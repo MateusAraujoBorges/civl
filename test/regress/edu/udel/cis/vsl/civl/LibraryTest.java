@@ -153,12 +153,6 @@ public class LibraryTest {
 	}
 
 	@Test
-	public void intIter() throws ABCException {
-		assertTrue(ui.run("verify", "-inputB=5", "-enablePrintf=false",
-				filename(CIVLC, "intIter.cvl")));
-	}
-
-	@Test
 	public void contains() throws ABCException {
 		assertTrue(ui.run("verify", filename(CIVLC, "contains.cvl")));
 	}
@@ -241,12 +235,6 @@ public class LibraryTest {
 				filename(POINTER, "simpleAssertEqualsFail.cvl")));
 		assertFalse(ui.run("verify -enablePrintf=false",
 				filename(POINTER, "simpleAssertEqualsFail2.cvl")));
-	}
-
-	@Test
-	public void defined() throws ABCException {
-		assertTrue(ui.run("verify -enablePrintf=false",
-				filename(CIVLC, "defined.cvl")));
 	}
 
 	@Test

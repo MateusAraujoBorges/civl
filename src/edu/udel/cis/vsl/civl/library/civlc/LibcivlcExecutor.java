@@ -10,7 +10,6 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
@@ -182,17 +181,9 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 			state = executeWaitAll(state, pid, arguments, argumentValues,
 					call.getSource(), call.target());
 			break;
-		case "$set_default":
-			state = executeSetDefault(state, pid, process, arguments,
-					argumentValues, call.getSource());
-			break;
 		case "$variable_reference":
 			state = executeVariableReference(state, pid, process, lhs,
 					arguments, argumentValues);
-			break;
-		case "$apply":
-			state = executeApply(state, pid, process, arguments,
-					argumentValues, call.getSource());
 			break;
 		case "$next_time_count":
 			state = this.executeNextTimeCount(state, pid, process, lhs,
@@ -305,90 +296,6 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 		if (lhs != null)
 			state = this.primaryExecutor.assign(state, pid, process, lhs,
 					timeCountValue);
-		return state;
-	}
-
-	/**
-	 * <pre>
-	 * applies the operation op on obj1 and obj2 and stores the result 
-	 * void $apply(void *obj1, $operation op, void *obj2, void *result);
-	 * </pre>
-	 * 
-	 * 
-	 * @param state
-	 * @param pid
-	 * @param process
-	 * @param arguments
-	 * @param argumentValues
-	 * @param source
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private State executeApply(State state, int pid, String process,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		// TODO Auto-generated method stub
-		SymbolicExpression obj1, obj2, result;
-		Evaluation eval;
-		int operator;
-
-		eval = this.evaluator.dereference(arguments[0].getSource(), state,
-				process, arguments[0], argumentValues[0], false);
-		state = eval.state;
-		obj1 = eval.value;
-		eval = this.evaluator.dereference(arguments[2].getSource(), state,
-				process, arguments[2], argumentValues[2], false);
-		state = eval.state;
-		obj2 = eval.value;
-		operator = this.symbolicUtil.extractInt(arguments[1].getSource(),
-				(NumericExpression) argumentValues[1]);
-		result = this.applyCIVLOperator(state, process, obj1, obj2,
-				this.translateOperator(operator), source);
-		state = this.primaryExecutor.assign(source, state, process,
-				argumentValues[3], result);
-		return state;
-	}
-
-	/**
-	 * <pre>
-	 * updates the leaf nodes of a status variable to the default value 0
-	 * 
-	 * void $set_default(void *status);
-	 * </pre>
-	 * 
-	 * @param state
-	 * @param pid
-	 * @param process
-	 * @param arguments
-	 * @param argumentValues
-	 * @param source
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private State executeSetDefault(State state, int pid, String process,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		// TODO Auto-generated method stub
-		CIVLType objectTypeByPointer = symbolicAnalyzer.typeOfObjByPointer(
-				arguments[0].getSource(), state, argumentValues[0]);
-		SymbolicExpression value;
-
-		// TODO assert objectTypeByPointer.isScalarType()
-		if (objectTypeByPointer.isBoolType())
-			value = this.falseValue;
-		else if (objectTypeByPointer.isIntegerType())
-			value = this.zero;
-		else if (objectTypeByPointer.isRealType())
-			value = universe.rational(0);
-		else if (objectTypeByPointer.isCharType())
-			value = universe.character((char) 0);
-		else if (objectTypeByPointer.isPointerType())
-			value = symbolicUtil.nullPointer();
-		else
-			throw new CIVLUnimplementedFeatureException("Argument of "
-					+ objectTypeByPointer + " type for $set_default()", source);
-		state = this.primaryExecutor.assign(source, state, process,
-				argumentValues[0], value);
 		return state;
 	}
 

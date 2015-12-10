@@ -15,9 +15,9 @@
 /* There are 16 modes, and they must appear in this order to be
  * consistent with the system function Java code. */
 typedef enum CIVL_File_mode {
-  CIVL_FILE_MODE_R,    // open text file for reading
-  CIVL_FILE_MODE_W,    // truncate to zero length or create text file for writing
-  CIVL_FILE_MODE_WX,   // create text file for writing
+  CIVL_FILE_MODE_R,    // "r", open text file for reading
+  CIVL_FILE_MODE_W,    // "w", truncate to zero length or create text file for writing
+  CIVL_FILE_MODE_WX,   // "wx", create text file for writing
   CIVL_FILE_MODE_A,    // append; open or create text file for writing at end-of-file
   CIVL_FILE_MODE_RB,   // open binary file for reading
   CIVL_FILE_MODE_WB,   // truncate to zero length or create binary file for writing

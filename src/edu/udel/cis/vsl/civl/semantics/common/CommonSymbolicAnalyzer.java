@@ -2132,4 +2132,26 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			return universe.identityReference();
 		return null;
 	}
+
+	@Override
+	public BooleanExpression isDerefablePointer(State state,
+			SymbolicExpression pointer) {
+		if (!this.symbolicUtil.isDefinedPointer(pointer))
+			return this.universe.falseExpression();
+
+		int dyscope = symbolicUtil.getDyscopeId(null, pointer);
+
+		if (dyscope < 0)
+			return this.universe.falseExpression();
+
+		int vid = symbolicUtil.getVariableId(null, pointer);
+		SymbolicExpression value = state.getVariableValue(dyscope, vid);
+
+		try {
+			universe.dereference(value, symbolicUtil.getSymRef(pointer));
+		} catch (Exception ex) {
+			return universe.falseExpression();
+		}
+		return universe.trueExpression();
+	}
 }

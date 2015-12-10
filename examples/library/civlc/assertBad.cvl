@@ -1,7 +1,7 @@
 #include<civlc.cvh>
 
 int check(int a, int b, int c, int d){
-  $assert((a+b) == (c+d));
+  $assert((a+b) == (c+d), "assertion failed!\n");
 }
 
 int thread($proc x){

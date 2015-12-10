@@ -38,9 +38,10 @@ public class CompareTest {
 
 	@Test
 	public void adder() {
-		assertTrue(ui.run("compare", "-showProgram", "-enablePrintf=false", "-inputNPROCSB=2",
-				"-inputNB=4", "-spec", filename("adder", "adder_par.cvl"),
-				"-impl", filename("adder", "adder_spec.cvl")));
+		assertTrue(ui.run("compare", "-showProgram", "-enablePrintf=false",
+				"-inputNPROCSB=2", "-inputNB=4", "-spec",
+				filename("adder", "adder_par.cvl"), "-impl",
+				filename("adder", "adder_spec.cvl")));
 	}
 
 	@Test
@@ -67,10 +68,12 @@ public class CompareTest {
 	public void dotMpiSerial() {
 		assertFalse(ui.run("compare -enablePrintf=false -inputVECLEN=5 -spec",
 				filename("dot", "mpithreads_serial.c"),
-				"-impl -input_mpi_nprocs=2", filename("dot", "mpithreads_mpi.c")));
+				"-impl -input_mpi_nprocs=2",
+				filename("dot", "mpithreads_mpi.c")));
 		assertFalse(ui.run("replay -spec",
 				filename("dot", "mpithreads_serial.c"),
-				"-impl -input_mpi_nprocs=2", filename("dot", "mpithreads_mpi.c")));
+				"-impl -input_mpi_nprocs=2",
+				filename("dot", "mpithreads_mpi.c")));
 	}
 
 	@Test
@@ -88,11 +91,17 @@ public class CompareTest {
 				"-impl -input_mpi_nprocs=2 -inputMAXTHRDS=2",
 				filename("dot", "mpithreads_both.c")));
 	}
-	
+
 	@Test
 	public void outputfiles() {
-		assertFalse(ui.run("compare", "-spec", filename("outputTest", "out1.c"), "-impl",
-				filename("outputTest", "out2.c")));
+		assertTrue(ui.run("compare", "-spec", filename("outputTest", "out1.c"),
+				"-impl", filename("outputTest", "out2.c")));
+	}
+
+	@Test
+	public void outputfile() {
+		assertTrue(ui.run("compare -spec", filename("outputfile", "spec.c"),
+				"-impl", filename("outputfile", "impl.c")));
 	}
 
 	@AfterClass

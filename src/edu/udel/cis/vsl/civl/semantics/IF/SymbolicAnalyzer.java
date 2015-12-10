@@ -8,6 +8,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -206,8 +207,10 @@ public interface SymbolicAnalyzer {
 	StringBuffer inputVariablesToStringBuffer(State state);
 
 	Evaluator evaluator();
-	
-	SymbolicExpression pointerArithmetics(CIVLSource source,
-			State state, boolean isSubtract, SymbolicExpression pointer,
-			SymbolicExpression offset) ;
+
+	SymbolicExpression pointerArithmetics(CIVLSource source, State state,
+			boolean isSubtract, SymbolicExpression pointer,
+			SymbolicExpression offset);
+
+	BooleanExpression isDerefablePointer(State state, SymbolicExpression pointer);
 }

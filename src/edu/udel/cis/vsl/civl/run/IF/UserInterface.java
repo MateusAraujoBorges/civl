@@ -363,7 +363,6 @@ public class UserInterface {
 				.isTrue(showProverQueriesO));
 		gmcConfig.setAnonymousSection(anonymousSection);
 		if (anonymousSection.isTrue(strictCompareO))
-
 			return this.strictCompareWorker(compareCommand, specWorker,
 					implWorker, gmcConfig, anonymousSection, traceFile);
 		else

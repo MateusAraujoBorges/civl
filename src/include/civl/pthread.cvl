@@ -693,7 +693,7 @@ int pthread_cond_destroy(pthread_cond_t *cond){
 }
 
 int pthread_equal(pthread_t t1, pthread_t t2){
-  if(!$proc_defined(t1.thr) || !$proc_defined(t2.thr))
+  if(t1.thr==$proc_null || t2.thr==$proc_null)
     return 0;
   if(t1.thr == t2.thr){
     return 1;

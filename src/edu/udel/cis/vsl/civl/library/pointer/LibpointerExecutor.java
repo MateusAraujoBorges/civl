@@ -90,6 +90,10 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 			state = eval.state;
 		}
 		switch (functionName) {
+		case "$apply":
+			state = executeApply(state, pid, process, arguments,
+					argumentValues, call.getSource());
+			break;
 		case "$contains":
 			state = executeContains(state, pid, process, lhs, arguments,
 					argumentValues, call.getSource());
@@ -126,6 +130,10 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 			state = execute_has_leaf_node_equal_to(state, pid, process, lhs,
 					arguments, argumentValues, call.getSource());
 			break;
+		case "$set_default":
+			state = executeSetDefault(state, pid, process, arguments,
+					argumentValues, call.getSource());
+			break;
 		case "$set_leaf_nodes":
 			state = execute_set_leaf_nodes(state, pid, process, arguments,
 					argumentValues, call.getSource());
@@ -144,6 +152,90 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 		}
 		state = stateFactory.setLocation(state, pid, call.target(),
 				call.lhs() != null);
+		return state;
+	}
+
+	/**
+	 * <pre>
+	 * updates the leaf nodes of a status variable to the default value 0
+	 * 
+	 * void $set_default(void *status);
+	 * </pre>
+	 * 
+	 * @param state
+	 * @param pid
+	 * @param process
+	 * @param arguments
+	 * @param argumentValues
+	 * @param source
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private State executeSetDefault(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		// TODO Auto-generated method stub
+		CIVLType objectTypeByPointer = symbolicAnalyzer.typeOfObjByPointer(
+				arguments[0].getSource(), state, argumentValues[0]);
+		SymbolicExpression value;
+
+		// TODO assert objectTypeByPointer.isScalarType()
+		if (objectTypeByPointer.isBoolType())
+			value = this.falseValue;
+		else if (objectTypeByPointer.isIntegerType())
+			value = this.zero;
+		else if (objectTypeByPointer.isRealType())
+			value = universe.rational(0);
+		else if (objectTypeByPointer.isCharType())
+			value = universe.character((char) 0);
+		else if (objectTypeByPointer.isPointerType())
+			value = symbolicUtil.nullPointer();
+		else
+			throw new CIVLUnimplementedFeatureException("Argument of "
+					+ objectTypeByPointer + " type for $set_default()", source);
+		state = this.primaryExecutor.assign(source, state, process,
+				argumentValues[0], value);
+		return state;
+	}
+
+	/**
+	 * <pre>
+	 * applies the operation op on obj1 and obj2 and stores the result 
+	 * void $apply(void *obj1, $operation op, void *obj2, void *result);
+	 * </pre>
+	 * 
+	 * 
+	 * @param state
+	 * @param pid
+	 * @param process
+	 * @param arguments
+	 * @param argumentValues
+	 * @param source
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private State executeApply(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		// TODO Auto-generated method stub
+		SymbolicExpression obj1, obj2, result;
+		Evaluation eval;
+		int operator;
+
+		eval = this.evaluator.dereference(arguments[0].getSource(), state,
+				process, arguments[0], argumentValues[0], false);
+		state = eval.state;
+		obj1 = eval.value;
+		eval = this.evaluator.dereference(arguments[2].getSource(), state,
+				process, arguments[2], argumentValues[2], false);
+		state = eval.state;
+		obj2 = eval.value;
+		operator = this.symbolicUtil.extractInt(arguments[1].getSource(),
+				(NumericExpression) argumentValues[1]);
+		result = this.applyCIVLOperator(state, process, obj1, obj2,
+				this.translateOperator(operator), source);
+		state = this.primaryExecutor.assign(source, state, process,
+				argumentValues[3], result);
 		return state;
 	}
 
