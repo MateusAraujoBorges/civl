@@ -13,7 +13,7 @@ $output int ARRAY[20];
 #endif
 
 int main() {
-  FILE *fpt = fopen("output2.out","a");
+  FILE *fpt = fopen("output","a");
   int b[5];
 
   for(int i=0;i<5;i++) {
