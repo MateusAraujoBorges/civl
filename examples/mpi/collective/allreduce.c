@@ -1,3 +1,8 @@
+/* This example shows misusage of MPI collective routines. With a
+ * macro TYPE or TYPE2, this example shows inconsistency of MPI
+ * datatypes of collective calls. With a macro OPERATOR, this example
+ * shows inconsistency of MPI operators of collective calls.
+ **/
 #include <mpi.h>
 #include <stdio.h>
 #ifdef _CIVL
@@ -9,10 +14,10 @@
 int main(int argc, char **argv){
     int npes, mype, ierr;
     double sum, val; int calc, knt=1;
+
     ierr = MPI_Init(&argc, &argv);
     ierr = MPI_Comm_size(WCOMM, &npes);
-    ierr = MPI_Comm_rank(WCOMM, &mype);
-    
+    ierr = MPI_Comm_rank(WCOMM, &mype);    
     val  = (double)mype;
     
 #ifdef TYPE
@@ -20,6 +25,14 @@ int main(int argc, char **argv){
         ierr = MPI_Allreduce(&val, &sum, knt, MPI_DOUBLE, MPI_SUM, WCOMM);
     else
         ierr = MPI_Allreduce(&val, &sum, knt, MPI_INT, MPI_SUM, WCOMM);
+#elif defined TYPE2
+    if(mype%2)
+        ierr = MPI_Allreduce(&val, &sum, knt, MPI_DOUBLE, MPI_SUM, WCOMM);
+    else {
+      int sum, val;
+
+      ierr = MPI_Allreduce(&val, &sum, knt, MPI_INT, MPI_SUM, WCOMM);
+    }
 #elif defined OPERATOR
     if(mype%2)
         ierr = MPI_Allreduce(&val, &sum, knt, MPI_DOUBLE, MPI_SUM, WCOMM);

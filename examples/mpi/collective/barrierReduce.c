@@ -1,3 +1,4 @@
+/* An example shows the misusage of MPI collective routines. */
 #include<mpi.h>
 #include<stdio.h>
 

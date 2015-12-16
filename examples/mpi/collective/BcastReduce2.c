@@ -22,7 +22,6 @@ int main(int argc, char * argv[]) {
   if(rank != 5)
     MPI_Reduce(&recv, &num, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Allreduce(&num, &recv, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  printf("recv = %d\n", recv);
   assert(recv == (3*nprocs*nprocs + 3*(nprocs-1)));
   MPI_Finalize();
   return 0;

@@ -1,3 +1,6 @@
+/* This example show how to collectively call MPI collective
+   functions. They must be called by every included process in a same
+   order. */
 #include <mpi.h>
 #include <assert.h>
 

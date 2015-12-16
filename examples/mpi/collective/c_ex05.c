@@ -23,7 +23,7 @@ $input int count=4;
 void init_it(int  *argc, char ***argv);
 
 void init_it(int  *argc, char ***argv) {
-	mpi_err = MPI_Init(argc,argv);
+  mpi_err = MPI_Init(argc,argv);
     mpi_err = MPI_Comm_size( MPI_COMM_WORLD, &numnodes );
     mpi_err = MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 }
@@ -61,7 +61,7 @@ int main(int argc,char *argv[]){
 	    total=total+myray[i];
 	printf("myid= %d total= %d\n",myid,total);
 #ifdef _CIVL
-	$assert(total == myid*25 + 10);
+	$assert(total == count*(2*myid*count + count - 1)/2);
 #endif
 /* send the local sums back to the root */
     mpi_err = MPI_Gather(&total,    1,  MPI_INT, 
@@ -75,7 +75,7 @@ int main(int argc,char *argv[]){
 	    total=total+back_ray[i];
 	  printf("results from all processors= %d \n",total);
 #ifdef _CIVL
-	  $assert(total == 25*numnodes*(numnodes-1)/2+10*numnodes);
+	  $assert(total == (size * size - size)/2);
 #endif
 	}
 #ifdef _CIVL
