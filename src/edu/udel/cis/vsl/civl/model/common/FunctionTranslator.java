@@ -3282,6 +3282,7 @@ public class FunctionTranslator {
 				result = modelFactory.booleanLiteralExpression(source, value);
 				break;
 			case CHAR:
+			case UNSIGNED_CHAR:
 				Value constValue = constantNode.getConstantValue();
 				ConstantKind constKind = constantNode.constantKind();
 				char[] charValues;
@@ -4562,12 +4563,12 @@ public class FunctionTranslator {
 		case BOOL:
 			return typeFactory.booleanType();
 		case CHAR:
+		case UNSIGNED_CHAR:
 			return typeFactory.charType();
 		case DOUBLE_COMPLEX:
 		case FLOAT_COMPLEX:
 		case LONG_DOUBLE_COMPLEX:
 		case SIGNED_CHAR:
-		case UNSIGNED_CHAR:
 		default:
 			throw new CIVLUnimplementedFeatureException("types of kind "
 					+ basicType.kind(), source);
