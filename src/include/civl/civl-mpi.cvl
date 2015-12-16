@@ -85,8 +85,9 @@ void $mpi_gcomm_destroy($mpi_gcomm gc) {
   $gcomm_destroy(gc.col);
   numJunkRecord = $gcollect_checker_destroy(gc.collect_checker);
   $gbarrier_destroy(gc.gbarrier);
-  $assert(numJunkRecord == 0, "MPI collective routines are called inappropriately "
-	  "because there are %d collective records remaining the collective routine checker.",
+  $assert(numJunkRecord == 0, "MPI collective routines are called "
+	  "inappropriately because there are %d collective records"
+	  " still remaining the collective routine checker.",
 	  numJunkRecord);
 }
 
