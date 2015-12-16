@@ -11,6 +11,9 @@
 #include <pointer.cvh>
 #include <seq.cvh>
 
+/* Library private helper function declaration */
+char * getCoroutineName(int tag);
+
 /**************************** Duplicated Part *************************************/
 /* Duplicated definition with the same struct in mpi.h.
    The reason of this duplication is to make civlmpi.cvl
@@ -76,10 +79,15 @@ $mpi_gcomm $mpi_gcomm_create($scope scope, int size) {
 }
 
 void $mpi_gcomm_destroy($mpi_gcomm gc) {
+  int numJunkRecord;
+
   $gcomm_destroy(gc.p2p);
   $gcomm_destroy(gc.col);
-  $gcollect_checker_destroy(gc.collect_checker);
+  numJunkRecord = $gcollect_checker_destroy(gc.collect_checker);
   $gbarrier_destroy(gc.gbarrier);
+  $assert(numJunkRecord == 0, "MPI collective routines are called inappropriately "
+	  "because there are %d collective records remaining the collective routine checker.",
+	  numJunkRecord);
 }
 
 MPI_Comm $mpi_comm_create($scope scope, $mpi_gcomm gc, int rank) {
@@ -589,28 +597,95 @@ int $mpi_comm_free(MPI_Comm * comm) {
   return 0;
 }
 
-$bundle $mpi_createCoroutineEntries(int routineTag, int root, 
+$bundle $mpi_createCoroutineEntry(int routineTag, int root, 
 				    int op, int numDatatypes, int * datatypes) {
   int zero = 0;
-  $bundle bundledEntries;
-  struct Entries {
+  $bundle bundledEntry;
+  struct Entry {
     int routine_tag;
     int root;
     int op;
     int numTypes;
     int datatypes[];
-  }entries;
+  }entry;
 
-  entries.routine_tag = routineTag;
-  entries.root = root;
-  entries.op = op;
-  entries.numTypes = numDatatypes;
-  $seq_init(&entries.datatypes, numDatatypes, &zero);
+  entry.routine_tag = routineTag;
+  entry.root = root;
+  entry.op = op;
+  entry.numTypes = numDatatypes;
+  $seq_init(&entry.datatypes, numDatatypes, &zero);
   for(int i = 0; i < numDatatypes; i++)
-    entries.datatypes[i] = datatypes[i];
-  bundledEntries = $bundle_pack(&entries, sizeof(struct Entries));
-  return bundledEntries;
+    entry.datatypes[i] = datatypes[i];
+  bundledEntry = $bundle_pack(&entry, sizeof(struct Entry));
+  return bundledEntry;
 }
 
+void $mpi_diffCoroutineEntries($bundle specEntry, $bundle mineEntry, int rank) {
+  struct Entry {
+    int routine_tag;
+    int root;
+    int op;
+    int numTypes;
+    int datatypes[];
+  }spec, mine;
+  char * routine;
+  int numTypes;
+  
+  $bundle_unpack(specEntry, &spec);
+  $bundle_unpack(mineEntry, &mine);
+  routine = getCoroutineName(spec.routine_tag);
+  if(spec.routine_tag != mine.routine_tag) {
+    char * mineRoutine = getCoroutineName(mine.routine_tag);
+
+    $assert($false, "Process with rank %d reaches an MPI collective routine "
+	    "%s while at least one of others are collectively reaching %s.", 
+	    rank, mineRoutine, routine);
+  }
+  else if(spec.root != mine.root) {
+    $assert($false, "Process with rank %d reaches an MPI collective routine "
+	    "%s which has a different root with at least one of others.", rank, routine);
+  } else if(spec.op != mine.op) {
+    $assert($false, "Process with rank %d reaches an MPI collective routine "
+	    "%s which has a different MPI_Op with at least one of others", rank, routine);
+  } else if(spec.numTypes != mine.numTypes) {
+    $assert($false, "Process with rank %d reaches an MPI collective routine "
+	    "%s which has an inconsistent datatype specification with at least"
+	    " one of others", 
+	    rank, routine);    
+  }
+  numTypes = spec.numTypes;
+  for(int i = 0; i < numTypes; i++)
+    if(spec.datatypes[i] != mine.datatypes[i]) {
+      $assert($false, "Process with rank %d reaches an MPI collective routine "
+	      "%s which has an inconsistent datatype specification with at "
+	      "least one of others", 
+	      rank, routine);          
+      break;
+    }
+}
+
+/********************* Private helper functions *********************/
+/* Returns the string literal of MPI collective routine names by
+ * giving the unique message tag. */
+char * getCoroutineName(int tag) {
+  switch(tag) {
+  case 9999: return "MPI_Bcast"; 
+  case 9998: return "MPI_Reduce";
+  case 9997: return "MPI_Allreduce";
+  case 9996: return "MPI_Gather";
+  case 9995: return "MPI_Scatter";
+  case 9994: return "MPI_Gatherv";
+  case 9993: return "MPI_Scatterv";
+  case 9992: return "MPI_Allgather";
+  case 9991: return "MPI_Reduce_scatter";
+  case 9990: return "MPI_Alltoall";
+  case 9989: return "MPI_Alltoallv";
+  case 9988: return "MPI_Alltoallw";
+  case 9987: return "MPI_Barrier";
+  case 9986: return "MPI_Commdup";
+  case 9985: return "MPI_Commfree";
+  default: $assert($false, "Internal Error: Unexpected MPI routine tag:%d.\n", tag);
+  }
+}
 #endif
 

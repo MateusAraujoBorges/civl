@@ -21,7 +21,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
-import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
@@ -132,7 +131,7 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 					arguments, argumentValues, call.getSource());
 			break;
 		case "$gcollect_checker_destroy":
-			state = executeGcollectCheckerDestroy(state, pid, process,
+			state = executeGcollectCheckerDestroy(state, pid, process, lhs,
 					arguments, argumentValues, call.getSource());
 			break;
 		case "$collect_checker_create":
@@ -495,7 +494,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	}
 
 	/**
-	 * Destroy a global collective checker
+	 * Destroy a global collective checker. The system function is suppose to
+	 * return the number of junk records remaining the checker.
 	 * 
 	 * @param state
 	 *            The current state
@@ -515,15 +515,12 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private State executeGcollectCheckerDestroy(State state, int pid,
-			String process, Expression[] arguments,
+			String process, LHSExpression lhs, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression gcheckerHandle = argumentValues[0];
 		SymbolicExpression gchecker;
 		NumericExpression records_length;
-		BooleanExpression claim;
-		ResultType resultType;
-		Reasoner reasoner;
 		Evaluation eval;
 
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
@@ -532,22 +529,9 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		gchecker = eval.value;
 		records_length = (NumericExpression) universe.tupleRead(gchecker,
 				zeroObject);
-		reasoner = universe.reasoner(state.getPathCondition());
-		claim = universe.equals(records_length, zero);
-		resultType = reasoner.valid(claim).getResultType();
-		if (!resultType.equals(ResultType.YES)) {
-			state = errorLogger
-					.logError(
-							source,
-							state,
-							process,
-							symbolicAnalyzer.stateInformation(state),
-							claim,
-							resultType,
-							ErrorKind.MPI_ERROR,
-							"There are records remaining in the collective operation checker which means collective "
-									+ "operations are not executed right for all processes.\n");
-		}
+		if (lhs != null)
+			state = primaryExecutor.assign(state, pid, process, lhs,
+					records_length);
 		state = this.executeFree(state, pid, process, arguments,
 				argumentValues, source);
 		return state;
@@ -603,7 +587,6 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		Reasoner reasoner;
 		Evaluation eval;
 		ResultType resultType;
-		boolean isMatched = true;
 		// fields indices
 		IntObject marksArrayIdx = universe.intObject(1);
 		IntObject numMarksIdx = universe.intObject(2);
@@ -664,8 +647,6 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 				else
 					loopIdf = universe.add(loopIdf, one);
 			}
-			isMatched = this.isRecordMatch(state, unmarked_record,
-					bundledEntries);
 			// No matter whether checking passed or not, the process always mark
 			// itself so that the execution can continue
 			marksArray = universe.tupleRead(unmarked_record, marksArrayIdx);
@@ -697,12 +678,14 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		state = primaryExecutor.assign(source, state, process, gcheckHandle,
 				gcheck);
 		if (lhs != null) {
-			if (!isMatched)// checking doesn't passed
-				state = primaryExecutor.assign(state, pid, process, lhs,
-						universe.falseExpression());
-			else
-				state = primaryExecutor.assign(state, pid, process, lhs,
-						universe.trueExpression());
+			state = this.primaryExecutor.assign(state, pid, process, lhs,
+					universe.tupleRead(modifiedRecord, this.zeroObject));
+			// if (!isMatched)// checking doesn't passed
+			// state = primaryExecutor.assign(state, pid, process, lhs,
+			// universe.falseExpression());
+			// else
+			// state = primaryExecutor.assign(state, pid, process, lhs,
+			// universe.trueExpression());
 
 		}
 		return state;
@@ -743,36 +726,5 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 				(SymbolicTupleType) collectRecordType.getDynamicType(universe),
 				newRecordComponents);
 		return newRecord;
-	}
-
-	/**
-	 * Check if a record is matched with a given group of values of another
-	 * record.
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param unmarked_record
-	 *            The record in queue which is used to compare
-	 * @param bundle
-	 *            The $bundle type object stores entries which should be stored
-	 *            in a record.
-	 * @return true if and only if the two records are matched
-	 * @throws LibraryLoaderException
-	 */
-	private boolean isRecordMatch(State state,
-			SymbolicExpression unmarked_record,
-			SymbolicExpression bundledEntries) {
-		ResultType resultType;
-		BooleanExpression claim;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		IntObject bundledIdx = this.zeroObject;
-
-		claim = universe.equals(bundledEntries,
-				universe.tupleRead(unmarked_record, bundledIdx));
-		resultType = reasoner.valid(claim).getResultType();
-		if (resultType.equals(ResultType.YES))
-			return true;
-		else
-			return false;
 	}
 }
