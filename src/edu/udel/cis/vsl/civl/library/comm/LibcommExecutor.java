@@ -749,15 +749,14 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 									resultType,
 									ErrorKind.COMMUNICATION,
 									"Communicator memory leak: "
-											+ "There is at least one message still remaining in channel["
+											+ "There is at least one message from place '"
 											+ i
-											+ "]["
+											+ "' to place '"
 											+ j
-											+ "] of the communicator referenced by "
-											+ gcommHandleExpr
-											+ " when the commmunicator is going to be destroyed.\n"
+											+ "' still remaining in civl communicator referenced by ["
+											+ gcommHandleExpr.getSource()
+											+ "] when the civl commmunicator is going to be destroyed.\n"
 											+ "Claim: " + claim + "\n");
-					// TODO: is always MPI error ?
 				}
 			}
 		}

@@ -408,10 +408,14 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 							process,
 							this.symbolicAnalyzer.stateInformation(state),
 							ErrorKind.MPI_ERROR,
-							"the primitive type "
+							"The primitive type "
 									+ realType.toString()
-									+ " of the object pointed by the input pointer argument of"
-									+ " MPI routines is not consistent with the given MPI_Datatype");
+									+ " of the object pointed by the input pointer argument ["
+									+ ptrSource.getLocation()
+									+ ":"
+									+ arguments[0]
+									+ "] of"
+									+ " MPI routines is not consistent with the specified MPI_Datatype.");
 		}
 		return state;
 	}
