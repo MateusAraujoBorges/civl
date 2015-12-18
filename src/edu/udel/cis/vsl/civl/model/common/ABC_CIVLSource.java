@@ -2,7 +2,7 @@ package edu.udel.cis.vsl.civl.model.common;
 
 import java.io.PrintStream;
 
-import edu.udel.cis.vsl.abc.token.IF.Source;
+import edu.udel.cis.vsl.abc.front.IF.token.Source;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 
 /**
