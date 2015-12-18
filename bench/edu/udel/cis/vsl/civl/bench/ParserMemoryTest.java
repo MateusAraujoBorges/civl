@@ -6,9 +6,9 @@ import java.util.List;
 
 import edu.udel.cis.vsl.abc.FrontEnd;
 import edu.udel.cis.vsl.abc.config.IF.Configuration.Language;
-import edu.udel.cis.vsl.abc.front.c.parse.IF.ParseException;
-import edu.udel.cis.vsl.abc.front.c.preproc.IF.PreprocessorException;
-import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.abc.front.IF.parse.ParseException;
+import edu.udel.cis.vsl.abc.front.IF.preproc.PreprocessorException;
+import edu.udel.cis.vsl.abc.front.IF.token.SyntaxException;
 
 /**
  * java -classpath ${WORKING_DIR}/civl.jar:${WORKING_DIR}/bin
