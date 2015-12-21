@@ -126,6 +126,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	private SymbolicTupleType functionPointerType;
 	private Evaluator evaluator;
 
+	@SuppressWarnings("unused")
 	private CIVLConfiguration config;
 
 	/* ***************************** Constructors ************************** */
@@ -2038,19 +2039,15 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 	@Override
 	public StringBuffer stateInformation(State state) {
-		if (this.config.isReplay())
-			return this.stateToString(state);
-		else {
-			StringBuffer result = new StringBuffer();
+		StringBuffer result = new StringBuffer();
 
-			result.append("\nContext:\n");
-			result.append(this.symbolicExpressionToString(null, state,
-					this.modelFactory.typeFactory().booleanType(),
-					state.getPathCondition()));
-			result.append("\n");
-			result.append(state.callStackToString());
-			return result;
-		}
+		result.append("\nContext:\n");
+		result.append(this.symbolicExpressionToString(null, state,
+				this.modelFactory.typeFactory().booleanType(),
+				state.getPathCondition()));
+		result.append("\n");
+		result.append(state.callStackToString());
+		return result;
 	}
 
 	@Override
