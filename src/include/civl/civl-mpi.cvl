@@ -79,10 +79,38 @@ $mpi_gcomm $mpi_gcomm_create($scope scope, int size) {
 }
 
 void $mpi_gcomm_destroy($mpi_gcomm gc) {
+  /* This function will report errors for any messages remaining the
+     $mpi_gcomm. Those messages are junk messages. */
   int numJunkRecord;
+  int numJunkMsg;
+  $message junkMsgs[]; // A CIVL-C sequence for junk messages.
 
-  $gcomm_destroy(gc.p2p);
-  $gcomm_destroy(gc.col);
+  $seq_init(&junkMsgs, 0, NULL);
+  numJunkMsg = $gcomm_destroy(gc.p2p, &junkMsgs);
+  /* Informations of reporting junk messages in p2p communicator and
+     collective communicator are different: */
+  for(int i = 0; i < numJunkMsg; i++) {
+    int src, dest, tag;
+
+    src = $message_source(junkMsgs[i]);
+    dest = $message_dest(junkMsgs[i]);
+    tag = $message_tag(junkMsgs[i]);
+    $assert($false, "MPI message leak: There is a message from rank %d to rank %d with tag %d "
+	    "has been sent but never be received in point-to-point communication.", 
+	    src, dest, tag);
+  }
+  numJunkMsg = $gcomm_destroy(gc.col, &junkMsgs);
+  for(int i = 0; i < numJunkMsg; i++) {
+    int src, tag;
+    char * routine;
+
+    src = $message_source(junkMsgs[i]);
+    tag = $message_tag(junkMsgs[i]);
+    routine = getCoroutineName(tag);
+    $assert($false, "MPI message leak: There is a message sent by rank %d for collective routine %s"
+	    " that never be received.", 
+	    src, routine);
+  }  
   numJunkRecord = $gcollect_checker_destroy(gc.collect_checker);
   $gbarrier_destroy(gc.gbarrier);
   $assert(numJunkRecord == 0, "MPI collective routines are called "

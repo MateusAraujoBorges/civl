@@ -34,6 +34,7 @@ import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
@@ -678,8 +679,11 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	}
 
 	/**
-	 * Free the gcomm object and check if there is any message still remaining
-	 * the message buffer
+	 * Frees the gcomm object and gives a CIVL sequence ($seq) of remaining
+	 * messages if there are any of them through the output argument.Returns the
+	 * number of remaining messages.
+	 * 
+	 * <code>Prototype: int $gcomm_destroy($gcomm, void * ptr)</code>
 	 * 
 	 * @param state
 	 *            the current state
@@ -704,12 +708,15 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		Expression gcommHandleExpr = arguments[0];
 		Expression gcommExpr;
 		SymbolicExpression gcommHandle;
+		SymbolicExpression junkMsgPtr = argumentValues[1];
 		SymbolicExpression gcomm;
 		NumericExpression nprocs;
 		SymbolicExpression buf;
 		SymbolicExpression queues;
 		int nprocs_int;
 		Evaluation eval;
+		// Collective all remaining messages
+		LinkedList<SymbolicExpression> remainMsgs = new LinkedList<>();
 
 		gcommHandle = argumentValues[0];
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
@@ -730,35 +737,41 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 			for (int j = 0; j < nprocs_int; j++) {
 				SymbolicExpression queue;
 				NumericExpression queueLength;
-				BooleanExpression claim;
-				ResultType resultType;
+				IntegerNumber concQLength;
 
 				queue = universe.arrayRead(queues, universe.integer(j));
 				queueLength = (NumericExpression) universe.tupleRead(queue,
 						zeroObject);
-				claim = universe.lessThanEquals(queueLength, zero);
-				resultType = reasoner.valid(claim).getResultType();
-				if (!resultType.equals(ResultType.YES)) {
-					state = this.errorLogger
-							.logError(
-									source,
-									state,
-									process,
-									symbolicAnalyzer.stateInformation(state),
-									claim,
-									resultType,
-									ErrorKind.COMMUNICATION,
-									"Communicator memory leak: "
-											+ "There is at least one message from place '"
-											+ i
-											+ "' to place '"
-											+ j
-											+ "' still remaining in civl communicator referenced by ["
-											+ gcommHandleExpr.getSource()
-											+ "] when the civl commmunicator is going to be destroyed.\n"
-											+ "Claim: " + claim + "\n");
+				concQLength = ((IntegerNumber) reasoner
+						.extractNumber(queueLength));
+				if (concQLength == null) {
+					throw new CIVLInternalException(
+							"The length of a message queue in a CIVL-C communicator is not concrete",
+							source);
+				} else {
+					SymbolicExpression msgArray = universe.tupleRead(queue,
+							oneObject);
+
+					for (int k = 0; k < concQLength.intValue(); k++)
+						remainMsgs.add(universe.arrayRead(msgArray,
+								universe.integer(k)));
 				}
 			}
+		}
+		// If there is any remaining messages, assign to the given pointer (a
+		// pointer to a civl-c $seq)
+		if (!remainMsgs.isEmpty() && !junkMsgPtr.isNull()) {
+			SymbolicType msgType = model.mesageType().getDynamicType(universe);
+			SymbolicExpression junkMsgArray = universe.array(msgType,
+					remainMsgs);
+
+			state = primaryExecutor.assign(arguments[1].getSource(), state,
+					process, junkMsgPtr, junkMsgArray);
+		}
+		// Return the number of remaining messages (junk messages):
+		if (lhs != null) {
+			state = primaryExecutor.assign(state, pid, process, lhs,
+					universe.integer(remainMsgs.size()));
 		}
 		state = this.executeFree(state, pid, process, arguments,
 				argumentValues, source);

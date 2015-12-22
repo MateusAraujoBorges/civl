@@ -36,5 +36,5 @@ void MPI_Process (int rank) {
 void main() {  
   // for (int i=0; i<2; i++) $spawn MPI_Process(i);
   $parfor (int i : ($domain){0 .. 1}) MPI_Process(i);
-  $gcomm_destroy(GCOMM_WORLD);
+  $gcomm_destroy(GCOMM_WORLD, NULL);
 }

@@ -47,5 +47,5 @@ void main() {
     procs[i] = $spawn MPI_Process(i);
   for (int i=0; i<NPROCS; i++)
     $wait(procs[i]);
-  $gcomm_destroy(GCOMM_WORLD);
+  $gcomm_destroy(GCOMM_WORLD, NULL);
 }
