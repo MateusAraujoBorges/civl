@@ -948,14 +948,18 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 								@SuppressWarnings("unchecked")
 								SymbolicCollection<? extends SymbolicExpression> symbolicCollection = (SymbolicCollection<? extends SymbolicExpression>) arguments[0];
 								int elementIndex = 0;
+								boolean allSubtypesScalar = civlType != null ? civlType
+										.areSubtypesScalar() : false;
 								boolean needNewLine = !separator.isEmpty()
-										&& (civlType != null ? !civlType
-												.areSubtypesScalar() : false);
+										&& !allSubtypesScalar;
 								String padding = "\n" + prefix + separator;
 								String newPrefix = needNewLine ? prefix
 										+ separator : prefix;
+								boolean needBrackets = allSubtypesScalar
+										|| symbolicCollection.size() == 0;
 
-								result.append("{");
+								if (needBrackets)
+									result.append("{");
 								for (SymbolicExpression symbolicElement : symbolicCollection) {
 									Pair<String, CIVLType> elementNameAndType = this
 											.subType(civlType, elementIndex);
@@ -964,17 +968,21 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 										result.append(", ");
 									if (needNewLine)
 										result.append(padding);
-									elementIndex++;
 									if (elementNameAndType.left != null)
 										result.append("."
 												+ elementNameAndType.left + "=");
+									else if (civlType.isArrayType())
+										result.append("[" + elementIndex + "]"
+												+ "=");
+									elementIndex++;
 									result.append(symbolicExpressionToString(
 											source, state,
 											elementNameAndType.right,
 											symbolicElement, false, newPrefix,
 											separator, false));
 								}
-								result.append("}");
+								if (needBrackets)
+									result.append("}");
 							} else {
 								result.append(arguments[0]
 										.toStringBuffer(false));
@@ -1113,18 +1121,23 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				case DENSE_TUPLE_WRITE: {
 					boolean first = true;
 					int eleIndex = 0;
+					boolean allSubtypesScalar = civlType.areSubtypesScalar();
 					boolean needNewLine = !separator.isEmpty()
-							&& !civlType.areSubtypesScalar();
+							&& !allSubtypesScalar;
 					String padding = "\n" + prefix + separator;
 					String newPrefix = needNewLine ? prefix + separator
 							: prefix;
+					SymbolicSequence<?> elements = (SymbolicSequence<?>) arguments[1];
+					boolean needBrackets = allSubtypesScalar
+							|| elements.size() == 0;
 
 					result.append(arguments[0].toStringBuffer(true));
-					result.append("{");
-					for (SymbolicExpression value : (SymbolicSequence<?>) arguments[1]) {
+					if (needBrackets)
+						result.append("{");
+					for (SymbolicExpression value : elements) {
 						if (!value.isNull()) {
 							Pair<String, CIVLType> eleNameAndType = this
-									.subType(civlType, eleIndex++);
+									.subType(civlType, eleIndex);
 
 							if (first)
 								first = false;
@@ -1137,8 +1150,10 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 									state, eleNameAndType.right, value, false,
 									newPrefix, separator, false));
 						}
+						eleIndex++;
 					}
-					result.append("}");
+					if (needBrackets)
+						result.append("}");
 					return result.toString();
 				}
 				case DIVIDE:
