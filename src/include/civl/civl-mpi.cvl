@@ -96,7 +96,7 @@ void $mpi_gcomm_destroy($mpi_gcomm gc) {
     dest = $message_dest(junkMsgs[i]);
     tag = $message_tag(junkMsgs[i]);
     $assert($false, "MPI message leak: There is a message from rank %d to rank %d with tag %d "
-	    "has been sent but never be received in point-to-point communication.", 
+	    "has been sent but is never received in point-to-point communication.", 
 	    src, dest, tag);
   }
   numJunkMsg = $gcomm_destroy(gc.col, &junkMsgs);
@@ -108,7 +108,7 @@ void $mpi_gcomm_destroy($mpi_gcomm gc) {
     tag = $message_tag(junkMsgs[i]);
     routine = getCoroutineName(tag);
     $assert($false, "MPI message leak: There is a message sent by rank %d for collective routine %s"
-	    " that never be received.", 
+	    " that is never received.", 
 	    src, routine);
   }  
   numJunkRecord = $gcollect_checker_destroy(gc.collect_checker);
