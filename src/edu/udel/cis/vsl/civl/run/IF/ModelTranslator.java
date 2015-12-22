@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.Stack;
 
 import edu.udel.cis.vsl.abc.FrontEnd;
+import edu.udel.cis.vsl.abc.FrontEnd.FrontEndKind;
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
@@ -196,11 +197,11 @@ public class ModelTranslator {
 	 *             if there is a problem processing any macros defined in the
 	 *             command line
 	 */
-	ModelTranslator(TransformerFactory transformerFactory, FrontEnd frontEnd,
+	ModelTranslator(TransformerFactory transformerFactory,
 			GMCConfiguration gmcConfig, GMCSection gmcSection,
 			String[] filenames, String coreName) throws PreprocessorException {
-		this(transformerFactory, frontEnd, gmcConfig, gmcSection, filenames,
-				coreName, SARL.newStandardUniverse());
+		this(transformerFactory, gmcConfig, gmcSection, filenames, coreName,
+				SARL.newStandardUniverse());
 	}
 
 	/**
@@ -225,7 +226,7 @@ public class ModelTranslator {
 	 *             if there is a problem processing any macros defined in the
 	 *             command line
 	 */
-	ModelTranslator(TransformerFactory transformerFactory, FrontEnd frontEnd,
+	ModelTranslator(TransformerFactory transformerFactory,
 			GMCConfiguration gmcConfig, GMCSection cmdSection,
 			String[] filenames, String coreName, SymbolicUniverse universe)
 			throws PreprocessorException {
@@ -248,7 +249,7 @@ public class ModelTranslator {
 		// } else
 		this.filenames = filenames;
 		userFileName = filenames[0];
-		this.frontEnd = frontEnd;
+		this.frontEnd = new FrontEnd(frontEndKindByFileName(userFileName));
 		frontEnd.getConfiguration().setLanguage(Language.CIVL_C);
 		if (config.svcomp()) {
 			frontEnd.getConfiguration().setSvcomp(config.svcomp());
@@ -258,6 +259,12 @@ public class ModelTranslator {
 		systemIncludes = this.getSysIncludes(cmdSection);
 		userIncludes = this.getUserIncludes(cmdSection);
 		macroMaps = getMacroMaps(preprocessor);
+	}
+
+	private FrontEndKind frontEndKindByFileName(String fileName) {
+		if (fileName.endsWith(".f") || fileName.endsWith(".F"))
+			return FrontEndKind.FORTRAN77;
+		return FrontEndKind.C_OR_CIVL_C;
 	}
 
 	/**

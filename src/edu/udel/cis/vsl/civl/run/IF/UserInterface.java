@@ -262,7 +262,7 @@ public class UserInterface {
 				gmcSection.read(commandLine.gmcConfig().getAnonymousSection());
 			}
 			ModelTranslator modelTranslator = new ModelTranslator(
-					transformerFactory, frontEnd, gmcConfig, gmcSection,
+					transformerFactory, gmcConfig, gmcSection,
 					commandLine.files(), commandLine.getCoreFileName());
 
 			// if (commandLine.gmcSection().isTrue(echoO))
@@ -351,10 +351,10 @@ public class UserInterface {
 				gmcConfig.getAnonymousSection());
 
 		ModelTranslator specWorker = new ModelTranslator(transformerFactory,
-				frontEnd, gmcConfig, specSection, spec.files(),
-				spec.getCoreFileName(), universe), implWorker = new ModelTranslator(
-				transformerFactory, frontEnd, gmcConfig, implSection,
-				impl.files(), impl.getCoreFileName(), universe);
+				gmcConfig, specSection, spec.files(), spec.getCoreFileName(),
+				universe), implWorker = new ModelTranslator(transformerFactory,
+				gmcConfig, implSection, impl.files(), impl.getCoreFileName(),
+				universe);
 
 		// if (anonymousSection.isTrue(echoO))
 		// out.println(compareCommand.getCommandString());
@@ -514,7 +514,7 @@ public class UserInterface {
 			GMCConfiguration gmcConfig = new GMCConfiguration(
 					definedOptions.values());
 			ModelTranslator translator = new ModelTranslator(
-					transformerFactory, frontEnd, gmcConfig,
+					transformerFactory, gmcConfig,
 					gmcConfig.getAnonymousSection(), files, files[0]);
 
 			return translator.getInputVariables();
