@@ -40,7 +40,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CancellationException;
 
-import edu.udel.cis.vsl.abc.FrontEnd;
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -75,8 +74,6 @@ import edu.udel.cis.vsl.civl.run.common.VerificationStatus;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
-import edu.udel.cis.vsl.civl.transform.IF.Transforms;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.CommandLineParser;
@@ -138,15 +135,10 @@ public class UserInterface {
 	private double startTime;
 
 	/**
-	 * The ABC front end.
-	 */
-	private FrontEnd frontEnd = new FrontEnd();
-
-	/**
 	 * The transformer factory that provides CIVL transformers.
 	 */
-	private TransformerFactory transformerFactory = Transforms
-			.newTransformerFactory(frontEnd.getASTFactory());
+	// private TransformerFactory transformerFactory = Transforms
+	// .newTransformerFactory(frontEnd.getASTFactory());
 
 	/* ************************** Static Code ***************************** */
 	// initializes the command line options
@@ -261,9 +253,9 @@ public class UserInterface {
 				gmcSection.setScalarValue(collectHeapsO, false);
 				gmcSection.read(commandLine.gmcConfig().getAnonymousSection());
 			}
-			ModelTranslator modelTranslator = new ModelTranslator(
-					transformerFactory, gmcConfig, gmcSection,
-					commandLine.files(), commandLine.getCoreFileName());
+			ModelTranslator modelTranslator = new ModelTranslator(gmcConfig,
+					gmcSection, commandLine.files(),
+					commandLine.getCoreFileName());
 
 			// if (commandLine.gmcSection().isTrue(echoO))
 			// out.println(commandLine.getCommandString());
@@ -350,9 +342,8 @@ public class UserInterface {
 		implSection = this.readInputs(implSection,
 				gmcConfig.getAnonymousSection());
 
-		ModelTranslator specWorker = new ModelTranslator(transformerFactory,
-				gmcConfig, specSection, spec.files(), spec.getCoreFileName(),
-				universe), implWorker = new ModelTranslator(transformerFactory,
+		ModelTranslator specWorker = new ModelTranslator(gmcConfig,
+				specSection, spec.files(), spec.getCoreFileName(), universe), implWorker = new ModelTranslator(
 				gmcConfig, implSection, impl.files(), impl.getCoreFileName(),
 				universe);
 
@@ -403,8 +394,9 @@ public class UserInterface {
 			out.println("Generating composite program...");
 		combinedAST = combiner.combine(specProgram.getAST(),
 				implProgram.getAST());
-		compositeProgram = frontEnd.getProgramFactory(
-				frontEnd.getStandardAnalyzer()).newProgram(combinedAST);
+		compositeProgram = specWorker.frontEnd.getProgramFactory(
+				specWorker.frontEnd.getStandardAnalyzer()).newProgram(
+				combinedAST);
 		if (civlConfig.debugOrVerbose() || civlConfig.showProgram()) {
 			compositeProgram.prettyPrint(out);
 		}
@@ -513,8 +505,7 @@ public class UserInterface {
 		try {
 			GMCConfiguration gmcConfig = new GMCConfiguration(
 					definedOptions.values());
-			ModelTranslator translator = new ModelTranslator(
-					transformerFactory, gmcConfig,
+			ModelTranslator translator = new ModelTranslator(gmcConfig,
 					gmcConfig.getAnonymousSection(), files, files[0]);
 
 			return translator.getInputVariables();

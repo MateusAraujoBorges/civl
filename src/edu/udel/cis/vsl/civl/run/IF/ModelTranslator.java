@@ -45,6 +45,7 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelBuilder;
 import edu.udel.cis.vsl.civl.model.IF.Models;
 import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
+import edu.udel.cis.vsl.civl.transform.IF.Transforms;
 import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.gmc.GMCSection;
@@ -152,7 +153,7 @@ public class ModelTranslator {
 	/**
 	 * The ABC front end to be used.
 	 */
-	private FrontEnd frontEnd;
+	FrontEnd frontEnd;
 
 	/**
 	 * The output stream for printing error messages.
@@ -197,11 +198,10 @@ public class ModelTranslator {
 	 *             if there is a problem processing any macros defined in the
 	 *             command line
 	 */
-	ModelTranslator(TransformerFactory transformerFactory,
-			GMCConfiguration gmcConfig, GMCSection gmcSection,
+	ModelTranslator(GMCConfiguration gmcConfig, GMCSection gmcSection,
 			String[] filenames, String coreName) throws PreprocessorException {
-		this(transformerFactory, gmcConfig, gmcSection, filenames, coreName,
-				SARL.newStandardUniverse());
+		this(gmcConfig, gmcSection, filenames, coreName, SARL
+				.newStandardUniverse());
 	}
 
 	/**
@@ -226,11 +226,9 @@ public class ModelTranslator {
 	 *             if there is a problem processing any macros defined in the
 	 *             command line
 	 */
-	ModelTranslator(TransformerFactory transformerFactory,
-			GMCConfiguration gmcConfig, GMCSection cmdSection,
+	ModelTranslator(GMCConfiguration gmcConfig, GMCSection cmdSection,
 			String[] filenames, String coreName, SymbolicUniverse universe)
 			throws PreprocessorException {
-		this.transformerFactory = transformerFactory;
 		this.cmdSection = cmdSection;
 		this.gmcConfig = gmcConfig;
 		this.userFileCoreName = coreName;
@@ -250,6 +248,8 @@ public class ModelTranslator {
 		this.filenames = filenames;
 		userFileName = filenames[0];
 		this.frontEnd = new FrontEnd(frontEndKindByFileName(userFileName));
+		this.transformerFactory = Transforms.newTransformerFactory(frontEnd
+				.getASTFactory());
 		frontEnd.getConfiguration().setLanguage(Language.CIVL_C);
 		if (config.svcomp()) {
 			frontEnd.getConfiguration().setSvcomp(config.svcomp());

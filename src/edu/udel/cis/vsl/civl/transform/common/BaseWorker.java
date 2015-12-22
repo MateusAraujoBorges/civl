@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.udel.cis.vsl.abc.FrontEnd;
+import edu.udel.cis.vsl.abc.FrontEnd.FrontEndKind;
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
@@ -466,7 +467,7 @@ public abstract class BaseWorker {
 	 * @throws SyntaxException
 	 */
 	protected AST parseSystemLibrary(String filename) throws SyntaxException {
-		FrontEnd frontEnd = new FrontEnd();
+		FrontEnd frontEnd = new FrontEnd(FrontEndKind.C_OR_CIVL_C);
 		Preprocessor preprocessor = frontEnd.getPreprocessor();
 		CTokenSource tokenSource;
 		ParseTree tree;

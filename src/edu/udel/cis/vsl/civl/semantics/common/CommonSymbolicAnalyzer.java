@@ -957,6 +957,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 										+ separator : prefix;
 								boolean needBrackets = allSubtypesScalar
 										|| symbolicCollection.size() == 0;
+								boolean isArray = civlType != null ? civlType
+										.isArrayType() : false;
 
 								if (needBrackets)
 									result.append("{");
@@ -971,7 +973,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 									if (elementNameAndType.left != null)
 										result.append("."
 												+ elementNameAndType.left + "=");
-									else if (civlType.isArrayType())
+									else if (isArray)
 										result.append("[" + elementIndex + "]"
 												+ "=");
 									elementIndex++;
