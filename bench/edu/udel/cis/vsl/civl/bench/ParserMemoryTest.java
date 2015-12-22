@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.udel.cis.vsl.abc.FrontEnd;
+import edu.udel.cis.vsl.abc.FrontEnd.FrontEndKind;
 import edu.udel.cis.vsl.abc.config.IF.Configuration.Language;
 import edu.udel.cis.vsl.abc.front.IF.parse.ParseException;
 import edu.udel.cis.vsl.abc.front.IF.preproc.PreprocessorException;
@@ -23,7 +24,7 @@ import edu.udel.cis.vsl.abc.front.IF.token.SyntaxException;
 public class ParserMemoryTest {
 	private static Runtime runtime = Runtime.getRuntime();
 	private static long mb = 1024 * 1024;
-	private static FrontEnd frontEnd = new FrontEnd();
+	private static FrontEnd frontEnd = new FrontEnd(FrontEndKind.C_OR_CIVL_C);
 	private static List<String> codes = Arrays.asList("prune", "sef");
 
 	public static void main(String[] args) throws SyntaxException,

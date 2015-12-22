@@ -33,8 +33,8 @@ public class ConcurrencyTest {
 
 	@Test
 	public void adderBad() {
-		assertFalse(ui.run("verify", "-inputB=4", "-min",
-				filename("adderBad.cvl")));
+		// assertFalse(ui.run("verify", "-inputB=4", "-min",
+		// filename("adderBad.cvl")));
 		assertFalse(ui.run("replay", filename("adderBad.cvl")));
 	}
 

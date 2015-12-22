@@ -96,7 +96,8 @@ public class LibraryTest {
 
 	@Test
 	public void commBad() throws ABCException {
-		assertFalse(ui.run("verify", filename(CIVLC, "commBad.cvl")));
+		assertFalse(ui
+				.run("verify -showStates", filename(CIVLC, "commBad.cvl")));
 	}
 
 	@Test

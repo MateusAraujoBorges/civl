@@ -8,6 +8,7 @@ import org.junit.AfterClass;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.FrontEnd;
+import edu.udel.cis.vsl.abc.FrontEnd.FrontEndKind;
 import edu.udel.cis.vsl.abc.ast.IF.DifferenceObject;
 import edu.udel.cis.vsl.abc.config.IF.Configuration.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -39,7 +40,7 @@ public class OmpSimplifierTest {
 	 * @throws IOException
 	 */
 	private void check(String fileNameRoot) throws ABCException, IOException {
-		FrontEnd frontEnd = new FrontEnd();
+		FrontEnd frontEnd = new FrontEnd(FrontEndKind.C_OR_CIVL_C);
 		TransformerFactory transformerFactory = Transforms
 				.newTransformerFactory(frontEnd.getASTFactory());
 		File file = new File(rootDir, fileNameRoot + ".c");
@@ -62,18 +63,16 @@ public class OmpSimplifierTest {
 			simplifiedProgram = frontEnd.compileAndLink(
 					new File[] { simplifiedFile }, Language.CIVL_C);
 		}
-		/*diff = program.getAST().getRootNode()
-				.diff(simplifiedProgram.getAST().getRootNode());
-		if (diff != null) {
-			out.println("For " + fileNameRoot
-					+ " expected simplified version to be:");
-			simplifiedProgram.getAST().prettyPrint(out, true);
-			out.println("Computed simplified version was:");
-			program.getAST().prettyPrint(out, true);
-			out.println("Difference is: ");
-			diff.print(out);
-			assertTrue(false);
-		}*/
+		/*
+		 * diff = program.getAST().getRootNode()
+		 * .diff(simplifiedProgram.getAST().getRootNode()); if (diff != null) {
+		 * out.println("For " + fileNameRoot +
+		 * " expected simplified version to be:");
+		 * simplifiedProgram.getAST().prettyPrint(out, true);
+		 * out.println("Computed simplified version was:");
+		 * program.getAST().prettyPrint(out, true);
+		 * out.println("Difference is: "); diff.print(out); assertTrue(false); }
+		 */
 	}
 
 	/* **************************** Test Methods *************************** */
@@ -172,22 +171,22 @@ public class OmpSimplifierTest {
 	public void quad() throws ABCException, IOException {
 		check("quad_openmp");
 	}
-	
+
 	@Test
 	public void pi() throws ABCException, IOException {
 		check("pi");
 	}
-	
+
 	@Test
 	public void region1() throws ABCException, IOException {
 		check("region1");
 	}
-	
+
 	@Test
 	public void region2() throws ABCException, IOException {
 		check("region2");
 	}
-	
+
 	@Test
 	public void defect_num_544() throws ABCException, IOException {
 		check("defect_num_544");
@@ -205,48 +204,38 @@ public class OmpSimplifierTest {
 
 	/* **************************** Test Methods *************************** */
 
-	/*@Ignore
-	@Test
-	public void dotProduct1Verify() {
-		assertTrue(ui.run("verify", "-inputTHREAD_MAX=2",
-				filename("dotProduct1.c")));
-		assertTrue(ui.run("verify", "-ompNoSimplify", "-inputTHREAD_MAX=2",
-				filename("dotProduct1.c")));
-	}
+	/*
+	 * @Ignore
+	 * 
+	 * @Test public void dotProduct1Verify() { assertTrue(ui.run("verify",
+	 * "-inputTHREAD_MAX=2", filename("dotProduct1.c")));
+	 * assertTrue(ui.run("verify", "-ompNoSimplify", "-inputTHREAD_MAX=2",
+	 * filename("dotProduct1.c"))); }
+	 * 
+	 * @Test public void dotProductCriticalVerify() {
+	 * assertTrue(ui.run("verify", "-inputTHREAD_MAX=4",
+	 * filename("dotProduct_critical.c"))); assertTrue(ui.run("verify",
+	 * "-ompNoSimplify", "-inputTHREAD_MAX=4",
+	 * filename("dotProduct_critical.c"))); }
+	 * 
+	 * @Test public void matProduct1Verify() { assertTrue(ui.run("verify",
+	 * "-inputTHREAD_MAX=4", filename("matProduct1.c")));
+	 * assertTrue(ui.run("verify", "-ompNoSimplify", "-inputTHREAD_MAX=4",
+	 * filename("matProduct1.c"))); }
+	 * 
+	 * @Ignore
+	 * 
+	 * @Test public void parallelforVerify() { assertTrue(ui.run("verify",
+	 * "-inputTHREAD_MAX=4", filename("parallelfor.c")));
+	 * assertTrue(ui.run("verify", "-ompNoSimplify", "-inputTHREAD_MAX=4",
+	 * filename("parallelfor.c"))); }
+	 * 
+	 * @Test public void raceCond1Verify() { assertTrue(ui.run("verify",
+	 * "-inputTHREAD_MAX=4", filename("raceCond1.c")));
+	 * assertTrue(ui.run("verify", "-ompNoSimplify", "-inputTHREAD_MAX=4",
+	 * filename("raceCond1.c"))); }
+	 */
 
-	@Test
-	public void dotProductCriticalVerify() {
-		assertTrue(ui.run("verify", "-inputTHREAD_MAX=4",
-				filename("dotProduct_critical.c")));
-		assertTrue(ui.run("verify", "-ompNoSimplify", "-inputTHREAD_MAX=4",
-				filename("dotProduct_critical.c")));
-	}
-
-	@Test
-	public void matProduct1Verify() {
-		assertTrue(ui.run("verify", "-inputTHREAD_MAX=4",
-				filename("matProduct1.c")));
-		assertTrue(ui.run("verify", "-ompNoSimplify", "-inputTHREAD_MAX=4",
-				filename("matProduct1.c")));
-	}
-
-	@Ignore
-	@Test
-	public void parallelforVerify() {
-		assertTrue(ui.run("verify", "-inputTHREAD_MAX=4",
-				filename("parallelfor.c")));
-		assertTrue(ui.run("verify", "-ompNoSimplify", "-inputTHREAD_MAX=4",
-				filename("parallelfor.c")));
-	}
-
-	@Test
-	public void raceCond1Verify() {
-		assertTrue(ui.run("verify", "-inputTHREAD_MAX=4",
-				filename("raceCond1.c")));
-		assertTrue(ui.run("verify", "-ompNoSimplify", "-inputTHREAD_MAX=4",
-				filename("raceCond1.c")));
-	}*/
-	
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

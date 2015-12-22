@@ -11,6 +11,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.FrontEnd;
+import edu.udel.cis.vsl.abc.FrontEnd.FrontEndKind;
 import edu.udel.cis.vsl.abc.config.IF.Configuration.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.program.IF.Program;
@@ -57,7 +58,7 @@ public class OmpTransformerTest {
 	 */
 	private void check(String filenameRoot, boolean debug) throws ABCException,
 			IOException {
-		FrontEnd frontEnd = new FrontEnd();
+		FrontEnd frontEnd = new FrontEnd(FrontEndKind.C_OR_CIVL_C);
 		TransformerFactory transformerFactory = Transforms
 				.newTransformerFactory(frontEnd.getASTFactory());
 		Program program;

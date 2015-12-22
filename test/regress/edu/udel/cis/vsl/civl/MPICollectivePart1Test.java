@@ -29,7 +29,8 @@ public class MPICollectivePart1Test {
 
 	@Test
 	public void vectorSum() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=5", filename("vectorSum.c")));
+		assertTrue(ui
+				.run("verify -input_mpi_nprocs=5", filename("vectorSum.c")));
 	}
 
 	@Test
@@ -40,24 +41,28 @@ public class MPICollectivePart1Test {
 
 	@Test
 	public void bcast_bad() {
-		assertFalse(ui.run("verify -input_mpi_nprocs=6 ", filename("bcast_bad.c")));
+		assertFalse(ui.run("verify -input_mpi_nprocs=6 ",
+				filename("bcast_bad.c")));
 	}
 
 	@Test
 	public void bcast_bad_but_ok() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=4 ", filename("bcast_bad.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=4 ",
+				filename("bcast_bad.c")));
 	}
 
 	@Test
 	public void bcast_good() {
 		assertFalse(ui.run("verify -DFASSERT -input_mpi_nprocs=3 ",
 				filename("bcast_good.c")));
-		assertTrue(ui.run("verify -input_mpi_nprocs=3", filename("bcast_good.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=3",
+				filename("bcast_good.c")));
 	}
 
 	@Test
 	public void BcastReduce() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=5 ", filename("BcastReduce.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=5 ",
+				filename("BcastReduce.c")));
 	}
 
 	@Test
@@ -68,8 +73,8 @@ public class MPICollectivePart1Test {
 
 	@Test
 	public void BcastReduce2() {
-		assertTrue(ui
-				.run("verify -input_mpi_nprocs=5 ", filename("BcastReduce2.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=5 ",
+				filename("BcastReduce2.c")));
 	}
 
 	@Test
@@ -107,7 +112,8 @@ public class MPICollectivePart1Test {
 
 	@Test
 	public void scatter_order() {
-		assertFalse(ui.run("verify -input_mpi_nprocs=6 ", filename("scatter.c")));
+		assertFalse(ui
+				.run("verify -input_mpi_nprocs=6 ", filename("scatter.c")));
 	}
 
 	@Test
@@ -124,12 +130,13 @@ public class MPICollectivePart1Test {
 
 	@Test
 	public void scatter2() {
-		assertFalse(ui.run("verify -input_mpi_nprocs=6 ", filename("scatter2.c")));
+		assertFalse(ui.run("verify -input_mpi_nprocs=6 ",
+				filename("scatter2.c")));
 	}
 
 	@Test
 	public void scatterAllgather_bad() {
-		assertFalse(ui.run("verify -input_mpi_nprocs=6 ",
+		assertFalse(ui.run("verify -input_mpi_nprocs=3 ",
 				filename("scatterAllgather_bad.c")));
 	}
 
