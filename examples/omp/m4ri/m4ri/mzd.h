@@ -253,7 +253,7 @@ static inline int mzd_row_to_block(mzd_t const* M, rci_t row) {
  */
 
 static inline wi_t mzd_rows_in_block(mzd_t const* M, int n) {
-  if (__M4RI_UNLIKELY(M->flags & mzd_flag_multiple_blocks)) {
+  if (__M4RI_UNLIKELY((int)(M->flags & mzd_flag_multiple_blocks))) {
     if (__M4RI_UNLIKELY(n == 0)) {
       return (1 << M->blockrows_log) - M->row_offset;
     } else {
@@ -278,7 +278,7 @@ static inline wi_t mzd_rows_in_block(mzd_t const* M, int n) {
 static inline wi_t mzd_remaining_rows_in_block(mzd_t const* M, rci_t r) {
   const int n = mzd_row_to_block(M, r);
   r = (r  - (n << M->blockrows_log));
-  if (__M4RI_UNLIKELY(M->flags & mzd_flag_multiple_blocks)) {
+  if (__M4RI_UNLIKELY((int)(M->flags & mzd_flag_multiple_blocks))) {
     if (__M4RI_UNLIKELY(n == 0)) {
       return (1 << M->blockrows_log) - M->row_offset - r;
     } else {
@@ -303,7 +303,7 @@ static inline wi_t mzd_remaining_rows_in_block(mzd_t const* M, rci_t r) {
 static inline word* mzd_row(mzd_t const* M, rci_t row) {
   wi_t big_vector = M->offset_vector + row * M->rowstride;
   word* result = M->blocks[0].begin + big_vector;
-  if (__M4RI_UNLIKELY(M->flags & mzd_flag_multiple_blocks)) {
+  if (__M4RI_UNLIKELY((int)(M->flags & mzd_flag_multiple_blocks))) {
     int const n = (M->row_offset + row) >> M->blockrows_log;
     result = M->blocks[n].begin + big_vector - n * (M->blocks[0].size / sizeof(word));
   }
