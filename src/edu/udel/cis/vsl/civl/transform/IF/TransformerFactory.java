@@ -8,7 +8,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
-import edu.udel.cis.vsl.abc.astgen.IF.ASTBuilder;
+import edu.udel.cis.vsl.abc.front.IF.astgen.ASTBuilder;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.transform.IF.Transformer;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;

@@ -26,7 +26,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.FunctionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.PointerType;
 import edu.udel.cis.vsl.abc.front.IF.parse.CParser;
-import edu.udel.cis.vsl.abc.front.IF.token.SyntaxException;
+import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.OpenMPOrphanTransformer;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Triple;

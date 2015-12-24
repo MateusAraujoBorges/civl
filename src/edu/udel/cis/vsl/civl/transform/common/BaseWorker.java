@@ -8,8 +8,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.udel.cis.vsl.abc.FrontEnd;
-import edu.udel.cis.vsl.abc.FrontEnd.FrontEndKind;
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
@@ -35,24 +33,24 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
-import edu.udel.cis.vsl.abc.config.IF.Configuration;
-import edu.udel.cis.vsl.abc.config.IF.Configuration.Language;
 import edu.udel.cis.vsl.abc.config.IF.Configurations;
+import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.front.IF.parse.CParser;
 import edu.udel.cis.vsl.abc.front.IF.parse.OmpCParser;
 import edu.udel.cis.vsl.abc.front.IF.parse.ParseException;
 import edu.udel.cis.vsl.abc.front.IF.preproc.Preprocessor;
 import edu.udel.cis.vsl.abc.front.IF.preproc.PreprocessorException;
 import edu.udel.cis.vsl.abc.front.IF.ptree.ParseTree;
-import edu.udel.cis.vsl.abc.front.IF.token.CToken;
-import edu.udel.cis.vsl.abc.front.IF.token.CTokenSource;
-import edu.udel.cis.vsl.abc.front.IF.token.Formation;
-import edu.udel.cis.vsl.abc.front.IF.token.Macro;
-import edu.udel.cis.vsl.abc.front.IF.token.Source;
-import edu.udel.cis.vsl.abc.front.IF.token.SourceFile;
-import edu.udel.cis.vsl.abc.front.IF.token.SyntaxException;
-import edu.udel.cis.vsl.abc.front.IF.token.TokenFactory;
-import edu.udel.cis.vsl.abc.front.IF.token.TransformFormation;
+import edu.udel.cis.vsl.abc.main.FrontEnd;
+import edu.udel.cis.vsl.abc.token.IF.CToken;
+import edu.udel.cis.vsl.abc.token.IF.CTokenSource;
+import edu.udel.cis.vsl.abc.token.IF.Formation;
+import edu.udel.cis.vsl.abc.token.IF.Macro;
+import edu.udel.cis.vsl.abc.token.IF.Source;
+import edu.udel.cis.vsl.abc.token.IF.SourceFile;
+import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
+import edu.udel.cis.vsl.abc.token.IF.TransformFormation;
 import edu.udel.cis.vsl.abc.transform.IF.Transformer;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 
@@ -467,22 +465,21 @@ public abstract class BaseWorker {
 	 * @throws SyntaxException
 	 */
 	protected AST parseSystemLibrary(String filename) throws SyntaxException {
-		FrontEnd frontEnd = new FrontEnd(FrontEndKind.C_OR_CIVL_C);
-		Preprocessor preprocessor = frontEnd.getPreprocessor();
+		FrontEnd frontEnd = new FrontEnd(
+				Configurations.newMinimalConfiguration());
+		Preprocessor preprocessor = frontEnd.getPreprocessor(Language.CIVL_C);
 		CTokenSource tokenSource;
 		ParseTree tree;
-		Configuration configuration = Configurations.newMinimalConfiguration();
 
-		configuration.setLanguage(Language.CIVL_C);
 		try {
 			tokenSource = preprocessor.outputTokenSource(
 					new File[] { CIVLConstants.CIVL_INCLUDE_PATH },
 					new File[0], new HashMap<String, Macro>(), filename);
-			tree = frontEnd.getParser().parse(tokenSource);
+			tree = frontEnd.getParser(Language.CIVL_C).parse(tokenSource);
 		} catch (PreprocessorException | IOException | ParseException e) {
 			return null;
 		}
-		return frontEnd.getASTBuilder().getTranslationUnit(configuration, tree);
+		return frontEnd.getASTBuilder(Language.CIVL_C).getTranslationUnit(tree);
 	}
 
 	/**

@@ -42,13 +42,13 @@ import java.util.concurrent.CancellationException;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
+import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.err.IF.ABCRuntimeException;
 import edu.udel.cis.vsl.abc.front.IF.parse.ParseException;
-import edu.udel.cis.vsl.abc.front.IF.preproc.Preprocessor;
 import edu.udel.cis.vsl.abc.front.IF.preproc.PreprocessorException;
-import edu.udel.cis.vsl.abc.front.IF.token.SyntaxException;
 import edu.udel.cis.vsl.abc.program.IF.Program;
+import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.Combiner;
 import edu.udel.cis.vsl.abc.transform.IF.Transform;
 import edu.udel.cis.vsl.civl.analysis.IF.Analysis;
@@ -395,8 +395,8 @@ public class UserInterface {
 		combinedAST = combiner.combine(specProgram.getAST(),
 				implProgram.getAST());
 		compositeProgram = specWorker.frontEnd.getProgramFactory(
-				specWorker.frontEnd.getStandardAnalyzer()).newProgram(
-				combinedAST);
+				specWorker.frontEnd.getStandardAnalyzer(Language.CIVL_C))
+				.newProgram(combinedAST);
 		if (civlConfig.debugOrVerbose() || civlConfig.showProgram()) {
 			compositeProgram.prettyPrint(out);
 		}
@@ -417,8 +417,7 @@ public class UserInterface {
 		if (civlConfig.web())
 			this.createWebLogs(model.program());
 		return this.runCompareVerify(compareCommand.getCommandString(),
-				compareCommand.gmcConfig(), model, specWorker.preprocessor,
-				specWorker.universe);
+				compareCommand.gmcConfig(), model, specWorker.universe);
 	}
 
 	/**
@@ -832,9 +831,8 @@ public class UserInterface {
 	}
 
 	private boolean runCompareVerify(String command,
-			GMCConfiguration cmdConfig, Model model, Preprocessor preprocessor,
-			SymbolicUniverse universe) throws CommandLineException,
-			ABCException, IOException {
+			GMCConfiguration cmdConfig, Model model, SymbolicUniverse universe)
+			throws CommandLineException, ABCException, IOException {
 		Verifier verifier = new Verifier(cmdConfig, model, out, err, startTime);
 		boolean result = false;
 

@@ -7,11 +7,11 @@ import java.io.PrintStream;
 import org.junit.AfterClass;
 import org.junit.Test;
 
-import edu.udel.cis.vsl.abc.FrontEnd;
-import edu.udel.cis.vsl.abc.FrontEnd.FrontEndKind;
 import edu.udel.cis.vsl.abc.ast.IF.DifferenceObject;
-import edu.udel.cis.vsl.abc.config.IF.Configuration.Language;
+import edu.udel.cis.vsl.abc.config.IF.Configurations;
+import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
+import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
@@ -40,7 +40,8 @@ public class OmpSimplifierTest {
 	 * @throws IOException
 	 */
 	private void check(String fileNameRoot) throws ABCException, IOException {
-		FrontEnd frontEnd = new FrontEnd(FrontEndKind.C_OR_CIVL_C);
+		FrontEnd frontEnd = new FrontEnd(
+				Configurations.newMinimalConfiguration());
 		TransformerFactory transformerFactory = Transforms
 				.newTransformerFactory(frontEnd.getASTFactory());
 		File file = new File(rootDir, fileNameRoot + ".c");

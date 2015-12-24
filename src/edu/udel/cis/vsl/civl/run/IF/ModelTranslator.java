@@ -20,24 +20,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import edu.udel.cis.vsl.abc.FrontEnd;
-import edu.udel.cis.vsl.abc.FrontEnd.FrontEndKind;
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
+import edu.udel.cis.vsl.abc.config.IF.Configuration;
 import edu.udel.cis.vsl.abc.config.IF.Configuration.Architecture;
-import edu.udel.cis.vsl.abc.config.IF.Configuration.Language;
+import edu.udel.cis.vsl.abc.config.IF.Configurations;
+import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.front.IF.parse.ParseException;
 import edu.udel.cis.vsl.abc.front.IF.preproc.Preprocessor;
 import edu.udel.cis.vsl.abc.front.IF.preproc.PreprocessorException;
 import edu.udel.cis.vsl.abc.front.IF.ptree.ParseTree;
-import edu.udel.cis.vsl.abc.front.IF.token.CTokenSource;
-import edu.udel.cis.vsl.abc.front.IF.token.Macro;
-import edu.udel.cis.vsl.abc.front.IF.token.SourceFile;
-import edu.udel.cis.vsl.abc.front.IF.token.SyntaxException;
+import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.program.IF.Program;
+import edu.udel.cis.vsl.abc.token.IF.CTokenSource;
+import edu.udel.cis.vsl.abc.token.IF.Macro;
+import edu.udel.cis.vsl.abc.token.IF.SourceFile;
+import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.Transform;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
@@ -116,11 +117,11 @@ public class ModelTranslator {
 	 */
 	CIVLConfiguration config;
 
-	/**
-	 * The preprocessor to be used for preprocessing source files associated
-	 * with this model translator.
-	 */
-	Preprocessor preprocessor;
+	// /**
+	// * The preprocessor to be used for preprocessing source files associated
+	// * with this model translator.
+	// */
+	// Preprocessor preprocessor;
 
 	/**
 	 * The symbolic universe.
@@ -175,6 +176,9 @@ public class ModelTranslator {
 	 * The core name of teh user file.
 	 */
 	private String userFileCoreName;
+
+	private Configuration abcConfiguration = Configurations
+			.newMinimalConfiguration();
 
 	// constructor
 	/**
@@ -247,24 +251,24 @@ public class ModelTranslator {
 		// } else
 		this.filenames = filenames;
 		userFileName = filenames[0];
-		this.frontEnd = new FrontEnd(frontEndKindByFileName(userFileName));
+		if (config.svcomp()) {
+			abcConfiguration.setSvcomp(config.svcomp());
+			abcConfiguration.setArchitecture(Architecture._32_BIT);
+		}
+		this.frontEnd = new FrontEnd(abcConfiguration);
 		this.transformerFactory = Transforms.newTransformerFactory(frontEnd
 				.getASTFactory());
-		frontEnd.getConfiguration().setLanguage(Language.CIVL_C);
-		if (config.svcomp()) {
-			frontEnd.getConfiguration().setSvcomp(config.svcomp());
-			frontEnd.getConfiguration().setArchitecture(Architecture._32_BIT);
-		}
-		this.preprocessor = frontEnd.getPreprocessor();
+		// this.preprocessor = frontEnd.getPreprocessor();
 		systemIncludes = this.getSysIncludes(cmdSection);
 		userIncludes = this.getUserIncludes(cmdSection);
-		macroMaps = getMacroMaps(preprocessor);
+		macroMaps = getMacroMaps(this.getLanguageByFileName(userFileName));
 	}
 
-	private FrontEndKind frontEndKindByFileName(String fileName) {
+	private Language getLanguageByFileName(String fileName) {
 		if (fileName.endsWith(".f") || fileName.endsWith(".F"))
-			return FrontEndKind.FORTRAN77;
-		return FrontEndKind.C_OR_CIVL_C;
+			return Language.FORTRAN77;
+		else
+			return Language.CIVL_C;
 	}
 
 	/**
@@ -286,7 +290,7 @@ public class ModelTranslator {
 	 */
 	Program buildProgram() throws PreprocessorException, SyntaxException,
 			IOException, ParseException, SvcompException {
-		CTokenSource[] tokenSources;
+		Map<Language, CTokenSource> tokenSources;
 		List<AST> asts = null;
 		Program program = null;
 		long startTime, endTime;
@@ -299,7 +303,7 @@ public class ModelTranslator {
 			totalTime = (endTime - startTime);// / 1000;
 			out.println(totalTime
 					+ "ms:\tSUMARRY ANTLR preprocessor parsing to form preproc tree for "
-					+ tokenSources.length + " translation units");
+					+ tokenSources.size() + " translation units");
 		}
 		asts = this.parseTokens(tokenSources);
 		if (this.config.svcomp()) {
@@ -312,8 +316,8 @@ public class ModelTranslator {
 			}
 			// parsing preprocessed .i file
 			if (userFileName.endsWith(".i")) {
-				frontEnd.getStandardAnalyzer().clear(userAST);
-				frontEnd.getStandardAnalyzer().analyze(userAST);
+				frontEnd.getStandardAnalyzer(Language.CIVL_C).clear(userAST);
+				frontEnd.getStandardAnalyzer(Language.CIVL_C).analyze(userAST);
 				userAST = Transform.newTransformer("prune",
 						userAST.getASTFactory()).transform(userAST);
 				// userAST.prettyPrint(System.out, true);
@@ -725,7 +729,7 @@ public class ModelTranslator {
 		long totalTime;
 
 		startTime = System.currentTimeMillis();
-		program = frontEnd.link(TUs, frontEnd.getConfiguration().getLanguage());
+		program = frontEnd.link(TUs, Language.CIVL_C);
 		endTime = System.currentTimeMillis();
 		if (config.showTime()) {
 			totalTime = (endTime - startTime);// / 1000;
@@ -746,8 +750,8 @@ public class ModelTranslator {
 	 * @throws SyntaxException
 	 * @throws ParseException
 	 */
-	private AST parse(CTokenSource tokenSource) throws SyntaxException,
-			ParseException {
+	private AST parse(Language language, CTokenSource tokenSource)
+			throws SyntaxException, ParseException {
 		ParseTree tree;
 		AST ast;
 		long startTime;
@@ -760,7 +764,7 @@ public class ModelTranslator {
 			// out.flush();
 		}
 		startTime = System.currentTimeMillis();
-		tree = frontEnd.getParser().parse(tokenSource);
+		tree = frontEnd.getParser(language).parse(tokenSource);
 		endTime = System.currentTimeMillis();
 		if (config.showTime()) {
 			totalTime = (endTime - startTime);// / 1000;
@@ -769,8 +773,7 @@ public class ModelTranslator {
 					+ tokenSource);
 		}
 		startTime = System.currentTimeMillis();
-		ast = frontEnd.getASTBuilder().getTranslationUnit(
-				frontEnd.getConfiguration(), tree);
+		ast = frontEnd.getASTBuilder(language).getTranslationUnit(tree);
 		endTime = System.currentTimeMillis();
 		if (config.showTime()) {
 			totalTime = (endTime - startTime);// / 1000;
@@ -792,12 +795,12 @@ public class ModelTranslator {
 	 * @throws ParseException
 	 *             if there is a problem parsing the tokens.
 	 */
-	public List<AST> parseTokens(CTokenSource[] tokenSources)
+	public List<AST> parseTokens(Map<Language, CTokenSource> tokenSources)
 			throws SyntaxException, ParseException {
-		List<AST> asts = new ArrayList<>(tokenSources.length);
+		List<AST> asts = new ArrayList<>(tokenSources.size());
 
-		for (CTokenSource tokens : tokenSources) {
-			AST ast = parse(tokens);
+		for (Map.Entry<Language, CTokenSource> pair : tokenSources.entrySet()) {
+			AST ast = parse(pair.getKey(), pair.getValue());
 
 			asts.add(ast);
 		}
@@ -811,16 +814,19 @@ public class ModelTranslator {
 	 * @throws PreprocessorException
 	 *             if there is any problem preprocessing the source files.
 	 */
-	public CTokenSource[] preprocess() throws PreprocessorException {
-		List<CTokenSource> tokenSources = new ArrayList<>(filenames.length);
+	public Map<Language, CTokenSource> preprocess()
+			throws PreprocessorException {
+		Map<Language, CTokenSource> tokenSources = new HashMap<>();
 
 		for (String filename : filenames) {
 			File file = new File(filename);
+			Language language = this.getLanguageByFileName(filename);
+			Preprocessor preprocessor = frontEnd.getPreprocessor(language);
 			CTokenSource tokens = preprocessor
 					.outputTokenSource(systemIncludes, userIncludes, macroMaps,
 							new File(filename));
 
-			tokenSources.add(tokens);
+			tokenSources.put(language, tokens);
 			if (config.showPreproc() || config.debugOrVerbose()) {
 				out.println(bar + " Preprocessor output for " + filename + " "
 						+ bar);
@@ -830,7 +836,7 @@ public class ModelTranslator {
 				out.flush();
 			}
 		}
-		return tokenSources.toArray(new CTokenSource[filenames.length]);
+		return tokenSources;
 	}
 
 	/**
@@ -842,10 +848,11 @@ public class ModelTranslator {
 	 * @throws PreprocessorExceptions
 	 *             if there is a problem preprocessing the macros.
 	 */
-	private Map<String, Macro> getMacroMaps(Preprocessor preprocessor)
+	private Map<String, Macro> getMacroMaps(Language language)
 			throws PreprocessorException {
 		Map<String, Object> macroDefMap = cmdSection.getMapValue(macroO);
 		Map<String, String> macroDefs = new HashMap<String, String>();
+		Preprocessor preprocessor = frontEnd.getPreprocessor(language);
 
 		if (this.cmdSection.isTrue(CIVLConstants.CIVLMacroO))
 			macroDefs.put(CIVL_MACRO, "");
@@ -941,6 +948,7 @@ public class ModelTranslator {
 		List<AST> result = new ArrayList<>();
 		Set<String> processedSystemFilenames = new HashSet<>();
 		Stack<AST> workList = new Stack<>();
+		Preprocessor preprocessor = frontEnd.getPreprocessor(Language.CIVL_C);
 
 		workList.addAll(userASTs);
 		while (!workList.isEmpty()) {
@@ -960,7 +968,7 @@ public class ModelTranslator {
 					CTokenSource tokens = preprocessor.outputTokenSource(
 							civlSysPathArray, emptyFileArray, macroMaps,
 							systemFilename);
-					AST newAST = parse(tokens);
+					AST newAST = parse(Language.CIVL_C, tokens);
 
 					workList.add(newAST);
 					result.add(newAST);

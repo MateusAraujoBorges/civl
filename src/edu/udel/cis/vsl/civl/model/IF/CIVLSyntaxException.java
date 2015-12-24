@@ -1,6 +1,6 @@
 package edu.udel.cis.vsl.civl.model.IF;
 
-import edu.udel.cis.vsl.abc.front.IF.token.Source;
+import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.civl.model.common.ABC_CIVLSource;
 
 /**

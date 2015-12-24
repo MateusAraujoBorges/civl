@@ -43,7 +43,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.ReturnNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.SwitchNode;
 import edu.udel.cis.vsl.abc.ast.util.ExpressionEvaluator;
-import edu.udel.cis.vsl.abc.front.IF.token.SyntaxException;
+import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.OpenMPSimplifier;
 
 /**

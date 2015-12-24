@@ -24,8 +24,8 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.front.IF.parse.CParser;
-import edu.udel.cis.vsl.abc.front.IF.token.Source;
-import edu.udel.cis.vsl.abc.front.IF.token.SyntaxException;
+import edu.udel.cis.vsl.abc.token.IF.Source;
+import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.SvcompTransformer;
 
 public class SvcompWorker extends BaseWorker {
