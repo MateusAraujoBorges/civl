@@ -24,7 +24,7 @@
 
 $input int NXB = 5;               /* upper bound on nx */
 $input int nx;                    /* number of discrete points including endpoints */
-$assume(2 <= nx && nx <= NXB);     /* setting bounds */
+$assume(2 <= nx && nx <= NXB);    /* setting bounds */
 $input double c;                  /* physical constant to do with string */
 $assume(c > 0.0);       
 $input int NSTEPSB = 5;        
@@ -190,9 +190,9 @@ void printData (int time, int first, int length, double * buf) {
     printf("u_curr[%d]=%8.8f   ", first + i, buf[i]);
 #ifdef _CIVL
 
-     $assert((oracle[time + 1][first + i + 1] == buf[i]), \
-    "Error: disagreement at time %d position %d: saw %lf, expected %lf", \
-    time, first + i, buf[i], oracle[time + 1][first + i + 1]);
+    $assert((oracle[time + 1][first + i + 1] == buf[i]), \
+	    "Error: disagreement at time %d position %d: saw %lf, expected %lf", \
+	    time, first + i, buf[i], oracle[time + 1][first + i + 1]);
 
 #endif
     printf("\n");
@@ -231,13 +231,6 @@ void exchange(){
 int main(int argc, char * argv[]) {
   int iter;
 
-
-  //#ifdef _CIVL
-
-  // elaborate nx to concrete value...
-  //$elaborate(nx);
-
-  //#endif
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs); 
