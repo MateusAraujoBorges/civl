@@ -47,6 +47,7 @@ import edu.udel.cis.vsl.civl.model.IF.ModelBuilder;
 import edu.udel.cis.vsl.civl.model.IF.Models;
 import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
 import edu.udel.cis.vsl.civl.transform.IF.Transforms;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.gmc.GMCSection;
@@ -290,7 +291,7 @@ public class ModelTranslator {
 	 */
 	Program buildProgram() throws PreprocessorException, SyntaxException,
 			IOException, ParseException, SvcompException {
-		Map<Language, CTokenSource> tokenSources;
+		List<Pair<Language, CTokenSource>> tokenSources;
 		List<AST> asts = null;
 		Program program = null;
 		long startTime, endTime;
@@ -795,12 +796,12 @@ public class ModelTranslator {
 	 * @throws ParseException
 	 *             if there is a problem parsing the tokens.
 	 */
-	public List<AST> parseTokens(Map<Language, CTokenSource> tokenSources)
+	public List<AST> parseTokens(List<Pair<Language, CTokenSource>> tokenSources)
 			throws SyntaxException, ParseException {
 		List<AST> asts = new ArrayList<>(tokenSources.size());
 
-		for (Map.Entry<Language, CTokenSource> pair : tokenSources.entrySet()) {
-			AST ast = parse(pair.getKey(), pair.getValue());
+		for (Pair<Language, CTokenSource> pair : tokenSources) {
+			AST ast = parse(pair.left, pair.right);
 
 			asts.add(ast);
 		}
@@ -814,9 +815,9 @@ public class ModelTranslator {
 	 * @throws PreprocessorException
 	 *             if there is any problem preprocessing the source files.
 	 */
-	public Map<Language, CTokenSource> preprocess()
+	public List<Pair<Language, CTokenSource>> preprocess()
 			throws PreprocessorException {
-		Map<Language, CTokenSource> tokenSources = new HashMap<>();
+		List<Pair<Language, CTokenSource>> tokenSources = new LinkedList<>();
 
 		for (String filename : filenames) {
 			File file = new File(filename);
@@ -826,7 +827,7 @@ public class ModelTranslator {
 					.outputTokenSource(systemIncludes, userIncludes, macroMaps,
 							new File(filename));
 
-			tokenSources.put(language, tokens);
+			tokenSources.add(new Pair<>(language, tokens));
 			if (config.showPreproc() || config.debugOrVerbose()) {
 				out.println(bar + " Preprocessor output for " + filename + " "
 						+ bar);
