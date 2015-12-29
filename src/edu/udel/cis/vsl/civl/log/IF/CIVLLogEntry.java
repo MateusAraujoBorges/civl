@@ -5,7 +5,10 @@ package edu.udel.cis.vsl.civl.log.IF;
 
 import java.io.PrintStream;
 
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConstants.ErrorStateEquivalence;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.gmc.LogEntry;
 
@@ -18,10 +21,13 @@ import edu.udel.cis.vsl.gmc.LogEntry;
 public class CIVLLogEntry extends LogEntry {
 
 	private CIVLExecutionException problem;
+	private CIVLConfiguration civlConfig;
 
-	public CIVLLogEntry(GMCConfiguration configuration,
+	public CIVLLogEntry(CIVLConfiguration civlConfig,
+			GMCConfiguration gmcConfig,
 			CIVLExecutionException problem) {
-		super(configuration);
+		super(gmcConfig);
+		this.civlConfig = civlConfig;
 		this.problem = problem;
 		problem.setReported();
 	}
@@ -41,26 +47,49 @@ public class CIVLLogEntry extends LogEntry {
 			CIVLExecutionException thatProblem = ((CIVLLogEntry) that).problem;
 			int result = problem.certainty().compareTo(thatProblem.certainty());
 
+			// The "kind" of error detected must match.
 			if (result != 0)
 				return result;
 			result = problem.kind().compareTo(thatProblem.kind());
-			if (result != 0)
+			if (result != 0) {
 				return result;
-			else {
-				CIVLSource source1 = problem.getSource(), source2 = thatProblem
-						.getSource();
+			} else {
+				CIVLSource source1 = problem.getSource();
+				CIVLSource source2 = thatProblem.getSource();
+				State errorState1 = problem.state();
+				State errorState2 = thatProblem.state();
 
-				if (source1 != null && source2 != null) {
-					if (source1.equals(source2))
-						return 0;
-					else
-						return source1.toString().compareTo(source2.toString());
-				} else if (source1 == null && source2 != null)
+				if (source1 == null && source2 != null) {
 					return -1;
-				else if (source1 != null & source2 == null)
+				} else if (source1 != null & source2 == null) {
 					return 1;
-				else
-					return 0;
+				} else {
+					if (civlConfig.errorStateEquiv() == ErrorStateEquivalence.LOC) {
+						if (source1.equals(source2))
+							return 0;
+						else
+							return source1.toString().compareTo(source2.toString());
+						
+					} else if (civlConfig.errorStateEquiv() == ErrorStateEquivalence.CALLSTACK) {
+						// compare based on the call stack
+						String callString1 = errorState1.callStackToString().toString();
+						String callString2 = errorState2.callStackToString().toString();
+						
+						return callString1.compareTo(callString2);
+						
+					} else if (civlConfig.errorStateEquiv() == ErrorStateEquivalence.FULL) {
+						// compare based on the full state
+						assert errorState1.getCanonicId() != -1 : "Expected error state to be canonic";
+						assert errorState2.getCanonicId() != -1 : "Expected error state to be canonic";
+						
+						String stateString1 = errorState1.getPathCondition().toString();
+						String stateString2 = errorState2.getPathCondition().toString();
+						
+						return stateString1.compareTo(stateString2);
+					} else {
+						assert false : "Invalid error state equivalence";
+					}
+				}
 			}
 		}
 		return -1;

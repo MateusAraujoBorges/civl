@@ -1029,8 +1029,7 @@ public class CommonExecutor implements Executor {
 					throw new CIVLExecutionException(ErrorKind.OTHER,
 							Certainty.CONCRETE, process,
 							"Loop variables are not belong to the domain",
-							this.symbolicAnalyzer.stateInformation(state),
-							source);
+							state, source);
 				// it's guaranteed that this iteration will have a
 				// subsequence.
 				if (counter < ((IntegerNumber) universe
@@ -1070,7 +1069,7 @@ public class CommonExecutor implements Executor {
 						Certainty.CONCRETE,
 						process,
 						"The domian object is neither a literal domain nor a rectangular domain",
-						this.symbolicAnalyzer.stateInformation(state), source);
+						state, source);
 		} catch (SARLException | ClassCastException e) {
 			throw new CIVLInternalException(
 					"Interanl errors happened in executeNextInDomain()", source);

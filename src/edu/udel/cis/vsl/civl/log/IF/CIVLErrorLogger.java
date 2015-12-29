@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.Map;
 
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.Certainty;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
@@ -31,7 +32,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  */
 public class CIVLErrorLogger extends ErrorLog {
 
-	private GMCConfiguration config;
+	private GMCConfiguration gmcConfig;
+	
+	private CIVLConfiguration civlConfig;
 
 	/**
 	 * The unique symbolic universe used in the system.
@@ -60,9 +63,10 @@ public class CIVLErrorLogger extends ErrorLog {
 	 * @param solve
 	 */
 	public CIVLErrorLogger(File directory, String sessionName, PrintStream out,
-			GMCConfiguration config, SymbolicUniverse universe, boolean solve) {
+			CIVLConfiguration civlConfig, GMCConfiguration gmcConfig, SymbolicUniverse universe, boolean solve) {
 		super(directory, sessionName, out);
-		this.config = config;
+		this.civlConfig = civlConfig;
+		this.gmcConfig = gmcConfig;
 		this.universe = universe;
 		this.trueReasoner = universe.reasoner(universe.trueExpression());
 		this.solve = solve;
@@ -179,7 +183,7 @@ public class CIVLErrorLogger extends ErrorLog {
 			}
 		}
 		error = new CIVLExecutionException(errorKind, certainty, process,
-				message, stateString, source);
+				message, state, source);
 		reportError(error);
 		newPc = universe.and(pc, claim);
 		// need to check satisfiability again because failure to do so
@@ -203,7 +207,7 @@ public class CIVLErrorLogger extends ErrorLog {
 	 */
 	private void reportError(CIVLExecutionException err) {
 		try {
-			report(new CIVLLogEntry(config, err));
+			report(new CIVLLogEntry(civlConfig, gmcConfig, err));
 		} catch (FileNotFoundException e) {
 			throw new CIVLException(e.toString(), err.getSource());
 		}
@@ -253,7 +257,7 @@ public class CIVLErrorLogger extends ErrorLog {
 		}
 		// TODO if pc has no symbolic constant
 		error = new CIVLExecutionException(errorKind, certainty, process,
-				message, stateString, source);
+				message, state, source);
 		reportError(error);
 	}
 }

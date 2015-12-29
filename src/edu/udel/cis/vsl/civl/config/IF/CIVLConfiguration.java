@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.Map;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants.DeadlockKind;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConstants.ErrorStateEquivalence;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
@@ -189,6 +190,13 @@ public class CIVLConfiguration {
 	 * default.
 	 */
 	private int ompLoopDecomp = ModelConfiguration.DECOMP_ROUND_ROBIN;
+	
+	/**
+	 * The error state equivalence semantics to suppress logging of redundant
+	 * error states.  All equivalences use the "kind" of error, but they vary
+	 * in the portions of the state considered.  LOC by default.
+	 */
+	private ErrorStateEquivalence errorStateEquiv = ErrorStateEquivalence.LOC;
 
 	/**
 	 * Is the current command replay? Not replay by default.
@@ -224,6 +232,8 @@ public class CIVLConfiguration {
 				.getValue(CIVLConstants.deadlockO);
 		String ompLoopDecompString = (String) config
 				.getValue(CIVLConstants.ompLoopDecompO);
+		String errorStateEquivString = (String) config
+				.getValue(CIVLConstants.errorStateEquivO);
 
 		if (ompLoopDecompString != null) {
 			switch (ompLoopDecompString) {
@@ -256,6 +266,21 @@ public class CIVLConfiguration {
 			default:
 				throw new CIVLInternalException("invalid deadlock kind "
 						+ deadlockString, (CIVLSource) null);
+			}
+		if (errorStateEquivString != null)
+			switch (errorStateEquivString) {
+			case "LOC":
+				this.errorStateEquiv = ErrorStateEquivalence.LOC;
+				break;
+			case "CALLSTACK":
+				this.errorStateEquiv = ErrorStateEquivalence.CALLSTACK;
+				break;
+			case "FULL":
+				this.errorStateEquiv = ErrorStateEquivalence.FULL;
+				break;
+			default:
+				throw new CIVLInternalException("invalid error state equivalence"
+						+ errorStateEquivString, (CIVLSource) null);
 			}
 		this.setShowMemoryUnits(config.isTrue(CIVLConstants.showMemoryUnitsO));
 		this.debug = config.isTrue(CIVLConstants.debugO);
@@ -426,6 +451,14 @@ public class CIVLConfiguration {
 
 	public boolean printStates() {
 		return this.showStates || this.verbose || this.debug;
+	}
+	
+	public ErrorStateEquivalence errorStateEquiv() {
+		return errorStateEquiv;
+	}
+
+	public void setErrorStateEquiv(ErrorStateEquivalence errorStateEquiv) {
+		this.errorStateEquiv = errorStateEquiv;
 	}
 
 	public boolean svcomp() {

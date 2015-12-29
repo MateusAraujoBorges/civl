@@ -113,7 +113,7 @@ public class CommonFunctionalEquivalence extends CommonCIVLStatePredicate
 			violation = new CIVLExecutionException(
 					ErrorKind.FUNCTIONAL_EQUIVALENCE, Certainty.PROVEABLE,
 					null, msg.toString(),
-					symbolicAnalyzer.stateInformation(state), null);
+					state, null);
 		}
 		return result;
 	}

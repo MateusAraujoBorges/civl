@@ -117,7 +117,7 @@ public abstract class Player {
 		this.solve = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(solveO);
 		this.log = new CIVLErrorLogger(new File("CIVLREP"), sessionName, out,
-				gmcConfig, universe, solve);
+				civlConfig, gmcConfig, universe, solve);
 		this.log.setErrorBound((int) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(errorBoundO));
 		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory);

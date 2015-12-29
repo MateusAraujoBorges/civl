@@ -121,6 +121,7 @@ OPTION_NAME
     | '-debug'
     | '-enablePrintf'
     | '-errorBound'
+    | '-errorStateEquiv'
     | '-gui'
     | '-guided'
     | '-id'

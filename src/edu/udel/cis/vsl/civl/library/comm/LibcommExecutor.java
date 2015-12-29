@@ -894,7 +894,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 			throw new CIVLExecutionException(ErrorKind.INTERNAL,
 					Certainty.CONCRETE, state.getProcessState(pid).name(),
 					"Unexpected arguments",
-					this.symbolicAnalyzer.stateInformation(state), civlsource);
+					state, civlsource);
 		}
 		return msgIndex;
 	}

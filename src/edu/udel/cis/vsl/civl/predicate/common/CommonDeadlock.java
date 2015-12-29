@@ -220,7 +220,7 @@ public class CommonDeadlock extends CommonCIVLStatePredicate implements
 			message += explanationWork(state);
 			violation = new CIVLExecutionException(ErrorKind.DEADLOCK,
 					certainty, null, message,
-					symbolicAnalyzer.stateInformation(state), source);
+					state, source);
 			return true;
 		}
 	}

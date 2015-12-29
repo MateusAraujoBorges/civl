@@ -33,6 +33,16 @@ public class CIVLConstants {
 	public enum DeadlockKind {
 		ABSOLUTE, POTENTIAL, NONE
 	}
+	
+	/**
+	 * Error state equivalence semantics for suppressing logging of redundant errors.
+	 * @author Matt Dwyer
+	 */
+	public enum ErrorStateEquivalence {
+		LOC, // Require the current location to match
+		CALLSTACK, // Require the call stacks to match
+		FULL // Require the full trace to match
+	}
 
 	/**
 	 * Where the CIVL header files (suffix .h and .cvh) and associated
@@ -124,6 +134,19 @@ public class CIVLConstants {
 	 */
 	public final static Option errorBoundO = Option.newScalarOption(
 			"errorBound", INTEGER, "stop after finding this many errors", 1);
+	
+	/**
+	 * The semantics for used to determine when error states are equivalent; CIVL
+	 * suppresses logging of equivalent states.  All semantics use the kind of error, but
+	 * they may vary in the portion of the state that is checked.  Current options include
+	 * using the current location (LOC), the call stacks (CALLSTACK), and the full trace (FULL), 
+	 * but others are possible.  LOC by default.
+	 */
+	public final static Option errorStateEquivO = Option.newScalarOption(
+			"errorStateEquiv", 
+			STRING, 
+			"semantics for equivalent error states: (LOC|CALLSTACK|FULL)", 
+			"LOC");
 
 	/**
 	 * User guided simulation?
@@ -466,9 +489,9 @@ public class CIVLConstants {
 	 */
 	public final static Option[] getAllOptions() {
 		return new Option[] { astO, collectHeapsO, collectProcessesO,
-				collectScopesO, deadlockO, debugO, enablePrintfO, errorBoundO,
-				guiO, guidedO, idO, inputO, linkO, macroO, maxdepthO, minO,
-				mpiContractO, ompLoopDecompO, ompNoSimplifyO, preprocO,
+				collectScopesO, deadlockO, debugO, enablePrintfO, errorBoundO, errorStateEquivO,
+				guiO, guidedO, idO, inputO, linkO, 
+				macroO, maxdepthO, minO, mpiContractO, ompLoopDecompO, ompNoSimplifyO, preprocO,
 				procBoundO, randomO, saveStatesO, seedO, showAmpleSetO,
 				showAmpleSetWtStatesO, showInputVarsO, showMemoryUnitsO,
 				showModelO, showPathConditionO, showProgramO,

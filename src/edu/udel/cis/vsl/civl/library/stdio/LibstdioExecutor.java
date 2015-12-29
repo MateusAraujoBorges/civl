@@ -715,7 +715,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 						Certainty.CONCRETE, process, "The file "
 								+ arguments[0].toString()
 								+ " is not a text file.",
-						this.symbolicAnalyzer.stateInformation(state), source);
+						state, source);
 			}
 			length = universe.tupleRead(theFile, universe.intObject(6));
 		}

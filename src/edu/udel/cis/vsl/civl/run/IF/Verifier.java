@@ -400,7 +400,7 @@ public class Verifier extends Player {
 						break;
 					violationFound = true;
 
-					CIVLLogEntry entry = new CIVLLogEntry(config,
+					CIVLLogEntry entry = new CIVLLogEntry(civlConfig, config,
 							this.predicate.getUnreportedViolation());
 
 					log.report(entry); // may throw ExcessiveErrorException
@@ -433,7 +433,7 @@ public class Verifier extends Player {
 			throw new CIVLExecutionException(stateException.kind(),
 					stateException.certainty(), "",
 					stateException.getMessage(),
-					symbolicAnalyzer.stateInformation(stateException.state()),
+					stateException.state(),
 					stateException.source());
 		}
 

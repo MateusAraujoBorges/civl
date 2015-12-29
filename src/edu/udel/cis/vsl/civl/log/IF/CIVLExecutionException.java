@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl.log.IF;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.state.IF.State;
 
 /**
  * This represents an error during the execution of a program.
@@ -15,8 +16,8 @@ public class CIVLExecutionException extends CIVLException {
 	 * Added by Eclipse.
 	 */
 	private static final long serialVersionUID = 1L;
-
-	private StringBuffer stateString = null;
+	
+	private State state = null;
 
 	private Certainty certainty;
 
@@ -43,13 +44,12 @@ public class CIVLExecutionException extends CIVLException {
 	 *            the source code element associated to the error; may be null
 	 */
 	public CIVLExecutionException(ErrorKind kind, Certainty certainty,
-			String process, String message, StringBuffer stateString,
-			CIVLSource source) {
+			String process, String message, State state, CIVLSource source) {
 		super(message, source);
 		assert kind != null;
 		assert certainty != null;
 		this.process = process;
-		this.stateString = stateString;
+		this.state = state;
 		this.kind = kind;
 		this.certainty = certainty;
 	}
@@ -66,6 +66,13 @@ public class CIVLExecutionException extends CIVLException {
 	 */
 	public ErrorKind kind() {
 		return kind;
+	}
+	
+	/**
+	 * @return the state in which this error occurred.
+	 */
+	public State state() {
+		return state;
 	}
 
 	/**
@@ -106,9 +113,9 @@ public class CIVLExecutionException extends CIVLException {
 		}
 		result.append(":\n");
 		result.append(this.getMessage());
-		if (this.stateString != null) {
+		if (this.state != null) {
 			result.append("\n");
-			result.append(this.stateString);
+			result.append(this.state.callStackToString());
 		}
 		return result.toString();
 	}

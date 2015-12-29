@@ -244,7 +244,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 			message += explanationWork(state);
 			violation = new CIVLExecutionException(ErrorKind.DEADLOCK,
 					certainty, "", message,
-					symbolicAnalyzer.stateInformation(state), source);
+					state, source);
 			return true;
 		}
 	}
