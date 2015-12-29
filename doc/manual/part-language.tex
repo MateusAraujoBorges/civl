@@ -1468,13 +1468,14 @@ CIVL-C headers have the suffix \texttt{.cvh}. Here is the list of standard libra
 \item \texttt{concurrency} provides concurrency utilities such as the barrier;
 \item \texttt{bundle} provides bundle types and methods;
 \item \texttt{comm} provides communicators and methods;
+\item \texttt{domain} provides operations on domains.
 %\item \texttt{civlmpi} provides CIVL-C types for MPI.
 \end{itemize}
 
 \subsection{CIVL basics \texttt{civlc.cvh}}
 \label{subsec:civlcLibrary}
 The header \texttt{civlc.cvh} declares four types, three macros and  several functions. The types declared are \texttt{size\_t}, \texttt{\$proc},
-\texttt{\$scope} and \texttt{\$int\_iter}. The declared macros are \texttt{\$true}, \texttt{\$false} and \texttt{NULL}. The functions provided in this header
+\texttt{\$scope} and \texttt{\$operation}. The declared macros are \texttt{\$true}, \texttt{\$false} and \texttt{NULL}. The functions provided in this header
 will be described in the following.
 
 \subsubsection{The \cassert\ and \cassume\ functions}
@@ -1518,35 +1519,13 @@ its call stack:
 
 \subsubsection{The \cchooseint{} function}
 \label{subsubsec:chooseint}
-
 The function \cchooseint{} has the following signature:
 \begin{verbatim}
   int $choose_int(int n);
 \end{verbatim}
 This function takes as input a positive integer \texttt{n} and
-nondeterministicaly returns an integer in the range
+nondeterministically returns an integer in the range
 $[0,\texttt{n}-1]$.
-
-\subsubsection{The \cscopedefined{} function}
-\label{subsubsec:scopedefined}
-
-The function \cscopedefined{} has signature
-\begin{verbatim}
-  _Bool $scope_defined($scope s);
-\end{verbatim}
-It returns \emph{true} if the dynamic scope specified by \texttt{s} is
-defined, else it returns \emph{false}.
-
-\subsubsection{The \cprocdefined{} function}
-\label{subsubsec:procdefined}
-
-The function \cprocdefined{} has signature
-\begin{verbatim}
-  _Bool $proc_defined($proc p);
-\end{verbatim}
-
-It returns \ctrue if and only if the given object of \cproc{} type is defined.
-
 
 \subsubsection{The heap-related functions: \cmalloc{} and \cfree}
 \label{subsubsec:mallocandfree}
@@ -1566,27 +1545,56 @@ it is just like C's \texttt{free}:
 An error is generated if the pointer is not one that was returned by
 \cmalloc, or if it was already freed.
 
-\subsection{Scope utilities \texttt{scope.cvh}}
-\label{subsec:scopeLibrary}
+\subsubsection{The \texttt{\$elaborate} function}
+The function \texttt{\$elaborate} has the following signature:
+\begin{verbatim}
+  int $elaborate(int n);
+\end{verbatim}
+This function takes as input an integer expression \texttt{n} and
+elaborates it using the current context.
 
-The header \texttt{scope.cvh} declares one function: \texttt{\$scope\_parent}, which has signature
-
+\subsubsection{The \texttt{\$scope\_parent} function}
+The function \texttt{\$scope\_parent} has the following signature
 \begin{verbatim}
   $scope $scope_parent($scope s);
 \end{verbatim}
-This function returns the parent dynamic scope of the dynamic scope referenced by
+It returns the parent dynamic scope of the dynamic scope referenced by
 \ct{s}.  If \ct{s} is the root dynamic scope, it returns the undefined
 value of type $\cscope$.
 
+\subsubsection{The \texttt{\$next\_time\_count} function}
+The function \texttt{\$next\_time\_count} has the following signature
+\begin{verbatim}
+  int $next_time_count();
+\end{verbatim}
+It returns a unique integer value for representing the current time unit. 
+
+\subsubsection{The \texttt{\$pathCondition} function}
+The function \texttt{\$pathCondition} has the following signature
+\begin{verbatim}
+  void $pathCondition();
+\end{verbatim}
+It prints the context, i.e., the path condition, of the current state.
+
 \subsection{Pointer utilities \texttt{pointer.cvh}}
 \label{subsec:pointerLibrary}
-The header \texttt{pointer.cvh} declares functions taking pointers as the arguments for different purposes, including:
-\begin{itemize}
-\item function \cequals{} for equality checking;
-\item function \ccontains{} for membership testing;
-\item function \texttt{\$translate\_ptr} for pointer translation;
-\item function \ccopy{} for copying data through pointers.
-\end{itemize}
+The header \texttt{pointer.cvh} declares functions taking pointers as the arguments for various purposes,
+such as copying, equality checking, membership testing, and so on.
+% including:
+%\begin{itemize}
+%\item function \cequals{} for equality checking;
+%\item function \ccontains{} for membership testing;
+%\item function \texttt{\$translate\_ptr} for pointer translation;
+%\item function \ccopy{} for copying data through pointers.
+%\end{itemize}
+
+\subsubsection{The \texttt{\$apply} function}
+The function \texttt{\$apply} has the signature
+\begin{verbatim}
+  void $apply(void* ptr1, $operation op, void* ptr2, void* res);
+\end{verbatim}
+It applies the operation specified by $op$ to the two objects referenced by $ptr1$ and
+$ptr2$, and assigns the result to the object pointed to by $res$.
 
 \subsubsection{The \cequals{} function}
 
@@ -1598,25 +1606,30 @@ The \cequals{} function has the signature
 This function takes two non-null pointers as input. If  the two objects that the pointers refer to have the same value, then the
 function returns \ctrue. Otherwise, it returns \cfalse.
 
-\subsubsection{The \ccontains{} function}
+\subsubsection{The \texttt{\$assert\_equals} function}
+The \texttt{\$assert\_equals} function has the signature
+\begin{verbatim}
+  _Bool $assert_equals(void *ptr1, void *ptr2);
+\end{verbatim}
+It asserts that two objects are equal to each other. It can take additional arguments 
+for error message if the assertion is violated.
 
+\subsubsection{The \ccontains{} function}
 The function \ccontains{} has the signature
 \begin{verbatim}
   _Bool $contains(void *ptr1, void *ptr2);
 \end{verbatim}
-
-This function takes two non-null pointers as input. If  the object that the pointer \texttt{ptr1} points to contains the object pointed to by \texttt{ptr2},  then the
+It takes two non-null pointers as input. If  the object that the pointer \texttt{ptr1} points to contains the object pointed to by \texttt{ptr2},  then the
 function returns \ctrue. Otherwise, it returns \cfalse. For example, given 
 \begin{verbatim}
- int a[10];
- struct foo {int x; double y} f;
- struct foo b[10];
+  int a[10];
+  struct foo {int x; double y} f;
+  struct foo b[10];
 
- // ... initialize a, f and b
+  // ... initialize a, f and b
 \end{verbatim}
 
 Here are the results of several invocations of  \ccontains:
-
 \begin{itemize}
 \item \texttt{\ccontains(\&a, \&a[3])} returns  \ctrue, since  the array \texttt{a} contains the cell \texttt{a[3]};
 \item \texttt{\ccontains(\&a[2], \&a[3])} returns \cfalse;
@@ -1646,7 +1659,7 @@ For example:
   }point;
   node nodes[3];
   point points[5];
-  ... // initialize nodes and points
+  // ... initialize nodes and points
   double *p = $translate_ptr(&(nodes[2].y), &points);
   // after the translation, p = &(points[2].b);
 \end{verbatim}
@@ -1661,6 +1674,47 @@ The \ccopy{} function has the signature
 It copies the value pointed to by \texttt{value\_ptr} to the memory 
 location specified by \texttt{ptr}. This function is different from \texttt{memcpy} only in the way that
 it can take pointers to (incomplete) array as the argument and copy the whole array to the other.
+
+\subsubsection{The \texttt{\$leaf\_node\_ptrs} function}
+The function \texttt{\$leaf\_node\_ptrs} has the signature
+\begin{verbatim}
+  void $leaf_node_ptrs(void* array, void* obj);
+\end{verbatim}
+It copies the references to the leaf nodes of the object pointed to by $obj$ 
+to the given array. A leaf node of an object has scalar type. 
+The type of $obj$ is pointer-to-$T'$, where all leaf nodes of $T'$ has type $T$, 
+and $array$ has type pointer to array of $T$. For example, 
+$T'$ could be $struct\{int~x;~int~y[10];~int~z;\}$.
+
+\subsubsection{The \texttt{\$set\_leaf\_nodes} function}
+\begin{verbatim}
+  void $set_leaf_nodes(void* obj, int value);
+\end{verbatim}
+
+\subsubsection{The \texttt{\$set\_default} function}
+The function \texttt{\$set\_default} has the following signature
+\begin{verbatim}
+  void $set_default(void* obj)
+\end{verbatim}
+It sets the leaf nodes of a variable to be the default value of zero. This function
+is equivalent to \texttt{\$set\_leaf\_nodes(obj, 0)}.
+
+\subsubsection{The \texttt{\$is\_identity\_ref}}
+\begin{verbatim}
+  _Bool $is_identity_ref(void* ptr);
+\end{verbatim}
+
+\subsubsection{The \texttt{\$leaf\_nodes\_equal\_to}}
+\begin{verbatim}
+  _Bool $leaf_nodes_equal_to(void* ptr, int value);
+\end{verbatim}
+
+\subsubsection{The \texttt{\$has\_leaf\_node\_equal\_to}}
+\begin{verbatim}
+  _Bool $has_leaf_node_equal_to(void* ptr, int value);
+\end{verbatim}
+
+
 
 \subsection{Sequence utilities \texttt{seq.cvh}}
 \label{subsec:seqLibrary}

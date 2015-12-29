@@ -84,7 +84,7 @@ The following command line options are available:
 \booloption{collectScopes}{true}{collect dyscopes}
 \stringoption{deadlock}{absolute}{deadlock choices: potential, absolute, or none}
   \booloption{debug}{false}{debug mode: print very detailed information}
-  \booloption{echo}{false}{print the command line}
+  %\booloption{echo}{false}{print the command line}
   \booloption{enablePrintf}{true}{enable \texttt{printf} function}
   \intoption{errorBound}{1}{stop after finding this many errors}
   \booloption{guided}{false}{user guided simulation; applies only to
@@ -94,24 +94,34 @@ The following command line options are available:
     \textit{value}}
   \intoption{maxdepth}{2147483647}{bound on search depth}
   \booloption{min}{false}{search for minimal counterexample}
-  \stringoption{por}{std}{partial order reduction (por) choices:
-    std (standard por) or scp (scoped por)}
-  \booloption{random}{varies}{select enabled transitions randomly;
+  \booloption{mpiContract}{false}{check contracts for MPI}
+  \stringoption{ompLoopDecomp}{ROUND\_ROBIN}{choices of loop decomposition strategy: ALL, ROUND\_ROBIN, or RANDOM}
+  \booloption{ompNoSimplify}{false}{don't simplify OpenMP pragmas}
+  \booloption{preproc}{false}{show the preprocessing result}
+  \intoption{procBound}{ -1}{bound on number of live processes (no bound if negative)}
+    \booloption{random}{varies}{select enabled transitions randomly;
     default for \texttt{run}, ignored for all other commands}
   \booloption{saveStates}{true}{save states during depth-first search}
   \stringoption{seed}{none}{set the random seed; applies only to run}
   \booloption{showAmpleSet}{false}{print the ample set of each state}
+  \booloption{showAmpleSetWtStates}{false}{print ample set and state when ample set contains more than one processes}
+  \booloption{showInputs}{false}{show input variables of my program}
+  \booloption{showMemoryUnits}{false}{print the impact/reachable memory units when the state contains more than one processes}
   \booloption{showModel}{false}{print the model}
+  \booloption{showPathCondition}{false}{show the path condition of each state}
+  \booloption{showProgram}{false}{show the final program after transformations}
   \booloption{showProverQueries}{false}{print theorem prover queries
     only}
   \booloption{showQueries}{false}{print all queries}
   \booloption{showSavedStates}{false}{print saved states only}
   \booloption{showStates}{false}{print all states}
   \booloption{showTransitions}{false}{print transitions}
+  \booloption{showUnreached}{false}{print unreachable code}
   \booloption{simplify}{true}{simplify states?}
   \booloption{solve}{false}{try to solve for concrete counterexample}
-  \stringoption{sysIncludePath}{}{set the system include path}
-  \stringoption{trace}{}{filename of trace to replay}
+  \stringoption{sysIncludePath}{none}{set the system include path}
+  \intoption{timeout}{-1}{time out in seconds, never time out if negative}
+  \stringoption{trace}{none}{filename of trace to replay}
   \stringoption{userIncludePath}{}{set the user include path}
   \booloption{verbose}{false}{verbose mode}
 \end{optionlist}
@@ -181,52 +191,50 @@ which one to play. (The default \emph{id} is 0).
 
 \chapter{Interpreting the Output}
 
-\section{Transitions}
+\section{Trace steps and transitions}
 
-Transitions are printed during trace \texttt{replay}, in the course of
-a \texttt{run}, or during verification if option
-\emph{showTransitions} is selected.  A typical transition is printed
+A trace step is a sequence of transitions performed by a particular process. 
+Trace steps and transitions are printed during if option
+\emph{showTransitions} is selected.  A typical trace step is printed
 as follows:
 
 \begin{verbatim}
-State 6, proc 0: 
-  44->49: LOOP_FALSE_BRANCH at f0:36.18-23 "i < n";
-  49->RET: return (init) at f0:37.0-1 "}";
-  7->8: i = 0 at f0:42.7-16 "int i = 0";
---> State 74
+Step 7: State 7, p1:  12->13: left=0 at diningBad.cvl:16.2-15 "int left = id"  13->14: right=(0+1)%2 [right:=1] at diningBad.cvl:17.2-26 "int right = (id  ... n"--> State 8
 \end{verbatim}
 
-This means that the transition begins executing from the state with
-ID 6, and it is executed by the process with PID 0.  The transition
-is executed in a sequence of atomic steps; in this case there the
-transition consists of three steps.
+This means that the trace step with ID 7 begins executing from the state with
+ID 7, and it is executed by process p1.  The trace step
+is executed in a sequence of transitions which are atomic; 
+in this case it consists of two transitions.
 
-Process 0 begins at location 44; this is a static location in the
+Process p1 begins at location 12; this is a static location in the
 program graph of a function in the CIVL model.  Details about the
 locations can be seen by printing the CIVL model.  In executing the
-first step, control moves from location 44 to location 49.  This first
-step is an edge in the program graph corresonding to the \emph{false}
-branch of a loop condition, i.e., the branch that exits the loop.
+first step, control moves from location 12 to location 13.  This first
+transition is an edge in the program graph corresponding to an assignment
+statement.
 
-The remainder of the line describing the step specifies the part of
-the original source code corresponding to this step.  The source code
-fragment can be found in file \texttt{f0}.  To save space and avoid
-constantly repeating long paths, all the source files involved in a
-program are printed once and assigned keys such as \texttt{f0},
-\texttt{f1}, etc.  The legend is printed out once at the beginning of
-the run; in this case it is simply the following:
-\begin{verbatim}
-File name list:
-f0	: dining.cvl
-\end{verbatim}
-The source code fragment begins on character 18 of line 36 of
-\texttt{f0}, and extends to character 23 of that line.  This range is
+The remainder of the line describing the transition specifies the part of
+the original source code corresponding to this transition.  The source code
+fragment can be found in file \texttt{diningBad.cvl}.  
+%To save space and avoid
+%constantly repeating long paths, all the source files involved in a
+%program are printed once and assigned keys such as \texttt{f0},
+%\texttt{f1}, etc.  The legend is printed out once at the beginning of
+%the run; in this case it is simply the following:
+%\begin{verbatim}
+%File name list:
+%f0	: dining.cvl
+%\end{verbatim}
+
+The source code fragment begins on character 2 of line 16 of
+\texttt{diningBad.cvl}, and extends to character 15 of that line.  This range is
 inclusive on the left and exclusive on the right, so the total number
-of characters in this range is $23-18=5$.  The five characters from
-the source code are printed next inside double quotes.  For longer
+of characters in this range is $15-2=13$.  The source code is 
+printed next inside double quotes.  For longer
 ranges, this excerpt will be abbreviated using an elipsis.
 
-The second step executes a \emph{return} statement, which results in
+The second transition executes another assignment statement, which results in
 popping the top activation frame from process 0's call stack. The
 function returning is \texttt{init}.  Since the program counter for
 that frame disappears with the execution of this step, there is no
