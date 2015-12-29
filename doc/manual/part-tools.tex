@@ -87,6 +87,7 @@ The following command line options are available:
   %\booloption{echo}{false}{print the command line}
   \booloption{enablePrintf}{true}{enable \texttt{printf} function}
   \intoption{errorBound}{1}{stop after finding this many errors}
+  \stringoption{errorStateEquiv}{LOC}{controls how error states are judged equivalent; match error location (\ct{LOC}), call stacks (\ct{CALLSTACK}), or full trace (\ct{FULL})}
   \booloption{guided}{false}{user guided simulation; applies only to
     run, ignored for all other commands}
   \intoption{id}{0}{ID number of trace to replay}
@@ -153,12 +154,17 @@ symbolic execution way.
 
 In addition to the printed reports, errors are logged.  However, CIVL
 follows a protocol aimed at limiting the number of reports of errors
-which are essentially the same.  This protocol uses a simple
+which are essentially the same.  This protocol uses an adjustable
 equivalence relation on the set of errors.  Two erroneous states are
 considered equivalent if the errors are of the same \emph{kind}
-(deadlock, division by zero, illegal pointer dereference, etc.) and
-every process is at the same location in both states.  When an error
-is encountered, CIVL first checks to see if an earlier equivalent
+(deadlock, division by zero, illegal pointer dereference, etc.) and,
+by default, if every process is at the same location in both states
+(the \ct{LOC} error state equivalence).
+The \emph{errorStateEquiv} option can be used to apply a finer
+equivalence that considers the call stacks in each process in
+addition to the location, \ct{CALLSTACK}, or that considers
+the full trace reaching the error location, \ct{FULL}.
+When an error is encountered, CIVL first checks to see if an earlier equivalent
 errors exists in the log.  If so, the lengths of the traces leading to
 the two error states are compared.  If the new trace is shorter, the
 old log entry is replaced with the new one.  In this way, only the
