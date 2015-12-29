@@ -36,11 +36,11 @@ import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.config.IF.Configurations;
 import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.front.IF.parse.CParser;
-import edu.udel.cis.vsl.abc.front.IF.parse.OmpCParser;
 import edu.udel.cis.vsl.abc.front.IF.parse.ParseException;
 import edu.udel.cis.vsl.abc.front.IF.preproc.Preprocessor;
 import edu.udel.cis.vsl.abc.front.IF.preproc.PreprocessorException;
 import edu.udel.cis.vsl.abc.front.IF.ptree.ParseTree;
+import edu.udel.cis.vsl.abc.front.c.parse.COmpParser;
 import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.CToken;
 import edu.udel.cis.vsl.abc.token.IF.CTokenSource;
@@ -498,7 +498,7 @@ public abstract class BaseWorker {
 	 * @param tokenType
 	 *            the integer code for the type of the token used to represent
 	 *            the source; use one of the constants in {@link CParser} or
-	 *            {@link OmpCParser}, for example, such as
+	 *            {@link COmpParser}, for example, such as
 	 *            {@link CParser#IDENTIFIER}.
 	 * @return the new source object
 	 */

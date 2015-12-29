@@ -67,7 +67,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.front.IF.parse.CParser;
-import edu.udel.cis.vsl.abc.front.IF.parse.OmpCParser;
+import edu.udel.cis.vsl.abc.front.c.parse.COmpParser;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -1464,7 +1464,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 			// Create the CompoundStatementNode of that replaces the
 			// OmpParallelNode
 			pragmaBody = nodeFactory.newCompoundStatementNode(
-					newSource(parallelNode, OmpCParser.PARALLEL), items);
+					newSource(parallelNode, COmpParser.PARALLEL), items);
 
 			// Insert the CompoundStatementNode where the OmpParallelNode used
 			// to be
