@@ -507,7 +507,7 @@ public abstract class BaseWorker {
 	protected Source newSource(String method, int tokenType) {
 		Formation formation = tokenFactory.newTransformFormation(
 				transformerName, method);
-		CivlcToken token = tokenFactory.newCToken(tokenType, "inserted text",
+		CivlcToken token = tokenFactory.newCivlcToken(tokenType, "inserted text",
 				formation);
 		Source source = tokenFactory.newSource(token);
 
