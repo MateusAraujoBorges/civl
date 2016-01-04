@@ -31,7 +31,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
-import edu.udel.cis.vsl.sarl.expr.Expressions;
+import edu.udel.cis.vsl.sarl.expr.IF.Expressions;
 
 public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		LibraryExecutor {
