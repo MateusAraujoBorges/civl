@@ -891,7 +891,6 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 			if (operator == SymbolicOperator.CONCRETE) {
 				if (type.toString().equals("$domain")) {
-					@SuppressWarnings("unchecked")
 					SymbolicSequence<? extends SymbolicExpression> symbolicSequence = (SymbolicSequence<? extends SymbolicExpression>) arguments[0];
 					SymbolicExpression dimension = symbolicSequence.get(0);
 					String unionKind = symbolicSequence.get(1)
@@ -906,7 +905,6 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append(this.symbolicExpressionToString(source,
 							state, null, value, false, "", ""));
 				} else if (type.toString().equals("$regular_range")) {
-					@SuppressWarnings("unchecked")
 					SymbolicCollection<? extends SymbolicExpression> symbolicCollection = (SymbolicCollection<? extends SymbolicExpression>) arguments[0];
 					int elementIndex = 0;
 
