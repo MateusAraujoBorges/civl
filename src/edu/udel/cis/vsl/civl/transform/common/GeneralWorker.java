@@ -35,7 +35,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
-import edu.udel.cis.vsl.abc.front.IF.parse.CParser;
+import edu.udel.cis.vsl.abc.front.IF.parse.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.NameTransformer;
@@ -159,11 +159,11 @@ public class GeneralWorker extends BaseWorker {
 
 	private VariableDeclarationNode create_argv() throws SyntaxException {
 		TypeNode arrayOfCharPointer = nodeFactory.newArrayTypeNode(this
-				.newSource("new main function", CParser.TYPE), nodeFactory
-				.newPointerTypeNode(
-						this.newSource("new main function", CParser.POINTER),
-						this.basicType(BasicTypeKind.CHAR)), this
-				.getUpperBoundOfArgvSize());
+				.newSource("new main function", CivlcTokenConstant.TYPE),
+				nodeFactory.newPointerTypeNode(this.newSource(
+						"new main function", CivlcTokenConstant.POINTER), this
+						.basicType(BasicTypeKind.CHAR)), this
+						.getUpperBoundOfArgvSize());
 
 		return this.variableDeclaration(_argvName, arrayOfCharPointer);
 	}
@@ -209,61 +209,63 @@ public class GeneralWorker extends BaseWorker {
 		VariableDeclarationNode _argv = this.create_argv();
 
 		loopInit = nodeFactory.newForLoopInitializerNode(this.newSource(
-				"new main function", CParser.INIT_DECLARATOR), Arrays
-				.asList(this.variableDeclaration("i", this
+				"new main function", CivlcTokenConstant.INIT_DECLARATOR),
+				Arrays.asList(this.variableDeclaration("i", this
 						.basicType(BasicTypeKind.INT), nodeFactory
 						.newIntegerConstantNode(this.newSource(
-								"new main function", CParser.INTEGER_CONSTANT),
-								"0"))));
-		condition = nodeFactory.newOperatorNode(
-				this.newSource("new main function", CParser.OPERATOR),
-				Operator.LT,
+								"new main function",
+								CivlcTokenConstant.INTEGER_CONSTANT), "0"))));
+		condition = nodeFactory.newOperatorNode(this.newSource(
+				"new main function", CivlcTokenConstant.OPERATOR), Operator.LT,
 				Arrays.asList(this.identifierExpression("i"),
 						this.getUpperBoundOfArgvSize()));
-		increment = nodeFactory.newOperatorNode(
-				this.newSource("new main function", CParser.OPERATOR),
-				Operator.POSTINCREMENT,
-				Arrays.asList(this.identifierExpression("i")));
+		increment = nodeFactory.newOperatorNode(this.newSource(
+				"new main function", CivlcTokenConstant.OPERATOR),
+				Operator.POSTINCREMENT, Arrays.asList(this
+						.identifierExpression("i")));
 		// _argv[i]
 		lhs = nodeFactory.newOperatorNode(this.newSource("new main function",
-				CParser.OPERATOR), Operator.SUBSCRIPT, Arrays.asList(this
-				.identifierExpression(_argvName), this.identifierExpression(
-				this.newSource("new main function", CParser.IDENTIFIER), "i")));
+				CivlcTokenConstant.OPERATOR), Operator.SUBSCRIPT, Arrays
+				.asList(this.identifierExpression(_argvName), this
+						.identifierExpression(this.newSource(
+								"new main function",
+								CivlcTokenConstant.IDENTIFIER), "i")));
 		// CIVL_argv[i]
 		rhs = nodeFactory.newOperatorNode(this.newSource("new main function",
-				CParser.OPERATOR), Operator.SUBSCRIPT,
-				Arrays.asList(
-						this.identifierExpression(this.newSource(
-								"new main function", CParser.IDENTIFIER),
-								CIVL_argv_name), this.identifierExpression(this
-								.newSource("new main function",
-										CParser.INTEGER_CONSTANT), "i")));
+				CivlcTokenConstant.OPERATOR), Operator.SUBSCRIPT, Arrays
+				.asList(this.identifierExpression(this.newSource(
+						"new main function", CivlcTokenConstant.IDENTIFIER),
+						CIVL_argv_name), this.identifierExpression(this
+						.newSource("new main function",
+								CivlcTokenConstant.INTEGER_CONSTANT), "i")));
 		// CIVL_argv[i][0]
 		rhs = nodeFactory.newOperatorNode(this.newSource("new main function",
-				CParser.OPERATOR), Operator.SUBSCRIPT, Arrays.asList(rhs,
-				nodeFactory.newIntegerConstantNode(this.newSource(
-						"new main function", CParser.INTEGER_CONSTANT), "0")));
+				CivlcTokenConstant.OPERATOR), Operator.SUBSCRIPT, Arrays
+				.asList(rhs, nodeFactory.newIntegerConstantNode(this.newSource(
+						"new main function",
+						CivlcTokenConstant.INTEGER_CONSTANT), "0")));
 		// &CIVL_argv[i][0]
-		rhs = nodeFactory.newOperatorNode(
-				this.newSource("new main function", CParser.OPERATOR),
-				Operator.ADDRESSOF, Arrays.asList(rhs));
+		rhs = nodeFactory.newOperatorNode(this.newSource("new main function",
+				CivlcTokenConstant.OPERATOR), Operator.ADDRESSOF, Arrays
+				.asList(rhs));
 		loopBody = nodeFactory.newExpressionStatementNode(nodeFactory
-				.newOperatorNode(
-						this.newSource("new main function", CParser.OPERATOR),
-						Operator.ASSIGN, Arrays.asList(lhs, rhs)));
+				.newOperatorNode(this.newSource("new main function",
+						CivlcTokenConstant.OPERATOR), Operator.ASSIGN, Arrays
+						.asList(lhs, rhs)));
 		forLoop = nodeFactory.newForLoopNode(
-				this.newSource("new main function", CParser.FOR), loopInit,
-				condition, increment, loopBody, null);
+				this.newSource("new main function", CivlcTokenConstant.FOR),
+				loopInit, condition, increment, loopBody, null);
 		// _argv[0];
 		addressOf_argv0 = nodeFactory.newOperatorNode(this.newSource(
-				"new main function", CParser.OPERATOR), Operator.SUBSCRIPT,
-				Arrays.asList(this.identifierExpression(_argvName), nodeFactory
+				"new main function", CivlcTokenConstant.OPERATOR),
+				Operator.SUBSCRIPT, Arrays.asList(this
+						.identifierExpression(_argvName), nodeFactory
 						.newIntegerConstantNode(this.newSource(
-								"new main function", CParser.INTEGER_CONSTANT),
-								"0")));
+								"new main function",
+								CivlcTokenConstant.INTEGER_CONSTANT), "0")));
 		// &_argv[0];
-		addressOf_argv0 = nodeFactory.newOperatorNode(
-				this.newSource("new main function", CParser.OPERATOR),
+		addressOf_argv0 = nodeFactory.newOperatorNode(this.newSource(
+				"new main function", CivlcTokenConstant.OPERATOR),
 				Operator.ADDRESSOF, Arrays.asList(addressOf_argv0));
 		// argv = &_argv[0];
 		// assignArgv = nodeFactory.newOperatorNode(
@@ -271,7 +273,7 @@ public class GeneralWorker extends BaseWorker {
 		// Operator.ASSIGN,
 		// Arrays.asList(this.identifierExpression(argvName), assignArgv));
 		callMain = nodeFactory.newFunctionCallNode(this.newSource(
-				"new main function", CParser.CALL), this
+				"new main function", CivlcTokenConstant.CALL), this
 				.identifierExpression(GEN_MAIN), Arrays.asList(
 				this.identifierExpression(CIVL_argc_name), addressOf_argv0),
 				null);
@@ -281,7 +283,8 @@ public class GeneralWorker extends BaseWorker {
 		mainFuncType = nodeFactory.newFunctionTypeNode(mainSource, nodeFactory
 				.newBasicTypeNode(mainSource, BasicTypeKind.INT), nodeFactory
 				.newSequenceNode(this.newSource("new main function",
-						CParser.PARAMETER_TYPE_LIST), "formal parameter types",
+						CivlcTokenConstant.PARAMETER_TYPE_LIST),
+						"formal parameter types",
 						new LinkedList<VariableDeclarationNode>()), false);
 
 		return nodeFactory.newFunctionDefinitionNode(this.mainSource,

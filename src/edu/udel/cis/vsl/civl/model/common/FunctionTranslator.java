@@ -107,7 +107,7 @@ import edu.udel.cis.vsl.abc.ast.value.IF.CharacterValue;
 import edu.udel.cis.vsl.abc.ast.value.IF.IntegerValue;
 import edu.udel.cis.vsl.abc.ast.value.IF.RealFloatingValue;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
-import edu.udel.cis.vsl.abc.token.IF.CToken;
+import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.StringLiteral;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
@@ -2258,7 +2258,7 @@ public class FunctionTranslator {
 									.continuity());
 				} else {
 					Source declSource = node.getIdentifier().getSource();
-					CToken token = declSource.getFirstToken();
+					CivlcToken token = declSource.getFirstToken();
 					File file = token.getSourceFile().getFile();
 					// fileName will be something like "stdlib.h" or "civlc.h"
 					String fileName = file.getName();

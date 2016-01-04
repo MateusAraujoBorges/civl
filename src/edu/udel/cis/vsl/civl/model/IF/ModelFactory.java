@@ -10,7 +10,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.program.IF.Program;
-import edu.udel.cis.vsl.abc.token.IF.CToken;
+import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
@@ -1014,7 +1014,7 @@ public interface ModelFactory {
 	 *            The C token
 	 * @return The CIVL source
 	 */
-	CIVLSource sourceOfToken(CToken token);
+	CIVLSource sourceOfToken(CivlcToken token);
 
 	/**
 	 * Get the CIVL source of an AST node

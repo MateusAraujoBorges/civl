@@ -22,7 +22,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.program.IF.Program;
-import edu.udel.cis.vsl.abc.token.IF.CToken;
+import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.civl.analysis.IF.Analysis;
@@ -419,7 +419,8 @@ public class ModelBuilderWorker {
 	 */
 	private boolean hasTimeLibrary(ASTNode node) {
 		Source source = node.getSource();
-		CToken token = source == null ? null : node.getSource().getFirstToken();
+		CivlcToken token = source == null ? null : node.getSource()
+				.getFirstToken();
 		SourceFile file = token == null ? null : token.getFormation()
 				.getLastFile();
 

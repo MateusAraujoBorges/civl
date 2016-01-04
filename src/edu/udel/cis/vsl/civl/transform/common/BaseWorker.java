@@ -35,15 +35,16 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.config.IF.Configurations;
 import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
-import edu.udel.cis.vsl.abc.front.IF.parse.CParser;
+import edu.udel.cis.vsl.abc.front.IF.parse.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.front.IF.parse.ParseException;
 import edu.udel.cis.vsl.abc.front.IF.preproc.Preprocessor;
 import edu.udel.cis.vsl.abc.front.IF.preproc.PreprocessorException;
 import edu.udel.cis.vsl.abc.front.IF.ptree.ParseTree;
 import edu.udel.cis.vsl.abc.front.c.parse.COmpParser;
+import edu.udel.cis.vsl.abc.front.c.parse.CParser;
 import edu.udel.cis.vsl.abc.main.FrontEnd;
-import edu.udel.cis.vsl.abc.token.IF.CToken;
-import edu.udel.cis.vsl.abc.token.IF.CTokenSource;
+import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
+import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
 import edu.udel.cis.vsl.abc.token.IF.Formation;
 import edu.udel.cis.vsl.abc.token.IF.Macro;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -124,7 +125,7 @@ public abstract class BaseWorker {
 
 	protected StatementNode elaborateCallNode(ExpressionNode argument) {
 		FunctionCallNode call = nodeFactory.newFunctionCallNode(
-				this.newSource("$elaborate call", CParser.CALL),
+				this.newSource("$elaborate call", CivlcTokenConstant.CALL),
 				this.identifierExpression(ELABORATE), Arrays.asList(argument),
 				null);
 
@@ -359,24 +360,24 @@ public abstract class BaseWorker {
 		FunctionDefinitionNode newMainFunction;
 
 		callMain = nodeFactory.newFunctionCallNode(
-				this.newSource("new main function", CParser.CALL),
+				this.newSource("new main function", CivlcTokenConstant.CALL),
 				this.identifierExpression(GEN_MAIN),
 				new LinkedList<ExpressionNode>(), null);
 		blockItems.add(nodeFactory.newExpressionStatementNode(callMain));
 		mainFuncType = nodeFactory.newFunctionTypeNode(this.newSource(
-				"new main function", CParser.TYPE), nodeFactory
-				.newBasicTypeNode(
-						this.newSource("new main function", CParser.TYPE),
-						BasicTypeKind.INT), nodeFactory.newSequenceNode(this
-				.newSource("new main function", CParser.PARAMETER_TYPE_LIST),
-				"formal parameter types",
-				new LinkedList<VariableDeclarationNode>()), false);
+				"new main function", CivlcTokenConstant.TYPE), nodeFactory
+				.newBasicTypeNode(this.newSource("new main function",
+						CivlcTokenConstant.TYPE), BasicTypeKind.INT),
+				nodeFactory.newSequenceNode(this.newSource("new main function",
+						CivlcTokenConstant.PARAMETER_TYPE_LIST),
+						"formal parameter types",
+						new LinkedList<VariableDeclarationNode>()), false);
 		newMainFunction = nodeFactory.newFunctionDefinitionNode(this.newSource(
-				"new main function", CParser.FUNCTION_DEFINITION), this
-				.identifier(MAIN), mainFuncType, null, nodeFactory
-				.newCompoundStatementNode(
-						this.newSource("new main function", CParser.BODY),
-						blockItems));
+				"new main function", CivlcTokenConstant.FUNCTION_DEFINITION),
+				this.identifier(MAIN), mainFuncType, null, nodeFactory
+						.newCompoundStatementNode(this.newSource(
+								"new main function", CivlcTokenConstant.BODY),
+								blockItems));
 		root.addSequenceChild(newMainFunction);
 	}
 
@@ -440,9 +441,10 @@ public abstract class BaseWorker {
 	}
 
 	protected StatementNode assumeNode(ExpressionNode expression) {
-		return nodeFactory.newExpressionStatementNode(this.functionCall(
-				this.newSource("assumption", CParser.EXPRESSION_STATEMENT),
-				ASSUME, Arrays.asList(expression)));
+		return nodeFactory.newExpressionStatementNode(this.functionCall(this
+				.newSource("assumption",
+						CivlcTokenConstant.EXPRESSION_STATEMENT), ASSUME,
+				Arrays.asList(expression)));
 	}
 
 	/**
@@ -468,7 +470,7 @@ public abstract class BaseWorker {
 		FrontEnd frontEnd = new FrontEnd(
 				Configurations.newMinimalConfiguration());
 		Preprocessor preprocessor = frontEnd.getPreprocessor(Language.CIVL_C);
-		CTokenSource tokenSource;
+		CivlcTokenSource tokenSource;
 		ParseTree tree;
 
 		try {
@@ -505,7 +507,7 @@ public abstract class BaseWorker {
 	protected Source newSource(String method, int tokenType) {
 		Formation formation = tokenFactory.newTransformFormation(
 				transformerName, method);
-		CToken token = tokenFactory.newCToken(tokenType, "inserted text",
+		CivlcToken token = tokenFactory.newCToken(tokenType, "inserted text",
 				formation);
 		Source source = tokenFactory.newSource(token);
 
@@ -532,7 +534,7 @@ public abstract class BaseWorker {
 			Source source = node.getSource();
 
 			if (source != null) {
-				CToken firstToken = source.getFirstToken();
+				CivlcToken firstToken = source.getFirstToken();
 
 				if (firstToken != null) {
 					Formation formation = firstToken.getFormation();
@@ -541,9 +543,9 @@ public abstract class BaseWorker {
 						TransformFormation tf = (TransformFormation) formation;
 
 						if (transformerName.equals(tf.getLastFile().getName())) {
-							CToken preToken = preNode == null ? null : preNode
-									.getSource().getLastToken();
-							CToken postToken = postNode == null ? null
+							CivlcToken preToken = preNode == null ? null
+									: preNode.getSource().getLastToken();
+							CivlcToken postToken = postNode == null ? null
 									: postNode.getSource().getFirstToken();
 							String text = node.prettyRepresentation()
 									.toString();
@@ -575,8 +577,8 @@ public abstract class BaseWorker {
 	 * @return the new identifier node.
 	 */
 	protected IdentifierNode identifier(String name) {
-		return nodeFactory.newIdentifierNode(
-				this.newSource("identifier " + name, CParser.IDENTIFIER), name);
+		return nodeFactory.newIdentifierNode(this.newSource("identifier "
+				+ name, CivlcTokenConstant.IDENTIFIER), name);
 	}
 
 	/**
@@ -589,8 +591,8 @@ public abstract class BaseWorker {
 	 * @return the new identifier expression node.
 	 */
 	protected ExpressionNode identifierExpression(String name) {
-		Source source = this
-				.newSource("identifier " + name, CParser.IDENTIFIER);
+		Source source = this.newSource("identifier " + name,
+				CivlcTokenConstant.IDENTIFIER);
 
 		return nodeFactory.newIdentifierExpressionNode(source,
 				nodeFactory.newIdentifierNode(source, name));
@@ -624,8 +626,8 @@ public abstract class BaseWorker {
 	protected VariableDeclarationNode variableDeclaration(String name,
 			TypeNode type) {
 		return nodeFactory.newVariableDeclarationNode(this.newSource(
-				"variable declaration of " + name, CParser.DECLARATION), this
-				.identifier(name), type);
+				"variable declaration of " + name,
+				CivlcTokenConstant.DECLARATION), this.identifier(name), type);
 	}
 
 	/**
@@ -647,8 +649,9 @@ public abstract class BaseWorker {
 		// if (init != null)
 		// text = text + " = " + init.prettyRepresentation();
 		return nodeFactory.newVariableDeclarationNode(this.newSource(
-				"variable declaration of " + name, CParser.DECLARATION), this
-				.identifier(name), type, init);
+				"variable declaration of " + name,
+				CivlcTokenConstant.DECLARATION), this.identifier(name), type,
+				init);
 	}
 
 	/**
@@ -659,7 +662,7 @@ public abstract class BaseWorker {
 	 */
 	protected ExpressionNode hereNode() {
 		return nodeFactory.newHereNode(this.newSource("constant $here",
-				CParser.HERE));
+				CivlcTokenConstant.HERE));
 	}
 
 	/**
@@ -670,7 +673,7 @@ public abstract class BaseWorker {
 	 */
 	protected TypeNode voidType() {
 		return nodeFactory.newVoidTypeNode(this.newSource("type void",
-				CParser.VOID));
+				CivlcTokenConstant.VOID));
 	}
 
 	/**
@@ -740,7 +743,7 @@ public abstract class BaseWorker {
 		default:
 		}
 		return this.nodeFactory.newBasicTypeNode(
-				this.newSource("type " + name, CParser.TYPE), kind);
+				this.newSource("type " + name, CivlcTokenConstant.TYPE), kind);
 	}
 
 	/**
@@ -752,7 +755,7 @@ public abstract class BaseWorker {
 	 * @return the new type node.
 	 */
 	protected TypeNode typeNode(Type type) {
-		Source source = this.newSource("type " + type, CParser.TYPE);
+		Source source = this.newSource("type " + type, CivlcTokenConstant.TYPE);
 
 		return this.typeNode(source, type);
 	}
@@ -805,7 +808,8 @@ public abstract class BaseWorker {
 	 */
 	protected ExpressionNode booleanConstant(boolean value) {
 		String method = value ? "constant $true" : "constant $false";
-		int tokenType = value ? CParser.TRUE : CParser.FALSE;
+		int tokenType = value ? CivlcTokenConstant.TRUE
+				: CivlcTokenConstant.FALSE;
 
 		return nodeFactory.newBooleanConstantNode(
 				this.newSource(method, tokenType), value);
@@ -820,9 +824,9 @@ public abstract class BaseWorker {
 	 * @return the new integer constant node
 	 */
 	protected ExpressionNode integerConstant(int value) throws SyntaxException {
-		return nodeFactory.newIntegerConstantNode(
-				this.newSource("constant " + value, CParser.INTEGER_CONSTANT),
-				Integer.toString(value));
+		return nodeFactory.newIntegerConstantNode(this.newSource("constant "
+				+ value, CivlcTokenConstant.INTEGER_CONSTANT), Integer
+				.toString(value));
 	}
 
 	/**
@@ -947,7 +951,7 @@ public abstract class BaseWorker {
 				Source source = node.getSource();
 
 				if (source != null) {
-					CToken token = source.getFirstToken();
+					CivlcToken token = source.getFirstToken();
 
 					if (token != null) {
 						Formation formation = token.getFormation();

@@ -16,7 +16,7 @@ import java.util.Stack;
 import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.program.IF.Program;
-import edu.udel.cis.vsl.abc.token.IF.CToken;
+import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
@@ -1070,7 +1070,7 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public CIVLSource sourceOfToken(CToken token) {
+	public CIVLSource sourceOfToken(CivlcToken token) {
 		return sourceOf(tokenFactory.newSource(token));
 	}
 
@@ -1499,7 +1499,7 @@ public class CommonModelFactory implements ModelFactory {
 				libraryName = "stdlib";
 				break;
 			case "assert":
-				libraryName="asserts";
+				libraryName = "asserts";
 				break;
 			default:
 			}

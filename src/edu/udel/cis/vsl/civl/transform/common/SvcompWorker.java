@@ -23,7 +23,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.QualifiedObjectType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
-import edu.udel.cis.vsl.abc.front.IF.parse.CParser;
+import edu.udel.cis.vsl.abc.front.IF.parse.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.SvcompTransformer;
@@ -277,7 +277,7 @@ public class SvcompWorker extends BaseWorker {
 			blockItems.add(nondet_bound_var);
 			// add upper bound variable and assumptions
 			blockItems.add(this.assumeFunctionDeclaration(this.newSource(
-					"$assume", CParser.DECLARATION)));
+					"$assume", CivlcTokenConstant.DECLARATION)));
 			for (VariableDeclarationNode nondet_var : nondet_int_variable_declarations) {
 				blockItems
 						.add(this.assumeNode(this.nodeFactory.newOperatorNode(
@@ -387,12 +387,12 @@ public class SvcompWorker extends BaseWorker {
 								this.releaseNodes(atomicItems);
 								newItems.add(this.nodeFactory.newAtomicStatementNode(
 										this.newSource("$atomic",
-												CParser.ATOMIC),
+												CivlcTokenConstant.ATOMIC),
 										false,
 										this.nodeFactory.newCompoundStatementNode(
 												this.newSource(
 														"body-of-atomic-begin-end",
-														CParser.COMPOUND_STATEMENT),
+														CivlcTokenConstant.COMPOUND_STATEMENT),
 												atomicItems)));
 								atomicItems = new LinkedList<>();
 							}

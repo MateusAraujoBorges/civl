@@ -35,7 +35,7 @@ import edu.udel.cis.vsl.abc.front.IF.preproc.PreprocessorException;
 import edu.udel.cis.vsl.abc.front.IF.ptree.ParseTree;
 import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.program.IF.Program;
-import edu.udel.cis.vsl.abc.token.IF.CTokenSource;
+import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
 import edu.udel.cis.vsl.abc.token.IF.Macro;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -291,7 +291,7 @@ public class ModelTranslator {
 	 */
 	Program buildProgram() throws PreprocessorException, SyntaxException,
 			IOException, ParseException, SvcompException {
-		List<Pair<Language, CTokenSource>> tokenSources;
+		List<Pair<Language, CivlcTokenSource>> tokenSources;
 		List<AST> asts = null;
 		Program program = null;
 		long startTime, endTime;
@@ -751,7 +751,7 @@ public class ModelTranslator {
 	 * @throws SyntaxException
 	 * @throws ParseException
 	 */
-	private AST parse(Language language, CTokenSource tokenSource)
+	private AST parse(Language language, CivlcTokenSource tokenSource)
 			throws SyntaxException, ParseException {
 		ParseTree tree;
 		AST ast;
@@ -796,11 +796,12 @@ public class ModelTranslator {
 	 * @throws ParseException
 	 *             if there is a problem parsing the tokens.
 	 */
-	public List<AST> parseTokens(List<Pair<Language, CTokenSource>> tokenSources)
+	public List<AST> parseTokens(
+			List<Pair<Language, CivlcTokenSource>> tokenSources)
 			throws SyntaxException, ParseException {
 		List<AST> asts = new ArrayList<>(tokenSources.size());
 
-		for (Pair<Language, CTokenSource> pair : tokenSources) {
+		for (Pair<Language, CivlcTokenSource> pair : tokenSources) {
 			AST ast = parse(pair.left, pair.right);
 
 			asts.add(ast);
@@ -815,15 +816,15 @@ public class ModelTranslator {
 	 * @throws PreprocessorException
 	 *             if there is any problem preprocessing the source files.
 	 */
-	public List<Pair<Language, CTokenSource>> preprocess()
+	public List<Pair<Language, CivlcTokenSource>> preprocess()
 			throws PreprocessorException {
-		List<Pair<Language, CTokenSource>> tokenSources = new LinkedList<>();
+		List<Pair<Language, CivlcTokenSource>> tokenSources = new LinkedList<>();
 
 		for (String filename : filenames) {
 			File file = new File(filename);
 			Language language = this.getLanguageByFileName(filename);
 			Preprocessor preprocessor = frontEnd.getPreprocessor(language);
-			CTokenSource tokens = preprocessor
+			CivlcTokenSource tokens = preprocessor
 					.outputTokenSource(systemIncludes, userIncludes, macroMaps,
 							new File(filename));
 
@@ -966,7 +967,7 @@ public class ModelTranslator {
 					// current directory or elsewhere in the path.
 					// It also ensures any file included will also
 					// be found in either /include/civl or /include/abc.
-					CTokenSource tokens = preprocessor.outputTokenSource(
+					CivlcTokenSource tokens = preprocessor.outputTokenSource(
 							civlSysPathArray, emptyFileArray, macroMaps,
 							systemFilename);
 					AST newAST = parse(Language.CIVL_C, tokens);
