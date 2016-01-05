@@ -27,7 +27,7 @@ public class ShtnsTest {
 
 	@Test
 	public void time_SHT() {
-		assertTrue(ui.run("show", "-ompNoSimplify -debug",
+		assertTrue(ui.run("show", "-ompNoSimplify",
 				"-input_omp_thread_max=1",
 				"-userIncludePath=examples/omp/shtns/SHT:examples/omp/shtns",
 				"-sysIncludePath=examples/omp/shtns/SHT:examples/omp/shtns",
