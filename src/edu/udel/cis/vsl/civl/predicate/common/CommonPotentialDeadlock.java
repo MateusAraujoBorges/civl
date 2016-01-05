@@ -55,6 +55,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 	 * The symbolic analyzer for operations on symbolic expressions and states,
 	 * used in this class for printing states.
 	 */
+	@SuppressWarnings("unused")
 	private SymbolicAnalyzer symbolicAnalyzer;
 
 	/**
@@ -186,7 +187,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 		CIVLSource source = null; // location of first non-term proc
 
-		for (ProcessState p : state.getProcessStates()) { 
+		for (ProcessState p : state.getProcessStates()) {
 			if (p == null || p.hasEmptyStack()) // p has terminated
 				continue;
 
@@ -243,8 +244,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 					+ "\n  Enabling predicate: " + predicate + "\n";
 			message += explanationWork(state);
 			violation = new CIVLExecutionException(ErrorKind.DEADLOCK,
-					certainty, "", message,
-					state, source);
+					certainty, "", message, state, source);
 			return true;
 		}
 	}
