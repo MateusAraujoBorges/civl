@@ -8,6 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
+
+#ifdef _CIVL
+$input int N=100; 
+#else
+#define N 1000
+#endif
 
 void print_usage(char *s) {
   printf("Usage: %s -i <nr of intervals>\n", s);
@@ -25,27 +32,29 @@ int main (int argc, char *argv[]) {
   int nthreads, tid;
   double d, x, sum=0.0, pi;
   double starttime, stoptime;
-  int n=100, i; // MATT CHANGED 1000 to 100 to SCALE DOWN
+  int n=N, i;
   char c;
 
+#ifndef _CIVL
   /* Check if we have at least one argument */
-//  if (argc <=1 ) {
-//    print_usage(argv[0]);
-//  }
-//  else {
-//    /* Parse the arguments for a -h or -i flag */
-//    while ((c=getopt(argc, argv, "hi:")) != EOF) {
-//      switch (c) {
-//      case 'h':
-//  	  print_usage(argv[0]);
-//      case 'i':
-//	  n = atoi(optarg);    /* Get number of intervals  */
-//	  break;
- //     default:
-//	  print_usage(argv[0]);
-//      }
-//    }
-//  }
+  if (argc <=1 ) {
+    print_usage(argv[0]);
+  }
+  else {
+    /* Parse the arguments for a -h or -i flag */
+    while ((c=getopt(argc, argv, "hi:")) != EOF) {
+      switch (c) {
+      case 'h':
+  	  print_usage(argv[0]);
+      case 'i':
+	  n = atoi(optarg);    /* Get number of intervals  */
+	  break;
+      default:
+	  print_usage(argv[0]);
+      }
+    }
+  }
+#endif
 
 
   /* Compute the size of intervals */
@@ -80,6 +89,9 @@ int main (int argc, char *argv[]) {
   printf("The computed value of Pi is %2.24f\n", pi);
   printf("The  \"exact\" value of Pi is %2.24f\n", PI24);
   printf("The difference is %e\n", fabs(PI24-pi));
+#ifdef _CIVL
+  assert(fabs(PI24-pi) < 0.1);
+#endif
   printf("Time: %2.4f seconds \n", stoptime-starttime);
 
   exit(0);

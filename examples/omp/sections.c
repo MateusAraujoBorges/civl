@@ -15,9 +15,18 @@ int main (int argc, char * argv[]){
       c[i] = 0;
 
 #pragma omp parallel
-#pragma omp for
-for(int i = 0; i < N ; i ++)
-a[i] = b[i] + c[i];
+#pragma omp sections
+  {
+
+  #pragma omp section    
+
+     c[0]=1;
+
+  #pragma omp section    
+
+     c[1]=1;
+
+  }
 
 
 }

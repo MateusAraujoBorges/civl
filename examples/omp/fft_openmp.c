@@ -4,8 +4,13 @@
 # include <time.h>
 # include <omp.h>
 
-#define NITS 4    // originally 10000
-#define LN2MAX 1  //originally 25
+#ifdef _CIVL
+$input int NITS=4;    // originally 10000
+$input int LN2MAX=1;  //originally 25
+#else
+#define NITS 10000
+#define LN2MAX 25
+#endif
 
 int main ( void );
 void ccopy ( int n, double x[], double y[] );
@@ -141,7 +146,7 @@ int main ( void )
     shared ( n, x, z ) \
     private ( i, z0, z1 )
 
-# pragma omp for nowait
+# pragma omp for
 
         for ( i = 0; i < 2 * n; i = i + 2 )
         {

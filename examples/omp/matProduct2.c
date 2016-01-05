@@ -14,20 +14,17 @@
 /* Number of threads used */
 #define NR_THREADS 4
 
-/*
+#ifdef _CIVL
+#define DEBUG 1
+$input int NRA=10;                 // number of rows in matrix A
+$input int NCA=10;                 // number of columns in matrix A
+$input int NCB=10;                 // number of columns in matrix B
+#else
 #define DEBUG 0
-
 #define NRA 1400                 // number of rows in matrix A 
 #define NCA 1400                 // number of columns in matrix A
 #define NCB 1400                 // number of columns in matrix B
-*/
-
-/* Use smaller matrices for testing and debugging */
-#define DEBUG 1
-#define NRA 10                 // number of rows in matrix A
-#define NCA 10                 // number of columns in matrix A
-#define NCB 10                 // number of columns in matrix B
-
+#endif
 
 int main (int argc, char *argv[]) {
   int	tid, nthreads, i, j, k;

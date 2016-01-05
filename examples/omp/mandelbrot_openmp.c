@@ -41,14 +41,14 @@ int main ( void )
     for a particular pixel.
 */
 {
-  int m = 500;
-  int n = 500;
+  int m = 10;
+  int n = 10;
 
   int b[m][n];
   int c;
   int c_max;
   int count[m][n];
-  int count_max = 2000;
+  int count_max = 10;
   int g[m][n];
   int i;
   int ierror;

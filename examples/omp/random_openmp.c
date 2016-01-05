@@ -108,9 +108,7 @@ void monte_carlo ( int n, int *seed )
   int i;
   int my_id;
   int my_seed;
-  double *x;
-
-  x = ( double * ) malloc ( n * sizeof ( double ) );
+  double x[n];
 
 # pragma omp master
 {
@@ -134,7 +132,7 @@ void monte_carlo ( int n, int *seed )
 
 }
 
-  free ( x );
+  //free ( x );
 
   return;
 }

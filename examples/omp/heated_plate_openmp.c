@@ -7,14 +7,15 @@ int main ( int argc, char *argv[] );
 
 /******************************************************************************/
 
-/* Michael: when I use CIVL-C input qualifiers the OMP2CIVL transformer breaks
+#ifdef _CIVL
 $input int M=5;		// originally 500
 $input int N=5;		// originally 500
 $input double EPSILON=0.1;    // originally 0.001
-*/
-#define M 5
-#define N 5
-#define EPSILON 0.1
+#else
+#define M 500
+#define N 500
+#define EPSILON 0.001
+#endif
 
 int main ( int argc, char *argv[] )
 

@@ -17,9 +17,9 @@
 #include <stdlib.h>
 
 #ifdef _CIVL
-#define NRA 4               /* number of rows in matrix A */
-#define NCA 4                 /* number of columns in matrix A */
-#define NCB 4                  /* number of columns in matrix B */
+$input int NRA=5;               /* number of rows in matrix A */
+$input int NCA=5;                 /* number of columns in matrix A */
+$input int NCB=5;                  /* number of columns in matrix B */
 #else
 #define NRA 8               /* number of rows in matrix A */
 #define NCA 8                 /* number of columns in matrix A */

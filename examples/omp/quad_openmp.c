@@ -4,6 +4,12 @@
 # include <time.h>
 # include <omp.h>
 
+#ifdef _CIVL
+$input int N=100;		// originally 10000000
+#else
+#define N 10000000
+#endif
+
 int main ( int argc, char *argv[] );
 double f ( double x );
 double cpu_time ( void );
@@ -37,7 +43,7 @@ int main ( int argc, char *argv[] )
   double error;
   double exact = 0.49936338107645674464;
   int i;
-  int n = 10000000;
+  int n = N;
   double total;
   double wtime;
   double x;

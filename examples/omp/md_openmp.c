@@ -1,13 +1,26 @@
+#ifdef _CIVL
+#include <civlc.cvh>
+#endif
+
 # include <stdlib.h>
 # include <stdio.h>
 # include <time.h>
 # include <math.h>
 # include <omp.h>
 
-#define ND 1 // Originally 3
-#define NP 10 // Originally 1000
-#define NSTEPS 10 // Originally 400
-#define DT 0.1 // Originally 0.0001
+#include <assert.h>
+
+#ifdef _CIVL
+$input int ND=1; // Originally 3
+$input int NP=10; // Originally 1000
+$input int NSTEPS=10; // Originally 400
+$input double DT=0.1; // Originally 0.0001
+#else
+#define ND 3
+#define NP 1000
+#define NSTEPS 400
+#define DT 0.0001
+#endif
 
 int main ( int argc, char *argv[] );
 void compute ( int np, int nd, double pos[], double vel[], 
@@ -262,13 +275,14 @@ void compute ( int np, int nd, double pos[], double vel[],
   ke = 0.0;
 
 # pragma omp parallel \
-  shared ( f, nd, np, pos, vel ) \
-  private ( i, j, k, rij, d, d2 )
+  shared ( f, np, pos, vel ) \
+  private ( i, j, k, rij, d, d2, nd )
   
 
 # pragma omp for reduction ( + : pe, ke )
   for ( k = 0; k < np; k++ )
   {
+  nd = ND;
 /*
   Compute the potential energy and forces.
 */
@@ -295,6 +309,9 @@ void compute ( int np, int nd, double pos[], double vel[],
         }
 
         pe = pe + 0.5 * pow ( sin ( d2 ), 2 );
+        #ifdef _CIVL
+        $assume(pe != 0);
+        #endif
 
         for ( i = 0; i < nd; i++ )
         {
@@ -308,6 +325,9 @@ void compute ( int np, int nd, double pos[], double vel[],
     for ( i = 0; i < nd; i++ )
     {
       ke = ke + vel[i+k*nd] * vel[i+k*nd];
+       #ifdef _CIVL
+       $assume(ke != 0);
+       #endif
     }
   }
 
@@ -356,7 +376,7 @@ double dist ( int nd, double r1[], double r2[], double dr[] )
   int i;
 
   d = 0.0;
-  for ( i = 0; i < nd; i++ )
+  for (int i = 0; i < nd; i++ )
   {
     dr[i] = r1[i] - r2[i];
     d = d + dr[i] * dr[i];

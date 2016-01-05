@@ -4,8 +4,8 @@
 # include <time.h>
 # include <omp.h>
 
-# define NX 161
-# define NY 161
+# define NX 10
+# define NY 10
 
 int main ( int argc, char *argv[] );
 double r8mat_rms ( int nx, int ny, double a[NX][NY] );
@@ -293,6 +293,7 @@ double r8mat_rms ( int nx, int ny, double a[NX][NY] )
       v = v + a[i][j] * a[i][j];
     }
   }
+  
   v = sqrt ( v / ( double ) ( nx * ny )  );
 
   return v;

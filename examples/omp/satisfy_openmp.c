@@ -39,7 +39,7 @@ int main ( int argc, char *argv[] )
     LC: QA76.73.C15.Q55.
 */
 {
-# define N 23
+# define N 5
 
   int bvec[N];
   int i;
@@ -52,7 +52,7 @@ int main ( int argc, char *argv[] )
   int n = N;
   int proc_num;
   int solution_num;
-  int solution_num_local;
+  int solution_num_local1;
   int thread_num;
   int value;
   double wtime;
@@ -97,7 +97,7 @@ int main ( int argc, char *argv[] )
 
 # pragma omp parallel \
   shared ( ihi, ilo, n, thread_num ) \
-  private ( bvec, i, id, ihi2, ilo2, j, solution_num_local, value ) \
+  private ( bvec, i, id, ihi2, ilo2, j, solution_num_local1, value ) \
   reduction ( + : solution_num )
   {
     id = omp_get_thread_num ( );
@@ -116,7 +116,7 @@ int main ( int argc, char *argv[] )
 /*
   Check every possible input vector.
 */
-    solution_num_local = 0;
+    solution_num_local1 = 0;
 
     for ( i = ilo2; i < ihi2; i++ )
     {
@@ -126,9 +126,9 @@ int main ( int argc, char *argv[] )
 
       if ( value == 1 )
       {
-        solution_num_local = solution_num_local + 1;
+        solution_num_local1 = solution_num_local1 + 1;
   
-        printf ( "  %2d  %8d  %10d:  ", solution_num_local, id, i );
+        printf ( "  %2d  %8d  %10d:  ", solution_num_local1, id, i );
         for ( j = 0; j < n; j++ )
         {
           printf ( " %d", bvec[j] );
@@ -136,7 +136,7 @@ int main ( int argc, char *argv[] )
         printf ( "\n" );
       }
     }
-    solution_num = solution_num + solution_num_local;
+    solution_num = solution_num + solution_num_local1;
   }
   wtime = omp_get_wtime ( ) - wtime;
   printf ( "\n" );
@@ -199,33 +199,7 @@ int circuit_value ( int n, int bvec[] )
        (  bvec[0]  ||  bvec[1]  )
     && ( !bvec[1]  || !bvec[3]  )
     && (  bvec[2]  ||  bvec[3]  )
-    && ( !bvec[3]  || !bvec[4]  )
-    && (  bvec[4]  || !bvec[5]  )
-    && (  bvec[5]  || !bvec[6]  )
-    && (  bvec[5]  ||  bvec[6]  )
-    && (  bvec[6]  || !bvec[15] )
-    && (  bvec[7]  || !bvec[8]  )
-    && ( !bvec[7]  || !bvec[13] )
-    && (  bvec[8]  ||  bvec[9]  )
-    && (  bvec[8]  || !bvec[9]  )
-    && ( !bvec[9]  || !bvec[10] )
-    && (  bvec[9]  ||  bvec[11] )
-    && (  bvec[10] ||  bvec[11] )
-    && (  bvec[12] ||  bvec[13] )
-    && (  bvec[13] || !bvec[14] )
-    && (  bvec[14] ||  bvec[15] )
-    && (  bvec[14] ||  bvec[16] )
-    && (  bvec[17] ||  bvec[1]  )
-    && (  bvec[18] || !bvec[0]  )
-    && (  bvec[19] ||  bvec[1]  )
-    && (  bvec[19] || !bvec[18] )
-    && ( !bvec[19] || !bvec[9]  )
-    && (  bvec[0]  ||  bvec[17] )
-    && ( !bvec[1]  ||  bvec[20] )
-    && ( !bvec[21] ||  bvec[20] )
-    && ( !bvec[22] ||  bvec[20] )
-    && ( !bvec[21] || !bvec[20] )
-    && (  bvec[22] || !bvec[20] );
+    && ( !bvec[3]  || !bvec[4]  );
 
   return value;
 }
