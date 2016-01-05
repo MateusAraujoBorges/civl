@@ -31,7 +31,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
-import edu.udel.cis.vsl.sarl.expr.IF.Expressions;
 
 public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		LibraryExecutor {
@@ -419,9 +418,9 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @param lhs
 	 *            The Left-hand side expression
 	 * @param arguments
-	 *            {@link Expressions} of arguments of the function call
+	 *            {@link Expression} of arguments of the function call
 	 * @param argumentValues
-	 *            {@link SymbolicExpressions} of arguments of the function call
+	 *            {@link SymbolicExpression} of arguments of the function call
 	 * @param source
 	 *            {@link CIVLSource} of the function call statement
 	 * @return
@@ -466,7 +465,7 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @param lhs
 	 *            The left-hand side expression of the statement
 	 * @param arguments
-	 *            The list of {@link Expressions} of the arguments
+	 *            The list of {@link Expression} of the arguments
 	 * @param argumentValues
 	 *            The list of {@link SymbolicExpression} of the arguments
 	 * @param source
@@ -506,7 +505,7 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @param lhs
 	 *            The left-hand side expression of the statement
 	 * @param arguments
-	 *            The list of {@link Expressions} of the arguments
+	 *            The list of {@link Expression} of the arguments
 	 * @param argumentValues
 	 *            The list of {@link SymbolicExpression} of the arguments
 	 * @param source
@@ -560,7 +559,7 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @param lhs
 	 *            The left-hand side expression of the statement
 	 * @param arguments
-	 *            The list of {@link Expressions} of the arguments
+	 *            The list of {@link Expression} of the arguments
 	 * @param argumentValues
 	 *            The list of {@link SymbolicExpression} of the arguments
 	 * @param source

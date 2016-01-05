@@ -31,7 +31,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.expr.IF.Expressions;
 
 public class LibpointerExecutor extends BaseLibraryExecutor implements
 		LibraryExecutor {
@@ -811,9 +810,9 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 	 * @param process
 	 *            The string identifier of the process
 	 * @param arguments
-	 *            {@link Expressions} of arguments
+	 *            {@link Expression} of arguments
 	 * @param argumentValues
-	 *            {@link SymbolicExpressions} of arguments
+	 *            {@link SymbolicExpression} of arguments
 	 * @param source
 	 *            CIVL source of the statement
 	 * @return
