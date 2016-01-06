@@ -1,0 +1,28 @@
+Session name....... badIndex
+Directory.......... CIVLREP
+Date............... Thu Jan 07 03:46:02 CST 2016
+Trace ID........... 0
+Violation number....... 0
+
+== Begin Violation Message == 
+Violation 0[length=2, file=CIVLREP/badIndex_0.trace]:
+CIVL execution violation in p0 (id = 0) (kind: DEREFERENCE, certainty: PROVEABLE)
+at badIndex.F:5.1-16 "ARRAY":
+Illegal pointer dereference: Array index out of bounds in method arrayRead.
+array: X_s1v2p0
+extent: 10
+index: 10
+
+Call stacks:
+process p0 (id=0):
+  _CIVL_system at badIndex.F:5.1-16 "ARRAY"
+
+== End Violation Message == 
+
+== Begin Configuration ==
+badIndex.F
+== End Configuration ==
+
+== Begin Trace ==
+LENGTH = 2
+== End Trace ==

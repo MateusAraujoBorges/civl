@@ -1,0 +1,17 @@
+Session name....... badDivideZero
+Directory.......... CIVLREP
+Date............... Thu Jan 07 03:44:29 CST 2016
+numErrors.......... 1
+numDistinctErrors.. 1
+search truncated... true
+
+Violation 0[length=1, file=CIVLREP/badDivideZero_0.trace]:
+CIVL execution violation in p0 (id = 0) (kind: DIVISION_BY_ZERO, certainty: PROVEABLE)
+at badDivideZero.F:5.6-38 "RESULT":
+division by zero where divisor: DENOMINATOR=0
+
+Call stacks:
+process p0 (id=0):
+  _CIVL_system at badDivideZero.F:5.6-38 "RESULT"
+
+
