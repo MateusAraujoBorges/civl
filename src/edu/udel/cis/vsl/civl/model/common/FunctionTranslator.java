@@ -3620,8 +3620,8 @@ public class FunctionTranslator {
 				break;
 			case NULL_POINTER: {
 				// result is a null pointer to new type
-				CIVLPointerType newCIVLType = (CIVLPointerType) translateABCType(
-						source, scope, newType);
+				CIVLType tmpType = translateABCType(source, scope, newType);
+				CIVLPointerType newCIVLType = (CIVLPointerType) tmpType;
 
 				expression = modelFactory.nullPointerExpression(newCIVLType,
 						source);
@@ -4763,10 +4763,10 @@ public class FunctionTranslator {
 				CIVLType baseType = translateABCType(source, scope,
 						referencedType);
 
-				if (baseType.isFunction())
-					result = baseType;
-				else
-					result = typeFactory.pointerType(baseType);
+				// if (baseType.isFunction())
+				// result = baseType;
+				// else
+				result = typeFactory.pointerType(baseType);
 				break;
 			}
 			case PROCESS:

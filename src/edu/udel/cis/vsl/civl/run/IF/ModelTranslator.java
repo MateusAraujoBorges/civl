@@ -23,7 +23,6 @@ import java.util.Stack;
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.config.IF.Configuration;
 import edu.udel.cis.vsl.abc.config.IF.Configuration.Architecture;
@@ -311,10 +310,10 @@ public class ModelTranslator {
 			AST userAST = asts.get(0);
 
 			// ignore non-pthread benchmarks
-			if (config.pthreadOnly()
-					&& !this.containsPthread(userAST.getRootNode())) {
-				throw new SvcompException();
-			}
+			// if (config.pthreadOnly()
+			// && !this.containsPthread(userAST.getRootNode())) {
+			// throw new SvcompException();
+			// }
 			// parsing preprocessed .i file
 			if (userFileName.endsWith(".i")) {
 				frontEnd.getStandardAnalyzer(Language.CIVL_C).clear(userAST);
@@ -355,21 +354,21 @@ public class ModelTranslator {
 		return program;
 	}
 
-	private boolean containsPthread(ASTNode node) {
-		if (node instanceof IdentifierNode) {
-			return ((IdentifierNode) node).name().startsWith("pthread_");
-		} else
-			for (ASTNode child : node.children()) {
-				if (child == null)
-					continue;
-
-				boolean childResult = this.containsPthread(child);
-
-				if (childResult)
-					return true;
-			}
-		return false;
-	}
+	// private boolean containsPthread(ASTNode node) {
+	// if (node instanceof IdentifierNode) {
+	// return ((IdentifierNode) node).name().startsWith("pthread_");
+	// } else
+	// for (ASTNode child : node.children()) {
+	// if (child == null)
+	// continue;
+	//
+	// boolean childResult = this.containsPthread(child);
+	//
+	// if (childResult)
+	// return true;
+	// }
+	// return false;
+	// }
 
 	/**
 	 * Print the input variables declared in the given program to the standard
