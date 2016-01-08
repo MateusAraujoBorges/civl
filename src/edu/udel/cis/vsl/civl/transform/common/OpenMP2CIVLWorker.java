@@ -164,7 +164,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	/* **************************** Instance Fields ************************* */
 
 	/**
-	 * There are new nodes created by the transformer, other than parsing from
+	 * 	 * There are new nodes created by the transformer, other than parsing from
 	 * some source file. All new nodes share the same source.
 	 */
 	@SuppressWarnings("unused")
@@ -696,7 +696,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		AST civlcAST = this.parseSystemLibrary("civlc.cvh");
 		AST civlcOmpAST = this.parseSystemLibrary("civl-omp.cvh");
 
-		this.source = root.getSource();
 		assert this.astFactory == ast.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();
 		ast.release();
@@ -714,9 +713,11 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		// Recursive call to replace all omp code
 		replaceOMPPragmas(root, null, null, null, null, threadPrivateList);
 
+		// Add in statements for omp read and writes
 		addStatements(sharedWrite, "write");
 		addStatements(sharedRead, "read");
 
+		// Eliminate extra barriers
 		fix_duplicated_barrier_flush(root, false);
 
 		result = this.program(root);
@@ -809,6 +810,19 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		}
 	}
 
+	/**
+	 * Recursive method to replace all OpenMP pragmas and functions. 
+	 * The type of the node is checked and if it matches then the code is 
+	 * modified, deleted, or inserted to create a pure CIVL-C representation.
+	 * 
+	 * @param node
+	 * @param privateIDs
+	 * @param sharedIDs
+	 * @param reductionIDs
+	 * @param firstPrivateIDs
+	 * @param threadPrivateIDs
+	 * @throws SyntaxException
+	 */
 	@SuppressWarnings("unchecked")
 	private void replaceOMPPragmas(ASTNode node,
 			SequenceNode<IdentifierExpressionNode> privateIDs,
@@ -818,6 +832,8 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 			SequenceNode<IdentifierExpressionNode> threadPrivateIDs)
 			throws SyntaxException {
 
+		// Check if a pragma is nested inside a parallel. If not then remove
+		// the pragma
 		if (node instanceof OmpExecutableNode) {
 			if (!(node instanceof OmpParallelNode)) {
 				// check if node is nested in omp parallel node
@@ -850,6 +866,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 			}
 
 		}
+		// Check if the node is a parallel node
 		if (node instanceof OmpParallelNode) {
 			List<BlockItemNode> items;
 			CompoundStatementNode pragmaBody;
@@ -872,12 +889,15 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 			removeNodeFromParent(numThreads);
 
+			// If there is no num_threads clause for the parallel pragma then
+			// get the number of threads from the CIVL input.
 			if (numThreads == null) {
 				numThreads = this.identifierExpression(
 						newSource(nthreadDeclaration,
 								CivlcTokenConstant.IDENTIFIER), OMPPRE
 								+ "num_threads");
 			}
+
 
 			add = nodeFactory
 					.newOperatorNode(
@@ -1023,6 +1043,8 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 			alreadyDeclVars.add("stdout");
 			alreadyDeclVars.add("stderr");
 
+			// Add varaible to already declared variables to decide what is to
+			// be shared or private
 			if (sharedList != null) {
 				for (ASTNode child : sharedList.children()) {
 					String c = ((IdentifierExpressionNode) child)
@@ -1064,6 +1086,8 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 						"sharedList", list);
 			}
 			ArrayList<String> loopVars = new ArrayList<String>();
+			// Get implicit shared variable and remove any that are already
+			// declared
 			boolean removed = getImplicitShared(sharedList, node,
 					alreadyDeclVars, implicitShared, loopVars, false);
 
@@ -1093,6 +1117,8 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 			ArrayList<String> loopVariables = new ArrayList<String>();
 
+			// Get variables from the loop and remove them from the list as
+			// they are not to be treated liek shared variables
 			getLoopVariables(node, alreadyDeclVars, privateList);
 			removed = false;
 			for (String varName : loopVariables) {
@@ -1546,17 +1572,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 			// $omp_gteam_destroy(gteam);
 			items.add(destroy("gteam", GTEAM));
 
-			/*
-			 * //add free(parallelDataArr) ExpressionNode freeName =
-			 * this.identifierExpression(newSource("free",
-			 * CivlcTokenConstant.IDENTIFIER), "$free"); ExpressionNode parName
-			 * = this.identifierExpression(newSource("free",
-			 * CivlcTokenConstant.IDENTIFIER), "parallelDataArr");
-			 * FunctionCallNode freeArr =
-			 * nodeFactory.newFunctionCallNode(source, freeName,
-			 * Arrays.asList(parName), null);
-			 * items.add(nodeFactory.newExpressionStatementNode(freeArr));
-			 */
+
 			// Create the CompoundStatementNode of that replaces the
 			// OmpParallelNode
 			pragmaBody = nodeFactory.newCompoundStatementNode(
@@ -1577,6 +1593,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 				}
 			}
 		} else if (node instanceof OmpForNode) {
+			// Check if the node is a OmpForNode and transform the node
 			ForLoopInitializerNode initializerNode;
 			SequenceNode<OmpReductionNode> ompReductionNode;
 			SequenceNode<IdentifierExpressionNode> reductionList = null;
@@ -1596,7 +1613,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 			ForLoopInitializerNode initializer;
 			OmpSymbolReductionNode reductionNode = null;
 			String forNode = "forPragma";
-			// ASTNode numIterations = null;
 
 			// Get the list of reduction variables in the OmpForNode
 			ompReductionNode = ((OmpForNode) node).reductionList();
@@ -1628,7 +1644,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 				}
 				initializer = currentLoop.getInitializer();
 				lo_hi_step = canonicalForLoopBounds(currentLoop);
-				// numIterations = lo_hi_step.second;
 				ranges.add(new Triple<ASTNode, ASTNode, ASTNode>(
 						lo_hi_step.first, lo_hi_step.second, lo_hi_step.third));
 				// Initializer node only will be either IdentifierExpressionNode
@@ -3027,6 +3042,13 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 	}
 
+	
+	/**
+	 * Check if the current node contains a shared variable.
+	 * @param node
+	 * @param sharedIDs
+	 * @return If there is a shared variable in the node, return true.
+	 */
 	private boolean containsSharedVar(ASTNode node,
 			SequenceNode<IdentifierExpressionNode> sharedIDs) {
 		if (node instanceof IdentifierNode) {
@@ -3047,13 +3069,22 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		return false;
 	}
 
+	
+	/**
+	 * Get the temp variable for a node. This method will generate a temp
+	 * variable that is used in the omp_read or omp_write functions.
+	 * 
+	 * @param node
+	 * @param readWrite
+	 * @param count
+	 * @return
+	 */
 	private Pair<VariableDeclarationNode, Integer> getTempVar(
 			IdentifierNode node, String readWrite, int count) {
 		VariableDeclarationNode temp;
 		Type currentType = ((Variable) node.getEntity()).getType();
 		int nodesDeep = 0;
 		boolean pointer = false;
-		// boolean write = false;
 		while (currentType instanceof PointerType) {
 			currentType = ((PointerType) currentType).referencedType();
 			nodesDeep++;
@@ -3125,6 +3156,19 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		return pair;
 	}
 
+	/**
+	 * Method to transform a shared write in C to CIVL-C
+	 * 
+	 * @param node
+	 * @param privateIDs
+	 * @param sharedIDs
+	 * @param reductionIDs
+	 * @param firstPrivateIDs
+	 * @param threadPrivateIDs
+	 * @param opCode
+	 * @throws SyntaxException
+	 * @throws NoSuchElementException
+	 */
 	private void sharedWrite(IdentifierNode node,
 			SequenceNode<IdentifierExpressionNode> privateIDs,
 			SequenceNode<IdentifierExpressionNode> sharedIDs,
@@ -3150,6 +3194,8 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		ExpressionStatementNode writeCall = null;
 		ExpressionStatementNode readCall = null;
 		ASTNode statementParent = node.parent();
+		
+		// Get the parent of the identifer that is a StatementNode
 		while (!(statementParent instanceof StatementNode)) {
 			statementParent = statementParent.parent();
 		}
@@ -3205,6 +3251,16 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		tempWriteCount++;
 	}
 
+	
+	/**
+	 * Record shared read and write statements so that the omp_read
+	 * and omp_write statements can be inserted. 
+	 * 
+	 * @param readWrite
+	 * @param decl
+	 * @param statement
+	 * @param statementParent
+	 */
 	private void recordSharedReadWrite(String readWrite,
 			VariableDeclarationNode decl, ExpressionStatementNode statement,
 			ASTNode statementParent) {
@@ -3235,6 +3291,11 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		}
 	}
 
+	/**
+	 * If the node like a for or if and more than one statement added then a
+	 * body needs to be created for the for or if node
+	 * @param node
+	 */
 	private void createBody(ASTNode node) {
 		int index = node.childIndex();
 		ASTNode parent = node.parent();
@@ -3249,6 +3310,13 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		parent.setChild(index, body);
 	}
 
+	/**
+	 * Insert a nodeToInsert in position k of the parent.
+	 * 
+	 * @param k
+	 * @param parent
+	 * @param nodeToInsert
+	 */
 	private void insertChildAt(int k, ASTNode parent, ASTNode nodeToInsert) {
 		int numChildren = parent.numChildren();
 
@@ -3280,6 +3348,13 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 	}
 
+	/**
+	 * Take a node that is a FunctionCallNode of some OpenMP function and 
+	 * replace it with an equivalent function that is a CIVL-C function
+	 * @param node
+	 * @return
+	 * @throws SyntaxException
+	 */
 	private boolean replaceOmpFunction(FunctionCallNode node)
 			throws SyntaxException {
 		ExpressionNode function = node.getFunction();
@@ -3338,6 +3413,12 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		return false;
 	}
 
+	/**
+	 * Check the operator and return an int for which operator it is
+	 * TODO add more operators as needed
+	 * @param operator
+	 * @return
+	 */
 	private int isAssignmentOperator(String operator) {
 		if (operator.equals("ASSIGN")) {
 			return 1;
@@ -3347,6 +3428,13 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		return 0;
 	}
 
+	/**
+	 * Create a declaration for each private variable inside a parallel node
+	 * @param node
+	 * @param privateKind
+	 * @return
+	 * @throws SyntaxException
+	 */
 	private VariableDeclarationNode addPrivateVariable(
 			IdentifierExpressionNode node, String privateKind)
 			throws SyntaxException {
@@ -3389,6 +3477,13 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		return privateVariable;
 	}
 
+	
+	/**
+	 * Method to get a statement that is the parent of some identifier
+	 * 
+	 * @param node
+	 * @return Node that is the parent of the IdentiferNode
+	 */
 	private ASTNode getParentOfID(IdentifierNode node) {
 		ASTNode parent = node.parent();
 		while (!(parent instanceof StatementNode || parent instanceof VariableDeclarationNode)) {
@@ -3420,6 +3515,17 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 	}
 
+	/**
+	 * Transform shared read from C to CIVL-C
+	 * @param node
+	 * @param parentStatement
+	 * @param privateIDs
+	 * @param sharedIDs
+	 * @param reductionIDs
+	 * @param firstPrivateIDs
+	 * @throws SyntaxException
+	 * @throws NoSuchElementException
+	 */
 	private void sharedRead(IdentifierNode node, BlockItemNode parentStatement,
 			SequenceNode<IdentifierExpressionNode> privateIDs,
 			SequenceNode<IdentifierExpressionNode> sharedIDs,
