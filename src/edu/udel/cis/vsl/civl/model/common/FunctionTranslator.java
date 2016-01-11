@@ -2835,9 +2835,13 @@ public class FunctionTranslator {
 				.getEntity();
 		// node.prettyPrint(System.out);
 		// System.out.println();
+		if(varEntity.getDefinition()==null)
+			throw new CIVLSyntaxException(
+					"Can't find the definition for variable "
+							+ node.getName(), node.getSource());
 		if (!varEntity.getDefinition().equals(node))
 			return null;
-
+		
 		TypeNode typeNode = node.getTypeNode();
 		CIVLType type = translateABCType(modelFactory.sourceOf(typeNode),
 				scope, typeNode.getType());
