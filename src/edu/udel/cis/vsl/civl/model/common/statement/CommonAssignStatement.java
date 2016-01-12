@@ -128,12 +128,24 @@ public class CommonAssignStatement extends CommonStatement implements
 					this.statementScope, this.lowestScope, this.source(),
 					newGuard, lhs, this.rhs, this.isInitialization);
 		} else {
-			Expression newRhs = rhs.replaceWith(oldExpression, newExpression);
 
-			if (newRhs != null) {
+			LHSExpression newLhs = (LHSExpression) lhs.replaceWith(
+					oldExpression, newExpression);
+
+			if (newLhs != null) {
 				newStatement = new CommonAssignStatement(this.getSource(),
 						this.statementScope, this.lowestScope, this.source(),
-						this.guard(), lhs, newRhs, this.isInitialization);
+						this.guard(), newLhs, rhs, this.isInitialization);
+			} else {
+				Expression newRhs = rhs.replaceWith(oldExpression,
+						newExpression);
+
+				if (newRhs != null) {
+					newStatement = new CommonAssignStatement(this.getSource(),
+							this.statementScope, this.lowestScope,
+							this.source(), this.guard(), lhs, newRhs,
+							this.isInitialization);
+				}
 			}
 		}
 		return newStatement;

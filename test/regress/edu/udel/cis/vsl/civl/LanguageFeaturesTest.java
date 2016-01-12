@@ -624,6 +624,11 @@ public class LanguageFeaturesTest {
 				filename("libraryException.cvl")));
 	}
 
+	@Test
+	public void conditionalLHS() {
+		assertTrue(ui.run("verify", filename("condLHS.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
