@@ -131,9 +131,9 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 				message.append("\nInput variables:");
 				message.append(inputVariableMap);
 			}
-			// message.append("\n\nContext: ");
-			// message.append(this.symbolicAnalyzer.symbolicExpressionToString(
-			// source, state, null, reasoner.getReducedContext()));
+			message.append("\n\nContext: ");
+			message.append(this.symbolicAnalyzer.symbolicExpressionToString(
+					source, state, null, reasoner.getReducedContext()));
 			message.append("\nAssertion: ");
 			message.append(this.symbolicAnalyzer.statementEvaluation(state,
 					state, pid, statement));
