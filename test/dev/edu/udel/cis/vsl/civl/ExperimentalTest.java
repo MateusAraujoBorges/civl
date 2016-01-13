@@ -96,6 +96,11 @@ public class ExperimentalTest {
 	public void omp2() {
 		assertTrue(ui.run("verify -input_omp_thread_max=3", filename("omp2.c")));
 	}
+	
+	@Test
+	public void sqrtTest() {
+		assertTrue(ui.run("verify", filename("sqrtBad2.cvl")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
