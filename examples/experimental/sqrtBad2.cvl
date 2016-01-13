@@ -1,4 +1,4 @@
-/*example form simplying assumption & predicate 21 query */
+/*example of simplied assumption & predicate 21 query */
 #include <civlc.cvh>
 
 $input double x0, x1;
