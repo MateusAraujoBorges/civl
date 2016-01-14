@@ -1519,7 +1519,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							fieldTypeElement, this.modelFactory
 									.integerLiteralExpression(mallocSource,
 											BigInteger.valueOf(heapObjSize)));
-				}
+				} else
+					heapObjType = this.typeFactory
+							.incompleteArrayType(fieldTypeElement);
 				result.append("\n");
 				result.append(objectPrefix);
 				result.append(j);
