@@ -2193,4 +2193,21 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		}
 		return universe.trueExpression();
 	}
+
+	@Override
+	public StringBuffer pathconditionToString(CIVLSource source, State state,
+			String prefix, BooleanExpression pc) {
+		BooleanExpression[] clauses = this.symbolicUtil
+				.getConjunctiveClauses(pc);
+		StringBuffer result = new StringBuffer();
+		int length = clauses.length;
+
+		for (int i = 0; i < length; i++) {
+			result.append("\n");
+			result.append(prefix);
+			result.append(this.symbolicExpressionToString(source, state, null,
+					clauses[i]));
+		}
+		return result;
+	}
 }

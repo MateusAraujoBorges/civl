@@ -213,4 +213,15 @@ public interface SymbolicAnalyzer {
 			SymbolicExpression offset);
 
 	BooleanExpression isDerefablePointer(State state, SymbolicExpression pointer);
+
+	/**
+	 * Pretty representation of a path condition, which is broken into lines if
+	 * it is in CNF.
+	 * 
+	 * @param state
+	 * @param pc
+	 * @return
+	 */
+	StringBuffer pathconditionToString(CIVLSource source,State state, String prefix,
+			BooleanExpression pc);
 }
