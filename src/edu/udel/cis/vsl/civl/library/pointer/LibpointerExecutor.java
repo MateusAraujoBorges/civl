@@ -863,10 +863,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 			reasoner = universe.reasoner(state.getPathCondition());
 			resultType = reasoner.valid(claim).getResultType();
 			if (!resultType.equals(ResultType.YES)) {
-				// Certainty certainty = resultType.equals(ResultType.NO) ?
-				// Certainty.CONCRETE
-				// : Certainty.MAYBE;
-				return this.errorLogger
+				this.errorLogger
 						.logError(
 								source,
 								state,
@@ -881,6 +878,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 										+ " consistent with the size of the"
 										+ " primitive type specified at the forth argument: "
 										+ type_size);
+				throw new UnsatisfiablePathConditionException();
 			}
 		}
 		eval = evaluator.evaluatePointerAdd(state, process, ptr, offset, true,

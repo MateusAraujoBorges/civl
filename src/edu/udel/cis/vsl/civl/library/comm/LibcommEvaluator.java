@@ -477,6 +477,7 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 							"The place of "
 									+ process
 									+ " in a communicator is out of the bound of the total number of processes");
+			throw new UnsatisfiablePathConditionException();
 		}
 		return universe.arrayRead(procArray, index);
 	}

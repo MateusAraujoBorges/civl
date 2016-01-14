@@ -394,8 +394,6 @@ public class CommonExecutor implements Executor {
 				state = errorLogger.logError(source, state, process,
 						symbolicAnalyzer.stateInformation(state), claim,
 						validity, ErrorKind.MALLOC, message);
-				// state = state.setPathCondition(universe.and(pathCondition,
-				// claim));
 				throw new UnsatisfiablePathConditionException();
 			}
 		}

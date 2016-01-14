@@ -148,11 +148,9 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 		if (!this.civlConfig.svcomp()) {
 			claim = universe.lessThan(dataSeqLength, count);
 			resultType = reasoner.valid(claim).getResultType();
-			if (resultType.equals(ResultType.YES)) {
-				state = reportOutOfBoundError(state, process, claim,
-						resultType, pointer, dataSeqLength, count, source);
-				return new Pair<>(new Evaluation(state, dataArray), pointer);
-			}
+			if (resultType.equals(ResultType.YES))
+				reportOutOfBoundError(state, process, claim, resultType,
+						pointer, dataSeqLength, count, source);
 		}
 		// If count is one:
 		if (reasoner.isValid(universe.equals(count, one))) {
@@ -201,12 +199,11 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 			eval = this.setDataBetween(state, process, eval.value,
 					arraySlicesSizes, startPos, count, pointer, dataArray,
 					source);
-			return new Pair<>(eval, startPtr);
 		} else {
-			state = reportOutOfBoundError(state, process, null, null, startPtr,
-					one, count, source);
-			return new Pair<>(new Evaluation(state, dataArray), pointer);
+			reportOutOfBoundError(state, process, null, null, startPtr, one,
+					count, source);
 		}
+		return new Pair<>(eval, startPtr);
 	}
 
 	/**
@@ -300,8 +297,8 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 			eval.value = getDataBetween(state, process, startPos, count,
 					commonArray, arraySlicesSizes, source);
 		else
-			state = reportOutOfBoundError(state, process, null, null, startPtr,
-					one, count, source);
+			reportOutOfBoundError(state, process, null, null, startPtr, one,
+					count, source);
 		return eval;
 	}
 
@@ -746,7 +743,7 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State reportOutOfBoundError(State state, String process,
+	private void reportOutOfBoundError(State state, String process,
 			BooleanExpression claim, ResultType resultType,
 			SymbolicExpression pointer, NumericExpression arrayLength,
 			NumericExpression offset, CIVLSource source)
@@ -764,9 +761,9 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 				+ symbolicAnalyzer.symbolicExpressionToString(source, state,
 						null, arrayLength);
 
-		return errorLogger.logError(source, state, process,
+		errorLogger.logError(source, state, process,
 				symbolicAnalyzer.stateToString(state), claim, resultType,
 				ErrorKind.OUT_OF_BOUNDS, message);
-
+		throw new UnsatisfiablePathConditionException();
 	}
 }

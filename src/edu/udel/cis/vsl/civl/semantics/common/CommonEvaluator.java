@@ -1015,7 +1015,7 @@ public class CommonEvaluator implements Evaluator {
 							this.symbolicAnalyzer.stateInformation(state),
 							claim, resultType, ErrorKind.INVALID_CAST,
 							"Cast from non-zero integer to pointer");
-					eval.state = state;
+					throw new UnsatisfiablePathConditionException();
 				}
 			} else
 				eval.value = this.symbolicUtil.nullPointer();
@@ -1101,7 +1101,7 @@ public class CommonEvaluator implements Evaluator {
 									"Cast operation may involve casting a integer, "
 											+ "whose value is larger than UCHAR_MAX or less than UCHAR_MIN, "
 											+ "to char type object which is considered as unimplemented feature of CIVL");
-					// throw new UnsatisfiablePathConditionException();
+					throw new UnsatisfiablePathConditionException();
 				}
 
 			}
@@ -1661,6 +1661,7 @@ public class CommonEvaluator implements Evaluator {
 															state,
 															divisor.getExpressionType(),
 															right));
+					throw new UnsatisfiablePathConditionException();
 				}
 			}
 			eval.value = universe.divide((NumericExpression) left, denominator);
@@ -1721,6 +1722,7 @@ public class CommonEvaluator implements Evaluator {
 							this.symbolicAnalyzer.stateInformation(eval.state),
 							claim, resultType, ErrorKind.DIVISION_BY_ZERO,
 							"Modulus denominator is zero");
+					throw new UnsatisfiablePathConditionException();
 				}
 			}
 			eval.value = universe.modulo((NumericExpression) left, denominator);
@@ -2131,6 +2133,7 @@ public class CommonEvaluator implements Evaluator {
 						resultType, ErrorKind.OUT_OF_BOUNDS,
 						"Out of bounds array index:\nindex = " + index
 								+ "\nlength = " + length);
+				throw new UnsatisfiablePathConditionException();
 			}
 		}
 		return state;
@@ -3307,6 +3310,8 @@ public class CommonEvaluator implements Evaluator {
 										"Pointer addition resulted in out of bounds.\nobject pointer:"
 												+ pointer + "\n" + "offset = "
 												+ offset);
+						// recovered, invalid pointer cannot be dereferenced,
+						// but execution is not suppose to stop here:
 					}
 				}
 				eval = new Evaluation(state, symbolicUtil.setSymRef(pointer,
@@ -3337,6 +3342,8 @@ public class CommonEvaluator implements Evaluator {
 							claim, resultType, ErrorKind.OUT_OF_BOUNDS,
 							"Pointer addition resulted in out of bounds.\nobject pointer:"
 									+ pointer + "\noffset = " + offset);
+					// recovered, invalid pointer cannot be dereferenced, but
+					// execution is not suppose to stop here:
 					return new Evaluation(state, symbolicUtil.makePointer(
 							pointer, universe.offsetReference(symRef, offset)));
 				}
@@ -3379,12 +3386,14 @@ public class CommonEvaluator implements Evaluator {
 							rightPtr));
 		} else {
 			// Check if the two point to the same object
-			if ((rightVid != leftVid) || (rightSid != leftSid))
-				state = errorLogger
-						.logError(expression.getSource(), state, process,
-								symbolicAnalyzer.stateInformation(state), null,
-								ResultType.NO, ErrorKind.POINTER,
-								"Operands of pointer subtraction point to the same obejct");
+			if ((rightVid != leftVid) || (rightSid != leftSid)) {
+				state = errorLogger.logError(expression.getSource(), state,
+						process, symbolicAnalyzer.stateInformation(state),
+						null, ResultType.NO, ErrorKind.POINTER,
+						"Operands of pointer subtraction don't point to the "
+								+ "same obejct");
+				throw new UnsatisfiablePathConditionException();
+			}
 			// Check if two pointers are array element reference pointers. Based
 			// on
 			// C11 Standard 6.5.6, entry 9: When two pointers are subtracted,

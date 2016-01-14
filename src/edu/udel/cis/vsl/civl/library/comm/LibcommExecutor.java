@@ -893,8 +893,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		else {
 			throw new CIVLExecutionException(ErrorKind.INTERNAL,
 					Certainty.CONCRETE, state.getProcessState(pid).name(),
-					"Unexpected arguments",
-					state, civlsource);
+					"Unexpected arguments", state, civlsource);
 		}
 		return msgIndex;
 	}
@@ -983,7 +982,10 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 			state = errorLogger.logError(civlsource, state, state
 					.getProcessState(pid).name(), symbolicAnalyzer
 					.stateInformation(state), universe.trueExpression(),
-					ResultType.NO, ErrorKind.INTERNAL, "Message dequeue fails");
+					ResultType.NO, ErrorKind.COMMUNICATION,
+					"There is no matched message [source:" + source
+							+ ", destication:" + dest + ", tag:" + tag
+							+ " ] in the message buffer.");
 			return new Pair<>(getEmptyMessage(state), buf);
 		}
 		message = universe.arrayRead(messages, universe.integer(msgIdx));
