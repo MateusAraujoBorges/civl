@@ -3,10 +3,7 @@ package edu.udel.cis.vsl.civl.library.common;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
-import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
-import edu.udel.cis.vsl.civl.model.IF.CIVLException.Certainty;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
-import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
@@ -19,7 +16,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.sarl.IF.SARLException;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
@@ -230,10 +226,11 @@ public abstract class LibraryComponent {
 	 * @param op
 	 *            The CIVL Operation
 	 * @return
+	 * @throws UnsatisfiablePathConditionException
 	 */
 	protected SymbolicExpression applyCIVLOperator(State state, String process,
 			SymbolicExpression arg0, SymbolicExpression arg1, CIVLOperator op,
-			CIVLSource civlsource) {
+			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
 		BooleanExpression claim;
 		SymbolicExpression[] operands = { arg0, arg1 };
 		SymbolicExpression[] tmpOperands = new SymbolicExpression[2];
@@ -288,10 +285,14 @@ public abstract class LibraryComponent {
 					else if (operands[i].type() instanceof SymbolicArrayType)
 						tmpOperands[i] = universe.arrayRead(operands[i],
 								universe.zeroInt());
-					else
-						throw new CIVLInternalException(
-								"CIVL_MINLOC operations cannot resolve operands",
-								civlsource);
+					else {
+						errorLogger.logSimpleError(civlsource, state, process,
+								symbolicAnalyzer.stateToString(state),
+								ErrorKind.OTHER,
+								"Invalid CIVL operation operand: "
+										+ operands[i]);
+						throw new UnsatisfiablePathConditionException();
+					}
 				claim = universe.lessThan((NumericExpression) tmpOperands[0],
 						(NumericExpression) tmpOperands[1]);
 				return universe.cond(claim, operands[0], operands[1]);
@@ -304,10 +305,14 @@ public abstract class LibraryComponent {
 					else if (operands[i].type() instanceof SymbolicArrayType)
 						tmpOperands[i] = universe.arrayRead(operands[i],
 								universe.zeroInt());
-					else
-						throw new CIVLInternalException(
-								"CIVL_MAXLOC operations cannot resolve operands",
-								civlsource);
+					else {
+						errorLogger.logSimpleError(civlsource, state, process,
+								symbolicAnalyzer.stateToString(state),
+								ErrorKind.OTHER,
+								"Invalid CIVL operation operand: "
+										+ operands[i]);
+						throw new UnsatisfiablePathConditionException();
+					}
 				claim = universe.lessThan((NumericExpression) tmpOperands[0],
 						(NumericExpression) tmpOperands[1]);
 				return universe.cond(claim, operands[1], operands[0]);
@@ -317,13 +322,10 @@ public abstract class LibraryComponent {
 						+ op.name());
 			}
 		} catch (ClassCastException e) {
-			throw new CIVLExecutionException(ErrorKind.OTHER,
-					Certainty.PROVEABLE, process,
-					"Invalid operands type for CIVL Operation: " + op.name(),
-					state, civlsource);
-		} catch (SARLException e) {
-			throw new CIVLInternalException("CIVL Operation " + op
-					+ " exception", civlsource);
+			errorLogger.logSimpleError(civlsource, state, process,
+					symbolicAnalyzer.stateToString(state), ErrorKind.OTHER,
+					"Invalid operands type for CIVL Operation: " + op.name());
+			throw new UnsatisfiablePathConditionException();
 		}
 	}
 
