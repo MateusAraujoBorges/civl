@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 
 import org.junit.AfterClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -56,9 +55,8 @@ public class LibraryTest {
 
 	@Test
 	public void elaborate1() throws ABCException {
-		assertTrue(ui
-				.run("verify -showTransitions=false -showPathCondition=false -enablePrintf=false",
-						filename(CIVLC, "elaborate1.cvl")));
+		assertTrue(ui.run("verify -enablePrintf=false",
+				filename(CIVLC, "elaborate1.cvl")));
 	}
 
 	@Test
@@ -96,8 +94,7 @@ public class LibraryTest {
 
 	@Test
 	public void commBad() throws ABCException {
-		assertFalse(ui
-				.run("verify -showStates", filename(CIVLC, "commBad.cvl")));
+		assertFalse(ui.run("verify", filename(CIVLC, "commBad.cvl")));
 	}
 
 	@Test
@@ -105,7 +102,6 @@ public class LibraryTest {
 		assertTrue(ui.run("verify", filename(STDLIB, "malloc.cvl")));
 	}
 
-	@Ignore
 	@Test
 	public void malloc2() throws ABCException {
 		assertTrue(ui.run("verify", filename(STDLIB, "malloc2.c")));
