@@ -1013,8 +1013,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			libexecutor = (LibcommExecutor) libExecutorLoader
 					.getLibraryExecutor("comm", primaryExecutor, modelFactory,
 							symbolicUtil, symbolicAnalyzer);
-			return libexecutor.getMsgOutofChannel(state, pid, channel, src,
-					dest, tag, civlsource).right;
+			return libexecutor.getMsgOutofChannel(state, pid, process, channel,
+					src, dest, tag, civlsource).right;
 		} catch (LibraryLoaderException e) {
 			StringBuffer message = new StringBuffer();
 

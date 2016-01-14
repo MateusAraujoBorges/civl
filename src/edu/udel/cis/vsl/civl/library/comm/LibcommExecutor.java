@@ -6,8 +6,6 @@ import java.util.LinkedList;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
-import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
-import edu.udel.cis.vsl.civl.model.IF.CIVLException.Certainty;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -321,8 +319,8 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		gcomm = eval.value;
 		buf = universe.tupleRead(gcomm, threeObject);
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
-		msg_buf = getMsgOutofChannel(state, pid, buf, source, dest, tag,
-				civlsource);
+		msg_buf = getMsgOutofChannel(state, pid, process, buf, source, dest,
+				tag, civlsource);
 		message = msg_buf.left;
 		buf = msg_buf.right;
 		gcomm = universe.tupleWrite(gcomm, threeObject, buf);
@@ -441,8 +439,8 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 				universe.tupleRead(gcomm, threeObject), source), dest);
 		queueLength = universe.tupleRead(queue, zeroObject);
 		messages = universe.tupleRead(queue, oneObject);
-		msgIdx = this.getMatchedMsgIdx(state, pid, messages, queueLength, tag,
-				civlsource);
+		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages,
+				queueLength, tag, civlsource);
 		if (msgIdx >= 0)
 			isFind = true;
 		if (lhs != null) {
@@ -508,8 +506,8 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 				universe.tupleRead(gcomm, threeObject), source), dest);
 		queueLength = universe.tupleRead(queue, zeroObject);
 		messages = universe.tupleRead(queue, oneObject);
-		msgIdx = this.getMatchedMsgIdx(state, pid, messages, queueLength, tag,
-				civlsource);
+		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages,
+				queueLength, tag, civlsource);
 		if (msgIdx == -1)
 			message = this.getEmptyMessage(state);
 		else
@@ -846,7 +844,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	 * @return The index of a matched message in the given array
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private int getMatchedMsgIdx(State state, int pid,
+	private int getMatchedMsgIdx(State state, int pid, String process,
 			SymbolicExpression messagesArray, SymbolicExpression queueLength,
 			SymbolicExpression tag, CIVLSource civlsource)
 			throws UnsatisfiablePathConditionException {
@@ -891,9 +889,11 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		}
 		// Exception
 		else {
-			throw new CIVLExecutionException(ErrorKind.INTERNAL,
-					Certainty.CONCRETE, state.getProcessState(pid).name(),
-					"Unexpected arguments", state, civlsource);
+			// tag != -2 && tag < 0
+			errorLogger.logSimpleError(civlsource, state, process,
+					symbolicAnalyzer.stateToString(state),
+					ErrorKind.COMMUNICATION, "Illegal message tag:" + tag);
+			throw new UnsatisfiablePathConditionException();
 		}
 		return msgIndex;
 	}
@@ -962,7 +962,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	}
 
 	public Pair<SymbolicExpression, SymbolicExpression> getMsgOutofChannel(
-			State state, int pid, SymbolicExpression channel,
+			State state, int pid, String process, SymbolicExpression channel,
 			NumericExpression source, NumericExpression dest,
 			NumericExpression tag, CIVLSource civlsource)
 			throws UnsatisfiablePathConditionException {
@@ -976,8 +976,8 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		queue = universe.arrayRead(bufRow, dest);
 		queueLength = (NumericExpression) universe.tupleRead(queue, zeroObject);
 		messages = universe.tupleRead(queue, oneObject);
-		msgIdx = this.getMatchedMsgIdx(state, pid, messages, queueLength, tag,
-				civlsource);
+		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages,
+				queueLength, tag, civlsource);
 		if (msgIdx == -1) {
 			state = errorLogger.logError(civlsource, state, state
 					.getProcessState(pid).name(), symbolicAnalyzer
