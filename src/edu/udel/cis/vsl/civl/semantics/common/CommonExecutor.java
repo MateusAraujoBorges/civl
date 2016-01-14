@@ -480,6 +480,7 @@ public class CommonExecutor implements Executor {
 												+ proc.identifier()
 												+ "(process<" + proc.getPid()
 												+ ">) is still running");
+						throw new UnsatisfiablePathConditionException();
 					}
 				}
 			}
@@ -604,7 +605,7 @@ public class CommonExecutor implements Executor {
 								ErrorKind.LIBRARY,
 								"unable to load the library executor for the library "
 										+ "mpi" + " to check mpi contracts");
-						break;
+						throw new UnsatisfiablePathConditionException();
 					}
 				state = libexec.executeCollectiveContract(state, pid, process,
 						args, condition.contractKind(), condition.getSource());

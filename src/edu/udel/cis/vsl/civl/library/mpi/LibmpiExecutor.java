@@ -386,13 +386,14 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 
 		if (symbolicUtil.isNullPointer(pointer))
 			return state;
+		// assertion doesn't need recovery:
 		if (!pointer.operator().equals(SymbolicOperator.CONCRETE)
 				|| !symbolicUtil.isDerefablePointer(pointer)) {
-			this.errorLogger.logSimpleError(arguments[0].getSource(), state,
+			errorLogger.logSimpleError(arguments[0].getSource(), state,
 					process, this.symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,
 					"attempt to read/write a invalid pointer type variable");
-			throw new UnsatisfiablePathConditionException();
+			return state;
 		}
 		reasoner = universe.reasoner(state.getPathCondition());
 		realType = symbolicAnalyzer.getArrayBaseType(state, ptrSource, pointer);
@@ -400,6 +401,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		assertedTypeEnum = (IntegerNumber) reasoner.extractNumber(assertedType);
 		assertedSymType = this.mpiTypeToCIVLType(assertedTypeEnum.intValue(),
 				source).getDynamicType(universe);
+		// assertion doesn't need recovery:
 		if (!assertedSymType.equals(realSymType)) {
 			errorLogger
 					.logSimpleError(
@@ -790,6 +792,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				Expression[] args = { snapShotAssertion };
 				SymbolicExpression[] argVals = { assertionVal };
 
+				// Assertion failures don't need recovery:
 				if (isContract) {
 					mergedState = this.primaryExecutor.reportContractViolation(
 							mergedState, snapShotAssertion.getSource(), place,
@@ -930,7 +933,26 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		return state;
 	}
 
-	// TODO:DOC!!!
+	/**
+	 * Loads the "comm" library executor to do a message enqueue operation on
+	 * the given message channel.
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param process
+	 *            The String identifier of the process
+	 * @param function
+	 *            The name of the function
+	 * @param channel
+	 *            The Symbolic Expression of the message channel
+	 * @param msg
+	 *            The Symbolic Expression of the message
+	 * @param civlsource
+	 *            The {@link CIVLSource} of where in the source file causes this
+	 *            execution
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private SymbolicExpression doMPISendOnSnapshots(State state,
 			String process, String function, SymbolicExpression channel,
 			SymbolicExpression msg, CIVLSource civlsource)
@@ -945,18 +967,41 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		} catch (LibraryLoaderException e) {
 			StringBuffer message = new StringBuffer();
 
-			message.append("unable to load the library executor for the library ");
-			message.append("comm");
-			message.append(" for the function ");
-			message.append(function);
-			this.errorLogger.logSimpleError(civlsource, state, process,
+			message.append("unable to load the library executor for the library"
+					+ " comm for the function " + function);
+			errorLogger.logSimpleError(civlsource, state, process,
 					this.symbolicAnalyzer.stateInformation(state),
 					ErrorKind.LIBRARY, message.toString());
-			return channel;
+			throw new UnsatisfiablePathConditionException();
 		}
 	}
 
-	// TODO:DOC!!!
+	/**
+	 * Loads the "comm" library executor to do a message dequeue operation on
+	 * the given message channel.
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param function
+	 *            The name of the function
+	 * @param channel
+	 *            The Symbolic Expression of the message channel
+	 * @param src
+	 *            The Symbolic Expression of the source of the message
+	 * @param dest
+	 *            The Symbolic Expression of the destination of the message
+	 * @param tag
+	 *            The Symbolic Expression of the message tag
+	 * @param civlsource
+	 *            The {@link CIVLSource} of where the source file causes this
+	 *            execution.
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private SymbolicExpression doMPIRecvOnSnapshots(State state, int pid,
 			String process, String function, SymbolicExpression channel,
 			NumericExpression src, NumericExpression dest,
@@ -973,14 +1018,12 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		} catch (LibraryLoaderException e) {
 			StringBuffer message = new StringBuffer();
 
-			message.append("unable to load the library executor for the library ");
-			message.append("comm");
-			message.append(" for the function ");
-			message.append(function);
-			this.errorLogger.logSimpleError(civlsource, state, process,
+			message.append("unable to load the library executor for the library comm"
+					+ " for the function " + function);
+			errorLogger.logSimpleError(civlsource, state, process,
 					this.symbolicAnalyzer.stateInformation(state),
 					ErrorKind.LIBRARY, message.toString());
-			return channel;
+			throw new UnsatisfiablePathConditionException();
 		}
 	}
 }

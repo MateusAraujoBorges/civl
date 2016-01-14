@@ -764,12 +764,6 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 				+ symbolicAnalyzer.symbolicExpressionToString(source, state,
 						null, arrayLength);
 
-		if (claim == null || resultType == null) {
-			errorLogger.logSimpleError(source, state, process,
-					symbolicAnalyzer.stateToString(state),
-					ErrorKind.OUT_OF_BOUNDS, message);
-			return state;
-		}
 		return errorLogger.logError(source, state, process,
 				symbolicAnalyzer.stateToString(state), claim, resultType,
 				ErrorKind.OUT_OF_BOUNDS, message);

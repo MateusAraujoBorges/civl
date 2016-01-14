@@ -490,7 +490,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 			this.errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.DEREFERENCE, msg.toString());
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		} else {
 			SymbolicExpression rightValue;
 			CIVLType objTypeLeft = symbolicAnalyzer.typeOfObjByPointer(
@@ -522,7 +522,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 				this.errorLogger.logSimpleError(source, state, process,
 						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.DEREFERENCE, msg.toString());
-				return state;
+				throw new UnsatisfiablePathConditionException();
 			}
 			eval = evaluator.dereference(sourceRight, state, process,
 					arguments[1], right, false);
@@ -553,7 +553,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 			LHSExpression lhs, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression first, second;
+		SymbolicExpression first, second, rhs;
 		Evaluation eval = evaluator.dereference(arguments[0].getSource(),
 				state, process, arguments[0], argumentValues[0], false);
 		int invalidArg = -1;
@@ -583,11 +583,12 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 							+ symbolicAnalyzer.symbolicExpressionToString(
 									arguments[invalidArg].getSource(), state,
 									null, invalidValue));
-			return state;
-		}
+			// recovery:
+			rhs = this.falseValue;
+		} else
+			rhs = universe.equals(first, second);
 		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs,
-					universe.equals(first, second));
+			state = primaryExecutor.assign(state, pid, process, lhs, rhs);
 		return state;
 	}
 
@@ -648,6 +649,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.DEREFERENCE,
 					"Attempt to dereference a invalid pointer:" + msg);
+			return state;
 		}
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
 				arguments[0], argumentValues[0], false);
@@ -789,7 +791,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 														arguments[0]
 																.getSource(),
 														state, null, pointer));
-				return state;
+				throw new UnsatisfiablePathConditionException();
 			}
 			if (lhs != null)
 				state = this.primaryExecutor.assign(state, pid, process, lhs,
@@ -848,7 +850,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 					"$pointer_add() doesn't accept an invalid pointer:"
 							+ symbolicAnalyzer.symbolicExpressionToString(
 									source, state, null, ptr));
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		}
 		primitiveTypePointedStatic = symbolicAnalyzer.getArrayBaseType(state,
 				arguments[0].getSource(), ptr);

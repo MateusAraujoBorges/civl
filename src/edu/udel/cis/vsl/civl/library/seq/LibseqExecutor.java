@@ -156,7 +156,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 		}
 		if (symbolicUtil.isNullPointer(arrayPtr)
 				|| symbolicUtil.isNullPointer(elePointer)) {
-			this.errorLogger.logSimpleError(
+			errorLogger.logSimpleError(
 					source,
 					state,
 					process,
@@ -171,7 +171,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 							+ "actual value of third argument: "
 							+ symbolicAnalyzer.symbolicExpressionToString(
 									elePtrSource, state, null, elePointer));
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		} else {
 			if (!arrayType.isIncompleteArrayType()) {
 				String arrayPtrString = symbolicAnalyzer
@@ -186,7 +186,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 								+ "actual first argument: " + arrayPtrString
 								+ "\n" + "actual type of " + arrayPtrString
 								+ ": pointer to " + arrayType);
-				return state;
+				throw new UnsatisfiablePathConditionException();
 			} else {
 				CIVLType eleType = symbolicAnalyzer.typeOfObjByPointer(
 						elePtrSource, state, elePointer);
@@ -304,7 +304,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 							+ "actual argument: "
 							+ symbolicAnalyzer.symbolicExpressionToString(
 									seqSource, state, null, seqPtr));
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		} else {
 			Evaluation eval = evaluator.dereference(seqSource, state, process,
 					arguments[0], seqPtr, false);
@@ -324,7 +324,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 								+ "actual argument: "
 								+ symbolicAnalyzer.symbolicExpressionToString(
 										seqSource, state, null, seq));
-				return state;
+				throw new UnsatisfiablePathConditionException();
 			} else if (lhs != null)
 				state = primaryExecutor.assign(state, pid, process, lhs,
 						universe.length(seq));
@@ -371,7 +371,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 							+ "actual value of first argument: "
 							+ symbolicAnalyzer.symbolicExpressionToString(
 									arrayPtrSource, state, null, arrayPtr));
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		}
 		if (count.isZero())// no op
 			return state;
@@ -389,7 +389,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 							+ "actual value of third argument: "
 							+ symbolicAnalyzer.symbolicExpressionToString(
 									valuesPtrSource, state, null, valuesPtr));
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		}
 		arrayType = symbolicAnalyzer.typeOfObjByPointer(arrayPtrSource, state,
 				arrayPtr);
@@ -406,7 +406,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 									+ " must be of a pointer to incomplete array of type T.\n"
 									+ "actual type of the first argument: pointer to "
 									+ arrayType);
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		}
 		arrayEleType = ((CIVLArrayType) arrayType).elementType();
 		if (!symbolicUtil.isNullPointer(valuesPtr)) {
@@ -430,7 +430,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 										+ "\n"
 										+ "actual type of the third argument: pointer to "
 										+ valueType);
-				return state;
+				throw new UnsatisfiablePathConditionException();
 			}
 		}
 		eval = evaluator.dereference(arrayPtrSource, state, process,
@@ -453,7 +453,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 											.symbolicExpressionToString(
 													arrayPtrSource, state,
 													null, arrayValue));
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		}
 		countInt = ((IntegerNumber) universe.extractNumber(count)).intValue();
 		indexInt = ((IntegerNumber) universe.extractNumber(index)).intValue();
@@ -468,7 +468,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 					"the index for $seq_insert() is out of the range of the array index.\n"
 							+ "array length: " + lengthInt + "\n" + "index: "
 							+ indexInt);
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		} else if (!isInsert && (countInt > lengthInt - indexInt)) {
 			this.errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
@@ -477,7 +477,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 							+ "array length: " + lengthInt + "\n"
 							+ "start index: " + indexInt + "\n"
 							+ "number of elements to be removed: " + countInt);
-			return state;
+			throw new UnsatisfiablePathConditionException();
 		}
 		removeToNull = !isInsert && symbolicUtil.isNullPointer(valuesPtr);
 		for (int i = 0; i < countInt; i++) {

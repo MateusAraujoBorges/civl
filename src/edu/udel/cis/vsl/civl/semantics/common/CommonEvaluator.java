@@ -1935,11 +1935,13 @@ public class CommonEvaluator implements Evaluator {
 		symProc = eval.value;
 		// If the process expression is not a NumericExpression, report the
 		// error.
-		if (!(symProc instanceof NumericExpression))
+		if (!(symProc instanceof NumericExpression)) {
 			errorLogger.logSimpleError(expression.getSource(), state, process,
 					symbolicAnalyzer.stateToString(state), ErrorKind.OTHER,
 					"The right-hand side expression of a remote access "
 							+ " must be a numeric expression.");
+			throw new UnsatisfiablePathConditionException();
+		}
 		remotePid = ((IntegerNumber) universe
 				.extractNumber((NumericExpression) symProc)).intValue();
 		dyscopeId = state.getProcessState(remotePid).getDyscopeId();
@@ -1955,7 +1957,7 @@ public class CommonEvaluator implements Evaluator {
 		}
 		if (dyscopeId != -1 && vid != -1)
 			value = state.getVariableValue(dyscopeId, vid);
-		else
+		else {
 			this.errorLogger.logSimpleError(expression.getSource(), state,
 					process, symbolicAnalyzer.stateToString(state),
 					ErrorKind.OTHER,
@@ -1963,6 +1965,8 @@ public class CommonEvaluator implements Evaluator {
 							+ variableExpr.toString()
 							+ "doesn't reachable by the remote process:"
 							+ remotePid);
+			throw new UnsatisfiablePathConditionException();
+		}
 		if (value == null)
 			throw new UnsatisfiablePathConditionException();
 		eval = new Evaluation(state, value);
@@ -3152,6 +3156,7 @@ public class CommonEvaluator implements Evaluator {
 								ErrorKind.UNDEFINED_VALUE,
 								"reading undefined or uninitialized value from some pointer to heap: "
 										+ charArray.argument(0));
+						throw new UnsatisfiablePathConditionException();
 					}
 					int_arrayIndex = symbolicUtil.extractInt(source,
 							((ArrayElementReference) ref).getIndex());

@@ -172,7 +172,7 @@ public class LibstdlibExecutor extends BaseLibraryExecutor implements
 							ErrorKind.OTHER,
 							"The argument to atoi() should be a valid integer representation.\n"
 									+ "actual argument: " + argString);
-					return state;
+					throw new UnsatisfiablePathConditionException();
 				}
 			}
 		}

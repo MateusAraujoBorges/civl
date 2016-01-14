@@ -257,12 +257,15 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,
 					"attempt to read/write from an invalid pointer");
+			throw new UnsatisfiablePathConditionException();
 		}
-		if ((charPointer2.operator() != SymbolicOperator.CONCRETE))
+		if ((charPointer2.operator() != SymbolicOperator.CONCRETE)) {
 			errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,
 					"attempt to read/write from an invalid pointer");
+			throw new UnsatisfiablePathConditionException();
+		}
 		// If two pointers are same, return 0.
 		if (charPointer1.equals(charPointer2))
 			result = zero;
@@ -423,11 +426,13 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 		pointer = argumentValues[0];
 		c = argumentValues[1];
 		// check if pointer is valid first
-		if (pointer.operator() != SymbolicOperator.CONCRETE)
+		if (pointer.operator() != SymbolicOperator.CONCRETE) {
 			errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,
 					"attempt to read/write from an invalid pointer");
+			throw new UnsatisfiablePathConditionException();
+		}
 		// check if c == 0, because that's the only case we support
 		claim = universe.equals(c, zero);
 		resultType = reasoner.valid(claim).getResultType();
