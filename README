@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.5
+                               v1.6
 
 ------------------------------ Overview -------------------------------
 
@@ -42,14 +42,14 @@ General Public License.  However, the libraries used by CIVL
 (and incorporated into the complete distribution) use various
 licenses.  See directory licenses for the license of each component.
 
--------------------------- Updates from v1.4 -------------------------
-- adding new option -svcomp16 for verifying concurrency suite of 
-  the benchmarks from software-verification competition 2016. 
-- adding transformation for translating preprocessed source files from
-  software-verification competition 2016.
-- improving the performance of pthreads library implementation.
-- fixing various bugs in parsing and transforming pthreads program.
-- fixing a bug in partial order reduction related to cycles in the state space.
+-------------------------- Updates from v1.5 -------------------------
+- improving the reasoning ability of SARL
+- adding a prototype of Fortran front end which supports a small 
+  subset of Fortran language
+- supporting the CUDA function specifier __device__ and more CUDA libraries
+- fixing various bugs in ABC's parsing and analysis functionality
+- fixing bugs in the core of CIVL related to integer and pointer conversion,
+  and so on
    
 ------------------------- Binary Installation -------------------------
 

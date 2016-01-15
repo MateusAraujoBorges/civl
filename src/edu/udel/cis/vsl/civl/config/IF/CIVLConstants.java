@@ -33,9 +33,11 @@ public class CIVLConstants {
 	public enum DeadlockKind {
 		ABSOLUTE, POTENTIAL, NONE
 	}
-	
+
 	/**
-	 * Error state equivalence semantics for suppressing logging of redundant errors.
+	 * Error state equivalence semantics for suppressing logging of redundant
+	 * errors.
+	 * 
 	 * @author Matt Dwyer
 	 */
 	public enum ErrorStateEquivalence {
@@ -54,13 +56,13 @@ public class CIVLConstants {
 			File.separator + "include"), "civl");
 
 	/** The version of this release of CIVL. */
-	public final static String version = "1.5+";
+	public final static String version = "1.6";
 
 	/**
 	 * The date of this release of CIVL. Format: YYYY-MM-DD in accordance with
 	 * ISO 8601.
 	 */
-	public final static String date = "2015-10-31";
+	public final static String date = "2016-01-15";
 
 	/**
 	 * The prefix of the full name of the class of a library enabler/executor.
@@ -134,18 +136,18 @@ public class CIVLConstants {
 	 */
 	public final static Option errorBoundO = Option.newScalarOption(
 			"errorBound", INTEGER, "stop after finding this many errors", 1);
-	
+
 	/**
-	 * The semantics for used to determine when error states are equivalent; CIVL
-	 * suppresses logging of equivalent states.  All semantics use the kind of error, but
-	 * they may vary in the portion of the state that is checked.  Current options include
-	 * using the current location (LOC), the call stacks (CALLSTACK), and the full trace (FULL), 
-	 * but others are possible.  LOC by default.
+	 * The semantics for used to determine when error states are equivalent;
+	 * CIVL suppresses logging of equivalent states. All semantics use the kind
+	 * of error, but they may vary in the portion of the state that is checked.
+	 * Current options include using the current location (LOC), the call stacks
+	 * (CALLSTACK), and the full trace (FULL), but others are possible. LOC by
+	 * default.
 	 */
 	public final static Option errorStateEquivO = Option.newScalarOption(
-			"errorStateEquiv", 
-			STRING, 
-			"semantics for equivalent error states: (LOC|CALLSTACK|FULL)", 
+			"errorStateEquiv", STRING,
+			"semantics for equivalent error states: (LOC|CALLSTACK|FULL)",
 			"LOC");
 
 	/**
@@ -489,12 +491,12 @@ public class CIVLConstants {
 	 */
 	public final static Option[] getAllOptions() {
 		return new Option[] { astO, collectHeapsO, collectProcessesO,
-				collectScopesO, deadlockO, debugO, enablePrintfO, errorBoundO, errorStateEquivO,
-				guiO, guidedO, idO, inputO, linkO, 
-				macroO, maxdepthO, minO, mpiContractO, ompLoopDecompO, ompNoSimplifyO, preprocO,
-				procBoundO, randomO, saveStatesO, seedO, showAmpleSetO,
-				showAmpleSetWtStatesO, showInputVarsO, showMemoryUnitsO,
-				showModelO, showPathConditionO, showProgramO,
+				collectScopesO, deadlockO, debugO, enablePrintfO, errorBoundO,
+				errorStateEquivO, guiO, guidedO, idO, inputO, linkO, macroO,
+				maxdepthO, minO, mpiContractO, ompLoopDecompO, ompNoSimplifyO,
+				preprocO, procBoundO, randomO, saveStatesO, seedO,
+				showAmpleSetO, showAmpleSetWtStatesO, showInputVarsO,
+				showMemoryUnitsO, showModelO, showPathConditionO, showProgramO,
 				showProverQueriesO, showQueriesO, showSavedStatesO,
 				showStatesO, showTimeO, showTransitionsO, showUnreachedCodeO,
 				simplifyO, solveO, statelessPrintfO, svcomp16O, pthreadOnlyO,
