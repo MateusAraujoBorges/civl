@@ -628,6 +628,26 @@ public class LanguageFeaturesTest {
 	public void conditionalLHS() {
 		assertTrue(ui.run("verify -showModel", filename("condLHS.c")));
 	}
+	
+	@Test
+	public void splitFormat() {
+		assertTrue(ui.run("verify ", filename("splitFormat.cvl")));
+	}
+	
+	@Test
+	public void splitFormatBad() {
+		assertFalse(ui.run("verify ", filename("splitFormatBad.cvl")));
+	}
+	
+	@Test
+	public void splitFormatBad2() {
+		assertFalse(ui.run("verify ", filename("splitFormatBad2.cvl")));
+	}
+	
+	@Test
+	public void splitFormatBad3() {
+		assertFalse(ui.run("verify ", filename("splitFormatBad3.cvl")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
