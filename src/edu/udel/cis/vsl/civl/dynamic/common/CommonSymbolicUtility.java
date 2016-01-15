@@ -1401,4 +1401,22 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			return getDyscopeId(null, pointer) >= 0;
 		return false;
 	}
+
+	@Override
+	public SymbolicExpression applyReverseFunction(String originalFunction,
+			SymbolicExpression argument) {
+		if (argument.operator() == SymbolicOperator.APPLY) {
+			SymbolicConstant function = (SymbolicConstant) argument.argument(0);
+			@SuppressWarnings("unchecked")
+			SymbolicSequence<? extends SymbolicExpression> args = (SymbolicSequence<? extends SymbolicExpression>) argument
+					.argument(1);
+
+			if (args.size() == 1) {
+				if (function.name().getString().equals(originalFunction)) {
+					return args.get(0);
+				}
+			}
+		}
+		return null;
+	}
 }

@@ -57,7 +57,8 @@ public class MacroWorker extends BaseWorker {
 		}
 		root = nodeFactory.newSequenceNode(root.getSource(), "TranslationUnit",
 				newExternalList);
-		newAst = astFactory.newAST(root, unit.getSourceFiles());
+		newAst = astFactory.newAST(root, unit.getSourceFiles(),
+				unit.isWholeProgram());
 		// newAst.prettyPrint(System.out, true);
 		return newAst;
 	}

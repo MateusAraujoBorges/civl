@@ -65,7 +65,8 @@ public class Cuda2CIVLWorker extends BaseWorker {
 		}
 		translateMainDefinition(root);
 		translateKernelDefinitions(root);
-		newAST = astFactory.newAST(root, ast.getSourceFiles());
+		newAST = astFactory.newAST(root, ast.getSourceFiles(),
+				ast.isWholeProgram());
 		// newAST.prettyPrint(System.out, false);
 		return newAST;
 	}

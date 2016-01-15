@@ -24,7 +24,10 @@ $assume(NBLOCKS % 2 == 0);
 #define NTHREADS (N/NBLOCKS)
 
 __global__ void sum(int* in, int* out) {
-  extern __shared__ int shared[];
+  //extern __shared__ int shared[]; 
+  __shared__ int shared[]; // commenting out the extern qualifier since
+                           // it doen't have the definition,
+                           // need to figure out if this is something special for cuda
   int i, tid = threadIdx.x,
          bid = blockIdx.x,
          bdim = blockDim.x;

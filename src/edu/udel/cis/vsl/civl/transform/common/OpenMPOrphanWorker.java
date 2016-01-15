@@ -58,8 +58,8 @@ public class OpenMPOrphanWorker extends BaseWorker {
 			insertChildAt(i, insert.left, insert.right);
 			i++;
 		}
-
-		newAst = astFactory.newAST(root, ast.getSourceFiles());
+		newAst = astFactory.newAST(root, ast.getSourceFiles(),
+				ast.isWholeProgram());
 		// newAst.prettyPrint(System.out, true);
 		return newAst;
 	}

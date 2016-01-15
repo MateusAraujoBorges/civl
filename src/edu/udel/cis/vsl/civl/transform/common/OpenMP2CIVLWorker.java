@@ -164,7 +164,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	/* **************************** Instance Fields ************************* */
 
 	/**
-	 * 	 * There are new nodes created by the transformer, other than parsing from
+	 * * There are new nodes created by the transformer, other than parsing from
 	 * some source file. All new nodes share the same source.
 	 */
 	@SuppressWarnings("unused")
@@ -758,7 +758,8 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 				externalList);
 		completeSources(newRootNode);
 		this.processOmpLockCalls(newRootNode);
-		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles());
+		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
+				ast.isWholeProgram());
 		boolean ompHeader = false;
 		for (SourceFile sourceFile : ast.getSourceFiles()) {
 			String filename = sourceFile.getName();
@@ -811,9 +812,9 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	}
 
 	/**
-	 * Recursive method to replace all OpenMP pragmas and functions. 
-	 * The type of the node is checked and if it matches then the code is 
-	 * modified, deleted, or inserted to create a pure CIVL-C representation.
+	 * Recursive method to replace all OpenMP pragmas and functions. The type of
+	 * the node is checked and if it matches then the code is modified, deleted,
+	 * or inserted to create a pure CIVL-C representation.
 	 * 
 	 * @param node
 	 * @param privateIDs
@@ -897,7 +898,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 								CivlcTokenConstant.IDENTIFIER), OMPPRE
 								+ "num_threads");
 			}
-
 
 			add = nodeFactory
 					.newOperatorNode(
@@ -1571,7 +1571,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 			// $omp_gteam_destroy(gteam);
 			items.add(destroy("gteam", GTEAM));
-
 
 			// Create the CompoundStatementNode of that replaces the
 			// OmpParallelNode
@@ -3042,9 +3041,9 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 	}
 
-	
 	/**
 	 * Check if the current node contains a shared variable.
+	 * 
 	 * @param node
 	 * @param sharedIDs
 	 * @return If there is a shared variable in the node, return true.
@@ -3069,7 +3068,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		return false;
 	}
 
-	
 	/**
 	 * Get the temp variable for a node. This method will generate a temp
 	 * variable that is used in the omp_read or omp_write functions.
@@ -3194,7 +3192,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		ExpressionStatementNode writeCall = null;
 		ExpressionStatementNode readCall = null;
 		ASTNode statementParent = node.parent();
-		
+
 		// Get the parent of the identifer that is a StatementNode
 		while (!(statementParent instanceof StatementNode)) {
 			statementParent = statementParent.parent();
@@ -3251,10 +3249,9 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		tempWriteCount++;
 	}
 
-	
 	/**
-	 * Record shared read and write statements so that the omp_read
-	 * and omp_write statements can be inserted. 
+	 * Record shared read and write statements so that the omp_read and
+	 * omp_write statements can be inserted.
 	 * 
 	 * @param readWrite
 	 * @param decl
@@ -3294,6 +3291,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	/**
 	 * If the node like a for or if and more than one statement added then a
 	 * body needs to be created for the for or if node
+	 * 
 	 * @param node
 	 */
 	private void createBody(ASTNode node) {
@@ -3349,8 +3347,9 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	}
 
 	/**
-	 * Take a node that is a FunctionCallNode of some OpenMP function and 
+	 * Take a node that is a FunctionCallNode of some OpenMP function and
 	 * replace it with an equivalent function that is a CIVL-C function
+	 * 
 	 * @param node
 	 * @return
 	 * @throws SyntaxException
@@ -3414,8 +3413,9 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	}
 
 	/**
-	 * Check the operator and return an int for which operator it is
-	 * TODO add more operators as needed
+	 * Check the operator and return an int for which operator it is TODO add
+	 * more operators as needed
+	 * 
 	 * @param operator
 	 * @return
 	 */
@@ -3430,6 +3430,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 	/**
 	 * Create a declaration for each private variable inside a parallel node
+	 * 
 	 * @param node
 	 * @param privateKind
 	 * @return
@@ -3477,7 +3478,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		return privateVariable;
 	}
 
-	
 	/**
 	 * Method to get a statement that is the parent of some identifier
 	 * 
@@ -3517,6 +3517,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 	/**
 	 * Transform shared read from C to CIVL-C
+	 * 
 	 * @param node
 	 * @param parentStatement
 	 * @param privateIDs

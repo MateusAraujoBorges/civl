@@ -940,7 +940,8 @@ public class MPI2CIVLWorker extends BaseWorker {
 			if (nprocsLowerBoundVar == null) {
 				Source lowerBoundSource = this.newSource(
 						"constant integer: one", CivlcTokenConstant.INT);
-				Source intTypeSource = this.newSource("int", CivlcTokenConstant.TYPE);
+				Source intTypeSource = this.newSource("int",
+						CivlcTokenConstant.TYPE);
 
 				// declaring $input int NPROCS_LOWER_BOUND;
 				nprocsLowerBoundVar = this.variableDeclaration(
@@ -998,7 +999,8 @@ public class MPI2CIVLWorker extends BaseWorker {
 		newRootNode = nodeFactory.newSequenceNode(null, "TranslationUnit",
 				externalList);
 		this.completeSources(newRootNode);
-		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles());
+		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
+				ast.isWholeProgram());
 		// newAst.prettyPrint(System.out, true);
 		return newAst;
 	}
@@ -1017,9 +1019,11 @@ public class MPI2CIVLWorker extends BaseWorker {
 		sysStatusType = nodeFactory.newTypedefNameNode(nodeFactory
 				.newIdentifierNode(
 						newSource("MPI_Sys_status in _MPI_Process",
-								CivlcTokenConstant.IDENTIFIER), MPI_SYS_STATUS_TYPENAME),
-				null);
-		node = variableDeclaration(MPI_SYS_STATUS, sysStatusType,
+								CivlcTokenConstant.IDENTIFIER),
+						MPI_SYS_STATUS_TYPENAME), null);
+		node = variableDeclaration(
+				MPI_SYS_STATUS,
+				sysStatusType,
 				nodeFactory.newEnumerationConstantNode(nodeFactory
 						.newIdentifierNode(
 								newSource("__UNINIT",
@@ -1038,7 +1042,8 @@ public class MPI2CIVLWorker extends BaseWorker {
 		List<ExpressionNode> assertionNodesList = new LinkedList<>();
 		Source assertSrc = newSource("_my_status initial value assertion",
 				CivlcTokenConstant.EXPRESSION_STATEMENT);
-		Source myStatusSrc = newSource("_my_status", CivlcTokenConstant.IDENTIFIER);
+		Source myStatusSrc = newSource("_my_status",
+				CivlcTokenConstant.IDENTIFIER);
 
 		assertionNodesList.add(nodeFactory.newIdentifierExpressionNode(
 				myStatusSrc,

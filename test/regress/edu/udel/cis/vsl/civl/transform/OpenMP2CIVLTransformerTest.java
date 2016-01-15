@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.transform;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -40,13 +39,13 @@ public class OpenMP2CIVLTransformerTest {
 
 	@Test
 	public void dotProductCritical() {
-		assertFalse(ui.run("verify ", "-ompNoSimplify",
+		assertTrue(ui.run("verify ", "-ompNoSimplify",
 				"-input_omp_thread_max=2", filename("dotProduct_critical.c")));
 	}
 
 	@Test
 	public void dotProductCriticalSimplify() {
-		assertFalse(ui.run("verify ", "-input_omp_thread_max=2",
+		assertTrue(ui.run("verify ", "-input_omp_thread_max=2",
 				filename("dotProduct_critical.c")));
 	}
 

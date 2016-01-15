@@ -507,8 +507,8 @@ public abstract class BaseWorker {
 	protected Source newSource(String method, int tokenType) {
 		Formation formation = tokenFactory.newTransformFormation(
 				transformerName, method);
-		CivlcToken token = tokenFactory.newCivlcToken(tokenType, "inserted text",
-				formation);
+		CivlcToken token = tokenFactory.newCivlcToken(tokenType,
+				"inserted text", formation);
 		Source source = tokenFactory.newSource(token);
 
 		return source;
@@ -859,7 +859,8 @@ public abstract class BaseWorker {
 		sourceFiles.addAll(second.getSourceFiles());
 		rootNode = this.nodeFactory.newSequenceNode(first.getRootNode()
 				.getSource(), "Translation Unit", allNodes);
-		return this.astFactory.newAST(rootNode, sourceFiles);
+		return this.astFactory.newAST(rootNode, sourceFiles,
+				first.isWholeProgram() || second.isWholeProgram());
 	}
 
 	/**

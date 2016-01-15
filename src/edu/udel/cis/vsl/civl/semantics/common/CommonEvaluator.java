@@ -125,6 +125,8 @@ import edu.udel.cis.vsl.sarl.number.IF.Numbers;
 public class CommonEvaluator implements Evaluator {
 
 	private static String ABSTRACT_FUNCTION_PREFIX = "_uf_";
+	private static String POINTER_TO_INT_FUNCTION = "_pointer2Int";
+	private static String INT_TO_POINTER_FUNCTION = "_int2Pointer";
 
 	/* *************************** Instance Fields ************************* */
 
@@ -320,6 +322,10 @@ public class CommonEvaluator implements Evaluator {
 
 	private CIVLTypeFactory typeFactory;
 
+	private SymbolicConstant pointer2IntFunc;
+
+	private SymbolicConstant int2PointerFunc;
+
 	/* ***************************** Constructors ************************** */
 
 	/**
@@ -398,6 +404,12 @@ public class CommonEvaluator implements Evaluator {
 				.stringObject("shiftright"), universe.functionType(
 				Arrays.asList(universe.integerType(), universe.integerType()),
 				universe.integerType()));
+		pointer2IntFunc = universe.symbolicConstant(universe
+				.stringObject(POINTER_TO_INT_FUNCTION), universe.functionType(
+				Arrays.asList(this.pointerType), this.universe.integerType()));
+		int2PointerFunc = universe.symbolicConstant(universe
+				.stringObject(INT_TO_POINTER_FUNCTION), universe.functionType(
+				Arrays.asList(this.universe.integerType()), this.pointerType));
 		this.civlConfig = config;
 		// this.zeroOrOne = (NumericExpression) universe.symbolicConstant(
 		// universe.stringObject("ZeroOrOne"), universe.integerType());
@@ -1000,22 +1012,31 @@ public class CommonEvaluator implements Evaluator {
 			eval.value = this.booleanToInteger(value);
 			return eval;
 		} else if (argType.isIntegerType() && castType.isPointerType()) {
-			// only good cast is from 0 to null pointer
+			// only good cast for:
+			// 1. from 0 to null pointer
+			// 2. pointer2Int(x) back to x;
 			BooleanExpression assumption = state.getPathCondition();
 			BooleanExpression claim = universe.equals(zero, value);
 			ResultType resultType = universe.reasoner(assumption).valid(claim)
 					.getResultType();
 
 			if (resultType != ResultType.YES) {
-				if (((CIVLPointerType) castType).baseType().isVoidType())
+				SymbolicExpression castedValue = this.symbolicUtil
+						.applyReverseFunction(POINTER_TO_INT_FUNCTION, value);
+
+				if (castedValue != null)
+					eval.value = castedValue;
+				else if (((CIVLPointerType) castType).baseType().isVoidType()) {
 					eval.value = value;
-				else {
-					state = errorLogger.logError(arg.getSource(), state,
-							process,
-							this.symbolicAnalyzer.stateInformation(state),
-							claim, resultType, ErrorKind.INVALID_CAST,
-							"Cast from non-zero integer to pointer");
-					throw new UnsatisfiablePathConditionException();
+				} else {
+					eval.value = universe.apply(this.int2PointerFunc,
+							Arrays.asList(value));
+					// state = errorLogger.logError(arg.getSource(), state,
+					// process,
+					// this.symbolicAnalyzer.stateInformation(state),
+					// claim, resultType, ErrorKind.INVALID_CAST,
+					// "Cast from non-zero integer to pointer");
+					// eval.state = state;
 				}
 			} else
 				eval.value = this.symbolicUtil.nullPointer();
@@ -1023,8 +1044,18 @@ public class CommonEvaluator implements Evaluator {
 		} else if (argType.isPointerType() && castType.isIntegerType()) {
 			if (this.symbolicUtil.isNullPointer(value))
 				eval.value = universe.integer(0);
-			else
+			else if (value.type().equals(universe.integerType()))
 				eval.value = value;
+			else {
+				SymbolicExpression castedValue = this.symbolicUtil
+						.applyReverseFunction(INT_TO_POINTER_FUNCTION, value);
+
+				if (castedValue != null)
+					eval.value = castedValue;
+				else
+					eval.value = universe.apply(this.pointer2IntFunc,
+							Arrays.asList(value));
+			}
 			return eval;
 		} else if (argType.isPointerType() && castType.isPointerType()) {
 			// pointer to pointer: for now...no change.
@@ -2682,6 +2713,9 @@ public class CommonEvaluator implements Evaluator {
 					return;
 			}
 			if (this.symbolicUtil.isNullPointer(expressionValue))
+				return;
+			if (this.symbolicUtil.applyReverseFunction(INT_TO_POINTER_FUNCTION,
+					expressionValue) != null)
 				return;
 			try {
 				int scopeID = symbolicUtil

@@ -812,4 +812,18 @@ public interface SymbolicUtility {
 	 * @return True iff the pointer is valid, i.e., can be dereferenced.
 	 */
 	boolean isDerefablePointer(SymbolicExpression pointer);
+
+	/**
+	 * Apply the reverse of a given uninterpreted function. If the argument is
+	 * <code>f(X)</code> and the given function is f, then returns
+	 * <code>X</code>. If the argument is <code>f(X,Y,Z)</code>, then returns
+	 * NULL. If the given function doesn't match the argument's function name,
+	 * returns NULL. If the argument's operator isn't APPLY, then returns NULL.
+	 * 
+	 * @param originalFunction
+	 * @param argument
+	 * @return
+	 */
+	SymbolicExpression applyReverseFunction(String originalFunction,
+			SymbolicExpression argument);
 }

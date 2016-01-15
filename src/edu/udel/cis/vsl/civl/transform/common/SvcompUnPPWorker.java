@@ -92,7 +92,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 		rootNode = downScaler(rootNode);
 		// rootNode.prettyPrint(System.out);
 		this.completeSources(rootNode);
-		ast = astFactory.newAST(rootNode, ast.getSourceFiles());
+		ast = astFactory.newAST(rootNode, ast.getSourceFiles(),
+				ast.isWholeProgram());
 		// ast.prettyPrint(System.out, false);
 		ast = this.addHeaders(ast);
 		return ast;

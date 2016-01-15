@@ -626,7 +626,13 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void conditionalLHS() {
-		assertTrue(ui.run("verify -showModel", filename("condLHS.c")));
+		assertTrue(ui.run("verify", filename("condLHS.c")));
+	}
+
+	@Test
+	public void intToPointer() {
+		assertTrue(ui.run("verify",
+				filename("intToPointer.cvl")));
 	}
 	
 	@Test

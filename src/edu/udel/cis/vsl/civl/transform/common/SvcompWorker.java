@@ -65,7 +65,8 @@ public class SvcompWorker extends BaseWorker {
 		this.processVerifierFunctions(rootNode);
 		rootNode = insert_input_variables(rootNode);
 		this.completeSources(rootNode);
-		ast = astFactory.newAST(rootNode, ast.getSourceFiles());
+		ast = astFactory.newAST(rootNode, ast.getSourceFiles(),
+				ast.isWholeProgram());
 		// ast.prettyPrint(System.out, false);
 		return ast;
 	}

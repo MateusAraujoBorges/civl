@@ -1216,7 +1216,8 @@ public class Pthread2CIVLWorker extends BaseWorker {
 		ast.release();
 		transformWorker(root);
 		this.completeSources(root);
-		AST result = astFactory.newAST(root, ast.getSourceFiles());
+		AST result = astFactory.newAST(root, ast.getSourceFiles(),
+				ast.isWholeProgram());
 		// result.prettyPrint(System.out, false);
 		return result;
 	}
