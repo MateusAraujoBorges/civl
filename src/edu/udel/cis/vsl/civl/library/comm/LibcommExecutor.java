@@ -986,7 +986,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 					"There is no matched message [source:" + source
 							+ ", destication:" + dest + ", tag:" + tag
 							+ " ] in the message buffer.");
-			return new Pair<>(getEmptyMessage(state), buf);
+			throw new UnsatisfiablePathConditionException();
 		}
 		message = universe.arrayRead(messages, universe.integer(msgIdx));
 		messages = universe.removeElementAt(messages, msgIdx);

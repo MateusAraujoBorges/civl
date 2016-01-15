@@ -386,7 +386,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 
 		if (symbolicUtil.isNullPointer(pointer))
 			return state;
-		// assertion doesn't need recovery:
+		// this assertion doesn't need recovery:
 		if (!pointer.operator().equals(SymbolicOperator.CONCRETE)
 				|| !symbolicUtil.isDerefablePointer(pointer)) {
 			errorLogger.logSimpleError(arguments[0].getSource(), state,
@@ -792,7 +792,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				Expression[] args = { snapShotAssertion };
 				SymbolicExpression[] argVals = { assertionVal };
 
-				// Assertion failures don't need recovery:
+				// Contracts don't need recovery:
 				if (isContract) {
 					mergedState = this.primaryExecutor.reportContractViolation(
 							mergedState, snapShotAssertion.getSource(), place,

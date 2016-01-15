@@ -275,6 +275,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source, BooleanExpression assertValue, int msgOffset)
 			throws UnsatisfiablePathConditionException {
+		BooleanExpression oldPC;
 		assert resultType != ResultType.YES;
 		if (arguments.length > msgOffset) {
 			// if (civlConfig.enablePrintf()) {
@@ -294,7 +295,10 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 		errorLogger.logSimpleError(source, state, process,
 				this.symbolicAnalyzer.stateInformation(state),
 				ErrorKind.ASSERTION_VIOLATION, message);
-		return state;
+		// recovery:
+		oldPC = state.getPathCondition();
+		return state.setPathCondition((BooleanExpression) universe
+				.canonic(universe.and(oldPC, assertValue)));
 	}
 
 	/**
