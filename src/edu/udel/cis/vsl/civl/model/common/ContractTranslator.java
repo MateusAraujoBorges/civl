@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
-import edu.udel.cis.vsl.abc.ast.node.IF.declaration.ContractNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.declaration.EnsuresNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.declaration.RequiresNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CollectiveExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
