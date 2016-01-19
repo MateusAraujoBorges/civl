@@ -2381,6 +2381,7 @@ public class FunctionTranslator {
 				.refineConditionalExpression(scope, expression,
 						modelFactory.sourceOfBeginning(conditionNode),
 						modelFactory.sourceOfEnd(conditionNode));
+		Fragment anonFragment = null;
 
 		beforeCondition = refineConditional.left;
 		expression = refineConditional.right;
@@ -2391,6 +2392,10 @@ public class FunctionTranslator {
 					+ expression + " is of " + expression.getExpressionType()
 					+ " type which cannot be converted to boolean type.",
 					expression.getSource());
+		}
+		if (modelFactory.anonFragment() != null) {
+			anonFragment = modelFactory.anonFragment();
+			modelFactory.clearAnonFragment();
 		}
 		trueBranch = new CommonFragment(modelFactory.ifElseBranchStatement(
 				modelFactory.sourceOfBeginning(ifNode.getTrueBranch()),
@@ -2413,6 +2418,8 @@ public class FunctionTranslator {
 			result = this.insertNoopAtBeginning(
 					modelFactory.sourceOfBeginning(ifNode), scope, result);
 		}
+		if (anonFragment != null)
+			result = anonFragment.combineWith(result);
 		return result;
 	}
 
@@ -2835,13 +2842,13 @@ public class FunctionTranslator {
 				.getEntity();
 		// node.prettyPrint(System.out);
 		// System.out.println();
-		if(varEntity.getDefinition()==null)
+		if (varEntity.getDefinition() == null)
 			throw new CIVLSyntaxException(
-					"Can't find the definition for variable "
-							+ node.getName(), node.getSource());
+					"Can't find the definition for variable " + node.getName(),
+					node.getSource());
 		if (!varEntity.getDefinition().equals(node))
 			return null;
-		
+
 		TypeNode typeNode = node.getTypeNode();
 		CIVLType type = translateABCType(modelFactory.sourceOf(typeNode),
 				scope, typeNode.getType());

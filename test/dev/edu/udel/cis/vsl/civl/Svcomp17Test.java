@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -32,7 +33,7 @@ public class Svcomp17Test {
 	@Test
 	public void parport_false() {
 		assertFalse(ui
-				.run("verify -svcomp16 -showProgram -errorBound=10 -pthreadOnly=false -errorStateEquiv=FULL",
+				.run("verify -svcomp16 -showTransitions -showProgram=false -errorBound=10 -pthreadOnly=false -errorStateEquiv=FULL",
 						filename("parport_false-unreach-call.i.cil.c")));
 	}
 
@@ -53,7 +54,19 @@ public class Svcomp17Test {
 
 	@Test
 	public void stringLiteral() {
-		assertFalse(ui.run("verify -showModel=false ",
+		assertTrue(ui.run("verify -showModel=true ",
 				filename("stringLiteralIf.c")));
+	}
+
+	@Test
+	public void Problem01() {
+		assertFalse(ui
+				.run("verify -svcomp16 -errorBound=1000 -pthreadOnly=false -errorStateEquiv=FULL",
+						filename("Problem01_label15_false-unreach-call.c")));
+	}
+
+	@Test
+	public void uchar() {
+		ui.run("verify ", filename("uchar.c"));
 	}
 }

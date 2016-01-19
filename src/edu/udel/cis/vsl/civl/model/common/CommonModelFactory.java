@@ -487,22 +487,27 @@ public class CommonModelFactory implements ModelFactory {
 		CIVLSource source = expression.getSource();
 
 		if (!expression.getExpressionType().equals(typeFactory.booleanType)) {
-			if (expression.getExpressionType().equals(typeFactory.integerType)) {
+			CIVLType exprType = expression.getExpressionType();
+
+			if (exprType.equals(typeFactory.integerType)) {
 				expression = binaryExpression(source,
 						BINARY_OPERATOR.NOT_EQUAL, expression,
 						integerLiteralExpression(source, BigInteger.ZERO));
-			} else if (expression.getExpressionType().equals(
-					typeFactory.realType)) {
+			} else if (exprType.equals(typeFactory.realType)) {
 				expression = binaryExpression(source,
 						BINARY_OPERATOR.NOT_EQUAL, expression,
 						realLiteralExpression(source, BigDecimal.ZERO));
-			} else if (expression.getExpressionType().isPointerType()) {
+			} else if (exprType.isPointerType()) {
 				CIVLPointerType pointerType = (CIVLPointerType) expression
 						.getExpressionType();
 
 				expression = binaryExpression(source,
 						BINARY_OPERATOR.NOT_EQUAL, expression,
 						this.nullPointerExpression(pointerType, source));
+			} else if (exprType.isCharType()) {
+				expression = binaryExpression(source,
+						BINARY_OPERATOR.NOT_EQUAL, expression,
+						this.charLiteralExpression(source, (char) 0));
 			} else {
 				throw new ModelFactoryException("The expression " + expression
 						+ " isn't compatible with boolean type",
@@ -521,6 +526,9 @@ public class CommonModelFactory implements ModelFactory {
 				|| type.isArrayType())
 			return expression;
 		if (type.isBoolType())
+			return this.castExpression(expression.getSource(),
+					typeFactory.integerType(), expression);
+		if (type.isCharType())
 			return this.castExpression(expression.getSource(),
 					typeFactory.integerType(), expression);
 		throw new ModelFactoryException("The expression " + expression

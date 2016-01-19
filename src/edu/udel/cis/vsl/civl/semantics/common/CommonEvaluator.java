@@ -104,11 +104,11 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.TupleComponentReference;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.NumberFactory;
+import edu.udel.cis.vsl.sarl.IF.object.CharObject;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
@@ -127,6 +127,8 @@ public class CommonEvaluator implements Evaluator {
 	private static String ABSTRACT_FUNCTION_PREFIX = "_uf_";
 	private static String POINTER_TO_INT_FUNCTION = "_pointer2Int";
 	private static String INT_TO_POINTER_FUNCTION = "_int2Pointer";
+	private static String CHAR_TO_INT_FUNCTION = "_char2int";
+	private static String INT_TO_CHAR_FUNCTION = "_int2char";
 
 	/* *************************** Instance Fields ************************* */
 
@@ -326,6 +328,10 @@ public class CommonEvaluator implements Evaluator {
 
 	private SymbolicConstant int2PointerFunc;
 
+	private SymbolicConstant char2IntFunc;
+
+	private SymbolicConstant int2CharFunc;
+
 	/* ***************************** Constructors ************************** */
 
 	/**
@@ -410,6 +416,16 @@ public class CommonEvaluator implements Evaluator {
 		int2PointerFunc = universe.symbolicConstant(universe
 				.stringObject(INT_TO_POINTER_FUNCTION), universe.functionType(
 				Arrays.asList(this.universe.integerType()), this.pointerType));
+		this.char2IntFunc = universe.symbolicConstant(
+				universe.stringObject(CHAR_TO_INT_FUNCTION),
+				universe.functionType(
+						Arrays.asList(this.universe.characterType()),
+						universe.integerType()));
+		this.int2CharFunc = universe.symbolicConstant(
+				universe.stringObject(INT_TO_CHAR_FUNCTION),
+				universe.functionType(
+						Arrays.asList(this.universe.integerType()),
+						universe.characterType()));
 		this.civlConfig = config;
 		// this.zeroOrOne = (NumericExpression) universe.symbolicConstant(
 		// universe.stringObject("ZeroOrOne"), universe.integerType());
@@ -1091,34 +1107,20 @@ public class CommonEvaluator implements Evaluator {
 				} else
 					eval.value = universe.character((char) int_value);
 			} else {
-				SymbolicExpression func;
-				SymbolicFunctionType funcType;
 				BooleanExpression insideRangeClaim;
 				SymbolicExpression newCharValue;
 				ResultType retType;
 
-				// TODO change to andTo
 				insideRangeClaim = universe.and(
 						universe.lessThan(zero, integerValue),
 						universe.lessThan(integerValue, universe.integer(255)));
 				retType = reasoner.valid(insideRangeClaim).getResultType();
 				if (retType == ResultType.YES) {
 					// If not concrete, return abstract function.
-					funcType = universe.functionType(
-							Arrays.asList(universe.integerType()),
-							universe.characterType());
-					func = universe.canonic(universe.symbolicConstant(
-							universe.stringObject("int2char"), funcType));
-					newCharValue = universe.apply(func,
+					newCharValue = universe.apply(this.int2CharFunc,
 							Arrays.asList(integerValue));
 					eval.value = newCharValue;
 				} else {
-					// Certainty certain;
-					//
-					// if (retType == ResultType.MAYBE)
-					// certain = Certainty.MAYBE;
-					// else
-					// certain = Certainty.PROVEABLE;
 					eval.state = errorLogger
 							.logError(
 									source,
@@ -1135,6 +1137,27 @@ public class CommonEvaluator implements Evaluator {
 					throw new UnsatisfiablePathConditionException();
 				}
 
+			}
+			return eval;
+		} else if (argType.isCharType() && castType.isIntegerType()) {
+			// cast a char into an integer
+			// 1. if concrete, use the Java cast;
+			// 2. if non-concrete and if it is a char2Int abstract function
+			// representation, unfold the function call;
+			// otherwise, use abstract function
+			if (value.operator() == SymbolicOperator.CONCRETE) {
+				CharObject charObj = (CharObject) value.argument(0);
+
+				eval.value = this.universe.integer((int) charObj.getChar());
+			} else {
+				SymbolicExpression castedValue = this.symbolicUtil
+						.applyReverseFunction(INT_TO_CHAR_FUNCTION, value);
+
+				if (castedValue != null)
+					eval.value = castedValue;
+				else
+					eval.value = universe.apply(this.char2IntFunc,
+							Arrays.asList(value));
 			}
 			return eval;
 		}

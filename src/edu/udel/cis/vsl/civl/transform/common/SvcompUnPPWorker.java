@@ -421,13 +421,19 @@ public class SvcompUnPPWorker extends BaseWorker {
 		}
 	}
 
-	private void isStdlibNode(BlockItemNode item) {
+	private boolean isStdlibNode(BlockItemNode item) {
+		// if (item.getSource().getFirstToken().getFormation() instanceof
+		// Inclusion)
+		// return false;
 		if (item instanceof FunctionDeclarationNode) {
 			FunctionDeclarationNode functionDecl = (FunctionDeclarationNode) item;
 
-			if (functionDecl.getName().equals(EXIT))
+			if (functionDecl.getName().equals(EXIT)) {
 				this.needsStdlibHeader = true;
+				return true;
+			}
 		}
+		return false;
 	}
 
 	/**
@@ -493,6 +499,9 @@ public class SvcompUnPPWorker extends BaseWorker {
 	 * @param root
 	 */
 	private boolean isQualifiedPthreadNode(BlockItemNode item) {
+		// if (item.getSource().getFirstToken().getFormation() instanceof
+		// Inclusion)
+		// return false;
 		if (item instanceof TypedefDeclarationNode) {
 			TypedefDeclarationNode typedef = (TypedefDeclarationNode) item;
 
@@ -510,5 +519,4 @@ public class SvcompUnPPWorker extends BaseWorker {
 		}
 		return false;
 	}
-
 }
