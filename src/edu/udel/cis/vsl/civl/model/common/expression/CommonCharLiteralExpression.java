@@ -46,23 +46,23 @@ public class CommonCharLiteralExpression extends CommonExpression implements
 	public String toString() {
 		switch (value) {
 		case 0:
-			return "";
+			return "''";
 		case '\u000C':
-			return "\\f";
+			return "'\\f'";
 		case '\u0007':
-			return "\\a";
+			return "'\\a'";
 		case '\b':
-			return "\\b";
+			return "'\\b'";
 		case '\n':
-			return "\\n";
+			return "'\\n'";
 		case '\t':
-			return "\\t";
+			return "'\\t'";
 		case '\r':
-			return "\\r";
+			return "'\\r'";
 		case ' ':
 			return "' '";
 		}
-		return Character.toString(value);
+		return "'" + Character.toString(value) + "'";
 	}
 
 	@Override

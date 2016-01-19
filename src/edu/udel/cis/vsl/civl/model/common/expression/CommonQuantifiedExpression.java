@@ -162,7 +162,7 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 		} else {
 			result += " | " + restriction;
 		}
-		result += "} " + expression;
+		result += "} " + expression.toString();
 		return result;
 	}
 

@@ -1287,7 +1287,11 @@ public class CommonExecutor implements Executor {
 				case 't':
 				case 'L':
 					stringBuffer.append(current);
-					current = formatBuffer.charAt(++i);
+					i++;
+					if (i >= count)
+						throw new CIVLSyntaxException("Invalid format \"%"
+								+ current + "\" for fprintf/printf", source);
+					current = formatBuffer.charAt(i);
 					break;
 				default:
 				}

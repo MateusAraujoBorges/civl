@@ -3222,6 +3222,8 @@ public class FunctionTranslator {
 				else if (value instanceof RealFloatingValue)
 					result = modelFactory.integerLiteralExpression(source,
 							((RealFloatingValue) value).getWholePartValue());
+				else if (value instanceof CharacterValue)
+					result = translateCharacterValue(source, constantNode);
 				else
 					throw new CIVLSyntaxException(
 							"Invalid constant for integers", source);
@@ -3294,44 +3296,7 @@ public class FunctionTranslator {
 				break;
 			case CHAR:
 			case UNSIGNED_CHAR:
-				Value constValue = constantNode.getConstantValue();
-				ConstantKind constKind = constantNode.constantKind();
-				char[] charValues;
-				BigInteger intValues;
-
-				if (constKind.equals(ConstantKind.CHAR)) {
-					try {
-						charValues = ((CharacterValue) constValue)
-								.getCharacter().getCharacters();
-						assert (charValues.length == 1) : constValue
-								+ " is not belong to execution characters set\n";
-					} catch (ClassCastException e) {
-						throw new CIVLInternalException(
-								"CHAR Constant value casting failed\n", source);
-					}
-				} else if (constKind.equals(ConstantKind.INT)) {
-					try {
-						// TODO: what about signed char which allows assigned by
-						// negative int objects ?
-						intValues = ((IntegerValue) constValue)
-								.getIntegerValue();
-						if (intValues.intValue() < 0
-								|| intValues.intValue() > 255)
-							throw new CIVLUnimplementedFeatureException(
-									"Converting integer whose value is larger than UCHAR_MAX or is less than UCHAR_MIN to char type\n");
-						charValues = new char[1];
-						charValues[0] = (char) intValues.intValue();
-					} catch (ClassCastException e) {
-						throw new CIVLInternalException(
-								"INT Constant value casting failed\n", source);
-					}
-				} else
-					throw new CIVLSyntaxException(source.getSummary() + " to "
-							+ convertedType.toString());
-
-				result = modelFactory.charLiteralExpression(source,
-						charValues[0]);
-				break;
+				return translateCharacterValue(source, constantNode);
 			default:
 				throw new CIVLUnimplementedFeatureException("type "
 						+ convertedType, source);
@@ -3444,6 +3409,51 @@ public class FunctionTranslator {
 			throw new CIVLUnimplementedFeatureException(
 					"type " + convertedType, source);
 		}
+		return result;
+	}
+
+	private Expression translateCharacterValue(CIVLSource source,
+			ConstantNode constantNode) {
+		Value constValue = constantNode.getConstantValue();
+		Type convertedType = constantNode.getConvertedType();
+		ConstantKind constKind = constantNode.constantKind();
+		char[] charValues;
+		BigInteger intValues;
+		Expression result;
+
+		if (constKind.equals(ConstantKind.CHAR)) {
+			try {
+				charValues = ((CharacterValue) constValue).getCharacter()
+						.getCharacters();
+				if (charValues.length == 0)
+					return modelFactory.charLiteralExpression(source,
+							(char) ((CharacterValue) constValue).getCharacter()
+									.getCodePoint());
+				assert (charValues.length == 1) : constValue
+						+ " is not belong to execution characters set\n";
+			} catch (ClassCastException e) {
+				throw new CIVLInternalException(
+						"CHAR Constant value casting failed\n", source);
+			}
+		} else if (constKind.equals(ConstantKind.INT)) {
+			try {
+				// TODO: what about signed char which allows assigned by
+				// negative int objects ?
+				intValues = ((IntegerValue) constValue).getIntegerValue();
+				if (intValues.intValue() < 0 || intValues.intValue() > 255)
+					throw new CIVLUnimplementedFeatureException(
+							"Converting integer whose value is larger than UCHAR_MAX or is less than UCHAR_MIN to char type\n");
+				charValues = new char[1];
+				charValues[0] = (char) intValues.intValue();
+			} catch (ClassCastException e) {
+				throw new CIVLInternalException(
+						"INT Constant value casting failed\n", source);
+			}
+		} else
+			throw new CIVLSyntaxException(source.getSummary() + " to "
+					+ convertedType.toString());
+
+		result = modelFactory.charLiteralExpression(source, charValues[0]);
 		return result;
 	}
 
