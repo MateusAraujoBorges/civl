@@ -45,6 +45,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Interval;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.collections.IF.SymbolicCollection;
 
@@ -528,6 +529,43 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 							integerConstantValue);
 				}
 				result.put(symbol, mybounds);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * This method tries use the assumptionAsInterval() method from SARL for
+	 * determining the range of a symbolic constant. However, the method
+	 * assumptionAsInterval() only returns when both lower and upper bounds are
+	 * present, which is not sufficient for the reasoning here. So we don't use
+	 * it for now.
+	 * 
+	 * @param context
+	 * @param symbolicConstants
+	 * @return
+	 */
+	@SuppressWarnings("unused")
+	private Map<SymbolicConstant, Pair<Integer, Integer>> extractsUpperBoundAndLowBoundOfNew(
+			BooleanExpression context, Set<SymbolicConstant> symbolicConstants) {
+		Map<SymbolicConstant, Pair<Integer, Integer>> result = new LinkedHashMap<>();
+		Reasoner reasoner = universe.reasoner(context);
+
+		for (SymbolicConstant variable : symbolicConstants) {
+			Interval interval = reasoner.assumptionAsInterval(variable);
+
+			if (interval != null) {
+				Number lowerNum = interval.lower(), upperNum = interval.upper();
+
+				if (lowerNum instanceof IntegerNumber
+						&& upperNum instanceof IntegerNumber) {
+					int lower, upper;
+
+					lower = ((IntegerNumber) lowerNum).intValue();
+					upper = ((IntegerNumber) upperNum).intValue();
+					result.put(variable, new Pair<>(lower, upper));
+					continue;
+				}
 			}
 		}
 		return result;
