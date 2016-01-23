@@ -3972,8 +3972,8 @@ public class FunctionTranslator {
 				result = modelFactory.addressOfExpression(source,
 						(LHSExpression) arguments.get(0));
 			break;
-		case AT:
-			return modelFactory.binaryExpression(source, BINARY_OPERATOR.AT,
+		case HASH:
+			return modelFactory.binaryExpression(source, BINARY_OPERATOR.HASH,
 					arguments.get(0), arguments.get(1));
 		case BIG_O:
 			result = modelFactory.unaryExpression(source, UNARY_OPERATOR.BIG_O,

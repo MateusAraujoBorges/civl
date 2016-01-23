@@ -61,7 +61,7 @@ public class ContractTest {
 	@Test
 	public void isEmptyRecvBufBad() {
 		assertFalse(ui.run("verify -mpiContract",
-				filename("isEmptyRecvBuf_BAD.c")));
+				filename("isRecvBufEmpty_BAD.c")));
 	}
 
 	@Test

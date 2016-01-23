@@ -786,7 +786,7 @@ public class CommonEvaluator implements Evaluator {
 		switch (operator) {
 		case AND:
 			return evaluateAnd(state, pid, expression);
-		case AT:
+		case HASH:
 			return this.evaluateRemoteExpression(state, pid, expression);
 		case OR:
 			return evaluateOr(state, pid, expression);
