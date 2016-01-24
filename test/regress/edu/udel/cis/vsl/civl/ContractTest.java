@@ -65,7 +65,7 @@ public class ContractTest {
 				filename("isRecvBufEmpty_BAD.c")));
 	}
 
-	@Test
+	@Ignore
 	public void wildcard_contract_bad() {
 		assertFalse(ui
 				.run("verify -min -deadlock=potential -mpiContract -input_mpi_nprocs=3",
