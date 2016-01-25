@@ -7,7 +7,6 @@ import java.io.File;
 
 import org.junit.AfterClass;
 import org.junit.Ignore;
-import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
@@ -38,7 +37,7 @@ public class ContractTest {
 						filename("wildcard_coassert_bad.c")));
 	}
 
-	@Test
+	@Ignore
 	// coverage test: only for covering parts of code, the example may not
 	// understandable for human beings.
 	public void collective_assert_coverage() {
@@ -47,19 +46,19 @@ public class ContractTest {
 						filename("coassert_cover.c")));
 	}
 
-	@Test
+	@Ignore
 	public void result() {
 		assertTrue(ui
 				.run("show -showModel -mpiContract ", filename("result.c")));
 	}
 
-	@Test
+	@Ignore
 	public void isRecvBufEmptyOK() {
 		assertTrue(ui.run("verify -min -mpiContract -input_mpi_nprocs=4",
 				filename("isRecvBufEmpty_OK.c")));
 	}
 
-	@Test
+	@Ignore
 	public void isEmptyRecvBufBad() {
 		assertFalse(ui.run("verify -mpiContract",
 				filename("isRecvBufEmpty_BAD.c")));

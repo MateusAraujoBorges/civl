@@ -10,9 +10,7 @@ import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.CollectiveExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
@@ -347,23 +345,8 @@ public class ContractTranslator extends FunctionTranslator {
 	private ContractClauseExpression translateContractExpressionNode(
 			ExpressionNode expressionNode, Scope scope, CIVLSource source,
 			ContractKind kind) {
-		ExpressionNode bodyNode, procsGroupNode;
-		Expression body;
-
-		if (expressionNode.expressionKind().equals(ExpressionKind.COLLECTIVE)) {
-			bodyNode = ((CollectiveExpressionNode) expressionNode).getBody();
-			procsGroupNode = ((CollectiveExpressionNode) expressionNode)
-					.getProcessesGroupExpression();
-		} else {
-			bodyNode = expressionNode;
-			procsGroupNode = null;
-		}
-		if (procsGroupNode != null)
-			processesGroup = translateExpressionNode(procsGroupNode, scope,
-					true);
-		body = translateExpressionNode(bodyNode, scope, true);
 		return modelFactory.contractClauseExpression(source,
-				this.typeFactory.booleanType(), processesGroup, body, kind);
+				this.typeFactory.booleanType(), processesGroup, null, kind);
 	}
 
 	@Override
