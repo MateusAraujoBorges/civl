@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl.model.IF.expression.contracts;
 
 import java.util.Iterator;
 
+import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
 /**
@@ -10,20 +11,29 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
  * 
  * @author ziqing
  *
- * @param <T>
  */
-public interface ClauseSequence<T extends ContractClause> extends Expression {
+public interface ClauseSequence extends Expression {
 	/**
 	 * Returns the iterator of this sequence of contract clauses
 	 * 
 	 * @return
 	 */
-	Iterator<T> getIterator();
+	Iterator<ContractClause> getIterator();
 
 	/**
 	 * Casting the sequence of contracts clauses into an array of T
 	 * 
 	 * @param receiver
 	 */
-	void toArray(T[] receiver);
+	void toArray(ContractClause[] receiver);
+
+	/**
+	 * Return the number of single contract clauses in this sequence
+	 * 
+	 * @return
+	 */
+	int length();
+
+	@Override
+	ClauseSequence replaceWith(ConditionalExpression oldExpr, Expression newExpr);
 }

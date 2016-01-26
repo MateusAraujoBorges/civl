@@ -16,6 +16,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
@@ -32,14 +33,12 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause.COLLECTIVE_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MemoryAccessClause;
-import edu.udel.cis.vsl.civl.model.IF.location.Location;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ObligationClause;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
@@ -49,15 +48,13 @@ public class ContractTranslator extends FunctionTranslator {
 	 * An special expression used to represent the result of a function in
 	 * function contracts.
 	 */
-	public static final String contractResultName = "$result";
+	public static final String contractResultName = "\\result";
 
 	private CIVLFunction function;
 
 	private ModelFactory modelFactory;
 
 	private ModelBuilderWorker modelBuilder;
-
-	private Expression processesGroup;
 
 	/******************** Constructor ********************/
 	ContractTranslator(ModelBuilderWorker modelBuilder,
@@ -84,26 +81,25 @@ public class ContractTranslator extends FunctionTranslator {
 		// A processesGroup is associated to a contractNode, each time
 		// processing a new contractNode, reset the global field of
 		// processesGroup, ditto for contractCalls:
-		processesGroup = null;
 		switch (contractNode.contractKind()) {
 		case ENSURES:
 			expressionNode = ((EnsuresNode) contractNode).getExpression();
 			expression = translateExpressionNode(expressionNode, scope, true);
-			return modelFactory.contractClause(ContractKind.ENSURES,
-					expression, nodeSource);
+			return modelFactory.obligationClause(ContractClauseKind.ENSURES,
+					expression, scope, nodeSource);
 		case REQUIRES:
-			expressionNode = ((EnsuresNode) contractNode).getExpression();
+			expressionNode = ((RequiresNode) contractNode).getExpression();
 			expression = translateExpressionNode(expressionNode, scope, true);
-			return modelFactory.contractClause(ContractKind.REQUIRES,
-					expression, nodeSource);
+			return modelFactory.obligationClause(ContractClauseKind.REQUIRES,
+					expression, scope, nodeSource);
 		case ASSIGNS_READS:
 			return this.translateAssignsOrReadsNode(
 					(AssignsOrReadsNode) contractNode, scope);
 		case ASSUMES:
 			expressionNode = ((AssumesNode) contractNode).getPredicate();
 			expression = translateExpressionNode(expressionNode, scope, true);
-			return modelFactory.contractClause(ContractKind.ASSUMES,
-					expression, nodeSource);
+			return modelFactory.obligationClause(ContractClauseKind.ASSUMES,
+					expression, scope, nodeSource);
 		case BEHAVIOR:
 			return this.translateBehaviorBlock((BehaviorNode) contractNode,
 					scope);
@@ -154,7 +150,7 @@ public class ContractTranslator extends FunctionTranslator {
 			MPICollectiveBlockNode node, Scope scope) {
 		Expression MPIComm;
 		COLLECTIVE_KIND kind;
-		ClauseSequence<ContractClause> body;
+		ClauseSequence body;
 		List<ContractClause> clauses = new LinkedList<>();
 		Iterator<ContractNode> iterator = node.getBody().iterator();
 		CIVLSource source = modelFactory.sourceOf(node);
@@ -178,9 +174,10 @@ public class ContractTranslator extends FunctionTranslator {
 
 			clauses.add(clause);
 		}
-		body = modelFactory.clauseSequence(clauses,
+		body = modelFactory.clauseSequence(clauses, scope,
 				modelFactory.sourceOf(node.getBody().getSource()));
-		return modelFactory.mpiCollectiveBlock(MPIComm, kind, body, source);
+		return modelFactory.mpiCollectiveBlock(MPIComm, kind, body, scope,
+				source);
 	}
 
 	// TODO:doc
@@ -188,7 +185,7 @@ public class ContractTranslator extends FunctionTranslator {
 		SequenceNode<ContractNode> block = node.getBody();
 		CIVLSource source = modelFactory.sourceOf(node);
 		Expression assumption = modelFactory.trueExpression(source);
-		ClauseSequence<ContractClause> clauseSeq;
+		ClauseSequence clauseSeq;
 		List<ContractClause> clauses = new LinkedList<>();
 		Iterator<ContractNode> blockIter = block.iterator();
 		String name = node.getName().name();
@@ -199,7 +196,8 @@ public class ContractTranslator extends FunctionTranslator {
 
 			translatedClause = this.translateContractNode(subClause);
 			if (translatedClause.contractKind().equals(ContractKind.ASSUMES)) {
-				Expression tmpAssum = translatedClause.getBody();
+				Expression tmpAssum = ((ObligationClause) translatedClause)
+						.getBody();
 				CIVLSource spanSource = modelFactory.sourceOfSpan(node,
 						subClause);
 
@@ -208,8 +206,9 @@ public class ContractTranslator extends FunctionTranslator {
 			} else
 				clauses.add(translatedClause);
 		}
-		clauseSeq = modelFactory.clauseSequence(clauses, source);
-		return modelFactory.behaviorBlock(assumption, clauseSeq, name, source);
+		clauseSeq = modelFactory.clauseSequence(clauses, scope, source);
+		return modelFactory.behaviorBlock(assumption, clauseSeq, name, scope,
+				source);
 	}
 
 	// TODO:doc
@@ -228,7 +227,8 @@ public class ContractTranslator extends FunctionTranslator {
 			memLocs.add(memLoc);
 		}
 		memLocArray = new Expression[memLocs.size()];
-		return modelFactory.memoryAccessClause(memLocArray, isReads, source);
+		return modelFactory.memoryAccessClause(memLocArray, isReads, scope,
+				source);
 	}
 
 	/**
@@ -432,30 +432,32 @@ public class ContractTranslator extends FunctionTranslator {
 		// A location only be used to construct a systemCallExpression,
 		// it doesn't have income statements
 		// and the outgoing statement dosen't have target:
-		Location floatingLocation;
-		List<Expression> arguments = new LinkedList<>();
-		Expression functionExpr = modelFactory.functionIdentifierExpression(
-				source, civlFunction);
-		Expression arg;
-		CallOrSpawnStatement civlSysFunctionCall;
-		SystemFunctionCallExpression result;
-		String functionName = civlFunction.name().name();
-
-		floatingLocation = modelFactory.location(source, scope);
-		for (ExpressionNode argNode : callNode.getArguments()) {
-			argNode = callNode.getArgument(0);
-			arg = translateExpressionNode(argNode, scope, true);
-			arguments.add(arg);
-		}
-		// Add Collective Group as the second argument
-		assert processesGroup != null : "Building model for " + functionName
-				+ "() but there is no collective group information";
-		arguments.add(processesGroup);
-		civlSysFunctionCall = modelFactory.callOrSpawnStatement(source,
-				floatingLocation, true, functionExpr, arguments,
-				modelFactory.trueExpression(null));
-		result = modelFactory.systemFunctionCallExpression(civlSysFunctionCall);
-		return result;
+		// Location floatingLocation;
+		// List<Expression> arguments = new LinkedList<>();
+		// Expression functionExpr = modelFactory.functionIdentifierExpression(
+		// source, civlFunction);
+		// Expression arg;
+		// CallOrSpawnStatement civlSysFunctionCall;
+		// SystemFunctionCallExpression result;
+		// String functionName = civlFunction.name().name();
+		//
+		// floatingLocation = modelFactory.location(source, scope);
+		// for (ExpressionNode argNode : callNode.getArguments()) {
+		// argNode = callNode.getArgument(0);
+		// arg = translateExpressionNode(argNode, scope, true);
+		// arguments.add(arg);
+		// }
+		// // Add Collective Group as the second argument
+		// assert processesGroup != null : "Building model for " + functionName
+		// + "() but there is no collective group information";
+		// arguments.add(processesGroup);
+		// civlSysFunctionCall = modelFactory.callOrSpawnStatement(source,
+		// floatingLocation, true, functionExpr, arguments,
+		// modelFactory.trueExpression(null));
+		// result =
+		// modelFactory.systemFunctionCallExpression(civlSysFunctionCall);
+		// return result;
+		return null;
 	}
 
 	@Override

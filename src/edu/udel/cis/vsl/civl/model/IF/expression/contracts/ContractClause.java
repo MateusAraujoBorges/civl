@@ -44,6 +44,10 @@ public interface ContractClause extends Expression {
 		 */
 		REQUIRES,
 		/**
+		 * A sequence of contract clauses
+		 */
+		SEQUENCE,
+		/**
 		 * A "\mpi_collective" node introduces a block of contracts which should
 		 * satisfy mpi collective behaviors.
 		 */
@@ -57,15 +61,6 @@ public interface ContractClause extends Expression {
 	 * @return
 	 */
 	ContractClauseKind contractKind();
-
-	/**
-	 * Returns the body of a contract clause. The body of a contract clause can
-	 * be predicates, expressions or memory locations. A
-	 * {@link ContractClauseKind} and a body compose a complete contract clause.
-	 * 
-	 * @return
-	 */
-	Expression getBody();
 
 	@Override
 	ContractClause replaceWith(ConditionalExpression oldExpr, Expression newExpr);

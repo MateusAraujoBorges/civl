@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode.ContractKind;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -57,9 +56,11 @@ import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.BehaviorBlock;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause.COLLECTIVE_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MemoryAccessClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ObligationClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference.ArraySliceKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.MemoryUnitReference;
@@ -1601,19 +1602,19 @@ public interface ModelFactory {
 			Expression process, Scope scope);
 
 	// TODO:doc
-	ContractClause contractClause(ContractKind kind, Expression expression,
-			CIVLSource source);
+	ObligationClause obligationClause(ContractClauseKind kind,
+			Expression expression, Scope scope, CIVLSource source);
 
-	BehaviorBlock behaviorBlock(Expression assumption,
-			ClauseSequence<ContractClause> body, String name, CIVLSource source);
+	BehaviorBlock behaviorBlock(Expression assumption, ClauseSequence body,
+			String name, Scope scope, CIVLSource source);
 
 	MemoryAccessClause memoryAccessClause(Expression[] locations,
-			boolean isRead, CIVLSource source);
+			boolean isRead, Scope scope, CIVLSource source);
 
 	MPICollectiveBlockClause mpiCollectiveBlock(Expression MPIComm,
-			COLLECTIVE_KIND kind, ClauseSequence<ContractClause> body,
+			COLLECTIVE_KIND kind, ClauseSequence body, Scope scope,
 			CIVLSource source);
 
-	ClauseSequence<ContractClause> clauseSequence(
-			List<ContractClause> components, CIVLSource source);
+	ClauseSequence clauseSequence(List<ContractClause> components, Scope scope,
+			CIVLSource source);
 }

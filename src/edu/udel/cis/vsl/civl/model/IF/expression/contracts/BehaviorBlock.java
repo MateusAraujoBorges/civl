@@ -19,5 +19,5 @@ public interface BehaviorBlock extends ContractClause {
 	 * 
 	 * @return
 	 */
-	Pair<Expression, ClauseSequence<ContractClause>> getSubBlock();
+	Pair<Expression, ClauseSequence> getSubBlock();
 }

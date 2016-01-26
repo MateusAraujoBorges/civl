@@ -15,7 +15,6 @@ import java.util.Stack;
 
 import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode.ContractKind;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -78,9 +77,11 @@ import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.BehaviorBlock;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause.COLLECTIVE_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MemoryAccessClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ObligationClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference.ArraySliceKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.MemoryUnitReference;
@@ -138,6 +139,11 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonSystemGuardExpression
 import edu.udel.cis.vsl.civl.model.common.expression.CommonUnaryExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonUndefinedProcessExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonVariableExpression;
+import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonBehaviorBlock;
+import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonClauseSequence;
+import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonMPICollectiveBlockClause;
+import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonMemoryAccessClause;
+import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonObligationClause;
 import edu.udel.cis.vsl.civl.model.common.expression.reference.CommonArraySliceReference;
 import edu.udel.cis.vsl.civl.model.common.expression.reference.CommonSelfReference;
 import edu.udel.cis.vsl.civl.model.common.expression.reference.CommonStructOrUnionFieldReference;
@@ -2159,38 +2165,39 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public ContractClause contractClause(ContractKind kind,
-			Expression expression, CIVLSource source) {
-		// TODO Auto-generated method stub
-		return null;
+	public ObligationClause obligationClause(ContractClauseKind kind,
+			Expression expression, Scope scope, CIVLSource source) {
+		return new CommonObligationClause(source, expression.expressionScope(),
+				expression.lowestScope(), typeFactory.voidType, kind,
+				expression);
 	}
 
 	@Override
 	public BehaviorBlock behaviorBlock(Expression assumption,
-			ClauseSequence<ContractClause> body, String name, CIVLSource source) {
-		// TODO Auto-generated method stub
-		return null;
+			ClauseSequence body, String name, Scope scope, CIVLSource source) {
+		return new CommonBehaviorBlock(source, scope, scope,
+				typeFactory.voidType, assumption, body, name);
 	}
 
 	@Override
 	public MemoryAccessClause memoryAccessClause(Expression[] locations,
-			boolean isRead, CIVLSource source) {
-		// TODO Auto-generated method stub
-		return null;
+			boolean isRead, Scope scope, CIVLSource source) {
+		return new CommonMemoryAccessClause(source, scope, scope,
+				typeFactory.voidType, locations, isRead);
 	}
 
 	@Override
 	public MPICollectiveBlockClause mpiCollectiveBlock(Expression MPIComm,
-			COLLECTIVE_KIND kind, ClauseSequence<ContractClause> body,
+			COLLECTIVE_KIND kind, ClauseSequence body, Scope scope,
 			CIVLSource source) {
-		// TODO Auto-generated method stub
-		return null;
+		return new CommonMPICollectiveBlockClause(source, scope, scope,
+				typeFactory.voidType, body, MPIComm, kind);
 	}
 
 	@Override
-	public ClauseSequence<ContractClause> clauseSequence(
-			List<ContractClause> components, CIVLSource source) {
-		// TODO Auto-generated method stub
-		return null;
+	public ClauseSequence clauseSequence(List<ContractClause> components,
+			Scope scope, CIVLSource source) {
+		return new CommonClauseSequence(source, scope, typeFactory.voidType,
+				components);
 	}
 }

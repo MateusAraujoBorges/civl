@@ -69,6 +69,5 @@ public interface MPICollectiveBlockClause extends ContractClause {
 	 */
 	COLLECTIVE_KIND getCollectiveKind();
 
-	@Override
-	ClauseSequence<ContractClause> getBody();
+	ClauseSequence getBody();
 }
