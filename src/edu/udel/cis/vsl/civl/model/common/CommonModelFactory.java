@@ -15,6 +15,7 @@ import java.util.Stack;
 
 import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode.ContractKind;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -43,8 +44,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.BoundVariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CharLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DerivativeCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
@@ -76,6 +75,12 @@ import edu.udel.cis.vsl.civl.model.IF.expression.SystemGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.BehaviorBlock;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause.COLLECTIVE_KIND;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MemoryAccessClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference.ArraySliceKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.MemoryUnitReference;
@@ -105,7 +110,6 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonBoundVariableExpressi
 import edu.udel.cis.vsl.civl.model.common.expression.CommonCastExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonCharLiteralExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonConditionalExpression;
-import edu.udel.cis.vsl.civl.model.common.expression.CommonContractClauseExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonDereferenceExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonDerivativeCallExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonDomainGuardExpression;
@@ -2123,23 +2127,6 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public ContractClauseExpression contractClauseExpression(CIVLSource source,
-			CIVLType type, Expression collectiveGroup, Expression body,
-			ContractKind contractKind) {
-		Scope lscope, hscope;
-
-		if (collectiveGroup != null) {
-			lscope = this.getLowerScope(Arrays.asList(collectiveGroup, body));
-			hscope = this.joinScope(Arrays.asList(collectiveGroup, body));
-		} else {
-			lscope = body.lowestScope();
-			hscope = body.expressionScope();
-		}
-		return new CommonContractClauseExpression(source, hscope, lscope, type,
-				collectiveGroup, body, contractKind);
-	}
-
-	@Override
 	public FunctionIdentifierExpression elaborateDomainPointer() {
 		if (this.elaborateDomainFuncPointer == null) {
 			List<Variable> parameters = new ArrayList<>(2);
@@ -2169,5 +2156,41 @@ public class CommonModelFactory implements ModelFactory {
 			CIVLSource civlSource, Location source) {
 		return new CommonNoopStatement(civlSource, source,
 				this.trueExpression(civlSource), false, true);
+	}
+
+	@Override
+	public ContractClause contractClause(ContractKind kind,
+			Expression expression, CIVLSource source) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BehaviorBlock behaviorBlock(Expression assumption,
+			ClauseSequence<ContractClause> body, String name, CIVLSource source) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MemoryAccessClause memoryAccessClause(Expression[] locations,
+			boolean isRead, CIVLSource source) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MPICollectiveBlockClause mpiCollectiveBlock(Expression MPIComm,
+			COLLECTIVE_KIND kind, ClauseSequence<ContractClause> body,
+			CIVLSource source) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ClauseSequence<ContractClause> clauseSequence(
+			List<ContractClause> components, CIVLSource source) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

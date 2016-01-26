@@ -2,7 +2,7 @@ package edu.udel.cis.vsl.civl.state.common.immutable;
 
 import java.util.Map;
 
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression.ContractKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.state.IF.CollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
@@ -56,9 +56,9 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	private int maxPid;
 
 	/**
-	 * The {@link ContractKind} of this entry
+	 * The {@link ContractClauseKind} of this entry
 	 */
-	private ContractKind kind;
+	private ContractClauseKind kind;
 
 	/**
 	 * Communicator channels, coordinated by source then destination.
@@ -103,7 +103,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	}
 
 	ImmutableCollectiveSnapshotsEntry(int numProcesses,
-			SymbolicUniverse universe, ContractKind kind) {
+			SymbolicUniverse universe, ContractClauseKind kind) {
 		this.numProcesses = numProcesses;
 		this.isComplete = false;
 		this.numMonoStates = 0;
@@ -261,7 +261,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	}
 
 	@Override
-	public ContractKind contractKind() {
+	public ContractClauseKind contractKind() {
 		return kind;
 	}
 
@@ -278,7 +278,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		return newEntry;
 	}
 
-	ImmutableCollectiveSnapshotsEntry setKind(ContractKind kind) {
+	ImmutableCollectiveSnapshotsEntry setKind(ContractClauseKind kind) {
 		ImmutableCollectiveSnapshotsEntry newEntry = this.copy();
 
 		newEntry.kind = kind;

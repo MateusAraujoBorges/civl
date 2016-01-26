@@ -17,7 +17,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression.ContractKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
@@ -109,7 +109,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	public State executeCollectiveContract(State state, int pid,
-			String process, Expression[] args, ContractKind kind,
+			String process, Expression[] args, ContractClauseKind kind,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression[] argumentValues = new SymbolicExpression[1];
 		Evaluation eval;
@@ -570,7 +570,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 *            flag controls whether an error will be reported as a contract
 	 *            violation or assertion violation
 	 * @param kind
-	 *            {@link ContractKind} if the the collective entry is associated
+	 *            {@link ContractClauseKind} if the the collective entry is associated
 	 *            to a contract, if it is associated to a collective assert,
 	 *            kind is null.
 	 * @return
@@ -578,7 +578,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 */
 	private State executeCoassertWorker(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source, boolean isContract, ContractKind kind)
+			CIVLSource source, boolean isContract, ContractClauseKind kind)
 			throws UnsatisfiablePathConditionException {
 		ImmutableState tmpState = (ImmutableState) state;
 		Expression MPICommExpr = arguments[0];

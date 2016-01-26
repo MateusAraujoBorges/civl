@@ -1,21 +1,29 @@
 package edu.udel.cis.vsl.civl.model.common;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
+import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.AssignsOrReadsNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.AssumesNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.BehaviorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode.ContractKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
+import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
@@ -23,11 +31,13 @@ import edu.udel.cis.vsl.civl.model.IF.Identifier;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause.COLLECTIVE_KIND;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MemoryAccessClause;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -45,8 +55,6 @@ public class ContractTranslator extends FunctionTranslator {
 
 	private ModelFactory modelFactory;
 
-	private CIVLTypeFactory typeFactory;
-
 	private ModelBuilderWorker modelBuilder;
 
 	private Expression processesGroup;
@@ -57,22 +65,21 @@ public class ContractTranslator extends FunctionTranslator {
 			CIVLFunction function) {
 		super(modelBuilder, modelFactory, function);
 		this.modelFactory = modelFactory;
-		this.typeFactory = typeFactory;
 		this.modelBuilder = modelBuilder;
 		this.function = function;
 	}
 
 	/**
-	 * Translates a {@link ContractNode} to a {@link ContractClauseExpression}.
+	 * Translates a {@link ContractNode} to a {@link ContractClause}.
 	 * 
 	 * @param contractNode
 	 * @return
 	 */
-	public ContractClauseExpression translateContractNode(
-			ContractNode contractNode) {
-		ContractClauseExpression clause;
-		ExpressionNode contractExpressionNode;
-		ContractKind kind;
+	public ContractClause translateContractNode(ContractNode contractNode) {
+		ExpressionNode expressionNode;
+		Expression expression;
+		CIVLSource nodeSource = modelFactory.sourceOf(contractNode);
+		Scope scope = function.outerScope();
 
 		// A processesGroup is associated to a contractNode, each time
 		// processing a new contractNode, reset the global field of
@@ -80,31 +87,155 @@ public class ContractTranslator extends FunctionTranslator {
 		processesGroup = null;
 		switch (contractNode.contractKind()) {
 		case ENSURES:
-			contractExpressionNode = ((EnsuresNode) contractNode)
-					.getExpression();
-			kind = ContractKind.ENSURES;
-			break;
+			expressionNode = ((EnsuresNode) contractNode).getExpression();
+			expression = translateExpressionNode(expressionNode, scope, true);
+			return modelFactory.contractClause(ContractKind.ENSURES,
+					expression, nodeSource);
 		case REQUIRES:
-			contractExpressionNode = ((RequiresNode) contractNode)
-					.getExpression();
-			kind = ContractKind.REQUIRES;
-			break;
+			expressionNode = ((EnsuresNode) contractNode).getExpression();
+			expression = translateExpressionNode(expressionNode, scope, true);
+			return modelFactory.contractClause(ContractKind.REQUIRES,
+					expression, nodeSource);
+		case ASSIGNS_READS:
+			return this.translateAssignsOrReadsNode(
+					(AssignsOrReadsNode) contractNode, scope);
+		case ASSUMES:
+			expressionNode = ((AssumesNode) contractNode).getPredicate();
+			expression = translateExpressionNode(expressionNode, scope, true);
+			return modelFactory.contractClause(ContractKind.ASSUMES,
+					expression, nodeSource);
+		case BEHAVIOR:
+			return this.translateBehaviorBlock((BehaviorNode) contractNode,
+					scope);
+		case MPI_COLLECTIVE:
+			return this.translateMPICollectiveBlock(
+					(MPICollectiveBlockNode) contractNode, scope);
+		case COMPLETENESS:
+		case DEPENDS:
+		case GUARDS:
 		default:
 			throw new CIVLUnimplementedFeatureException(
 					"Translate Procedure ContractNode with "
 							+ contractNode.contractKind());
 		}
-		clause = translateContractExpressionNode(contractExpressionNode,
-				function.outerScope(), modelFactory.sourceOf(contractNode),
-				kind);
-		return clause;
+	}
+
+	@Override
+	protected Expression translateExpressionNode(ExpressionNode expressionNode,
+			Scope scope, boolean translateConversions) {
+		ExpressionKind kind = expressionNode.expressionKind();
+
+		switch (kind) {
+		case MPI_CONTRACT_EXPRESSION:
+			return translateMPIContractExpression(
+					(MPIContractExpressionNode) expressionNode, scope);
+		default:
+			return super.translateExpressionNode(expressionNode, scope,
+					translateConversions);
+		}
+	}
+
+	private Expression translateMPIContractExpression(
+			MPIContractExpressionNode node, Scope scope) {
+		MPIContractExpressionKind kind = node.MPIContractExpressionKind();
+		switch (kind) {
+		case MPI_CONSTANT:
+		case MPI_EMPTY_IN:
+		case MPI_EMPTY_OUT:
+		case MPI_EQUALS:
+		case MPI_REGION:
+		case MPI_SIZE:
+		}
+		return null;
+
+	}
+
+	private ContractClause translateMPICollectiveBlock(
+			MPICollectiveBlockNode node, Scope scope) {
+		Expression MPIComm;
+		COLLECTIVE_KIND kind;
+		ClauseSequence<ContractClause> body;
+		List<ContractClause> clauses = new LinkedList<>();
+		Iterator<ContractNode> iterator = node.getBody().iterator();
+		CIVLSource source = modelFactory.sourceOf(node);
+
+		MPIComm = this.translateExpressionNode(node.getMPIComm(), scope, true);
+		switch (node.getCollectiveKind()) {
+		case P2P:
+			kind = COLLECTIVE_KIND.P2P;
+			break;
+		case COL:
+			kind = COLLECTIVE_KIND.COL;
+			break;
+		case BOTH:
+			kind = COLLECTIVE_KIND.BOTH;
+			break;
+		default:
+			throw new CIVLInternalException("Unreachable", source);
+		}
+		while (iterator.hasNext()) {
+			ContractClause clause = translateContractNode(iterator.next());
+
+			clauses.add(clause);
+		}
+		body = modelFactory.clauseSequence(clauses,
+				modelFactory.sourceOf(node.getBody().getSource()));
+		return modelFactory.mpiCollectiveBlock(MPIComm, kind, body, source);
+	}
+
+	// TODO:doc
+	private ContractClause translateBehaviorBlock(BehaviorNode node, Scope scope) {
+		SequenceNode<ContractNode> block = node.getBody();
+		CIVLSource source = modelFactory.sourceOf(node);
+		Expression assumption = modelFactory.trueExpression(source);
+		ClauseSequence<ContractClause> clauseSeq;
+		List<ContractClause> clauses = new LinkedList<>();
+		Iterator<ContractNode> blockIter = block.iterator();
+		String name = node.getName().name();
+
+		while (blockIter.hasNext()) {
+			ContractNode subClause = blockIter.next();
+			ContractClause translatedClause;
+
+			translatedClause = this.translateContractNode(subClause);
+			if (translatedClause.contractKind().equals(ContractKind.ASSUMES)) {
+				Expression tmpAssum = translatedClause.getBody();
+				CIVLSource spanSource = modelFactory.sourceOfSpan(node,
+						subClause);
+
+				assumption = modelFactory.binaryExpression(spanSource,
+						BINARY_OPERATOR.AND, assumption, tmpAssum);
+			} else
+				clauses.add(translatedClause);
+		}
+		clauseSeq = modelFactory.clauseSequence(clauses, source);
+		return modelFactory.behaviorBlock(assumption, clauseSeq, name, source);
+	}
+
+	// TODO:doc
+	private MemoryAccessClause translateAssignsOrReadsNode(
+			AssignsOrReadsNode node, Scope scope) {
+		Iterator<ExpressionNode> menLocIter = node.getMemoryList().iterator();
+		List<Expression> memLocs = new LinkedList<>();
+		Expression[] memLocArray;
+		boolean isReads = node.isReads();
+		CIVLSource source = modelFactory.sourceOf(node);
+
+		while (menLocIter.hasNext()) {
+			Expression memLoc = translateExpressionNode(menLocIter.next(),
+					scope, true);
+
+			memLocs.add(memLoc);
+		}
+		memLocArray = new Expression[memLocs.size()];
+		return modelFactory.memoryAccessClause(memLocArray, isReads, source);
 	}
 
 	/**
-	 * Merging {@link ContractClauseExpression}s by calling the helper function:
+	 * Merging {@link ContractClause}s by calling the helper function:
 	 * {@link #mergeSingleKindContracts(List, CIVLTypeFactory, ModelFactory)}.
 	 * This function pre-processes contracts according to their
-	 * {@link ContractKind}, then calls the helper function.
+	 * {@link ContractClauseKind}, then calls the helper function.
 	 * 
 	 * @param contracts
 	 *            The {@link List} of unmegred contracts
@@ -114,36 +245,35 @@ public class ContractTranslator extends FunctionTranslator {
 	 *            A reference to a {@link ModelFactory} instance
 	 * @return
 	 */
-	static public CIVLFunction mergeContracts(
-			List<ContractClauseExpression> contracts,
-			CIVLTypeFactory typeFactory, ModelFactory modelFactory,
-			CIVLFunction function) {
-		List<ContractClauseExpression> requires, ensures;
-
-		requires = new LinkedList<>();
-		ensures = new LinkedList<>();
-		for (ContractClauseExpression contract : contracts) {
-			ContractKind kind = contract.contractKind();
-
-			if (kind.equals(ContractKind.REQUIRES))
-				requires.add(contract);
-			else if (kind.equals(ContractKind.ENSURES))
-				ensures.add(contract);
-			else
-				throw new CIVLUnimplementedFeatureException(
-						"Merge contract with kind " + contract.contractKind());
-		}
-		for (ContractClauseExpression precond : mergeSingleKindContracts(
-				requires, typeFactory, modelFactory))
-			function.addPrecondition(precond);
-		for (ContractClauseExpression postcond : mergeSingleKindContracts(
-				ensures, typeFactory, modelFactory))
-			function.addPostcondition(postcond);
-		return function;
-	}
+	// static public CIVLFunction mergeContracts(List<ContractClause> contracts,
+	// CIVLTypeFactory typeFactory, ModelFactory modelFactory,
+	// CIVLFunction function) {
+	// List<ContractClause> requires, ensures;
+	//
+	// requires = new LinkedList<>();
+	// ensures = new LinkedList<>();
+	// for (ContractClause contract : contracts) {
+	// ContractClauseKind kind = contract.contractKind();
+	//
+	// if (kind.equals(ContractClauseKind.REQUIRES))
+	// requires.add(contract);
+	// else if (kind.equals(ContractClauseKind.ENSURES))
+	// ensures.add(contract);
+	// else
+	// throw new CIVLUnimplementedFeatureException(
+	// "Merge contract with kind " + contract.contractKind());
+	// }
+	// for (ContractClause precond : mergeSingleKindContracts(requires,
+	// typeFactory, modelFactory))
+	// function.addPrecondition(precond);
+	// for (ContractClause postcond : mergeSingleKindContracts(ensures,
+	// typeFactory, modelFactory))
+	// function.addPostcondition(postcond);
+	// return function;
+	// }
 
 	/**
-	 * Merging {@link ContractClauseExpression}s with same {@link ContractKind}
+	 * Merging {@link ContractClause}s with same {@link ContractClauseKind}
 	 * together according to following rules: <br>
 	 * 1. collective contracts shouldn't be merged with non-collective
 	 * contracts;<br>
@@ -159,75 +289,75 @@ public class ContractTranslator extends FunctionTranslator {
 	 *            A reference to a {@link ModelFactory} instance
 	 * @return
 	 */
-	static private List<ContractClauseExpression> mergeSingleKindContracts(
-			List<ContractClauseExpression> contracts,
-			CIVLTypeFactory typeFactory, ModelFactory modelFactory) {
-		Map<Variable, Integer> collectiveGroup = new HashMap<>();
-		ArrayList<ContractClauseExpression> collectiveContracts = new ArrayList<>();
-		ContractClauseExpression regularContracts = null;
-		CIVLType contractType = typeFactory.booleanType();
-
-		for (ContractClauseExpression contract : contracts) {
-			ContractKind kind = contract.contractKind();
-			CIVLSource contractBodySource = contract.getBody().getSource();
-			CIVLSource contractSource = contract.getSource();
-
-			// Collective contracts should be merged with their groups:
-			if (contract.isCollectiveClause()) {
-				ContractClauseExpression canocContract;
-				int collectContractIdx;
-				VariableExpression group = (VariableExpression) contract
-						.getCollectiveGroup();
-
-				if (!collectiveGroup.containsKey(group.variable())) {
-					collectContractIdx = collectiveContracts.size();
-					collectiveGroup.put(group.variable(), collectContractIdx);
-					canocContract = modelFactory.contractClauseExpression(
-							contract.getSource(), contractType, group,
-							contract.getBody(), kind);
-					collectiveContracts.add(canocContract);
-				} else {
-					Expression mergedBody;
-
-					collectContractIdx = collectiveGroup.get(group.variable());
-					canocContract = collectiveContracts.get(collectContractIdx);
-					mergedBody = canocContract.getBody();
-					mergedBody = modelFactory
-							.binaryExpression(modelFactory.sourceOfSpan(
-									mergedBody.getSource(), contract.getBody()
-											.getSource()), BINARY_OPERATOR.AND,
-									mergedBody, contract.getBody());
-					canocContract = modelFactory.contractClauseExpression(
-							modelFactory.sourceOfSpan(
-									canocContract.getSource(), contractSource),
-							contractType, group, mergedBody, kind);
-					collectiveContracts.set(collectContractIdx, canocContract);
-				}
-			}
-			// Regular contracts should be merged together:
-			else {
-				Expression oldBody;
-
-				if (regularContracts != null) {
-					oldBody = regularContracts.getBody();
-					oldBody = modelFactory.binaryExpression(modelFactory
-							.sourceOfSpan(oldBody.getSource(),
-									contractBodySource), BINARY_OPERATOR.AND,
-							oldBody, contract.getBody());
-					regularContracts = modelFactory.contractClauseExpression(
-							modelFactory.sourceOfSpan(
-									regularContracts.getSource(),
-									contractSource), contractType, null,
-							oldBody, kind);
-				} else
-					regularContracts = contract;
-			}
-		}
-		if (regularContracts != null)
-			collectiveContracts.add(regularContracts);
-		collectiveGroup.clear();
-		return collectiveContracts;
-	}
+	// static private List<ContractClause> mergeSingleKindContracts(
+	// List<ContractClause> contracts, CIVLTypeFactory typeFactory,
+	// ModelFactory modelFactory) {
+	// Map<Variable, Integer> collectiveGroup = new HashMap<>();
+	// ArrayList<ContractClause> collectiveContracts = new ArrayList<>();
+	// ContractClause regularContracts = null;
+	// CIVLType contractType = typeFactory.booleanType();
+	//
+	// for (ContractClause contract : contracts) {
+	// ContractClauseKind kind = contract.contractKind();
+	// CIVLSource contractBodySource = contract.getBody().getSource();
+	// CIVLSource contractSource = contract.getSource();
+	//
+	// // Collective contracts should be merged with their groups:
+	// if (contract.isCollectiveClause()) {
+	// ContractClause canocContract;
+	// int collectContractIdx;
+	// VariableExpression group = (VariableExpression) contract
+	// .getCollectiveGroup();
+	//
+	// if (!collectiveGroup.containsKey(group.variable())) {
+	// collectContractIdx = collectiveContracts.size();
+	// collectiveGroup.put(group.variable(), collectContractIdx);
+	// canocContract = modelFactory.contractClauseExpression(
+	// contract.getSource(), contractType, group,
+	// contract.getBody(), kind);
+	// collectiveContracts.add(canocContract);
+	// } else {
+	// Expression mergedBody;
+	//
+	// collectContractIdx = collectiveGroup.get(group.variable());
+	// canocContract = collectiveContracts.get(collectContractIdx);
+	// mergedBody = canocContract.getBody();
+	// mergedBody = modelFactory
+	// .binaryExpression(modelFactory.sourceOfSpan(
+	// mergedBody.getSource(), contract.getBody()
+	// .getSource()), BINARY_OPERATOR.AND,
+	// mergedBody, contract.getBody());
+	// canocContract = modelFactory.contractClauseExpression(
+	// modelFactory.sourceOfSpan(
+	// canocContract.getSource(), contractSource),
+	// contractType, group, mergedBody, kind);
+	// collectiveContracts.set(collectContractIdx, canocContract);
+	// }
+	// }
+	// // Regular contracts should be merged together:
+	// else {
+	// Expression oldBody;
+	//
+	// if (regularContracts != null) {
+	// oldBody = regularContracts.getBody();
+	// oldBody = modelFactory.binaryExpression(modelFactory
+	// .sourceOfSpan(oldBody.getSource(),
+	// contractBodySource), BINARY_OPERATOR.AND,
+	// oldBody, contract.getBody());
+	// regularContracts = modelFactory.contractClauseExpression(
+	// modelFactory.sourceOfSpan(
+	// regularContracts.getSource(),
+	// contractSource), contractType, null,
+	// oldBody, kind);
+	// } else
+	// regularContracts = contract;
+	// }
+	// }
+	// if (regularContracts != null)
+	// collectiveContracts.add(regularContracts);
+	// collectiveGroup.clear();
+	// return collectiveContracts;
+	// }
 
 	@Override
 	protected Expression translateFunctionCallExpression(
@@ -326,27 +456,6 @@ public class ContractTranslator extends FunctionTranslator {
 				modelFactory.trueExpression(null));
 		result = modelFactory.systemFunctionCallExpression(civlSysFunctionCall);
 		return result;
-	}
-
-	/**
-	 * Translates an {@link ExpressionNode} to {@link ContractClauseExpression}
-	 * 
-	 * @param expressionNode
-	 *            The ExpressionNode which should be a child of a
-	 *            {@link ContractNode}
-	 * @param scope
-	 *            The scope to where the contract clause belongs
-	 * @param source
-	 *            The CIVLSource of the contract clasue expression
-	 * @param kind
-	 *            The {@link ContractKind} of the contract
-	 * @return
-	 */
-	private ContractClauseExpression translateContractExpressionNode(
-			ExpressionNode expressionNode, Scope scope, CIVLSource source,
-			ContractKind kind) {
-		return modelFactory.contractClauseExpression(source,
-				this.typeFactory.booleanType(), processesGroup, null, kind);
 	}
 
 	@Override

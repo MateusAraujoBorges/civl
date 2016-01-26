@@ -7,7 +7,7 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Set;
 
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
@@ -73,16 +73,6 @@ public interface CIVLFunction extends Sourceable {
 	 * @return The set of locations in this function.
 	 */
 	public Set<Location> locations();
-
-	/**
-	 * @return The precondition for this function. Null if not set.
-	 */
-	public List<ContractClauseExpression> preconditions();
-
-	/**
-	 * @return The postcondition for this function. Null if not set.
-	 */
-	public List<ContractClauseExpression> postconditions();
 
 	/**
 	 * @return The model to which this function belongs.
@@ -156,16 +146,18 @@ public interface CIVLFunction extends Sourceable {
 	public void setContainingScope(Scope containingScope);
 
 	/**
-	 * @param precondition
-	 *            The precondition for this function.
+	 * Set {@link ContractClause} of this function.
+	 * 
+	 * @param contracts
 	 */
-	public void addPrecondition(ContractClauseExpression precondition);
+	void setContracts(Iterable<ContractClause> contracts);
 
 	/**
-	 * @param postcondition
-	 *            The postcondition for this function.
+	 * Returns a set of function contracts.
+	 * 
+	 * @return
 	 */
-	public void addPostcondition(ContractClauseExpression postcondition);
+	Iterable<ContractClause> getContracts();
 
 	/**
 	 * @param model

@@ -17,7 +17,6 @@ import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
-import edu.udel.cis.vsl.civl.library.mpi.LibmpiExecutor;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.Certainty;
@@ -29,9 +28,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
@@ -52,7 +49,6 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
-import edu.udel.cis.vsl.civl.model.common.FunctionTranslator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
@@ -301,11 +297,11 @@ public class CommonExecutor implements Executor {
 		// Right after the call stack entry is pushed into call stack, check
 		// pre-conditions:
 		if (civlConfig.isEnableMpiContract()) {
-			List<ContractClauseExpression> preconditions = statement.function()
-					.preconditions();
-
-			if (preconditions != null && !preconditions.isEmpty())
-				state = assertMPIContractClauses(state, pid, preconditions);
+			// List<ContractClause> preconditions = statement.function()
+			// .preconditions();
+			//
+			// if (preconditions != null && !preconditions.isEmpty())
+			// state = assertMPIContractClauses(state, pid, preconditions);
 		}
 		return state;
 	}
@@ -504,38 +500,38 @@ public class CommonExecutor implements Executor {
 		// Before popping call stack, check post-conditions if -mpiContract
 		// option is selected.
 		if (civlConfig.isEnableMpiContract()) {
-			List<ContractClauseExpression> postconditions = function
-					.postconditions();
-
-			if (postconditions != null && !postconditions.isEmpty()) {
-				Scope outerScope = function.outerScope();
-				Variable resultVar = outerScope
-						.variable(FunctionTranslator.contractResultName);
-
-				// replacing $result if it exists:
-				if (resultVar != null) {
-					int sid = state.getDyscope(pid, outerScope);
-
-					if (returnValue != null) {
-						state = stateFactory.setVariable(state,
-								resultVar.vid(), sid, returnValue);
-						state = assertMPIContractClauses(state, pid,
-								postconditions);
-					} else {
-						CIVLSource ensuresSource = postconditions.get(0)
-								.getSource();
-
-						errorLogger.logSimpleError(ensuresSource, state,
-								process, symbolicAnalyzer.stateToString(state),
-								ErrorKind.OTHER, "Function: " + functionName
-										+ "has no return value but the "
-										+ "contracts of it uses $result");
-						// If there is no return value but $result is used in
-						// contract, ignore all contracts.
-					}
-				} else
-					state = assertMPIContractClauses(state, pid, postconditions);
-			}
+			// List<ContractClause> postconditions = function
+			// .postconditions();
+			//
+			// if (postconditions != null && !postconditions.isEmpty()) {
+			// Scope outerScope = function.outerScope();
+			// Variable resultVar = outerScope
+			// .variable(FunctionTranslator.contractResultName);
+			//
+			// // replacing $result if it exists:
+			// if (resultVar != null) {
+			// int sid = state.getDyscope(pid, outerScope);
+			//
+			// if (returnValue != null) {
+			// state = stateFactory.setVariable(state,
+			// resultVar.vid(), sid, returnValue);
+			// state = assertMPIContractClauses(state, pid,
+			// postconditions);
+			// } else {
+			// CIVLSource ensuresSource = postconditions.get(0)
+			// .getSource();
+			//
+			// errorLogger.logSimpleError(ensuresSource, state,
+			// process, symbolicAnalyzer.stateToString(state),
+			// ErrorKind.OTHER, "Function: " + functionName
+			// + "has no return value but the "
+			// + "contracts of it uses $result");
+			// // If there is no return value but $result is used in
+			// // contract, ignore all contracts.
+			// }
+			// } else
+			// state = assertMPIContractClauses(state, pid, postconditions);
+			// }
 		}
 		state = stateFactory.popCallStack(state, pid);
 		processState = state.getProcessState(pid);
@@ -576,55 +572,55 @@ public class CommonExecutor implements Executor {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State assertMPIContractClauses(State state, int pid,
-			List<ContractClauseExpression> conditions)
-			throws UnsatisfiablePathConditionException {
-		LibmpiExecutor libexec = null;
-		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
-
-		for (ContractClauseExpression condition : conditions) {
-			Expression clauseBody = condition.getBody();
-
-			if (condition.isCollectiveClause()) {
-				// if the contract is a collective contract, loads library
-				// evaluator
-				Expression group = condition.getCollectiveGroup();
-				Expression[] args = { group, clauseBody };
-
-				if (libexec == null)
-					try {
-						libexec = (LibmpiExecutor) loader.getLibraryExecutor(
-								"mpi", this, modelFactory, symbolicUtil,
-								symbolicAnalyzer);
-					} catch (LibraryLoaderException e) {
-						errorLogger.logSimpleError(condition.getSource(),
-								state, process,
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.LIBRARY,
-								"unable to load the library executor for the library "
-										+ "mpi" + " to check mpi contracts");
-						throw new UnsatisfiablePathConditionException();
-					}
-				state = libexec.executeCollectiveContract(state, pid, process,
-						args, condition.contractKind(), condition.getSource());
-			} else {
-				Expression conditionExpr = condition.getBody();
-				Reasoner reasoner = universe.reasoner(state.getPathCondition());
-				Evaluation eval = evaluator.evaluate(state, pid, conditionExpr);
-				ResultType resultType = reasoner.valid(
-						(BooleanExpression) eval.value).getResultType();
-
-				state = eval.state;
-				// Check non-collective conditions once
-				if (!resultType.equals(ResultType.YES))
-					state = reportContractViolation(state,
-							conditionExpr.getSource(), pid, resultType,
-							(BooleanExpression) eval.value, conditionExpr,
-							ErrorKind.CONTRACT, null);
-			}
-		}
-		return state;
-	}
+	// private State assertMPIContractClauses(State state, int pid,
+	// List<ContractClause> conditions)
+	// throws UnsatisfiablePathConditionException {
+	// LibmpiExecutor libexec = null;
+	// String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
+	//
+	// for (ContractClause condition : conditions) {
+	// Expression clauseBody = condition.getBody();
+	//
+	// if (condition.isCollectiveClause()) {
+	// // if the contract is a collective contract, loads library
+	// // evaluator
+	// Expression group = condition.getCollectiveGroup();
+	// Expression[] args = { group, clauseBody };
+	//
+	// if (libexec == null)
+	// try {
+	// libexec = (LibmpiExecutor) loader.getLibraryExecutor(
+	// "mpi", this, modelFactory, symbolicUtil,
+	// symbolicAnalyzer);
+	// } catch (LibraryLoaderException e) {
+	// errorLogger.logSimpleError(condition.getSource(),
+	// state, process,
+	// symbolicAnalyzer.stateInformation(state),
+	// ErrorKind.LIBRARY,
+	// "unable to load the library executor for the library "
+	// + "mpi" + " to check mpi contracts");
+	// throw new UnsatisfiablePathConditionException();
+	// }
+	// state = libexec.executeCollectiveContract(state, pid, process,
+	// args, condition.contractKind(), condition.getSource());
+	// } else {
+	// Expression conditionExpr = condition.getBody();
+	// Reasoner reasoner = universe.reasoner(state.getPathCondition());
+	// Evaluation eval = evaluator.evaluate(state, pid, conditionExpr);
+	// ResultType resultType = reasoner.valid(
+	// (BooleanExpression) eval.value).getResultType();
+	//
+	// state = eval.state;
+	// // Check non-collective conditions once
+	// if (!resultType.equals(ResultType.YES))
+	// state = reportContractViolation(state,
+	// conditionExpr.getSource(), pid, resultType,
+	// (BooleanExpression) eval.value, conditionExpr,
+	// ErrorKind.CONTRACT, null);
+	// }
+	// }
+	// return state;
+	// }
 
 	/**
 	 * Executes a spawn statement. The state will be updated with a new process

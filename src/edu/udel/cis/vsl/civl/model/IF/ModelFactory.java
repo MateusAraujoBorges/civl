@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode.ContractKind;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -24,8 +25,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.BoundVariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CharLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DerivativeCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
@@ -55,6 +54,12 @@ import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.BehaviorBlock;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause.COLLECTIVE_KIND;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MemoryAccessClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference.ArraySliceKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.MemoryUnitReference;
@@ -1595,27 +1600,20 @@ public interface ModelFactory {
 	RemoteExpression remoteExpression(CIVLSource source, Expression expression,
 			Expression process, Scope scope);
 
-	/**
-	 * Creates a contract clause expression: {@link ContractClauseExpression}.
-	 * 
-	 * @param source
-	 *            CIVLSource of the contract clause
-	 * @param type
-	 *            Expression type, should can only be Boolean Type
-	 * @param collectiveGroup
-	 *            Expression of the group of processes, only significant when
-	 *            this contract is a collective contract.
-	 * @param body
-	 *            Expression of the body of this contract clause which should be
-	 *            a boolean expression.
-	 * @param contractKind
-	 *            The kind of the contract, e.g. Requires or Ensures
-	 * @param contractCalls
-	 *            System function calls supported by contract semantics, can be
-	 *            null if there is no such call.
-	 * @return
-	 */
-	ContractClauseExpression contractClauseExpression(CIVLSource source,
-			CIVLType type, Expression collectiveGroup, Expression body,
-			ContractKind contractKind);
+	// TODO:doc
+	ContractClause contractClause(ContractKind kind, Expression expression,
+			CIVLSource source);
+
+	BehaviorBlock behaviorBlock(Expression assumption,
+			ClauseSequence<ContractClause> body, String name, CIVLSource source);
+
+	MemoryAccessClause memoryAccessClause(Expression[] locations,
+			boolean isRead, CIVLSource source);
+
+	MPICollectiveBlockClause mpiCollectiveBlock(Expression MPIComm,
+			COLLECTIVE_KIND kind, ClauseSequence<ContractClause> body,
+			CIVLSource source);
+
+	ClauseSequence<ContractClause> clauseSequence(
+			List<ContractClause> components, CIVLSource source);
 }

@@ -17,7 +17,7 @@ void recv(int iter) {
 void send(int msg) {
   MPI_Send(&msg, 1, MPI_INT, root, 0, MPI_COMM_WORLD);
   printf("Proc:%d sends %d\n", rank, msg);
-  $mpi_coassert(MPI_COMM_WORLD, x@root == msg);
+  //@ assert x@root == msg;
 }
 
 int main(int argc, char * argv[]) {

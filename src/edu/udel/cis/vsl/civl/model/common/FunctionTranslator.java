@@ -128,7 +128,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.ContractClauseExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
@@ -138,6 +137,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.location.Location.AtomicKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
@@ -2304,7 +2304,7 @@ public class FunctionTranslator {
 		if (contract != null) {
 			ContractTranslator contractTranslator = new ContractTranslator(
 					modelBuilder, modelFactory, typeFactory, result);
-			List<ContractClauseExpression> contracts = new LinkedList<>();
+			List<ContractClause> contracts = new LinkedList<>();
 
 			for (int i = 0; i < contract.numChildren(); i++) {
 				ContractNode contractNode = contract.getSequenceChild(i);
@@ -2312,8 +2312,10 @@ public class FunctionTranslator {
 				contracts.add(contractTranslator
 						.translateContractNode(contractNode));
 			}
-			result = ContractTranslator.mergeContracts(contracts, typeFactory,
-					modelFactory, result);
+			// result = ContractTranslator.mergeContracts(contracts,
+			// typeFactory,
+			// modelFactory, result);
+			result.setContracts(contracts);
 		}
 	}
 
