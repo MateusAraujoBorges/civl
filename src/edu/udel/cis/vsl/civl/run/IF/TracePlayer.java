@@ -102,6 +102,7 @@ public class TracePlayer extends Player {
 		log.setSearcher(null);
 		replayer = new Replayer<State, Transition>(stateManager, out);
 		replayer.setPrintAllStates(false);
+		replayer.setQuiet(civlConfig.isQuiet());
 		// replayer.setPrintAllStates(civlConfig.showStates()
 		// || civlConfig.debugOrVerbose() || civlConfig.showSavedStates());
 		replayer.setPredicate(predicate);

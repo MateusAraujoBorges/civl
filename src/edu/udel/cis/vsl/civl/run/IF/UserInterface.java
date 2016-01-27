@@ -515,7 +515,39 @@ public class UserInterface {
 	}
 
 	/* ************************* Private Methods *************************** */
-
+	/**
+	 * If the user set quiet option to true in the command, line
+	 * 
+	 * @param args
+	 * the command line arguments, e.g., {"verify", "-verbose",
+	 *            "foo.c"}. This is an array of strings of length at least 1;
+	 *            element 0 should be the name of the command
+	 * @return true iff user sets quiet option true in the command line.
+	 */
+	private boolean isQuiet(String[] args){
+		StringBuilder stringBuilder = null;
+		String command = null;
+		
+		if(args != null){
+			stringBuilder = new StringBuilder();
+			int argsLen = args.length;
+			for(int i=0; i<argsLen ; i++){
+				stringBuilder.append(args[i]);
+			}
+			command = stringBuilder.toString().trim();
+			int commandSize = command.length();
+			int lastQuietIndex = command.lastIndexOf("-quiet");
+			if(lastQuietIndex == -1) return false;
+			// "-quiet=false" has 12 characters. 
+			if(lastQuietIndex + 12 > commandSize) return true;
+			if(command.substring(lastQuietIndex, lastQuietIndex+12).equals("-quiet=false"))
+				return false;
+			else
+				return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * Parses command line arguments and runs the CIVL tool(s) as specified by
 	 * those arguments.
@@ -530,10 +562,13 @@ public class UserInterface {
 	 * @throws IOException
 	 */
 	private boolean runMain(String[] args) throws CommandLineException {
-		out.println("CIVL v" + version + " of " + date
-				+ " -- http://vsl.cis.udel.edu/civl");
-		out.flush();
-
+		boolean quiet = false;
+		quiet = isQuiet(args);
+		if(!quiet){
+			out.println("CIVL v" + version + " of " + date
+					+ " -- http://vsl.cis.udel.edu/civl");
+			out.flush();
+		}
 		if (args == null || args.length < 1) {
 			out.println("Incomplete command. Please type \'civl help\'"
 					+ " for more instructions.");
@@ -623,11 +658,12 @@ public class UserInterface {
 				@SuppressWarnings("unused")
 				CIVL_GUI gui = new CIVL_GUI(trace, replayer.symbolicAnalyzer);
 			}
-			printCommand(out, command);
-			// printTimeAndMemory(out);
-			replayer.printStats();
-			printUniverseStats(out, modelTranslator.universe);
-			out.println();
+			if(!modelTranslator.config.isQuiet()){
+				printCommand(out, command);
+				replayer.printStats();
+				printUniverseStats(out, modelTranslator.universe);
+				out.println();
+			}
 			return result;
 		}
 		return false;
@@ -644,15 +680,23 @@ public class UserInterface {
 		if (model != null) {
 			player = TracePlayer.randomPlayer(modelTranslator.gmcConfig, model,
 					out, err);
-			out.println("\nRunning random simulation with seed "
-					+ player.getSeed() + " ...");
-			out.flush();
+			if(!modelTranslator.config.isQuiet()){
+				out.println("\nRunning random simulation with seed "
+						+ player.getSeed() + " ...");
+				out.flush();
+			}
 			result = player.run().result();
+			/* original
 			this.printCommand(out, command);
-			// printTimeAndMemory(out);
 			player.printStats();
 			printUniverseStats(out, modelTranslator.universe);
-			out.println();
+			*/
+			if(!modelTranslator.config.isQuiet()){
+				this.printCommand(out, command);
+				player.printStats();
+				printUniverseStats(out, modelTranslator.universe);
+				out.println();
+			}
 			return result;
 		}
 		return false;
@@ -698,7 +742,6 @@ public class UserInterface {
 				} catch (CancellationException cancel) {
 					// time out
 				} catch (Exception e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 					return false;
 				}
@@ -717,12 +760,14 @@ public class UserInterface {
 					Analysis.printResults(model.factory().codeAnalyzers(), out);
 				}
 			}
-			this.printCommand(out, command);
-			verifier.printStats();
-			printUniverseStats(out, modelTranslator.universe);
-			out.println();
-			verifier.printResult();
-			out.flush();
+			if(!modelTranslator.config.isQuiet()){
+				this.printCommand(out, command);
+				verifier.printStats();
+				printUniverseStats(out, modelTranslator.universe);
+				out.println();
+				verifier.printResult();
+				out.flush();
+			}
 			return result;
 		}
 		return false;
@@ -835,7 +880,8 @@ public class UserInterface {
 			throws CommandLineException, ABCException, IOException {
 		Verifier verifier = new Verifier(cmdConfig, model, out, err, startTime);
 		boolean result = false;
-
+		boolean quiet = isQuiet(new String[]{command});
+		
 		try {
 			result = verifier.run_work();
 		} catch (CIVLUnimplementedFeatureException unimplemented) {
@@ -847,13 +893,14 @@ public class UserInterface {
 			verifier.terminateUpdater();
 			throw e;
 		}
-		this.printCommand(out, command);
-		// this.printTimeAndMemory(out);
-		verifier.printStats();
-		printUniverseStats(out, universe);
-		out.println();
-		verifier.printResult();
-		out.flush();
+		if(!quiet){
+			this.printCommand(out, command);
+			verifier.printStats();
+			printUniverseStats(out, universe);
+			out.println();
+			verifier.printResult();
+			out.flush();
+		}
 		return result;
 	}
 
@@ -866,6 +913,7 @@ public class UserInterface {
 		TracePlayer replayer;
 		Trace<Transition, State> trace;
 		boolean result;
+		boolean quiet = isQuiet(new String[]{command});
 
 		replayer = TracePlayer.guidedPlayer(gmcConfig, model, traceFile, out,
 				err);
@@ -875,11 +923,13 @@ public class UserInterface {
 			@SuppressWarnings("unused")
 			CIVL_GUI gui = new CIVL_GUI(trace, replayer.symbolicAnalyzer);
 		}
-		this.printCommand(out, command);
-		// this.printTimeAndMemory(out);
-		replayer.printStats();
-		printUniverseStats(out, universe);
-		out.println();
+		if(!quiet){
+			this.printCommand(out, command);
+			// this.printTimeAndMemory(out);
+			replayer.printStats();
+			printUniverseStats(out, universe);
+			out.println();
+		}
 		return result;
 	}
 
