@@ -178,6 +178,11 @@ public class CIVLConfiguration {
 	 * state?
 	 */
 	private boolean showMemoryUnits = false;
+	
+	/**
+	 * Should CIVL ignore the output after executing the command line.
+	 */
+	private boolean quiet = false;
 
 	/**
 	 * The maximal number of processes allowed in a state. -1 means infinitely
@@ -319,6 +324,7 @@ public class CIVLConfiguration {
 				.isTrue(CIVLConstants.checkDivisionByZeroO));
 		this.checkMemoryLeak = config.isTrue(CIVLConstants.checkMemoryLeakO);
 		this.setTimeout((int) config.getValueOrDefault(CIVLConstants.timeoutO));
+		this.quiet = config.isTrue(CIVLConstants.quietO);
 		if (this.svcomp) {
 			if (config.getValue(CIVLConstants.checkMemoryLeakO) == null)
 				this.checkMemoryLeak = false;
@@ -599,6 +605,14 @@ public class CIVLConfiguration {
 
 	public void setReplay(boolean isReplay) {
 		this.isReplay = isReplay;
+	}
+
+	public boolean isQuiet() {
+		return quiet;
+	}
+
+	public void setQuiet(boolean quiet) {
+		this.quiet = quiet;
 	}
 
 	/**

@@ -477,12 +477,19 @@ public class CIVLConstants {
 	 */
 	public final static Option CIVLMacroO = Option.newScalarOption("_CIVL",
 			BOOLEAN, "Define _CIVL macro?", true);
+	
+	/**
+	 * Ignore the output? false by default.
+	 */
+	public final static Option quietO = Option.newScalarOption("quiet",
+			BOOLEAN, "ignore output?", false);
 
 	/**
 	 * The name of the CIVL system function, which is the starting point of a
 	 * CIVL model.
 	 */
 	public final static String civlSystemFunction = "_CIVL_system";
+	
 
 	/**
 	 * Returns all options defined for CIVL in alphabetic order.
@@ -500,8 +507,8 @@ public class CIVLConstants {
 				showProverQueriesO, showQueriesO, showSavedStatesO,
 				showStatesO, showTimeO, showTransitionsO, showUnreachedCodeO,
 				simplifyO, solveO, statelessPrintfO, svcomp16O, pthreadOnlyO,
-				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
-				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
+				quietO, sysIncludePathO, traceO, userIncludePathO, verboseO, 
+				webO,CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO };
 	}
 
