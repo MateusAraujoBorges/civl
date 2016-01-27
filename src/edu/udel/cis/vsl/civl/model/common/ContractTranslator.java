@@ -33,6 +33,7 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.BehaviorBlock;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
@@ -131,6 +132,13 @@ public class ContractTranslator extends FunctionTranslator {
 		}
 	}
 
+	/**
+	 * Translate a {@link MPIContractExpressionNode} into a CIVL Expression
+	 * 
+	 * @param node
+	 * @param scope
+	 * @return
+	 */
 	private Expression translateMPIContractExpression(
 			MPIContractExpressionNode node, Scope scope) {
 		MPIContractExpressionKind kind = node.MPIContractExpressionKind();
@@ -146,6 +154,16 @@ public class ContractTranslator extends FunctionTranslator {
 
 	}
 
+	/**
+	 * Translate an {@link MPICollectiveBlockNode} to a
+	 * {@link MPICollectiveBlock}
+	 * 
+	 * @param node
+	 *            The {@link MPICollectiveBlockNode}
+	 * @param scope
+	 *            The scope where the MPI collective block appears.
+	 * @return
+	 */
 	private ContractClause translateMPICollectiveBlock(
 			MPICollectiveBlockNode node, Scope scope) {
 		Expression MPIComm;
@@ -180,7 +198,15 @@ public class ContractTranslator extends FunctionTranslator {
 				source);
 	}
 
-	// TODO:doc
+	/**
+	 * Translate a {@link BehaviorNode} into a {@link BehaviorBlock}.
+	 * 
+	 * @param node
+	 *            The {@link BehaviorNode}
+	 * @param scope
+	 *            The scope where the behavior block appers
+	 * @return
+	 */
 	private ContractClause translateBehaviorBlock(BehaviorNode node, Scope scope) {
 		SequenceNode<ContractNode> block = node.getBody();
 		CIVLSource source = modelFactory.sourceOf(node);
@@ -211,7 +237,15 @@ public class ContractTranslator extends FunctionTranslator {
 				source);
 	}
 
-	// TODO:doc
+	/**
+	 * Translate a {@link AssignsOrReadsNode} into a {@link MemoryAccessClause}
+	 * 
+	 * @param node
+	 *            The {@link AssignsOrReadsNode}
+	 * @param scope
+	 *            The scope where the clause appears.
+	 * @return
+	 */
 	private MemoryAccessClause translateAssignsOrReadsNode(
 			AssignsOrReadsNode node, Scope scope) {
 		Iterator<ExpressionNode> menLocIter = node.getMemoryList().iterator();

@@ -3,6 +3,13 @@ package edu.udel.cis.vsl.civl.model.IF.expression.contracts;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 
+/**
+ * This class represents a named behavior block which is defined in ACSL(v1.4
+ * 2.3.3)
+ * 
+ * @author ziqing
+ *
+ */
 public interface BehaviorBlock extends ContractClause {
 	/**
 	 * Returns the name of the behavior block.

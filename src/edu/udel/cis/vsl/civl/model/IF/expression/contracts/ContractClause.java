@@ -6,6 +6,13 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
+/**
+ * An common interface for difference contract clauses. Different contract
+ * clauses are denoted by {@link ContractClauseKind}.
+ * 
+ * @author ziqing
+ *
+ */
 public interface ContractClause extends Expression {
 	public enum ContractClauseKind {
 		/**

@@ -3,8 +3,11 @@ package edu.udel.cis.vsl.civl.model.IF.expression.contracts;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
 /**
- * This class represents contract clauses stating properties of accessing memory
- * locations. e.g. read/write on specific memory locations
+ * This class represents a series of contract clauses that claims how the
+ * function will access memory locations. The notation is :
+ * <code>[clause_kind] [location set]</code> where <br>
+ * <code>clause_kind ::= reads | assigns </code> and <br>
+ * <code>location set ::= a set of lvalues separated by commas </code>
  * 
  * @author ziqing
  *

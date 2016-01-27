@@ -1601,20 +1601,91 @@ public interface ModelFactory {
 	RemoteExpression remoteExpression(CIVLSource source, Expression expression,
 			Expression process, Scope scope);
 
-	// TODO:doc
+	/**
+	 * Creates a {@link ObligationClause}
+	 * 
+	 * @param kind
+	 *            The {@link ContractClauseKind} of this clause. It shall only
+	 *            be {@link ContractClauseKind#REQUIRES} ,
+	 *            {@link ContractClauseKind#ENSURES} or
+	 *            {@link ContractClauseKind#ASSUMES}
+	 * @param expression
+	 *            The body of the clause, it should be a boolean expression.
+	 * @param scope
+	 *            The scope of where the clause appears
+	 * @param source
+	 *            The CIVLSource of this clause.
+	 * @return
+	 */
 	ObligationClause obligationClause(ContractClauseKind kind,
 			Expression expression, Scope scope, CIVLSource source);
 
+	/**
+	 * Creates a {@link BehaviorBlock}.
+	 * 
+	 * @param assumption
+	 *            The assumption of this behavior block. It must be a boolean
+	 *            expression.
+	 * @param body
+	 *            A {@link ClauseSequence} represents the body of this behavior
+	 *            block under the given assumption (no assumptions in body).
+	 * @param name
+	 *            The name of the behavior
+	 * @param scope
+	 *            The scope where the block appears
+	 * @param source
+	 *            The CIVLSource of the behavior block
+	 * @return
+	 */
 	BehaviorBlock behaviorBlock(Expression assumption, ClauseSequence body,
 			String name, Scope scope, CIVLSource source);
 
+	/**
+	 * Creates a {@link MemoryAccessClause}.
+	 * 
+	 * @param locations
+	 *            A set of memory location expressions.
+	 * @param isRead
+	 *            A flag indicates if it is a "reads" clause.
+	 * @param scope
+	 *            The scope where the clause appears.
+	 * @param source
+	 *            The CIVLSource of this clause.
+	 * @return
+	 */
 	MemoryAccessClause memoryAccessClause(Expression[] locations,
 			boolean isRead, Scope scope, CIVLSource source);
 
+	/**
+	 * Creates an {@link MPICollectiveBlockClause}.
+	 * 
+	 * @param MPIComm
+	 *            The expression stands for an MPI communicator
+	 * @param kind
+	 *            The {@link COLLECTIVE_KIND} of this MPI collective block.
+	 * @param body
+	 *            The body of this MPI collective block.
+	 * @param scope
+	 *            The scope where the MPI collective block appears.
+	 * @param source
+	 *            The CIVLSource of this MPI collective block.
+	 * @return
+	 */
 	MPICollectiveBlockClause mpiCollectiveBlock(Expression MPIComm,
 			COLLECTIVE_KIND kind, ClauseSequence body, Scope scope,
 			CIVLSource source);
 
+	/**
+	 * Creates a {@link ClauseSequence}.
+	 * 
+	 * @param components
+	 *            The ordered set of contract clauses
+	 * @param scope
+	 *            The scope where the sequence of contract clauses appears
+	 * @param source
+	 *            The CIVLSource of this sequence of contract clauses.
+	 * @return
+	 */
 	ClauseSequence clauseSequence(List<ContractClause> components, Scope scope,
 			CIVLSource source);
 }
