@@ -16,7 +16,7 @@
     this.showTransitions = config.isTrue(CIVLConstants.showTransitionsO);
 (3) add getter and setter for the new field.
 
-3. edit the static code in civl.run.IF.UserInterface: 
+3. edit the static code in civl.run.common.CIVLCommand.java: 
 add it to CIVLCommand's option categories as it should be, 
 for example, "traceO" is only applicable to replay command so just add it 
 by CIVLCommand.addReplayOption(...).
