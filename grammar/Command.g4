@@ -133,6 +133,7 @@ OPTION_NAME
     | '-preproc'
     | '-procBound'
     | '-pthreadOnly'
+    | '-quiet'
     | '-random'
     | '-saveStates'
     | '-seed'
