@@ -194,9 +194,15 @@ public class CIVLCommandListener extends CommandBaseListener implements
 		} else if (ctx.NUMBER() != null) {
 			// NUMBER
 			return Integer.parseInt(ctx.NUMBER().getText());
-		} else
+		} else if (ctx.PATH() != null)
 			// PATH
 			return ctx.PATH().getText();
+		else {
+			// STRING
+			String whole = ctx.STRING().getText();
+
+			return whole.substring(1, whole.length() - 1);
+		}
 	}
 
 	@Override

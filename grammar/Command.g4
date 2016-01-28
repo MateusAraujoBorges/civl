@@ -70,6 +70,7 @@ value
     | VAR
     | NUMBER
     | PATH
+    | STRING
     ;
 
 BOOLEAN
@@ -179,8 +180,8 @@ NEWLINE
     : '\r'? '\n'
     ;
 
-/*STRING
-    : ~[ =\-\r\n\t]+;*/
+STRING
+    : '"' ~[ =\-\r\n\t]+ '"';
 
 WS
     : [ \t]+ -> skip
