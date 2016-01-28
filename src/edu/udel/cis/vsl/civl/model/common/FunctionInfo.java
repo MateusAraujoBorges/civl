@@ -2,7 +2,6 @@ package edu.udel.cis.vsl.civl.model.common;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -50,7 +49,7 @@ public class FunctionInfo {
 	 * identifier for a bound variable corresponding to a particular quantifier.
 	 * 
 	 */
-	private LinkedList<Pair<Identifier, CIVLType>> boundVariables;
+	private Stack<Pair<Identifier, CIVLType>> boundVariables;
 
 	/**
 	 * The current function that is being processed
@@ -81,7 +80,7 @@ public class FunctionInfo {
 		gotoStatements = new LinkedHashMap<Statement, LabelNode>();
 		continueStatements = new Stack<Set<Statement>>();
 		breakStatements = new Stack<Set<Statement>>();
-		boundVariables = new LinkedList<Pair<Identifier, CIVLType>>();
+		boundVariables = new Stack<Pair<Identifier, CIVLType>>();
 	}
 
 	/* *************************** Public Methods ************************** */
