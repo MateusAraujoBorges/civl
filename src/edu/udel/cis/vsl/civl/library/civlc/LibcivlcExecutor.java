@@ -31,6 +31,7 @@ import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
@@ -141,6 +142,10 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 			state = executeFree(state, pid, process, arguments, argumentValues,
 					call.getSource());
 			break;
+		case "$havoc":
+			state = executeHavoc(state, pid, process, arguments,
+					argumentValues, call.getSource());
+			break;
 		case "$int_iter_create":
 			state = this.executeIntIterCreate(state, pid, process, lhs,
 					arguments, argumentValues, call.getSource());
@@ -199,6 +204,36 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 	}
 
 	/* ************************** Private Methods ************************** */
+
+	private State executeHavoc(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		SymbolicExpression pointer = argumentValues[0];
+		String name = "X" + stateFactory.numSymbolicConstants(state);
+		CIVLType type;
+		SymbolicConstant unconstrainedValue;
+
+		if (!symbolicUtil.isDerefablePointer(pointer)) {
+			this.errorLogger.logSimpleError(
+					source,
+					state,
+					process,
+					this.symbolicAnalyzer.stateInformation(state),
+					ErrorKind.POINTER,
+					"can't apply $havoc to a pointer that can't be dereferenced.\npointer: "
+							+ this.symbolicAnalyzer.symbolicExpressionToString(
+									source, state, null, pointer));
+		} else {
+			state = stateFactory.incrementNumSymbolicConstants(state);
+			type = this.symbolicAnalyzer.typeOfObjByPointer(source, state,
+					pointer);
+			unconstrainedValue = universe.symbolicConstant(
+					universe.stringObject(name), type.getDynamicType(universe));
+			state = this.primaryExecutor.assign(source, state, process,
+					pointer, unconstrainedValue);
+		}
+		return state;
+	}
 
 	private State executePow(State state, int pid, String process,
 			LHSExpression lhs, Expression[] arguments,

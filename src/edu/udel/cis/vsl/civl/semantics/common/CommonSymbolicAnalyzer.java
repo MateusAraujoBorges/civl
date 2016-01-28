@@ -1016,7 +1016,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						result.append("(");
 						result.append(this.symbolicExpressionToString(source,
 								state, civlType,
-								(SymbolicExpression) arguments[0], atomize,
+								(SymbolicExpression) arguments[0], false,
 								prefix, separator));
 						result.append(")");
 					} else
@@ -1029,7 +1029,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append("]=");
 					result.append(this.symbolicExpressionToString(source,
 							state, ((CIVLArrayType) civlType).elementType(),
-							(SymbolicExpression) arguments[2], newPrefix,
+							(SymbolicExpression) arguments[2], true, newPrefix,
 							separator));
 					result.append("}");
 					return result.toString();
@@ -1038,14 +1038,22 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append('(');
 					result.append(type.toStringBuffer(false));
 					result.append(')');
-					result.append(arguments[0].toStringBuffer(true));
+					result.append(this.symbolicExpressionToString(source,
+							state, null, (SymbolicExpression) arguments[0],
+							true, "", ""));
 					return result.toString();
 				case COND:
-					result.append(arguments[0].toStringBuffer(true));
+					result.append(this.symbolicExpressionToString(source,
+							state, this.typeFactory.booleanType(),
+							(SymbolicExpression) arguments[0], true, "", ""));
 					result.append(" ? ");
-					result.append(arguments[1].toStringBuffer(true));
+					result.append(this.symbolicExpressionToString(source,
+							state, civlType, (SymbolicExpression) arguments[1],
+							true, "", ""));
 					result.append(" : ");
-					result.append(arguments[1].toStringBuffer(true));
+					result.append(this.symbolicExpressionToString(source,
+							state, civlType, (SymbolicExpression) arguments[2],
+							true, "", ""));
 					if (atomize)
 						atomize(result);
 					return result.toString();
@@ -1134,20 +1142,23 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						atomize(result);
 					return result.toString();
 				case EQUALS:
-					if (arguments[0] instanceof SymbolicExpression)
-						result.append(this.symbolicExpressionToString(source,
-								state, null, (SymbolicExpression) arguments[0]));
-					else
-						result.append(arguments[0].toStringBuffer(false));
-					result.append("==");
-					if (arguments[1] instanceof SymbolicExpression)
-						result.append(this.symbolicExpressionToString(source,
-								state, null, (SymbolicExpression) arguments[1]));
-					else
-						result.append(arguments[1].toStringBuffer(false));
-					if (atomize)
-						atomize(result);
+					processFlexibleBinary(source, state, symbolicExpression,
+							result, "%", true, atomize);
 					return result.toString();
+					// if (arguments[0] instanceof SymbolicExpression)
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[0]));
+					// else
+					// result.append(arguments[0].toStringBuffer(false));
+					// result.append("==");
+					// if (arguments[1] instanceof SymbolicExpression)
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[1]));
+					// else
+					// result.append(arguments[1].toStringBuffer(false));
+					// if (atomize)
+					// atomize(result);
+					// return result.toString();
 				case EXISTS:
 					result.append("exists ");
 					result.append(arguments[0].toStringBuffer(false));
@@ -1198,41 +1209,50 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append(")");
 					return result.toString();
 				case LESS_THAN:
-					result.append(this.symbolicExpressionToString(source,
-							state, null, (SymbolicExpression) arguments[0], "",
-							""));
-					result.append("<");
-					result.append(this.symbolicExpressionToString(source,
-							state, null, (SymbolicExpression) arguments[1], "",
-							""));
-					if (atomize)
-						atomize(result);
+					processFlexibleBinary(source, state, symbolicExpression,
+							result, "<", true, atomize);
 					return result.toString();
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[0],
+					// true, "", ""));
+					// result.append("<");
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[1],
+					// true, "", ""));
+					// if (atomize)
+					// atomize(result);
+					// return result.toString();
 				case LESS_THAN_EQUALS:
-					result.append(this.symbolicExpressionToString(source,
-							state, null, (SymbolicExpression) arguments[0], "",
-							""));
-					result.append("<=");
-					result.append(this.symbolicExpressionToString(source,
-							state, null, (SymbolicExpression) arguments[1], "",
-							""));
-					if (atomize)
-						atomize(result);
+					processFlexibleBinary(source, state, symbolicExpression,
+							result, "<=", true, atomize);
 					return result.toString();
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[0], true,"",
+					// ""));
+					// result.append("<=");
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[1],true, "",
+					// ""));
+					// if (atomize)
+					// atomize(result);
+					// return result.toString();
 				case MODULO:
-					result.append(this.symbolicExpressionToString(source,
-							state, null, (SymbolicExpression) arguments[0], "",
-							""));
-					result.append("%");
-					result.append(this.symbolicExpressionToString(source,
-							state, null, (SymbolicExpression) arguments[1], "",
-							""));
-					if (atomize)
-						atomize(result);
+					processFlexibleBinary(source, state, symbolicExpression,
+							result, "%", true, atomize);
 					return result.toString();
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[0], true,"",
+					// ""));
+					// result.append("%");
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[1],true, "",
+					// ""));
+					// if (atomize)
+					// atomize(result);
+					// return result.toString();
 				case MULTIPLY:
 					processFlexibleBinary(source, state, symbolicExpression,
-							result, "*", true, false);
+							result, "*", true, atomize);
 					return result.toString();
 				case NEGATIVE:
 					result.append("-");
@@ -1248,16 +1268,16 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							""));
 					result.append("!=");
 					result.append(this.symbolicExpressionToString(source,
-							state, null, (SymbolicExpression) arguments[1], "",
-							""));
+							state, null, (SymbolicExpression) arguments[1],
+							true, "", ""));
 					if (atomize)
 						atomize(result);
 					return result.toString();
 				case NOT:
 					result.append("!");
 					result.append(this.symbolicExpressionToString(source,
-							state, null, (SymbolicExpression) arguments[0], "",
-							""));
+							state, null, (SymbolicExpression) arguments[0],
+							true, "", ""));
 					if (atomize)
 						atomize(result);
 					return result.toString();
@@ -1271,18 +1291,24 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					// atomize(result);
 					return result.toString();
 				case POWER:
-					result.append(this.symbolicExpressionToString(source,
-							state, null, (SymbolicExpression) arguments[0], "",
-							""));
-					result.append("^");
-					result.append(arguments[1].toStringBuffer(false));
-					if (atomize)
-						atomize(result);
+					processFlexibleBinary(source, state, symbolicExpression,
+							result, "^", false, atomize);
+					// if (atomize)
+					// atomize(result);
 					return result.toString();
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[0], "",
+					// ""));
+					// result.append("^");
+					// result.append(arguments[1].toStringBuffer(false));
+					// if (atomize)
+					// atomize(result);
+					// return result.toString();
 				case SUBTRACT:
-					processBinary(result, "-", arguments[0], arguments[1], true);
-					if (atomize)
-						atomize(result);
+					processFlexibleBinary(source, state, symbolicExpression,
+							result, "-", false, atomize);
+					// if (atomize)
+					// atomize(result);
 					return result.toString();
 				case SYMBOLIC_CONSTANT:
 					result.append(arguments[0].toStringBuffer(true));

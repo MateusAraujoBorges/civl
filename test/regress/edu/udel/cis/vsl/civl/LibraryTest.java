@@ -285,6 +285,18 @@ public class LibraryTest {
 		assertTrue(ui.run("verify", filename(STDLIB, "exitTest.c")));
 	}
 
+	@Test
+	public void havoc() throws ABCException {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				TestConstants.NOPRINTF, filename(CIVLC, "havoc.cvl")));
+	}
+
+	@Test
+	public void havocBad() throws ABCException {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				TestConstants.NOPRINTF, filename(CIVLC, "havocBad.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
