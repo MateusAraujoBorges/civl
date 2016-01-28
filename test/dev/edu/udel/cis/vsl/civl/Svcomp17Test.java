@@ -54,7 +54,7 @@ public class Svcomp17Test {
 
 	@Test
 	public void stringLiteral() {
-		assertTrue(ui.run("verify -showModel=true ",
+		assertTrue(ui.run("verify -showModel=false ",
 				filename("stringLiteralIf.c")));
 	}
 
@@ -63,6 +63,13 @@ public class Svcomp17Test {
 		assertFalse(ui
 				.run("verify -svcomp16 -errorBound=1000 -pthreadOnly=false -errorStateEquiv=FULL",
 						filename("Problem01_label15_false-unreach-call.c")));
+	}
+
+	@Test
+	public void uniqueLoop() {
+		assertFalse(ui
+				.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
+						filename("unique_loop.c")));
 	}
 
 	@Test
