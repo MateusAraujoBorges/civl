@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
@@ -150,9 +151,13 @@ public class CommonStructOrUnionType extends CommonType implements
 							universe.stringObject(name.name()),
 							fieldDynamicTypes);
 				} else {
-					dynamicType = universe.unionType(
-							universe.stringObject(name.name()),
-							fieldDynamicTypes);
+					try {
+						dynamicType = universe.unionType(
+								universe.stringObject(name.name()),
+								fieldDynamicTypes);
+					} catch (IllegalArgumentException ex) {
+						throw new CIVLException(ex.getMessage(), null);
+					}
 				}
 				dynamicType = (SymbolicType) universe.canonic(dynamicType);
 			}
