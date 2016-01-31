@@ -143,7 +143,7 @@ public class ContractTranslator extends FunctionTranslator {
 			MPIContractExpressionNode node, Scope scope) {
 		MPIContractExpressionKind kind = node.MPIContractExpressionKind();
 		switch (kind) {
-		case MPI_CONSTANT:
+		case MPI_INTEGER_CONSTANT:
 		case MPI_EMPTY_IN:
 		case MPI_EMPTY_OUT:
 		case MPI_EQUALS:
