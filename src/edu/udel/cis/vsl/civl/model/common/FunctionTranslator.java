@@ -3870,7 +3870,7 @@ public class FunctionTranslator {
 		ExpressionNode functionExpression = callNode.getFunction();
 		Function callee;
 		CIVLFunction civlFunction;
-		String functionName;
+		// String functionName;
 
 		if (functionExpression instanceof IdentifierExpressionNode) {
 			callee = (Function) ((IdentifierExpressionNode) functionExpression)
@@ -3880,7 +3880,7 @@ public class FunctionTranslator {
 					"Function call must use identifier for now: "
 							+ functionExpression.getSource());
 		civlFunction = modelBuilder.functionMap.get(callee);
-		functionName = civlFunction.name().name();
+		// functionName = civlFunction.name().name();
 		assert civlFunction != null;
 		if (civlFunction.isAbstractFunction()) {
 			List<Expression> arguments = new ArrayList<Expression>();
@@ -3897,8 +3897,9 @@ public class FunctionTranslator {
 					(AbstractFunction) civlFunction, arguments);
 			return result;
 		} else
-			throw new CIVLUnimplementedFeatureException("Using function call: "
-					+ functionName + "as expression.");
+			throw new CIVLUnimplementedFeatureException(
+					"Using a function call as an expression.",
+					callNode.getSource());
 	}
 
 	/**
