@@ -1143,7 +1143,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					return result.toString();
 				case EQUALS:
 					processFlexibleBinary(source, state, symbolicExpression,
-							result, "%", true, atomize);
+							result, "==", true, atomize);
 					return result.toString();
 					// if (arguments[0] instanceof SymbolicExpression)
 					// result.append(this.symbolicExpressionToString(source,
@@ -2109,12 +2109,16 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	public StringBuffer stateInformation(State state) {
 		StringBuffer result = new StringBuffer();
 
-		result.append("\nContext:\n");
-		result.append(this.symbolicExpressionToString(null, state,
-				this.modelFactory.typeFactory().booleanType(),
+		result.append("\nInputs:");
+		result.append(this.inputVariablesToStringBuffer(state));
+		result.append("\nContext:");
+		result.append(this.pathconditionToString(null, state, "  ",
 				state.getPathCondition()));
-		result.append("\n");
-		result.append(state.callStackToString());
+		// result.append(this.symbolicExpressionToString(null, state,
+		// this.modelFactory.typeFactory().booleanType(),
+		// state.getPathCondition()));
+		// result.append("\n");
+		// result.append(state.callStackToString());
 		return result;
 	}
 
@@ -2126,7 +2130,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 		for (Map.Entry<Variable, SymbolicExpression> entry : inputVariableValues
 				.entrySet()) {
-			result.append("\n");
+			result.append("\n  ");
 			result.append(entry.getKey().name().name());
 			result.append("=");
 			result.append(this.symbolicExpressionToString(entry.getKey()
