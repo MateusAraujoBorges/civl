@@ -1388,12 +1388,17 @@ public class CommonExecutor implements Executor {
 			SymbolicExpression pointer, SymbolicExpression value,
 			boolean isInitialization)
 			throws UnsatisfiablePathConditionException {
-		if (!symbolicUtil.isDerefablePointer(pointer)) {
-			errorLogger.logSimpleError(
+		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer
+				.isDerefablePointer(state, pointer);
+
+		if (checkPointer.right != ResultType.YES) {
+			errorLogger.logError(
 					source,
 					state,
 					process,
 					symbolicAnalyzer.stateInformation(state),
+					checkPointer.left,
+					checkPointer.right,
 					ErrorKind.DEREFERENCE,
 					"attempt to write to a memory location through the pointer "
 							+ this.symbolicAnalyzer.symbolicExpressionToString(

@@ -6,7 +6,7 @@ public class Triple<R, S, T> {
 	public T third;
 
 	public Triple(R first, S second, T third) {
-		assert first != null && second != null && third != null;
+		// assert first != null && second != null && third != null;
 		this.first = first;
 		this.second = second;
 		this.third = third;

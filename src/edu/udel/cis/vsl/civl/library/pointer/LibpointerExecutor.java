@@ -23,6 +23,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -242,10 +243,9 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 			String process, LHSExpression lhs, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression result = this.falseValue;
+		SymbolicExpression result = this.symbolicAnalyzer.isDerefablePointer(
+				state, argumentValues[0]).left;
 
-		if (symbolicUtil.isDerefablePointer(argumentValues[0]))
-			result = this.trueValue;
 		if (lhs != null)
 			state = this.primaryExecutor.assign(state, pid, process, lhs,
 					result);
@@ -444,9 +444,12 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression first = argumentValues[0], second = argumentValues[1], result;
+		Pair<BooleanExpression, ResultType> checkFirst = symbolicAnalyzer
+				.isDerefablePointer(state, first), checkRight = symbolicAnalyzer
+				.isDerefablePointer(state, second);
 
-		if (!symbolicUtil.isDerefablePointer(first)
-				|| !symbolicUtil.isDerefablePointer(second))
+		if (checkFirst.right != ResultType.YES
+				|| checkRight.right != ResultType.YES)
 			result = falseValue;
 		else
 			result = symbolicUtil.contains(first, second);

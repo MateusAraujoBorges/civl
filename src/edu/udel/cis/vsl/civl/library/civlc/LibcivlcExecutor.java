@@ -28,7 +28,9 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
@@ -212,14 +214,18 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 		String name = "X" + stateFactory.numSymbolicConstants(state);
 		CIVLType type;
 		SymbolicConstant unconstrainedValue;
+		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer
+				.isDerefablePointer(state, pointer);
 
-		if (!symbolicUtil.isDerefablePointer(pointer)) {
-			this.errorLogger.logSimpleError(
+		if (checkPointer.right != ResultType.YES) {
+			this.errorLogger.logError(
 					source,
 					state,
 					process,
 					this.symbolicAnalyzer.stateInformation(state),
-					ErrorKind.POINTER,
+					checkPointer.left,
+					checkPointer.right,
+					ErrorKind.MEMORY_MANAGE,
 					"can't apply $havoc to a pointer that can't be dereferenced.\npointer: "
 							+ this.symbolicAnalyzer.symbolicExpressionToString(
 									source, state, null, pointer));

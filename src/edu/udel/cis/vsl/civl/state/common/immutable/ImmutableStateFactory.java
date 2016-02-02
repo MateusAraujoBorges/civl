@@ -24,8 +24,8 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
@@ -1640,21 +1640,26 @@ public class ImmutableStateFactory implements StateFactory {
 
 			// if (!reachable.contains(heapObjPtr))
 			reachable.add(heapObjPtr);
-		} else if (this.symbolicUtil.isDerefablePointer(value)) {
+		} else if (value.type().equals(this.typeFactory.pointerSymbolicType())) {
 			// other pointers
 			int dyscopeId = this.symbolicUtil.getDyscopeId(null, value);
-			int vid = this.symbolicUtil.getVariableId(null, value);
-			ReferenceExpression reference = this.symbolicUtil.getSymRef(value);
-			SymbolicExpression varValue = state
-					.getVariableValue(dyscopeId, vid);
-			SymbolicExpression objectValue;
 
-			try {
-				objectValue = this.universe.dereference(varValue, reference);
-			} catch (SARLException e) {
-				return;
+			if (dyscopeId >= 0) {
+				int vid = this.symbolicUtil.getVariableId(null, value);
+				ReferenceExpression reference = this.symbolicUtil
+						.getSymRef(value);
+				SymbolicExpression varValue = state.getVariableValue(dyscopeId,
+						vid);
+				SymbolicExpression objectValue;
+
+				try {
+					objectValue = this.universe
+							.dereference(varValue, reference);
+				} catch (SARLException e) {
+					return;
+				}
+				reachableHeapObjectsOfValue(state, objectValue, reachable);
 			}
-			reachableHeapObjectsOfValue(state, objectValue, reachable);
 		}
 	}
 
@@ -1746,7 +1751,7 @@ public class ImmutableStateFactory implements StateFactory {
 
 			if (newHeapObjPtr != null
 					&& !oldToNewHeapPointers.containsKey(value)) {
-				if (!symbolicUtil.isDefinedPointer(newHeapObjPtr))
+				if (newHeapObjPtr.isNull())
 					oldToNewHeapPointers.put(value, newHeapObjPtr);
 				else {
 					ReferenceExpression ref = symbolicUtil
@@ -1964,7 +1969,8 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state,
 			int pid, int numProcesses, int place, int queueID,
-			Expression assertion, SymbolicExpression channels, ContractClauseKind kind) {
+			Expression assertion, SymbolicExpression channels,
+			ContractClauseKind kind) {
 		ImmutableCollectiveSnapshotsEntry[] queue = state.getSnapshots(queueID);
 		ImmutableCollectiveSnapshotsEntry[] newQueue;
 		ImmutableCollectiveSnapshotsEntry entry = new ImmutableCollectiveSnapshotsEntry(

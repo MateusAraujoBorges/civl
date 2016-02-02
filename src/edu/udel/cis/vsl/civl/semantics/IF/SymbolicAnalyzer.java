@@ -8,6 +8,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
@@ -212,7 +213,39 @@ public interface SymbolicAnalyzer {
 			boolean isSubtract, SymbolicExpression pointer,
 			SymbolicExpression offset);
 
-	BooleanExpression isDerefablePointer(State state, SymbolicExpression pointer);
+	/**
+	 * Is this an defined pointer? A pointer is defined if one of the following
+	 * holds:
+	 * <ul>
+	 * <li>it can be dereferenced (derefable pointer), e.g., <code>&a</code>,
+	 * <code>&b[0]</code> where <code>a</code> is a scalar variable and
+	 * <code>b</code> is an array of length 5.</li>
+	 * <li>it is the NULL pointer.</li>
+	 * <li>it points to the end of an array, e.g., <code>&b[5]</code> where
+	 * <code>b</code> is an array of length 5.</li>
+	 * </ul>
+	 * For the latter two cases, the pointer is called underefable pointer.
+	 * 
+	 * @param pointer
+	 *            The pointer.
+	 * @return True iff the given pointer is defined.
+	 */
+	Pair<BooleanExpression, ResultType> isDefinedPointer(State state,
+			SymbolicExpression pointer);
+
+	/**
+	 * Is this a derefable pointer? In other words, check if the pointer can be
+	 * dereferenced safely. Examples of derefable pointers: <code>&a</code>,
+	 * <code>&b[0]</code> where <code>a</code> is a scalar variable and
+	 * <code>b</code> is an array of length 5. Examples of underefable pointers:
+	 * NULL, <code>&b[5]</code> where <code>b</code> is an array of length 5.
+	 * 
+	 * @param state
+	 * @param pointer
+	 * @return
+	 */
+	Pair<BooleanExpression, ResultType> isDerefablePointer(State state,
+			SymbolicExpression pointer);
 
 	/**
 	 * Pretty representation of a path condition, which is broken into lines if
@@ -222,6 +255,6 @@ public interface SymbolicAnalyzer {
 	 * @param pc
 	 * @return
 	 */
-	StringBuffer pathconditionToString(CIVLSource source,State state, String prefix,
-			BooleanExpression pc);
+	StringBuffer pathconditionToString(CIVLSource source, State state,
+			String prefix, BooleanExpression pc);
 }

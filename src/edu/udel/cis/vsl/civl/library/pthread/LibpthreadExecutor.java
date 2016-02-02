@@ -24,6 +24,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
+import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
@@ -219,7 +220,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 			SymbolicExpression pidValue;
 			int pidInt;
 
-			if (!this.symbolicUtil.isDerefablePointer(threadPtr))
+			if (this.symbolicAnalyzer.isDerefablePointer(state, threadPtr).right != ResultType.YES)
 				continue;
 			eval = this.evaluator.dereference(source, state, process, null,
 					universe.arrayRead(threads, universe.integer(i)), false);
@@ -231,7 +232,8 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 					&& modelFactory.isPocessIdDefined(pidInt))
 				state = stateFactory.removeProcess(state, pidInt);
 		}
-		state=this.executeFree(state, pid, process, arguments, argumentValues, source);
+		state = this.executeFree(state, pid, process, arguments,
+				argumentValues, source);
 		return state;
 	}
 
@@ -336,7 +338,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 		state = eval.state;
 		threadPointer = universe.arrayRead(
 				universe.tupleRead(gpoolObject, zeroObject), index);
-		if (!symbolicUtil.isDerefablePointer(threadPointer))
+		if (symbolicAnalyzer.isDerefablePointer(state, threadPointer).right != ResultType.YES)
 			result = modelFactory.nullProcessValue();
 		else {
 			eval = this.evaluator.dereference(source, state, process, null,
@@ -372,7 +374,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression gpoolObject, result;
 		Evaluation eval;
 
-		if (symbolicUtil.isDerefablePointer(gpool)) {
+		if (symbolicAnalyzer.isDerefablePointer(state, gpool).right == ResultType.YES) {
 			eval = this.evaluator.dereference(source, state, process,
 					arguments[0], gpool, false);
 			gpoolObject = eval.value;
@@ -414,7 +416,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 		poolObj = eval.value;
 		state = eval.state;
 		threadPointer = universe.tupleRead(poolObj, this.twoObject);
-		if (this.symbolicUtil.isDerefablePointer(threadPointer)) {
+		if (this.symbolicAnalyzer.isDerefablePointer(state, threadPointer).right == ResultType.YES) {
 			threadTermPointer = this.symbolicUtil.makePointer(threadPointer,
 					universe.tupleComponentReference(
 							symbolicUtil.getSymRef(threadPointer),

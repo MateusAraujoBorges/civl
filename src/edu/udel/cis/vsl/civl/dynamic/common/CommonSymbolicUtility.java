@@ -695,11 +695,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public boolean isDefinedPointer(SymbolicExpression pointer) {
-		return !pointer.isNull();
-	}
-
-	@Override
 	public boolean isValidRefOf(ReferenceExpression ref,
 			SymbolicExpression value) {
 		return isValidRefOfValue(ref, value).right;
@@ -1393,13 +1388,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			argValues.add(argumentValues[i]);
 		}
 		return universe.apply(abstractFunction, argValues);
-	}
-
-	@Override
-	public boolean isDerefablePointer(SymbolicExpression pointer) {
-		if (this.isDefinedPointer(pointer))
-			return getDyscopeId(null, pointer) >= 0;
-		return false;
 	}
 
 	@Override

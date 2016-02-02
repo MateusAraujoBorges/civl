@@ -307,15 +307,6 @@ public interface SymbolicUtility {
 	boolean isHeapPointer(SymbolicExpression pointer);
 
 	/**
-	 * Is this an undefined pointer?
-	 * 
-	 * @param pointer
-	 *            The pointer.
-	 * @return True iff the given pointer is undefined.
-	 */
-	boolean isDefinedPointer(SymbolicExpression pointer);
-
-	/**
 	 * Checks if the given reference is valid for a certain object or a
 	 * sub-component of some object.
 	 * 
@@ -801,17 +792,6 @@ public interface SymbolicUtility {
 	 */
 	SymbolicExpression getAbstractGuardOfFunctionCall(String library,
 			String function, SymbolicExpression[] argumentValues);
-
-	/**
-	 * Checks if a pointer is derefable, i.e., it could be safely dereferenced.
-	 * A derefable pointer is defined and not NULL. (Array index within bound is
-	 * not guaranteed, however.)
-	 * 
-	 * @param pointer
-	 *            The pointer to be checked.
-	 * @return True iff the pointer is valid, i.e., can be dereferenced.
-	 */
-	boolean isDerefablePointer(SymbolicExpression pointer);
 
 	/**
 	 * Apply the reverse of a given uninterpreted function. If the argument is

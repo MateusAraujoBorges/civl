@@ -24,6 +24,7 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.MemoryUnitExpressionEvaluator;
+import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnit;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitSet;
@@ -33,6 +34,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -226,6 +228,11 @@ public class AmpleSetWorker {
 	private SymbolicUtility symbolicUtil;
 
 	/**
+	 * The symbolic analyzer
+	 */
+	private SymbolicAnalyzer symbolicAnalyzer;
+
+	/**
 	 * The symbolic universe
 	 */
 	private SymbolicUniverse universe;
@@ -298,6 +305,7 @@ public class AmpleSetWorker {
 		this.debugging = debug;
 		this.debugOut = debugOut;
 		this.symbolicUtil = evaluator.symbolicUtility();
+		this.symbolicAnalyzer = evaluator.symbolicAnalyzer();
 		this.universe = evaluator.universe();
 		impactMemUnits = new MemoryUnitSet[state.numProcs()];
 		this.memUnitFactory = muFactory;
@@ -1081,7 +1089,8 @@ public class AmpleSetWorker {
 					CIVLSource source = variable.getSource();
 
 					if (!value.isNull()
-							&& symbolicUtil.isDerefablePointer(value))
+							&& symbolicAnalyzer
+									.isDerefablePointer(state, value).right == ResultType.YES)
 						memUnitFactory.add(nonPtrReadonly, memUnitFactory
 								.newMemoryUnit(symbolicUtil.getDyscopeId(
 										source, value), symbolicUtil
@@ -1150,7 +1159,7 @@ public class AmpleSetWorker {
 				Variable variable;
 
 				if (expr.operator() != SymbolicOperator.CONCRETE
-						|| !symbolicUtil.isDerefablePointer(expr))
+						|| symbolicAnalyzer.isDerefablePointer(state, expr).right != ResultType.YES)
 					return;
 				variable = state
 						.getDyscope(symbolicUtil.getDyscopeId(null, expr))

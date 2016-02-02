@@ -62,6 +62,7 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NTReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
@@ -78,6 +79,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType.SymbolicTypeKind;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
 import edu.udel.cis.vsl.sarl.collections.IF.SymbolicCollection;
 import edu.udel.cis.vsl.sarl.collections.IF.SymbolicSequence;
 
@@ -2203,25 +2205,198 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public BooleanExpression isDerefablePointer(State state,
+	public Pair<BooleanExpression, ResultType> isDerefablePointer(State state,
 			SymbolicExpression pointer) {
-		if (!this.symbolicUtil.isDefinedPointer(pointer))
-			return this.universe.falseExpression();
+		if (this.symbolicUtil.isNullPointer(pointer) || pointer.isNull())
+			return new Pair<>(universe.falseExpression(), ResultType.NO);
 
 		int dyscope = symbolicUtil.getDyscopeId(null, pointer);
 
 		if (dyscope < 0)
-			return this.universe.falseExpression();
+			return new Pair<>(universe.falseExpression(), ResultType.NO);
 
 		int vid = symbolicUtil.getVariableId(null, pointer);
 		SymbolicExpression value = state.getVariableValue(dyscope, vid);
 
-		try {
-			universe.dereference(value, symbolicUtil.getSymRef(pointer));
-		} catch (Exception ex) {
-			return universe.falseExpression();
+		if (value == null)
+			return new Pair<>(universe.falseExpression(), ResultType.NO);
+		return this.checkReference(true,
+				universe.reasoner(state.getPathCondition()),
+				symbolicUtil.getSymRef(pointer), value);
+	}
+
+	/**
+	 * Is the given reference applicable to the specified symbolic expression?
+	 * 
+	 * @param ref
+	 *            The reference expression to be checked.
+	 * @param value
+	 *            The symbolic expression specified.
+	 * @return True iff the given reference is applicable to the specified
+	 *         symbolic expression
+	 */
+	private Triple<SymbolicExpression, BooleanExpression, ResultType> isValidRefOfValue(
+			Reasoner reasoner, boolean derefable, ReferenceExpression ref,
+			SymbolicExpression value) {
+		if (ref.isIdentityReference())
+			return new Triple<>(value, universe.trueExpression(),
+					ResultType.YES);
+		else {
+			ReferenceExpression parent = ((NTReferenceExpression) ref)
+					.getParent();
+			Triple<SymbolicExpression, BooleanExpression, ResultType> parentTest = isValidRefOfValue(
+					reasoner, derefable, parent, value);
+			SymbolicExpression targetValue;
+
+			if (parentTest.third != ResultType.YES)
+				return parentTest;
+			targetValue = parentTest.first;
+			if (targetValue == null)
+				return parentTest;
+			if (ref.isArrayElementReference()) {
+				ArrayElementReference arrayEleRef = (ArrayElementReference) ref;
+
+				if (targetValue.type() instanceof SymbolicArrayType) {
+					NumericExpression index = arrayEleRef.getIndex();
+					NumericExpression length = universe.length(targetValue);
+
+					if (targetValue.type() instanceof SymbolicCompleteArrayType) {
+						BooleanExpression claim = derefable ? universe
+								.lessThan(index, length) : universe
+								.lessThanEquals(index, length);
+						ResultType result = reasoner.valid(claim)
+								.getResultType();
+
+						claim = reasoner.simplify(claim);
+						if (result == ResultType.YES) {
+							if (!derefable
+									&& reasoner.valid(
+											universe.equals(length, index))
+											.getResultType() != ResultType.NO) {
+								return new Triple<>(null, claim, result);
+							} else {
+								return new Triple<>(universe.arrayRead(
+										targetValue, index), claim, result);
+							}
+						}else if(result==ResultType.MAYBE)
+							return new Triple<>(null, claim, result);
+					} else {
+						return new Triple<>(universe.arrayRead(targetValue,
+								index), universe.trueExpression(),
+								ResultType.YES);
+					}
+				}
+			} else if (ref.isTupleComponentReference()) {
+				TupleComponentReference tupleCompRef = (TupleComponentReference) ref;
+
+				if (targetValue.type() instanceof SymbolicTupleType) {
+					IntObject index = tupleCompRef.getIndex();
+					int length = ((SymbolicTupleType) targetValue.type())
+							.sequence().numTypes();
+
+					if (index.getInt() < length)
+						return new Triple<>(universe.tupleRead(targetValue,
+								index), universe.trueExpression(),
+								ResultType.YES);
+				}
+			} else if (ref instanceof UnionMemberReference) {
+				UnionMemberReference unionMemRef = (UnionMemberReference) ref;
+				IntObject index = unionMemRef.getIndex();
+
+				if (targetValue.type() instanceof SymbolicUnionType) {
+					int length = ((SymbolicUnionType) targetValue.type())
+							.sequence().numTypes();
+
+					if (index.getInt() < length)
+						return new Triple<>(universe.unionExtract(index,
+								targetValue), universe.trueExpression(),
+								ResultType.YES);
+				}
+			} else {
+				// offset reference
+				return new Triple<>(null, universe.trueExpression(),
+						ResultType.YES);
+			}
 		}
-		return universe.trueExpression();
+		return new Triple<>(null, universe.falseExpression(), ResultType.NO);
+	}
+
+	/**
+	 * 
+	 * @param derefable
+	 *            true iff to check derefableness; otherwise, only check
+	 *            definedness.
+	 * @param reasoner
+	 * @param reference
+	 * @param object
+	 * @return
+	 */
+	private Pair<BooleanExpression, ResultType> checkReference(
+			boolean derefable, Reasoner reasoner,
+			ReferenceExpression reference, SymbolicExpression object) {
+		Triple<SymbolicExpression, BooleanExpression, ResultType> result = isValidRefOfValue(
+				reasoner, derefable, reference, object);
+
+		return new Pair<>(result.second, result.third);
+		// SymbolicType objType = object.type();
+		//
+		// if (reference.isArrayElementReference()) {
+		// ArrayElementReference arrayEleRef = (ArrayElementReference)
+		// reference;
+		//
+		// if (objType instanceof SymbolicArrayType) {
+		// NumericExpression index = arrayEleRef.getIndex();
+		// NumericExpression length = universe.length(object);
+		// BooleanExpression boundedIndex = derefable ? universe.lessThan(
+		// index, length) : universe.lessThanEquals(index, length);
+		// ResultType result = reasoner.valid(boundedIndex)
+		// .getResultType();
+		//
+		// switch (result) {
+		// case YES:
+		// return this.checkReference(derefable, reasoner,
+		// arrayEleRef.getParent(),
+		// universe.arrayRead(object, index));
+		// case NO:
+		// case MAYBE:
+		// return new Pair<>(boundedIndex, result);
+		// default:
+		// throw new CIVLInternalException(
+		// "Unexpected result type of a claim",
+		// (CIVLSource) null);
+		// }
+		// }
+		// } else if (reference.isTupleComponentReference()) {
+		// TupleComponentReference tupleCompRef = (TupleComponentReference)
+		// reference;
+		// IntObject index = tupleCompRef.getIndex();
+		//
+		// if (objType instanceof SymbolicTupleType) {
+		// int length = ((SymbolicTupleType) objType).sequence()
+		// .numTypes();
+		//
+		// if (index.getInt() < length)
+		// return this.checkReference(derefable, reasoner,
+		// tupleCompRef.getParent(),
+		// universe.tupleRead(object, index));
+		// }
+		// } else if (reference.isUnionMemberReference()) {
+		// UnionMemberReference unionMemRef = (UnionMemberReference) reference;
+		// IntObject index = unionMemRef.getIndex();
+		//
+		// if (objType instanceof SymbolicUnionType) {
+		// int length = ((SymbolicUnionType) objType).sequence()
+		// .numTypes();
+		//
+		// if (index.getInt() < length)
+		// return this.checkReference(derefable, reasoner,
+		// unionMemRef.getParent(),
+		// universe.unionExtract(index, object));
+		// }
+		// } else {// if (reference.isIdentityReference()) {
+		// return new Pair<>(universe.trueExpression(), ResultType.YES);
+		// }
+		// return new Pair<>(universe.falseExpression(), ResultType.NO);
 	}
 
 	@Override
@@ -2239,5 +2414,28 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					clauses[i]));
 		}
 		return result;
+	}
+
+	@Override
+	public Pair<BooleanExpression, ResultType> isDefinedPointer(State state,
+			SymbolicExpression pointer) {
+		if (this.symbolicUtil.isNullPointer(pointer))
+			return new Pair<>(universe.trueExpression(), ResultType.YES);
+		if (pointer.isNull())
+			return new Pair<>(universe.falseExpression(), ResultType.NO);
+
+		int dyscope = symbolicUtil.getDyscopeId(null, pointer);
+
+		if (dyscope < 0)
+			return new Pair<>(universe.falseExpression(), ResultType.NO);
+
+		int vid = symbolicUtil.getVariableId(null, pointer);
+		SymbolicExpression value = state.getVariableValue(dyscope, vid);
+
+		if (value == null)
+			return new Pair<>(universe.falseExpression(), ResultType.NO);
+		return this.checkReference(false,
+				universe.reasoner(state.getPathCondition()),
+				symbolicUtil.getSymRef(pointer), value);
 	}
 }

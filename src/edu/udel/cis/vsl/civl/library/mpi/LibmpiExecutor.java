@@ -17,9 +17,9 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -383,15 +383,24 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		SymbolicType realSymType, assertedSymType;
 		Reasoner reasoner;
 		IntegerNumber assertedTypeEnum;
+		Pair<BooleanExpression, ResultType> checkPointer;
 
 		if (symbolicUtil.isNullPointer(pointer))
 			return state;
 		// this assertion doesn't need recovery:
-		if (!pointer.operator().equals(SymbolicOperator.CONCRETE)
-				|| !symbolicUtil.isDerefablePointer(pointer)) {
-			errorLogger.logSimpleError(arguments[0].getSource(), state,
-					process, this.symbolicAnalyzer.stateInformation(state),
-					ErrorKind.POINTER,
+		if (!pointer.operator().equals(SymbolicOperator.CONCRETE)) {
+			errorLogger
+					.logSimpleError(arguments[0].getSource(), state, process,
+							this.symbolicAnalyzer.stateInformation(state),
+							ErrorKind.POINTER,
+							"attempt to read/write a non-concrete pointer type variable");
+			return state;
+		}
+		checkPointer = symbolicAnalyzer.isDerefablePointer(state, pointer);
+		if (checkPointer.right != ResultType.YES) {
+			errorLogger.logError(arguments[0].getSource(), state, process,
+					this.symbolicAnalyzer.stateInformation(state),
+					checkPointer.left, checkPointer.right, ErrorKind.POINTER,
 					"attempt to read/write a invalid pointer type variable");
 			return state;
 		}
@@ -570,9 +579,9 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 *            flag controls whether an error will be reported as a contract
 	 *            violation or assertion violation
 	 * @param kind
-	 *            {@link ContractClauseKind} if the the collective entry is associated
-	 *            to a contract, if it is associated to a collective assert,
-	 *            kind is null.
+	 *            {@link ContractClauseKind} if the the collective entry is
+	 *            associated to a contract, if it is associated to a collective
+	 *            assert, kind is null.
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */

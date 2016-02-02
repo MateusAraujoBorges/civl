@@ -190,13 +190,18 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression firstElementPointer = argumentValues[0];
+		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer
+				.isDefinedPointer(state, firstElementPointer);
 
-		if (!symbolicUtil.isDefinedPointer(firstElementPointer)) {
+		if (checkPointer.right != ResultType.YES) {
 			this.errorLogger
-					.logSimpleError(source, state, process,
+					.logError(source, state, process,
 							symbolicAnalyzer.stateInformation(state),
+							checkPointer.left, checkPointer.right,
 							ErrorKind.MEMORY_MANAGE,
 							"attempt to deallocate memory space through an undefined pointer");
+			state = state.setPathCondition(universe.and(
+					state.getPathCondition(), checkPointer.left));
 			// dont report unsatisfiable path condition exception
 		} else if (this.symbolicUtil.isNullPointer(firstElementPointer)) {
 			// does nothing for null pointer.
@@ -217,12 +222,18 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 							+ " is not a pointer returned by a memory "
 							+ "management method");
 		} else {
-			Evaluation eval = this.evaluator.dereference(source, state,
-					process, null, firstElementPointer, false);
-			SymbolicExpression heapObject = eval.value;
+			Evaluation eval;
+			SymbolicExpression heapObject = null;
+			Pair<BooleanExpression, ResultType> checkDerefable = symbolicAnalyzer
+					.isDerefablePointer(state, firstElementPointer);
 
-			state = eval.state;
-			if (heapObject.isNull()) {
+			if (checkDerefable.right == ResultType.YES) {
+				eval = this.evaluator.dereference(source, state, process, null,
+						firstElementPointer, false);
+				heapObject = eval.value;
+				state = eval.state;
+			}
+			if (heapObject != null && heapObject.isNull()) {
 				// the heap object has been deallocated
 				this.errorLogger
 						.logSimpleError(source, state, process,

@@ -531,10 +531,23 @@ public class CommonEvaluator implements Evaluator {
 					// this function should never return a java null
 					deref = universe.dereference(variableValue, symRef);
 				} catch (SARLException e) {
-					errorLogger.logSimpleError(source, state, process,
+					errorLogger.logSimpleError(
+							source,
+							state,
+							process,
 							symbolicAnalyzer.stateInformation(state),
 							ErrorKind.DEREFERENCE,
-							"Illegal pointer dereference: " + e.getMessage());
+							"Illegal pointer dereference: " + e.getMessage()
+									+ "\n"
+									+ symbolicAnalyzer.stateInformation(state)
+					// + "\n\nInputs: "
+					// + symbolicAnalyzer
+					// .inputVariablesToStringBuffer(state)
+					// + "\n\nContext:"
+					// + symbolicAnalyzer.pathconditionToString(
+					// source, state, "  ",
+					// state.getPathCondition())
+							);
 					throwPCException = true;
 				}
 			}
@@ -3357,10 +3370,14 @@ public class CommonEvaluator implements Evaluator {
 			BinaryExpression expression, SymbolicExpression pointer,
 			NumericExpression offset)
 			throws UnsatisfiablePathConditionException {
-		if (!symbolicUtil.isDefinedPointer(pointer)) {
+		Pair<BooleanExpression, ResultType> checkPointer = this.symbolicAnalyzer
+				.isDefinedPointer(state, pointer);
+
+		if (checkPointer.right != ResultType.YES) {
 			errorLogger
-					.logSimpleError(expression.getSource(), state, process,
+					.logError(expression.getSource(), state, process,
 							symbolicAnalyzer.stateInformation(state),
+							checkPointer.left, checkPointer.right,
 							ErrorKind.DEREFERENCE,
 							"Attempt to performs pointer addition upon an undefined pointer");
 			throw new UnsatisfiablePathConditionException();
