@@ -851,6 +851,8 @@ public class ModelTranslator {
 	 */
 	private Map<String, Macro> getMacroMaps(Language language)
 			throws PreprocessorException {
+		if (language.ordinal() == Language.FORTRAN77.ordinal())
+			return new HashMap<String, Macro>();
 		Map<String, Object> macroDefMap = cmdSection.getMapValue(macroO);
 		Map<String, String> macroDefs = new HashMap<String, String>();
 		Preprocessor preprocessor = frontEnd.getPreprocessor(language);
