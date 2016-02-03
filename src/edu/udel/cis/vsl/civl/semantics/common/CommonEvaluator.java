@@ -2211,22 +2211,28 @@ public class CommonEvaluator implements Evaluator {
 			BooleanExpression assumption = state.getPathCondition();
 			// TODO change to andTo
 			BooleanExpression claim;
+			ResultType resultType;
+			Reasoner reasoner = universe.reasoner(assumption);
 
-			if (addressOnly)
-				claim = universe.and(universe.lessThanEquals(zero, index),
-						universe.lessThanEquals(index, length));
-			else
-				claim = universe.and(universe.lessThanEquals(zero, index),
-						universe.lessThan(index, length));
-
-			ResultType resultType = universe.reasoner(assumption).valid(claim)
-					.getResultType();
-
+			claim = universe.lessThanEquals(zero, index);
+			resultType = reasoner.valid(claim).getResultType();
 			if (resultType != ResultType.YES) {
 				state = errorLogger.logError(source, state, process,
 						symbolicAnalyzer.stateInformation(state), claim,
 						resultType, ErrorKind.OUT_OF_BOUNDS,
-						"Out of bounds array index:\nindex = " + index
+						"possible negative array index: " + index);
+				throw new UnsatisfiablePathConditionException();
+			}
+			if (addressOnly)
+				claim = universe.lessThanEquals(index, length);
+			else
+				claim = universe.lessThan(index, length);
+			resultType = reasoner.valid(claim).getResultType();
+			if (resultType != ResultType.YES) {
+				state = errorLogger.logError(source, state, process,
+						symbolicAnalyzer.stateInformation(state), claim,
+						resultType, ErrorKind.OUT_OF_BOUNDS,
+						"out of bounds array index:\nindex = " + index
 								+ "\nlength = " + length);
 				throw new UnsatisfiablePathConditionException();
 			}
