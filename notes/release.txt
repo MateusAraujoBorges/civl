@@ -48,7 +48,7 @@ Second, go to the directory you download:
 Third, merge changes from the trunk:
   svn merge svn://vsl.cis.udel.edu/civl/trunk
 Forth, commit:
-  svn ci -m"Merged updated README from trunk."
+  svn commit -m"Merged updates from trunk."
 
 8. Test the release: download it from the web page, move the
 executable file "civl" somewhere in your path (e.g., /tools/bin)
