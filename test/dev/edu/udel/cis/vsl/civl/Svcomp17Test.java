@@ -33,11 +33,10 @@ public class Svcomp17Test {
 	@Test
 	public void parport_false() {
 		assertFalse(ui
-				.run("verify -svcomp16 -showTransitions -showProgram=false -errorBound=10 -pthreadOnly=false -errorStateEquiv=FULL",
+				.run("verify -svcomp16 -showTransitions -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
 						filename("parport_false-unreach-call.i.cil.c")));
 	}
 
-	// verify -svcomp16 -errorBound=10 -pthreadOnly=false -errorStateEquiv=FULL
 	@Test
 	public void floppy_false() {
 		assertFalse(ui
@@ -48,7 +47,7 @@ public class Svcomp17Test {
 	@Test
 	public void base_name() {
 		assertFalse(ui.run("verify -showModel=false -svcomp16 -errorBound=10 "
-				+ "-pthreadOnly=false -errorStateEquiv=FULL",
+				+ "-errorStateEquiv=FULL",
 				filename("basename_false-unreach-call.c")));
 	}
 
@@ -60,9 +59,9 @@ public class Svcomp17Test {
 
 	@Test
 	public void Problem01() {
-		assertFalse(ui
-				.run("verify -svcomp16 -errorBound=1000 -pthreadOnly=false -errorStateEquiv=FULL",
-						filename("Problem01_label15_false-unreach-call.c")));
+		assertFalse(ui.run(
+				"verify -svcomp16 -errorBound=1000 -errorStateEquiv=FULL",
+				filename("Problem01_label15_false-unreach-call.c")));
 	}
 
 	@Test

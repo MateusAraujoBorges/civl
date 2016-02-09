@@ -223,7 +223,7 @@ public class CIVLConfiguration {
 
 	private int timeout = -1;
 
-	private boolean pthreadOnly = true;
+	// private boolean pthreadOnly = true;
 
 	/**
 	 * Constructs a new CIVL configuration object from the command line
@@ -707,18 +707,18 @@ public class CIVLConfiguration {
 		this.timeout = timeout;
 	}
 
-	/**
-	 * @return the pthreadOnly
-	 */
-	public boolean pthreadOnly() {
-		return pthreadOnly;
-	}
-
-	/**
-	 * @param pthreadOnly
-	 *            the pthreadOnly to set
-	 */
-	public void setPthreadOnly(boolean pthreadOnly) {
-		this.pthreadOnly = pthreadOnly;
-	}
+	// /**
+	// * @return the pthreadOnly
+	// */
+	// public boolean pthreadOnly() {
+	// return pthreadOnly;
+	// }
+	//
+	// /**
+	// * @param pthreadOnly
+	// * the pthreadOnly to set
+	// */
+	// public void setPthreadOnly(boolean pthreadOnly) {
+	// this.pthreadOnly = pthreadOnly;
+	// }
 }

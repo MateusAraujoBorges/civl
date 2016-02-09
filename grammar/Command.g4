@@ -133,7 +133,6 @@ OPTION_NAME
     | '-ompLoopDecomp'
     | '-preproc'
     | '-procBound'
-    | '-pthreadOnly'
     | '-quiet'
     | '-random'
     | '-saveStates'
