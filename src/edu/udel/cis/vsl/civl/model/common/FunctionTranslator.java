@@ -1053,6 +1053,9 @@ public class FunctionTranslator {
 							"Expected boolean value for variable " + variable
 									+ " but saw " + constant);
 			case INT:
+				if (constant instanceof BigInteger)
+					return modelFactory.integerLiteralExpression(source,
+							(BigInteger) constant);
 				if (constant instanceof Integer)
 					return modelFactory.integerLiteralExpression(source,
 							new BigInteger(((Integer) constant).toString()));

@@ -394,6 +394,7 @@ public class UserInterface {
 			out.println("Generating composite program...");
 		combinedAST = combiner.combine(specProgram.getAST(),
 				implProgram.getAST());
+		// combinedAST.prettyPrint(System.out, true);
 		compositeProgram = specWorker.frontEnd.getProgramFactory(
 				specWorker.frontEnd.getStandardAnalyzer(Language.CIVL_C))
 				.newProgram(combinedAST);
@@ -760,7 +761,7 @@ public class UserInterface {
 					Analysis.printResults(model.factory().codeAnalyzers(), out);
 				}
 			}
-			if(!modelTranslator.config.isQuiet()){
+			if(!modelTranslator.config.isQuiet()) {
 				this.printCommand(out, command);
 				verifier.printStats();
 				printUniverseStats(out, modelTranslator.universe);
@@ -880,8 +881,8 @@ public class UserInterface {
 			throws CommandLineException, ABCException, IOException {
 		Verifier verifier = new Verifier(cmdConfig, model, out, err, startTime);
 		boolean result = false;
-		boolean quiet = isQuiet(new String[]{command});
-		
+		boolean quiet = isQuiet(new String[] { command });
+
 		try {
 			result = verifier.run_work();
 		} catch (CIVLUnimplementedFeatureException unimplemented) {
@@ -893,7 +894,7 @@ public class UserInterface {
 			verifier.terminateUpdater();
 			throw e;
 		}
-		if(!quiet){
+		if (!quiet) {
 			this.printCommand(out, command);
 			verifier.printStats();
 			printUniverseStats(out, universe);
@@ -913,7 +914,7 @@ public class UserInterface {
 		TracePlayer replayer;
 		Trace<Transition, State> trace;
 		boolean result;
-		boolean quiet = isQuiet(new String[]{command});
+		boolean quiet = isQuiet(new String[] { command });
 
 		replayer = TracePlayer.guidedPlayer(gmcConfig, model, traceFile, out,
 				err);
@@ -923,7 +924,7 @@ public class UserInterface {
 			@SuppressWarnings("unused")
 			CIVL_GUI gui = new CIVL_GUI(trace, replayer.symbolicAnalyzer);
 		}
-		if(!quiet){
+		if (!quiet) {
 			this.printCommand(out, command);
 			// this.printTimeAndMemory(out);
 			replayer.printStats();

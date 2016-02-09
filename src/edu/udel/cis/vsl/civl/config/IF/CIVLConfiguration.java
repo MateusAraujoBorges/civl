@@ -178,7 +178,7 @@ public class CIVLConfiguration {
 	 * state?
 	 */
 	private boolean showMemoryUnits = false;
-	
+
 	/**
 	 * Should CIVL ignore the output after executing the command line.
 	 */
@@ -195,11 +195,11 @@ public class CIVLConfiguration {
 	 * default.
 	 */
 	private int ompLoopDecomp = ModelConfiguration.DECOMP_ROUND_ROBIN;
-	
+
 	/**
 	 * The error state equivalence semantics to suppress logging of redundant
-	 * error states.  All equivalences use the "kind" of error, but they vary
-	 * in the portions of the state considered.  LOC by default.
+	 * error states. All equivalences use the "kind" of error, but they vary in
+	 * the portions of the state considered. LOC by default.
 	 */
 	private ErrorStateEquivalence errorStateEquiv = ErrorStateEquivalence.LOC;
 
@@ -284,8 +284,9 @@ public class CIVLConfiguration {
 				this.errorStateEquiv = ErrorStateEquivalence.FULL;
 				break;
 			default:
-				throw new CIVLInternalException("invalid error state equivalence"
-						+ errorStateEquivString, (CIVLSource) null);
+				throw new CIVLInternalException(
+						"invalid error state equivalence"
+								+ errorStateEquivString, (CIVLSource) null);
 			}
 		this.setShowMemoryUnits(config.isTrue(CIVLConstants.showMemoryUnitsO));
 		this.debug = config.isTrue(CIVLConstants.debugO);
@@ -336,10 +337,6 @@ public class CIVLConfiguration {
 				this.deadlock = DeadlockKind.NONE;
 			if (config.getValue(CIVLConstants.procBoundO) == null)
 				this.procBound = 6;
-		}
-		if (this.svcomp) {
-			this.setPthreadOnly((boolean) config
-					.getValueOrDefault(CIVLConstants.pthreadOnlyO));
 		}
 	}
 
@@ -458,7 +455,7 @@ public class CIVLConfiguration {
 	public boolean printStates() {
 		return this.showStates || this.verbose || this.debug;
 	}
-	
+
 	public ErrorStateEquivalence errorStateEquiv() {
 		return errorStateEquiv;
 	}

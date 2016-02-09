@@ -631,25 +631,24 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void intToPointer() {
-		assertTrue(ui.run("verify",
-				filename("intToPointer.cvl")));
+		assertTrue(ui.run("verify", filename("intToPointer.cvl")));
 	}
-	
+
 	@Test
 	public void splitFormat() {
 		assertTrue(ui.run("verify ", filename("splitFormat.cvl")));
 	}
-	
+
 	@Test
 	public void splitFormatBad() {
 		assertFalse(ui.run("verify ", filename("splitFormatBad.cvl")));
 	}
-	
+
 	@Test
 	public void splitFormatBad2() {
 		assertFalse(ui.run("verify ", filename("splitFormatBad2.cvl")));
 	}
-	
+
 	@Test
 	public void splitFormatBad3() {
 		assertFalse(ui.run("verify ", filename("splitFormatBad3.cvl")));

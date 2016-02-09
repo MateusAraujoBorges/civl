@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.run.common;
 
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -10,6 +11,7 @@ import java.util.TreeMap;
 
 import org.antlr.v4.runtime.misc.NotNull;
 
+import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.run.IF.CommandLine;
 import edu.udel.cis.vsl.civl.run.IF.CommandLine.CommandLineKind;
 import edu.udel.cis.vsl.civl.run.common.NormalCommandLine.NormalCommandKind;
@@ -173,7 +175,7 @@ public class CIVLCommandListener extends CommandBaseListener implements
 
 		try {
 			if (ctx.value() != null) {
-				Object value = this.translateValue(ctx.value());
+				Object value = this.translateValue(option, ctx.value());
 
 				cmdSection.setScalarValue(option, value);
 			} else if (option.type() == OptionType.BOOLEAN)
@@ -183,7 +185,8 @@ public class CIVLCommandListener extends CommandBaseListener implements
 		}
 	}
 
-	private Object translateValue(@NotNull CommandParser.ValueContext ctx) {
+	private Object translateValue(Option option,
+			@NotNull CommandParser.ValueContext ctx) {
 		if (ctx.VAR() != null) {
 			return ctx.VAR().getText();
 		} else if (ctx.BOOLEAN() != null) {
@@ -193,7 +196,13 @@ public class CIVLCommandListener extends CommandBaseListener implements
 				return false;
 		} else if (ctx.NUMBER() != null) {
 			// NUMBER
-			return Integer.parseInt(ctx.NUMBER().getText());
+			String optionName = option.name();
+
+			if (optionName.equals(CIVLConstants.SEED)
+					|| optionName.equals(CIVLConstants.INPUT))
+				return new BigInteger(ctx.NUMBER().getText());
+			else
+				return Integer.parseInt(ctx.NUMBER().getText());
 		} else if (ctx.PATH() != null)
 			// PATH
 			return ctx.PATH().getText();
@@ -207,16 +216,16 @@ public class CIVLCommandListener extends CommandBaseListener implements
 
 	@Override
 	public void enterInputOption(@NotNull CommandParser.InputOptionContext ctx) {
-		Option option = mapOptionMap.get("input");
+		Option option = mapOptionMap.get(CIVLConstants.INPUT);
 		String key = ctx.VAR().getText();
-		Object value = this.translateValue(ctx.value());
+		Object value = this.translateValue(option, ctx.value());
 
 		cmdSection.putMapEntry(option, key, value);
 	}
 
 	@Override
 	public void enterMacroOption(@NotNull CommandParser.MacroOptionContext ctx) {
-		Option option = mapOptionMap.get("D");
+		Option option = mapOptionMap.get(CIVLConstants.MACRO);
 		String name = ctx.VAR().getText();
 		String value = ctx.value() != null ? ctx.value().getText() : "";
 

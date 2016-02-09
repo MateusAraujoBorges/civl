@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -176,8 +177,9 @@ public class GeneralWorker extends BaseWorker {
 				&& inputVariables.containsKey(CIVL_argc_name)) {
 			Object CIVL_argc_obj = inputVariables.get(CIVL_argc_name);
 
-			assert CIVL_argc_obj instanceof Integer;
-			return this.integerConstant((int) CIVL_argc_obj);
+			assert CIVL_argc_obj instanceof BigInteger;
+			return this
+					.integerConstant(((BigInteger) CIVL_argc_obj).intValue());
 		}
 		return this.integerConstant(DEFAULT_ARGV_SIZE);
 	}

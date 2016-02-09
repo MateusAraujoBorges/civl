@@ -25,7 +25,7 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.ompLoopDecompO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.ompNoSimplifyO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.preprocO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.procBoundO;
-import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.pthreadOnlyO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.quietO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.randomO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.saveStatesO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.seedO;
@@ -53,7 +53,6 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.timeoutO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.traceO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.userIncludePathO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.verboseO;
-import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.quietO;
 
 import java.io.PrintStream;
 import java.util.Collection;
@@ -77,28 +76,28 @@ public class CIVLCommand {
 
 	static {
 		CIVLCommand.addShowOption(showModelO, verboseO, debugO,
-				userIncludePathO, sysIncludePathO, svcomp16O, pthreadOnlyO,
-				showInputVarsO, showProgramO, ompNoSimplifyO, ompLoopDecompO,
-				macroO, preprocO, astO, showTimeO, CIVLMacroO, quietO);
+				userIncludePathO, sysIncludePathO, svcomp16O, showInputVarsO,
+				showProgramO, ompNoSimplifyO, ompLoopDecompO, macroO, preprocO,
+				astO, showTimeO, CIVLMacroO, quietO);
 		CIVLCommand.addVerifyOrCompareOption(errorBoundO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO,
 				showProverQueriesO, inputO, minO, mpiContractO, maxdepthO,
 				procBoundO, saveStatesO, simplifyO, solveO, enablePrintfO,
 				showAmpleSetO, showAmpleSetWtStatesO, statelessPrintfO,
-				deadlockO, svcomp16O, pthreadOnlyO, showProgramO,
-				showPathConditionO, ompNoSimplifyO, ompLoopDecompO,
-				collectProcessesO, collectScopesO, collectHeapsO, macroO,
-				preprocO, astO, showTimeO, showMemoryUnitsO, CIVLMacroO,
-				showUnreachedCodeO, analyzeAbsO, collectOutputO,
-				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, quietO);
+				deadlockO, svcomp16O, showProgramO, showPathConditionO,
+				ompNoSimplifyO, ompLoopDecompO, collectProcessesO,
+				collectScopesO, collectHeapsO, macroO, preprocO, astO,
+				showTimeO, showMemoryUnitsO, CIVLMacroO, showUnreachedCodeO,
+				analyzeAbsO, collectOutputO, checkDivisionByZeroO,
+				checkMemoryLeakO, timeoutO, quietO);
 		CIVLCommand.addCompareOption(errorBoundO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO,
 				showProverQueriesO, inputO, minO, maxdepthO, procBoundO,
 				saveStatesO, simplifyO, solveO, enablePrintfO, showAmpleSetO,
 				showAmpleSetWtStatesO, statelessPrintfO, deadlockO, svcomp16O,
-				pthreadOnlyO, showProgramO, showPathConditionO, ompNoSimplifyO,
+				showProgramO, showPathConditionO, ompNoSimplifyO,
 				ompLoopDecompO, collectProcessesO, collectScopesO,
 				collectHeapsO, macroO, preprocO, astO, showTimeO,
 				showMemoryUnitsO, CIVLMacroO, showUnreachedCodeO, analyzeAbsO,
@@ -115,12 +114,11 @@ public class CIVLCommand {
 				showTransitionsO, showStatesO, showSavedStatesO, showQueriesO,
 				showProverQueriesO, inputO, maxdepthO, procBoundO, simplifyO,
 				enablePrintfO, showAmpleSetO, showAmpleSetWtStatesO,
-				statelessPrintfO, deadlockO, svcomp16O, pthreadOnlyO,
-				showProgramO, showPathConditionO, ompNoSimplifyO,
-				ompLoopDecompO, collectProcessesO, collectScopesO,
-				collectHeapsO, macroO, preprocO, astO, showMemoryUnitsO,
-				CIVLMacroO, collectOutputO, checkDivisionByZeroO,
-				checkMemoryLeakO, timeoutO, quietO);
+				statelessPrintfO, deadlockO, svcomp16O, showProgramO,
+				showPathConditionO, ompNoSimplifyO, ompLoopDecompO,
+				collectProcessesO, collectScopesO, collectHeapsO, macroO,
+				preprocO, astO, showMemoryUnitsO, CIVLMacroO, collectOutputO,
+				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, quietO);
 	}
 
 	private static void addShowOption(Option... options) {

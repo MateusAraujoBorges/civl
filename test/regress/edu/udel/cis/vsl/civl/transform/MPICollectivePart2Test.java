@@ -73,12 +73,13 @@ public class MPICollectivePart2Test {
 
 	@Test
 	public void alltoallv() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", filename("alltoallv.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=6 ",
+				filename("alltoallv.c")));
 	}
 
 	@Test
 	public void reduce() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", filename("reduce.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=6", filename("reduce.c")));
 	}
 
 	@Test
@@ -101,7 +102,8 @@ public class MPICollectivePart2Test {
 
 	@Test
 	public void allreduce() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6", filename("allreduce.c")));
+		assertTrue(ui
+				.run("verify -input_mpi_nprocs=6", filename("allreduce.c")));
 	}
 
 	@Test
@@ -118,8 +120,8 @@ public class MPICollectivePart2Test {
 
 	@Test
 	public void barrierReduce() {
-		assertTrue(ui
-				.run("verify -input_mpi_nprocs=5", filename("barrierReduce.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=5",
+				filename("barrierReduce.c")));
 	}
 
 	@Test
@@ -133,13 +135,13 @@ public class MPICollectivePart2Test {
 		assertFalse(ui.run("verify -input_mpi_nprocs=5",
 				filename("barrierScatter.c")));
 	}
-	
+
 	@Test
-	public void reduceScatter(){
+	public void reduceScatter() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=4",
 				filename("reduceScatter.c")));
 	}
-	
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

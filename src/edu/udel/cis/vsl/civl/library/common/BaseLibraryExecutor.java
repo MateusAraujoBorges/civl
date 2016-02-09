@@ -158,8 +158,8 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 				message.append(result);
 			}
 			state = this.reportAssertionFailure(state, pid, process,
-					resultType, message.toString(), arguments, argumentValues,
-					source, assertValue, 1);
+					resultType, message.toString(), arguments,
+					argumentValues, source, assertValue, 1);
 			state = state.setPathCondition(this.universe.and(
 					state.getPathCondition(),
 					(BooleanExpression) argumentValues[0]));
@@ -273,7 +273,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 	 *            The symbolic expressions of the arguments
 	 * @param source
 	 *            The CIVL source of the assertion statement
-	 * @param assertValue
+	 * @param claim
 	 *            The boolean expression of the value of the assertion claim
 	 * @param msgOffset
 	 *            the start index in arguments list of the assertion failure
@@ -282,9 +282,10 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	protected State reportAssertionFailure(State state, int pid,
-			String process, ResultType resultType, String message,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source, BooleanExpression assertValue, int msgOffset)
+			String process, ResultType resultType,
+			String message, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source,
+			BooleanExpression claim, int msgOffset)
 			throws UnsatisfiablePathConditionException {
 		assert resultType != ResultType.YES;
 		if (arguments.length > msgOffset) {
@@ -299,12 +300,12 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			civlConfig.out().println();
 			// }
 		}
-		// errorLogger.logError(source, state, process,
-		// this.symbolicAnalyzer.stateInformation(state), claim, resultType,
-		// ErrorKind.ASSERTION_VIOLATION, message)
-		errorLogger.logSimpleError(source, state, process,
-				this.symbolicAnalyzer.stateInformation(state),
-				ErrorKind.ASSERTION_VIOLATION, message);
+		errorLogger.logError(source, state, process,
+				this.symbolicAnalyzer.stateInformation(state), claim,
+				resultType, ErrorKind.ASSERTION_VIOLATION, message);
+		// errorLogger.logSimpleError(source, state, process,
+		// this.symbolicAnalyzer.stateInformation(state),
+		// ErrorKind.ASSERTION_VIOLATION, message);
 		return state;
 	}
 

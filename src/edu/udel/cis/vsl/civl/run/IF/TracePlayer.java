@@ -5,6 +5,7 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.seedO;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigInteger;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
@@ -60,20 +61,20 @@ public class TracePlayer extends Player {
 			throws CommandLineException, IOException,
 			MisguidedExecutionException {
 		TracePlayer result = new TracePlayer(config, model, out, err);
-		String seedString = (String) config.getAnonymousSection().getValue(
-				seedO);
+		BigInteger seedValue = (BigInteger) config.getAnonymousSection()
+				.getValue(seedO);
 		RandomTransitionChooser<State, Transition, TransitionSequence> chooser;
 
-		if (seedString == null)
+		if (seedValue == null)
 			chooser = new RandomTransitionChooser<>(result.enabler);
 		else {
 			long seed;
 
 			try {
-				seed = new Long(seedString);
+				seed = seedValue.longValue();
 			} catch (NumberFormatException e) {
 				throw new CommandLineException(
-						"Expected long value for seed, saw " + seedString);
+						"Expected long value for seed, saw " + seedValue);
 			}
 			chooser = new RandomTransitionChooser<>(result.enabler, seed);
 		}
@@ -140,8 +141,7 @@ public class TracePlayer extends Player {
 		} catch (CIVLStateException stateException) {
 			throw new CIVLExecutionException(stateException.kind(),
 					stateException.certainty(), "",
-					stateException.getMessage(),
-					stateException.state(),
+					stateException.getMessage(), stateException.state(),
 					stateException.source());
 		}
 	}
