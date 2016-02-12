@@ -39,8 +39,8 @@ public class CommonAbstractFunction extends CommonFunction implements
 	public CommonAbstractFunction(CIVLSource source, Identifier name,
 			List<Variable> parameters, CIVLType returnType,
 			Scope containingScope, int fid, int continuity, ModelFactory factory) {
-		super(source, name, parameters, returnType, containingScope, fid, null,
-				factory);
+		super(source, true, name, parameters, returnType, containingScope, fid,
+				null, factory);
 		this.continuity = continuity;
 	}
 

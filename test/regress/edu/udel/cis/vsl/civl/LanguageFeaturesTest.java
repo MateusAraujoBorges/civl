@@ -355,7 +355,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void quantifiers() {
-		assertTrue(ui.run("verify", filename("quantifiers.cvl")));
+		assertTrue(ui.run("verify -showStates=false -showTransitions",
+				filename("quantifiers.cvl")));
 	}
 
 	@Test
@@ -652,6 +653,12 @@ public class LanguageFeaturesTest {
 	@Test
 	public void splitFormatBad3() {
 		assertFalse(ui.run("verify ", filename("splitFormatBad3.cvl")));
+	}
+
+	@Test
+	public void atomicFunctionSpecifier() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				filename("atomicFunctionSpecifier.cvl")));
 	}
 
 	@AfterClass

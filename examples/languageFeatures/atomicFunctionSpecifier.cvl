@@ -1,0 +1,16 @@
+#include<civlc.cvh>
+
+$atomic_f void increase(int* p){
+  int old=*p;
+  
+  *p=(*p)+1;
+
+  $assert(old+1==*p);
+}
+
+int data=0;
+
+void main(){
+  $parfor(int i: 0 .. 1)
+    increase(&data);
+}

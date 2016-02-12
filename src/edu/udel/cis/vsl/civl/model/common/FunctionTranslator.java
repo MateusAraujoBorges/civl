@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -81,7 +80,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.NullStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ReturnNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode.StatementKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.SwitchNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.WhenNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.EnumerationTypeNode;
@@ -137,7 +135,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.location.Location.AtomicKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
@@ -537,25 +534,25 @@ public class FunctionTranslator {
 		return result;
 	}
 
-	private FunctionCallNode isFunctionCall(StatementNode block) {
-		StatementNode statement = block;
-
-		if (block.statementKind() == StatementKind.COMPOUND) {
-			CompoundStatementNode compound = (CompoundStatementNode) block;
-
-			if (compound.numChildren() > 1)
-				return null;
-			statement = (StatementNode) compound.getSequenceChild(0);
-		}
-		if (statement.statementKind() == StatementKind.EXPRESSION) {
-			ExpressionNode expr = ((ExpressionStatementNode) statement)
-					.getExpression();
-
-			if (expr.expressionKind() == ExpressionKind.FUNCTION_CALL)
-				return (FunctionCallNode) expr;
-		}
-		return null;
-	}
+	// private FunctionCallNode isFunctionCall(StatementNode block) {
+	// StatementNode statement = block;
+	//
+	// if (block.statementKind() == StatementKind.COMPOUND) {
+	// CompoundStatementNode compound = (CompoundStatementNode) block;
+	//
+	// if (compound.numChildren() > 1)
+	// return null;
+	// statement = (StatementNode) compound.getSequenceChild(0);
+	// }
+	// if (statement.statementKind() == StatementKind.EXPRESSION) {
+	// ExpressionNode expr = ((ExpressionStatementNode) statement)
+	// .getExpression();
+	//
+	// if (expr.expressionKind() == ExpressionKind.FUNCTION_CALL)
+	// return (FunctionCallNode) expr;
+	// }
+	// return null;
+	// }
 
 	private Fragment translateCivlParForNode(Scope scope,
 			CivlForNode civlForNode) {
@@ -573,46 +570,52 @@ public class FunctionTranslator {
 		VariableExpression parProcs = modelFactory.parProcsVariable(source,
 				procsType, scope);
 		StatementNode bodyNode = civlForNode.getBody();
-		FunctionCallNode bodyFuncCall = this.isFunctionCall(bodyNode);
+		// FunctionCallNode bodyFuncCall = this.isFunctionCall(bodyNode);
 		CIVLFunction procFunc;
 		CivlParForSpawnStatement parForEnter;
 		Fragment result;
 		CallOrSpawnStatement callWaitAll;
 		Location location;
 		Expression domain;
-		CallOrSpawnStatement call = null;
+		// CallOrSpawnStatement call = null;
 
-		if (bodyFuncCall != null) {
-			// $parfor(...) func(); -- no need for _par_for_proc function
-			call = (CallOrSpawnStatement) this.translateFunctionCall(
-					initResults.first, null, bodyFuncCall, true,
-					parForEndSource);
+		// if (bodyFuncCall != null) {
+		// // $parfor(...) func(); -- no need for _par_for_proc function
+		// call = (CallOrSpawnStatement) this.translateFunctionCall(
+		// initResults.first, null, bodyFuncCall, true,
+		// parForEndSource);
+		//
+		// // modelBuilder.callStatements.put(call, value)
+		// procFunc = call.function();
+		// } else {
 
-			// modelBuilder.callStatements.put(call, value)
-			procFunc = call.function();
-		} else {
-			CIVLSource procFuncSource = modelFactory.sourceOf(bodyNode);
-			CIVLSource procFuncStartSource = modelFactory
-					.sourceOfBeginning(bodyNode);
-			List<Variable> loopVars = initResults.third;
-			int numOfLoopVars = loopVars.size();
-			List<Variable> procFuncParameters = new ArrayList<>(numOfLoopVars);
+		// even when the body is a single function call statement, we still need
+		// to introduce a new proc function to wrap that single function call
+		// because there is no guarantee that the arguments of the arbitrary
+		// function call would fit the iterator variables of the domain nicely.
+		CIVLSource procFuncSource = modelFactory.sourceOf(bodyNode);
+		CIVLSource procFuncStartSource = modelFactory
+				.sourceOfBeginning(bodyNode);
+		List<Variable> loopVars = initResults.third;
+		int numOfLoopVars = loopVars.size();
+		List<Variable> procFuncParameters = new ArrayList<>(numOfLoopVars);
 
-			for (int i = 0; i < numOfLoopVars; i++) {
-				Variable loopVar = loopVars.get(i);
-				Variable parameter = modelFactory.variable(loopVar.getSource(),
-						loopVar.type(), loopVar.name(), i + 1);
+		for (int i = 0; i < numOfLoopVars; i++) {
+			Variable loopVar = loopVars.get(i);
+			Variable parameter = modelFactory.variable(loopVar.getSource(),
+					loopVar.type(), loopVar.name(), i + 1);
 
-				procFuncParameters.add(parameter);
-			}
-			procFunc = modelFactory.function(
-					procFuncSource,
-					modelFactory.identifier(procFuncStartSource, PAR_FUNC_NAME
-							+ modelBuilder.parProcFunctions.size()),
-					procFuncParameters, typeFactory.voidType(), scope, null);
-			scope.addFunction(procFunc);
-			modelBuilder.parProcFunctions.put(procFunc, bodyNode);
+			procFuncParameters.add(parameter);
 		}
+		procFunc = modelFactory.function(
+				procFuncSource,
+				false,
+				modelFactory.identifier(procFuncStartSource, PAR_FUNC_NAME
+						+ modelBuilder.parProcFunctions.size()),
+				procFuncParameters, typeFactory.voidType(), scope, null);
+		scope.addFunction(procFunc);
+		modelBuilder.parProcFunctions.put(procFunc, bodyNode);
+		// }
 		domain = this.translateExpressionNode(civlForNode.getDomain(), scope,
 				true);
 		result = new CommonFragment(this.elaborateDomainCall(scope, domain));
@@ -622,6 +625,8 @@ public class FunctionTranslator {
 				location, domain, domSizeVar, parProcs, procFunc);
 		assert procFunc != null;
 		parForEnter.setParProcFunction(procFunc);
+		// if (call != null)
+		// parForEnter.setArguments(call.arguments());
 		result = result.combineWith(new CommonFragment(parForEnter));
 		location = modelFactory.location(parForEndSource, scope);
 		callWaitAll = modelFactory.callOrSpawnStatement(parForEndSource,
@@ -2297,8 +2302,10 @@ public class FunctionTranslator {
 					scope.addFunction(result);
 				}
 			} else { // regular function
-				result = modelFactory.function(nodeSource, functionIdentifier,
-						parameters, returnType, scope, null);
+				result = modelFactory
+						.function(nodeSource, entity.isAtomic(),
+								functionIdentifier, parameters, returnType,
+								scope, null);
 				scope.addFunction(result);
 				modelBuilder.unprocessedFunctions.add(entity.getDefinition());
 			}
@@ -2307,18 +2314,19 @@ public class FunctionTranslator {
 		if (contract != null) {
 			ContractTranslator contractTranslator = new ContractTranslator(
 					modelBuilder, modelFactory, typeFactory, result);
-			List<ContractClause> contracts = new LinkedList<>();
-
-			for (int i = 0; i < contract.numChildren(); i++) {
-				ContractNode contractNode = contract.getSequenceChild(i);
-
-				contracts.add(contractTranslator
-						.translateContractNode(contractNode));
-			}
-			// result = ContractTranslator.mergeContracts(contracts,
-			// typeFactory,
-			// modelFactory, result);
-			result.setContracts(contracts);
+			// List<ContractClause> contracts = new LinkedList<>();
+			//
+			// for (int i = 0; i < contract.numChildren(); i++) {
+			// ContractNode contractNode = contract.getSequenceChild(i);
+			//
+			// contracts.add(contractTranslator
+			// .translateContractNode(contractNode));
+			// }
+			// // result = ContractTranslator.mergeContracts(contracts,
+			// // typeFactory,
+			// // modelFactory, result);
+			// result.setContracts(contracts);
+			contractTranslator.translateFunctionContract(contract);
 		}
 	}
 

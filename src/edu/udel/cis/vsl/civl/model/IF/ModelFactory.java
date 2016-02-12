@@ -36,6 +36,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
@@ -53,6 +54,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.WildcardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.BehaviorBlock;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
@@ -1237,6 +1239,9 @@ public interface ModelFactory {
 	 * 
 	 * @param source
 	 *            The CIVL source
+	 * @param isAtomic
+	 *            Is the function atomic (i.e., declared with
+	 *            <code>$atomic_f</code>)?
 	 * @param name
 	 *            The name of this function.
 	 * @param parameters
@@ -1249,7 +1254,7 @@ public interface ModelFactory {
 	 *            The first location in the function.
 	 * @return The new function.
 	 */
-	CIVLFunction function(CIVLSource source, Identifier name,
+	CIVLFunction function(CIVLSource source, boolean isAtomic, Identifier name,
 			List<Variable> parameters, CIVLType returnType,
 			Scope containingScope, Location startLocation);
 
@@ -1688,4 +1693,16 @@ public interface ModelFactory {
 	 */
 	ClauseSequence clauseSequence(List<ContractClause> components, Scope scope,
 			CIVLSource source);
+
+	/**
+	 * Creates a wildcard expression <code>...</code>, which is only used in
+	 * contract.
+	 * 
+	 * @param source
+	 * @param type
+	 * @return
+	 */
+	WildcardExpression wildcardExpression(CIVLSource source, CIVLType type);
+
+	Nothing nothing(CIVLSource source);
 }

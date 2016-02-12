@@ -892,8 +892,8 @@ public class ModelBuilderWorker {
 
 		preprocess();
 		system = factory.function(
-				factory.sourceOf(program.getAST().getRootNode()), systemID,
-				new ArrayList<Variable>(), null, null, null);
+				factory.sourceOf(program.getAST().getMain().getDefinition()),
+				false, systemID, new ArrayList<Variable>(), null, null, null);
 		systemFunctionTranslator = new FunctionTranslator(this, factory, system);
 		initialization(system);
 		systemFunctionTranslator.translateRootFunction(systemScope, rootNode);

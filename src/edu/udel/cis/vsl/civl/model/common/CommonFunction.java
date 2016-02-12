@@ -16,6 +16,7 @@ import edu.udel.cis.vsl.civl.model.IF.Identifier;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.expression.BooleanLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
@@ -42,6 +43,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	protected boolean isSystem = false;
 
+	private boolean isAtomic = false;
+
 	private Set<Location> locations;
 
 	private Model model;
@@ -64,6 +67,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	private int fid;
 
+	private FunctionContract contract;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -84,7 +89,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	 * @param factory
 	 *            The model factory
 	 */
-	public CommonFunction(CIVLSource source, Identifier name,
+	public CommonFunction(CIVLSource source, boolean isAtomic, Identifier name,
 			List<Variable> parameters, CIVLType returnType,
 			Scope containingScope, int fid, Location startLocation,
 			ModelFactory factory) {
@@ -92,6 +97,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 		this.name = name;
 		this.fid = fid;
 		this.parameters = parameters;
+		this.isAtomic = isAtomic;
 		if (parameters != null) {
 			int number = parameters.size();
 			CIVLType[] types = new CIVLType[number];
@@ -201,7 +207,13 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 		while (iter.hasNext()) {
 			out.println(prefix + "| | " + iter.next().name());
 		}
+		// print contracts
+		if (contract != null) {
+			contract.print(prefix + "| ", out, isDebug);
+		}
+		// print scopes
 		outerScope.print(prefix + "| ", out, isDebug);
+		// print locations
 		if (!isRootFunction()) {
 			out.println(prefix + "| locations (start=" + startLocation.id()
 					+ ")");
@@ -505,7 +517,6 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	@Override
 	public StringBuffer unreachedCode() {
-
 		StringBuffer result = new StringBuffer("");
 
 		for (Location location : locations) {
@@ -529,5 +540,20 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	@Override
 	public Iterable<ContractClause> getContracts() {
 		return this.contracts;
+	}
+
+	@Override
+	public FunctionContract functionContract() {
+		return this.contract;
+	}
+
+	@Override
+	public void setFunctionContract(FunctionContract contract) {
+		this.contract = contract;
+	}
+
+	@Override
+	public boolean isAtomicFunction() {
+		return this.isAtomic;
 	}
 }

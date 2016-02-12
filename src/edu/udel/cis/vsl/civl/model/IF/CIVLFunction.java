@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Set;
 
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
@@ -241,6 +242,16 @@ public interface CIVLFunction extends Sourceable {
 	boolean isSystemFunction();
 
 	/**
+	 * Is this an atomic function? An atomic function is declared with the
+	 * specifier <code>$atomic_f</code>. Note that abstract functions and system
+	 * functions are all atomic although they don't have the
+	 * <code>$atomic_f</code> specifier.
+	 * 
+	 * @return
+	 */
+	boolean isAtomicFunction();
+
+	/**
 	 * Is this an abstract function?
 	 * 
 	 * @return true iff this function is an abstract function.
@@ -280,4 +291,18 @@ public interface CIVLFunction extends Sourceable {
 	 *         function
 	 */
 	StringBuffer unreachedCode();
+
+	/**
+	 * returns the contract specification of this function.
+	 * 
+	 * @return
+	 */
+	FunctionContract functionContract();
+
+	/**
+	 * sets the contract of this function.
+	 * 
+	 * @param contract
+	 */
+	void setFunctionContract(FunctionContract contract);
 }

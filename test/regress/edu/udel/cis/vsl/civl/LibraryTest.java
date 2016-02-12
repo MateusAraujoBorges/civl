@@ -66,7 +66,9 @@ public class LibraryTest {
 
 	@Test
 	public void memset() throws ABCException {
-		assertTrue(ui.run("verify", filename(STRING, "memset.cvl")));
+		assertTrue(ui.run(
+				"verify -showTransitions=false -showSavedStates=false",
+				filename(STRING, "memset.cvl")));
 	}
 
 	@Test

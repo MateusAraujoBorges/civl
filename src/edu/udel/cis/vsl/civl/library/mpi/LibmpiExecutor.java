@@ -253,16 +253,21 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 					+ pid + " .\n";
 			myStatusVar = procStaticScope.variable("_mpi_status");
 			assert myStatusVar != null : "Failure of getting variable '_mpi_status' in function '_mpi_process()'";
-			dyscopeId = this
-					.getScopeInProcessStack(state, pid, procStaticScope);
+			// dyscopeId = this
+			// .getScopeInProcessStack(state, pid, procStaticScope);
+			dyscopeId = state.getDyscope(pid, procStaticScope);
+
 			this.processStatusVariables.put(pid, new Pair<>(procStaticScope,
 					myStatusVar));
 		} else {
 			myStatusVarInfo = this.processStatusVariables.get(pid);
 			myStatusVar = myStatusVarInfo.right;
-			dyscopeId = this.getScopeInProcessStack(state, pid,
-					myStatusVarInfo.left);
+			// dyscopeId = this.getScopeInProcessStack(state, pid,
+			// myStatusVarInfo.left);
+			dyscopeId = state.getDyscope(pid, myStatusVarInfo.left);
+
 		}
+
 		newState = this.stateFactory.setVariable(state, myStatusVar.vid(),
 				dyscopeId, newStatus);
 		return newState;
@@ -295,15 +300,17 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 						+ pid + " .\n";
 				myStatusVar = procStaticScope.variable("_mpi_status");
 				assert myStatusVar != null : "Failure of getting variable '_mpi_status' in function '_mpi_process()'";
-				dyscopeId = this.getScopeInProcessStack(state, pid,
-						procStaticScope);
+				// dyscopeId = this.getScopeInProcessStack(state, pid,
+				// procStaticScope);
+				dyscopeId=state.getDyscope(pid, procStaticScope);
 				this.processStatusVariables.put(pid, new Pair<>(
 						procStaticScope, myStatusVar));
 			} else {
 				myStatusVarInfo = this.processStatusVariables.get(pid);
 				myStatusVar = myStatusVarInfo.right;
-				dyscopeId = this.getScopeInProcessStack(state, pid,
-						myStatusVarInfo.left);
+				// dyscopeId = this.getScopeInProcessStack(state, pid,
+				// myStatusVarInfo.left);
+				dyscopeId=state.getDyscope(pid, myStatusVarInfo.left);
 			}
 			valueOfMyStatusVar = state.getDyscope(dyscopeId).getValue(
 					myStatusVar.vid());
@@ -325,6 +332,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @param targetScope
 	 * @return
 	 */
+	@SuppressWarnings("unused")
 	private int getScopeInProcessStack(State state, int pid, Scope targetScope) {
 		Iterator<? extends StackEntry> stackIter = state.getProcessState(pid)
 				.getStackEntries().iterator();
@@ -342,7 +350,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		}
 		// if the target scope is not in process call stack, search all parents
 		// of the scope in the bottom of the call stack
-		while (currDyscope.getParent() > 0) {
+		while (currDyscope.getParent() >= 0) {
 			int currDySid = currDyscope.getParent();
 
 			currDyscope = state.getDyscope(currDySid);

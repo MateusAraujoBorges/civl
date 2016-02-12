@@ -35,7 +35,7 @@ public class CommonSystemFunction extends CommonFunction implements
 			List<Variable> parameters, CIVLType returnType,
 			Scope containingScope, int fid, Location startLocation,
 			ModelFactory factory, String libraryName) {
-		super(source, name, parameters, returnType, containingScope, fid,
+		super(source, true, name, parameters, returnType, containingScope, fid,
 				startLocation, factory);
 		this.isSystem = true;
 		this.library = libraryName;

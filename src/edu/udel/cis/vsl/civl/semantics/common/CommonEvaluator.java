@@ -1900,13 +1900,11 @@ public class CommonEvaluator implements Evaluator {
 			assert lower.value instanceof NumericExpression;
 			assert upper.value instanceof NumericExpression;
 			upperBound = universe.add(one, (NumericExpression) upper.value);
-			// TODO change to andTo
 			rangeRestriction = universe.and(universe.lessThanEquals(
 					(NumericExpression) lower.value,
 					(NumericExpression) boundVariable), universe
 					.lessThanEquals((NumericExpression) boundVariable,
 							(NumericExpression) upper.value));
-			// TODO change to andTo
 			stateWithRestriction = state.setPathCondition(universe.and(
 					(BooleanExpression) rangeRestriction,
 					state.getPathCondition()));

@@ -56,6 +56,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
@@ -74,6 +75,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.SystemGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.WildcardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.BehaviorBlock;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
@@ -122,6 +124,7 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonHereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonInitialValueExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonIntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonMemoryUnitExpression;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonNothing;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonProcnullExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonRealLiteralExpression;
@@ -139,6 +142,7 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonSystemGuardExpression
 import edu.udel.cis.vsl.civl.model.common.expression.CommonUnaryExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonUndefinedProcessExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonVariableExpression;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonWildcardExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonBehaviorBlock;
 import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonClauseSequence;
 import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonMPICollectiveBlockClause;
@@ -1426,16 +1430,16 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public CIVLFunction function(CIVLSource source, Identifier name,
-			List<Variable> parameters, CIVLType returnType,
+	public CIVLFunction function(CIVLSource source, boolean isAtomic,
+			Identifier name, List<Variable> parameters, CIVLType returnType,
 			Scope containingScope, Location startLocation) {
 		for (Variable v : parameters) {
 			if (v.type().isArrayType()) {
 				throw new CIVLInternalException("Parameter of array type.", v);
 			}
 		}
-		return new CommonFunction(source, name, parameters, returnType,
-				containingScope,
+		return new CommonFunction(source, isAtomic, name, parameters,
+				returnType, containingScope,
 				containingScope != null ? containingScope.numFunctions() : -1,
 				startLocation, this);
 	}
@@ -2200,4 +2204,16 @@ public class CommonModelFactory implements ModelFactory {
 		return new CommonClauseSequence(source, scope, typeFactory.voidType,
 				components);
 	}
+
+	@Override
+	public WildcardExpression wildcardExpression(CIVLSource source,
+			CIVLType type) {
+		return new CommonWildcardExpression(source, type);
+	}
+
+	@Override
+	public Nothing nothing(CIVLSource source) {
+		return new CommonNothing(source);
+	}
+
 }

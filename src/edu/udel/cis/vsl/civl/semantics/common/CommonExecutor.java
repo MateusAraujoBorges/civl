@@ -293,6 +293,8 @@ public class CommonExecutor implements Executor {
 			} else
 				state = stateFactory.pushCallStack(state, pid, function,
 						arguments);
+			if (function.isAtomicFunction())
+				state = stateFactory.getAtomicLock(state, pid);
 		}
 		// Right after the call stack entry is pushed into call stack, check
 		// pre-conditions:
@@ -456,6 +458,8 @@ public class CommonExecutor implements Executor {
 		processState = state.getProcessState(pid);
 		function = processState.peekStack().location().function();
 		functionName = function.name().name();
+		if (function.isAtomicFunction())
+			state = stateFactory.releaseAtomicLock(state);
 		if (functionName.equals(CIVLConstants.civlSystemFunction)) {
 			assert pid == 0;
 			if (state.numProcs() > 1) {
