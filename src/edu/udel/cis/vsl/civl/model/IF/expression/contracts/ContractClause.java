@@ -1,7 +1,6 @@
 package edu.udel.cis.vsl.civl.model.IF.expression.contracts;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.GuardNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
