@@ -18,7 +18,7 @@ void laplace() {
       result[i][j] = (u[i-1][j]+u[i][j-1]-4*u[i][j]+u[i+1][j]+u[i][j+1])/(h*h);
     }
   }
-  $assert(($uniform {i=1 .. rows-2} $uniform {j=1 .. cols-2} result[i][j] - ($D[phi,{x,2}](i*h,j*h)+$D[phi,{y,2}](i*h,j*h)) == $O(h*h)));
+  $assert($uniform {i=1 .. rows-2} $uniform {j=1 .. cols-2} result[i][j] - ($D[phi,{x,2}](i*h,j*h)+$D[phi,{y,2}](i*h,j*h)) == $O(h*h));
 }
 
 void main() {

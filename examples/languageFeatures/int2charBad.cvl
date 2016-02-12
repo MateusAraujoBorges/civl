@@ -12,6 +12,6 @@ void main(){
   pc[0] = num1;
   pc[1] = num2;
   //test symbolic int to char
-  $assert((pc[0] == pc[1]));
+  $assert(pc[0] == pc[1]);
   $free(pc);
 }

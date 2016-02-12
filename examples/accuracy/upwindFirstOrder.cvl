@@ -37,7 +37,7 @@ void upwind() {
   for (int i = 1; i < n-1; i++) {
 	  v[i] = v_new[i];
   }	
-  $assert(($uniform{m=1 .. n-2} (u(m*h, (iter+1)*dt)-v[m])/dt-($D[u, {t, 1}](m*h, iter*dt)+a*$D[u,{x,1}](m*h, iter*dt)) ==$O(dt)+$O(h)));
+  $assert($uniform{m=1 .. n-2} (u(m*h, (iter+1)*dt)-v[m])/dt-($D[u, {t, 1}](m*h, iter*dt)+a*$D[u,{x,1}](m*h, iter*dt)) ==$O(dt)+$O(h));
 }
 
 void main() {

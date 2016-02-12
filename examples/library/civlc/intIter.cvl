@@ -17,7 +17,7 @@ void main(){
     int current = $int_iter_next(iter);
     
     printf("Current is %d.\n", current);
-    $assert((current == k));
+    $assert(current == k);
     k++;
   }
   $int_iter_destroy(iter);

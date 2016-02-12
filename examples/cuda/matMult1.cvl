@@ -291,8 +291,8 @@ int main (int argc, char** argv) {
         for (int i = 0; i < N*N; i ++) {
             printf("i = %d\n", i);
             printf("cpu = %f, gpuGlobal = %f, gpuShared = %f\n", cpuResult[i], gpuGlobalResult[i], gpuSharedResult[i]);
-            $assert((cpuResult[i] == gpuGlobalResult[i]));
-            $assert((cpuResult[i] == gpuSharedResult[i]));
+            $assert(cpuResult[i] == gpuGlobalResult[i]);
+            $assert(cpuResult[i] == gpuSharedResult[i]);
         }
 
 		return 0; 

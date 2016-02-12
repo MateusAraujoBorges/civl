@@ -13,8 +13,10 @@ $input int n=2;
 $input double z[n];
 double M[n][n];
 $assume(n>0);
+$input double k;
 // z is a non-zero column vector
-$assume($exists {int i | 0 <=i && i<n} z[i] != 0);
+//$assume($exists {int i | 0 <=i && i<n} z[i] != 0);
+$assume($forall {double x|x!=0} x*x > 0);
 
 // use Identity matrix for a test here
 void initialize(){
@@ -34,12 +36,14 @@ double compute(){
 
   for(int i=0; i<n; i++){
     zTxM[i]=0;
+    assumption=assumption || (z[i]!=0);
     for(int j=0; j<n; j++){
       // checks that M is symmetric
       $assert(M[i][j]==M[j][i]);
       zTxM[i]+=z[i]*M[i][j];
     }
   }
+  $assume(assumption);
   for(int i=0; i<n; i++){
     result+=zTxM[i]*z[i];
   }
@@ -48,6 +52,8 @@ double compute(){
 }
 
 int main(){
+  $assume(k!=0);
+  $assert(k*k>=0);
   initialize();
   compute();
 }

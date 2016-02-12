@@ -45,6 +45,6 @@ void main(){
   newTotal = newTotal - X * M * L;
   Y = newTotal / (L);
   Z = newTotal - Y * L;
-  $assert((*(&a[x][y][z] + offset) == a[X][Y][Z]));
+  $assert(*(&a[x][y][z] + offset) == a[X][Y][Z]);
 
 }

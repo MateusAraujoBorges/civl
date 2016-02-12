@@ -27,5 +27,5 @@ void main() {
   }
   double result1 = mean1();
   double result2 = mean2();
-  $assert((result1==result2)); 
+  $assert(result1==result2); 
 }

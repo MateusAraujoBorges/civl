@@ -21,7 +21,7 @@ void differentiate(double h, int n, double y[], double result[]){
 	}
 	// forward at endpoint
 	result[0] = (y[1] - y[0])/h;
-	$assert(($uniform {k=0 .. n-1} result[k]-$D[rho,{x,1}](k*h) == $O(h)));
+	$assert($uniform {k=0 .. n-1} result[k]-$D[rho,{x,1}](k*h) == $O(h));
 }
 
 void main() {

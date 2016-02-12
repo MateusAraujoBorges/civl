@@ -152,7 +152,7 @@ int main ( void ) {
     #define sum_squares(x)  (x*(x+1)*(2*x+1)/6)
     printf( "Does GPU value %.6g = %.6g?\n", c,
          2 * sum_squares( (float)(N - 1) ) );
-    $assert((c == 2 * sum_squares( (float)(N - 1) ) ));
+    $assert(c == 2 * sum_squares( (float)(N - 1) ) );
 
     // free memory on the gpu side
     cudaFree( dev_a ); // civl versionof cudaFree will check memory correctness, then call regular free

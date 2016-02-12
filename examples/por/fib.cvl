@@ -23,6 +23,6 @@ int main(){
   }
   $wait(p0);
   $wait(p1);
-  //printf("x=%d, y=%d\n", x, y);
+  printf("i=%d, j=%d\n", i, j);
 }
 

@@ -28,11 +28,11 @@ void MPI_Process (int rank) {
       $comm_enqueue(comm, out);
       in = $comm_dequeue(comm, left, TAG);
       $message_unpack(in, &y, sizeof(int));
-      $assert((y==left));
+      $assert(y==left);
     } else { // recv first, then send
       in = $comm_dequeue(comm, left, TAG);
       $message_unpack(in, &y, sizeof(int));
-      $assert((y==left));
+      $assert(y==left);
       out = $message_pack(rank, right, TAG, &x, sizeof(int));
       $comm_enqueue(comm, out);
     }

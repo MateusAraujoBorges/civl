@@ -3,5 +3,5 @@
 $input int x;
 
 void main() {
-  $assert(( (!x) != x));
+  $assert((!x) != x);
 }

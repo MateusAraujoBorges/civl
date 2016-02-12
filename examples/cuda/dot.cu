@@ -131,7 +131,7 @@ int main( void ) {
     printf( "Does GPU value %.6g = %.6g?\n", c,
              2 * sum_squares( (float)(N - 1) ) );
 #ifdef _CIVL
-    $assert((c == 2 * sum_squares( (float)(N - 1) ) ));
+    $assert(c == 2 * sum_squares( (float)(N - 1) ) );
 #endif
 
     // free memory on the gpu side
