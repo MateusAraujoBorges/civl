@@ -27,36 +27,36 @@ public class BackendTest {
 	/* **************************** Test Methods *************************** */
 	@Test
 	public void printExpr() {
-		assertTrue(ui
-				.run("verify -showProgram=false -showSavedStates -showTransitions",
-						filename("printExpr.cvl")));
+		assertTrue(ui.run(
+				"verify -showProgram=false -showSavedStates -showTransitions",
+				TestConstants.QUIET, filename("printExpr.cvl")));
 	}
-	
+
 	@Test
 	public void arrayWrite() {
-		assertTrue(ui
-				.run("verify -showProgram=false -showSavedStates -showTransitions",
-						filename("arrayWrite.cvl")));
+		assertTrue(ui.run(
+				"verify -showProgram=false -showSavedStates -showTransitions",
+				TestConstants.QUIET, filename("arrayWrite.cvl")));
 	}
 
 	@Test
 	public void showTrans() {
-		assertTrue(ui.run("verify -showProgram -showTransitions",
-				filename("showTrans.cvl")));
+		assertTrue(ui.run("verify -showProgram=false -showTransitions",
+				TestConstants.QUIET, filename("showTrans.cvl")));
 	}
-	
+
 	@Test
 	public void sizeOfTypes() {
-		assertTrue(ui.run("verify -showProgram -showTransitions",
-				filename("sizeOfTypes.c")));
+		assertTrue(ui.run("verify -showProgram=false -showTransitions",
+				TestConstants.QUIET, filename("sizeOfTypes.c")));
 	}
 
 	@Test
 	public void returnNull() throws ABCException {
-		assertFalse(ui.run("verify","-errorBound=2 -enablePrintf=false", filename("returnNull.cvl")));
+		assertFalse(ui.run("verify", "-errorBound=2 -enablePrintf=false",
+				TestConstants.QUIET, filename("returnNull.cvl")));
 	}
 
-	
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
