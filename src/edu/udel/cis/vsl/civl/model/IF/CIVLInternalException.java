@@ -19,8 +19,8 @@ public class CIVLInternalException extends CIVLException {
 
 	public CIVLInternalException(String s, CIVLSource source) {
 		super("A CIVL internal error has occurred."
-				+ " Please report the error to civl-dev@udel.edu.\n" + s,
-				source);
+				+ " Please report the error to civl-dev@googlegroups.com.\n"
+				+ s, source);
 	}
 
 	public CIVLInternalException(String s, Sourceable sourceable) {
