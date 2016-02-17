@@ -448,6 +448,34 @@ public interface StateFactory {
 	State getAtomicLock(State state, int pid);
 
 	/**
+	 * Process pid enters a new atomic section. <br>
+	 * Precondition: no other processes hold the atomic lock<br>
+	 * If the process already holds the atomic lock, then its atomic count is
+	 * incremented; <br>
+	 * if the process doesn't hold the atomic lock, then the atomic lock is
+	 * obtained and its atomic count is set to be 1.
+	 * 
+	 * @param state
+	 * @param pid
+	 * @return the new state after process pid enters a new atomic section
+	 */
+	State enterAtomic(State state, int pid);
+
+	/**
+	 * Process pid leaves an atomic section.<br>
+	 * Precondition: in the given state, the process pid holds the atomic lock
+	 * and its atomic count is greater than zero.<br>
+	 * The atomic count is decremented by 1 after this method;<br>
+	 * if the resultant atomic count is 0, then the atomic lock is released as
+	 * well.
+	 * 
+	 * @param state
+	 * @param pid
+	 * @return the new state after process pid leaves an atomic section
+	 */
+	State leaveAtomic(State state, int pid);
+
+	/**
 	 * Releases the atomic lock, by updating the atomic lock variable with the
 	 * undefined process value. If atomic lock of the given state is already
 	 * released, this is a no op.

@@ -464,7 +464,7 @@ public class ImmutableStateFactory implements StateFactory {
 		return theState;
 	}
 
-	@Override
+	// @Override
 	public State getAtomicLock(State state, int pid) {
 		Variable atomicVar = modelFactory.atomicLockVariableExpression()
 				.variable();
@@ -2159,5 +2159,25 @@ public class ImmutableStateFactory implements StateFactory {
 			newCount = universe.add((NumericExpression) countValue,
 					universe.oneInt());
 		return this.setVariable(state, symbolicConstantVar.vid(), 0, newCount);
+	}
+
+	@Override
+	public State enterAtomic(State state, int pid) {
+		ProcessState procState = state.getProcessState(pid);
+		int atomicCount = procState.atomicCount();
+
+		if (atomicCount == 0)
+			state = getAtomicLock(state, pid);
+		return this.setProcessState(state, procState.incrementAtomicCount());
+	}
+
+	@Override
+	public State leaveAtomic(State state, int pid) {
+		ProcessState procState = state.getProcessState(pid);
+		int atomicCount = procState.atomicCount();
+
+		if (atomicCount == 1)
+			state = releaseAtomicLock(state);
+		return this.setProcessState(state, procState.decrementAtomicCount());
 	}
 }

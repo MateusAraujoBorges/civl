@@ -39,7 +39,7 @@ public interface Statement extends Sourceable {
 		// ASSUME, /** Assumption */
 		CALL_OR_SPAWN, /** Function call or process spawn */
 		// CHOOSE, /** Non-deterministic choice */
-		CIVL_FOR_ENTER, /** CIVL for loop ($for) enter statement */
+		DOMAIN_ITERATOR, /** CIVL for loop ($for) enter statement */
 		CIVL_PAR_FOR_ENTER, /** CIVL parallel for ($par) enter statement */
 		CONTRACT, /* contracts statement */
 		MALLOC, /** Memory allocation */

@@ -34,8 +34,8 @@ import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.AtomicLockAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.CivlForEnterStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
@@ -1425,7 +1425,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				result.append("[" + elementIndex + "]");
 			if (subtypesOfEleScalar || eleEmpty)
 				result.append("=");
-			else
+			else if (eleType != null)
 				result.append(": " + eleType);
 			elementIndex++;
 			result.append(symbolicExpressionToString(source, state,
@@ -1693,7 +1693,28 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		switch (kind) {
 		case ASSIGN: {
 			if (statement instanceof AtomicLockAssignStatement) {
-				result.append(statement.toString());
+				AtomicLockAssignStatement atomicLockStmt = (AtomicLockAssignStatement) statement;
+				String process = state.getProcessState(pid).name();
+				int previousAtomicCount = state.getProcessState(pid)
+						.atomicCount();
+
+				if (atomicLockStmt.enterAtomic()) {
+					result.append("ENTER_ATOMIC [");
+					if (previousAtomicCount < 1)
+						result.append(ModelConfiguration.ATOMIC_LOCK_VARIABLE
+								+ ":=" + process + ", ");
+					result.append(process + ".atomicCount:="
+							+ (previousAtomicCount + 1));
+					result.append("]");
+				} else {
+					result.append("LEAVE_ATOMIC [");
+
+					if (previousAtomicCount == 1)
+						result.append(ModelConfiguration.ATOMIC_LOCK_VARIABLE
+								+ ":=$proc_null, ");
+					result.append(process + ".atomicCount:=0");
+					result.append("]");
+				}
 			} else {
 				AssignStatement assign = (AssignStatement) statement;
 				LHSExpression lhs = assign.getLhs();
@@ -1768,12 +1789,12 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			}
 			break;
 		}
-		case CIVL_FOR_ENTER: {
-			CivlForEnterStatement civlForEnter = (CivlForEnterStatement) statement;
+		case DOMAIN_ITERATOR: {
+			DomainIteratorStatement civlForEnter = (DomainIteratorStatement) statement;
 			List<Variable> loopVars = civlForEnter.loopVariables();
 			int dim = loopVars.size();
 
-			result.append("$for((");
+			result.append("NEXT of (");
 			for (int i = 0; i < dim; i++) {
 				Variable loopVar = loopVars.get(i);
 
@@ -1783,9 +1804,22 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						loopVar.getSource(), state, loopVar.type(),
 						state.valueOf(pid, loopVar), "", ""));
 			}
-			result.append(") has next in ");
+			result.append(") in ");
 			tmp = this.expressionEvaluation(state, pid, civlForEnter.domain());
 			result.append(tmp.right);
+			result.append(" [");
+			for (int i = 0; i < dim; i++) {
+				Variable loopVar = loopVars.get(i);
+
+				if (i != 0)
+					result.append(", ");
+				result.append(loopVar.name().name());
+				result.append(":=");
+				result.append(this.symbolicExpressionToString(
+						loopVar.getSource(), postState, loopVar.type(),
+						postState.valueOf(pid, loopVar), "", ""));
+			}
+			result.append("]");
 			break;
 		}
 		case CIVL_PAR_FOR_ENTER: {

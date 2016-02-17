@@ -37,7 +37,7 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.AtomicLockAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.CivlForEnterStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
@@ -220,19 +220,22 @@ public class CommonExecutor implements Executor {
 
 		if (statement instanceof AtomicLockAssignStatement) {
 			AtomicLockAssignStatement atomicLockAssign = (AtomicLockAssignStatement) statement;
-			ProcessState procState = state.getProcessState(pid), newProcState;
-			int atomicCount = procState.atomicCount();
+			// ProcessState procState = state.getProcessState(pid),
+			// newProcState;
+			// int atomicCount = procState.atomicCount();
 
 			if (atomicLockAssign.enterAtomic()) {
-				newProcState = procState.incrementAtomicCount();
-				if (atomicCount == 0)
-					state = stateFactory.getAtomicLock(state, pid);
+				state = stateFactory.enterAtomic(state, pid);
+				// newProcState = procState.incrementAtomicCount();
+				// if (atomicCount == 0)
+				// state = stateFactory.getAtomicLock(state, pid);
 			} else {// leave atomic
-				newProcState = procState.decrementAtomicCount();
-				if (atomicCount == 1)
-					state = stateFactory.releaseAtomicLock(state);
+			// newProcState = procState.decrementAtomicCount();
+			// if (atomicCount == 1)
+			// state = stateFactory.releaseAtomicLock(state);
+				state = stateFactory.leaveAtomic(state, pid);
 			}
-			state = stateFactory.setProcessState(state, newProcState);
+			// state = stateFactory.setProcessState(state, newProcState);
 		} else
 			state = assign(eval.state, pid, process, statement.getLhs(),
 					eval.value, statement.isInitialization());
@@ -294,7 +297,7 @@ public class CommonExecutor implements Executor {
 				state = stateFactory.pushCallStack(state, pid, function,
 						arguments);
 			if (function.isAtomicFunction())
-				state = stateFactory.getAtomicLock(state, pid);
+				state = stateFactory.enterAtomic(state, pid);
 		}
 		// Right after the call stack entry is pushed into call stack, check
 		// pre-conditions:
@@ -459,7 +462,7 @@ public class CommonExecutor implements Executor {
 		function = processState.peekStack().location().function();
 		functionName = function.name().name();
 		if (function.isAtomicFunction())
-			state = stateFactory.releaseAtomicLock(state);
+			state = stateFactory.leaveAtomic(state, pid);
 		if (functionName.equals(CIVLConstants.civlSystemFunction)) {
 			assert pid == 0;
 			if (state.numProcs() > 1) {
@@ -765,9 +768,9 @@ public class CommonExecutor implements Executor {
 		case RETURN:
 			return executeReturn(state, pid, process,
 					(ReturnStatement) statement);
-		case CIVL_FOR_ENTER:
+		case DOMAIN_ITERATOR:
 			return executeNextInDomain(state, pid,
-					(CivlForEnterStatement) statement);
+					(DomainIteratorStatement) statement);
 		case CIVL_PAR_FOR_ENTER:
 			return executeCivlParFor(state, pid,
 					(CivlParForSpawnStatement) statement);
@@ -970,7 +973,7 @@ public class CommonExecutor implements Executor {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private State executeNextInDomain(State state, int pid,
-			CivlForEnterStatement nextInDomain)
+			DomainIteratorStatement nextInDomain)
 			throws UnsatisfiablePathConditionException {
 		List<Variable> loopVars = nextInDomain.loopVariables();
 		Expression domain = nextInDomain.domain();

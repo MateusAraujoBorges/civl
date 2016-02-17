@@ -12,7 +12,7 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
  * 
  * @author Manchun Zheng (zmanchun)
  */
-public interface CivlForEnterStatement extends Statement {
+public interface DomainIteratorStatement extends Statement {
 
 	/**
 	 * Returns the iteration domain expression, which is the expression

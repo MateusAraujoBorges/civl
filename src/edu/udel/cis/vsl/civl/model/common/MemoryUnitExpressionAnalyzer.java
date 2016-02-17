@@ -34,7 +34,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.reference.SelfReference;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.CivlForEnterStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
@@ -270,9 +270,9 @@ public class MemoryUnitExpressionAnalyzer {
 						result);
 			break;
 		}
-		case CIVL_FOR_ENTER:
+		case DOMAIN_ITERATOR:
 			computeImpactMemoryUnitsOfExpression(writableVars,
-					((CivlForEnterStatement) statement).domain(), result);
+					((DomainIteratorStatement) statement).domain(), result);
 			break;
 		case CIVL_PAR_FOR_ENTER:
 			computeImpactMemoryUnitsOfExpression(writableVars,

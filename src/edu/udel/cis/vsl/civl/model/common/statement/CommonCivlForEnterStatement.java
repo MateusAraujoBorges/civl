@@ -8,13 +8,13 @@ import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
-import edu.udel.cis.vsl.civl.model.IF.statement.CivlForEnterStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 public class CommonCivlForEnterStatement extends CommonStatement implements
-		CivlForEnterStatement {
+		DomainIteratorStatement {
 
 	private Expression domain;
 
@@ -36,7 +36,7 @@ public class CommonCivlForEnterStatement extends CommonStatement implements
 	public Statement replaceWith(ConditionalExpression oldExpression,
 			Expression newExpression) {
 		Expression newGuard = guardReplaceWith(oldExpression, newExpression);
-		CivlForEnterStatement newStatement = null;
+		DomainIteratorStatement newStatement = null;
 
 		if (newGuard != null) {
 			newStatement = new CommonCivlForEnterStatement(this.getSource(),
@@ -67,7 +67,7 @@ public class CommonCivlForEnterStatement extends CommonStatement implements
 
 	@Override
 	public StatementKind statementKind() {
-		return StatementKind.CIVL_FOR_ENTER;
+		return StatementKind.DOMAIN_ITERATOR;
 	}
 
 	@Override

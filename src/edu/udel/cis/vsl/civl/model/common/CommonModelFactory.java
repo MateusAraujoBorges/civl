@@ -92,7 +92,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.reference.StructOrUnionFieldRef
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.CivlForEnterStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
@@ -1753,7 +1753,7 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public Fragment civlForEnterFragment(CIVLSource source, Location src,
 			Expression dom, List<Variable> variables, Variable counter) {
-		CivlForEnterStatement statement = new CommonCivlForEnterStatement(
+		DomainIteratorStatement statement = new CommonCivlForEnterStatement(
 				source, src, this.trueExpression(source), dom, variables,
 				counter);
 
