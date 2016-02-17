@@ -889,7 +889,8 @@ public class AmpleSetWorker {
 			// reachableMemUnitsMap.put(pid, reachableMemoryUnits);
 			if (debugging) {
 				debugOut.println("impact memory units of process " + pid + ":");
-				this.impactMemUnits[pid].print(debugOut);
+				this.printMemoryUnitSet(debugOut, this.impactMemUnits[pid]);
+				// this.impactMemUnits[pid].print(debugOut);
 				debugOut.println();
 				// debugOut.println("reachable memory units of process " + pid
 				// + ":");
@@ -908,6 +909,19 @@ public class AmpleSetWorker {
 			// enabler.stateFactory.;
 			this.printReachableMemoryUnits();
 		}
+	}
+
+	private void printMemoryUnitSet(PrintStream out, MemoryUnitSet muSet) {
+		int i = 0;
+
+		out.print("{");
+		for (MemoryUnit mu : muSet.memoryUnits()) {
+			if (i != 0)
+				out.print(", ");
+			out.print(this.symbolicAnalyzer.memoryUnitToString(state, mu));
+			i++;
+		}
+		out.print("}");
 	}
 
 	// /**
@@ -1004,19 +1018,23 @@ public class AmpleSetWorker {
 				continue;
 			debugOut.println("reachable memory units (non-ptr, readonly) of process "
 					+ i + ":");
-			reachableNonPtrReadonly[i].print(debugOut);
+			this.printMemoryUnitSet(debugOut, reachableNonPtrReadonly[i]);
+			// reachableNonPtrReadonly[i].print(debugOut);
 			debugOut.println();
 			debugOut.println("reachable memory units (non-ptr, writable) of process "
 					+ i + ":");
-			reachableNonPtrWritable[i].print(debugOut);
+			printMemoryUnitSet(debugOut, reachableNonPtrWritable[i]);
+			// reachableNonPtrWritable[i].print(debugOut);
 			debugOut.println();
 			debugOut.println("reachable memory units (ptr, readonly) of process "
 					+ i + ":");
-			reachablePtrReadonly[i].print(debugOut);
+			// reachablePtrReadonly[i].print(debugOut);
+			printMemoryUnitSet(debugOut, reachablePtrReadonly[i]);
 			debugOut.println();
 			debugOut.println("reachable memory units (ptr, writable) of process "
 					+ i + ":");
-			reachablePtrWritable[i].print(debugOut);
+			// reachablePtrWritable[i].print(debugOut);
+			printMemoryUnitSet(debugOut, reachablePtrWritable[i]);
 			debugOut.println();
 		}
 	}

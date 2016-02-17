@@ -4,6 +4,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.civl.state.IF.MemoryUnit;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -257,4 +258,13 @@ public interface SymbolicAnalyzer {
 	 */
 	StringBuffer pathconditionToString(CIVLSource source, State state,
 			String prefix, BooleanExpression pc);
+
+	/**
+	 * Pretty representation of a memory unit.
+	 * 
+	 * @param state
+	 * @param mu
+	 * @return
+	 */
+	StringBuffer memoryUnitToString(State state, MemoryUnit mu);
 }

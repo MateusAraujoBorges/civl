@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -17,6 +18,7 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
+import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.BooleanLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
@@ -555,5 +557,35 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	@Override
 	public boolean isAtomicFunction() {
 		return this.isAtomic;
+	}
+
+	@SuppressWarnings("unused")
+	@Override
+	public void computePathconditionOfLocations(ModelFactory factory) {
+		Expression context = null;
+		Stack<Location> working = new Stack<>();
+		Set<Integer> visited = new HashSet<>();
+		Location current;
+
+		working.add(startLocation);
+		startLocation.setPathcondition(factory.trueExpression(startLocation
+				.getSource()));
+		while (!working.isEmpty()) {
+			int numIncoming;
+
+			current = working.pop();
+			visited.add(current.id());
+			for (Statement outgoing : current.outgoing()) {
+				Expression guard = outgoing.guard();
+				Location target = outgoing.target();
+				CIVLSource source = target.getSource();
+				int tid = target.id();
+
+				target.setPathcondition(factory.binaryExpression(source,
+						BINARY_OPERATOR.OR, target.pathCondition(), guard));
+				// if(visited.contains(target).)
+			}
+		}
+
 	}
 }

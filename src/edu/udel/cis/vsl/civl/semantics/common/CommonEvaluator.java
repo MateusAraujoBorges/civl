@@ -1647,8 +1647,8 @@ public class CommonEvaluator implements Evaluator {
 			StringObject nameObj;
 
 			if (variable.scope().id() == 0 && variable.isInput()) {
-				name = "X" + stateFactory.numSymbolicConstants(state);
-				state = stateFactory.incrementNumSymbolicConstants(state);
+				name = "X" + stateFactory.numSymbolicInputs(state);
+				state = stateFactory.incrementNumSymbolicInputs(state);
 			} else
 				name = "X_s" + dyscopeId + "v" + vid + "p" + pid;
 			nameObj = universe.stringObject(name);
@@ -1907,8 +1907,8 @@ public class CommonEvaluator implements Evaluator {
 					.lessThanEquals((NumericExpression) boundVariable,
 							(NumericExpression) upper.value));
 			reasoner = universe.reasoner(state.getPathCondition());
-			isRestrictionInValid = reasoner.valid(universe.not(rangeRestriction))
-					.getResultType();
+			isRestrictionInValid = reasoner.valid(
+					universe.not(rangeRestriction)).getResultType();
 			if (isRestrictionInValid == ResultType.YES) {
 				// invalid range restriction
 				switch (expression.quantifier()) {

@@ -10,6 +10,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.Sourceable;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
@@ -343,4 +344,13 @@ public interface Location extends Sourceable {
 	 * @return
 	 */
 	boolean isInNoopLoop();
+
+	/**
+	 * returns the path condition of this location from the start location
+	 * 
+	 * @return
+	 */
+	Expression pathCondition();
+
+	void setPathcondition(Expression expression);
 }

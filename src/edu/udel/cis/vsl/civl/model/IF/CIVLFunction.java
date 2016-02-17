@@ -305,4 +305,6 @@ public interface CIVLFunction extends Sourceable {
 	 * @param contract
 	 */
 	void setFunctionContract(FunctionContract contract);
+
+	void computePathconditionOfLocations(ModelFactory modelFactory);
 }

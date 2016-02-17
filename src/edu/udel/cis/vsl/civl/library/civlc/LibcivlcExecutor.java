@@ -211,7 +211,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression pointer = argumentValues[0];
-		String name = "X" + stateFactory.numSymbolicConstants(state);
+		String name = "Y" + stateFactory.numSymbolicConstants(state);
 		CIVLType type;
 		SymbolicConstant unconstrainedValue;
 		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer

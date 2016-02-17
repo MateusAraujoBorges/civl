@@ -14,6 +14,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
@@ -814,6 +815,18 @@ public class CommonLocation extends CommonSourceable implements Location {
 	@Override
 	public boolean isInNoopLoop() {
 		return this.isInNoopLoop;
+	}
+
+	@Override
+	public Expression pathCondition() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setPathcondition(Expression expression) {
+		// TODO Auto-generated method stub
+
 	}
 
 }

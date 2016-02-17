@@ -1790,12 +1790,12 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @return
 	 */
 	@SuppressWarnings("unused")
-	private ImmutableState collectSymbolicConstants(State state,
+	private ImmutableState collectHavocVariables(State state,
 			boolean collectHeaps) {
 		ImmutableState theState = (ImmutableState) state;
 		int numDyscopes = theState.numDyscopes();
 		UnaryOperator<SymbolicExpression> nameSubstituter = universe
-				.canonicalRenamer("X", this.isReservedSymbolicConstant);
+				.canonicalRenamer("H", this.isReservedSymbolicConstant);
 		ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[numDyscopes];
 		boolean change = false;
 
@@ -2128,5 +2128,17 @@ public class ImmutableStateFactory implements StateFactory {
 		snapshot = new ImmutableMonoState(newProcessState, newDyscopes,
 				pathCondition);
 		return snapshot;
+	}
+
+	@Override
+	public int numSymbolicInputs(State state) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public State incrementNumSymbolicInputs(State state) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

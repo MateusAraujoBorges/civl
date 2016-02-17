@@ -8,8 +8,8 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.Model;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
@@ -598,6 +598,18 @@ public interface StateFactory {
 	 */
 	int numSymbolicConstants(State state);
 
+	int numSymbolicInputs(State state);
+
+	/**
+	 * Increase the number of symbolic constants by one.
+	 * 
+	 * @param state
+	 *            the state whole number of symbolic constants is to be
+	 *            increased.
+	 * @return the new state
+	 */
+	State incrementNumSymbolicInputs(State state);
+
 	MemoryUnitFactory memUnitFactory();
 
 	/**
@@ -674,7 +686,8 @@ public interface StateFactory {
 	 */
 	ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state,
 			int pid, int numProcesses, int place, int queueID,
-			Expression assertion, SymbolicExpression channels, ContractClauseKind kind);
+			Expression assertion, SymbolicExpression channels,
+			ContractClauseKind kind);
 
 	/**
 	 * Dequeues an {@link CollectiveSnapshotsEntry} from the specific snapshots

@@ -2079,6 +2079,17 @@ public class FunctionTranslator {
 		return new Triple<>(newScope, initFragment, variables);
 	}
 
+	protected CIVLFunction getFunction(IdentifierExpressionNode ident) {
+		Entity entity = ident.getIdentifier().getEntity();
+
+		if (entity.getEntityKind() == EntityKind.FUNCTION) {
+			Function function = (Function) entity;
+
+			return modelBuilder.functionMap.get(function);
+		}
+		return null;
+	}
+
 	/**
 	 * Translate a function call node into a fragment containing the call
 	 * statement.
@@ -2096,18 +2107,11 @@ public class FunctionTranslator {
 		ArrayList<Expression> arguments = new ArrayList<Expression>();
 		Location location;
 		CIVLFunction civlFunction = null;
-		Function callee;
 		ExpressionNode functionExpression = functionCallNode.getFunction();
 		CallOrSpawnStatement callStmt;
 
 		if (functionExpression instanceof IdentifierExpressionNode) {
-			Entity entity = ((IdentifierExpressionNode) functionExpression)
-					.getIdentifier().getEntity();
-
-			if (entity.getEntityKind() == EntityKind.FUNCTION) {
-				callee = (Function) entity;
-				civlFunction = modelBuilder.functionMap.get(callee);
-			}
+			civlFunction = getFunction((IdentifierExpressionNode) functionExpression);
 		}
 		for (int i = 0; i < functionCallNode.getNumberOfArguments(); i++) {
 			Expression actual = translateExpressionNode(
