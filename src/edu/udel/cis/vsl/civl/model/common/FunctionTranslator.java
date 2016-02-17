@@ -2079,15 +2079,16 @@ public class FunctionTranslator {
 		return new Triple<>(newScope, initFragment, variables);
 	}
 
-	protected CIVLFunction getFunction(IdentifierExpressionNode ident) {
+	protected Pair<Function, CIVLFunction> getFunction(
+			IdentifierExpressionNode ident) {
 		Entity entity = ident.getIdentifier().getEntity();
 
 		if (entity.getEntityKind() == EntityKind.FUNCTION) {
 			Function function = (Function) entity;
 
-			return modelBuilder.functionMap.get(function);
+			return new Pair<>(function, modelBuilder.functionMap.get(function));
 		}
-		return null;
+		return new Pair<>(null, null);
 	}
 
 	/**
@@ -2111,7 +2112,7 @@ public class FunctionTranslator {
 		CallOrSpawnStatement callStmt;
 
 		if (functionExpression instanceof IdentifierExpressionNode) {
-			civlFunction = getFunction((IdentifierExpressionNode) functionExpression);
+			civlFunction = getFunction((IdentifierExpressionNode) functionExpression).right;
 		}
 		for (int i = 0; i < functionCallNode.getNumberOfArguments(); i++) {
 			Expression actual = translateExpressionNode(

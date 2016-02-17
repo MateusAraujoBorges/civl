@@ -413,7 +413,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				continue;
 			} else if (varName.equals(ModelConfiguration.TIME_COUNT_VARIABLE)
 					|| varName
-							.equals(ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER)) {
+							.equals(ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER)
+					|| varName
+							.equals(ModelConfiguration.SYMBOLIC_INPUT_COUNTER)) {
 				continue;
 			} else if (varName.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE)
 					&& (value.isNull() || !modelFactory

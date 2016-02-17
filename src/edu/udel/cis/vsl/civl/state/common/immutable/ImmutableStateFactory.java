@@ -2132,13 +2132,32 @@ public class ImmutableStateFactory implements StateFactory {
 
 	@Override
 	public int numSymbolicInputs(State state) {
-		// TODO Auto-generated method stub
-		return 0;
+		Variable symbolicConstantVar = state.getDyscope(0).lexicalScope()
+				.variable(ModelConfiguration.SYMBOLIC_INPUT_COUNTER);
+		SymbolicExpression countValue = state.getVariableValue(0,
+				symbolicConstantVar.vid());
+
+		if (countValue.isNull())
+			return 0;
+
+		IntegerNumber countNum = (IntegerNumber) universe
+				.extractNumber((NumericExpression) countValue);
+
+		return countNum.intValue();
 	}
 
 	@Override
 	public State incrementNumSymbolicInputs(State state) {
-		// TODO Auto-generated method stub
-		return null;
+		Variable symbolicConstantVar = state.getDyscope(0).lexicalScope()
+				.variable(ModelConfiguration.SYMBOLIC_INPUT_COUNTER);
+		SymbolicExpression countValue = state.getVariableValue(0,
+				symbolicConstantVar.vid()), newCount;
+
+		if (countValue.isNull())
+			newCount = universe.oneInt();
+		else
+			newCount = universe.add((NumericExpression) countValue,
+					universe.oneInt());
+		return this.setVariable(state, symbolicConstantVar.vid(), 0, newCount);
 	}
 }

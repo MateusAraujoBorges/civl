@@ -85,7 +85,13 @@ public final class ModelConfiguration {
 	 * The variable to store the number of symbolic constants appearing in the
 	 * state
 	 */
-	public static final String SYMBOLIC_CONSTANT_COUNTER = "_X_count_var";
+	public static final String SYMBOLIC_CONSTANT_COUNTER = "_Y_count_var";
+
+	/**
+	 * The variable to store the number of symbolic constants appearing in the
+	 * state
+	 */
+	public static final String SYMBOLIC_INPUT_COUNTER = "_X_count_var";
 
 	/**
 	 * The name of the heap variable of each scope.

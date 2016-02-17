@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.model.IF.contract;
 import java.util.List;
 import java.util.Set;
 
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.contract.CompositeEvent.CompositeEventOperator;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -48,7 +49,7 @@ public interface ContractFactory {
 	 * @param arguments
 	 * @return
 	 */
-	CallEvent newCallEvent(CIVLSource source, Expression function,
+	CallEvent newCallEvent(CIVLSource source, CIVLFunction function,
 			List<Expression> arguments);
 
 	/**

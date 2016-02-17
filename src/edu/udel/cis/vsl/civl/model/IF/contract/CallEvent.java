@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl.model.IF.contract;
 
 import java.util.List;
 
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
 /**
@@ -17,7 +18,7 @@ public interface CallEvent extends DependsEvent {
 	 * 
 	 * @return
 	 */
-	Expression function();
+	CIVLFunction function();
 
 	/**
 	 * Returns the arguments of the call event.
@@ -32,5 +33,12 @@ public interface CallEvent extends DependsEvent {
 	 * @return
 	 */
 	int numArguments();
+
+	/**
+	 * Sets the callee of this event
+	 * 
+	 * @param function
+	 */
+	void setFunction(CIVLFunction function);
 
 }

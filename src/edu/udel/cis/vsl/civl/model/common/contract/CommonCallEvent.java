@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl.model.common.contract;
 
 import java.util.List;
 
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.contract.CallEvent;
 import edu.udel.cis.vsl.civl.model.IF.contract.DependsEvent;
@@ -9,11 +10,11 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
 public class CommonCallEvent extends CommonDependsEvent implements CallEvent {
 
-	private Expression function;
+	private CIVLFunction function;
 
 	private List<Expression> arguments;
 
-	public CommonCallEvent(CIVLSource source, Expression function,
+	public CommonCallEvent(CIVLSource source, CIVLFunction function,
 			List<Expression> arguments) {
 		super(source, DependsEventKind.CALL);
 		this.function = function;
@@ -21,7 +22,7 @@ public class CommonCallEvent extends CommonDependsEvent implements CallEvent {
 	}
 
 	@Override
-	public Expression function() {
+	public CIVLFunction function() {
 		return this.function;
 	}
 
@@ -64,12 +65,17 @@ public class CommonCallEvent extends CommonDependsEvent implements CallEvent {
 		StringBuffer result = new StringBuffer();
 
 		result.append("call(");
-		result.append(function);
+		result.append(function.name().name());
 		for (Expression argument : arguments) {
 			result.append(", ");
 			result.append(argument);
 		}
 		result.append(")");
 		return result.toString();
+	}
+
+	@Override
+	public void setFunction(CIVLFunction function) {
+		this.function = function;
 	}
 }

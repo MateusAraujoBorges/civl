@@ -65,7 +65,7 @@ public class CommonSystemFunction extends CommonFunction implements
 
 	@Override
 	public String toString() {
-		return this.name().name() + " : system function call";
+		return this.name().name() + " : system function";
 	}
 
 	@Override

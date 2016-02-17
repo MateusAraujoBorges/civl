@@ -41,6 +41,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.contract.CallEvent;
 import edu.udel.cis.vsl.civl.model.IF.contract.CompositeEvent.CompositeEventOperator;
 import edu.udel.cis.vsl.civl.model.IF.contract.ContractFactory;
 import edu.udel.cis.vsl.civl.model.IF.contract.DependsEvent;
@@ -61,6 +62,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ObligationClause;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.model.common.contract.CommonContractFactory;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 
 public class ContractTranslator extends FunctionTranslator {
 	/**
@@ -230,6 +232,9 @@ public class ContractTranslator extends FunctionTranslator {
 			functionContract.setGuard(guard);
 			break;
 		}
+		case PURE:
+			functionContract.setPure(true);
+			break;
 		case COMPLETENESS:
 		case MPI_COLLECTIVE:
 		default:
@@ -261,17 +266,21 @@ public class ContractTranslator extends FunctionTranslator {
 		}
 		case CALL: {
 			CallEventNode callEvent = (CallEventNode) eventNode;
-			Expression function = this.translateExpressionNode(
-					callEvent.getFunction(), scope, true);
+			Pair<Function, CIVLFunction> functionPair = this
+					.getFunction(callEvent.getFunction());
 			SequenceNode<ExpressionNode> argumentNodes = callEvent.arguments();
 			List<Expression> arguments = new ArrayList<>();
+			CallEvent call;
 
 			for (ExpressionNode argNode : argumentNodes) {
 				arguments.add(this
 						.translateExpressionNode(argNode, scope, true));
 			}
-			return this.contractFactory.newCallEvent(source, function,
-					arguments);
+			call = this.contractFactory.newCallEvent(source,
+					functionPair.right, arguments);
+			if (functionPair.right == null)
+				this.modelBuilder.callEvents.put(call, functionPair.left);
+			return call;
 		}
 		case COMPOSITE: {
 			CompositeEventNode compositeEvent = (CompositeEventNode) eventNode;

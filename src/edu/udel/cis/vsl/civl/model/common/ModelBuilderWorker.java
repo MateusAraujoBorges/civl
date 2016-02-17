@@ -37,6 +37,7 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.contract.CallEvent;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -107,14 +108,25 @@ public class ModelBuilderWorker {
 	CIVLBundleType bundleType;
 
 	/**
-	 * Map whose key set contains all call/spawn statements in the model. The
-	 * value associated to the key is the ABC function definition node. This is
-	 * built up as call statements are processed. On a later pass, we iterate
-	 * over this map and set the function fields of the call/spawn statements to
-	 * the corresponding model Function object. Visibility make it
-	 * package-private since CommonModelFactory needs to access it
+	 * Map whose key set contains all {@link CallOrSpawnStatement} whose callee
+	 * is unknown in the model. The value associated to the key is the ABC
+	 * {@link Function} entity. This is built up as call/spawn statements are
+	 * processed. On a later pass, we iterate over this map and set the function
+	 * fields of the call/spawn statements to the corresponding
+	 * {@link CIVLFunction} object. Visibility make it package-private since
+	 * {@link FunctionTranslator} needs to access it.
 	 */
 	Map<CallOrSpawnStatement, Function> callStatements;
+
+	/**
+	 * Map whose key set contains all {@link CallEvent} whose callee is unknown
+	 * in the model. The value associated to the key is the ABC {@link Function}
+	 * entity. This is built up as call events are processed. On a later pass,
+	 * we iterate over this map and set the function fields of the call event to
+	 * the corresponding {@link CIVLFunction} object. Visibility make it
+	 * package-private since {@link ContractTranslator} needs to access it.
+	 */
+	Map<CallEvent, Function> callEvents;
 
 	// Map<Scope, CIVLFunction> elaborateDomainFunction = new HashMap<>();
 
@@ -346,9 +358,10 @@ public class ModelBuilderWorker {
 
 	protected void initialization(CIVLFunction system) {
 		systemScope = system.outerScope();
-		callStatements = new LinkedHashMap<CallOrSpawnStatement, Function>();
-		functionMap = new LinkedHashMap<Function, CIVLFunction>();
-		unprocessedFunctions = new ArrayList<FunctionDefinitionNode>();
+		callStatements = new LinkedHashMap<>();
+		callEvents = new LinkedHashMap<>();
+		functionMap = new LinkedHashMap<>();
+		unprocessedFunctions = new ArrayList<>();
 		factory.setSystemScope(systemScope);
 	}
 
@@ -900,8 +913,7 @@ public class ModelBuilderWorker {
 		if (inputInitMap != null) {
 			// if commandline specified input variables that do not
 			// exist, throw exception...
-			Set<String> commandLineVars = new HashSet<String>(
-					inputInitMap.keySet());
+			Set<String> commandLineVars = new HashSet<>(inputInitMap.keySet());
 
 			commandLineVars.removeAll(initializedInputs);
 			// ignore extra input variables for svcomp
@@ -933,11 +945,20 @@ public class ModelBuilderWorker {
 		completeBundleType();
 		completeHeapType();
 		completeTimeVar();
+		completeCallEvents();
 		completeModel(system);
 		this.calculateConstantValue();
 		this.factory.setCodeAnalyzers(Analysis.getAnalyzers(civlConfig,
 				universe));
 		this.staticAnalysis();
+	}
+
+	private void completeCallEvents() {
+		for (Map.Entry<CallEvent, Function> callEventPair : this.callEvents
+				.entrySet()) {
+			callEventPair.getKey().setFunction(
+					this.functionMap.get(callEventPair.getValue()));
+		}
 	}
 
 	private void completeTimeVar() {

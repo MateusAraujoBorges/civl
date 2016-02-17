@@ -13,6 +13,8 @@ import edu.udel.cis.vsl.civl.model.common.CommonSourceable;
 public class CommonFunctionContract extends CommonSourceable implements
 		FunctionContract {
 
+	private boolean pure = false;
+
 	private Expression guard = null;
 
 	private FunctionBehavior defaultBehavior;
@@ -64,12 +66,24 @@ public class CommonFunctionContract extends CommonSourceable implements
 		String subPrefix = prefix + "| ";
 
 		out.println(prefix + "contract");
+		if (this.pure)
+			out.println(subPrefix + "pure");
 		if (guard != null)
 			out.println(subPrefix + "guard: " + guard.toString());
 		defaultBehavior.print(subPrefix, out, isDebug);
 		for (NamedFunctionBehavior behavior : namedBehaviors.values()) {
 			behavior.print(subPrefix, out, isDebug);
 		}
+	}
+
+	@Override
+	public boolean isPure() {
+		return this.pure;
+	}
+
+	@Override
+	public void setPure(boolean value) {
+		this.pure = value;
 	}
 
 }

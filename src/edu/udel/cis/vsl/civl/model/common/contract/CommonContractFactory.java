@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.model.common.contract;
 import java.util.List;
 import java.util.Set;
 
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.contract.CallEvent;
 import edu.udel.cis.vsl.civl.model.IF.contract.CompositeEvent;
@@ -35,7 +36,7 @@ public class CommonContractFactory implements ContractFactory {
 	}
 
 	@Override
-	public CallEvent newCallEvent(CIVLSource source, Expression function,
+	public CallEvent newCallEvent(CIVLSource source, CIVLFunction function,
 			List<Expression> arguments) {
 		return new CommonCallEvent(source, function, arguments);
 	}

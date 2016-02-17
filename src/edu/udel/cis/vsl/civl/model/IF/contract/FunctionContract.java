@@ -35,6 +35,20 @@ public interface FunctionContract extends Sourceable {
 	Expression guard();
 
 	/**
+	 * Does the contract contains <code>pure</code> clause?
+	 * 
+	 * @return
+	 */
+	boolean isPure();
+
+	/**
+	 * Updates the contract to denote if it contains <code>pure</code> clause.
+	 * 
+	 * @param value
+	 */
+	void setPure(boolean value);
+
+	/**
 	 * Sets the guard of the function.
 	 * 
 	 * @param expression
