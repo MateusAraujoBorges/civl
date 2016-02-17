@@ -12,11 +12,11 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnitSet;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NTReferenceExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
-import edu.udel.cis.vsl.sarl.ideal.IF.Constant;
 
 public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 	/**
@@ -163,8 +163,9 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 	public void add(MemoryUnitSet muSet, SymbolicExpression pointer) {
 		int scope = modelFactory.getScopeId(null,
 				universe.tupleRead(pointer, zero));
-		int var = ((IntegerNumber) ((Constant) universe.tupleRead(pointer, one))
-				.number()).intValue();
+		int var = ((IntegerNumber) universe
+				.extractNumber((NumericExpression) universe.tupleRead(pointer,
+						one))).intValue();
 		ReferenceExpression reference = (ReferenceExpression) universe
 				.tupleRead(pointer, two);
 		ImmutableMemoryUnit mu = this.newMemoryUnit(scope, var, reference);
