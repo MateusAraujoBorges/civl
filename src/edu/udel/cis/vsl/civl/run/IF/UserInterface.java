@@ -520,35 +520,38 @@ public class UserInterface {
 	 * If the user set quiet option to true in the command, line
 	 * 
 	 * @param args
-	 * the command line arguments, e.g., {"verify", "-verbose",
+	 *            the command line arguments, e.g., {"verify", "-verbose",
 	 *            "foo.c"}. This is an array of strings of length at least 1;
 	 *            element 0 should be the name of the command
 	 * @return true iff user sets quiet option true in the command line.
 	 */
-	private boolean isQuiet(String[] args){
+	private boolean isQuiet(String[] args) {
 		StringBuilder stringBuilder = null;
 		String command = null;
-		
-		if(args != null){
+
+		if (args != null) {
 			stringBuilder = new StringBuilder();
 			int argsLen = args.length;
-			for(int i=0; i<argsLen ; i++){
+			for (int i = 0; i < argsLen; i++) {
 				stringBuilder.append(args[i]);
 			}
 			command = stringBuilder.toString().trim();
 			int commandSize = command.length();
 			int lastQuietIndex = command.lastIndexOf("-quiet");
-			if(lastQuietIndex == -1) return false;
-			// "-quiet=false" has 12 characters. 
-			if(lastQuietIndex + 12 > commandSize) return true;
-			if(command.substring(lastQuietIndex, lastQuietIndex+12).equals("-quiet=false"))
+			if (lastQuietIndex == -1)
+				return false;
+			// "-quiet=false" has 12 characters.
+			if (lastQuietIndex + 12 > commandSize)
+				return true;
+			if (command.substring(lastQuietIndex, lastQuietIndex + 12).equals(
+					"-quiet=false"))
 				return false;
 			else
 				return true;
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Parses command line arguments and runs the CIVL tool(s) as specified by
 	 * those arguments.
@@ -565,7 +568,7 @@ public class UserInterface {
 	private boolean runMain(String[] args) throws CommandLineException {
 		boolean quiet = false;
 		quiet = isQuiet(args);
-		if(!quiet){
+		if (!quiet) {
 			out.println("CIVL v" + version + " of " + date
 					+ " -- http://vsl.cis.udel.edu/civl");
 			out.flush();
@@ -659,7 +662,7 @@ public class UserInterface {
 				@SuppressWarnings("unused")
 				CIVL_GUI gui = new CIVL_GUI(trace, replayer.symbolicAnalyzer);
 			}
-			if(!modelTranslator.config.isQuiet()){
+			if (!modelTranslator.config.isQuiet()) {
 				printCommand(out, command);
 				replayer.printStats();
 				printUniverseStats(out, modelTranslator.universe);
@@ -681,18 +684,17 @@ public class UserInterface {
 		if (model != null) {
 			player = TracePlayer.randomPlayer(modelTranslator.gmcConfig, model,
 					out, err);
-			if(!modelTranslator.config.isQuiet()){
+			if (!modelTranslator.config.isQuiet()) {
 				out.println("\nRunning random simulation with seed "
 						+ player.getSeed() + " ...");
 				out.flush();
 			}
 			result = player.run().result();
-			/* original
-			this.printCommand(out, command);
-			player.printStats();
-			printUniverseStats(out, modelTranslator.universe);
-			*/
-			if(!modelTranslator.config.isQuiet()){
+			/*
+			 * original this.printCommand(out, command); player.printStats();
+			 * printUniverseStats(out, modelTranslator.universe);
+			 */
+			if (!modelTranslator.config.isQuiet()) {
 				this.printCommand(out, command);
 				player.printStats();
 				printUniverseStats(out, modelTranslator.universe);
@@ -738,12 +740,11 @@ public class UserInterface {
 				return false;
 			} catch (Exception e) {
 				verifier.terminateUpdater();
-				try {
-					throw e;
-				} catch (CancellationException cancel) {
-					// time out
-				} catch (Exception e1) {
-					e1.printStackTrace();
+
+				if (e instanceof CancellationException) {
+					// timeout, does nothing
+				} else {
+					e.printStackTrace();
 					return false;
 				}
 			}
@@ -761,7 +762,7 @@ public class UserInterface {
 					Analysis.printResults(model.factory().codeAnalyzers(), out);
 				}
 			}
-			if(!modelTranslator.config.isQuiet()) {
+			if (!modelTranslator.config.isQuiet()) {
 				this.printCommand(out, command);
 				verifier.printStats();
 				printUniverseStats(out, modelTranslator.universe);
