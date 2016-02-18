@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
@@ -738,15 +739,10 @@ public class UserInterface {
 				verifier.terminateUpdater();
 				err.println(syntax);
 				return false;
-			} catch (Exception e) {
+			} catch (CancellationException | ExecutionException
+					| InterruptedException e) {
+				// time out
 				verifier.terminateUpdater();
-
-				if (e instanceof CancellationException) {
-					// timeout, does nothing
-				} else {
-					e.printStackTrace();
-					return false;
-				}
 			}
 			if (result) {
 				if (modelTranslator.config.collectOutputs()) {
