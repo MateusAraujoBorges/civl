@@ -8,6 +8,7 @@ import java.io.File;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import edu.udel.cis.vsl.civl.TestConstants;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class MPICollectivePart2Test {
@@ -29,117 +30,122 @@ public class MPICollectivePart2Test {
 	@Test
 	public void scatterGather_bad() {
 		assertFalse(ui.run("verify -DORDER -input_mpi_nprocs=6 ",
-				filename("scatterGather.c")));
+				TestConstants.QUIET, filename("scatterGather.c")));
 	}
 
 	@Test
 	public void scatterGather() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=6 ",
-				filename("scatterGather.c")));
+				TestConstants.QUIET, filename("scatterGather.c")));
 	}
 
 	@Test
 	public void bcast_ex04() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", filename("c_ex04.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET, 
+				filename("c_ex04.c")));
 	}
 
 	@Test
 	public void scatterGather_ex05() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=6 -inputcount=5",
-				filename("c_ex05.c")));
+				TestConstants.QUIET, filename("c_ex05.c")));
 	}
 
 	@Test
 	public void scatterReduce_ex06() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=6 -inputcount=5",
-				filename("c_ex06.c")));
+				TestConstants.QUIET, filename("c_ex06.c")));
 	}
 
 	@Test
 	public void alltoall_ex07() {
 		assertTrue(ui.run("verify -enablePrintf=false -input_mpi_nprocs=6 ",
-				filename("c_ex07.c")));
+				TestConstants.QUIET, filename("c_ex07.c")));
 	}
 
 	@Test
 	public void gatherv_ex08() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", filename("c_ex08.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET, 
+				filename("c_ex08.c")));
 	}
 
 	@Test
 	public void gatherv_ex13() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", filename("c_ex13.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET, 
+				filename("c_ex13.c")));
 	}
 
 	@Test
 	public void alltoallv() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=6 ",
-				filename("alltoallv.c")));
+				TestConstants.QUIET, filename("alltoallv.c")));
 	}
 
 	@Test
 	public void reduce() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6", filename("reduce.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=6", TestConstants.QUIET, 
+				filename("reduce.c")));
 	}
 
 	@Test
 	public void reduce_operator() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=6 -DOPERATOR",
-				filename("reduce.c")));
+				TestConstants.QUIET, filename("reduce.c")));
 	}
 
 	@Test
 	public void reduce_root() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=6 -DROOT",
-				filename("reduce.c")));
+				TestConstants.QUIET, filename("reduce.c")));
 	}
 
 	@Test
 	public void reduce_type() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=6 -DTYPE",
-				filename("reduce.c")));
+				TestConstants.QUIET, filename("reduce.c")));
 	}
 
 	@Test
 	public void allreduce() {
 		assertTrue(ui
-				.run("verify -input_mpi_nprocs=6", filename("allreduce.c")));
+				.run("verify -input_mpi_nprocs=6", TestConstants.QUIET, 
+						filename("allreduce.c")));
 	}
 
 	@Test
 	public void allreduce_operator() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=6 -DOPERATOR",
-				filename("allreduce.c")));
+				TestConstants.QUIET, filename("allreduce.c")));
 	}
 
 	@Test
 	public void allreduce_type() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=6 -DTYPE",
-				filename("allreduce.c")));
+				TestConstants.QUIET, filename("allreduce.c")));
 	}
 
 	@Test
 	public void barrierReduce() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=5",
-				filename("barrierReduce.c")));
+				TestConstants.QUIET, filename("barrierReduce.c")));
 	}
 
 	@Test
 	public void barrierReduce_order() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=5 -DORDER",
-				filename("barrierReduce.c")));
+				TestConstants.QUIET, filename("barrierReduce.c")));
 	}
 
 	@Test
 	public void barrierScatter() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=5",
-				filename("barrierScatter.c")));
+				TestConstants.QUIET, filename("barrierScatter.c")));
 	}
 
 	@Test
 	public void reduceScatter() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=4",
-				filename("reduceScatter.c")));
+				TestConstants.QUIET, filename("reduceScatter.c")));
 	}
 
 	@AfterClass

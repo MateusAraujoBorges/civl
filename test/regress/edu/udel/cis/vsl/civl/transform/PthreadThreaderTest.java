@@ -9,6 +9,7 @@ import org.junit.AfterClass;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
+import edu.udel.cis.vsl.civl.TestConstants;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class PthreadThreaderTest {
@@ -30,31 +31,31 @@ public class PthreadThreaderTest {
 	@Test
 	public void dekker_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16 -showProgram=false",
-				filename("dekker_true-unreach-call.c")));
+				TestConstants.QUIET, filename("dekker_true-unreach-call.c")));
 	}
 
 	@Test
 	public void lamport_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16",
-				filename("lamport_true-unreach-call.c")));
+				TestConstants.QUIET, filename("lamport_true-unreach-call.c")));
 	}
 
 	@Test
 	public void peterson_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16",
-				filename("peterson_true-unreach-call.c")));
+				TestConstants.QUIET, filename("peterson_true-unreach-call.c")));
 	}
 
 	@Test
 	public void qrcu_false() throws ABCException {
 		assertFalse(ui.run("verify", "-svcomp16",
-				filename("qrcu_false-unreach-call.c")));
+				TestConstants.QUIET, filename("qrcu_false-unreach-call.c")));
 	}
 
 	@Test
 	public void read_write_lock_false() throws ABCException {
 		assertFalse(ui.run("verify", "-svcomp16",
-				filename("read_write_lock_false-unreach-call.c")));
+				TestConstants.QUIET, filename("read_write_lock_false-unreach-call.c")));
 	}
 
 	@Test
@@ -62,7 +63,7 @@ public class PthreadThreaderTest {
 		// assertTrue(ui.run("verify", "-svcomp16 -showProgram",
 		// filename("read_write_lock_true-unreach-call.c")));
 		assertTrue(ui.run("verify", "-svcomp16 -showProgram=false",
-				filename("read_write_lock_true-unreach-call.c")));
+				TestConstants.QUIET, filename("read_write_lock_true-unreach-call.c")));
 		// ui.run("replay", "-svcomp16 -showTransitions",
 		// filename("read_write_lock_true-unreach-call.c"));
 	}
@@ -70,13 +71,13 @@ public class PthreadThreaderTest {
 	@Test
 	public void szymanski_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16",
-				filename("szymanski_true-unreach-call.c")));
+				TestConstants.QUIET, filename("szymanski_true-unreach-call.c")));
 	}
 
 	@Test
 	public void time_var_mutex_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16",
-				filename("time_var_mutex_true-unreach-call.c")));
+				TestConstants.QUIET, filename("time_var_mutex_true-unreach-call.c")));
 	}
 
 	@AfterClass

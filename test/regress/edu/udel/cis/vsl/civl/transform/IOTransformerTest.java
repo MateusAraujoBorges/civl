@@ -8,6 +8,7 @@ import java.io.File;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import edu.udel.cis.vsl.civl.TestConstants;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
@@ -28,30 +29,30 @@ public class IOTransformerTest {
 
 	@Test
 	public void io() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", filename("io.cvl")));
+		assertTrue(ui.run("verify", "-enablePrintf=false", TestConstants.QUIET, filename("io.cvl")));
 	}
 
 	@Test
 	public void scanf() {
-		assertTrue(ui.run("verify", filename("fscanf.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, filename("fscanf.cvl")));
 	}
 
 	@Test
 	public void stringTestBad() {
 		try {
-			assertFalse(ui.run("verify -DNEGINDEX", filename("fileOpen.cvl")));
+			assertFalse(ui.run("verify -DNEGINDEX", TestConstants.QUIET, filename("fileOpen.cvl")));
 		} catch (CIVLInternalException e) {
 			System.out.println(e.getMessage());
 		}
-		assertFalse(ui.run("verify", filename("fileOpen.cvl")));
-		assertFalse(ui.run("verify -DNCINDEX", filename("fileOpen.cvl")));
-		assertFalse(ui.run("verify -DNCARRAY", filename("fileOpen.cvl")));
-		assertFalse(ui.run("verify -DSCHAR", filename("fileOpen.cvl")));
+		assertFalse(ui.run("verify", TestConstants.QUIET, filename("fileOpen.cvl")));
+		assertFalse(ui.run("verify -DNCINDEX", TestConstants.QUIET, filename("fileOpen.cvl")));
+		assertFalse(ui.run("verify -DNCARRAY", TestConstants.QUIET, filename("fileOpen.cvl")));
+		assertFalse(ui.run("verify -DSCHAR", TestConstants.QUIET, filename("fileOpen.cvl")));
 	}
 
 	@Test
 	public void defaultLength() {
-		assertTrue(ui.run("verify", filename("defaultLength.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, filename("defaultLength.cvl")));
 	}
 
 	@AfterClass

@@ -7,6 +7,7 @@ import java.io.File;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import edu.udel.cis.vsl.civl.TestConstants;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class OmpHelpersTest {
@@ -27,52 +28,52 @@ public class OmpHelpersTest {
 
 	@Test
 	public void teams() {
-		assertTrue(ui.run("run", filename("teams.cvl")));
+		assertTrue(ui.run("run", TestConstants.QUIET, filename("teams.cvl")));
 	}
 
 	@Test
 	public void shared() {
-		assertTrue(ui.run("run", filename("shared.cvl")));
+		assertTrue(ui.run("run", TestConstants.QUIET, filename("shared.cvl")));
 	}
 
 	// TODO: move this to another test. it has nothing to do with omp.
 	@Test
 	public void read() {
-		assertTrue(ui.run("run", filename("read.cvl")));
+		assertTrue(ui.run("run", TestConstants.QUIET, filename("read.cvl")));
 	}
 
 	@Test
 	public void write() {
-		assertTrue(ui.run("run", filename("write.cvl")));
+		assertTrue(ui.run("run", TestConstants.QUIET, filename("write.cvl")));
 	}
 
 	@Test
 	public void barrierFlush() {
 		// assertTrue(ui.run("run", filename("barrierFlush.cvl"),
 		// "-showSavedStates"));
-		assertTrue(ui.run("run", filename("barrierFlush.cvl")));
+		assertTrue(ui.run("run", TestConstants.QUIET, filename("barrierFlush.cvl")));
 		// ui.run("run", filename("barrierFlush.cvl"));
 		// ui.run("replay", "-gui", filename("barrierFlush.cvl"));
 	}
 
 	@Test
 	public void reduction() {
-		assertTrue(ui.run("run", filename("reduction.cvl")));
+		assertTrue(ui.run("run", TestConstants.QUIET, filename("reduction.cvl")));
 	}
 
 	@Test
 	public void sections() {
-		assertTrue(ui.run("run", filename("sections.cvl")));
+		assertTrue(ui.run("run", TestConstants.QUIET, filename("sections.cvl")));
 	}
 
 	@Test
 	public void single() {
-		assertTrue(ui.run("run", filename("single.cvl")));
+		assertTrue(ui.run("run", TestConstants.QUIET, filename("single.cvl")));
 	}
 
 	@Test
 	public void ompfor() {
-		assertTrue(ui.run("run", filename("for.cvl")));
+		assertTrue(ui.run("run", TestConstants.QUIET, filename("for.cvl")));
 	}
 	
 	@AfterClass

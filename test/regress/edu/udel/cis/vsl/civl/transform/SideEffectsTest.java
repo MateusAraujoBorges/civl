@@ -8,6 +8,7 @@ import org.junit.AfterClass;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
+import edu.udel.cis.vsl.civl.TestConstants;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class SideEffectsTest {
@@ -28,7 +29,7 @@ public class SideEffectsTest {
 
 	@Test
 	public void postIncr() throws ABCException {
-		assertTrue(ui.run("verify -showProgram", filename("postIncr.cvl")));
+		assertTrue(ui.run("verify -showProgram", TestConstants.QUIET, filename("postIncr.cvl")));
 	}
 
 	@AfterClass
