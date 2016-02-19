@@ -166,7 +166,7 @@ public class LibstdlibExecutor extends BaseLibraryExecutor implements
 					int integer = Integer.parseInt(argString);
 
 					intValue = universe.integer(integer);
-				} catch (Exception ex) {
+				} catch (NumberFormatException ex) {
 					errorLogger.logSimpleError(source, state, process,
 							symbolicAnalyzer.stateInformation(state),
 							ErrorKind.OTHER,

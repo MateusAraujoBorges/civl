@@ -1273,11 +1273,11 @@ public class AmpleSetWorker {
 		SymbolicExpression deref;
 
 		variableValue = state.getDyscope(sid).getValue(vid);
-		try {
-			deref = universe.dereference(variableValue, symRef);
-		} catch (Exception e) {
-			return null;
-		}
+		// try {
+		deref = universe.dereference(variableValue, symRef);
+		// } catch (Exception e) {
+		// return null;
+		// }
 		return deref;
 	}
 

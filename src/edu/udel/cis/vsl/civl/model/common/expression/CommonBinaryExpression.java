@@ -242,12 +242,12 @@ public class CommonBinaryExpression extends CommonExpression implements
 					(NumericExpression) rightValue);
 			break;
 		case DIVIDE:
-			try {
-				constantValue = universe.divide((NumericExpression) leftValue,
-						(NumericExpression) rightValue);
-			} catch (Exception ex) {
-
-			}
+			// try {
+			// constantValue = universe.divide((NumericExpression) leftValue,
+			// (NumericExpression) rightValue);
+			// } catch (Exception ex) {
+			//
+			// }
 			break;
 		case LESS_THAN:
 			constantValue = universe.lessThan((NumericExpression) leftValue,

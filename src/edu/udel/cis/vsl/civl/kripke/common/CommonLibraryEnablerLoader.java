@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -71,7 +72,10 @@ public class CommonLibraryEnablerLoader implements LibraryEnablerLoader {
 						evaluator, modelFacotry, symbolicUtil,
 						symbolicAnalyzer, this.civlConfig, this,
 						this.libEvaluatorLoader);
-			} catch (Exception e) {
+			} catch (ClassNotFoundException | NoSuchMethodException
+					| SecurityException | InstantiationException
+					| IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException e) {
 				throw new LibraryLoaderException(e.getMessage());
 			}
 			libraryEnablerCache.put(name, result);

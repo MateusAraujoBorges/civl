@@ -2830,29 +2830,30 @@ public class CommonEvaluator implements Evaluator {
 			if (this.symbolicUtil.applyReverseFunction(INT_TO_POINTER_FUNCTION,
 					expressionValue) != null)
 				return;
-			try {
-				int scopeID = symbolicUtil
-						.getDyscopeId(source, expressionValue);
+			if (expressionValue.operator() != SymbolicOperator.CONCRETE)
+				return;
+			// try {
+			int scopeID = symbolicUtil.getDyscopeId(source, expressionValue);
 
-				if (scopeID < 0) {
-					StringBuffer message = new StringBuffer();
+			if (scopeID < 0) {
+				StringBuffer message = new StringBuffer();
 
-					message.append("Attempt to evaluate a pointer refererring to memory of an invalid scope:\n");
-					message.append("pointer expression: "
-							+ expression.toString() + "\n");
-					message.append("value: " + expressionValue);
-					errorLogger.logSimpleError(source, state, process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.MEMORY_LEAK, message.toString());
-					throw new UnsatisfiablePathConditionException();
-				}
-			} catch (Exception e) {
+				message.append("Attempt to evaluate a pointer refererring to memory of an invalid scope:\n");
+				message.append("pointer expression: " + expression.toString()
+						+ "\n");
+				message.append("value: " + expressionValue);
 				errorLogger.logSimpleError(source, state, process,
 						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.UNDEFINED_VALUE,
-						"Attempt to use undefined pointer");
+						ErrorKind.MEMORY_LEAK, message.toString());
 				throw new UnsatisfiablePathConditionException();
 			}
+			// } catch (Exception e) {
+			// errorLogger.logSimpleError(source, state, process,
+			// symbolicAnalyzer.stateInformation(state),
+			// ErrorKind.UNDEFINED_VALUE,
+			// "Attempt to use undefined pointer");
+			// throw new UnsatisfiablePathConditionException();
+			// }
 		}
 	}
 
