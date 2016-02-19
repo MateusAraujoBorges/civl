@@ -618,7 +618,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 			Number number = universe
 					.extractNumber((NumericExpression) expression);
 
-			return number.isZero();
+			return number != null && number.isZero();
 		}
 		return false;
 	}
