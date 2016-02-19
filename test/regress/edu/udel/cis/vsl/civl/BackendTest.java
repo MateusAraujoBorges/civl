@@ -28,33 +28,38 @@ public class BackendTest {
 	@Test
 	public void printExpr() {
 		assertTrue(ui.run(
-				"verify -showProgram=false -showSavedStates -showTransitions",
+				TestConstants.VERIFY, TestConstants.NO_SHOW_PROGRAM, 
+				TestConstants.SHOW_SAVED_STATES, TestConstants.SHOW_TRANSITIONS,
 				TestConstants.QUIET, filename("printExpr.cvl")));
 	}
 
 	@Test
 	public void arrayWrite() {
 		assertTrue(ui.run(
-				"verify -showProgram=false -showSavedStates -showTransitions",
+				TestConstants.VERIFY, TestConstants.NO_SHOW_PROGRAM,
+				TestConstants.SHOW_SAVED_STATES, TestConstants.SHOW_TRANSITIONS,
 				TestConstants.QUIET, filename("arrayWrite.cvl")));
 	}
 
 	@Test
 	public void showTrans() {
-		assertTrue(ui.run("verify -showProgram=false -showTransitions",
-				TestConstants.QUIET, filename("showTrans.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.NO_SHOW_PROGRAM,
+				TestConstants.SHOW_TRANSITIONS, TestConstants.QUIET, 
+				filename("showTrans.cvl")));
 	}
 
 	@Test
 	public void sizeOfTypes() {
-		assertTrue(ui.run("verify -showProgram=false -showTransitions",
-				TestConstants.QUIET, filename("sizeOfTypes.c")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.NO_SHOW_PROGRAM,
+				TestConstants.SHOW_TRANSITIONS, TestConstants.QUIET, 
+				filename("sizeOfTypes.c")));
 	}
 
 	@Test
 	public void returnNull() throws ABCException {
-		assertFalse(ui.run("verify", "-errorBound=2 -enablePrintf=false",
-				TestConstants.QUIET, filename("returnNull.cvl")));
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.errorBound(2),
+				TestConstants.NO_PRINTF, TestConstants.QUIET, 
+				filename("returnNull.cvl")));
 	}
 
 	@AfterClass

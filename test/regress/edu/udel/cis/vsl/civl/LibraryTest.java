@@ -290,13 +290,13 @@ public class LibraryTest {
 	@Test
 	public void havoc() throws ABCException {
 		assertTrue(ui.run("verify", TestConstants.QUIET,
-				TestConstants.NOPRINTF, filename(CIVLC, "havoc.cvl")));
+				TestConstants.NO_PRINTF, filename(CIVLC, "havoc.cvl")));
 	}
 
 	@Test
 	public void havocBad() throws ABCException {
 		assertFalse(ui.run("verify", TestConstants.QUIET,
-				TestConstants.NOPRINTF, filename(CIVLC, "havocBad.cvl")));
+				TestConstants.NO_PRINTF, filename(CIVLC, "havocBad.cvl")));
 	}
 
 	@AfterClass

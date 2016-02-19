@@ -32,21 +32,22 @@ public class CompareTest {
 
 	@Test
 	public void sumN() {
-		assertTrue(ui.run("compare", "-inputN=10", "-spec",
-				filename("sumNspec.cvl"), "-impl", filename("sumNimpl.cvl")));
+		assertTrue(ui.run(TestConstants.COMPARE, "-inputN=10", TestConstants.QUIET,
+				TestConstants.SPEC, filename("sumNspec.cvl"), 
+				TestConstants.IMPL, filename("sumNimpl.cvl")));
 	}
 
 	@Test
 	public void adder() {
-		assertTrue(ui.run("compare", "-showProgram", "-enablePrintf=false",
-				"-inputNPROCSB=2", "-inputNB=4", "-spec",
-				filename("adder", "adder_par.cvl"), "-impl",
-				filename("adder", "adder_spec.cvl")));
+		assertTrue(ui.run(TestConstants.COMPARE, TestConstants.SHOW_PROGRAM, TestConstants.QUIET,
+				TestConstants.NO_PRINTF, "-inputNPROCSB=2", "-inputNB=4", 
+				TestConstants.SPEC, filename("adder", "adder_par.cvl"), 
+				TestConstants.IMPL, filename("adder", "adder_spec.cvl")));
 	}
 
 	@Test
 	public void max() {
-		ui.run("show ", filename("max", "max.cvl"),
+		ui.run(TestConstants.SHOW, filename("max", "max.cvl"), 
 				filename("max", "max_seq.cvl"));
 		// assertFalse(ui.run("compare -inputB=4 -min -spec",
 		// filename("max", "max.cvl"), filename("max", "max_seq.cvl"),
@@ -60,50 +61,57 @@ public class CompareTest {
 	@Test
 	public void dotMpiPthreads() {
 		assertTrue(ui
-				.run("compare -enablePrintf=false -inputVECLEN=5 -spec -inputMAXTHRDS=2",
-						filename("dot", "mpithreads_threads.c"),
-						"-impl -input_mpi_nprocs=2",
+				.run(TestConstants.COMPARE, TestConstants.NO_PRINTF, TestConstants.QUIET,
+						"-inputVECLEN=5", TestConstants.SPEC,
+						"-inputMAXTHRDS=2", filename("dot", "mpithreads_threads.c"),
+						TestConstants.IMPL, "-input_mpi_nprocs=2",
 						filename("dot", "mpithreads_mpi.c")));
 	}
 
 	@Test
 	public void dotMpiSerial() {
-		assertFalse(ui.run("compare -enablePrintf=false -inputVECLEN=5 -spec",
+		assertFalse(ui.run(TestConstants.COMPARE, TestConstants.NO_PRINTF, TestConstants.QUIET,
+				"-inputVECLEN=5", TestConstants.SPEC,
 				filename("dot", "mpithreads_serial.c"),
-				"-impl -input_mpi_nprocs=2",
+				TestConstants.IMPL, "-input_mpi_nprocs=2",
 				filename("dot", "mpithreads_mpi.c")));
-		assertFalse(ui.run("replay -spec",
+		
+		assertFalse(ui.run(TestConstants.REPLAY, TestConstants.SPEC, TestConstants.QUIET,
 				filename("dot", "mpithreads_serial.c"),
-				"-impl -input_mpi_nprocs=2",
+				TestConstants.IMPL, "-input_mpi_nprocs=2",
 				filename("dot", "mpithreads_mpi.c")));
 	}
 
 	@Test
 	public void dotPthreadsSerial() {
-		assertFalse(ui.run("compare -enablePrintf=false -inputVECLEN=5 -spec",
+		assertFalse(ui.run(TestConstants.COMPARE, TestConstants.NO_PRINTF,
+				"-inputVECLEN=5", TestConstants.SPEC, TestConstants.QUIET,
 				filename("dot", "mpithreads_serial.c"),
-				"-impl -inputMAXTHRDS=2",
+				TestConstants.IMPL, "-inputMAXTHRDS=2",
 				filename("dot", "mpithreads_threads.c")));
 	}
 
 	@Test
 	public void dotHybridSerial() {
-		assertFalse(ui.run("compare -enablePrintf=false -inputVECLEN=5 -spec",
+		assertFalse(ui.run(TestConstants.COMPARE, TestConstants.NO_PRINTF, TestConstants.QUIET,
+				"-inputVECLEN=5", TestConstants.SPEC,
 				filename("dot", "mpithreads_serial.c"),
-				"-impl -input_mpi_nprocs=2 -inputMAXTHRDS=2",
+				TestConstants.IMPL, "-input_mpi_nprocs=2 -inputMAXTHRDS=2",
 				filename("dot", "mpithreads_both.c")));
 	}
 
 	@Test
 	public void outputfiles() {
-		assertTrue(ui.run("compare", "-spec", filename("outputTest", "out1.c"),
-				"-impl", filename("outputTest", "out2.c")));
+		assertTrue(ui.run(TestConstants.COMPARE, TestConstants.QUIET,
+				TestConstants.SPEC, filename("outputTest", "out1.c"),
+				TestConstants.IMPL, filename("outputTest", "out2.c")));
 	}
 
 	@Test
 	public void outputfile() {
-		assertTrue(ui.run("compare -spec", filename("outputfile", "spec.c"),
-				"-impl", filename("outputfile", "impl.c")));
+		assertTrue(ui.run(TestConstants.COMPARE, TestConstants.QUIET,
+				TestConstants.SPEC, filename("outputfile", "spec.c"),
+				TestConstants.IMPL, filename("outputfile", "impl.c")));
 	}
 
 	@AfterClass

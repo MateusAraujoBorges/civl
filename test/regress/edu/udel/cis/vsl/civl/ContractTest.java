@@ -24,17 +24,27 @@ public class ContractTest {
 	@Ignore
 	public void collective_assert() {
 		assertFalse(ui.run(
-				"verify -enablePrintf=false -input_mpi_nprocs=3 -mpiContract",
+				TestConstants.VERIFY, TestConstants.NO_PRINTF, TestConstants.QUIET,
+				"-input_mpi_nprocs=3", TestConstants.MPI_CONTRACT,
 				filename("wildcard_coassert_bad.c")));
+		
 		assertTrue(ui
-				.run("verify -enablePrintf=false -input_mpi_nprocs=4 -deadlock=potential -mpiContract",
+				.run(TestConstants.VERIFY, TestConstants.NO_PRINTF,
+						"-input_mpi_nprocs=4", TestConstants.POTENTIAL_DEADLOCK,
+						TestConstants.MPI_CONTRACT, TestConstants.QUIET,
 						filename("wildcard_coassert_barrier.c")));
+		
 		assertTrue(ui
-				.run("verify -enablePrintf=false -input_mpi_nprocs=5 -deadlock=potential -mpiContract",
+				.run(TestConstants.VERIFY, TestConstants.NO_PRINTF,
+						"-input_mpi_nprocs=5", TestConstants.POTENTIAL_DEADLOCK,
+						TestConstants.MPI_CONTRACT, TestConstants.QUIET,
 						filename("reduce_coassert.c")));
+		
 		assertFalse(ui
-				.run("verify -enablePrintf=false -input_mpi_nprocs=4 -deadlock=potential -errorBound=10 -mpiContract",
-						filename("wildcard_coassert_bad.c")));
+				.run(TestConstants.VERIFY, TestConstants.NO_PRINTF,
+						"-input_mpi_nprocs=4", TestConstants.POTENTIAL_DEADLOCK,
+						TestConstants.errorBound(10), TestConstants.MPI_CONTRACT,
+						TestConstants.QUIET, filename("wildcard_coassert_bad.c")));
 	}
 
 	@Ignore
@@ -42,34 +52,40 @@ public class ContractTest {
 	// understandable for human beings.
 	public void collective_assert_coverage() {
 		assertFalse(ui
-				.run("verify -enablePrintf=false -errorBound=10 -input_mpi_nprocs=3 -mpiContract",
-						filename("coassert_cover.c")));
+				.run(TestConstants.VERIFY, TestConstants.NO_PRINTF,
+						TestConstants.NO_PRINTF, TestConstants.errorBound(10),
+						"-input_mpi_nprocs=3", TestConstants.MPI_CONTRACT,
+						TestConstants.QUIET, filename("coassert_cover.c")));
 	}
 
 	@Ignore
 	public void result() {
 		assertTrue(ui
-				.run("show -showModel -mpiContract ", filename("result.c")));
+				.run(TestConstants.SHOW, TestConstants.SHOW_MODEL,
+						TestConstants.MPI_CONTRACT, filename("result.c")));
 	}
 
 	@Ignore
 	public void isRecvBufEmptyOK() {
-		assertTrue(ui.run("verify -min -mpiContract -input_mpi_nprocs=4",
-				filename("isRecvBufEmpty_OK.c")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.MIN,
+				TestConstants.MPI_CONTRACT, "-input_mpi_nprocs=4",
+				TestConstants.QUIET, filename("isRecvBufEmpty_OK.c")));
 	}
 
 	@Ignore
 	public void isEmptyRecvBufBad() {
-		assertFalse(ui.run("verify -mpiContract",
-				filename("isRecvBufEmpty_BAD.c")));
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.MPI_CONTRACT,
+				TestConstants.QUIET, filename("isRecvBufEmpty_BAD.c")));
 	}
 
 	@Ignore
 	public void wildcard_contract_bad() {
 		assertFalse(ui
-				.run("verify -min -deadlock=potential -mpiContract -input_mpi_nprocs=3",
+				.run(TestConstants.VERIFY, TestConstants.MIN,
+						TestConstants.POTENTIAL_DEADLOCK, TestConstants.MPI_CONTRACT,
+						"-input_mpi_nprocs=3", TestConstants.QUIET,
 						filename("wildcard_contract_bad.c")));
-		ui.run("replay", filename("wildcard_contract_bad.c"));
+		ui.run(TestConstants.REPLAY, TestConstants.QUIET, filename("wildcard_contract_bad.c"));
 	}
 
 	@AfterClass

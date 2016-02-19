@@ -21,7 +21,7 @@ public class ArithmeticTest {
 	/* *************************** Helper Methods ************************** */
 
 	private void check(String name) {
-		assertTrue(ui.run("verify", filename(name)));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, filename(name)));
 	}
 
 	private static String filename(String name) {
@@ -37,7 +37,8 @@ public class ArithmeticTest {
 
 	@Test
 	public void assoc() {
-		assertTrue(ui.run("verify", "-inputB=10", filename("assoc.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				"-inputB=10", filename("assoc.cvl")));
 	}
 
 	@Test
@@ -57,7 +58,8 @@ public class ArithmeticTest {
 
 	@Test
 	public void divisionBad() {
-		assertFalse(ui.run("verify", filename("divisionBad.cvl")));
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				filename("divisionBad.cvl")));
 	}
 
 	@Test
@@ -67,89 +69,102 @@ public class ArithmeticTest {
 
 	@Test
 	public void matmat() {
-		assertTrue(ui.run("verify", "-inputBOUND=3", filename("matmat.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				"-inputBOUND=3", filename("matmat.cvl")));
 	}
 
 	@Test
 	public void matmatBad() {
 		assertFalse(ui
-				.run("verify", "-inputBOUND=3", filename("matmatBad.cvl")));
+				.run(TestConstants.VERIFY, TestConstants.QUIET,
+						"-inputBOUND=3", filename("matmatBad.cvl")));
 	}
 
 	@Test
 	public void mean() {
-		assertTrue(ui.run("verify", "-inputB=10", filename("mean.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				"-inputB=10", filename("mean.cvl")));
 	}
 
 	@Test
 	public void meanBad() {
-		assertFalse(ui.run("verify", "-inputB=10", "-min",
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				"-inputB=10", TestConstants.MIN,
 				filename("meanBad.cvl")));
 	}
 
 	@Test
 	public void multiplicationInLoopCondition() {
-		assertTrue(ui.run("verify",
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("multiplicationInLoopCondition.cvl")));
 	}
 
 	@Test
 	public void math() {
-		assertTrue(ui.run("verify", filename("mathematical.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				filename("mathematical.cvl")));
 	}
 
 	@Test
 	public void exp1() {
-		assertFalse(ui.run("run", filename("div0.cvl")));
+		assertFalse(ui.run(TestConstants.RUN, TestConstants.QUIET,
+				filename("div0.cvl")));
+		assertFalse(ui.run(TestConstants.RUN, TestConstants.QUIET,
+				filename("div0.cvl")));
 	}
 
 	@Test
 	public void sqrt() {
-		assertTrue(ui.run("verify", filename("sqrt.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET
+				, filename("sqrt.cvl")));
 	}
 
 	@Test
 	public void sqrt_elaborate() {
-		assertTrue(ui.run("verify", "-DMATH_ELABORATE_ASSUMPTIONS",
-				filename("sqrt.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.DMATH_ELABORATE_ASSUMPTIONS,
+				TestConstants.QUIET, filename("sqrt.cvl")));
 	}
 
 	@Test
 	public void sqrt_no_assumptions() {
-		assertFalse(ui.run("verify", "-DMATH_NO_ASSUMPTIONS",
-				filename("sqrt.cvl")));
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.DMATH_NO_ASSUMPTIONS,
+				TestConstants.QUIET, filename("sqrt.cvl")));
 	}
 
 	@Test
 	public void sqrtBad1() {
-		assertFalse(ui.run("verify", filename("sqrtBad1.cvl")));
-	}
-
-	@Test
-	public void sqrtBad1_elaborate() {
-		assertFalse(ui.run("verify", "-DMATH_ELABORATE_ASSUMPTIONS",
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("sqrtBad1.cvl")));
 	}
 
 	@Test
-	public void sqrtBad2() {
-		assertFalse(ui.run("verify", filename("sqrtBad2.cvl")));
+	public void sqrtBad1_elaborate() {
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.DMATH_ELABORATE_ASSUMPTIONS,
+				TestConstants.QUIET, filename("sqrtBad1.cvl")));
 	}
 
 	@Test
-	public void sqrtBad2_elaborate() {
-		assertFalse(ui.run("verify", "-DMATH_ELABORATE_ASSUMPTIONS",
+	public void sqrtBad2() {
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("sqrtBad2.cvl")));
 	}
 
 	@Test
+	public void sqrtBad2_elaborate() {
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.DMATH_ELABORATE_ASSUMPTIONS,
+				TestConstants.QUIET, filename("sqrtBad2.cvl")));
+	}
+
+	@Test
 	public void quadratic1() {
-		assertTrue(ui.run("verify", filename("quadratic1.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				filename("quadratic1.cvl")));
 	}
 
 	@Test
 	public void quadratic2() {
-		assertTrue(ui.run("verify", filename("quadratic2.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				filename("quadratic2.cvl")));
 	}
 
 	@AfterClass

@@ -26,19 +26,22 @@ public class AnalysisTest {
 
 	@Test
 	public void unreached() {
-		assertTrue(ui.run("verify -showUnreached=true -analyze_abs=false",
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.SHOW_UNREACHED, 
+				TestConstants.NO_ANALYZE_ABS, TestConstants.QUIET,
 				filename("unreached.c")));
 	}
 
 	@Test
 	public void abs() {
-		assertTrue(ui.run("verify -analyze_abs=true -showUnreached=false",
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.ANALYZE_ABS,
+				TestConstants.NO_SHOW_UNREACHED, TestConstants.QUIET,
 				filename("abs.c")));
 	}
 
 	@Test
 	public void abs2() {
-		assertTrue(ui.run("verify -analyze_abs=true -showUnreached=false",
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.ANALYZE_ABS,
+				TestConstants.NO_SHOW_UNREACHED, TestConstants.QUIET,
 				filename("abs2.c")));
 	}
 
