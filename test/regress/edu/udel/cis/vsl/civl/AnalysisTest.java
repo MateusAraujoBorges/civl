@@ -1,6 +1,10 @@
 package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.ANALYZE_ABS;
+import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 
 import java.io.File;
 
@@ -26,16 +30,13 @@ public class AnalysisTest {
 
 	@Test
 	public void unreached() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.SHOW_UNREACHED, 
-				TestConstants.NO_ANALYZE_ABS, TestConstants.QUIET,
-				filename("unreached.c")));
+		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF, filename("unreached.c")));
 	}
 
 	@Test
 	public void abs() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.ANALYZE_ABS,
-				TestConstants.NO_SHOW_UNREACHED, TestConstants.QUIET,
-				filename("abs.c")));
+		assertTrue(ui.run(VERIFY, ANALYZE_ABS, TestConstants.NO_SHOW_UNREACHED,
+				TestConstants.QUIET, filename("abs.c")));
 	}
 
 	@Test
