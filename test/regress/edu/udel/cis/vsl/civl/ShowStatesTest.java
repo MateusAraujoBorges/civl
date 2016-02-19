@@ -33,13 +33,13 @@ public class ShowStatesTest {
 	@Test
 	public void structsArray() {
 		assertTrue(ui.run("verify", "-showSavedStates",
-				filename("structsArray.cvl")));
+				TestConstants.QUIET, filename("structsArray.cvl")));
 	}
 
 	@Test
 	public void symbolicArrayWrite() {
 		assertTrue(ui.run("verify", "-showSavedStates",
-				filename("symbolicArrayWrite.cvl")));
+				TestConstants.QUIET, filename("symbolicArrayWrite.cvl")));
 	}
 
 	@AfterClass

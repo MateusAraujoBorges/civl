@@ -36,9 +36,6 @@ public class TestConstants {
 	
 	public static String NO_SHOW_UNREACHED = "-showUnreached=false";
 	
-	/**
-	 * -analyze_abs=true
-	 */
 	public static String ANALYZE_ABS = "-analyze_abs=true";
 	
 	public static String NO_ANALYZE_ABS = "-analyze_abs=false";

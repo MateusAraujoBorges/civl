@@ -29,12 +29,12 @@ public class ReasoningTest {
 
 	@Test
 	public void neqZero() throws ABCException {
-		assertTrue(ui.run("verify", filename("neqZero.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, filename("neqZero.cvl")));
 	}
 
 	@Test
 	public void evaluatePc() throws ABCException {
-		assertFalse(ui.run("verify", filename("evaluatePc.cvl")));
+		assertFalse(ui.run("verify", TestConstants.QUIET, filename("evaluatePc.cvl")));
 	}
 
 	@AfterClass

@@ -29,36 +29,36 @@ public class SpecialStatementsTest {
 
 	@Test
 	public void choose1() throws ABCException {
-		assertTrue(ui.run("verify", filename("choose1.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, filename("choose1.cvl")));
 	}
 
 	@Test
 	public void choose_bad1() throws ABCException {
-		assertFalse(ui.run("show", filename("choose_bad1.cvl")));
+		assertFalse(ui.run("show", TestConstants.QUIET, filename("choose_bad1.cvl")));
 	}
 
 	@Test
 	public void choose_bad2() throws ABCException {
-		assertFalse(ui.run("show", filename("choose_bad2.cvl")));
+		assertFalse(ui.run("show", TestConstants.QUIET, filename("choose_bad2.cvl")));
 	}
 
 	@Test
 	public void choose_bad3() throws ABCException {
-		assertFalse(ui.run("show", filename("choose_bad3.cvl")));
+		assertFalse(ui.run("show", TestConstants.QUIET, filename("choose_bad3.cvl")));
 	}
 
 	@Test
 	public void when1() throws ABCException {
-		assertTrue(ui.run("verify", filename("when1.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, filename("when1.cvl")));
 	}
 
 	@Test
 	public void when2() throws ABCException {
-		assertTrue(ui.run("verify", filename("when2.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, filename("when2.cvl")));
 	}
 
 	@Test
 	public void when3() throws ABCException {
-		assertTrue(ui.run("verify", filename("when3.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, filename("when3.cvl")));
 	}
 }
