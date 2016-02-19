@@ -342,6 +342,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void pointersBad() throws ABCException {
+		// TODO: separate into different tests
 		assertFalse(ui
 				.run("verify -errorBound=10", filename("pointersBad.cvl")));
 		assertFalse(ui.run("verify -DICLeafNode", filename("pointersBad.cvl")));

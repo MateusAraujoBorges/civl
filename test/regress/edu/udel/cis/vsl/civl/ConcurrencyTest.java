@@ -34,9 +34,8 @@ public class ConcurrencyTest {
 
 	@Test
 	public void adderBad() {
-		assertFalse(ui.run(TestConstants.VERIFY, "-inputB=4", 
-				TestConstants.MIN, TestConstants.QUIET,
-				filename("adderBad.cvl")));
+		assertFalse(ui.run(TestConstants.VERIFY, "-inputB=4", TestConstants.MIN,
+				TestConstants.QUIET, filename("adderBad.cvl")));
 		assertFalse(ui.run(TestConstants.REPLAY, TestConstants.QUIET,
 				filename("adderBad.cvl")));
 	}
@@ -62,22 +61,20 @@ public class ConcurrencyTest {
 	@Test
 	public void barrierBad() {
 		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
-				TestConstants.MIN, "-inputB=4",
+				TestConstants.MIN, "-inputB=4", filename("barrierBad.cvl")));
+		assertFalse(ui.run(TestConstants.REPLAY, TestConstants.QUIET, "-id=0",
 				filename("barrierBad.cvl")));
-		assertFalse(ui.run(TestConstants.REPLAY, TestConstants.QUIET, 
-				"-id=0", filename("barrierBad.cvl")));
 	}
 
 	@Test
 	public void blockAdder() {
 		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
-				"-inputB=6", "-inputW=3",
-				filename("blockAdder.cvl")));
+				"-inputB=6", "-inputW=3", filename("blockAdder.cvl")));
 	}
 
 	@Test
 	public void blockAdderBad() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				"-inputB=6", "-inputW=3", TestConstants.MIN,
 				filename("blockAdderBad.cvl")));
 		assertFalse(ui.run(TestConstants.REPLAY, TestConstants.QUIET,
@@ -87,15 +84,15 @@ public class ConcurrencyTest {
 	@Test
 	public void dining() {
 		assertTrue(ui.run(TestConstants.VERIFY, "-inputBOUND=4",
-				TestConstants.NO_SHOW_TRANSITIONS, TestConstants.QUIET,
-				filename("dining.cvl")));
+				TestConstants.QUIET, filename("dining.cvl")));
 	}
 
 	@Test
 	public void diningBad() {
-		assertFalse(ui.run(TestConstants.VERIFY, "-inputB=4", TestConstants.QUIET,
-				TestConstants.MIN,filename("diningBad.cvl")));
-		
+		assertFalse(
+				ui.run(TestConstants.VERIFY, "-inputB=4", TestConstants.QUIET,
+						TestConstants.MIN, filename("diningBad.cvl")));
+
 		assertFalse(ui.run(TestConstants.REPLAY, TestConstants.QUIET,
 				filename("diningBad.cvl")));
 	}
@@ -108,116 +105,127 @@ public class ConcurrencyTest {
 
 	@Test
 	public void locksBad10() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, filename("locksBad10.cvl")));
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				filename("locksBad10.cvl")));
 	}
 
 	@Test
 	public void locksGood() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, filename("locksGood.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				filename("locksGood.cvl")));
 	}
 
 	@Test
 	public void spawn() {
-		assertTrue(ui.run(TestConstants.VERIFY, "-inputN=10", 
+		assertTrue(ui.run(TestConstants.VERIFY, "-inputN=10",
 				TestConstants.QUIET, filename("spawn.cvl")));
 	}
 
 	@Test
 	public void spawn2() {
-		assertTrue(ui.run(TestConstants.VERIFY, "-inputN=10", 
+		assertTrue(ui.run(TestConstants.VERIFY, "-inputN=10",
 				TestConstants.QUIET, filename("spawn2.cvl")));
 	}
 
 	@Test
 	public void spawnBad() {
-		assertFalse(ui.run(TestConstants.VERIFY, "-inputN=10", 
+		assertFalse(ui.run(TestConstants.VERIFY, "-inputN=10",
 				TestConstants.QUIET, filename("spawnBad.cvl")));
 	}
 
 	@Test
 	public void waitSelf() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("waitSelf.cvl")));
 	}
 
 	@Test
 	public void dlqueue() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("dlqueue.cvl")));
 	}
 
 	@Test
 	public void hybrid() {
-		assertFalse(ui.run(TestConstants.VERIFY, "-inputNPROCS=2", 
+		assertFalse(ui.run(TestConstants.VERIFY, "-inputNPROCS=2",
 				TestConstants.QUIET, filename("hybrid.cvl")));
 	}
 
 	@Test
 	public void mpiPthreads() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("mpi-pthreads.cvl")));
 	}
 
 	@Test
 	public void mpiPthreadsMin() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.MIN, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.MIN,
 				TestConstants.QUIET, filename("mpi-pthreads.cvl")));
 	}
 
 	@Test
 	public void ring() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK, TestConstants.QUIET, 
-				" -inputNPROCS_BOUND=8", "-inputN_BOUND=4", filename("ring.cvl")));
+		assertTrue(
+				ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK,
+						TestConstants.QUIET, " -inputNPROCS_BOUND=8",
+						"-inputN_BOUND=4", filename("ring.cvl")));
 	}
 
 	@Test
 	public void ring1Bad() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY,
+				TestConstants.POTENTIAL_DEADLOCK, TestConstants.QUIET,
 				"-inputNPROCS=3", filename("ring1Bad.cvl")));
 	}
 
 	@Test
 	public void ring1() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK,TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY,
+				TestConstants.POTENTIAL_DEADLOCK, TestConstants.QUIET,
 				"-inputNPROCS=3", filename("ring1.cvl")));
 	}
 
 	@Test
 	public void ring2() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK, TestConstants.QUIET,
+		assertTrue(ui.run(TestConstants.VERIFY,
+				TestConstants.POTENTIAL_DEADLOCK, TestConstants.QUIET,
 				"-inputNPROCS=3", filename("ring2.cvl")));
 	}
 
 	@Test
 	public void ring2Bad() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK, TestConstants.QUIET,
+		assertFalse(ui.run(TestConstants.VERIFY,
+				TestConstants.POTENTIAL_DEADLOCK, TestConstants.QUIET,
 				"-inputNPROCS=3", filename("ring2Bad.cvl")));
 	}
 
 	@Test
 	public void ring3() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK,
-				TestConstants.QUIET, filename("ring3.cvl")));
+		assertTrue(
+				ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK,
+						TestConstants.QUIET, filename("ring3.cvl")));
 	}
 
 	@Test
 	public void ring3Bad() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK,
-				TestConstants.QUIET, filename("ring3Bad.cvl")));
+		assertFalse(
+				ui.run(TestConstants.VERIFY, TestConstants.POTENTIAL_DEADLOCK,
+						TestConstants.QUIET, filename("ring3Bad.cvl")));
 	}
 
 	@Test
 	public void wildcard() {
 		assertTrue(ui.run(TestConstants.VERIFY, "-inputNPROCS=2",
-				TestConstants.SHOW_TRANSITIONS, TestConstants.QUIET,
-				TestConstants.NO_PRINTF, filename("wildcard.cvl")));
+				TestConstants.QUIET, TestConstants.NO_PRINTF,
+				filename("wildcard.cvl")));
 	}
 
 	@Test
 	public void wildcardBad() {
 		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.NO_PRINTF,
 				TestConstants.QUIET, filename("wildcardBad.c")));
-		ui.run(TestConstants.REPLAY, TestConstants.QUIET, filename("wildcardBad.c"));
+		ui.run(TestConstants.REPLAY, TestConstants.QUIET,
+				filename("wildcardBad.c"));
 	}
 
 	@AfterClass
