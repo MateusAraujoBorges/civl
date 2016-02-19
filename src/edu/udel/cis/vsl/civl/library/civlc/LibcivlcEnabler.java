@@ -1,14 +1,12 @@
 package edu.udel.cis.vsl.civl.library.civlc;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -43,11 +41,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Interval;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicCollection;
 
 /**
  * Implementation of the enabler-related logics for system functions declared
@@ -302,8 +298,9 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 		Set<SymbolicConstant> symbolicConstants = universe
 				.getFreeSymbolicConstants(argumentValues[0]);
 
-		return this.elaborateSymbolicConstants(state, pid, processIdentifier,
-				call, source, symbolicConstants, atomicLockAction);
+		return this.elaborateSymbolicConstantsNew(state, pid,
+				processIdentifier, call, source, symbolicConstants,
+				atomicLockAction);
 	}
 
 	private List<Transition> elaborateRectangularDomainWorker(State state,
@@ -314,23 +311,20 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 		Set<SymbolicConstant> symbolicConstants = universe
 				.getFreeSymbolicConstants(argumentValues[0]);
 
-		return this.elaborateSymbolicConstants(state, pid, processIdentifier,
-				call, source, symbolicConstants, atomicLockAction);
+		return this.elaborateSymbolicConstantsNew(state, pid,
+				processIdentifier, call, source, symbolicConstants,
+				atomicLockAction);
 	}
 
-	private List<Transition> elaborateSymbolicConstants(State state, int pid,
-			int processIdentifier, Statement call, CIVLSource source,
+	private List<Transition> elaborateSymbolicConstantsNew(State state,
+			int pid, int processIdentifier, Statement call, CIVLSource source,
 			Set<SymbolicConstant> symbolicConstants,
 			AtomicLockAction atomicLockAction) {
 		BooleanExpression pathCondition = state.getPathCondition();
-		// get all sub-clauses of the path condition, which is always in CNF
-		BooleanExpression[] clauses = this.symbolicUtil
-				.getConjunctiveClauses(pathCondition);
-		Map<SymbolicConstant, Pair<Integer, Integer>> boundsMap;
+		List<ConstantBound> bounds = new ArrayList<>();
 		ConstantBound[] constantBounds;
 		Set<BooleanExpression> concreteValueClauses;
 		List<Transition> transitions = new LinkedList<>();
-		int index = 0;
 		Reasoner reasoner = universe.reasoner(pathCondition);
 
 		if (symbolicConstants.size() < 1) {
@@ -339,23 +333,31 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 					pathCondition, pid, processIdentifier, null, call, false,
 					atomicLockAction));
 		}
-		// state = this.stateFactory.simplify(state);
-		boundsMap = extractsUpperBoundAndLowBoundOf(clauses, symbolicConstants);
-		if (boundsMap.size() < 1) {
-			// no bound of the symbolic constants associated with the argument
-			// could be found
-			return Arrays.asList((Transition) Semantics.newNoopTransition(
-					pathCondition, pid, processIdentifier, null, call, false,
-					atomicLockAction));
+		for (SymbolicConstant var : symbolicConstants) {
+			Interval interval = reasoner.assumptionAsInterval(var);
+
+			if (interval == null) {// var is unbounded
+				if (var.type().isInteger()) {
+					bounds.add(new ConstantBound(var, Integer.MIN_VALUE,
+							Integer.MAX_VALUE));
+				}
+			} else if (interval.isIntegral()) {
+				Number lowerNum = interval.lower(), upperNum = interval.upper();
+				int lower = Integer.MIN_VALUE, upper = Integer.MAX_VALUE;
+
+				if (lowerNum != null) {
+					assert !interval.strictLower();
+					lower = ((IntegerNumber) lowerNum).intValue();
+				}
+				if (upperNum != null) {
+					assert !interval.strictUpper();
+					upper = ((IntegerNumber) upperNum).intValue();
+				}
+				bounds.add(new ConstantBound(var, lower, upper));
+			}
 		}
-		constantBounds = new ConstantBound[boundsMap.size()];
-		for (Entry<SymbolicConstant, Pair<Integer, Integer>> constantAndBounds : boundsMap
-				.entrySet()) {
-			constantBounds[index++] = new ConstantBound(
-					constantAndBounds.getKey(),
-					constantAndBounds.getValue().left,
-					constantAndBounds.getValue().right);
-		}
+		constantBounds = new ConstantBound[bounds.size()];
+		bounds.toArray(constantBounds);
 		concreteValueClauses = this.generateConcreteValueClauses(reasoner,
 				constantBounds, 0);
 		for (BooleanExpression clause : concreteValueClauses) {
@@ -367,6 +369,57 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 		}
 		return transitions;
 	}
+
+	// private List<Transition> elaborateSymbolicConstants(State state, int pid,
+	// int processIdentifier, Statement call, CIVLSource source,
+	// Set<SymbolicConstant> symbolicConstants,
+	// AtomicLockAction atomicLockAction) {
+	// BooleanExpression pathCondition = state.getPathCondition();
+	// // get all sub-clauses of the path condition, which is always in CNF
+	// BooleanExpression[] clauses = this.symbolicUtil
+	// .getConjunctiveClauses(pathCondition);
+	// Map<SymbolicConstant, Pair<Integer, Integer>> boundsMap;
+	// ConstantBound[] constantBounds;
+	// Set<BooleanExpression> concreteValueClauses;
+	// List<Transition> transitions = new LinkedList<>();
+	// int index = 0;
+	// Reasoner reasoner = universe.reasoner(pathCondition);
+	//
+	// if (symbolicConstants.size() < 1) {
+	// // noop if no symbolic constant is contained
+	// return Arrays.asList((Transition) Semantics.newNoopTransition(
+	// pathCondition, pid, processIdentifier, null, call, false,
+	// atomicLockAction));
+	// }
+	// // state = this.stateFactory.simplify(state);
+	// boundsMap = extractsUpperBoundAndLowBoundOf(clauses, symbolicConstants);
+	// if (boundsMap.size() < 1) {
+	// // no bound of the symbolic constants associated with the argument
+	// // could be found
+	// return Arrays.asList((Transition) Semantics.newNoopTransition(
+	// pathCondition, pid, processIdentifier, null, call, false,
+	// atomicLockAction));
+	// }
+	// constantBounds = new ConstantBound[boundsMap.size()];
+	// for (Entry<SymbolicConstant, Pair<Integer, Integer>> constantAndBounds :
+	// boundsMap
+	// .entrySet()) {
+	// constantBounds[index++] = new ConstantBound(
+	// constantAndBounds.getKey(),
+	// constantAndBounds.getValue().left,
+	// constantAndBounds.getValue().right);
+	// }
+	// concreteValueClauses = this.generateConcreteValueClauses(reasoner,
+	// constantBounds, 0);
+	// for (BooleanExpression clause : concreteValueClauses) {
+	// BooleanExpression newPathCondition = (BooleanExpression) universe
+	// .canonic(universe.and(pathCondition, clause));
+	//
+	// transitions.add(Semantics.newNoopTransition(newPathCondition, pid,
+	// processIdentifier, clause, call, true, atomicLockAction));
+	// }
+	// return transitions;
+	// }
 
 	/**
 	 * generates boolean expressions by elaborating symbolic constants according
@@ -425,203 +478,172 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 		return result;
 	}
 
-	/**
-	 * extracts the upper and lower bound for each symbolic constant based on
-	 * the given clauses. If no upper/lower bound can be inferred, then the
-	 * default MAX/MIN value is used.
-	 * 
-	 * For example, if the given clauses is {A<100, 6<=A, X<9, 4<X, Z<5}, and
-	 * the symbolic constant set is {X, Y, Z}, then the result will be{(X,
-	 * [5,8]), (Y, [MIN, MAX]), (Z, [MIN, 4])}.
-	 * 
-	 * @param clauses
-	 *            all clauses will be in the canonical form, i.e., it only
-	 *            contains LT/LTE/EQ relational operators (all GT/GTE are
-	 *            converted to LT/LTE)
-	 * @param symbolicConstants
-	 * @return the map between each symbolic constant and their upper and lower
-	 *         bound based on the given clauses
-	 */
-	private Map<SymbolicConstant, Pair<Integer, Integer>> extractsUpperBoundAndLowBoundOf(
-			BooleanExpression[] clauses, Set<SymbolicConstant> symbolicConstants) {
-		Map<SymbolicConstant, Pair<Integer, Integer>> result = new LinkedHashMap<>();
-		int length = clauses.length;
+	// /**
+	// * extracts the upper and lower bound for each symbolic constant based on
+	// * the given clauses. If no upper/lower bound can be inferred, then the
+	// * default MAX/MIN value is used.
+	// *
+	// * For example, if the given clauses is {A<100, 6<=A, X<9, 4<X, Z<5}, and
+	// * the symbolic constant set is {X, Y, Z}, then the result will be{(X,
+	// * [5,8]), (Y, [MIN, MAX]), (Z, [MIN, 4])}.
+	// *
+	// * @param clauses
+	// * all clauses will be in the canonical form, i.e., it only
+	// * contains LT/LTE/EQ relational operators (all GT/GTE are
+	// * converted to LT/LTE)
+	// * @param symbolicConstants
+	// * @return the map between each symbolic constant and their upper and
+	// lower
+	// * bound based on the given clauses
+	// */
+	// private Map<SymbolicConstant, Pair<Integer, Integer>>
+	// extractsUpperBoundAndLowBoundOf(
+	// BooleanExpression[] clauses, Set<SymbolicConstant> symbolicConstants) {
+	// Map<SymbolicConstant, Pair<Integer, Integer>> result = new
+	// LinkedHashMap<>();
+	// int length = clauses.length;
+	//
+	// for (int i = 0; i < length; i++) {
+	// BooleanExpression clause = clauses[i];
+	// SymbolicOperator operator = clause.operator();
+	// SymbolicConstant symbol;
+	// boolean isLTE = operator == SymbolicOperator.LESS_THAN_EQUALS, isLT =
+	// operator == SymbolicOperator.LESS_THAN;
+	// SymbolicExpression polynomial;
+	// Set<SymbolicConstant> symbols;
+	// Pair<Integer, Integer> mybounds;
+	// SymbolicOperator polynomialOperator;
+	//
+	// // ignore clauses that are not in LTE/LT form
+	// if (!isLTE && !isLT)
+	// continue;
+	// if (!this.isIntegerZero((SymbolicExpression) clause.argument(0)))
+	// continue;
+	// symbols = universe.getFreeSymbolicConstants(clause);
+	// // ignore clause that contain more than 1 symbolic constants
+	// if (symbols.size() != 1)
+	// continue;
+	// symbol = symbols.iterator().next();
+	// if (!symbolicConstants.contains(symbol))
+	// continue;
+	// mybounds = result.get(symbol);
+	// if (mybounds == null)
+	// mybounds = new Pair<>(Integer.MIN_VALUE, Integer.MAX_VALUE);
+	// polynomial = (SymbolicExpression) clause.argument(1);
+	// polynomialOperator = polynomial.operator();
+	// if (polynomialOperator == SymbolicOperator.SYMBOLIC_CONSTANT) {
+	// // 0 < X or 0<=X TODO check 0 < -X
+	// int lowerbound = isLTE ? 0 : 1;
+	//
+	// mybounds.left = this.max(mybounds.left, lowerbound);
+	// result.put(symbol, mybounds);
+	// } else if (polynomialOperator == SymbolicOperator.ADD) {
+	// // the polynomial always has the form (-1*X) + N,
+	// // where N could be a positive or a negative integer
+	// // symbolPart is X or -1*x
+	// @SuppressWarnings("unchecked")
+	// SymbolicCollection<? extends SymbolicExpression> polynomialCollection =
+	// (SymbolicCollection<SymbolicExpression>) polynomial
+	// .argument(0);
+	// SymbolicExpression symbolPart = null, integerConstant = null;
+	// boolean symbolPartPositive;
+	// int integerConstantValue;
+	// int index = 0;
+	//
+	// for (SymbolicExpression polyElement : polynomialCollection) {
+	// if (index == 0)
+	// symbolPart = polyElement;
+	// else if (index == 1)
+	// integerConstant = polyElement;
+	// index++;
+	// }
+	// assert symbolPart != null;
+	// assert integerConstant != null;
+	// symbolPartPositive = symbolPart.operator() ==
+	// SymbolicOperator.SYMBOLIC_CONSTANT;
+	// if (!symbolPartPositive) {
+	// if (symbolPart.operator() != SymbolicOperator.MULTIPLY)
+	// continue;
+	// if (!this.isNegativeOne((SymbolicExpression) symbolPart
+	// .argument(0)))
+	// continue;
+	// }
+	// integerConstantValue = this.symbolicUtil.extractInt(null,
+	// (NumericExpression) integerConstant);
+	// if (symbolPartPositive)
+	// integerConstantValue = 0 - integerConstantValue;
+	// if (isLT) {
+	// if (symbolPartPositive)
+	// integerConstantValue++;
+	// else
+	// integerConstantValue--;
+	// }
+	// if (symbolPartPositive) {
+	// // this is the lowerbound
+	// mybounds.left = this.max(mybounds.left,
+	// integerConstantValue);
+	// } else {
+	// // upper bound
+	// mybounds.right = this.min(mybounds.right,
+	// integerConstantValue);
+	// }
+	// result.put(symbol, mybounds);
+	// }
+	// }
+	// return result;
+	// }
 
-		for (int i = 0; i < length; i++) {
-			BooleanExpression clause = clauses[i];
-			SymbolicOperator operator = clause.operator();
-			SymbolicConstant symbol;
-			boolean isLTE = operator == SymbolicOperator.LESS_THAN_EQUALS, isLT = operator == SymbolicOperator.LESS_THAN;
-			SymbolicExpression polynomial;
-			Set<SymbolicConstant> symbols;
-			Pair<Integer, Integer> mybounds;
-			SymbolicOperator polynomialOperator;
-
-			// ignore clauses that are not in LTE/LT form
-			if (!isLTE && !isLT)
-				continue;
-			if (!this.isIntegerZero((SymbolicExpression) clause.argument(0)))
-				continue;
-			symbols = universe.getFreeSymbolicConstants(clause);
-			// ignore clause that contain more than 1 symbolic constants
-			if (symbols.size() != 1)
-				continue;
-			symbol = symbols.iterator().next();
-			if (!symbolicConstants.contains(symbol))
-				continue;
-			mybounds = result.get(symbol);
-			if (mybounds == null)
-				mybounds = new Pair<>(Integer.MIN_VALUE, Integer.MAX_VALUE);
-			polynomial = (SymbolicExpression) clause.argument(1);
-			polynomialOperator = polynomial.operator();
-			if (polynomialOperator == SymbolicOperator.SYMBOLIC_CONSTANT) {
-				// 0 < X or 0<=X TODO check 0 < -X
-				int lowerbound = isLTE ? 0 : 1;
-
-				mybounds.left = this.max(mybounds.left, lowerbound);
-				result.put(symbol, mybounds);
-			} else if (polynomialOperator == SymbolicOperator.ADD) {
-				// the polynomial always has the form (-1*X) + N,
-				// where N could be a positive or a negative integer
-				// symbolPart is X or -1*x
-				@SuppressWarnings("unchecked")
-				SymbolicCollection<? extends SymbolicExpression> polynomialCollection = (SymbolicCollection<SymbolicExpression>) polynomial
-						.argument(0);
-				SymbolicExpression symbolPart = null, integerConstant = null;
-				boolean symbolPartPositive;
-				int integerConstantValue;
-				int index = 0;
-
-				for (SymbolicExpression polyElement : polynomialCollection) {
-					if (index == 0)
-						symbolPart = polyElement;
-					else if (index == 1)
-						integerConstant = polyElement;
-					index++;
-				}
-				assert symbolPart != null;
-				assert integerConstant != null;
-				symbolPartPositive = symbolPart.operator() == SymbolicOperator.SYMBOLIC_CONSTANT;
-				if (!symbolPartPositive) {
-					if (symbolPart.operator() != SymbolicOperator.MULTIPLY)
-						continue;
-					if (!this.isNegativeOne((SymbolicExpression) symbolPart
-							.argument(0)))
-						continue;
-				}
-				integerConstantValue = this.symbolicUtil.extractInt(null,
-						(NumericExpression) integerConstant);
-				if (symbolPartPositive)
-					integerConstantValue = 0 - integerConstantValue;
-				if (isLT) {
-					if (symbolPartPositive)
-						integerConstantValue++;
-					else
-						integerConstantValue--;
-				}
-				if (symbolPartPositive) {
-					// this is the lowerbound
-					mybounds.left = this.max(mybounds.left,
-							integerConstantValue);
-				} else {
-					// upper bound
-					mybounds.right = this.min(mybounds.right,
-							integerConstantValue);
-				}
-				result.put(symbol, mybounds);
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * This method tries use the assumptionAsInterval() method from SARL for
-	 * determining the range of a symbolic constant. However, the method
-	 * assumptionAsInterval() only returns when both lower and upper bounds are
-	 * present, which is not sufficient for the reasoning here. So we don't use
-	 * it for now.
-	 * 
-	 * @param context
-	 * @param symbolicConstants
-	 * @return
-	 */
-	@SuppressWarnings("unused")
-	private Map<SymbolicConstant, Pair<Integer, Integer>> extractsUpperBoundAndLowBoundOfNew(
-			BooleanExpression context, Set<SymbolicConstant> symbolicConstants) {
-		Map<SymbolicConstant, Pair<Integer, Integer>> result = new LinkedHashMap<>();
-		Reasoner reasoner = universe.reasoner(context);
-
-		for (SymbolicConstant variable : symbolicConstants) {
-			Interval interval = reasoner.assumptionAsInterval(variable);
-
-			if (interval != null) {
-				Number lowerNum = interval.lower(), upperNum = interval.upper();
-
-				if (lowerNum instanceof IntegerNumber
-						&& upperNum instanceof IntegerNumber) {
-					int lower, upper;
-
-					lower = ((IntegerNumber) lowerNum).intValue();
-					upper = ((IntegerNumber) upperNum).intValue();
-					result.put(variable, new Pair<>(lower, upper));
-					continue;
-				}
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * checks if the given expression is -1.
-	 * 
-	 * @param expression
-	 * @return
-	 */
-	private boolean isNegativeOne(SymbolicExpression expression) {
-		if (expression instanceof NumericExpression) {
-			return this.symbolicUtil.extractInt(null,
-					(NumericExpression) expression) == -1;
-		}
-		return false;
-	}
-
-	/**
-	 * gets the smaller value between a and b
-	 * 
-	 * @param a
-	 * @param b
-	 * @return a if a is less than or equal to b; otherwise, b.
-	 */
-	private int min(int a, int b) {
-		return a <= b ? a : b;
-	}
-
-	/**
-	 * gets the greater value between a and b
-	 * 
-	 * @param a
-	 * @param b
-	 * @return a if a is greater than or equal to b; otherwise, b.
-	 */
-	private int max(int a, int b) {
-		return a >= b ? a : b;
-	}
-
-	/**
-	 * checks if the given expression is the integer zero.
-	 * 
-	 * @param expression
-	 * @return true iff the given symbolic expression is the integer zero
-	 */
-	private boolean isIntegerZero(SymbolicExpression expression) {
-		if (expression instanceof NumericExpression) {
-			Number number = universe
-					.extractNumber((NumericExpression) expression);
-
-			return number != null && number.isZero();
-		}
-		return false;
-	}
+	// /**
+	// * checks if the given expression is -1.
+	// *
+	// * @param expression
+	// * @return
+	// */
+	// private boolean isNegativeOne(SymbolicExpression expression) {
+	// if (expression instanceof NumericExpression) {
+	// return this.symbolicUtil.extractInt(null,
+	// (NumericExpression) expression) == -1;
+	// }
+	// return false;
+	// }
+	//
+	// /**
+	// * gets the smaller value between a and b
+	// *
+	// * @param a
+	// * @param b
+	// * @return a if a is less than or equal to b; otherwise, b.
+	// */
+	// private int min(int a, int b) {
+	// return a <= b ? a : b;
+	// }
+	//
+	// /**
+	// * gets the greater value between a and b
+	// *
+	// * @param a
+	// * @param b
+	// * @return a if a is greater than or equal to b; otherwise, b.
+	// */
+	// private int max(int a, int b) {
+	// return a >= b ? a : b;
+	// }
+	//
+	// /**
+	// * checks if the given expression is the integer zero.
+	// *
+	// * @param expression
+	// * @return true iff the given symbolic expression is the integer zero
+	// */
+	// private boolean isIntegerZero(SymbolicExpression expression) {
+	// if (expression instanceof NumericExpression) {
+	// Number number = universe
+	// .extractNumber((NumericExpression) expression);
+	//
+	// return number != null && number.isZero();
+	// }
+	// return false;
+	// }
 }
 
 /**
@@ -644,6 +666,15 @@ class ConstantBound {
 	 */
 	int upper;
 
+	/**
+	 * 
+	 * @param constant
+	 *            the symbolic constant
+	 * @param lower
+	 *            the lower bound
+	 * @param upper
+	 *            the upper bound
+	 */
 	ConstantBound(SymbolicConstant constant, int lower, int upper) {
 		this.constant = constant;
 		this.lower = lower;
