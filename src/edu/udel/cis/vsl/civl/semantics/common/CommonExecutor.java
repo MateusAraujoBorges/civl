@@ -1141,7 +1141,7 @@ public class CommonExecutor implements Executor {
 			} else
 				printedContents.add(new StringBuffer(this.symbolicAnalyzer
 						.symbolicExpressionToString(arguments[i].getSource(),
-								state, null, argumentValue)));
+								state, argumentType, argumentValue)));
 		}
 		this.printf(civlConfig.out(), arguments[0].getSource(), process,
 				formats, printedContents);

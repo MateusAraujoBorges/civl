@@ -714,8 +714,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 				throw new CIVLExecutionException(ErrorKind.OTHER,
 						Certainty.CONCRETE, process, "The file "
 								+ arguments[0].toString()
-								+ " is not a text file.",
-						state, source);
+								+ " is not a text file.", state, source);
 			}
 			length = universe.tupleRead(theFile, universe.intObject(6));
 		}
@@ -1066,7 +1065,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 			} else
 				printedContents.add(new StringBuffer(this.symbolicAnalyzer
 						.symbolicExpressionToString(arguments[i].getSource(),
-								state, null, argumentValue)));
+								state, argumentType, argumentValue)));
 		}
 		if (fileNameString.compareTo(STDOUT) == 0) {
 			if (civlConfig.enablePrintf())
@@ -1086,7 +1085,6 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		{ // updates the file
 			SymbolicExpression fileContents = universe.tupleRead(fileObject,
 					oneObject);
-
 			int newContentCount = formats.size();
 			int dataIndex = 2;
 

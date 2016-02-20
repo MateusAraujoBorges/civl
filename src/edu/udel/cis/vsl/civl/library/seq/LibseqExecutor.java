@@ -447,7 +447,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 							ErrorKind.SEQUENCE,
 							"the first argument of "
 									+ functionName
-									+ "must be a pointer to a concrete array.\n"
+									+ " must be a pointer to a concrete array.\n"
 									+ "actual value of the array pointed to by the first argument: "
 									+ symbolicAnalyzer
 											.symbolicExpressionToString(

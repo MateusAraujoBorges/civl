@@ -424,8 +424,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				continue;
 			}
 			result.append(prefix + "| | " + variable.name());
-			if (variable.type().areSubtypesScalar())
-				result.append(" = ");
+			// if (variable.type().areSubtypesScalar())
+			result.append(" = ");
 			result.append(symbolicExpressionToString(variable.getSource(),
 					state, variable.type(), value, prefix + "| | ", "| "));
 			result.append("\n");
@@ -1415,7 +1415,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 				eleEmpty = symbolicEleCollection.size() == 0;
 			}
-			if (elementIndex != 0)
+			if (elementIndex != 0 && !needNewLine)
 				result.append(", ");
 			if (needNewLine)
 				result.append(padding);
