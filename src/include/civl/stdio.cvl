@@ -97,14 +97,14 @@ struct FILE {
 /* Converts a mode string to the enumerated type CIVL_File_mode.
  * An exception is thrown if the mode string is not one of those
  * specified in the C11 Standard. */
-CIVL_File_mode CIVL_File_stringToMode(char * modeString);//mode not string-literal
+$system CIVL_File_mode CIVL_File_stringToMode(char * modeString);//mode not string-literal
 
 /* Creates a new empty file system, returning a handle to it. */
-$filesystem $filesystem_create($scope scope);
+$system $filesystem $filesystem_create($scope scope);
 
 /* Deallocates any data associated to the file system, and makes
  * the handle undefined */
-void $filesystem_destroy($filesystem fs);
+$system void $filesystem_destroy($filesystem fs);
 
 /* Opens a file f, creates a new FILE F pointing into f, and returns
  * a pointer to F.  Will create f if f does not already exist or
@@ -131,7 +131,7 @@ void $filesystem_destroy($filesystem fs);
  *         in Standard par. 7
  *
  */
-FILE * $fopen($filesystem fs, const char * restrict filename,
+$system FILE * $fopen($filesystem fs, const char * restrict filename,
               CIVL_File_mode mode);
 
 // same as C. make system function
@@ -157,7 +157,7 @@ FILE * $fopen($filesystem fs, const char * restrict filename,
  * output array.  The parameter output should be a pointer
  * to element 0 of that array.
  */
-void $filesystem_copy_output($filesystem fs, $file * output);
+$system void $filesystem_copy_output($filesystem fs, $file * output);
 
 $filesystem CIVL_filesystem = $filesystem_create($here);
 

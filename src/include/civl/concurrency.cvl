@@ -51,9 +51,9 @@ struct $collect_checker {
 
 /* *********************** Functions *********************** */
 
-void $barrier_enter($barrier barrier);
+$system void $barrier_enter($barrier barrier);
 
-void $barrier_exit($barrier barrier);
+$system void $barrier_exit($barrier barrier);
 
 void $barrier_call($barrier barrier) {
   $barrier_enter(barrier);

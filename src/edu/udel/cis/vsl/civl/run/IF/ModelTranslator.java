@@ -729,7 +729,9 @@ public class ModelTranslator {
 		long totalTime;
 
 		startTime = System.currentTimeMillis();
+		// TUs[0].prettyPrint(System.out, false);
 		program = frontEnd.link(TUs, Language.CIVL_C);
+		// program.prettyPrint(System.out);
 		endTime = System.currentTimeMillis();
 		if (config.showTime()) {
 			totalTime = (endTime - startTime);// / 1000;

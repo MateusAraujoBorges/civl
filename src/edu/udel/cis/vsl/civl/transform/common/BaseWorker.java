@@ -418,9 +418,11 @@ public abstract class BaseWorker {
 												BasicTypeKind.BOOL))))
 
 				, false);
+		FunctionDeclarationNode function = nodeFactory
+				.newFunctionDeclarationNode(source, name, funcType, null);
 
-		return nodeFactory.newFunctionDeclarationNode(source, name, funcType,
-				null);
+		function.setSystemFunctionSpeciier(true);
+		return function;
 	}
 
 	protected FunctionCallNode functionCall(Source source, String name,

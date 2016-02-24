@@ -30,8 +30,8 @@ public class MPITranslationTest {
 
 	@Test
 	public void ring1() {
-		assertTrue(ui.run("verify", "-input_mpi_nprocs=2", 
-				TestConstants.QUIET, filename("ring1.c")));
+		assertTrue(ui.run("verify", "-input_mpi_nprocs=2", TestConstants.QUIET,
+				filename("ring1.c")));
 	}
 
 	@Test
@@ -42,22 +42,21 @@ public class MPITranslationTest {
 
 	@Test
 	public void reduce() {
-		assertTrue(ui.run("verify", "-input_mpi_nprocs=4",
-				"-enablePrintf=true", TestConstants.QUIET, 
-				filename("routines/reduce.c")));
+		assertTrue(ui.run("verify", "-input_mpi_nprocs=4", TestConstants.QUIET,
+				TestConstants.NO_PRINTF, filename("routines/reduce.c")));
 	}
 
 	@Test
 	public void mpithreads_mpi() {
 		assertTrue(ui.run("verify", "-input_mpi_nprocs=2",
-				"-enablePrintf=false",
-				TestConstants.QUIET, filename("../mpi-pthread/mpithreads_mpi.c")));
+				"-enablePrintf=false", TestConstants.QUIET,
+				filename("../mpi-pthread/mpithreads_mpi.c")));
 	}
 
 	@Test
 	public void adder_par() {
 		assertTrue(ui.run("verify", "-input_mpi_nprocs=2", "-inputNB=4",
-				"-enablePrintf=false", TestConstants.QUIET, 
+				"-enablePrintf=false", TestConstants.QUIET,
 				filename("adder_par.c")));
 	}
 
@@ -65,35 +64,36 @@ public class MPITranslationTest {
 	public void adder_comp() {
 		assertTrue(ui.run("compare", "-enablePrintf=false",
 				"-input_mpi_nprocs=2", "-inputNB=4", "-spec",
-				TestConstants.QUIET, filename("seq/adder_spec.c"), "-impl", filename("adder_par.c")));
+				TestConstants.QUIET, filename("seq/adder_spec.c"), "-impl",
+				filename("adder_par.c")));
 	}
 
 	@Test
 	public void mpi_scatter() throws ABCException {
 		assertTrue(ui.run("verify", "-input_mpi_nprocs=4",
-				"-enablePrintf=false",
-				TestConstants.QUIET, filename("routines/Gather_Scatter/mpi_scatter.c")));
+				"-enablePrintf=false", TestConstants.QUIET,
+				filename("routines/Gather_Scatter/mpi_scatter.c")));
 	}
 
 	@Test
 	public void mpi_gather() throws ABCException {
 		assertTrue(ui.run("verify", "-input_mpi_nprocs=4",
-				"-enablePrintf=false",
-				TestConstants.QUIET, filename("routines/Gather_Scatter/mpi_gather.c")));
+				"-enablePrintf=false", TestConstants.QUIET,
+				filename("routines/Gather_Scatter/mpi_gather.c")));
 	}
 
 	@Test
 	public void mpi_gatherv() throws ABCException {
 		assertTrue(ui.run("verify", "-input_mpi_nprocs=4",
-				"-enablePrintf=false",
-				TestConstants.QUIET, filename("routines/Gather_Scatter/mpi_gather_inPlace.c")));
+				"-enablePrintf=false", TestConstants.QUIET,
+				filename("routines/Gather_Scatter/mpi_gather_inPlace.c")));
 	}
 
 	@Test
 	public void mpi_scatterv() throws ABCException {
 		assertTrue(ui.run("verify", "-input_mpi_nprocs=4",
-				"-enablePrintf=false",
-				TestConstants.QUIET, filename("routines/Gather_Scatter/mpi_scatter_inPlace.c")));
+				"-enablePrintf=false", TestConstants.QUIET,
+				filename("routines/Gather_Scatter/mpi_scatter_inPlace.c")));
 	}
 
 	@Test
@@ -105,11 +105,10 @@ public class MPITranslationTest {
 
 	@Test
 	public void mpi_diff2d() throws ABCException {
-		assertTrue(ui
-				.run("verify", "-input_mpi_nprocs=4", "-inputnsteps=2",
-						"-inputnx=2", "-inputny=2", "-enablePrintf=false",
-						"-inputNPROCSX=2", "-inputNPROCSY=2",
-						TestConstants.QUIET, filename("diffusion2d.c")));
+		assertTrue(ui.run("verify", "-input_mpi_nprocs=4", "-inputnsteps=2",
+				"-inputnx=2", "-inputny=2", "-enablePrintf=false",
+				"-inputNPROCSX=2", "-inputNPROCSY=2", TestConstants.QUIET,
+				filename("diffusion2d.c")));
 	}
 
 	@Test
@@ -130,7 +129,7 @@ public class MPITranslationTest {
 	@Test
 	public void mpiSysStatus() {
 		assertTrue(ui.run("verify", "-enablePrintf=false",
-				"-input_mpi_nprocs=3", TestConstants.QUIET, 
+				"-input_mpi_nprocs=3", TestConstants.QUIET,
 				filename("routines/mpiSysStatus.c")));
 	}
 
@@ -157,21 +156,20 @@ public class MPITranslationTest {
 	public void mpiMatmat() {
 		assertTrue(ui.run("verify", "-enablePrintf=false",
 				"-input_mpi_nprocs_hi=3", "-inputNB=2", "-inputLB=2",
-				"-inputMB=2", TestConstants.QUIET, 
+				"-inputMB=2", TestConstants.QUIET,
 				filename("matmat_mw/matmat_mw.c")));
 	}
 
 	@Test
 	public void mpiSumArray() {
-		assertTrue(ui
-				.run("verify", "-enablePrintf=false", "-input_mpi_nprocs_hi=3",
-						"-inputNB=8", TestConstants.QUIET, 
-						filename("sum_array.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false",
+				"-input_mpi_nprocs_hi=3", "-inputNB=8", TestConstants.QUIET,
+				filename("sum_array.c")));
 	}
 
 	@Test
 	public void sendrecv() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=3", TestConstants.QUIET, 
+		assertTrue(ui.run("verify -input_mpi_nprocs=3", TestConstants.QUIET,
 				filename("sendrecv.c")));
 	}
 
@@ -179,7 +177,8 @@ public class MPITranslationTest {
 	public void gaussJordan() {
 		assertTrue(ui
 				.run("verify -enablePrintf=false -inputnumRow=2 -inputnumCol=2 -input_mpi_nprocs=2",
-						TestConstants.QUIET, filename("gaussJordan_elimination.c")));
+						TestConstants.QUIET,
+						filename("gaussJordan_elimination.c")));
 	}
 
 	@AfterClass
