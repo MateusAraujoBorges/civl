@@ -56,7 +56,7 @@ public class MPITranslationTest {
 	@Test
 	public void adder_par() {
 		assertTrue(ui.run("verify", "-input_mpi_nprocs=2", "-inputNB=4",
-				"-enablePrintf=false", TestConstants.QUIET,
+				TestConstants.QUIET, TestConstants.NO_PRINTF,
 				filename("adder_par.c")));
 	}
 
