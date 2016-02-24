@@ -41,61 +41,61 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void abstractFunNoArg() throws ABCException {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("abstractFunNoArg.cvl")));
 	}
 
 	@Test
 	public void arrayLiteral() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				"-enablePrintf=false", filename("arrayLiteral.cvl")));
 	}
 
 	@Test
 	public void arrayPointer() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("arrayPointer.cvl")));
 	}
 
 	@Test
 	public void arrays() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("arrays.cvl")));
 	}
 
 	@Test
 	public void assertNonNullPointer() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("assertNonNullPointer.cvl")));
 	}
 
 	@Test
 	public void assertNullPointer() throws ABCException {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("assertNullPointer.cvl")));
 	}
 
 	@Test
 	public void assertPrintf() throws ABCException {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("assertPrintf.cvl")));
 	}
 
 	@Test
 	public void assume() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("assume.cvl")));
 	}
 
 	@Test
 	public void atomChooseBad() throws ABCException {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("atomChooseBad.cvl")));
 	}
 
 	@Test
 	public void atomicBlockedResume() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("atomicBlockedResume.cvl")));
 	}
 
@@ -107,25 +107,25 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void atomicWait() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, "-inputN=3", 
+		assertTrue(ui.run(TestConstants.VERIFY, "-inputN=3",
 				TestConstants.QUIET, filename("atomicWait.cvl")));
 	}
 
 	@Test
 	public void atomStatement() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("atomStatement.cvl")));
 	}
 
 	@Test
 	public void atomWaitBad() throws ABCException {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("atomWaitBad.cvl")));
 	}
 
 	@Test
 	public void badGuard() throws ABCException {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("badGuard.cvl")));
 	}
 
@@ -135,25 +135,25 @@ public class LanguageFeaturesTest {
 	@Ignore
 	@Test
 	public void bigO() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("bigO.cvl")));
 	}
 
 	@Test
 	public void bitwise() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("bitwise.cvl")));
 	}
 
 	@Test
 	public void breakStatement() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("break.cvl")));
 	}
 
 	@Test
 	public void bundleArray() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("bundleArray.cvl")));
 	}
 
@@ -243,15 +243,16 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void divisionByZero() throws ABCException {
-		
+
 		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				TestConstants.errorBound(2), filename("divisionByZero.cvl")));
 	}
 
 	@Test
 	public void divisionByZero_Ignore() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.NO_CHECK_DIVISION_BY_ZERO,
-				TestConstants.QUIET, filename("divisionByZero.cvl")));
+		assertTrue(ui.run(TestConstants.VERIFY,
+				TestConstants.NO_CHECK_DIVISION_BY_ZERO, TestConstants.QUIET,
+				filename("divisionByZero.cvl")));
 	}
 
 	@Test
@@ -304,9 +305,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void mallocBad() throws ABCException {
-		assertFalse(ui
-				.run(TestConstants.VERIFY, TestConstants.errorBound(3),
-						TestConstants.QUIET, filename("mallocBad.cvl")));
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.errorBound(3),
+				TestConstants.QUIET, filename("mallocBad.cvl")));
 	}
 
 	@Test
@@ -394,9 +394,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void pointerAddBad6() throws ABCException {
-		assertFalse(ui
-				.run(TestConstants.VERIFY, TestConstants.errorBound(2),
-						TestConstants.QUIET, filename("pointerAddBad6.c")));
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.errorBound(2),
+				TestConstants.QUIET, filename("pointerAddBad6.c")));
 	}
 
 	@Test
@@ -581,7 +580,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void comma() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, "-inputn=5", 
+		assertTrue(ui.run(TestConstants.VERIFY, "-inputn=5",
 				TestConstants.QUIET, filename("comma.cvl")));
 	}
 
@@ -593,7 +592,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void civlPragma() throws ABCException {
-		assertTrue(ui.run(TestConstants.VERIFY, "-inputNB=5", 
+		assertTrue(ui.run(TestConstants.VERIFY, "-inputNB=5 -showTransitions",
 				TestConstants.QUIET, filename("civlPragma.cvl")));
 	}
 
@@ -612,49 +611,49 @@ public class LanguageFeaturesTest {
 	@Test
 	public void civlParforNotConcrete() throws ABCException {
 		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.errorBound(2),
-				TestConstants.NO_PRINTF, TestConstants.QUIET, 
+				TestConstants.NO_PRINTF, TestConstants.QUIET,
 				filename("civlParforNotConcrete.cvl")));
 	}
 
 	@Test
 	public void pointerSub() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("pointerSubtraction.cvl")));
 	}
 
 	@Test
 	public void pointerSubBad() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("pointerSubtractionBad.cvl")));
 	}
 
 	@Test
 	public void pointerSubBad2() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("pointerSubtractionBad2.cvl")));
 	}
 
 	@Test
 	public void stringTest() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("stringTest.cvl")));
 	}
 
 	@Test
 	public void int2char() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("int2char.cvl")));
 	}
 
 	@Test
 	public void int2charBad() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("int2charBad.cvl")));
 	}
 
 	@Test
 	public void int2charBad2() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET, 
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("int2charBad2.cvl")));
 	}
 
@@ -667,9 +666,10 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void procBound() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.procBound(10), 
-				TestConstants.NO_SHOW_TRANSITIONS, TestConstants.NO_SHOW_SAVED_STATES,
-				TestConstants.QUIET, filename("procBound.cvl")));
+		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.procBound(10),
+				TestConstants.NO_SHOW_TRANSITIONS,
+				TestConstants.NO_SHOW_SAVED_STATES, TestConstants.QUIET,
+				filename("procBound.cvl")));
 	}
 
 	@Test
@@ -688,12 +688,12 @@ public class LanguageFeaturesTest {
 	public void pointerAdd1() {
 		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("pointerAdd1.cvl")));
-		assertFalse(ui.run(TestConstants.VERIFY, "-DWRONG", TestConstants.QUIET,
-				filename("pointerAdd1.cvl")));
+		assertFalse(ui.run(TestConstants.VERIFY, "-DWRONG",
+				TestConstants.QUIET, filename("pointerAdd1.cvl")));
 		assertTrue(ui.run(TestConstants.VERIFY, "-DARRAY", TestConstants.QUIET,
 				filename("pointerAdd1.cvl")));
-		assertFalse(ui.run(TestConstants.VERIFY, "-DARRAY -DWRONG", TestConstants.QUIET,
-				filename("pointerAdd1.cvl")));
+		assertFalse(ui.run(TestConstants.VERIFY, "-DARRAY -DWRONG",
+				TestConstants.QUIET, filename("pointerAdd1.cvl")));
 	}
 
 	@Test
@@ -774,6 +774,12 @@ public class LanguageFeaturesTest {
 	public void atomicFunctionSpecifier() {
 		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
 				filename("atomicFunctionSpecifier.cvl")));
+	}
+
+	@Test
+	public void shortCircuit() {
+		assertTrue(ui.run(TestConstants.VERIFY, "-showProgram",
+				TestConstants.QUIET, filename("shortCircuit.c")));
 	}
 
 	@AfterClass
