@@ -778,8 +778,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void shortCircuit() {
-		assertTrue(ui.run(TestConstants.VERIFY, "-showProgram",
-				TestConstants.QUIET, filename("shortCircuit.c")));
+		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.QUIET,
+				filename("shortCircuit.c")));
 	}
 
 	@AfterClass
