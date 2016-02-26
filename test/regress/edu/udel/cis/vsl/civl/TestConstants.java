@@ -34,11 +34,7 @@ public class TestConstants {
 	
 	public static String SHOW_UNREACHED = "-showUnreached=true";
 	
-	public static String NO_SHOW_UNREACHED = "-showUnreached=false";
-	
 	public static String ANALYZE_ABS = "-analyze_abs=true";
-	
-	public static String NO_ANALYZE_ABS = "-analyze_abs=false";
 	
 	public static String MIN = "-min";
 	
@@ -47,8 +43,6 @@ public class TestConstants {
 	public static String DMATH_NO_ASSUMPTIONS = "-DMATH_NO_ASSUMPTIONS";
 	
 	public static String SHOW_PROGRAM = "-showProgram=true";
-	
-	public static String NO_SHOW_PROGRAM = "-showProgram=false";
 	
 	public static String SHOW_SAVED_STATES = "-showSavedStates=true";
 	

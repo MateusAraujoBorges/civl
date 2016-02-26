@@ -2,6 +2,14 @@ package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
+import static edu.udel.cis.vsl.civl.TestConstants.RUN;
+import static edu.udel.cis.vsl.civl.TestConstants.REPLAY;
+import static edu.udel.cis.vsl.civl.TestConstants.COMPARE;
+import static edu.udel.cis.vsl.civl.TestConstants.IMPL;
+import static edu.udel.cis.vsl.civl.TestConstants.SPEC;
 
 import java.io.File;
 
@@ -33,40 +41,40 @@ public class QuietOptionTest {
 
 	@Test
 	public void adderRun() {
-		assertTrue(ui.run(TestConstants.RUN, "-inputB=5", TestConstants.QUIET,
-				TestConstants.NO_PRINTF, filename1("adder.cvl")));
+		assertTrue(ui.run(RUN, "-inputB=5", QUIET,
+				NO_PRINTF, filename1("adder.cvl")));
 	}
 
 	@Test
 	public void adderVerify() {
-		assertTrue(ui.run(TestConstants.VERIFY, "-inputB=5",
-				TestConstants.NO_PRINTF, TestConstants.QUIET,
+		assertTrue(ui.run(VERIFY, "-inputB=5",
+				NO_PRINTF, QUIET,
 				filename1("adder.cvl")));
 	}
 
 	@Test
 	public void adderBadVerify() {
-		assertFalse(ui.run(TestConstants.VERIFY, "-inputB=5",
-				TestConstants.NO_PRINTF, TestConstants.QUIET,
+		assertFalse(ui.run(VERIFY, "-inputB=5",
+				NO_PRINTF, QUIET,
 				filename1("adderBad.cvl")));
 	}
 
 	@Test
 	public void adderBadReplay() {
-		assertFalse(ui.run(TestConstants.VERIFY, "-inputB=5",
-				TestConstants.NO_PRINTF, TestConstants.QUIET,
+		assertFalse(ui.run(VERIFY, "-inputB=5",
+				NO_PRINTF, QUIET,
 				filename1("adderBad.cvl")));
 
-		assertFalse(ui.run(TestConstants.REPLAY, TestConstants.QUIET,
-				TestConstants.NO_PRINTF, filename1("adderBad.cvl")));
+		assertFalse(ui.run(REPLAY, QUIET,
+				NO_PRINTF, filename1("adderBad.cvl")));
 	}
 
 	@Test
 	public void adderCompare() {
-		assertTrue(ui.run(TestConstants.COMPARE, "-inputNB=4",
-				"-inputNPROCSB=2", TestConstants.QUIET,
-				TestConstants.NO_PRINTF, TestConstants.IMPL,
-				filename2("adder_par.cvl"), TestConstants.SPEC,
+		assertTrue(ui.run(COMPARE, "-inputNB=4",
+				"-inputNPROCSB=2", QUIET,
+				NO_PRINTF, IMPL,
+				filename2("adder_par.cvl"), SPEC,
 				filename2("adder_spec.cvl")));
 	}
 

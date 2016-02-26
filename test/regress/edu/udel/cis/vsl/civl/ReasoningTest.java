@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 
 import java.io.File;
 
@@ -29,12 +30,12 @@ public class ReasoningTest {
 
 	@Test
 	public void neqZero() throws ABCException {
-		assertTrue(ui.run("verify", TestConstants.QUIET, filename("neqZero.cvl")));
+		assertTrue(ui.run("verify", QUIET, filename("neqZero.cvl")));
 	}
 
 	@Test
 	public void evaluatePc() throws ABCException {
-		assertFalse(ui.run("verify", TestConstants.QUIET, filename("evaluatePc.cvl")));
+		assertFalse(ui.run("verify", QUIET, filename("evaluatePc.cvl")));
 	}
 
 	@AfterClass

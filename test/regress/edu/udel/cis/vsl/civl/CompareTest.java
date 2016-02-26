@@ -2,6 +2,13 @@ package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.COMPARE;
+import static edu.udel.cis.vsl.civl.TestConstants.SPEC;
+import static edu.udel.cis.vsl.civl.TestConstants.IMPL;
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
+import static edu.udel.cis.vsl.civl.TestConstants.SHOW;
+import static edu.udel.cis.vsl.civl.TestConstants.REPLAY;
 
 import java.io.File;
 
@@ -32,22 +39,20 @@ public class CompareTest {
 
 	@Test
 	public void sumN() {
-		assertTrue(ui.run(TestConstants.COMPARE, "-inputN=10", TestConstants.QUIET,
-				TestConstants.SPEC, filename("sumNspec.cvl"), 
-				TestConstants.IMPL, filename("sumNimpl.cvl")));
+		assertTrue(ui.run(COMPARE, "-inputN=10", QUIET, SPEC, filename("sumNspec.cvl"), 
+				IMPL, filename("sumNimpl.cvl")));
 	}
 
 	@Test
 	public void adder() {
-		assertTrue(ui.run(TestConstants.COMPARE, TestConstants.SHOW_PROGRAM, TestConstants.QUIET,
-				TestConstants.NO_PRINTF, "-inputNPROCSB=2", "-inputNB=4", 
-				TestConstants.SPEC, filename("adder", "adder_par.cvl"), 
-				TestConstants.IMPL, filename("adder", "adder_spec.cvl")));
+		assertTrue(ui.run(COMPARE, QUIET, NO_PRINTF, "-inputNPROCSB=2", "-inputNB=4", 
+				SPEC, filename("adder", "adder_par.cvl"), 
+				IMPL, filename("adder", "adder_spec.cvl")));
 	}
 
 	@Test
 	public void max() {
-		ui.run(TestConstants.SHOW, filename("max", "max.cvl"), 
+		ui.run(SHOW, filename("max", "max.cvl"), 
 				filename("max", "max_seq.cvl"));
 		// assertFalse(ui.run("compare -inputB=4 -min -spec",
 		// filename("max", "max.cvl"), filename("max", "max_seq.cvl"),
@@ -61,57 +66,57 @@ public class CompareTest {
 	@Test
 	public void dotMpiPthreads() {
 		assertTrue(ui
-				.run(TestConstants.COMPARE, TestConstants.NO_PRINTF, TestConstants.QUIET,
-						"-inputVECLEN=5", TestConstants.SPEC,
+				.run(COMPARE, NO_PRINTF, QUIET,
+						"-inputVECLEN=5", SPEC,
 						"-inputMAXTHRDS=2", filename("dot", "mpithreads_threads.c"),
-						TestConstants.IMPL, "-input_mpi_nprocs=2",
+						IMPL, "-input_mpi_nprocs=2",
 						filename("dot", "mpithreads_mpi.c")));
 	}
 
 	@Test
 	public void dotMpiSerial() {
-		assertFalse(ui.run(TestConstants.COMPARE, TestConstants.NO_PRINTF, TestConstants.QUIET,
-				"-inputVECLEN=5", TestConstants.SPEC,
+		assertFalse(ui.run(COMPARE, NO_PRINTF, QUIET,
+				"-inputVECLEN=5", SPEC,
 				filename("dot", "mpithreads_serial.c"),
-				TestConstants.IMPL, "-input_mpi_nprocs=2",
+				IMPL, "-input_mpi_nprocs=2",
 				filename("dot", "mpithreads_mpi.c")));
 		
-		assertFalse(ui.run(TestConstants.REPLAY, TestConstants.SPEC, TestConstants.QUIET,
+		assertFalse(ui.run(REPLAY, SPEC, QUIET,
 				filename("dot", "mpithreads_serial.c"),
-				TestConstants.IMPL, "-input_mpi_nprocs=2",
+				IMPL, "-input_mpi_nprocs=2",
 				filename("dot", "mpithreads_mpi.c")));
 	}
 
 	@Test
 	public void dotPthreadsSerial() {
-		assertFalse(ui.run(TestConstants.COMPARE, TestConstants.NO_PRINTF,
-				"-inputVECLEN=5", TestConstants.SPEC, TestConstants.QUIET,
+		assertFalse(ui.run(COMPARE, NO_PRINTF, QUIET,
+				"-inputVECLEN=5", SPEC, 
 				filename("dot", "mpithreads_serial.c"),
-				TestConstants.IMPL, "-inputMAXTHRDS=2",
+				IMPL, "-inputMAXTHRDS=2",
 				filename("dot", "mpithreads_threads.c")));
 	}
 
 	@Test
 	public void dotHybridSerial() {
-		assertFalse(ui.run(TestConstants.COMPARE, TestConstants.NO_PRINTF, TestConstants.QUIET,
-				"-inputVECLEN=5", TestConstants.SPEC,
+		assertFalse(ui.run(COMPARE, NO_PRINTF, QUIET,
+				"-inputVECLEN=5", SPEC,
 				filename("dot", "mpithreads_serial.c"),
-				TestConstants.IMPL, "-input_mpi_nprocs=2 -inputMAXTHRDS=2",
+				IMPL, "-input_mpi_nprocs=2 -inputMAXTHRDS=2",
 				filename("dot", "mpithreads_both.c")));
 	}
 
 	@Test
 	public void outputfiles() {
-		assertTrue(ui.run(TestConstants.COMPARE, TestConstants.QUIET,
-				TestConstants.SPEC, filename("outputTest", "out1.c"),
-				TestConstants.IMPL, filename("outputTest", "out2.c")));
+		assertTrue(ui.run(COMPARE, QUIET,
+				SPEC, filename("outputTest", "out1.c"),
+				IMPL, filename("outputTest", "out2.c")));
 	}
 
 	@Test
 	public void outputfile() {
-		assertTrue(ui.run(TestConstants.COMPARE, TestConstants.QUIET,
-				TestConstants.SPEC, filename("outputfile", "spec.c"),
-				TestConstants.IMPL, filename("outputfile", "impl.c")));
+		assertTrue(ui.run(COMPARE, QUIET,
+				SPEC, filename("outputfile", "spec.c"),
+				IMPL, filename("outputfile", "impl.c")));
 	}
 
 	@AfterClass

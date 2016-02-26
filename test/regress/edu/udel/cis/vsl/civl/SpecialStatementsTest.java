@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 
 import java.io.File;
 
@@ -30,42 +31,42 @@ public class SpecialStatementsTest {
 	@Test
 	public void choose1() throws ABCException {
 		assertTrue(
-				ui.run("verify", TestConstants.QUIET, filename("choose1.cvl")));
+				ui.run("verify", QUIET, filename("choose1.cvl")));
 	}
 
 	@Test
 	public void choose_bad1() throws ABCException {
-		assertFalse(ui.run("verify", TestConstants.QUIET,
+		assertFalse(ui.run("verify", QUIET,
 				filename("choose_bad1.cvl")));
 	}
 
 	@Test
 	public void choose_bad2() throws ABCException {
-		assertFalse(ui.run("verify", TestConstants.QUIET,
+		assertFalse(ui.run("verify", QUIET,
 				filename("choose_bad2.cvl")));
 	}
 
 	@Test
 	public void choose_bad3() throws ABCException {
-		assertFalse(ui.run("verify", TestConstants.QUIET,
+		assertFalse(ui.run("verify", QUIET,
 				filename("choose_bad3.cvl")));
 	}
 
 	@Test
 	public void when1() throws ABCException {
 		assertTrue(
-				ui.run("verify", TestConstants.QUIET, filename("when1.cvl")));
+				ui.run("verify", QUIET, filename("when1.cvl")));
 	}
 
 	@Test
 	public void when2() throws ABCException {
 		assertTrue(
-				ui.run("verify", TestConstants.QUIET, filename("when2.cvl")));
+				ui.run("verify", QUIET, filename("when2.cvl")));
 	}
 
 	@Test
 	public void when3() throws ABCException {
 		assertTrue(
-				ui.run("verify", TestConstants.QUIET, filename("when3.cvl")));
+				ui.run("verify", QUIET, filename("when3.cvl")));
 	}
 }

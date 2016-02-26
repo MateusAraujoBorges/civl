@@ -2,6 +2,12 @@ package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.SHOW_SAVED_STATES;
+import static edu.udel.cis.vsl.civl.TestConstants.SHOW_TRANSITIONS;
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
+import static edu.udel.cis.vsl.civl.TestConstants.errorBound;
 
 import java.io.File;
 
@@ -28,37 +34,33 @@ public class BackendTest {
 	@Test
 	public void printExpr() {
 		assertTrue(ui.run(
-				TestConstants.VERIFY, TestConstants.NO_SHOW_PROGRAM, 
-				TestConstants.SHOW_SAVED_STATES, TestConstants.SHOW_TRANSITIONS,
-				TestConstants.QUIET, filename("printExpr.cvl")));
+				VERIFY, SHOW_SAVED_STATES, SHOW_TRANSITIONS,
+				QUIET, filename("printExpr.cvl")));
 	}
 
 	@Test
 	public void arrayWrite() {
 		assertTrue(ui.run(
-				TestConstants.VERIFY, TestConstants.NO_SHOW_PROGRAM,
-				TestConstants.SHOW_SAVED_STATES, TestConstants.SHOW_TRANSITIONS,
-				TestConstants.QUIET, filename("arrayWrite.cvl")));
+				VERIFY, SHOW_SAVED_STATES, SHOW_TRANSITIONS,
+				QUIET, filename("arrayWrite.cvl")));
 	}
 
 	@Test
 	public void showTrans() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.NO_SHOW_PROGRAM,
-				TestConstants.SHOW_TRANSITIONS, TestConstants.QUIET, 
+		assertTrue(ui.run(VERIFY, SHOW_TRANSITIONS, QUIET, 
 				filename("showTrans.cvl")));
 	}
 
 	@Test
 	public void sizeOfTypes() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.NO_SHOW_PROGRAM,
-				TestConstants.SHOW_TRANSITIONS, TestConstants.QUIET, 
+		assertTrue(ui.run(VERIFY, SHOW_TRANSITIONS, QUIET, 
 				filename("sizeOfTypes.c")));
 	}
 
 	@Test
 	public void returnNull() throws ABCException {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.errorBound(2),
-				TestConstants.NO_PRINTF, TestConstants.QUIET, 
+		assertFalse(ui.run(VERIFY, errorBound(2),
+				NO_PRINTF, QUIET, 
 				filename("returnNull.cvl")));
 	}
 

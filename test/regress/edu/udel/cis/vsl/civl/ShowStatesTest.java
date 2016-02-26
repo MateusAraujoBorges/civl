@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 
 import java.io.File;
 
@@ -33,13 +34,13 @@ public class ShowStatesTest {
 	@Test
 	public void structsArray() {
 		assertTrue(ui.run("verify", "-showSavedStates",
-				TestConstants.QUIET, filename("structsArray.cvl")));
+				QUIET, filename("structsArray.cvl")));
 	}
 
 	@Test
 	public void symbolicArrayWrite() {
 		assertTrue(ui.run("verify", "-showSavedStates",
-				TestConstants.QUIET, filename("symbolicArrayWrite.cvl")));
+				QUIET, filename("symbolicArrayWrite.cvl")));
 	}
 
 	@AfterClass

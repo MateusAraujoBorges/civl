@@ -2,6 +2,15 @@ package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.MIN;
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
+import static edu.udel.cis.vsl.civl.TestConstants.MPI_CONTRACT;
+import static edu.udel.cis.vsl.civl.TestConstants.POTENTIAL_DEADLOCK;
+import static edu.udel.cis.vsl.civl.TestConstants.SHOW;
+import static edu.udel.cis.vsl.civl.TestConstants.REPLAY;
+import static edu.udel.cis.vsl.civl.TestConstants.errorBound;
 
 import java.io.File;
 
@@ -24,27 +33,24 @@ public class ContractTest {
 	@Ignore
 	public void collective_assert() {
 		assertFalse(ui.run(
-				TestConstants.VERIFY, TestConstants.NO_PRINTF, TestConstants.QUIET,
-				"-input_mpi_nprocs=3", TestConstants.MPI_CONTRACT,
+				VERIFY, NO_PRINTF, QUIET,
+				"-input_mpi_nprocs=3", MPI_CONTRACT,
 				filename("wildcard_coassert_bad.c")));
 		
 		assertTrue(ui
-				.run(TestConstants.VERIFY, TestConstants.NO_PRINTF,
-						"-input_mpi_nprocs=4", TestConstants.POTENTIAL_DEADLOCK,
-						TestConstants.MPI_CONTRACT, TestConstants.QUIET,
+				.run(VERIFY, NO_PRINTF, "-input_mpi_nprocs=4", POTENTIAL_DEADLOCK,
+						MPI_CONTRACT, QUIET,
 						filename("wildcard_coassert_barrier.c")));
 		
 		assertTrue(ui
-				.run(TestConstants.VERIFY, TestConstants.NO_PRINTF,
-						"-input_mpi_nprocs=5", TestConstants.POTENTIAL_DEADLOCK,
-						TestConstants.MPI_CONTRACT, TestConstants.QUIET,
+				.run(VERIFY, NO_PRINTF, "-input_mpi_nprocs=5", POTENTIAL_DEADLOCK,
+						MPI_CONTRACT, QUIET,
 						filename("reduce_coassert.c")));
 		
 		assertFalse(ui
-				.run(TestConstants.VERIFY, TestConstants.NO_PRINTF,
-						"-input_mpi_nprocs=4", TestConstants.POTENTIAL_DEADLOCK,
-						TestConstants.errorBound(10), TestConstants.MPI_CONTRACT,
-						TestConstants.QUIET, filename("wildcard_coassert_bad.c")));
+				.run(VERIFY, NO_PRINTF, "-input_mpi_nprocs=4", POTENTIAL_DEADLOCK,
+						errorBound(10), MPI_CONTRACT,
+						QUIET, filename("wildcard_coassert_bad.c")));
 	}
 
 	@Ignore
@@ -52,40 +58,35 @@ public class ContractTest {
 	// understandable for human beings.
 	public void collective_assert_coverage() {
 		assertFalse(ui
-				.run(TestConstants.VERIFY, TestConstants.NO_PRINTF,
-						TestConstants.NO_PRINTF, TestConstants.errorBound(10),
-						"-input_mpi_nprocs=3", TestConstants.MPI_CONTRACT,
-						TestConstants.QUIET, filename("coassert_cover.c")));
+				.run(VERIFY, NO_PRINTF, NO_PRINTF, errorBound(10),
+						"-input_mpi_nprocs=3", MPI_CONTRACT,
+						QUIET, filename("coassert_cover.c")));
 	}
 
 	@Ignore
 	public void result() {
 		assertTrue(ui
-				.run(TestConstants.SHOW, TestConstants.SHOW_MODEL,
-						TestConstants.MPI_CONTRACT, filename("result.c")));
+				.run(SHOW, MPI_CONTRACT, filename("result.c")));
 	}
 
 	@Ignore
 	public void isRecvBufEmptyOK() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.MIN,
-				TestConstants.MPI_CONTRACT, "-input_mpi_nprocs=4",
-				TestConstants.QUIET, filename("isRecvBufEmpty_OK.c")));
+		assertTrue(ui.run(VERIFY, MIN, MPI_CONTRACT, "-input_mpi_nprocs=4",
+				QUIET, filename("isRecvBufEmpty_OK.c")));
 	}
 
 	@Ignore
 	public void isEmptyRecvBufBad() {
-		assertFalse(ui.run(TestConstants.VERIFY, TestConstants.MPI_CONTRACT,
-				TestConstants.QUIET, filename("isRecvBufEmpty_BAD.c")));
+		assertFalse(ui.run(VERIFY, MPI_CONTRACT, QUIET, filename("isRecvBufEmpty_BAD.c")));
 	}
 
 	@Ignore
 	public void wildcard_contract_bad() {
 		assertFalse(ui
-				.run(TestConstants.VERIFY, TestConstants.MIN,
-						TestConstants.POTENTIAL_DEADLOCK, TestConstants.MPI_CONTRACT,
-						"-input_mpi_nprocs=3", TestConstants.QUIET,
+				.run(VERIFY, MIN, POTENTIAL_DEADLOCK, MPI_CONTRACT,
+						"-input_mpi_nprocs=3", QUIET,
 						filename("wildcard_contract_bad.c")));
-		ui.run(TestConstants.REPLAY, TestConstants.QUIET, filename("wildcard_contract_bad.c"));
+		ui.run(REPLAY, QUIET, filename("wildcard_contract_bad.c"));
 	}
 
 	@AfterClass

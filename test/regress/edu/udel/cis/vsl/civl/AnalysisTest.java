@@ -35,14 +35,12 @@ public class AnalysisTest {
 
 	@Test
 	public void abs() {
-		assertTrue(ui.run(VERIFY, ANALYZE_ABS, TestConstants.NO_SHOW_UNREACHED,
-				TestConstants.QUIET, filename("abs.c")));
+		assertTrue(ui.run(VERIFY, ANALYZE_ABS, QUIET, filename("abs.c")));
 	}
 
 	@Test
 	public void abs2() {
-		assertTrue(ui.run(TestConstants.VERIFY, TestConstants.ANALYZE_ABS,
-				TestConstants.QUIET, filename("abs2.c")));
+		assertTrue(ui.run(VERIFY, ANALYZE_ABS, QUIET, filename("abs2.c")));
 	}
 
 	@AfterClass
