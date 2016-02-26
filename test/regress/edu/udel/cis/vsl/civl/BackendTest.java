@@ -34,14 +34,14 @@ public class BackendTest {
 	@Test
 	public void printExpr() {
 		assertTrue(ui.run(
-				VERIFY, SHOW_SAVED_STATES, SHOW_TRANSITIONS,
+				VERIFY,
 				QUIET, filename("printExpr.cvl")));
 	}
 
 	@Test
 	public void arrayWrite() {
 		assertTrue(ui.run(
-				VERIFY, SHOW_SAVED_STATES, SHOW_TRANSITIONS,
+				VERIFY,
 				QUIET, filename("arrayWrite.cvl")));
 	}
 
@@ -53,7 +53,7 @@ public class BackendTest {
 
 	@Test
 	public void sizeOfTypes() {
-		assertTrue(ui.run(VERIFY, SHOW_TRANSITIONS, QUIET, 
+		assertTrue(ui.run(VERIFY, QUIET, 
 				filename("sizeOfTypes.c")));
 	}
 

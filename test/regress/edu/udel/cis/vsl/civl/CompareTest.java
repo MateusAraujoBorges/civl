@@ -52,7 +52,7 @@ public class CompareTest {
 
 	@Test
 	public void max() {
-		ui.run(SHOW, filename("max", "max.cvl"), 
+		ui.run(SHOW, QUIET, filename("max", "max.cvl"), 
 				filename("max", "max_seq.cvl"));
 		// assertFalse(ui.run("compare -inputB=4 -min -spec",
 		// filename("max", "max.cvl"), filename("max", "max_seq.cvl"),
@@ -81,7 +81,7 @@ public class CompareTest {
 				IMPL, "-input_mpi_nprocs=2",
 				filename("dot", "mpithreads_mpi.c")));
 		
-		assertFalse(ui.run(REPLAY, SPEC, QUIET,
+		assertFalse(ui.run(REPLAY, QUIET, NO_PRINTF, SPEC,
 				filename("dot", "mpithreads_serial.c"),
 				IMPL, "-input_mpi_nprocs=2",
 				filename("dot", "mpithreads_mpi.c")));
