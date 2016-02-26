@@ -640,7 +640,8 @@ public class CommonStateManager implements StateManager {
 
 	@Override
 	public void printStateLong(PrintStream out, State state) {
-		out.print(this.symbolicAnalyzer.stateToString(state));
+		if(!config.isQuiet())
+			out.print(this.symbolicAnalyzer.stateToString(state));
 	}
 
 	@Override

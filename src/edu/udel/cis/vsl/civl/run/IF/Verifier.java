@@ -399,15 +399,16 @@ public class Verifier extends Player {
 					if (!workRemains)
 						break;
 					violationFound = true;
-
+					config.setQuiet(civlConfig.isQuiet());
 					CIVLLogEntry entry = new CIVLLogEntry(civlConfig, config,
 							this.predicate.getUnreportedViolation());
-
 					log.report(entry); // may throw ExcessiveErrorException
 				}
 			} catch (ExcessiveErrorException e) {
 				violationFound = true;
-				civlConfig.out().println(errorBoundExceeds);
+				if(!civlConfig.isQuiet()){
+					civlConfig.out().println(errorBoundExceeds);
+				}
 			}
 			terminateUpdater();
 			if (violationFound || log.numEntries() > 0) {

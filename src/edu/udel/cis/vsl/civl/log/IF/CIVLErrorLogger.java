@@ -207,6 +207,7 @@ public class CIVLErrorLogger extends ErrorLog {
 	 */
 	private void reportError(CIVLExecutionException err) {
 		try {
+			gmcConfig.setQuiet(civlConfig.isQuiet());
 			report(new CIVLLogEntry(civlConfig, gmcConfig, err));
 		} catch (FileNotFoundException e) {
 			throw new CIVLException(e.toString(), err.getSource());

@@ -132,7 +132,7 @@ public class TracePlayer extends Player {
 			boolean violation = trace.violation();
 
 			violation = violation || log.numErrors() > 0;
-			if (violation) {
+			if (violation && !replayer.isQuiet()) {
 				civlConfig.out().println("Violation(s) found.");
 				civlConfig.out().flush();
 			}
