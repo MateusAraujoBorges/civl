@@ -1,3 +1,12 @@
+/* From wiki:
+ * Sylvester's criterion states that a Hermitian matrix M is positive-definite 
+ * if and only if all the following matrices have a positive determinant:
+ * the upper left 1-by-1 corner of M,
+ * the upper left 2-by-2 corner of M,
+ * the upper left 3-by-3 corner of M,
+ * M itself.
+ * In other words, all of the leading principal minors must be positive.
+ */
 #include <civlc.cvh>
 #include <stdio.h>
 #define n 2
