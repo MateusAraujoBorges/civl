@@ -4,7 +4,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
-import static edu.udel.cis.vsl.civl.TestConstants.SHOW_SAVED_STATES;
 import static edu.udel.cis.vsl.civl.TestConstants.SHOW_TRANSITIONS;
 import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 import static edu.udel.cis.vsl.civl.TestConstants.errorBound;
