@@ -37,8 +37,8 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.AtomicLockAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
@@ -230,9 +230,9 @@ public class CommonExecutor implements Executor {
 				// if (atomicCount == 0)
 				// state = stateFactory.getAtomicLock(state, pid);
 			} else {// leave atomic
-			// newProcState = procState.decrementAtomicCount();
-			// if (atomicCount == 1)
-			// state = stateFactory.releaseAtomicLock(state);
+				// newProcState = procState.decrementAtomicCount();
+				// if (atomicCount == 1)
+				// state = stateFactory.releaseAtomicLock(state);
 				state = stateFactory.leaveAtomic(state, pid);
 			}
 			// state = stateFactory.setProcessState(state, newProcState);
@@ -1143,8 +1143,9 @@ public class CommonExecutor implements Executor {
 						.symbolicExpressionToString(arguments[i].getSource(),
 								state, argumentType, argumentValue)));
 		}
-		this.printf(civlConfig.out(), arguments[0].getSource(), process,
-				formats, printedContents);
+		if (!civlConfig.isQuiet() && civlConfig.enablePrintf())
+			this.printf(civlConfig.out(), arguments[0].getSource(), process,
+					formats, printedContents);
 		return state;
 	}
 
