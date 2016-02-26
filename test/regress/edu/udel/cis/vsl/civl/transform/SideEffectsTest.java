@@ -29,7 +29,7 @@ public class SideEffectsTest {
 
 	@Test
 	public void postIncr() throws ABCException {
-		assertTrue(ui.run("verify -showProgram", TestConstants.QUIET, filename("postIncr.cvl")));
+		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("postIncr.cvl")));
 	}
 
 	@AfterClass

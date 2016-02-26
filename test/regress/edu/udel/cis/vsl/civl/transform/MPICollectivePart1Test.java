@@ -2,6 +2,8 @@ package edu.udel.cis.vsl.civl.transform;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 
 import java.io.File;
 
@@ -31,14 +33,14 @@ public class MPICollectivePart1Test {
 	@Test
 	public void vectorSum() {
 		assertTrue(ui
-				.run("verify -input_mpi_nprocs=5", TestConstants.QUIET, 
+				.run("verify -input_mpi_nprocs=5", QUIET, NO_PRINTF,
 						filename("vectorSum.c")));
 	}
 
 	@Test
 	public void vectorSum_bad() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=5",
-				TestConstants.QUIET, filename("vectorSum_bad.c")));
+				QUIET, NO_PRINTF, filename("vectorSum_bad.c")));
 	}
 
 	@Test
@@ -56,9 +58,9 @@ public class MPICollectivePart1Test {
 	@Test
 	public void bcast_good() {
 		assertFalse(ui.run("verify -DFASSERT -input_mpi_nprocs=3 ",
-				TestConstants.QUIET, filename("bcast_good.c")));
+				TestConstants.QUIET, NO_PRINTF, filename("bcast_good.c")));
 		assertTrue(ui.run("verify -input_mpi_nprocs=3",
-				TestConstants.QUIET, filename("bcast_good.c")));
+				TestConstants.QUIET, NO_PRINTF, filename("bcast_good.c")));
 	}
 
 	@Test
@@ -149,7 +151,7 @@ public class MPICollectivePart1Test {
 	@Test
 	public void scatterAllgather() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=6 ",
-				TestConstants.QUIET, filename("scatterAllgather.c")));
+				TestConstants.QUIET, NO_PRINTF, filename("scatterAllgather.c")));
 	}
 
 	@AfterClass

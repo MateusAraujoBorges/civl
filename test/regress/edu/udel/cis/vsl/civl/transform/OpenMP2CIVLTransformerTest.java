@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.transform;
 
 import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 
 import java.io.File;
 
@@ -28,46 +29,46 @@ public class OpenMP2CIVLTransformerTest {
 
 	@Test
 	public void dotProduct1() {
-		assertTrue(ui.run("verify ", "-ompNoSimplify",
+		assertTrue(ui.run("verify ", NO_PRINTF, "-ompNoSimplify",
 				"-input_omp_thread_max=2", TestConstants.QUIET, 
 				filename("dotProduct1.c")));
 	}
 
 	@Test
 	public void dotProduct1Simplify() {
-		assertTrue(ui.run("verify ", "-input_omp_thread_max=2",
+		assertTrue(ui.run("verify ", NO_PRINTF, "-input_omp_thread_max=2",
 				TestConstants.QUIET, filename("dotProduct1.c")));
 	}
 
 	@Test
 	public void dotProductCritical() {
-		assertTrue(ui.run("verify ", "-ompNoSimplify",
+		assertTrue(ui.run("verify ", NO_PRINTF, "-ompNoSimplify",
 				"-input_omp_thread_max=2", TestConstants.QUIET, 
 				filename("dotProduct_critical.c")));
 	}
 
 	@Test
 	public void dotProductCriticalSimplify() {
-		assertTrue(ui.run("verify ", "-input_omp_thread_max=2",
+		assertTrue(ui.run("verify ", NO_PRINTF, "-input_omp_thread_max=2",
 				TestConstants.QUIET, filename("dotProduct_critical.c")));
 	}
 
 	@Test
 	public void matProduct1Simplify() {
-		assertTrue(ui.run("verify", "-input_omp_thread_max=2",
+		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
 				TestConstants.QUIET, filename("matProduct1.c")));
 	}
 
 	@Test
 	public void parallelfor() {
-		assertTrue(ui.run("verify", "-ompNoSimplify",
+		assertTrue(ui.run("verify", NO_PRINTF, "-ompNoSimplify",
 				"-input_omp_thread_max=2", TestConstants.QUIET, 
 				filename("parallelfor.c")));
 	}
 
 	@Test
 	public void parallelforSimplify() {
-		assertTrue(ui.run("verify", "-input_omp_thread_max=2",
+		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
 				TestConstants.QUIET, filename("parallelfor.c")));
 	}
 
