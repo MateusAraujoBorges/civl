@@ -30,18 +30,18 @@ void cg(double A[n][n], double b[n], double x[n], int steps) {
 
   // r = b-temp
   for(int i=0; i<n; i++) {
-    r[i] = b[i] -temp[i];
+      r[i] = b[i] -temp[i];
   }
 
   // rsold = <r,r>
   rsold = 0.0;
   for(int i=0; i<n; i++) {
-    rsold += r[i]*r[i];
+      rsold += r[i]*r[i];
   }
 
   // p=r
   for(int i=0; i<n; i++) {
-    p[i] = r[i];
+      p[i] = r[i];
   }
 
   for(int i=0; i<steps; i++) {
@@ -62,37 +62,32 @@ void cg(double A[n][n], double b[n], double x[n], int steps) {
     alpha = rsold/alpha;
     // tempp = r-alpha*temp
     for(int i=0; i<n; i++) {
-      tempp[i] = r[i] -alpha*temp[i];
+        tempp[i] = r[i] -alpha*temp[i];
     }
-    
     for(int i=0; i<n; i++) {
-      r[i] = tempp[i];
+        r[i] = tempp[i];
     }
-    
     for(int i=0; i<n; i++) {
-      tempp[i] = x[i] +alpha*p[i];
+        tempp[i] = x[i] +alpha*p[i];
     }
-    
     for(int i=0; i<n; i++) {
-      x[i] = tempp[i];
+        x[i] = tempp[i];
     }
     if(i<steps-1) {
       // rsnew = <r,r>
       rsnew = 0.0;
       for(int i=0; i<n; i++) {
-	rsnew += r[i]*r[i];
+          rsnew += r[i]*r[i];
       }
-     
+
       $assume(rsold !=0);
 
       rsfrac = rsnew/rsold;
-      
       for(int i=0; i<n; i++) {
-	tempp[i] = r[i] +rsfrac*p[i];
+          tempp[i] = r[i] +rsfrac*p[i];
       }
-      
       for(int i=0; i<n; i++) {
-	p[i] = tempp[i];
+          p[i] = tempp[i];
       }
       rsold = rsnew;
     }
@@ -102,8 +97,6 @@ void cg(double A[n][n], double b[n], double x[n], int steps) {
 void main() {
   double bncg[n];
   double A[n][n];
-  double posTemp[n];
-  double posResult;
 
   A[0][0] = diag1;
   A[1][1] = diag2;
@@ -115,8 +108,6 @@ void main() {
   A[1][2] = off3;
   A[2][1] = off3;
 
-  $assume(b[0]!=0 || b[1]!=0 || b[2]!=0);
-  
   cg(A,b,xcg,n);
   
   for(int i=0; i<n; i++) {
