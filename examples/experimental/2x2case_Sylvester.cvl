@@ -1,5 +1,5 @@
 /* 
- * CG 2x2 case with assumption based on Sylvester's criteria.
+ * CG 2x2 case with positive definite assumption based on Sylvester's criteria.
  * From wiki:
  * Sylvester's criterion states that a Hermitian matrix M is positive-definite 
  * if and only if all the following matrices have a positive determinant:
