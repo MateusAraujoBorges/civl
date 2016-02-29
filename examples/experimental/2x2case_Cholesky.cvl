@@ -1,4 +1,6 @@
-/* From wiki:
+/* 
+ * CG 2x2 case with potitive definite assumption based on Cholesky decomposition.
+ * From wiki:
  * The matrix M is positive definite if and only if there exists a unique lower 
  * triangular matrix L, with real and strictly positive diagonal elements, such 
  * that M = LL*. This factorization is called the Cholesky decomposition of M.
@@ -136,8 +138,6 @@ void main() {
     for(int j=0; j<n; j++) {
       bncg[i] += A[i][j]*xcg[j];
     }
-    printf("b_final[%d]=%f\n", i, b[i]);
-    printf("b_finalCG[%d]=%f\n\n", i, bncg[i]);
     $assert(bncg[i] == b[i]);
     }
 }
