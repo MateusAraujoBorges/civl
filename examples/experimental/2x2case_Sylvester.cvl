@@ -1,4 +1,6 @@
-/* From wiki:
+/* 
+ * CG 2x2 case with assumption based on Sylvester's criteria.
+ * From wiki:
  * Sylvester's criterion states that a Hermitian matrix M is positive-definite 
  * if and only if all the following matrices have a positive determinant:
  * the upper left 1-by-1 corner of M,
@@ -122,8 +124,6 @@ void main() {
     for(int j=0; j<n; j++) {
       bncg[i] += A[i][j]*xcg[j];
     }
-    printf("b_final[%d]=%f\n", i, b[i]);
-    printf("b_finalCG[%d]=%f\n\n", i, bncg[i]);
     $assert(bncg[i] == b[i]);
   }
 }
