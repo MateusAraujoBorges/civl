@@ -1,3 +1,7 @@
+/* 
+ * cleared up CG 2x2 case without assumption of positive definite.
+ */
+
 #include <civlc.cvh>
 #include <stdio.h>
 #define n 2
@@ -111,8 +115,6 @@ void main() {
     for(int j=0; j<n; j++) {
       bncg[i] += A[i][j]*xcg[j];
     }
-    printf("b_final[%d]=%f\n", i, b[i]);
-    printf("b_finalCG[%d]=%f\n\n", i, bncg[i]);
     $assert(bncg[i] == b[i]);
   }
 }
