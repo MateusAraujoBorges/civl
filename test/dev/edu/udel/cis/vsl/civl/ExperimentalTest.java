@@ -113,6 +113,16 @@ public class ExperimentalTest {
 	public void cg3x3Test() {
 		assertTrue(ui.run("verify", filename("3x3case_CG.cvl")));
 	}
+	
+	@Test
+	public void cg3x3SylvesterTest() {
+		assertTrue(ui.run("verify", filename("3x3case_Sylvester.cvl")));
+	}
+	
+	@Test
+	public void cg3x3CholeskyTest() {
+		assertTrue(ui.run("verify", filename("3x3case_Cholesky.cvl")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
