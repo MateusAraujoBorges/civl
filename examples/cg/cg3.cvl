@@ -1,3 +1,10 @@
+/* 
+ * Simple implementation of Conjugate Gradient algorithm for 3x3
+ * symmetric matrix.  Instead of assuming positive-definite-ness, 
+ * we assume that in every division, the denominator is non-0.
+ * Based on https://en.wikipedia.org/wiki/Conjugate_gradient_method
+ */
+
 #include <civlc.cvh>
 #include <stdio.h>
 #define n 3
