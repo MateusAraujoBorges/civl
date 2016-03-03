@@ -111,6 +111,7 @@ public class CommonStateManager implements StateManager {
 	private Stack<TransitionSequence> stack;
 
 	private Set<Integer> expandedStateIDs = new HashSet<>();
+	
 
 	// TODO: trying to fix this:
 	// private boolean saveStates;
@@ -201,8 +202,9 @@ public class CommonStateManager implements StateManager {
 			assert stateStatus.enabledTransition != null;
 			assert stateStatus.enabledStatus == EnabledStatus.DETERMINISTIC;
 			assert stateStatus.atomCount >= 0;
-			if (this.config.printStates())
+			if (this.config.printStates()){
 				config.out().print(this.symbolicAnalyzer.stateToString(state));
+			}
 			state = executor.execute(state, pid, stateStatus.enabledTransition);
 			numStatesExplored++;
 			if (printTransitions)
@@ -223,8 +225,9 @@ public class CommonStateManager implements StateManager {
 		if (stateStatus.enabledStatus == EnabledStatus.BLOCKED
 				&& stateFactory.lockedByAtomic(state))
 			state = stateFactory.releaseAtomicLock(state);
-		if (printTransitions)
+		if (printTransitions){
 			config.out().print("--> ");
+		}
 		if (config.saveStates()) {
 			int newCanonicId;
 			Set<HeapErrorKind> ignoredErrorSet = new HashSet<>();
@@ -510,7 +513,6 @@ public class CommonStateManager implements StateManager {
 			boolean atomicLockVarChanged)
 			throws UnsatisfiablePathConditionException {
 		Statement stmt = transition.statement();
-
 		config.out().print("  ");
 		config.out().print(stmt.locationStepString());
 		config.out().print(": ");
@@ -551,8 +553,10 @@ public class CommonStateManager implements StateManager {
 	 *            with.
 	 */
 	private void printTransitionPrefix(State state, int processIdentifier) {
-		config.out().print(state + ", p");
-		config.out().println(processIdentifier + ":");
+		
+			config.out().print(state + ", p");
+			config.out().println(processIdentifier + ":");
+		
 	}
 
 	/**
@@ -640,7 +644,6 @@ public class CommonStateManager implements StateManager {
 
 	@Override
 	public void printStateLong(PrintStream out, State state) {
-		if(!config.isQuiet())
 			out.print(this.symbolicAnalyzer.stateToString(state));
 	}
 
