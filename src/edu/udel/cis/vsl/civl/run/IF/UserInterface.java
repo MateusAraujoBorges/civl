@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -123,6 +124,13 @@ public class UserInterface {
 
 	/** Stdout: where most output is going to go, including error reports */
 	private PrintStream out = System.out;
+	
+	private PrintStream dump = new PrintStream(new OutputStream() {
+		@Override
+		public void write(int b) throws IOException {
+			// doing nothing
+		}
+	});
 
 	/**
 	 * The parser from the Generic Model Checking package used to parse the
@@ -755,7 +763,11 @@ public class UserInterface {
 					model.printUnreachedCode(out);
 				}
 				if (modelTranslator.config.analyzeAbs()) {
-					Analysis.printResults(model.factory().codeAnalyzers(), out);
+					if(modelTranslator.config.isQuiet()){
+						Analysis.printResults(model.factory().codeAnalyzers(), dump);
+					}else{
+						Analysis.printResults(model.factory().codeAnalyzers(), out);
+					}
 				}
 			}
 			if (!modelTranslator.config.isQuiet()) {

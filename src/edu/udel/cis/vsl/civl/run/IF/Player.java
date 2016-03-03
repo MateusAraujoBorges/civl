@@ -9,6 +9,8 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.solveO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.statsBar;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -108,7 +110,7 @@ public abstract class Player {
 		this.config = gmcConfig;
 		this.model = model;
 		civlConfig = new CIVLConfiguration(gmcConfig.getAnonymousSection());
-		civlConfig.setOut(out);
+//		civlConfig.setOut(out);
 		civlConfig.setErr(err);
 		civlConfig.setCollectOutputs(collectOutputs);
 		this.sessionName = model.name();
@@ -156,6 +158,16 @@ public abstract class Player {
 					modelFactory, symbolicUtil, symbolicAnalyzer));
 		} else {
 			this.addPredicate(Predicates.newTrivialPredicate());
+		}
+		if(civlConfig.isQuiet()){
+			civlConfig.setOut(new PrintStream(new OutputStream() {
+				@Override
+				public void write(int b) throws IOException {
+					//doing nothing
+				}
+			}));
+		}else{
+			civlConfig.setOut(out);
 		}
 		stateManager = Kripkes.newStateManager((Enabler) enabler, executor,
 				symbolicAnalyzer, log, civlConfig);
