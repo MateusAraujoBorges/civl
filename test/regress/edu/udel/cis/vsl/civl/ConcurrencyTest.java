@@ -41,7 +41,7 @@ public class ConcurrencyTest {
 	@Test
 	public void adderBad() {
 		assertFalse(ui.run(VERIFY, "-inputB=4", MIN,
-				QUIET, filename("adderBad.cvl")));
+				"-showAmpleSet", QUIET, filename("adderBad.cvl")));
 		assertFalse(ui.run(REPLAY, QUIET,
 				filename("adderBad.cvl")));
 	}
