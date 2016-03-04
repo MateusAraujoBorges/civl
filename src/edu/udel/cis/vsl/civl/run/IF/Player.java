@@ -106,12 +106,24 @@ public abstract class Player {
 			PrintStream err, boolean collectOutputs)
 			throws CommandLineException {
 		SymbolicUniverse universe;
-
 		this.config = gmcConfig;
 		this.model = model;
 		civlConfig = new CIVLConfiguration(gmcConfig.getAnonymousSection());
+		if(civlConfig.isQuiet()){
+			PrintStream dump = new PrintStream(new OutputStream() {
+				@Override
+				public void write(int b) throws IOException {
+					//doing nothing
+				}
+			});
+			civlConfig.setOut(dump);
+			civlConfig.setErr(dump);
+		}else{
+			civlConfig.setOut(out);
+			civlConfig.setErr(err);
+		}
 //		civlConfig.setOut(out);
-		civlConfig.setErr(err);
+//		civlConfig.setErr(err);
 		civlConfig.setCollectOutputs(collectOutputs);
 		this.sessionName = model.name();
 		this.modelFactory = model.factory();
@@ -158,16 +170,6 @@ public abstract class Player {
 					modelFactory, symbolicUtil, symbolicAnalyzer));
 		} else {
 			this.addPredicate(Predicates.newTrivialPredicate());
-		}
-		if(civlConfig.isQuiet()){
-			civlConfig.setOut(new PrintStream(new OutputStream() {
-				@Override
-				public void write(int b) throws IOException {
-					//doing nothing
-				}
-			}));
-		}else{
-			civlConfig.setOut(out);
 		}
 		stateManager = Kripkes.newStateManager((Enabler) enabler, executor,
 				symbolicAnalyzer, log, civlConfig);
