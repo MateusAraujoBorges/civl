@@ -106,6 +106,7 @@ public abstract class Player {
 			PrintStream err, boolean collectOutputs)
 			throws CommandLineException {
 		SymbolicUniverse universe;
+
 		this.config = gmcConfig;
 		this.model = model;
 		civlConfig = new CIVLConfiguration(gmcConfig.getAnonymousSection());
