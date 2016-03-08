@@ -86,4 +86,25 @@ public interface FunctionContract extends Sourceable {
 	 * @param isDebug
 	 */
 	void print(String prefix, PrintStream out, boolean isDebug);
+
+	/**
+	 * is there reads clause in this contract?
+	 * 
+	 * @return
+	 */
+	boolean hasReadsClause();
+
+	/**
+	 * is there assigns clause in this contract?
+	 * 
+	 * @return
+	 */
+	boolean hasAssignsClause();
+
+	/**
+	 * is there depends clause in this contract?
+	 * 
+	 * @return
+	 */
+	boolean hasDependsClause();
 }

@@ -358,19 +358,33 @@ public class CommonLocation extends CommonSourceable implements Location {
 				headString += ">";
 			}
 			headString += ")";
-			out.println("reachable memory units of location " + this.id + ":");
-			for (MemoryUnitExpression memUnit : this.reachableMemUnitsWoPointer) {
-				out.print(memUnit + "\t");
-			}
-			for (MemoryUnitExpression memUnit : this.reachableMemUnitsWtPointer) {
-				out.print(memUnit + "\t");
-			}
-			out.println();
 		} else {
 			headString = prefix + "location " + id() + " (scope: " + scope.id()
 					+ ")";
 		}
 		out.println(headString);
+		if (isDebug) {
+			if (!this.impactMemUnits.isEmpty()) {
+				out.print(prefix);
+				out.print("impact memory units: ");
+				for (MemoryUnitExpression memUnit : this.impactMemUnits) {
+					out.print(memUnit + "\t");
+				}
+				out.println();
+			}
+			if (!reachableMemUnitsWoPointer.isEmpty()
+					|| !reachableMemUnitsWtPointer.isEmpty()) {
+				out.print(prefix);
+				out.print("reachable memory units: ");
+				for (MemoryUnitExpression memUnit : this.reachableMemUnitsWoPointer) {
+					out.print(memUnit + "\t");
+				}
+				for (MemoryUnitExpression memUnit : this.reachableMemUnitsWtPointer) {
+					out.print(memUnit + "\t");
+				}
+				out.println();
+			}
+		}
 		for (Statement statement : outgoing) {
 			if (statement.target() != null) {
 				targetLocation = "" + statement.target().id();
@@ -594,6 +608,14 @@ public class CommonLocation extends CommonSourceable implements Location {
 
 			checkedLocationIDs.add(location.id());
 			for (Statement statement : location.outgoing()) {
+				// TODO special handling for call statements with reads/assigns
+				// contracts
+				// for example
+				// assigns \nothing;
+				// reads *x;
+				// int getValue(int *x){return *x;}
+				// then: getValue(&a); wouldn't add a into the written-variable
+				// set.
 				Set<Variable> statementResult = statement
 						.variableAddressedOf(scope);
 				Location target = statement.target();

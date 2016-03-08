@@ -130,8 +130,10 @@ public class CommonMemoryUnitExpression extends CommonExpression implements
 	@Override
 	public String toString() {
 		String result;
+		Scope scope = variable.scope();
 
-		result = "(" + variable.scope().id() + ", " + variable.vid() + ", "
+		result = "(s" + scope.id() + ", "
+				+ scope.variable(variable.vid()).name().name() + ", "
 				+ reference + ")";
 		if (this.writable)
 			result = result + "[w]";

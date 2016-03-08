@@ -86,4 +86,23 @@ public class CommonFunctionContract extends CommonSourceable implements
 		this.pure = value;
 	}
 
+	@Override
+	public boolean hasReadsClause() {
+		return this.defaultBehavior.readsNothing()
+				|| defaultBehavior.numReadsMemoryUnits() > 0;
+	}
+
+	@Override
+	public boolean hasAssignsClause() {
+		return defaultBehavior.assignsNothing()
+				|| defaultBehavior.numAssignsMemoryUnits() > 0;
+	}
+
+	@Override
+	public boolean hasDependsClause() {
+		return defaultBehavior.dependsAnyact()
+				|| defaultBehavior.dependsNoact()
+				|| defaultBehavior.numDependsEvents() > 0;
+	}
+
 }
