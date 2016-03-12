@@ -105,4 +105,10 @@ public class CommonFunctionContract extends CommonSourceable implements
 				|| defaultBehavior.numDependsEvents() > 0;
 	}
 
+	@Override
+	public boolean hasRequirementsOrEnsurances() {
+		return (defaultBehavior.numPostconditions() + defaultBehavior
+				.numPreconditions()) > 0;
+	}
+
 }

@@ -57,6 +57,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
+import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
@@ -76,14 +77,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.WildcardExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.BehaviorBlock;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause.COLLECTIVE_KIND;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MemoryAccessClause;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ObligationClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference.ArraySliceKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.MemoryUnitReference;
@@ -92,8 +85,8 @@ import edu.udel.cis.vsl.civl.model.IF.expression.reference.StructOrUnionFieldRef
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
@@ -125,6 +118,7 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonInitialValueExpressio
 import edu.udel.cis.vsl.civl.model.common.expression.CommonIntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonMemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonNothing;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonPointerSetExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonProcnullExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonRealLiteralExpression;
@@ -143,11 +137,6 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonUnaryExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonUndefinedProcessExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonVariableExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonWildcardExpression;
-import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonBehaviorBlock;
-import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonClauseSequence;
-import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonMPICollectiveBlockClause;
-import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonMemoryAccessClause;
-import edu.udel.cis.vsl.civl.model.common.expression.contracts.CommonObligationClause;
 import edu.udel.cis.vsl.civl.model.common.expression.reference.CommonArraySliceReference;
 import edu.udel.cis.vsl.civl.model.common.expression.reference.CommonSelfReference;
 import edu.udel.cis.vsl.civl.model.common.expression.reference.CommonStructOrUnionFieldReference;
@@ -826,6 +815,10 @@ public class CommonModelFactory implements ModelFactory {
 					operand.getExpressionType(), operator, operand);
 		case NOT:
 			assert operand.getExpressionType().isBoolType();
+			return new CommonUnaryExpression(source, typeFactory.booleanType,
+					operator, operand);
+		case VALID:
+			assert operand instanceof PointerSetExpression;
 			return new CommonUnaryExpression(source, typeFactory.booleanType,
 					operator, operand);
 		default:
@@ -2180,43 +2173,6 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public ObligationClause obligationClause(ContractClauseKind kind,
-			Expression expression, Scope scope, CIVLSource source) {
-		return new CommonObligationClause(source, expression.expressionScope(),
-				expression.lowestScope(), typeFactory.voidType, kind,
-				expression);
-	}
-
-	@Override
-	public BehaviorBlock behaviorBlock(Expression assumption,
-			ClauseSequence body, String name, Scope scope, CIVLSource source) {
-		return new CommonBehaviorBlock(source, scope, scope,
-				typeFactory.voidType, assumption, body, name);
-	}
-
-	@Override
-	public MemoryAccessClause memoryAccessClause(Expression[] locations,
-			boolean isRead, Scope scope, CIVLSource source) {
-		return new CommonMemoryAccessClause(source, scope, scope,
-				typeFactory.voidType, locations, isRead);
-	}
-
-	@Override
-	public MPICollectiveBlockClause mpiCollectiveBlock(Expression MPIComm,
-			COLLECTIVE_KIND kind, ClauseSequence body, Scope scope,
-			CIVLSource source) {
-		return new CommonMPICollectiveBlockClause(source, scope, scope,
-				typeFactory.voidType, body, MPIComm, kind);
-	}
-
-	@Override
-	public ClauseSequence clauseSequence(List<ContractClause> components,
-			Scope scope, CIVLSource source) {
-		return new CommonClauseSequence(source, scope, typeFactory.voidType,
-				components);
-	}
-
-	@Override
 	public WildcardExpression wildcardExpression(CIVLSource source,
 			CIVLType type) {
 		return new CommonWildcardExpression(source, type);
@@ -2225,6 +2181,21 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public Nothing nothing(CIVLSource source) {
 		return new CommonNothing(source);
+	}
+
+	@Override
+	public PointerSetExpression pointerSetExpression(CIVLSource source,
+			Scope scope, LHSExpression basePointer, Expression range) {
+		Scope expressionScope = join(basePointer.expressionScope(),
+				range.expressionScope());
+		Scope lowestScope = getLower(basePointer.lowestScope(),
+				range.lowestScope());
+
+		expressionScope = join(scope, expressionScope);
+		lowestScope = getLower(scope, lowestScope);
+		return new CommonPointerSetExpression(source, expressionScope,
+				lowestScope, typeFactory.incompleteArrayType(basePointer
+						.getExpressionType()), basePointer, range);
 	}
 
 }

@@ -110,21 +110,21 @@ public abstract class Player {
 		this.config = gmcConfig;
 		this.model = model;
 		civlConfig = new CIVLConfiguration(gmcConfig.getAnonymousSection());
-		if(civlConfig.isQuiet()){
+		if (civlConfig.isQuiet()) {
 			PrintStream dump = new PrintStream(new OutputStream() {
 				@Override
 				public void write(int b) throws IOException {
-					//doing nothing
+					// doing nothing
 				}
 			});
 			civlConfig.setOut(dump);
 			civlConfig.setErr(dump);
-		}else{
+		} else {
 			civlConfig.setOut(out);
 			civlConfig.setErr(err);
 		}
-//		civlConfig.setOut(out);
-//		civlConfig.setErr(err);
+		// civlConfig.setOut(out);
+		// civlConfig.setErr(err);
 		civlConfig.setCollectOutputs(collectOutputs);
 		this.sessionName = model.name();
 		this.modelFactory = model.factory();
@@ -144,16 +144,25 @@ public abstract class Player {
 				.newLibraryEvaluatorLoader(this.civlConfig);
 		this.symbolicAnalyzer = Semantics.newSymbolicAnalyzer(this.civlConfig,
 				universe, modelFactory, symbolicUtil);
-		this.evaluator = Semantics.newEvaluator(modelFactory, stateFactory,
-				libraryEvaluatorLoader, symbolicUtil, symbolicAnalyzer,
-				memUnitFactory, log, this.civlConfig);
 		this.gui = (Boolean) gmcConfig.getAnonymousSection().getValueOrDefault(
 				guiO);
 		this.libraryExecutorLoader = Semantics.newLibraryExecutorLoader(
 				this.libraryEvaluatorLoader, this.civlConfig);
-		this.executor = Semantics.newExecutor(modelFactory, stateFactory, log,
-				libraryExecutorLoader, evaluator, symbolicAnalyzer, log,
-				civlConfig);
+		if (this.civlConfig.isEnableMpiContract()) {
+			this.evaluator = Semantics.newContractEvaluator(modelFactory,
+					stateFactory, libraryEvaluatorLoader, symbolicUtil,
+					symbolicAnalyzer, memUnitFactory, log, this.civlConfig);
+			this.executor = Semantics.newContractExecutor(modelFactory,
+					stateFactory, log, libraryExecutorLoader, evaluator,
+					symbolicAnalyzer, log, civlConfig);
+		} else {
+			this.evaluator = Semantics.newEvaluator(modelFactory, stateFactory,
+					libraryEvaluatorLoader, symbolicUtil, symbolicAnalyzer,
+					memUnitFactory, log, this.civlConfig);
+			this.executor = Semantics.newExecutor(modelFactory, stateFactory,
+					log, libraryExecutorLoader, evaluator, symbolicAnalyzer,
+					log, civlConfig);
+		}
 		this.random = gmcConfig.getAnonymousSection().isTrue(randomO);
 		this.minimize = gmcConfig.getAnonymousSection().isTrue(minO);
 		this.maxdepth = (int) gmcConfig.getAnonymousSection()

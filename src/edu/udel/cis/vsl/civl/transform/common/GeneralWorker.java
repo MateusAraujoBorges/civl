@@ -43,6 +43,7 @@ import edu.udel.cis.vsl.abc.transform.IF.NameTransformer;
 import edu.udel.cis.vsl.abc.transform.IF.Transform;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 
 /**
@@ -68,7 +69,7 @@ public class GeneralWorker extends BaseWorker {
 
 	private final static int DEFAULT_ARGV_SIZE = 10;
 	private final static String MALLOC = "malloc";
-	final static String GENERAL_ROOT = "_gen_root";
+	final static String GENERAL_ROOT = ModelConfiguration.GENERAL_ROOT;
 	private final static String separator = "$";
 	// private final static String INPUT_PREFIX = "_gen_";
 	private int static_var_count = 0;

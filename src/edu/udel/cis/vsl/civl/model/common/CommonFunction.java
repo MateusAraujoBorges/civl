@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
@@ -21,7 +22,6 @@ import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.BooleanLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.location.Location.AtomicKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
@@ -30,6 +30,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.model.common.type.CommonFunctionType;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 
 /**
  * A function.
@@ -57,7 +58,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	private List<Variable> parameters;
 
-	private Iterable<ContractClause> contracts;
+	private List<Pair<Expression, Integer>> possibleConsequences = null;
 
 	private CIVLFunctionType functionType;
 
@@ -69,7 +70,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	private int fid;
 
-	private FunctionContract contract;
+	private FunctionContract contract = null;
 
 	/* **************************** Constructors *************************** */
 
@@ -535,16 +536,6 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	}
 
 	@Override
-	public void setContracts(Iterable<ContractClause> contracts) {
-		this.contracts = contracts;
-	}
-
-	@Override
-	public Iterable<ContractClause> getContracts() {
-		return this.contracts;
-	}
-
-	@Override
 	public FunctionContract functionContract() {
 		return this.contract;
 	}
@@ -552,6 +543,26 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	@Override
 	public void setFunctionContract(FunctionContract contract) {
 		this.contract = contract;
+	}
+
+	@Override
+	public void addPossibleValidConsequence(
+			Pair<Expression, Integer> validConsequences) {
+		if (possibleConsequences == null)
+			possibleConsequences = new LinkedList<>();
+		possibleConsequences.add(validConsequences);
+	}
+
+	@Override
+	public List<Pair<Expression, Integer>> getPossibleValidConsequences() {
+		if (possibleConsequences == null)
+			possibleConsequences = new LinkedList<>();
+		return possibleConsequences;
+	}
+
+	@Override
+	public boolean isContracted() {
+		return contract != null && contract.hasRequirementsOrEnsurances();
 	}
 
 	@Override

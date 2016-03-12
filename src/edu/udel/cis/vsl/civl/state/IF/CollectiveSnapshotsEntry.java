@@ -1,6 +1,6 @@
 package edu.udel.cis.vsl.civl.state.IF;
 
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableCollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableMonoState;
@@ -26,7 +26,7 @@ public interface CollectiveSnapshotsEntry {
 	 * 
 	 * @return
 	 */
-	ContractClauseKind contractKind();
+	ContractKind contractKind();
 
 	/**
 	 * If the entry is complete and can be dequeue for evaluation

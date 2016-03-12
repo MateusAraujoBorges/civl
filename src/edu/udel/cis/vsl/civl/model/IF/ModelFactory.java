@@ -37,6 +37,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
+import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
@@ -55,14 +56,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.WildcardExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.BehaviorBlock;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ClauseSequence;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MPICollectiveBlockClause.COLLECTIVE_KIND;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.MemoryAccessClause;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ObligationClause;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference.ArraySliceKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.MemoryUnitReference;
@@ -1607,94 +1600,6 @@ public interface ModelFactory {
 			Expression process, Scope scope);
 
 	/**
-	 * Creates a {@link ObligationClause}
-	 * 
-	 * @param kind
-	 *            The {@link ContractClauseKind} of this clause. It shall only
-	 *            be {@link ContractClauseKind#REQUIRES} ,
-	 *            {@link ContractClauseKind#ENSURES} or
-	 *            {@link ContractClauseKind#ASSUMES}
-	 * @param expression
-	 *            The body of the clause, it should be a boolean expression.
-	 * @param scope
-	 *            The scope of where the clause appears
-	 * @param source
-	 *            The CIVLSource of this clause.
-	 * @return
-	 */
-	ObligationClause obligationClause(ContractClauseKind kind,
-			Expression expression, Scope scope, CIVLSource source);
-
-	/**
-	 * Creates a {@link BehaviorBlock}.
-	 * 
-	 * @param assumption
-	 *            The assumption of this behavior block. It must be a boolean
-	 *            expression.
-	 * @param body
-	 *            A {@link ClauseSequence} represents the body of this behavior
-	 *            block under the given assumption (no assumptions in body).
-	 * @param name
-	 *            The name of the behavior
-	 * @param scope
-	 *            The scope where the block appears
-	 * @param source
-	 *            The CIVLSource of the behavior block
-	 * @return
-	 */
-	BehaviorBlock behaviorBlock(Expression assumption, ClauseSequence body,
-			String name, Scope scope, CIVLSource source);
-
-	/**
-	 * Creates a {@link MemoryAccessClause}.
-	 * 
-	 * @param locations
-	 *            A set of memory location expressions.
-	 * @param isRead
-	 *            A flag indicates if it is a "reads" clause.
-	 * @param scope
-	 *            The scope where the clause appears.
-	 * @param source
-	 *            The CIVLSource of this clause.
-	 * @return
-	 */
-	MemoryAccessClause memoryAccessClause(Expression[] locations,
-			boolean isRead, Scope scope, CIVLSource source);
-
-	/**
-	 * Creates an {@link MPICollectiveBlockClause}.
-	 * 
-	 * @param MPIComm
-	 *            The expression stands for an MPI communicator
-	 * @param kind
-	 *            The {@link COLLECTIVE_KIND} of this MPI collective block.
-	 * @param body
-	 *            The body of this MPI collective block.
-	 * @param scope
-	 *            The scope where the MPI collective block appears.
-	 * @param source
-	 *            The CIVLSource of this MPI collective block.
-	 * @return
-	 */
-	MPICollectiveBlockClause mpiCollectiveBlock(Expression MPIComm,
-			COLLECTIVE_KIND kind, ClauseSequence body, Scope scope,
-			CIVLSource source);
-
-	/**
-	 * Creates a {@link ClauseSequence}.
-	 * 
-	 * @param components
-	 *            The ordered set of contract clauses
-	 * @param scope
-	 *            The scope where the sequence of contract clauses appears
-	 * @param source
-	 *            The CIVLSource of this sequence of contract clauses.
-	 * @return
-	 */
-	ClauseSequence clauseSequence(List<ContractClause> components, Scope scope,
-			CIVLSource source);
-
-	/**
 	 * Creates a wildcard expression <code>...</code>, which is only used in
 	 * contract.
 	 * 
@@ -1705,4 +1610,7 @@ public interface ModelFactory {
 	WildcardExpression wildcardExpression(CIVLSource source, CIVLType type);
 
 	Nothing nothing(CIVLSource source);
+
+	PointerSetExpression pointerSetExpression(CIVLSource source, Scope scope,
+			LHSExpression basePointer, Expression range);
 }

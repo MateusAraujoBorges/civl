@@ -12,14 +12,14 @@ package edu.udel.cis.vsl.civl.model.IF.expression;
 public interface UnaryExpression extends Expression {
 
 	public enum UNARY_OPERATOR {
-		NEGATIVE, NOT, BIG_O
+		NEGATIVE, NOT, BIG_O, VALID
 	};
 
 	/**
 	 * @return The binary operator
 	 */
 	UNARY_OPERATOR operator();
-	
+
 	String operatorToString();
 
 	/**

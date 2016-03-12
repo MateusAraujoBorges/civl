@@ -15,6 +15,7 @@ import java.util.Set;
 public final class ModelConfiguration {
 
 	/* Reserved names of symbolic constants */
+	public final static String GENERAL_ROOT = "_gen_root";
 	/**
 	 * Constant for the name of undefined values
 	 */

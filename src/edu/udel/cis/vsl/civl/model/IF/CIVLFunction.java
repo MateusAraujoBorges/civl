@@ -8,12 +8,13 @@ import java.util.List;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 
 /**
  * A CIVL function.
@@ -147,20 +148,6 @@ public interface CIVLFunction extends Sourceable {
 	public void setContainingScope(Scope containingScope);
 
 	/**
-	 * Set {@link ContractClause} of this function.
-	 * 
-	 * @param contracts
-	 */
-	void setContracts(Iterable<ContractClause> contracts);
-
-	/**
-	 * Returns a set of function contracts.
-	 * 
-	 * @return
-	 */
-	Iterable<ContractClause> getContracts();
-
-	/**
 	 * @param model
 	 *            The Model to which this function belongs.
 	 */
@@ -291,6 +278,32 @@ public interface CIVLFunction extends Sourceable {
 	 *         function
 	 */
 	StringBuffer unreachedCode();
+
+	/********************** Function contracts methods ***********************/
+	/**
+	 * Possible valid consequence is a valid contract expression which is
+	 * POSSIBLE a consequence of the whole contract Notice that consequences
+	 * only come from requirements
+	 * 
+	 * @param validConsequences
+	 */
+	void addPossibleValidConsequence(Pair<Expression, Integer> validConsequences);
+
+	/**
+	 * Possible valid consequence is a valid contract expression which is
+	 * POSSIBLE a consequence of the whole contract Notice that consequences
+	 * only come from requirements
+	 * 
+	 * @param validConsequences
+	 */
+	List<Pair<Expression, Integer>> getPossibleValidConsequences();
+
+	/**
+	 * returns true if and only if the function is contracted.
+	 * 
+	 * @return
+	 */
+	boolean isContracted();
 
 	/**
 	 * returns the contract specification of this function.

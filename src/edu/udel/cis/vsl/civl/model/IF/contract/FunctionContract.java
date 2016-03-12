@@ -13,6 +13,10 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
  */
 public interface FunctionContract extends Sourceable {
 
+	static public enum ContractKind {
+		REQUIRES, ENSURES, ASSIGNS // TODO: complete this
+	}
+
 	/**
 	 * Returns the default behavior of the function.
 	 * 
@@ -107,4 +111,11 @@ public interface FunctionContract extends Sourceable {
 	 * @return
 	 */
 	boolean hasDependsClause();
+
+	/**
+	 * is there any requirements or ensurances ?
+	 * 
+	 * @return
+	 */
+	boolean hasRequirementsOrEnsurances();
 }

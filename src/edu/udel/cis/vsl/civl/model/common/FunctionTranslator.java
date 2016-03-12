@@ -170,13 +170,6 @@ import edu.udel.cis.vsl.gmc.CommandLineException;
  * 
  */
 public class FunctionTranslator {
-	/**
-	 * The string type name of the Result Expression:<br>
-	 * An special expression used to represent the result of a function in
-	 * function contracts.
-	 */
-	public static final String contractResultName = "$result";
-
 	private static final String PAR_FUNC_NAME = "_par_proc";
 
 	/* ************************** Instance Fields ************************** */
@@ -2386,18 +2379,6 @@ public class FunctionTranslator {
 		if (contract != null) {
 			ContractTranslator contractTranslator = new ContractTranslator(
 					modelBuilder, modelFactory, typeFactory, result);
-			// List<ContractClause> contracts = new LinkedList<>();
-			//
-			// for (int i = 0; i < contract.numChildren(); i++) {
-			// ContractNode contractNode = contract.getSequenceChild(i);
-			//
-			// contracts.add(contractTranslator
-			// .translateContractNode(contractNode));
-			// }
-			// // result = ContractTranslator.mergeContracts(contracts,
-			// // typeFactory,
-			// // modelFactory, result);
-			// result.setContracts(contracts);
 			contractTranslator.translateFunctionContract(contract);
 		}
 	}
@@ -4029,7 +4010,7 @@ public class FunctionTranslator {
 	 *            The (static) scope containing the expression.
 	 * @return The model representation of the expression.
 	 */
-	private Expression translateOperatorNode(OperatorNode operatorNode,
+	protected Expression translateOperatorNode(OperatorNode operatorNode,
 			Scope scope) {
 		CIVLSource source = modelFactory.sourceOf(operatorNode);
 		Operator operator = operatorNode.getOperator();

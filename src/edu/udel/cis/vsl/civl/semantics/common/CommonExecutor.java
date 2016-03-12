@@ -120,7 +120,7 @@ public class CommonExecutor implements Executor {
 	 * defined to be a call to method
 	 * {@link #executeWork(State, int, Statement)}.
 	 */
-	private long numSteps = 0;
+	protected long numSteps = 0;
 
 	/** The factory used to produce and manipulate model states. */
 	private StateFactory stateFactory;
@@ -701,7 +701,7 @@ public class CommonExecutor implements Executor {
 	 * @param statement
 	 * @return
 	 */
-	private State executeStatement(State state, int pid, Statement statement)
+	protected State executeStatement(State state, int pid, Statement statement)
 			throws UnsatisfiablePathConditionException {
 		try {
 			statement.reached();
@@ -1392,7 +1392,7 @@ public class CommonExecutor implements Executor {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State assign(CIVLSource source, State state, String process,
+	protected State assign(CIVLSource source, State state, String process,
 			SymbolicExpression pointer, SymbolicExpression value,
 			boolean isInitialization)
 			throws UnsatisfiablePathConditionException {
@@ -1481,7 +1481,7 @@ public class CommonExecutor implements Executor {
 		}
 	}
 
-	private State assign(State state, int pid, String process,
+	protected State assign(State state, int pid, String process,
 			LHSExpression lhs, SymbolicExpression value,
 			boolean isInitialization)
 			throws UnsatisfiablePathConditionException {

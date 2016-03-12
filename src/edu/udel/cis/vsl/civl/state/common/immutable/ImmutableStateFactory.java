@@ -24,8 +24,8 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
@@ -82,7 +82,7 @@ public class ImmutableStateFactory implements StateFactory {
 	/**
 	 * The model factory.
 	 */
-	private ModelFactory modelFactory;
+	protected ModelFactory modelFactory;
 
 	private CIVLTypeFactory typeFactory;
 
@@ -115,7 +115,7 @@ public class ImmutableStateFactory implements StateFactory {
 	/**
 	 * The number of canonic dyscopes.
 	 */
-	private int dyscopeCount = 0;
+	protected int dyscopeCount = 0;
 
 	/**
 	 * The map of canonic states. The key and the corresponding value should be
@@ -125,7 +125,7 @@ public class ImmutableStateFactory implements StateFactory {
 	private Map<ImmutableState, ImmutableState> stateMap = new HashMap<>(
 			1000000);
 
-	private SymbolicExpression undefinedProcessValue;
+	protected SymbolicExpression undefinedProcessValue;
 
 	/**
 	 * the CIVL configuration specified by the comamnd line
@@ -173,9 +173,9 @@ public class ImmutableStateFactory implements StateFactory {
 	/**
 	 * The symbolic universe, provided by SARL.
 	 */
-	private SymbolicUniverse universe;
+	protected SymbolicUniverse universe;
 
-	private SymbolicUtility symbolicUtil;
+	protected SymbolicUtility symbolicUtil;
 
 	private ImmutableMemoryUnitFactory memUnitFactory;
 
@@ -183,7 +183,7 @@ public class ImmutableStateFactory implements StateFactory {
 
 	private List<Variable> inputVariables;
 
-	private Set<HeapErrorKind> emptyHeapErrorSet = new HashSet<>(0);
+	protected Set<HeapErrorKind> emptyHeapErrorSet = new HashSet<>(0);
 
 	/* **************************** Constructors *************************** */
 
@@ -1026,7 +1026,7 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            The old state.
 	 * @return A new instance of state with only the process states changed.
 	 */
-	private ImmutableState createNewProcess(State state) {
+	protected ImmutableState createNewProcess(State state) {
 		ImmutableState theState = (ImmutableState) state;
 		int numProcs = theState.numProcs();
 		ImmutableProcessState[] newProcesses;
@@ -1090,7 +1090,7 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @return An array of initial values of variables of the given lexical
 	 *         scope.
 	 */
-	private SymbolicExpression[] initialValues(Scope lexicalScope) {
+	protected SymbolicExpression[] initialValues(Scope lexicalScope) {
 		// TODO: special handling for input variables in root scope?
 		SymbolicExpression[] values = new SymbolicExpression[lexicalScope
 				.variables().size()];
@@ -1301,7 +1301,7 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            which has no caller
 	 * @return new stack with new frame on call stack of process pid
 	 */
-	private ImmutableState pushCallStack2(ImmutableState state, int pid,
+	protected ImmutableState pushCallStack2(ImmutableState state, int pid,
 			CIVLFunction function, int functionParentDyscope,
 			SymbolicExpression[] arguments, int callerPid) {
 		Scope containingStaticScope = function.containingScope();
@@ -1463,7 +1463,7 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            The identifier of the dynamic scope that the process is in
 	 *            before the call.
 	 */
-	private ImmutableStackEntry stackEntry(Location location, int scope,
+	protected ImmutableStackEntry stackEntry(Location location, int scope,
 			int dyscopeIdentifier) {
 		return new ImmutableStackEntry(location, scope, dyscopeIdentifier);
 	}
@@ -1969,8 +1969,7 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state,
 			int pid, int numProcesses, int place, int queueID,
-			Expression assertion, SymbolicExpression channels,
-			ContractClauseKind kind) {
+			Expression assertion, SymbolicExpression channels, ContractKind kind) {
 		ImmutableCollectiveSnapshotsEntry[] queue = state.getSnapshots(queueID);
 		ImmutableCollectiveSnapshotsEntry[] newQueue;
 		ImmutableCollectiveSnapshotsEntry entry = new ImmutableCollectiveSnapshotsEntry(

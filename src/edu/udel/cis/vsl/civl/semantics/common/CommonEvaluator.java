@@ -1218,7 +1218,7 @@ public class CommonEvaluator implements Evaluator {
 	 *         after the dereference.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation evaluateDereference(State state, int pid,
+	protected Evaluation evaluateDereference(State state, int pid,
 			String process, DereferenceExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.pointer());
@@ -1598,7 +1598,7 @@ public class CommonEvaluator implements Evaluator {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation evaluateInitialValue(State state, int pid,
+	protected Evaluation evaluateInitialValue(State state, int pid,
 			InitialValueExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Variable variable = expression.variable();
@@ -2448,7 +2448,7 @@ public class CommonEvaluator implements Evaluator {
 	 * @return The symbolic representation of the unary expression.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation evaluateUnary(State state, int pid,
+	protected Evaluation evaluateUnary(State state, int pid,
 			UnaryExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.operand());

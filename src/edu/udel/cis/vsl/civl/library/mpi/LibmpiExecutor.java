@@ -17,9 +17,9 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.contracts.ContractClause.ContractClauseKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -32,7 +32,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.semantics.common.ContractEvaluator;
+import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
 import edu.udel.cis.vsl.civl.state.IF.DynamicScope;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -109,7 +109,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	public State executeCollectiveContract(State state, int pid,
-			String process, Expression[] args, ContractClauseKind kind,
+			String process, Expression[] args, ContractKind kind,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression[] argumentValues = new SymbolicExpression[1];
 		Evaluation eval;
@@ -302,7 +302,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				assert myStatusVar != null : "Failure of getting variable '_mpi_status' in function '_mpi_process()'";
 				// dyscopeId = this.getScopeInProcessStack(state, pid,
 				// procStaticScope);
-				dyscopeId=state.getDyscope(pid, procStaticScope);
+				dyscopeId = state.getDyscope(pid, procStaticScope);
 				this.processStatusVariables.put(pid, new Pair<>(
 						procStaticScope, myStatusVar));
 			} else {
@@ -310,7 +310,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				myStatusVar = myStatusVarInfo.right;
 				// dyscopeId = this.getScopeInProcessStack(state, pid,
 				// myStatusVarInfo.left);
-				dyscopeId=state.getDyscope(pid, myStatusVarInfo.left);
+				dyscopeId = state.getDyscope(pid, myStatusVarInfo.left);
 			}
 			valueOfMyStatusVar = state.getDyscope(dyscopeId).getValue(
 					myStatusVar.vid());
@@ -595,7 +595,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 */
 	private State executeCoassertWorker(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source, boolean isContract, ContractClauseKind kind)
+			CIVLSource source, boolean isContract, ContractKind kind)
 			throws UnsatisfiablePathConditionException {
 		ImmutableState tmpState = (ImmutableState) state;
 		Expression MPICommExpr = arguments[0];
