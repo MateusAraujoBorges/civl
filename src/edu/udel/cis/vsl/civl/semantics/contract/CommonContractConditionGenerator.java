@@ -596,7 +596,9 @@ public class CommonContractConditionGenerator extends CommonEvaluator implements
 			predicate = (BooleanExpression) universe.apply(validAbstractFunc,
 					Arrays.asList(basePointer));
 		}
-		return universe.forallInt(idx, low, high, predicate);
+		// universe.forallInt takes low and high as [low, high):
+		return universe.forallInt(idx, low,
+				universe.add(high, universe.oneInt()), predicate);
 	}
 
 	/****************************************************************************

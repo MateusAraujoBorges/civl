@@ -2186,16 +2186,22 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public PointerSetExpression pointerSetExpression(CIVLSource source,
 			Scope scope, LHSExpression basePointer, Expression range) {
-		Scope expressionScope = join(basePointer.expressionScope(),
-				range.expressionScope());
-		Scope lowestScope = getLower(basePointer.lowestScope(),
-				range.lowestScope());
+		Scope expressionScope;
+		Scope lowestScope;
 
+		if (range != null) {
+			expressionScope = join(basePointer.expressionScope(),
+					range.expressionScope());
+			lowestScope = getLower(basePointer.lowestScope(),
+					range.lowestScope());
+		} else {
+			expressionScope = basePointer.expressionScope();
+			lowestScope = basePointer.lowestScope();
+		}
 		expressionScope = join(scope, expressionScope);
 		lowestScope = getLower(scope, lowestScope);
 		return new CommonPointerSetExpression(source, expressionScope,
 				lowestScope, typeFactory.incompleteArrayType(basePointer
 						.getExpressionType()), basePointer, range);
 	}
-
 }

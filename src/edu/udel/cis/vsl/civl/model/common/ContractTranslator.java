@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.model.common;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -213,7 +212,7 @@ public class ContractTranslator extends FunctionTranslator {
 			currentContractKind = ContractKind.ENSURES;
 			Expression expression = translateExpressionNode(
 					((EnsuresNode) contractNode).getExpression(), scope, true);
-			functionBehavior.addPrecondition(expression);
+			functionBehavior.addPostcondition(expression);
 			currentContractKind = null;
 			break;
 		}
@@ -221,7 +220,7 @@ public class ContractTranslator extends FunctionTranslator {
 			currentContractKind = ContractKind.REQUIRES;
 			Expression expression = translateExpressionNode(
 					((RequiresNode) contractNode).getExpression(), scope, true);
-			functionBehavior.addPostcondition(expression);
+			functionBehavior.addPrecondition(expression);
 			currentContractKind = null;
 			break;
 		}
@@ -483,8 +482,7 @@ public class ContractTranslator extends FunctionTranslator {
 		// [pointer]:
 		if (arg.getExpressionType().isPointerType())
 			mem = modelFactory.pointerSetExpression(arg.getSource(), scope,
-					(LHSExpression) arg, modelFactory.integerLiteralExpression(
-							null, BigInteger.ZERO));
+					(LHSExpression) arg, null);
 		else
 			mem = (PointerSetExpression) arg;
 		result = modelFactory

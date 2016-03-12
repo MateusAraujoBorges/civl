@@ -334,6 +334,9 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 					state = eval.state;
 					range = eval.value;
 					size = symbolicUtil.getHighOfRegularRange(range);
+					// \valid(ptr + (0..n)) ==> there are (n + 1) objects in
+					// heap:
+					size = universe.add(size, universe.oneInt());
 				} else
 					size = universe.oneInt();
 				ret = malloc(state, pid, dyscopeId, i,

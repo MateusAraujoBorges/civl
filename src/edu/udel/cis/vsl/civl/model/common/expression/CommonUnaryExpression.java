@@ -170,6 +170,7 @@ public class CommonUnaryExpression extends CommonExpression implements
 			this.constantValue = universe.not((BooleanExpression) operandValue);
 			break;
 		case BIG_O:
+		case VALID:
 			break;
 		default:
 			throw new CIVLInternalException("Unknown unary operator: "
@@ -198,6 +199,9 @@ public class CommonUnaryExpression extends CommonExpression implements
 			break;
 		case BIG_O:
 			op = "$O";
+			break;
+		case VALID:
+			op = "\\valid";
 			break;
 		default:
 			throw new CIVLInternalException("Unknown unary operator: "
