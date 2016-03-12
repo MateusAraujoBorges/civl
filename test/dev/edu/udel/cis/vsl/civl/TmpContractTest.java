@@ -64,37 +64,43 @@ public class TmpContractTest {
 
 	@Test
 	public void pointers3() {
-		assertTrue(ui.run("verify  -errorBound=10",
+		assertTrue(ui.run("verify  -errorBound=10", enableContract,
 				filename("sequential/pointers3.c")));
 	}
 
 	@Test
 	public void pointers3Bad() {
-		assertFalse(ui.run("verify  -errorBound=10",
+		assertFalse(ui.run("verify  -errorBound=10", enableContract,
 				filename("sequential/pointers3Bad.c")));
 	}
 
 	@Test
 	public void pointers4() {
-		assertTrue(ui.run("verify  -errorBound=10",
+		assertTrue(ui.run("verify  -errorBound=10", enableContract,
 				filename("sequential/pointers4.c")));
 	}
 
 	@Test
+	public void pointers4Bad() {
+		assertFalse(ui.run("verify  -errorBound=10", enableContract,
+				filename("sequential/pointers4Bad.c")));
+	}
+
+	@Test
 	public void caseVoidPointers() {
-		assertTrue(ui.run("verify  -errorBound=10",
+		assertTrue(ui.run("verify  -errorBound=10", enableContract,
 				filename("sequential/voidPointers.c")));
 	}
 
 	@Test
 	public void globalPointers() {
-		assertTrue(ui.run("verify  -errorBound=10",
+		assertTrue(ui.run("verify  -errorBound=10", enableContract,
 				filename("sequential/globalPointers.c")));
 	}
 
 	@Test
 	public void globalPointersBad() {
-		assertFalse(ui.run("verify  -errorBound=10",
+		assertFalse(ui.run("verify  -errorBound=10", enableContract,
 				filename("sequential/globalPointersBad.c")));
 	}
 }
