@@ -879,8 +879,8 @@ public interface ModelFactory {
 	 *            The left hand side of the malloc statement
 	 * @param staticElementType
 	 *            The static element type
-	 * @param heapPointerExpression
-	 *            The heap pointer
+	 * @param scopeExpression
+	 *            The expression of the scope
 	 * @param sizeExpression
 	 *            The size argument of the malloc statement
 	 * @param mallocId
@@ -891,7 +891,7 @@ public interface ModelFactory {
 	 */
 	MallocStatement mallocStatement(CIVLSource civlSource, Location source,
 			LHSExpression lhs, CIVLType staticElementType,
-			Expression heapPointerExpression, Expression sizeExpression,
+			Expression scopeExpression, Expression sizeExpression,
 			int mallocId, Expression guard);
 
 	/**
@@ -1600,6 +1600,24 @@ public interface ModelFactory {
 			Expression process, Scope scope);
 
 	/**
+	 * Creates a {@link PointerSetExpression}.
+	 * 
+	 * @param source
+	 *            The CIVLSource of the expression
+	 * @param scope
+	 *            The scope where this expression appears
+	 * @param basePointer
+	 *            The base pointer expression, it must be a
+	 *            {@link LHSExpression}
+	 * @param range
+	 *            The range, it can be null if the expression is a singleton
+	 *            pointer set.
+	 * @return
+	 */
+	PointerSetExpression pointerSetExpression(CIVLSource source, Scope scope,
+			LHSExpression basePointer, Expression range);
+
+	/**
 	 * Creates a wildcard expression <code>...</code>, which is only used in
 	 * contract.
 	 * 
@@ -1610,7 +1628,4 @@ public interface ModelFactory {
 	WildcardExpression wildcardExpression(CIVLSource source, CIVLType type);
 
 	Nothing nothing(CIVLSource source);
-
-	PointerSetExpression pointerSetExpression(CIVLSource source, Scope scope,
-			LHSExpression basePointer, Expression range);
 }

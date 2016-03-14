@@ -1,6 +1,7 @@
 #include <assert.h>
 
 /*@ requires \valid(x + (0 .. 3));
+
   @ requires \valid(x[0] + (0 .. 3));
   @ requires \valid(x[1] + (0 .. 3));
   @ requires \valid(x[2] + (0 .. 3));

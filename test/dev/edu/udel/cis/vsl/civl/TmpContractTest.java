@@ -103,4 +103,10 @@ public class TmpContractTest {
 		assertFalse(ui.run("verify  -errorBound=10", enableContract,
 				filename("sequential/globalPointersBad.c")));
 	}
+
+	@Test
+	public void simpleMPITest() {
+		assertFalse(ui.run("verify  -errorBound=10", enableContract,
+				filename("sequential/simpleMpiTest.c")));
+	}
 }

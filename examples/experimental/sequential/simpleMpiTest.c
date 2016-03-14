@@ -1,4 +1,4 @@
-//#include<mpi.h>
+#include<mpi.h>
 
 double * u;
 int nx = 10;

@@ -1,8 +1,5 @@
 package edu.udel.cis.vsl.civl.semantics.contract;
 
-import java.util.Iterator;
-import java.util.Map;
-
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
@@ -29,7 +26,6 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
@@ -77,30 +73,11 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 		return conditionGenerator.deriveExpression(state, pid, expression);
 	}
 
-	public void saveValidAxioms(
-			Map<Pair<Integer, Integer>, PointerSetExpression> validAxioms) {
-		Iterator<Pair<Integer, Integer>> vid_depth_iter = validAxioms.keySet()
-				.iterator();
-		PointerSetExpression saved[][];
-		int maxVid = 0;
-		int maxDepth = 0;
-
-		while (vid_depth_iter.hasNext()) {
-			Pair<Integer, Integer> vid_depth = vid_depth_iter.next();
-
-			maxVid = maxVid < vid_depth.left ? vid_depth.left : maxVid;
-			maxDepth = maxDepth < vid_depth.right ? vid_depth.right : maxDepth;
-		}
-		saved = new PointerSetExpression[maxVid][maxDepth];
-		vid_depth_iter = validAxioms.keySet().iterator();
-		while (vid_depth_iter.hasNext()) {
-			Pair<Integer, Integer> vid_depth = vid_depth_iter.next();
-
-			saved[vid_depth.left][vid_depth.right] = validAxioms.get(vid_depth);
-		}
-	}
-
 	/*********************** Evaluating section ************************/
+	/*
+	 * Methods here do regular evaluation on expressions. Some methods are
+	 * overridded because of some different semantics for contracts
+	 */
 	@Override
 	public Evaluation pointerAdd(State state, int pid, String process,
 			BinaryExpression expression, SymbolicExpression pointer,
@@ -110,10 +87,6 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 				pointer, offset);
 	}
 
-	/*
-	 * Methods here do regular evaluation on expressions. Some methods are
-	 * overridded because of some different semantics for contracts
-	 */
 	/**
 	 * Override for adding contract specific operations evaluating
 	 * implementations.
@@ -203,8 +176,9 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 
 	/**
 	 * Override for pointers: In a contract system, a pointer will be
-	 * initialized as a symbolic constant "XP[vid]". A pointer will be
-	 * initialized only if it's a parameter of the verifying function.
+	 * initialized as a symbolic constant "XP[sid, vid]", where "sid" is the
+	 * lexical scope id. A pointer will be initialized only if it's a parameter
+	 * of the verifying function or it is a global variable.
 	 */
 	@Override
 	protected Evaluation evaluateInitialValue(State state, int pid,
@@ -220,14 +194,8 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 	}
 
 	/**
-	 * Override for handling non-concrete symbolic pointers:
-	 * <p>
-	 * The pointer expression will be derived to a symbolic expression which
-	 * either is a concrete tuple or a uninterpreted function. For uninterpreted
-	 * functions, if it's {@link #ValidStringObject}, then returns a
-	 * {@link #DerefStringObject} function on it
-	 * </p>
-	 * 
+	 * Override for handling non-concrete symbolic pointers: The current policy
+	 * for symbolic pointers does not allow dereferencing a symbolic pointer.
 	 */
 	@Override
 	protected Evaluation evaluateDereference(State state, int pid,
@@ -244,7 +212,7 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 					.logSimpleError(expression.getSource(), state, process,
 							symbolicAnalyzer.stateToString(state),
 							ErrorKind.CONTRACT,
-							"Dereferencing a pointer without any guarantee that it's valid pointer.");
+							"Attempt to dereference a pointer which cannot be proved as a valid pointer.");
 			throw new UnsatisfiablePathConditionException();
 		} else
 			return super.evaluateDereference(state, pid, process, expression);

@@ -480,10 +480,14 @@ public class ContractTranslator extends FunctionTranslator {
 		// TODO: check if pointer is LHSExpression:
 		// \valid operator syntactically accepts either [pointer + range] or
 		// [pointer]:
-		if (arg.getExpressionType().isPointerType())
-			mem = modelFactory.pointerSetExpression(arg.getSource(), scope,
-					(LHSExpression) arg, null);
-		else
+		if (arg.getExpressionType().isPointerType()) {
+			if (arg instanceof LHSExpression)
+				mem = modelFactory.pointerSetExpression(arg.getSource(), scope,
+						(LHSExpression) arg, null);
+			else
+				throw new CIVLUnimplementedFeatureException(
+						"Singleton pointer set but the element is not a LHSExpression.");
+		} else
 			mem = (PointerSetExpression) arg;
 		result = modelFactory
 				.unaryExpression(source, UNARY_OPERATOR.VALID, mem);
@@ -496,7 +500,7 @@ public class ContractTranslator extends FunctionTranslator {
 
 			// TODO: what if pointer is void *?
 			modelBuilder.mallocStatements.add(modelFactory.mallocStatement(
-					source, null, memPointer, staticElementType, memPointer,
+					source, null, memPointer, staticElementType, null,
 					mem.getRange(), mallocId, null));
 
 			function.addPossibleValidConsequence(new Pair<>(result, mallocId));

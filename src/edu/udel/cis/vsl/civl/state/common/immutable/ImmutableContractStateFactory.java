@@ -1,9 +1,12 @@
 package edu.udel.cis.vsl.civl.state.common.immutable;
 
 import java.util.BitSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -18,7 +21,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
-import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.ContractConditionGenerator;
@@ -31,7 +33,6 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.transform.IF.ContractTransformer;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
@@ -95,77 +96,59 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		ImmutableState initialState;
 		SymbolicExpression args[] = new SymbolicExpression[functionModel
 				.parameters().size()];
-		Variable atomicVar = modelFactory.atomicLockVariableExpression()
-				.variable();
-		Variable timeCountVar = modelFactory.timeCountVariable();
-		Variable genRoot, symbolicConstantCounter;
 		FunctionContract contracts = functionModel.functionContract();
 		List<Pair<PointerSetExpression, Integer>> validConsequences = new LinkedList<>();
 		BooleanExpression context;
 		Evaluation eval;
-		List<AssignStatement> globalAssignments;
 		String[] processes = new String[numProcesses];
+		Queue<Scope> wrapperScopeStack = new LinkedList<Scope>();
+		Scope wrapperScope;
 
-		// TODO: this is not correct:
-		globalAssignments = ContractTransformer.getGlobalStatements(model);
+		// Initialization Phase 1 : Single process initialization
 		rootScope = model.system().outerScope();
-		genRoot = rootScope.variable(ModelConfiguration.GENERAL_ROOT);
 		initialState = new ImmutableState(new ImmutableProcessState[0],
 				new ImmutableDynamicScope[0], universe.trueExpression());
 		if (functionModel.isRootFunction())
 			functionModel.setOuterScope(rootScope);
 		// Push root scope and function scope:
 		initialState = pushRootScope(initialState, numProcesses, rootScope);
-		for (int pid = 0; pid < numProcesses; pid++)
+		// Initializing global arguments:
+		Pair<ImmutableState, Set<Integer>> state_skipSet;
+		Set<Integer> skipSet;
+
+		state_skipSet = initializeSystemGlobalVarianbles(initialState,
+				rootScope);
+		initialState = state_skipSet.left;
+		skipSet = state_skipSet.right;
+		for (Variable globalVar : rootScope.variables())
+			if (!skipSet.contains(globalVar.vid()))
+				initialState = initVariableToSymbolicConstants(initialState,
+						globalVar, 0);
+		wrapperScope = functionModel.containingScope();
+		while (wrapperScope.id() != rootScope.id()) {
+			wrapperScopeStack.add(wrapperScope);
+			wrapperScope = wrapperScope.parent();
+		}
+		for (int pid = 0; pid < numProcesses; pid++) {
+			while (!wrapperScopeStack.isEmpty()) {
+				wrapperScope = wrapperScopeStack.poll();
+				initialState = pushScope(initialState, pid, numProcesses,
+						wrapperScope);
+			}
 			initialState = pushCallStack2(initialState, pid, functionModel, 0,
 					args, -1);
+		}
 		for (int pid = 0; pid < processes.length; pid++) {
 			int processIdentifier = initialState.getProcessState(pid)
 					.identifier();
 
 			processes[pid] = "p" + processIdentifier + " (id = " + pid + ")";
 		}
-		// Initializing global arguments:
-		initialState = this.setVariable(initialState, atomicVar.vid(), 0,
-				undefinedProcessValue);
-		if (timeCountVar != null)
-			initialState = setVariable(initialState, timeCountVar.vid(), 0,
-					universe.zeroInt());
-		symbolicConstantCounter = rootScope
-				.variable(ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER);
-		if (symbolicConstantCounter != null)
-			initialState = setVariable(initialState, symbolicConstantCounter,
-					0, universe.zeroInt());
 		// Initializing arguments and memory spaces:
-		for (int pid = 0; pid < numProcesses; pid++) {
-			int rootDyscopeId = initialState.getDyscope(pid, rootScope);
-
-			if (genRoot != null)
-				initialState = this.setVariable(initialState, genRoot, pid,
-						modelFactory.scopeValue(rootDyscopeId));
-			for (Variable var : functionModel.parameters()) {
-				Expression varVal;
-
-				// Temporarily set "var" as an input variable, so that its
-				// value can be initialized as a symbolic constant:
-				// if (!var.type().isPointerType()) {
-				var.setIsInput(true);
-				varVal = modelFactory.initialValueExpression(var.getSource(),
-						var);
-				eval = evaluator.evaluate(initialState, pid, varVal);
-				var.setIsInput(false);
-				initialState = (ImmutableState) eval.state;
-				initialState = this.setVariable(initialState, var, pid,
-						eval.value);
-			}
-		}
-		for (int pid = 0; pid < numProcesses; pid++) {
-			for (AssignStatement assign : globalAssignments) {
-				eval = evaluator.evaluate(initialState, pid, assign.rhs());
-				initialState = (ImmutableState) executor.assign(eval.state,
-						pid, processes[pid], assign.getLhs(), eval.value);
-			}
-		}
+		// for (int pid = 0; pid < numProcesses; pid++)
+		// for (Variable var : functionModel.parameters())
+		// initialState = initVariableToSymbolicConstants(initialState,
+		// var, pid);
 		/******* Necessary derivation on contracts *******/
 		// PHASE 1: Derives contracts to reasonable boolean expressions:
 		Iterator<Expression> requiresIter = contracts.defaultBehavior()
@@ -298,6 +281,36 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		return state;
 	}
 
+	// TODO: does this can replace the "pushRootScope" method ?
+	private ImmutableState pushScope(ImmutableState state, int pid,
+			int numProcesses, Scope scope) {
+		int dyscopeId = dyscopeCount++;
+		Location location = modelFactory.location(scope.getSource(), scope);
+		ImmutableDynamicScope[] newScopes;
+		Scope parent = scope.parent();
+		int parentId, parentIdentifier;
+		SymbolicExpression[] values;
+		BitSet bitSet = new BitSet(numProcesses);
+		ImmutableProcessState processState;
+
+		// TODO: how does this "initialValues" work ? Can it replace the
+		// "initVariableToSymbolicConstants" method ?
+		values = this.initialValues(scope);
+		bitSet.set(pid);
+		newScopes = state.copyAndExpandScopes();
+		parentId = parent == null ? -1 : state.getDyscope(pid, scope.parent());
+		parentIdentifier = (parentId == -1) ? -1 : state.getDyscope(parentId)
+				.identifier();
+		newScopes[dyscopeId] = new ImmutableDynamicScope(scope, parentId,
+				parentIdentifier, values, bitSet, dyscopeId);
+		processState = state.getProcessState(pid);
+		processState = processState.push(stackEntry(location, dyscopeId,
+				dyscopeId));
+		state = state.setScopes(newScopes);
+		state = state.setProcessState(pid, processState);
+		return state;
+	}
+
 	/**
 	 * TODO:limitation: range can only go from 0 .. N with step 1
 	 * 
@@ -347,5 +360,62 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 			}
 		}
 		return (ImmutableState) state;
+	}
+
+	private ImmutableState initVariableToSymbolicConstants(
+			ImmutableState state, Variable var, int pid)
+			throws UnsatisfiablePathConditionException {
+		Expression varVal;
+		Evaluation eval;
+
+		// Temporarily set "var" as an input variable, so that its
+		// value can be initialized as a symbolic constant:
+		// if (!var.type().isPointerType()) {
+		var.setIsInput(true);
+		varVal = modelFactory.initialValueExpression(var.getSource(), var);
+		eval = evaluator.evaluate(state, pid, varVal);
+		var.setIsInput(false);
+		state = (ImmutableState) eval.state;
+		state = this.setVariable(state, var, pid, eval.value);
+		return state;
+	}
+
+	private Pair<ImmutableState, Set<Integer>> initializeSystemGlobalVarianbles(
+			ImmutableState state, Scope rootScope) {
+		Variable atomicLock = modelFactory.atomicLockVariableExpression()
+				.variable();
+		Variable timeCount = modelFactory.timeCountVariable();
+		Variable genRoot = rootScope.variable(ModelConfiguration.GENERAL_ROOT);
+		Variable symYCount = rootScope
+				.variable(ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER);
+		Variable symXCount = rootScope
+				.variable(ModelConfiguration.SYMBOLIC_INPUT_COUNTER);
+		Set<Integer> skipSet = new HashSet<>();
+
+		if (atomicLock != null) {
+			state = setVariable(state, atomicLock, 0, undefinedProcessValue);
+			skipSet.add(atomicLock.vid());
+		}
+		if (timeCount != null) {
+			state = setVariable(state, timeCount, 0, universe.zeroInt());
+			skipSet.add(timeCount.vid());
+		}
+		if (genRoot != null) {
+			int rootDyscopeId = state.getDyscope(0, rootScope);
+
+			state = setVariable(state, genRoot, 0,
+					modelFactory.scopeValue(rootDyscopeId));
+			skipSet.add(genRoot.vid());
+		}
+		if (symYCount != null) {
+			state = setVariable(state, symYCount, 0, universe.zeroInt());
+			skipSet.add(symYCount.vid());
+		}
+		if (symXCount != null) {
+			state = setVariable(state, symXCount, 0, universe.zeroInt());
+			skipSet.add(symXCount.vid());
+		}
+		skipSet.add(0);
+		return new Pair<>(state, skipSet);
 	}
 }
