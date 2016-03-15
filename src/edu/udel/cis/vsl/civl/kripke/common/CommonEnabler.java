@@ -284,6 +284,9 @@ public abstract class CommonEnabler implements Enabler {
 	 * @param pid
 	 *            The process id to work with.
 	 * @param newGuardMap
+	 *            A map of process IDs and their guards of statements. This is
+	 *            to reuse evaluation result of guards and it could be an empty
+	 *            map if there is nothing to be reused.
 	 * @param assignAtomicLock
 	 *            The assignment statement for the atomic lock variable, should
 	 *            be null except that the process is going to re-obtain the
