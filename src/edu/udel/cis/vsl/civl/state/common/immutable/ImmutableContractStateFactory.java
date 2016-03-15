@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
+import java.util.Stack;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -101,9 +101,11 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		BooleanExpression context;
 		Evaluation eval;
 		String[] processes = new String[numProcesses];
-		Queue<Scope> wrapperScopeStack = new LinkedList<Scope>();
+		Stack<Scope> wrapperScopeStack = new Stack<Scope>();
+		Scope[] wrapperScopes;
 		Scope wrapperScope;
 
+		numProcesses = 2;
 		// Initialization Phase 1 : Single process initialization
 		rootScope = model.system().outerScope();
 		initialState = new ImmutableState(new ImmutableProcessState[0],
@@ -111,7 +113,8 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		if (functionModel.isRootFunction())
 			functionModel.setOuterScope(rootScope);
 		// Push root scope and function scope:
-		initialState = pushRootScope(initialState, numProcesses, rootScope);
+		initialState = pushRootScope(initialState, numProcesses, rootScope,
+				model.system());
 		// Initializing global arguments:
 		Pair<ImmutableState, Set<Integer>> state_skipSet;
 		Set<Integer> skipSet;
@@ -124,19 +127,40 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 			if (!skipSet.contains(globalVar.vid()))
 				initialState = initVariableToSymbolicConstants(initialState,
 						globalVar, 0);
+		// Initialization Phase 2 : Multi-processes initialization
+		// Push all visible scopes:
 		wrapperScope = functionModel.containingScope();
 		while (wrapperScope.id() != rootScope.id()) {
 			wrapperScopeStack.add(wrapperScope);
 			wrapperScope = wrapperScope.parent();
 		}
+		wrapperScopes = new Scope[wrapperScopeStack.size()];
+		wrapperScopeStack.toArray(wrapperScopes);
 		for (int pid = 0; pid < numProcesses; pid++) {
-			while (!wrapperScopeStack.isEmpty()) {
-				wrapperScope = wrapperScopeStack.poll();
-				initialState = pushScope(initialState, pid, numProcesses,
-						wrapperScope);
+			int parentId = 0;
+			int bound = wrapperScopes.length - 1;
+			List<Variable> initializeVarSet = new LinkedList<>();
+
+			for (int i = bound; i >= 0; i--) {
+				Pair<ImmutableState, Integer> state_dyscopeId;
+
+				wrapperScope = wrapperScopes[i];
+				state_dyscopeId = pushScope(initialState, pid, numProcesses,
+						wrapperScope, parentId);
+				initialState = state_dyscopeId.left;
+				parentId = state_dyscopeId.right;
+				initializeVarSet.addAll(wrapperScope.variables());
 			}
-			initialState = pushCallStack2(initialState, pid, functionModel, 0,
-					args, -1);
+			initialState = pushCallStack2(initialState, pid, functionModel,
+					parentId, args, -1);
+			for (Variable var : initializeVarSet) {
+				if (var.vid() != 0) // No initialization on heap
+					initialState = initVariableToSymbolicConstants(
+							initialState, var, pid);
+			}
+			for (Variable var : functionModel.parameters())
+				initialState = initVariableToSymbolicConstants(initialState,
+						var, pid);
 		}
 		for (int pid = 0; pid < processes.length; pid++) {
 			int processIdentifier = initialState.getProcessState(pid)
@@ -151,10 +175,11 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		// var, pid);
 		/******* Necessary derivation on contracts *******/
 		// PHASE 1: Derives contracts to reasonable boolean expressions:
-		Iterator<Expression> requiresIter = contracts.defaultBehavior()
-				.preconditions().iterator();
+		Iterator<Expression> requiresIter;
 		context = universe.trueExpression();
 		for (int pid = 0; pid < numProcesses; pid++) {
+			requiresIter = contracts.defaultBehavior().preconditions()
+					.iterator();
 			while (requiresIter.hasNext()) {
 				eval = conditionGenerator.deriveExpression(initialState, pid,
 						requiresIter.next());
@@ -164,6 +189,8 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		}
 
 		// PHASE 2: Reasoning some clauses that need special handling:
+		// TODO: reasoning is depend on process but current valid consequences
+		// are not stored by PID
 		for (int pid = 0; pid < numProcesses; pid++) {
 			for (Pair<Expression, Integer> guess : functionModel
 					.getPossibleValidConsequences()) {
@@ -189,9 +216,10 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		// PHASE 3: Evaluating contracts phase:
 		Reasoner reasoner;
 
-		requiresIter = contracts.defaultBehavior().preconditions().iterator();
 		context = initialState.getPathCondition();
-		for (int pid = 0; pid < numProcesses; pid++)
+		for (int pid = 0; pid < numProcesses; pid++) {
+			requiresIter = contracts.defaultBehavior().preconditions()
+					.iterator();
 			while (requiresIter.hasNext()) {
 				BooleanExpression pred;
 				Expression require = requiresIter.next();
@@ -212,6 +240,7 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 							"Unsatisfiable requirements: " + require);
 				}
 			}
+		}
 		initialState = initialState.setPathCondition(context);
 		return super.canonic(initialState, false, false, false,
 				emptyHeapErrorSet);
@@ -256,14 +285,13 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 	 * @return
 	 */
 	private ImmutableState pushRootScope(ImmutableState state,
-			int numProcesses, Scope rootScope) {
+			int numProcesses, Scope rootScope, CIVLFunction systemFunction) {
 		ImmutableProcessState[] newProcesses = new ImmutableProcessState[numProcesses];
 		SymbolicExpression[] values;
 		ImmutableDynamicScope[] newScopes;
 		int rootDyScopeId = dyscopeCount;
 		BitSet bitSet = new BitSet(numProcesses);
-		Location location = modelFactory.location(rootScope.getSource(),
-				rootScope);
+		Location location = systemFunction.startLocation();
 
 		values = initialValues(rootScope);
 		bitSet.set(0, numProcesses - 1);
@@ -282,13 +310,13 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 	}
 
 	// TODO: does this can replace the "pushRootScope" method ?
-	private ImmutableState pushScope(ImmutableState state, int pid,
-			int numProcesses, Scope scope) {
+	private Pair<ImmutableState, Integer> pushScope(ImmutableState state,
+			int pid, int numProcesses, Scope scope, int parentDyscopeId)
+			throws UnsatisfiablePathConditionException {
 		int dyscopeId = dyscopeCount++;
 		Location location = modelFactory.location(scope.getSource(), scope);
 		ImmutableDynamicScope[] newScopes;
-		Scope parent = scope.parent();
-		int parentId, parentIdentifier;
+		int parentIdentifier;
 		SymbolicExpression[] values;
 		BitSet bitSet = new BitSet(numProcesses);
 		ImmutableProcessState processState;
@@ -298,17 +326,12 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		values = this.initialValues(scope);
 		bitSet.set(pid);
 		newScopes = state.copyAndExpandScopes();
-		parentId = parent == null ? -1 : state.getDyscope(pid, scope.parent());
-		parentIdentifier = (parentId == -1) ? -1 : state.getDyscope(parentId)
-				.identifier();
-		newScopes[dyscopeId] = new ImmutableDynamicScope(scope, parentId,
-				parentIdentifier, values, bitSet, dyscopeId);
-		processState = state.getProcessState(pid);
-		processState = processState.push(stackEntry(location, dyscopeId,
-				dyscopeId));
+		parentIdentifier = (parentDyscopeId == -1) ? -1 : state.getDyscope(
+				parentDyscopeId).identifier();
+		newScopes[dyscopeId] = new ImmutableDynamicScope(scope,
+				parentDyscopeId, parentIdentifier, values, bitSet, dyscopeId);
 		state = state.setScopes(newScopes);
-		state = state.setProcessState(pid, processState);
-		return state;
+		return new Pair<>(state, dyscopeId);
 	}
 
 	/**
@@ -375,9 +398,8 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		varVal = modelFactory.initialValueExpression(var.getSource(), var);
 		eval = evaluator.evaluate(state, pid, varVal);
 		var.setIsInput(false);
-		state = (ImmutableState) eval.state;
-		state = this.setVariable(state, var, pid, eval.value);
-		return state;
+		eval.state = this.setVariable(eval.state, var, pid, eval.value);
+		return (ImmutableState) eval.state;
 	}
 
 	private Pair<ImmutableState, Set<Integer>> initializeSystemGlobalVarianbles(

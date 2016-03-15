@@ -1,9 +1,11 @@
 package edu.udel.cis.vsl.civl.semantics.contract;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -163,6 +165,10 @@ public class CommonContractConditionGenerator extends CommonEvaluator implements
 			List<Pair<PointerSetExpression, Integer>> validAxioms) {
 		int vidMax, colMax;
 		List<Triple<Integer, Integer, Pair<PointerSetExpression, Integer>>> temp = new LinkedList<>();
+		Set<Integer> avoidDuplicated = new HashSet<>(); // TODO: it is not
+														// correct, malloc Ids
+														// should store also via
+														// PIDs
 
 		vidMax = colMax = 0;
 		for (Pair<PointerSetExpression, Integer> axiom : validAxioms) {
@@ -183,9 +189,12 @@ public class CommonContractConditionGenerator extends CommonEvaluator implements
 			int col = item.second;
 			Pair<PointerSetExpression, Integer> axiom = item.third;
 
-			if (validPointerAxioms[vid][col] == null)
-				validPointerAxioms[vid][col] = new independentMallocs();
-			validPointerAxioms[vid][col].mallocSet.add(axiom.right);
+			if (!avoidDuplicated.contains(axiom.right)) {
+				avoidDuplicated.add(axiom.right);
+				if (validPointerAxioms[vid][col] == null)
+					validPointerAxioms[vid][col] = new independentMallocs();
+				validPointerAxioms[vid][col].mallocSet.add(axiom.right);
+			}
 		}
 	}
 

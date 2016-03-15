@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
-import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -22,7 +21,6 @@ import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.model.common.ContractTranslator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
-import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.NoopTransition;
@@ -67,7 +65,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  *
  */
 public class ContractExecutor extends CommonExecutor implements Executor {
-	private Evaluator evaluator;
+	private ContractEvaluator evaluator;
 
 	private StateFactory stateFactory;
 
@@ -83,7 +81,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 
 	public ContractExecutor(ModelFactory modelFactory,
 			StateFactory stateFactory, ErrorLog log,
-			LibraryExecutorLoader loader, Evaluator evaluator,
+			LibraryExecutorLoader loader, ContractEvaluator evaluator,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errorLogger,
 			CIVLConfiguration civlConfig) {
 		super(modelFactory, stateFactory, log, loader, evaluator,
@@ -244,10 +242,8 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		if (!processState.hasEmptyStack()) {
 			StackEntry returnContext = processState.peekStack();
 			Location returnLocation = returnContext.location();
-			CIVLFunction callerFunc = returnLocation.function();
 
-			if (callerFunc.name().name()
-					.equals(CIVLConstants.civlSystemFunction)) {
+			if (function.name().equals(evaluator.getVerifyingFunction().name())) {
 				// If the caller function is root function, execution
 				// terminates:
 				if (!modelFactory.isPocessIdDefined(pid)

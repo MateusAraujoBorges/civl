@@ -106,7 +106,7 @@ public class TmpContractTest {
 
 	@Test
 	public void simpleMPITest() {
-		assertFalse(ui.run("verify  -errorBound=10", enableContract,
-				filename("sequential/simpleMpiTest.c")));
+		assertTrue(ui.run("verify  -showAmpleSet -errorBound=10",
+				enableContract, filename("sequential/simpleMpiTest.c")));
 	}
 }

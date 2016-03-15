@@ -35,6 +35,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
+import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
@@ -153,8 +154,9 @@ public abstract class Player {
 					stateFactory, libraryEvaluatorLoader, symbolicUtil,
 					symbolicAnalyzer, memUnitFactory, log, this.civlConfig);
 			this.executor = Semantics.newContractExecutor(modelFactory,
-					stateFactory, log, libraryExecutorLoader, evaluator,
-					symbolicAnalyzer, log, civlConfig);
+					stateFactory, log, libraryExecutorLoader,
+					(ContractEvaluator) evaluator, symbolicAnalyzer, log,
+					civlConfig);
 		} else {
 			this.evaluator = Semantics.newEvaluator(modelFactory, stateFactory,
 					libraryEvaluatorLoader, symbolicUtil, symbolicAnalyzer,

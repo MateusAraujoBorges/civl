@@ -106,7 +106,7 @@ public class Semantics {
 	 */
 	public static ContractExecutor newContractExecutor(
 			ModelFactory modelFactory, StateFactory stateFactory, ErrorLog log,
-			LibraryExecutorLoader loader, Evaluator evaluator,
+			LibraryExecutorLoader loader, ContractEvaluator evaluator,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errLogger,
 			CIVLConfiguration civlConfig) {
 		return new ContractExecutor(modelFactory, stateFactory, log, loader,
