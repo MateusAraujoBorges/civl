@@ -73,6 +73,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.TupleComponentReference;
 import edu.udel.cis.vsl.sarl.IF.expr.UnionMemberReference;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
@@ -606,7 +607,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @param atomizeResult
 	 *            should the final result be atomized?
 	 */
-	private void processFlexibleBinary(CIVLSource source, State state,
+	private void processFlexibleBinaryNew(CIVLSource source, State state,
 			SymbolicExpression symbolicExpression, StringBuffer buffer,
 			String opString, boolean atomizeArgs, boolean atomizeResult) {
 		int numArgs = symbolicExpression.numArguments();
@@ -620,6 +621,62 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			buffer.append(symbolicExpression.argument(i).toStringBuffer(
 					atomizeArgs));
 		}
+		if (atomizeResult) {
+			buffer.insert(0, '(');
+			buffer.append(')');
+		}
+	}
+
+	/**
+	 * Computes string representation of a binary operator expression
+	 * 
+	 * @param buffer
+	 *            string buffer to which computed result should be appended
+	 * @param opString
+	 *            the string representation of the operator, e.g. "+"
+	 * @param arg0
+	 *            object to be represented
+	 * @param arg1
+	 *            object to be represented
+	 * @param atomizeArgs
+	 *            should each argument be atomized (surrounded by parens if
+	 *            necessary)?
+	 */
+	private void processBinary(StringBuffer buffer, String opString,
+			SymbolicObject arg0, SymbolicObject arg1, boolean atomizeArgs) {
+		buffer.append(arg0.toStringBuffer(atomizeArgs));
+		buffer.append(opString);
+		buffer.append(arg1.toStringBuffer(atomizeArgs));
+	}
+
+	/**
+	 * Computes string representation of a binary operator expression that may
+	 * take either one argument (a list of expressions) or two arguments.
+	 * 
+	 * @param buffer
+	 *            string buffer to which computed result should be appended
+	 * @param opString
+	 *            the string representation of the operator, e.g. "+"
+	 * @param atomizeArgs
+	 *            should each argument be atomized (surrounded by parens if
+	 *            necessary)?
+	 * @param atomizeResult
+	 *            should the final result be atomized?
+	 */
+	private void processFlexibleBinary(CIVLSource source, State state,
+			SymbolicExpression symbolicExpression, StringBuffer buffer,
+			String opString, boolean atomizeArgs, boolean atomizeResult) {
+		int numArgs = symbolicExpression.numArguments();
+
+		// TODO : FIX ME. No longer binary vs. collection. Just
+		// print all arguments.
+
+		if (numArgs == 1)
+			accumulate(source, state, buffer, opString,
+					(SymbolicCollection<?>) symbolicExpression.argument(0));
+		else
+			processBinary(buffer, opString, symbolicExpression.argument(0),
+					symbolicExpression.argument(1), atomizeArgs);
 		if (atomizeResult) {
 			buffer.insert(0, '(');
 			buffer.append(')');
@@ -984,7 +1041,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				// }
 				switch (operator) {
 				case ADD:
-					processFlexibleBinary(source, state, symbolicExpression,
+					processFlexibleBinaryNew(source, state, symbolicExpression,
 							result, "+", false, atomize);
 					break;
 				case AND:
@@ -1287,7 +1344,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				// atomize(result);
 				// return result.toString();
 				case MULTIPLY:
-					processFlexibleBinary(source, state, symbolicExpression,
+					processFlexibleBinaryNew(source, state, symbolicExpression,
 							result, "*", true, atomize);
 					break;
 				case NEGATIVE:
