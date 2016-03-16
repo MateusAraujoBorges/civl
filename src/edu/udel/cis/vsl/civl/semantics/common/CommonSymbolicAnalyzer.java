@@ -288,10 +288,12 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		else
 			result.append(state.identifier());
 		result.append("\n");
-		result.append("| Path condition\n");
-		result.append("| | "
-				+ this.symbolicExpressionToString(null, state, null,
-						state.getPathCondition()));
+		result.append("| Path condition");
+		result.append(this.pathconditionToString(null, state, "| | ",
+				state.getPathCondition()));
+		// result.append("| | "
+		// + this.symbolicExpressionToString(null, state, null,
+		// state.getPathCondition()));
 		result.append("\n");
 		result.append("| Dynamic scopes\n");
 		for (int i = 0; i < numScopes; i++) {
@@ -667,9 +669,6 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			SymbolicExpression symbolicExpression, StringBuffer buffer,
 			String opString, boolean atomizeArgs, boolean atomizeResult) {
 		int numArgs = symbolicExpression.numArguments();
-
-		// TODO : FIX ME. No longer binary vs. collection. Just
-		// print all arguments.
 
 		if (numArgs == 1)
 			accumulate(source, state, buffer, opString,
