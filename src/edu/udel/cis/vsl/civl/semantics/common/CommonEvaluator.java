@@ -3317,7 +3317,7 @@ public class CommonEvaluator implements Evaluator {
 							charPointer, false);
 					state = eval.state;
 					// A single character is not acceptable.
-					if (eval.value.arguments().length <= 1) {
+					if (eval.value.numArguments() <= 1) {
 						this.errorLogger.logSimpleError(source, state, process,
 								this.symbolicAnalyzer.stateInformation(state),
 								ErrorKind.OTHER,

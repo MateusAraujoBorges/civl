@@ -339,7 +339,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void pointerAdd2() throws ABCException {
-		assertTrue(ui.run(VERIFY, QUIET,
+		assertTrue(ui.run(VERIFY, //QUIET,
 				filename("pointerAdd2.cvl")));
 	}
 
