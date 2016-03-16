@@ -111,7 +111,12 @@ public class CommonStateManager implements StateManager {
 	private Stack<TransitionSequence> stack;
 
 	private Set<Integer> expandedStateIDs = new HashSet<>();
-	
+
+	private boolean printTransitions;
+
+	private boolean printAllStates;
+
+	private boolean printSavedStates;
 
 	// TODO: trying to fix this:
 	// private boolean saveStates;
@@ -139,6 +144,11 @@ public class CommonStateManager implements StateManager {
 		this.enabler = (CommonEnabler) enabler;
 		this.stateFactory = executor.stateFactory();
 		this.config = config;
+		printTransitions = this.config.printTransitions()
+				|| config.debugOrVerbose();
+		printAllStates = this.config.debugOrVerbose()
+				|| this.config.showStates();
+		printSavedStates = printAllStates || this.config.showSavedStates();
 		this.errorLogger = errorLogger;
 		this.symbolicAnalyzer = symbolicAnalyzer;
 		this.falseExpr = symbolicAnalyzer.getUniverse().falseExpression();
@@ -165,7 +175,6 @@ public class CommonStateManager implements StateManager {
 			Transition transition) throws UnsatisfiablePathConditionException {
 		int pid;
 		int numProcs;
-		boolean printTransitions = this.config.printTransitions();
 		int oldMaxCanonicId = this.maxCanonicId;
 		int processIdentifier;
 		Transition firstTransition;
@@ -175,6 +184,8 @@ public class CommonStateManager implements StateManager {
 		String process;
 		int atomCount = 0;
 		boolean ampleSetUpdated = false;
+		int startStateId = state.getCanonicId();
+		int sequenceId = 1;
 
 		assert transition instanceof Transition;
 		pid = ((Transition) transition).pid();
@@ -191,6 +202,8 @@ public class CommonStateManager implements StateManager {
 		// }
 		state = executor.execute(state, pid, firstTransition);
 		if (printTransitions) {
+			if (this.printSavedStates)
+				config.out().println();
 			printTransitionPrefix(oldState, processIdentifier);
 			printStatement(oldState, state, firstTransition, AtomicKind.NONE,
 					processIdentifier, false);
@@ -202,14 +215,20 @@ public class CommonStateManager implements StateManager {
 			assert stateStatus.enabledTransition != null;
 			assert stateStatus.enabledStatus == EnabledStatus.DETERMINISTIC;
 			assert stateStatus.atomCount >= 0;
-			if (this.config.printStates()){
-				config.out().print(this.symbolicAnalyzer.stateToString(state));
+			if (this.printAllStates) {
+				config.out().println();
+				config.out().print(
+						this.symbolicAnalyzer.stateToString(state,
+								startStateId, sequenceId++));
 			}
 			state = executor.execute(state, pid, stateStatus.enabledTransition);
 			numStatesExplored++;
-			if (printTransitions)
+			if (printTransitions) {
+				if (this.printAllStates)
+					config.out().println();
 				printStatement(oldState, state, stateStatus.enabledTransition,
 						AtomicKind.NONE, processIdentifier, false);
+			}
 			traceStep.addAtomicStep(new CommonAtomicStep(state,
 					stateStatus.enabledTransition));
 			oldState = state;
@@ -225,7 +244,7 @@ public class CommonStateManager implements StateManager {
 		if (stateStatus.enabledStatus == EnabledStatus.BLOCKED
 				&& stateFactory.lockedByAtomic(state))
 			state = stateFactory.releaseAtomicLock(state);
-		if (printTransitions){
+		if (printTransitions) {
 			config.out().print("--> ");
 		}
 		if (config.saveStates()) {
@@ -348,10 +367,8 @@ public class CommonStateManager implements StateManager {
 					"ample set at state " + updatedState.getCanonicId()
 							+ " fully expanded");
 		}
-		if (config.debugOrVerbose()
-				|| (!config.saveStates() && config.showStates())
-				|| (config.saveStates() && config.showStates() && this.maxCanonicId > oldMaxCanonicId)
-				|| (config.saveStates() && config.showSavedStates() && this.maxCanonicId > oldMaxCanonicId)) {
+		if (printSavedStates
+				&& (!config.saveStates() || this.maxCanonicId > oldMaxCanonicId)) {
 			// in -savedStates mode, only print new states.
 			config.out().println();
 			config.out().print(this.symbolicAnalyzer.stateToString(state));
@@ -553,10 +570,9 @@ public class CommonStateManager implements StateManager {
 	 *            with.
 	 */
 	private void printTransitionPrefix(State state, int processIdentifier) {
-		
-			config.out().print(state + ", p");
-			config.out().println(processIdentifier + ":");
-		
+		// Executed by p0 from State 1
+		config.out().print("Executed by p");
+		config.out().println(processIdentifier + " from " + state + ":");
 	}
 
 	/**
@@ -644,7 +660,7 @@ public class CommonStateManager implements StateManager {
 
 	@Override
 	public void printStateLong(PrintStream out, State state) {
-			out.print(this.symbolicAnalyzer.stateToString(state));
+		out.print(this.symbolicAnalyzer.stateToString(state));
 	}
 
 	@Override

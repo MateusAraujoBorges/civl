@@ -551,7 +551,7 @@ public class CIVLConstants {
 	 * The name of the CIVL system function, which is the starting point of a
 	 * CIVL model.
 	 */
-	public final static String civlSystemFunction = "_CIVL_system";
+	public final static String civlSystemFunction = "main";
 
 	/**
 	 * Returns all options defined for CIVL in alphabetic order.

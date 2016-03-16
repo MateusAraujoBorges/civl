@@ -44,7 +44,8 @@ public interface SymbolicAnalyzer {
 			throws UnsatisfiablePathConditionException;
 
 	/**
-	 * Computes the user-friendly string representation of a state.
+	 * Computes the user-friendly and brief string representation of a state.
+	 * Only the call stack is printed.
 	 * 
 	 * @param state
 	 *            The state whose string representation is to be computed.
@@ -52,7 +53,30 @@ public interface SymbolicAnalyzer {
 	 */
 	StringBuffer stateInformation(State state);
 
+	/**
+	 * Computes the user-friendly and complete string representation of a state.
+	 * Everything including dyscopes, call stacks is printed.
+	 * 
+	 * @param state
+	 * @return
+	 */
 	StringBuffer stateToString(State state);
+
+	/**
+	 * Computes the user-friendly and complete string representation of a state.
+	 * Everything including dyscopes, call stacks is printed.
+	 * 
+	 * @param state
+	 * @param lastSavedState
+	 *            the last saved state that this state is generated from. -1 if
+	 *            the there is no such last saved state.
+	 * @param sequenceId
+	 *            the place that this state have in the sequence of intermediate
+	 *            states after executing the last saved state. -1 iff
+	 *            lastSavedState is -1.
+	 * @return
+	 */
+	StringBuffer stateToString(State state, int lastSavedState, int sequenceId);
 
 	/**
 	 * <p>

@@ -330,7 +330,7 @@ public class ImmutableProcessState implements ProcessState {
 			} else {
 				stackChange = true;
 				newStack[j] = new ImmutableStackEntry(oldFrame.location(),
-						newScope, oldFrame.dyscopeIdentifier());
+						newScope);
 			}
 		}
 		return stackChange ? new ImmutableProcessState(pid, this.identifier,

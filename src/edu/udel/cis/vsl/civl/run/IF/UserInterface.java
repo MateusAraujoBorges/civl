@@ -766,7 +766,8 @@ public class UserInterface {
 					if(modelTranslator.config.isQuiet()){
 						Analysis.printResults(model.factory().codeAnalyzers(), dump);
 					}else{
-						Analysis.printResults(model.factory().codeAnalyzers(), out);
+						Analysis.printResults(model.factory().codeAnalyzers(),
+								out);
 					}
 				}
 			}

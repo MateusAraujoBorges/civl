@@ -85,29 +85,32 @@ public interface DynamicScope {
 	 */
 	int numberOfValues();
 
-	/**
-	 * This identifier is not part of the state. It is never renamed, helping to
-	 * identify a specific dynamic scope when scopes get collected.
-	 * 
-	 * @return The identifier of this scope.
-	 */
-	int identifier();
+	// /**
+	// * This identifier is not part of the state. It is never renamed, helping
+	// to
+	// * identify a specific dynamic scope when scopes get collected.
+	// *
+	// * @return The identifier of this scope.
+	// */
+	// int identifier();
 
-//	/**
-//	 * The identifier of the parent of this dyscope in the dyscope tree. Returns
-//	 * -1 when this is the root scope.
-//	 * 
-//	 * @return The identifier of the parent of this dyscope in the dyscope tree.
-//	 */
-//	int getParentIdentifier();
+	// /**
+	// * The identifier of the parent of this dyscope in the dyscope tree.
+	// Returns
+	// * -1 when this is the root scope.
+	// *
+	// * @return The identifier of the parent of this dyscope in the dyscope
+	// tree.
+	// */
+	// int getParentIdentifier();
 
-	/**
-	 * This name of the dynamic scope, which is not part of the state and is
-	 * immutable. It is <code>"d" + identifier</code>.
-	 * 
-	 * @return The name of this dynamic scope.
-	 */
-	String name();
+	// /**
+	// * This name of the dynamic scope, which is not part of the state and is
+	// * immutable. It is <code>"d" + identifier</code>.
+	// *
+	// * @return The name of this dynamic scope.
+	// */
+	// String name();
 
 	/**
 	 * Returns the reachers field.

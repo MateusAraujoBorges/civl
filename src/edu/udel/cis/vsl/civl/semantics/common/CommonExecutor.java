@@ -39,8 +39,10 @@ import edu.udel.cis.vsl.civl.model.IF.statement.AtomicLockAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.LoopBranchStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement.NoopKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
@@ -740,10 +742,6 @@ public class CommonExecutor implements Executor {
 		case ASSIGN:
 			return executeAssign(state, pid, process,
 					(AssignStatement) statement);
-			// case ASSUME:
-			// return executeAssume(state, pid, (AssumeStatement) statement);
-			// case ASSERT:
-			// return executeAssert(state, pid, (AssertStatement) statement);
 		case CALL_OR_SPAWN:
 			CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
 
@@ -755,7 +753,8 @@ public class CommonExecutor implements Executor {
 			return executeMalloc(state, pid, process,
 					(MallocStatement) statement);
 		case NOOP: {
-			Expression expression = ((NoopStatement) statement).expression();
+			NoopStatement noop = (NoopStatement) statement;
+			Expression expression = noop.expression();
 
 			if (expression != null) {
 				Evaluation eval = this.evaluator.evaluate(state, pid,
@@ -763,7 +762,14 @@ public class CommonExecutor implements Executor {
 
 				state = eval.state;
 			}
-			return stateFactory.setLocation(state, pid, statement.target());
+			state = stateFactory.setLocation(state, pid, statement.target());
+			if (noop.noopKind() == NoopKind.LOOP) {
+				LoopBranchStatement loopBranch = (LoopBranchStatement) noop;
+
+				if (!loopBranch.isEnter())
+					state = this.stateFactory.simplify(state);
+			}
+			return state;
 		}
 		case RETURN:
 			return executeReturn(state, pid, process,
@@ -779,64 +785,6 @@ public class CommonExecutor implements Executor {
 					statement);
 		}
 	}
-
-	// private State executeAssert(State state, int pid, AssertStatement
-	// assertStmt)
-	// throws UnsatisfiablePathConditionException {
-	// BooleanExpression assertValue;
-	// Evaluation eval;
-	// Reasoner reasoner;
-	// ValidityResult valid;
-	// ResultType resultType;
-	// CIVLSource source = assertStmt.getSource();
-	// String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
-	//
-	// eval = evaluator.evaluate(state, pid, assertStmt.getCondition());
-	// assertValue = (BooleanExpression) eval.value;
-	// state = eval.state;
-	// reasoner = universe.reasoner(state.getPathCondition());
-	// valid = reasoner.valid(assertValue);
-	// resultType = valid.getResultType();
-	// if (resultType != ResultType.YES) {
-	// Expression[] explanation = assertStmt.getExplanation();
-	//
-	// if (explanation != null) {
-	// // if (civlConfig.enablePrintf()) {
-	// SymbolicExpression[] pArgumentValues = new
-	// SymbolicExpression[explanation.length];
-	//
-	// for (int i = 0; i < explanation.length; i++) {
-	// eval = this.evaluator.evaluate(state, pid, explanation[i]);
-	// state = eval.state;
-	// pArgumentValues[i] = eval.value;
-	// }
-	// state = this.execute_printf(source, state, pid, process, null,
-	// explanation, pArgumentValues, true);
-	// civlConfig.out().println();
-	// // }
-	// }
-	//
-	// // if (arguments.length > 1) {
-	// // if (civlConfig.enablePrintf()) {
-	// // Expression[] pArguments = Arrays.copyOfRange(arguments, 1,
-	// // arguments.length);
-	// // SymbolicExpression[] pArgumentValues = Arrays.copyOfRange(
-	// // argumentValues, 1, argumentValues.length);
-	// //
-	// // state = this.execute_printf(source, state, pid, process,
-	// // null, pArguments, pArgumentValues);
-	// // }
-	// // }
-	// state = errorLogger.logError(source, state, process,
-	// symbolicAnalyzer.stateToString(state), assertValue,
-	// resultType, ErrorKind.ASSERTION_VIOLATION,
-	// "Cannot prove assertion holds: " + assertStmt.toString()
-	// + "\n  Path condition: " + state.getPathCondition()
-	// + "\n  Assertion: " + assertValue + "\n");
-	// }
-	// state = stateFactory.setLocation(state, pid, assertStmt.target());
-	// return state;
-	// }
 
 	/**
 	 * When the domain is empty, this is equivalent to a noop.
@@ -879,13 +827,6 @@ public class CommonExecutor implements Executor {
 			// throw new UnsatisfiablePathConditionException();
 		} else if (!number_domSize.isZero()) {
 			// only spawns processes when the domain is not empty.
-			// InitialValueExpression initVal = modelFactory
-			// .initialValueExpression(parProcs.getSource(),
-			// parProcsVar.variable());
-			// eval = evaluator.evaluate(state, pid, initVal);
-			// state = eval.state;
-			// state = this.assign(state, pid, process, parProcsVar,
-			// eval.value);
 			state = this.executeSpawns(state, pid, parProcsVar,
 					parFor.parProcFunction(), dim, domainValue);
 		}
@@ -933,23 +874,13 @@ public class CommonExecutor implements Executor {
 		domainIter = symbolicUtil.getDomainIterator(domainValue);
 		while (domainIter.hasNext()) {
 			SymbolicExpression[] arguments = new SymbolicExpression[dim];
-			// SymbolicExpression procPointer;
-			// Evaluation eval;
 			int newPid;
 
 			myValues = domainIter.next();
 			myValues.toArray(arguments);
 			newPid = state.numProcs();
 			state = stateFactory.addProcess(state, function, arguments, pid);
-			// state = stateFactory.computeReachableMemUnits(state, newPid);
-			// eval = evaluator.evaluatePointerAdd(state, process,
-			// parProcsPointer, universe.integer(procPtrOffset++), false,
-			// source).left; // no need for checking output
-			// procPointer = eval.value;
-			// state = eval.state;
 			processes.add(modelFactory.processValue(newPid));
-			// state = this.assign(source, state, process, procPointer,
-			// modelFactory.processValue(newPid));
 		}
 		state = this.assign(state, pid, process, parProcsVar, universe.array(
 				this.modelFactory.typeFactory().processSymbolicType(),

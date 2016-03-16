@@ -329,9 +329,8 @@ public class ImmutableState implements State {
 		int bitSetLength = reachers.length();
 		boolean first = true;
 
-		out.println(prefix + "dyscope " + dyscope.name() + " (id=" + id
-				+ ", parent ID=" + dyscope.getParent() + ", static="
-				+ lexicalScope.id() + ")");
+		out.println(prefix + "dyscope d" + id + " (parent ID="
+				+ dyscope.getParent() + ", static=" + lexicalScope.id() + ")");
 		out.print(prefix + "| reachers = {");
 		for (int j = 0; j < bitSetLength; j++) {
 			if (reachers.get(j)) {
@@ -761,7 +760,7 @@ public class ImmutableState implements State {
 		if (canonicId != -1)
 			return String.valueOf(this.canonicId);
 		else
-			return canonicId + ":" + instanceId;
+			return "(" + instanceId + ")";
 	}
 
 	@Override

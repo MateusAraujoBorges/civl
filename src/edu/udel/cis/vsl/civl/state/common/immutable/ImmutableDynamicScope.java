@@ -70,10 +70,11 @@ public class ImmutableDynamicScope implements DynamicScope {
 	private int parent;
 
 	/**
-	 * The identifier of the parent of this dynamic scope in the dynamic scope
-	 * tree, or -1 if this is the root (and therefore has no parent).
+	 * // * The identifier of the parent of this dynamic scope in the dynamic
+	 * scope // * tree, or -1 if this is the root (and therefore has no parent).
+	 * //
 	 */
-	private int parentIdentifier;
+	// private int parentIdentifier;
 
 	/**
 	 * Sets of PIDs of processes that can "reach" this dynamic scope.
@@ -88,11 +89,12 @@ public class ImmutableDynamicScope implements DynamicScope {
 	 */
 	private SymbolicExpression[] variableValues;
 
-	/**
-	 * This identifier is not part of the state. It is never renamed, helping to
-	 * identify a specific dynamic scope when scopes get collected.
-	 */
-	private int identifier;
+	// /**
+	// * This identifier is not part of the state. It is never renamed, helping
+	// to
+	// * identify a specific dynamic scope when scopes get collected.
+	// */
+	// private int identifier;
 
 	/* **************************** Constructors *************************** */
 
@@ -115,16 +117,17 @@ public class ImmutableDynamicScope implements DynamicScope {
 	 * @param identifier
 	 *            the identifier of this dyscope
 	 */
-	ImmutableDynamicScope(Scope lexicalScope, int parent, int parentIdentifier,
-			SymbolicExpression[] variableValues, BitSet reachers, int identifier) {
+	ImmutableDynamicScope(Scope lexicalScope, int parent, // int
+															// parentIdentifier,
+			SymbolicExpression[] variableValues, BitSet reachers) {
 		assert variableValues != null
 				&& variableValues.length == lexicalScope.numVariables();
 		this.lexicalScope = lexicalScope;
 		this.parent = parent;
 		this.variableValues = variableValues;
 		this.reachers = reachers;
-		this.identifier = identifier;
-		this.parentIdentifier = parentIdentifier;
+		// this.identifier = identifier;
+		// this.parentIdentifier = parentIdentifier;
 	}
 
 	/* ********************** Package-private Methods ********************** */
@@ -139,10 +142,9 @@ public class ImmutableDynamicScope implements DynamicScope {
 	 *            the identifier of the new parent
 	 * @return new instance same as original but with new parent value
 	 */
-	ImmutableDynamicScope setParent(int parent, int parentIdentifer) {
+	ImmutableDynamicScope setParent(int parent) { // ,int parentIdentifer) {
 		return parent == this.parent ? this : new ImmutableDynamicScope(
-				lexicalScope, parent, parentIdentifer, variableValues,
-				reachers, this.identifier);
+				lexicalScope, parent, variableValues, reachers);
 	}
 
 	/**
@@ -154,8 +156,8 @@ public class ImmutableDynamicScope implements DynamicScope {
 	 * @return new instance same as original but with new reachers value
 	 */
 	ImmutableDynamicScope setReachers(BitSet reachers) {
-		return new ImmutableDynamicScope(lexicalScope, parent,
-				parentIdentifier, variableValues, reachers, this.identifier);
+		return new ImmutableDynamicScope(lexicalScope, parent, variableValues,
+				reachers);
 	}
 
 	/**
@@ -193,7 +195,7 @@ public class ImmutableDynamicScope implements DynamicScope {
 	ImmutableDynamicScope setVariableValues(
 			SymbolicExpression[] newVariableValues) {
 		return new ImmutableDynamicScope(lexicalScope, parent,
-				parentIdentifier, newVariableValues, reachers, this.identifier);
+				newVariableValues, reachers);
 	}
 
 	/**
@@ -261,9 +263,8 @@ public class ImmutableDynamicScope implements DynamicScope {
 		int bitSetLength = reachers.length();
 		boolean first = true;
 
-		out.println(prefix + "dyscope d" + identifier + " (id=" + id
-				+ ", parent=d" + parentIdentifier + ", static="
-				+ lexicalScope.id() + ")");
+		out.println(prefix + "dyscope d" + id + "(parent=d" + parent
+				+ ", static=" + lexicalScope.id() + ")");
 		out.print(prefix + "| reachers = {");
 		for (int j = 0; j < bitSetLength; j++) {
 			if (reachers.get(j)) {
@@ -310,7 +311,7 @@ public class ImmutableDynamicScope implements DynamicScope {
 	 */
 	ImmutableDynamicScope updateDyscopeIds(
 			UnaryOperator<SymbolicExpression> substituter,
-			SymbolicUniverse universe, int newParentId, int newParentIdentifier) {
+			SymbolicUniverse universe, int newParentId) {
 		Collection<Variable> scopeVariableIter = lexicalScope
 				.variablesWithScoperefs();
 		SymbolicExpression[] newValues = null;
@@ -329,10 +330,9 @@ public class ImmutableDynamicScope implements DynamicScope {
 				}
 			}
 		}
-		return newValues == null ? setParent(newParentId, newParentIdentifier)
+		return newValues == null ? setParent(newParentId)
 				: new ImmutableDynamicScope(lexicalScope, newParentId,
-						newParentIdentifier, newValues, reachers,
-						this.identifier);
+						newValues, reachers);
 	}
 
 	ImmutableDynamicScope updateHeapPointers(
@@ -363,8 +363,7 @@ public class ImmutableDynamicScope implements DynamicScope {
 			}
 		}
 		return newValues == null ? this : new ImmutableDynamicScope(
-				lexicalScope, this.parent, this.parentIdentifier, newValues,
-				reachers, this.identifier);
+				lexicalScope, this.parent, newValues, reachers);
 	}
 
 	ImmutableDynamicScope updateSymbolicConstants(
@@ -386,8 +385,7 @@ public class ImmutableDynamicScope implements DynamicScope {
 			}
 		}
 		return newValues == null ? this : new ImmutableDynamicScope(
-				lexicalScope, this.parent, this.parentIdentifier, newValues,
-				reachers, this.identifier);
+				lexicalScope, this.parent, newValues, reachers);
 	}
 
 	/* ************************* Methods from Object *********************** */
@@ -432,8 +430,7 @@ public class ImmutableDynamicScope implements DynamicScope {
 
 	@Override
 	public String toString() {
-		return this.name() + "[static=" + lexicalScope.id() + ", parent=d"
-				+ parentIdentifier + "(ID=" + parent + ")" + "]";
+		return "[static=" + lexicalScope.id() + ", parent=d" + parent + "]";
 	}
 
 	/* ********************** Methods from DynamicScope ******************** */
@@ -458,10 +455,10 @@ public class ImmutableDynamicScope implements DynamicScope {
 		return Arrays.asList(variableValues);
 	}
 
-	@Override
-	public int identifier() {
-		return this.identifier;
-	}
+	// @Override
+	// public int identifier() {
+	// return this.identifier;
+	// }
 
 	@Override
 	public Scope lexicalScope() {
@@ -481,7 +478,7 @@ public class ImmutableDynamicScope implements DynamicScope {
 		System.arraycopy(variableValues, 0, newVariableValues, 0, n);
 		newVariableValues[vid] = value;
 		return new ImmutableDynamicScope(lexicalScope, parent,
-				parentIdentifier, newVariableValues, reachers, this.identifier);
+				newVariableValues, reachers);
 	}
 
 	@Override
@@ -489,10 +486,10 @@ public class ImmutableDynamicScope implements DynamicScope {
 		return this.variableValues.length;
 	}
 
-	@Override
-	public String name() {
-		return "d" + identifier;
-	}
+	// @Override
+	// public String name() {
+	// return "d" + identifier;
+	// }
 
 	/* ************************ Other Public Methods *********************** */
 	// none

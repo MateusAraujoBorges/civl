@@ -289,34 +289,34 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		ImmutableProcessState[] newProcesses = new ImmutableProcessState[numProcesses];
 		SymbolicExpression[] values;
 		ImmutableDynamicScope[] newScopes;
-		int rootDyScopeId = dyscopeCount;
+		int rootDyScopeId = state.numDyscopes();
 		BitSet bitSet = new BitSet(numProcesses);
 		Location location = systemFunction.startLocation();
 
 		values = initialValues(rootScope);
 		bitSet.set(0, numProcesses - 1);
 		newScopes = state.copyAndExpandScopes();
-		newScopes[rootDyScopeId] = new ImmutableDynamicScope(rootScope, -1, -1,
-				values, bitSet, dyscopeCount++);
+		newScopes[rootDyScopeId] = new ImmutableDynamicScope(rootScope, -1,
+				values, bitSet);
 
 		for (int pid = 0; pid < numProcesses; pid++) {
 			state = createNewProcess(state);
 			newProcesses[pid] = state.getProcessState(pid).push(
-					stackEntry(location, rootDyScopeId,
-							newScopes[rootDyScopeId].identifier()));
+					stackEntry(location, rootDyScopeId));
 		}
 		state = ImmutableState.newState(state, newProcesses, newScopes, null);
 		return state;
 	}
 
 	// TODO: does this can replace the "pushRootScope" method ?
+	@SuppressWarnings("unused")
 	private Pair<ImmutableState, Integer> pushScope(ImmutableState state,
 			int pid, int numProcesses, Scope scope, int parentDyscopeId)
 			throws UnsatisfiablePathConditionException {
-		int dyscopeId = dyscopeCount++;
+		int dyscopeId = state.numDyscopes();
 		Location location = modelFactory.location(scope.getSource(), scope);
 		ImmutableDynamicScope[] newScopes;
-		int parentIdentifier;
+		// int parentIdentifier;
 		SymbolicExpression[] values;
 		BitSet bitSet = new BitSet(numProcesses);
 		ImmutableProcessState processState;
@@ -326,10 +326,10 @@ public class ImmutableContractStateFactory extends ImmutableStateFactory
 		values = this.initialValues(scope);
 		bitSet.set(pid);
 		newScopes = state.copyAndExpandScopes();
-		parentIdentifier = (parentDyscopeId == -1) ? -1 : state.getDyscope(
-				parentDyscopeId).identifier();
+		// parentIdentifier = (parentDyscopeId == -1) ? -1 : state.getDyscope(
+		// parentDyscopeId).identifier();
 		newScopes[dyscopeId] = new ImmutableDynamicScope(scope,
-				parentDyscopeId, parentIdentifier, values, bitSet, dyscopeId);
+				parentDyscopeId, values, bitSet);
 		state = state.setScopes(newScopes);
 		return new Pair<>(state, dyscopeId);
 	}

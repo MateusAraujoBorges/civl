@@ -18,9 +18,9 @@ public class DyscopeNode extends DefaultMutableTreeNode {
 	public DyscopeNode(String name, DynamicScope d) {
 		super(name);
 		dyscope = d;
-		
+
 	}
-	
+
 	public DynamicScope getDyscope() {
 		return dyscope;
 	}
@@ -32,11 +32,11 @@ public class DyscopeNode extends DefaultMutableTreeNode {
 	public DefaultMutableTreeNode getChildren() {
 		return children;
 	}
-	
+
 	@Override
 	public boolean equals(Object other) {
-		if(other instanceof DyscopeNode) {
-			return getDyscope().identifier() == ((DyscopeNode)other).getDyscope().identifier();
+		if (other instanceof DyscopeNode) {
+			return getDyscope().equals(((DyscopeNode) other).getDyscope());
 		}
 		return false;
 	}

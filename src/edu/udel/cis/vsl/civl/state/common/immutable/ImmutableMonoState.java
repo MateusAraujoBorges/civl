@@ -81,7 +81,7 @@ public class ImmutableMonoState implements State {
 			+ " process state in a ImmutableMonoState";
 
 	/* ************************ End of static fields ************************ */
-	
+
 	/* ************************ Instance fields ************************ */
 	/**
 	 * The path condition, a non-null boolean-valued symbolic expression
@@ -141,7 +141,7 @@ public class ImmutableMonoState implements State {
 	ImmutableState simplifiedState = null;
 
 	/* ****************** End of instance fields ****************** */
-	
+
 	/* ************************ Constructors ************************ */
 	ImmutableMonoState(ImmutableProcessState processState,
 			ImmutableDynamicScope[] dyscopes, BooleanExpression pathCondition) {
@@ -456,9 +456,8 @@ public class ImmutableMonoState implements State {
 		int bitSetLength = reachers.length();
 		boolean first = true;
 
-		out.println(prefix + "dyscope " + dyscope.name() + " (id=" + id
-				+ ", parent ID=" + dyscope.getParent() + ", static="
-				+ lexicalScope.id() + ")");
+		out.println(prefix + "dyscope d" + id + " (parent ID="
+				+ dyscope.getParent() + ", static=" + lexicalScope.id() + ")");
 		out.print(prefix + "| reachers = {");
 		for (int j = 0; j < bitSetLength; j++) {
 			if (reachers.get(j)) {

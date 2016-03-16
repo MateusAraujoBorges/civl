@@ -56,10 +56,9 @@ public class ImmutableStackEntry implements StackEntry {
 	 *            The dynamic scope of the process at the time of the function
 	 *            call.
 	 */
-	ImmutableStackEntry(Location location, int dyscopeId, int dyscopeIdentifier) {
+	ImmutableStackEntry(Location location, int dyscopeId) {
 		this.location = location;
 		this.dyscopeId = dyscopeId;
-		this.dyscopeIdentifier = dyscopeIdentifier;
 	}
 
 	/* ********************** Methods from StackEntry ********************** */

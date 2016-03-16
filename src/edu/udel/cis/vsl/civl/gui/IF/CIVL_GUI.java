@@ -147,9 +147,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 		// Make an array of nodes corresponding to the dyscopes of the state
 		DyscopeNode[] treeNodes = new DyscopeNode[dyscopes.length];
 		for (int i = 0; i < dyscopes.length; i++) {
-			treeNodes[i] = new DyscopeNode("d" + dyscopes[i].identifier()
-					+ " (static = " + dyscopes[i].lexicalScope().id() + ")",
-					dyscopes[i]);
+			treeNodes[i] = new DyscopeNode("d" + i + " (static = "
+					+ dyscopes[i].lexicalScope().id() + ")", dyscopes[i]);
 		}
 
 		// For each dyscope

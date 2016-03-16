@@ -387,12 +387,11 @@ public class Verifier extends Player {
 
 			updateThread = new Thread(new UpdaterRunnable(updatePeriod * 1000));
 			updateThread.start();
-			if (civlConfig.debugOrVerbose() || civlConfig.showStates()) {
+			if (civlConfig.debugOrVerbose() || civlConfig.showStates()
+					|| civlConfig.showSavedStates()) {
 				civlConfig.out().println();
-				// stateFactory.printState(out, initialState);
 				civlConfig.out().print(
-						symbolicAnalyzer.stateInformation(initialState));
-				// initialState.print(out);
+						symbolicAnalyzer.stateToString(initialState));
 			}
 			try {
 				while (true) {

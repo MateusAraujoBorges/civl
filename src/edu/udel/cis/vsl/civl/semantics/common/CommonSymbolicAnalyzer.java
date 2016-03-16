@@ -269,11 +269,24 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 	@Override
 	public StringBuffer stateToString(State state) {
+		return stateToString(state, -1, -1);
+	}
+
+	@Override
+	public StringBuffer stateToString(State state, int lastSavedState,
+			int sequenceId) {
 		int numScopes = state.numDyscopes();
 		int numProcs = state.numProcs();
 		StringBuffer result = new StringBuffer();
+		int canonicId = state.getCanonicId();
 
-		result.append("State " + state.identifier());
+		result.append("State ");
+		if (canonicId != -1)
+			result.append(canonicId);
+		else if (lastSavedState != -1)
+			result.append(lastSavedState + "." + sequenceId);
+		else
+			result.append(state.identifier());
 		result.append("\n");
 		result.append("| Path condition\n");
 		result.append("| | "
@@ -393,16 +406,16 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		// boolean first = true;
 		StringBuffer result = new StringBuffer();
 		String parentString;
-		DynamicScope parent = dyscope.getParent() < 0 ? null : state
-				.getDyscope(dyscope.getParent());
+		int parentId = dyscope.getParent();
+		// DynamicScope parent = dyscope.getParent() < 0 ? null : state
+		// .getDyscope(dyscope.getParent());
 
-		if (parent == null)
+		if (parentId < 0)
 			parentString = "NULL";
 		else
-			parentString = parent.name();
-		result.append(prefix + "dyscope " + dyscope.name() + " (id=" + id
-				+ ", parent=" + parentString + ", static=" + lexicalScope.id()
-				+ ")\n");
+			parentString = "d" + dyscope.getParent();
+		result.append(prefix + "dyscope d" + id + " (parent=" + parentString
+				+ ", static=" + lexicalScope.id() + ")\n");
 		result.append(prefix + "| variables\n");
 		for (int i = 0; i < numVars; i++) {
 			Variable variable = lexicalScope.variable(i);
@@ -466,7 +479,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				CIVLFunction function = dyScope.lexicalScope().getFunction(fid);
 
 				result.append("&<");
-				result.append(dyScope.name());
+				result.append("d" + dyscopeId);
 				result.append(">");
 				result.append(function.toString());
 			}
@@ -736,9 +749,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			Variable variable = dyscope.lexicalScope().variable(vid);
 
 			if (variable.type().equals(this.heapType)) {
-				result.append(heapObjectReferenceToString(source, state
-						.getDyscope(dyscopeId).identifier(), this.heapType,
-						reference).third);
+				result.append(heapObjectReferenceToString(source, dyscopeId,
+						this.heapType, reference).third);
 			} else {
 				if (variable
 						.name()
@@ -757,7 +769,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					if (!isMu)
 						result.append('&');
 					result.append("<");
-					result.append(dyscope.name());
+					result.append("d" + dyscopeId);
 					result.append('>');
 					result.append(variable.name());
 					result.append(referenceToString(source, variable.type(),
@@ -895,7 +907,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				if (!modelFactory.isScopeIdDefined(scopeId))
 					result.append("UNDEFINED");
 				else
-					result.append(state.getDyscope(scopeId).name());
+					result.append("d" + scopeId);
 			}
 		} else {
 			SymbolicOperator operator = symbolicExpression.operator();
@@ -1882,7 +1894,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			Expression guard = statement.guard();
 
 			result.append(statement.toString());
-			result.append("(");
+			result.append(" (guard: ");
 			result.append(this.expressionEvaluation(state, pid, guard, false).right);
 			result.append(")");
 			break;
