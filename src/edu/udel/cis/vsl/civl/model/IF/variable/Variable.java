@@ -7,6 +7,7 @@ import edu.udel.cis.vsl.civl.model.IF.Identifier;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.Sourceable;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
  * A static variable. Each variable is declared in some static scope. Each
@@ -14,6 +15,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
  * range [0,n-1], where n is the number of variables in the static scope
  * containing this variable. This variable's ID is unique within its scope.
  * 
+ * @author Manchun Zheng (zmanchun)
  * @author Timothy K. Zirkel (zirkel)
  * @author Timothy J. McClory (tmcclory)
  * 
@@ -32,24 +34,32 @@ public interface Variable extends Sourceable {
 	CIVLType type();
 
 	/**
-	 * @return Whether this variable is a const.
+	 * @return Whether this variable is const qualified.
 	 */
 	boolean isConst();
 
 	/**
-	 * @return Whether this variable is an input.
+	 * @return Whether this variable is input qualified.
 	 */
 	boolean isInput();
 
 	/**
-	 * @return Whether this variable is an output.
+	 * @return Whether this variable is output qualified.
 	 */
 	boolean isOutput();
 
 	/**
-	 * @return Whether this variable is a bound variable.
+	 * @return Whether this variable is a bound variable of a quantified
+	 *         expression.
 	 */
 	boolean isBound();
+
+	/**
+	 * is this variable static qualified?
+	 * 
+	 * @return
+	 */
+	boolean isStatic();
 
 	/**
 	 * @param type
@@ -118,10 +128,18 @@ public interface Variable extends Sourceable {
 	 */
 	boolean purelyLocal();
 
-	void setPurelyLocal(boolean pl);
+	/**
+	 * sets this variable to be purely local according to the given value
+	 * 
+	 * @param value
+	 */
+	void setPurelyLocal(boolean value);
 
-	boolean isStatic();
-
+	/**
+	 * sets this variable to be static qualified according to the given value
+	 * 
+	 * @param value
+	 */
 	void setStatic(boolean value);
 
 	/**
@@ -141,4 +159,11 @@ public interface Variable extends Sourceable {
 	 */
 	void setPointerRef(boolean value);
 
+	/**
+	 * returns the constant value of this variable. If the variable is not
+	 * constant or input qualified, then only
+	 * 
+	 * @return
+	 */
+	SymbolicExpression constantValue();
 }

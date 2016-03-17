@@ -9,6 +9,7 @@ import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.model.common.CommonSourceable;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
  * A variable.
@@ -31,6 +32,7 @@ public class CommonVariable extends CommonSourceable implements Variable {
 	private boolean purelyLocal = true;
 	private boolean isStatic = false;
 	private boolean hasPointerRef = false;
+	private SymbolicExpression constantValue = null;
 
 	/**
 	 * A variable.
@@ -253,6 +255,11 @@ public class CommonVariable extends CommonSourceable implements Variable {
 	@Override
 	public void setPointerRef(boolean value) {
 		this.hasPointerRef = value;
+	}
+
+	@Override
+	public SymbolicExpression constantValue() {
+		return this.constantValue;
 	}
 
 	// @Override

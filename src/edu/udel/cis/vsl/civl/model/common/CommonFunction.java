@@ -475,6 +475,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 		Set<Variable> result = new HashSet<>();
 
 		for (Statement statement : this.statements) {
+			// System.out.println(statement + " " +
+			// statement.summaryOfSource());
 			Set<Variable> subResult = statement.variableAddressedOf();
 
 			if (subResult != null)

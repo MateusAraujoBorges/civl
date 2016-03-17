@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.model.common.expression;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -31,12 +32,14 @@ public class CommonFunctionIdentifierExpression extends CommonExpression
 
 	@Override
 	public Set<Variable> variableAddressedOf(Scope scope) {
-		return function.variableAddressedOf(scope);
+		// return function.variableAddressedOf(scope);
+		return new HashSet<>();
 	}
 
 	@Override
 	public Set<Variable> variableAddressedOf() {
-		return function.variableAddressedOf();
+		return new HashSet<>();
+		// return function.variableAddressedOf();
 	}
 
 	@Override

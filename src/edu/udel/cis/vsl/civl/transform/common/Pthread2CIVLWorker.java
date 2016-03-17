@@ -16,6 +16,7 @@ import edu.udel.cis.vsl.abc.ast.entity.IF.Variable;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodePredicate;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
@@ -88,23 +89,9 @@ public class Pthread2CIVLWorker extends BaseWorker {
 	// needs to go to MPI process scope
 	final static String PTHREAD_EXIT_MAIN_NEW = "$pthread_exit_main";
 
-	// private final static String ERROR = "ERROR";
-
-	// private final static String VERIFIER_NONDET_UINT =
-	// "__VERIFIER_nondet_uint";
-	//
-	// private final static String VERIFIER_NONDET_INT =
-	// "__VERIFIER_nondet_int";
-	//
-	// private final static String VERIFIER_ASSUME = "__VERIFIER_assume";
-	//
-	// private final static String VERIFIER_ASSERT = "__VERIFIER_assert";
-	//
-	// private final static String VERIFIER_ATOMIC = "__VERIFIER_atomic";
-
-	// private int numberOfNondetCall = 0;
-
 	private boolean exitMainDone = false;
+
+	private String originalMain = MAIN;
 
 	/* **************************** Instance Fields ************************* */
 
@@ -142,8 +129,8 @@ public class Pthread2CIVLWorker extends BaseWorker {
 	public Pthread2CIVLWorker(ASTFactory astFactory) {
 		super(Pthread2CIVLTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "$pthreads_";
+		// threadFunctionNames.add(e)
 		newNonThreadFunctionNamesWtSyncCalls.add(PTHREAD_COND_WAIT);
-		// newNonThreadFunctionNamesWtSyncCalls.add(PTHREAD_EXIT_NEW);
 		newNonThreadFunctionNamesWtSyncCalls.add(PTHREAD_MUTEX_LOCK);
 		newNonThreadFunctionNamesWtSyncCalls.add(PTHREAD_SELF);
 		nonThreadFunctionNamesWtSyncCalls.add(PTHREAD_COND_WAIT);
@@ -448,7 +435,8 @@ public class Pthread2CIVLWorker extends BaseWorker {
 	private void process_thread_functions(FunctionDefinitionNode node) {
 		String name = node.getName();
 
-		if (this.threadFunctionNames.contains(name)) {
+		if (this.threadFunctionNames.contains(name)
+				|| name.equals(this.originalMain)) {
 			CompoundStatementNode body = node.getBody();
 			List<BlockItemNode> newBodyNodes = new LinkedList<>();
 			VariableDeclarationNode pthreadPoolVar = this
@@ -530,241 +518,6 @@ public class Pthread2CIVLWorker extends BaseWorker {
 		return result;
 	}
 
-	// private List<BlockItemNode> transform_access_to_shared_varaibles(
-	// ASTNode node) {
-	// List<BlockItemNode> result = new LinkedList<>();
-	//
-	// if (node instanceof IdentifierExpressionNode) {
-	// IdentifierExpressionNode identiferExpression = (IdentifierExpressionNode)
-	// node;
-	// VariableDeclarationNode replace =
-	// process_identifier_expression(identiferExpression);
-	//
-	// if (replace != null) {
-	// result.add(replace);
-	// }
-	// } else {
-	// for (ASTNode child : node.children()) {
-	// if (child == null)
-	// continue;
-	//
-	// List<BlockItemNode> subResult =
-	// transform_access_to_shared_varaibles(child);
-	//
-	// result.addAll(subResult);
-	// }
-	// }
-	// return result;
-	// }
-
-	// private VariableDeclarationNode process_identifier_expression(
-	// IdentifierExpressionNode identifier) {
-	// Entity entity = identifier.getIdentifier().getEntity();
-	//
-	// if (entity instanceof Variable) {
-	// VariableDeclarationNode variableDeclaration = ((Variable) entity)
-	// .getDefinition();
-	//
-	// if (this.shared_variables.contains(variableDeclaration)) {
-	// String tmpName = this.newUniqueIdentifier("tmp");
-	// VariableDeclarationNode tmpVariable = this.variableDeclaration(
-	// tmpName, variableDeclaration.getTypeNode().copy(),
-	// identifier.copy());
-	//
-	// identifier.parent().setChild(identifier.childIndex(),
-	// this.identifierExpression(tmpName));
-	// return tmpVariable;
-	// }
-	// }
-	// return null;
-	// }
-
-	// /**
-	// * Processes function calls starting with __VERIFIER_, which are special
-	// * functions of the SV-COMP.
-	// *
-	// * @param node
-	// * The function definition node whose body is to be searched for
-	// * __VERIFIER_ calls for transformation.
-	// * @throws SyntaxException
-	// */
-	// private void process_VERIFIER_function_calls(FunctionDefinitionNode node)
-	// throws SyntaxException {
-	// process_VERIFIER_function_call_worker(node);
-	// }
-
-	// /**
-	// * TODO documentation about VERIFIER_nondet_int and VERIFIER_atomic
-	// * Transforms __VERIFIER_ function calls into their corresponding
-	// * counterparts:
-	// * <ul>
-	// * <li>VERIFIER_nondet_int: abstract integer function</li>
-	// * <li>VERIFIER_atomic: atomic function</li>
-	// * </ul>
-	// *
-	// * @param node
-	// * ASTNode to be be checked for a VERIFIER
-	// *
-	// */
-	// private void process_VERIFIER_function_call_worker(ASTNode node)
-	// throws SyntaxException {
-	// if (node instanceof FunctionCallNode) {
-	// FunctionCallNode funcCall = (FunctionCallNode) node;
-	// ExpressionNode function = funcCall.getFunction();
-	//
-	// if (function.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
-	// IdentifierExpressionNode funcName = (IdentifierExpressionNode) function;
-	// String name = funcName.getIdentifier().name();
-	//
-	// if (name.equals(VERIFIER_NONDET_INT)
-	// || name.equals(VERIFIER_NONDET_UINT)) {
-	// ExpressionNode newArg = nodeFactory.newIntegerConstantNode(
-	// funcName.getSource(),
-	// String.valueOf(numberOfNondetCall));
-	//
-	// this.numberOfNondetCall++;
-	// funcCall.setArguments(nodeFactory.newSequenceNode(
-	// funcName.getSource(), "Actual Arguments",
-	// Arrays.asList(newArg)));
-	// }
-	// }
-	// } else if (node instanceof FunctionDefinitionNode) {
-	// IdentifierNode functionName = ((FunctionDefinitionNode) node)
-	// .getIdentifier();
-	// if (functionName.name().startsWith(VERIFIER_ATOMIC)) {
-	// CompoundStatementNode tmp = ((FunctionDefinitionNode) node)
-	// .getBody().copy();
-	// Source source = tmp.getSource();
-	// AtomicNode newAtomicBlock = nodeFactory.newAtomicStatementNode(
-	// source, false, tmp);
-	// CompoundStatementNode block = nodeFactory
-	// .newCompoundStatementNode(source,
-	// Arrays.asList((BlockItemNode) newAtomicBlock));
-	// ((FunctionDefinitionNode) node).setBody(block);
-	// }
-	// for (ASTNode child : node.children()) {
-	// if (child != null)
-	// process_VERIFIER_function_call_worker(child);
-	// }
-	// } else {
-	// for (ASTNode child : node.children()) {
-	// if (child != null)
-	// process_VERIFIER_function_call_worker(child);
-	// }
-	// }
-	// }
-
-	// /**
-	// * Inserts an abstract function node in place of VERIFIER_nondet_int
-	// *
-	// * @param function
-	// * Node to be checked and converted for VERIFIER function
-	// *
-	// */
-	// private void process_VERIFIER_functions(FunctionDeclarationNode function)
-	// {
-	// IdentifierNode functionName = function.getIdentifier();
-	//
-	// if (functionName.name().equals(VERIFIER_NONDET_UINT)
-	// || functionName.name().equals(VERIFIER_NONDET_INT)) {
-	// FunctionTypeNode funcTypeNode = function.getTypeNode();
-	// FunctionDeclarationNode abstractNode;
-	//
-	// funcTypeNode = nodeFactory
-	// .newFunctionTypeNode(
-	// funcTypeNode.getSource(),
-	// funcTypeNode.getReturnType().copy(),
-	// nodeFactory.newSequenceNode(this.newSource(
-	// "formal parameter declarations of "
-	// + functionName.name(),
-	// CivlcTokenConstant.DECLARATION_LIST),
-	// "Formal Parameters",
-	// Arrays.asList(this.variableDeclaration(
-	// "seed",
-	// this.basicType(BasicTypeKind.INT)))),
-	// false);
-	// abstractNode = nodeFactory.newAbstractFunctionDefinitionNode(
-	// function.getSource(), function.getIdentifier().copy(),
-	// funcTypeNode, null, 0);
-	// function.parent().setChild(function.childIndex(), abstractNode);
-	// }
-	// }
-
-	// /**
-	// * Translates nodes if they meet one of various specific cases
-	// *
-	// * @param node
-	// * Node to be translated
-	// *
-	// */
-	// private void translateNode(ASTNode node) {
-	// if (node instanceof LabeledStatementNode) {
-	// LabeledStatementNode labelStatement = (LabeledStatementNode) node;
-	// LabelNode labelNode = labelStatement.getLabel();
-	//
-	// if (labelNode instanceof OrdinaryLabelNode) {
-	// OrdinaryLabelNode label = (OrdinaryLabelNode) labelNode;
-	// String name = label.getName();
-	// if (name.equals(ERROR))
-	// labelStatement.setChild(1,
-	// this.assertFalse(labelStatement.getSource()));
-	// }
-	// // } else if (node instanceof ExpressionStatementNode) {
-	// // ExpressionNode expression = ((ExpressionStatementNode) node)
-	// // .getExpression();
-	// // StatementNode newStatementNode = null;
-	// //
-	// // if (expression.expressionKind() == ExpressionKind.FUNCTION_CALL)
-	// // {
-	// // FunctionCallNode functionCall = (FunctionCallNode) expression;
-	// // ExpressionNode functionName = functionCall.getFunction();
-	// //
-	// // if (functionName.expressionKind() ==
-	// // ExpressionKind.IDENTIFIER_EXPRESSION) {
-	// // String name = ((IdentifierExpressionNode) functionName)
-	// // .getIdentifier().name();
-	// //
-	// // switch (name) {
-	// // case VERIFIER_ASSERT:
-	// // newStatementNode = this.assertNode(functionCall
-	// // .getSource(), functionCall.getArgument(0)
-	// // .copy());
-	// // break;
-	// // case VERIFIER_ASSUME:
-	// // newStatementNode = this.assumeNode(functionCall
-	// // .getArgument(0).copy());
-	// // break;
-	// // default:
-	// // }
-	// // }
-	// // if (newStatementNode != null)
-	// // node.parent().setChild(node.childIndex(), newStatementNode);
-	// // }
-	// } else
-	// for (ASTNode child : node.children())
-	// if (child != null)
-	// this.translateNode(child);
-	// }
-
-	// private StatementNode assertNode(Source mySource, ExpressionNode
-	// expression) {
-	// return nodeFactory.newExpressionStatementNode(this.functionCall(
-	// mySource, ASSERT, Arrays.asList(expression)));
-	// }
-
-	// /**
-	// * Creates a StatementNode for error report: $assert $false.
-	// *
-	// * @param mySource
-	// *
-	// * @return
-	// */
-	// private StatementNode assertFalse(Source mySource) {
-	// ExpressionNode falseExpression = this.booleanConstant(false);
-	//
-	// return assertNode(mySource, falseExpression);
-	// }
-
 	/**
 	 * TODO javadocs
 	 * 
@@ -786,6 +539,10 @@ public class Pthread2CIVLWorker extends BaseWorker {
 		if (isMain) {
 			ExpressionNode ZERO = this.integerConstant(0);
 			if (!hasReturn(function)) {
+				// this.identifierExpression(this
+				// .newSource(PTHREAD_POOL,
+				// CivlcTokenConstant.IDENTIFIER),
+				// PTHREAD_POOL)
 				if (returnType.getType().kind() == TypeKind.VOID)
 					function.getBody().addSequenceChild(
 							nodeFactory.newReturnNode(this.newSource(
@@ -828,13 +585,11 @@ public class Pthread2CIVLWorker extends BaseWorker {
 					.newPointerTypeNode(this.newSource("type void *",
 							CivlcTokenConstant.TYPE), this.voidType()), this
 					.integerConstant(0));
-			// ExpressionNode isMainArg = this.booleanConstant(false);
 			FunctionCallNode newPthreadExit = nodeFactory.newFunctionCallNode(
 					this.newSource("function call " + pthread_exit_name,
-							CivlcTokenConstant.CALL),
-					this.identifierExpression(pthread_exit_name),
-					isMain ? Arrays.asList(nullNode) : Arrays.asList(nullNode,
-							this.identifierExpression(this
+							CivlcTokenConstant.CALL), this
+							.identifierExpression(pthread_exit_name), Arrays
+							.asList(nullNode, this.identifierExpression(this
 									.newSource(PTHREAD_POOL,
 											CivlcTokenConstant.IDENTIFIER),
 									PTHREAD_POOL)), null);
@@ -987,6 +742,22 @@ public class Pthread2CIVLWorker extends BaseWorker {
 						} else if (!exitMainDone) {
 							this.exitMainDone = true;
 							name.getIdentifier().setName(PTHREAD_EXIT_MAIN_NEW);
+							oldArg.parent().removeChild(oldArg.childIndex());
+							newArgs = nodeFactory
+									.newSequenceNode(
+											this.newSource(
+													"actual parameter list of "
+															+ nameString,
+													CivlcTokenConstant.ARGUMENT_LIST),
+											"Actual parameters",
+											Arrays.asList(
+													oldArg,
+													this.identifierExpression(
+															this.newSource(
+																	PTHREAD_POOL,
+																	CivlcTokenConstant.IDENTIFIER),
+															PTHREAD_POOL)));
+							funcCall.setArguments(newArgs);
 						}
 					}
 				}
@@ -1003,19 +774,14 @@ public class Pthread2CIVLWorker extends BaseWorker {
 				if (isMain)
 					exitMainDone = true;
 				FunctionCallNode newPthreadExit = nodeFactory
-						.newFunctionCallNode(
-								this.newSource("function call of "
-										+ pthread_exit_name,
-										CivlcTokenConstant.CALL),
+						.newFunctionCallNode(this.newSource("function call of "
+								+ pthread_exit_name, CivlcTokenConstant.CALL),
 								this.identifierExpression(pthread_exit_name),
-								isMain ? Arrays.asList(nullPointerNode())
-										: Arrays.asList(
-												newExpr,
-												this.identifierExpression(
-														this.newSource(
-																PTHREAD_POOL,
-																CivlcTokenConstant.IDENTIFIER),
-														PTHREAD_POOL)), null);
+								Arrays.asList(newExpr, this
+										.identifierExpression(this.newSource(
+												PTHREAD_POOL,
+												CivlcTokenConstant.IDENTIFIER),
+												PTHREAD_POOL)), null);
 				StatementNode pthreadExit = nodeFactory
 						.newExpressionStatementNode(newPthreadExit);
 
@@ -1031,6 +797,19 @@ public class Pthread2CIVLWorker extends BaseWorker {
 				CivlcTokenConstant.CAST), nodeFactory.newPointerTypeNode(
 				this.newSource("type void *", CivlcTokenConstant.TYPE),
 				this.voidType()), this.integerConstant(0));
+	}
+
+	private void setOrignalMainFunction(SequenceNode<BlockItemNode> root) {
+		for (BlockItemNode item : root) {
+			if (item != null && item instanceof FunctionDeclarationNode) {
+				FunctionDeclarationNode function = (FunctionDeclarationNode) item;
+
+				if (function.getName().equals(GENERATED_MAIN)) {
+					this.originalMain = GENERATED_MAIN;
+					return;
+				}
+			}
+		}
 	}
 
 	// TODO: what is this function trying to do for pthread_create? What kind of
@@ -1134,17 +913,6 @@ public class Pthread2CIVLWorker extends BaseWorker {
 		return false;
 	}
 
-	// private void process_thread_local(SequenceNode<BlockItemNode> root,
-	// Collection<SourceFile> sourceFiles) throws SyntaxException {
-	// if (this.thread_local_variable_declarations.size() > 0) {
-	// AST ast = astFactory.newAST(root, sourceFiles);
-	//
-	// Analysis.performStandardAnalysis(
-	// Configurations.newMinimalConfiguration(), ast);
-	// dd
-	// }
-	// }
-
 	private void check_thread_local_accesses(SequenceNode<BlockItemNode> root) {
 		for (BlockItemNode item : root) {
 			if (item == null)
@@ -1210,7 +978,8 @@ public class Pthread2CIVLWorker extends BaseWorker {
 
 		assert this.astFactory == ast.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();
-
+		setOrignalMainFunction(root);
+		this.threadFunctionNames.add(this.originalMain);
 		check_thread_local_accesses(root);
 		this.getThreadFunctions(root);
 		ast.release();

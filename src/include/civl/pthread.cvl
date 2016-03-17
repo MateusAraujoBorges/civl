@@ -791,7 +791,8 @@ void pthread_exit(void *value_ptr){
   $exit();
 }*/
 
-void $pthread_exit_main(void *value_ptr){
+void $pthread_exit_main(void *value_ptr, $pthread_pool_t $pthread_pool){
+  $free($pthread_pool);
   $pthread_gpool_join($pthread_gpool);
   /*int len = $pthread_gpool_size($pthread_gpool);
   
