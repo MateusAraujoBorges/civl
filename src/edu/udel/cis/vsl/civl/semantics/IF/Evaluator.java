@@ -23,6 +23,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
  * This is the CIVL main evaluator. First, it is responsible for evaluating all
@@ -367,4 +368,12 @@ public interface Evaluator {
 	Evaluation evaluateCastWorker(State state, int pid, String process,
 			CIVLType castType, Expression arg)
 			throws UnsatisfiablePathConditionException;
+
+	/**
+	 * returns an arbitrary symbolic constant with the given type.
+	 * 
+	 * @param state
+	 * @return
+	 */
+	Evaluation havoc(State state, SymbolicType type);
 }

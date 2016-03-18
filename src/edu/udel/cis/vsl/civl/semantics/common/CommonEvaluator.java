@@ -4042,4 +4042,15 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		return this.evaluate(state, pid, expression, true);
 	}
+
+	@Override
+	public Evaluation havoc(State state, SymbolicType type) {
+		String name = "Y" + stateFactory.numSymbolicConstants(state);
+		SymbolicConstant unconstrainedValue;
+
+		state = stateFactory.incrementNumSymbolicConstants(state);
+		unconstrainedValue = universe.symbolicConstant(
+				universe.stringObject(name), type);
+		return new Evaluation(state, unconstrainedValue);
+	}
 }

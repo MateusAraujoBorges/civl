@@ -33,7 +33,6 @@ import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
@@ -211,9 +210,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression pointer = argumentValues[0];
-		String name = "Y" + stateFactory.numSymbolicConstants(state);
 		CIVLType type;
-		SymbolicConstant unconstrainedValue;
 		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer
 				.isDerefablePointer(state, pointer);
 
@@ -230,13 +227,14 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 							+ this.symbolicAnalyzer.symbolicExpressionToString(
 									source, state, null, pointer));
 		} else {
-			state = stateFactory.incrementNumSymbolicConstants(state);
+			Evaluation havocEval;
+
 			type = this.symbolicAnalyzer.typeOfObjByPointer(source, state,
 					pointer);
-			unconstrainedValue = universe.symbolicConstant(
-					universe.stringObject(name), type.getDynamicType(universe));
-			state = this.primaryExecutor.assign(source, state, process,
-					pointer, unconstrainedValue);
+			havocEval = this.evaluator.havoc(state,
+					type.getDynamicType(universe));
+			state = this.primaryExecutor.assign(source, havocEval.state,
+					process, pointer, havocEval.value);
 		}
 		return state;
 	}
