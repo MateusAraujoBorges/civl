@@ -43,7 +43,6 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType.SymbolicTypeKind;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicCollection;
 import edu.udel.cis.vsl.sarl.collections.IF.SymbolicSequence;
 
 public class CommonSymbolicUtility implements SymbolicUtility {
@@ -1345,14 +1344,11 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			result = new BooleanExpression[1];
 			result[0] = clause;
 		} else {
-			@SuppressWarnings("unchecked")
-			SymbolicCollection<? extends SymbolicExpression> collection = (SymbolicCollection<? extends SymbolicExpression>) clause
-					.argument(0);
-			int i = 0;
+			int numArgs = clause.numArguments();
 
-			result = new BooleanExpression[collection.size()];
-			for (SymbolicExpression element : collection) {
-				result[i++] = (BooleanExpression) element;
+			result = new BooleanExpression[numArgs];
+			for (int i = 0; i < numArgs; i++) {
+				result[i] = (BooleanExpression) clause.argument(i);
 			}
 		}
 		return result;

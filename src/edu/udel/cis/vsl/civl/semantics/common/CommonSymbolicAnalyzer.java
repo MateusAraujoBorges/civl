@@ -616,12 +616,21 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		boolean first = true;
 
 		for (int i = 0; i < numArgs; i++) {
+			SymbolicObject arg = symbolicExpression.argument(i);
+			String argString;
+
+			if (arg instanceof SymbolicExpression)
+				argString = this.symbolicExpressionToString(source, state,
+						null, (SymbolicExpression) arg);
+			else
+				argString = symbolicExpression.argument(i)
+						.toStringBuffer(atomizeArgs).toString();
+			if (!first && (!opString.equals("+") || !argString.startsWith("-"))) {
+				buffer.append(opString);
+			}
+			buffer.append(argString);
 			if (first)
 				first = false;
-			else
-				buffer.append(opString);
-			buffer.append(symbolicExpression.argument(i).toStringBuffer(
-					atomizeArgs));
 		}
 		if (atomizeResult) {
 			buffer.insert(0, '(');
@@ -1018,7 +1027,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 										separator, prefix));
 							} else {
 								result.append(symbolicExpression.argument(0)
-										.toStringBuffer(false));
+										.toStringBuffer(true));
 							}
 							if (type.isHerbrand())
 								result.append('h');
@@ -1044,7 +1053,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							result, "+", false, atomize);
 					break;
 				case AND:
-					processFlexibleBinary(source, state, symbolicExpression,
+					processFlexibleBinaryNew(source, state, symbolicExpression,
 							result, " && ", true, atomize);
 					break;
 				case APPLY: {
@@ -1352,8 +1361,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							.symbolicExpressionToString(source, state, null,
 									(SymbolicExpression) symbolicExpression
 											.argument(0), "", ""));
-					if (atomize)
-						atomize(result);
+					// if (atomize)
+					atomize(result);
 					break;
 				case NEQ:
 					result.append(this
@@ -1381,8 +1390,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append("NULL");
 					break;
 				case OR:
-					processFlexibleBinary(source, state, symbolicExpression,
-							result, "||", false, atomize);
+					processFlexibleBinaryNew(source, state, symbolicExpression,
+							result, " || ", false, atomize);
 					// if (atomize)
 					// atomize(result);
 					break;
