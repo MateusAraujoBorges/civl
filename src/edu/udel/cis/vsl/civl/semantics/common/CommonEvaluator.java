@@ -3336,8 +3336,8 @@ public class CommonEvaluator implements Evaluator {
 					int_arrayIndex, false);
 			return new Triple<>(state, result, true);
 		} else
-			throw new CIVLUnimplementedFeatureException("non-concrete strings",
-					source);
+			throw new CIVLUnimplementedFeatureException(
+					"access on a non-concrete string", source);
 	}
 
 	@Override
@@ -3365,7 +3365,8 @@ public class CommonEvaluator implements Evaluator {
 
 				if (indexNum == null)
 					throw new CIVLUnimplementedFeatureException(
-							"non-concrete symbolic index into string", source);
+							"access an element of an array of char with a non-concrete index",
+							source);
 				index = indexNum.intValue();
 			}
 			if (index == 0)
