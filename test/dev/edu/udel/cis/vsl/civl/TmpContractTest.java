@@ -104,9 +104,16 @@ public class TmpContractTest {
 				filename("sequential/globalPointersBad.c")));
 	}
 
+	/************************ concurrent section ***********************/
+	@Test
+	public void dummyMPITest() {
+		assertTrue(ui.run("verify  -showAmpleSet -errorBound=10",
+				enableContract, filename("sequential/dummyMpiTest.c")));
+	}
+
 	@Test
 	public void simpleMPITest() {
-		assertTrue(ui.run("verify  -showAmpleSet -errorBound=10",
-				enableContract, filename("sequential/simpleMpiTest.c")));
+		assertTrue(ui.run("verify  -errorBound=10", enableContract,
+				filename("sequential/simpleMpiTest.c")));
 	}
 }

@@ -1,5 +1,9 @@
 package edu.udel.cis.vsl.civl.semantics.contract;
 
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
@@ -15,7 +19,9 @@ import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.civl.model.IF.type.StructOrUnionField;
 import edu.udel.cis.vsl.civl.semantics.IF.ContractConditionGenerator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
@@ -32,6 +38,8 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 
@@ -189,8 +197,42 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 		if (exprType.isPointerType()) {
 			return new Evaluation(state,
 					conditionGenerator.initializePointer(expression.variable()));
+		} else if (exprType.isStructType()) {
+			return evaluateInitialStructWorker(state, pid,
+					(CIVLStructOrUnionType) exprType, expression);
 		} else
 			return super.evaluateInitialValue(state, pid, expression);
+	}
+
+	private Evaluation evaluateInitialStructWorker(State state, int pid,
+			CIVLStructOrUnionType type, Expression expression) {
+		Iterator<StructOrUnionField> fieldIter = type.fields().iterator();
+		List<SymbolicType> fieldTypes = new LinkedList<>();
+		List<SymbolicExpression> fields = new LinkedList<>();
+		Evaluation eval = null;
+
+		while (fieldIter.hasNext()) {
+			StructOrUnionField field = fieldIter.next();
+
+			if (field.type().isStructType()) {
+				Expression dotExpr = modelFactory.dotExpression(
+						expression.getSource(), expression, field.index());
+
+				eval = evaluateInitialStructWorker(state, pid,
+						(CIVLStructOrUnionType) field.type(), dotExpr);
+			} else
+				eval = havoc(state, field.type().getDynamicType(universe));
+			state = eval.state;
+			fieldTypes.add(eval.value.type());
+			fields.add(eval.value);
+		}
+
+		SymbolicTupleType structType = universe.tupleType(
+				universe.stringObject(expression.toString()), fieldTypes);
+		SymbolicExpression structInitVal = universe.tuple(structType, fields);
+
+		eval.value = structInitVal;
+		return eval;
 	}
 
 	/**

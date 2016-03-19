@@ -24,21 +24,6 @@ public class CommonNamedFunctionBehavior extends CommonFunctionBehavior
 	}
 
 	@Override
-	public Iterable<Expression> assumptions() {
-		return this.assumptions;
-	}
-
-	@Override
-	public void addAssumption(Expression assumption) {
-		this.assumptions.add(assumption);
-	}
-
-	@Override
-	public int numAssumptions() {
-		return this.assumptions.size();
-	}
-
-	@Override
 	public void print(String prefix, PrintStream out, boolean isDebug) {
 		String subPrefix = prefix + "| ";
 
@@ -57,6 +42,21 @@ public class CommonNamedFunctionBehavior extends CommonFunctionBehavior
 			out.println();
 		}
 		super.print(subPrefix, out, isDebug);
+	}
+
+	@Override
+	public Iterable<Expression> assumptions() {
+		return this.assumptions;
+	}
+
+	@Override
+	public void addAssumption(Expression assumption) {
+		this.assumptions.add(assumption);
+	}
+
+	@Override
+	public int numAssumptions() {
+		return this.assumptions.size();
 	}
 
 }

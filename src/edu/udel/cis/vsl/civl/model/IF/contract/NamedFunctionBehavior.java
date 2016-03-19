@@ -22,6 +22,15 @@ public interface NamedFunctionBehavior extends FunctionBehavior {
 	String name();
 
 	/**
+	 * prints this behavior
+	 * 
+	 * @param prefix
+	 * @param out
+	 * @param isDebug
+	 */
+	void print(String prefix, PrintStream out, boolean isDebug);
+
+	/**
 	 * Returns the assumptions of this behavior.
 	 * 
 	 * @return
@@ -41,13 +50,4 @@ public interface NamedFunctionBehavior extends FunctionBehavior {
 	 * @return
 	 */
 	int numAssumptions();
-
-	/**
-	 * prints this behavior
-	 * 
-	 * @param prefix
-	 * @param out
-	 * @param isDebug
-	 */
-	void print(String prefix, PrintStream out, boolean isDebug);
 }

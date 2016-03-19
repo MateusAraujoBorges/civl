@@ -36,12 +36,12 @@ public class CommonFunctionBehavior extends CommonSourceable implements
 	}
 
 	@Override
-	public Iterable<Expression> preconditions() {
+	public Iterable<Expression> requirements() {
 		return this.preconditions;
 	}
 
 	@Override
-	public Iterable<Expression> postconditions() {
+	public Iterable<Expression> ensurances() {
 		return this.postconditions;
 	}
 
@@ -89,12 +89,12 @@ public class CommonFunctionBehavior extends CommonSourceable implements
 	}
 
 	@Override
-	public int numPreconditions() {
+	public int numRequirements() {
 		return this.preconditions.size();
 	}
 
 	@Override
-	public int numPostconditions() {
+	public int numEnsurances() {
 		return this.postconditions.size();
 	}
 
@@ -137,7 +137,7 @@ public class CommonFunctionBehavior extends CommonSourceable implements
 
 	@Override
 	public void print(String prefix, PrintStream out, boolean isDebug) {
-		if (this.numPreconditions() > 0) {
+		if (this.numRequirements() > 0) {
 			boolean first = true;
 
 			out.print(prefix + "precondition: ");
@@ -150,7 +150,7 @@ public class CommonFunctionBehavior extends CommonSourceable implements
 			}
 			out.println();
 		}
-		if (this.numPostconditions() > 0) {
+		if (this.numEnsurances() > 0) {
 			boolean first = true;
 
 			out.print(prefix + "postcondition: ");

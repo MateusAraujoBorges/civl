@@ -79,6 +79,8 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 
 	private ModelFactory modelFactory;
 
+	// private LibraryExecutorLoader loader;
+
 	public ContractExecutor(ModelFactory modelFactory,
 			StateFactory stateFactory, ErrorLog log,
 			LibraryExecutorLoader loader, ContractEvaluator evaluator,
@@ -94,6 +96,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		this.symbolicAnalyzer = symbolicAnalyzer;
 		// this.symbolicUtil = evaluator.symbolicUtility();
 		this.modelFactory = modelFactory;
+		// this.loader = loader;
 	}
 
 	@Override
@@ -152,12 +155,17 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		// semantics:
 		switch (statement.statementKind()) {
 		case RETURN:
-			return executeReturn(state, pid, process,
-					(ReturnStatement) statement);
-		case CALL_OR_SPAWN:// TODO: need check if contracted
-			if (((CallOrSpawnStatement) statement).isSystemCall())
-				return super.executeStatement(state, pid, statement);
+			// TODO:Experimental:
+			CIVLFunction currentFunction = state.getProcessState(pid)
+					.peekStack().location().function();
+
+			if (currentFunction.isContracted())
+				return executeReturn(state, pid, process,
+						(ReturnStatement) statement);
 			else
+				return super.executeStatement(state, pid, statement);
+		case CALL_OR_SPAWN:// TODO: need check if contracted
+			if (((CallOrSpawnStatement) statement).function().isContracted())
 				return executeContractedFunctionCall(state, pid, process,
 						(CallOrSpawnStatement) statement);
 		default:
@@ -209,8 +217,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 						returnValue);
 		}
 		// Before pop stack entry frame, verify assurances:
-		assurances = function.functionContract().defaultBehavior()
-				.postconditions();
+		assurances = function.functionContract().defaultBehavior().ensurances();
 		for (Expression ens : assurances) {
 			Evaluation eval;
 			BooleanExpression ensPred, holdPred;
@@ -360,10 +367,10 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			throws UnsatisfiablePathConditionException {
 		// Requirements:
 		realState = deduceRequirement(evalState, realState, pid, process,
-				functionName, contract.defaultBehavior().preconditions());
+				functionName, contract.defaultBehavior().requirements());
 		// Ensureances:
 		realState = deduceAssurance(evalState, realState, pid, process,
-				contract.defaultBehavior().postconditions());
+				contract.defaultBehavior().ensurances());
 		return realState;
 	}
 
@@ -453,4 +460,38 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 							+ "\nwhich can't be proved as a valid pointer.");
 		throw new UnsatisfiablePathConditionException();
 	}
+
+	// // TODO:exprimental
+	// public State initializeMPICOMMWORLD(State state, int pid,
+	// LHSExpression lhs, int numProcesses, Location location, Scope scope)
+	// throws UnsatisfiablePathConditionException {
+	// LibcommExecutor commExecutor = null;
+	// CallOrSpawnStatement statement;
+	// CIVLFunction function;
+	// Expression scopeExpr, nprocsExpr, arguments[], funcExpr;
+	// Variable nprocs, genRoot;
+	//
+	// arguments = new Expression[2];
+	// nprocs = scope.variable("_mpi_nprocs");
+	// nprocsExpr = modelFactory
+	// .variableExpression(nprocs.getSource(), nprocs);
+	// scopeExpr = modelFactory.hereOrRootExpression(null, true);
+	// arguments[0] = scopeExpr;
+	// arguments[1] = nprocsExpr;
+	// function = modelFactory.model().function("$mpi_gcomm_create");
+	// funcExpr = modelFactory.functionIdentifierExpression(null, function);
+	// statement = modelFactory.callOrSpawnStatement(null, location, true,
+	// funcExpr, Arrays.asList(arguments), null);
+	// statement.setTarget(location);
+	// statement.setLhs(lhs);
+	// try {
+	// commExecutor = (LibcommExecutor) loader.getLibraryExecutor("comm",
+	// this, modelFactory, evaluator.symbolicUtility(),
+	// symbolicAnalyzer);
+	// } catch (LibraryLoaderException e) {
+	// // TODO Auto-generated catch block
+	// e.printStackTrace();
+	// }
+	// return commExecutor.execute(state, pid, statement, "$gcomm_create");
+	// }
 }

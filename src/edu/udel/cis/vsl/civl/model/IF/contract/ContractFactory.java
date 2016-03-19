@@ -6,6 +6,7 @@ import java.util.Set;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.contract.CompositeEvent.CompositeEventOperator;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
 /**
@@ -98,5 +99,16 @@ public interface ContractFactory {
 	 * @return
 	 */
 	DependsEvent newNoactEvent(CIVLSource source);
+
+	/**
+	 * Creates a new instance of <code>\mpi_collective(comm, pattern)</code>
+	 * 
+	 * @param source
+	 * @param communicator
+	 * @param pattern
+	 * @return
+	 */
+	MPICollectiveBehavior newMPICollectiveBehavior(CIVLSource source,
+			Expression communicator, MPICommunicationPattern pattern);
 
 }

@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl.model.common;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -18,6 +19,8 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.DependsEventNode.DependsEventNodeKi
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.DependsNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.GuardsNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractConstantNode.MPIConstantKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ReadOrWriteEventNode;
@@ -27,7 +30,9 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
+import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonMPIConstantNode;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
+import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
@@ -43,6 +48,8 @@ import edu.udel.cis.vsl.civl.model.IF.contract.DependsEvent.DependsEventKind;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -63,7 +70,10 @@ public class ContractTranslator extends FunctionTranslator {
 	 * An special expression used to represent the result of a function in
 	 * function contracts.
 	 */
+	// TODO: move this to model configuration
 	public static final String contractResultName = "\\result";
+	public static final String contractMPICommRankName = "\\mpi_comm_rank";
+	public static final String contractMPICommSizeName = "\\mpi_comm_size";
 
 	private CIVLFunction function;
 
@@ -97,21 +107,57 @@ public class ContractTranslator extends FunctionTranslator {
 
 	private void translateContractNode(ContractNode contractNode,
 			FunctionContract functionContract) {
-		this.translateContractNodeWork(contractNode, functionContract, null);
+		this.translateContractNodeWork(contractNode, functionContract, null,
+				null);
 	}
 
 	/**
-	 * Translates a {@link ContractNode} to a {@link ContractClause}.
+	 * Translates a {@link ContractNode} to a component of a
+	 * {@link FunctionContract}.
+	 * 
+	 * The function takes at most three main components:
+	 * {@link FunctionContract}, {@link MPICollectiveBehavior} and
+	 * {@link NamedFunctionBehavior}. According to the syntax:
+	 * <p>
+	 * <ol>
+	 * <li>None of them can be nested.</li>
+	 * <li>{@link NamedFunctionBehavior} can appear in {@link FunctionContract}
+	 * or {@link MPICollectiveBehavior}</li>
+	 * <li>{@link MPICollectiveBehavior} can only appear in
+	 * {@link FunctionContract}</li>
+	 * <li>{@link FunctionContract} denotes the whole group of function
+	 * contracts for a function. For each function, it can has at most one
+	 * {@link FunctionContract}.</li>
+	 * </ol>
+	 * </p>
+	 * Thus, the specifications for different kind of contracts is as follows:
+	 * <p>
+	 * <ol>
+	 * <li>
+	 * A {@link NamedFunctionBehavior} will be added as a component of a
+	 * {@link MPICollectiveBehavior} if it is non-null, else as of a
+	 * {@link FunctionContract}.</li>
+	 * <li>{@link ASSUMES} can only be added as a component of a
+	 * {@link NamedFunctionBehavior}</li>
+	 * <li>Other contract clauses will be added as a component of one of the
+	 * three main blocks with such a precedence:
+	 * <code>{@link NamedFunctionBehavior} higher than {@link MPICollectiveBehavior} high than {@link FunctionContract}<code>
+	 * </li>
+	 * </ol>
+	 * </p>
 	 * 
 	 * @param contractNode
 	 * @return
 	 */
 	private void translateContractNodeWork(ContractNode contractNode,
-			FunctionContract functionContract, NamedFunctionBehavior behavior) {
+			FunctionContract functionContract,
+			MPICollectiveBehavior collectiveBehavior,
+			NamedFunctionBehavior behavior) {
 		CIVLSource source = modelFactory.sourceOf(contractNode);
 		Scope scope = function.outerScope();
-		FunctionBehavior functionBehavior = behavior != null ? behavior
-				: functionContract.defaultBehavior();
+		FunctionBehavior targetBehavior = behavior != null ? behavior
+				: collectiveBehavior != null ? collectiveBehavior
+						: functionContract.defaultBehavior();
 
 		switch (contractNode.contractKind()) {
 		case ASSIGNS_READS: {
@@ -126,15 +172,15 @@ public class ContractTranslator extends FunctionTranslator {
 
 				if (mu instanceof Nothing) {
 					if (isAssigns) {
-						if (functionBehavior.numAssignsMemoryUnits() == 0)
-							functionBehavior.setAssingsNothing();
+						if (targetBehavior.numAssignsMemoryUnits() == 0)
+							targetBehavior.setAssingsNothing();
 						else
 							throw new CIVLSyntaxException(
 									"assigns \\nothing conflicts with previous assigns clause",
 									source);
 					} else {
-						if (functionBehavior.numAssignsMemoryUnits() == 0)
-							functionBehavior.setReadsNothing();
+						if (targetBehavior.numAssignsMemoryUnits() == 0)
+							targetBehavior.setReadsNothing();
 						else
 							throw new CIVLSyntaxException(
 									"reads \\nothing conflicts with previous reads clause",
@@ -142,24 +188,24 @@ public class ContractTranslator extends FunctionTranslator {
 					}
 				} else {
 					if (isAssigns) {
-						if (functionBehavior.assignsNothing())
+						if (targetBehavior.assignsNothing())
 							throw new CIVLSyntaxException(
 									"assigns clause conflicts with previous assigns \\nothing",
 									source);
-						functionBehavior.addAssignsMemoryUnit(mu);
+						targetBehavior.addAssignsMemoryUnit(mu);
 					} else {
-						if (functionBehavior.readsNothing())
+						if (targetBehavior.readsNothing())
 							throw new CIVLSyntaxException(
 									"reads clause conflicts with previous reads \\nothing",
 									source);
-						functionBehavior.addReadsMemoryUnit(mu);
+						targetBehavior.addReadsMemoryUnit(mu);
 					}
 				}
 			}
 			break;
 		}
 		case ASSUMES: {
-			assert functionBehavior instanceof NamedFunctionBehavior;
+			assert targetBehavior instanceof NamedFunctionBehavior;
 			Expression expression = translateExpressionNode(
 					((AssumesNode) contractNode).getPredicate(), scope, true);
 			behavior.addAssumption(expression);
@@ -174,9 +220,13 @@ public class ContractTranslator extends FunctionTranslator {
 			SequenceNode<ContractNode> body = behaviorNode.getBody();
 
 			for (ContractNode item : body) {
-				this.translateContractNodeWork(item, null, namedBehavior);
+				this.translateContractNodeWork(item, null, collectiveBehavior,
+						namedBehavior);
 			}
-			functionContract.addNamedBehavior(namedBehavior);
+			if (collectiveBehavior != null)
+				collectiveBehavior.addNamedBehaviors(namedBehavior);
+			else
+				functionContract.addNamedBehavior(namedBehavior);
 			break;
 		}
 
@@ -190,29 +240,29 @@ public class ContractTranslator extends FunctionTranslator {
 						scope);
 
 				if (event.dependsEventKind() == DependsEventKind.NOACT) {
-					if (functionBehavior.numDependsEvents() > 0)
+					if (targetBehavior.numDependsEvents() > 0)
 						throw new CIVLSyntaxException(
 								"depends \\noact conflicts with previous depends clause",
 								source);
-					functionBehavior.setDependsNoact();
+					targetBehavior.setDependsNoact();
 				} else if (event.dependsEventKind() == DependsEventKind.ANYACT) {
-					if (functionBehavior.dependsNoact())
+					if (targetBehavior.dependsNoact())
 						throw new CIVLSyntaxException(
 								"depends \\anyact conflicts with previous depends \\noact clause",
 								source);
-					functionBehavior.setDependsAnyact();
+					targetBehavior.setDependsAnyact();
 				} else
-					functionBehavior.addDependsEvent(event);
+					targetBehavior.addDependsEvent(event);
 			}
-			if (functionBehavior.dependsAnyact())
-				functionBehavior.clearDependsEvents();
+			if (targetBehavior.dependsAnyact())
+				targetBehavior.clearDependsEvents();
 			break;
 		}
 		case ENSURES: {
 			currentContractKind = ContractKind.ENSURES;
 			Expression expression = translateExpressionNode(
 					((EnsuresNode) contractNode).getExpression(), scope, true);
-			functionBehavior.addPostcondition(expression);
+			targetBehavior.addPostcondition(expression);
 			currentContractKind = null;
 			break;
 		}
@@ -220,7 +270,7 @@ public class ContractTranslator extends FunctionTranslator {
 			currentContractKind = ContractKind.REQUIRES;
 			Expression expression = translateExpressionNode(
 					((RequiresNode) contractNode).getExpression(), scope, true);
-			functionBehavior.addPrecondition(expression);
+			targetBehavior.addPrecondition(expression);
 			currentContractKind = null;
 			break;
 		}
@@ -231,11 +281,16 @@ public class ContractTranslator extends FunctionTranslator {
 			functionContract.setGuard(guard);
 			break;
 		}
+		case MPI_COLLECTIVE:
+			MPICollectiveBehavior newCollectiveBehavior = translateMPICollectiveBehavior(
+					(MPICollectiveBlockNode) contractNode, scope,
+					functionContract);
+			functionContract.addMPICollectiveBehavior(newCollectiveBehavior);
+			break;
 		case PURE:
 			functionContract.setPure(true);
 			break;
 		case COMPLETENESS:
-		case MPI_COLLECTIVE:
 		default:
 			throw new CIVLUnimplementedFeatureException(
 					"Translate Procedure ContractNode with "
@@ -355,6 +410,8 @@ public class ContractTranslator extends FunctionTranslator {
 		MPIContractExpressionKind kind = node.MPIContractExpressionKind();
 		switch (kind) {
 		case MPI_INTEGER_CONSTANT:
+			return translateMPIIntegerConstantNode(
+					(CommonMPIConstantNode) node, scope);
 		case MPI_EMPTY_IN:
 		case MPI_EMPTY_OUT:
 		case MPI_EQUALS:
@@ -363,6 +420,35 @@ public class ContractTranslator extends FunctionTranslator {
 		}
 		return null;
 
+	}
+
+	private Expression translateMPIIntegerConstantNode(
+			CommonMPIConstantNode node, Scope scope) {
+		MPIConstantKind kind = node.getMPIConstantKind();
+		CIVLSource source = modelFactory.sourceOf(node);
+		Identifier variableIdent;
+		Variable result;
+
+		switch (kind) {
+		case MPI_COMM_RANK:
+			variableIdent = modelFactory.identifier(source,
+					contractMPICommRankName);
+			break;
+		case MPI_COMM_SIZE:
+			variableIdent = modelFactory.identifier(source,
+					contractMPICommSizeName);
+			break;
+		default:
+			throw new CIVLInternalException("Unreachable", (CIVLSource) null);
+		}
+		if (!scope.containsVariable(variableIdent.name())) {
+			result = modelFactory.variable(source, modelFactory.typeFactory()
+					.integerType(), variableIdent, scope.numVariables());
+			scope.addVariable(result);
+			result.setScope(scope);
+		} else
+			result = scope.variable(variableIdent);
+		return modelFactory.variableExpression(source, result);
 	}
 
 	@Override
@@ -505,6 +591,42 @@ public class ContractTranslator extends FunctionTranslator {
 
 			function.addPossibleValidConsequence(new Pair<>(result, mallocId));
 		}
+		return result;
+	}
+
+	/**
+	 * Translate a {@link MPICollectiveBlockNode} to a
+	 * {@link MPICollectiveBehavior}.
+	 * 
+	 * @param node
+	 * @param scope
+	 * @return
+	 */
+	private MPICollectiveBehavior translateMPICollectiveBehavior(
+			MPICollectiveBlockNode node, Scope scope,
+			FunctionContract functionContract) {
+		MPICollectiveBehavior result;
+		CIVLSource source = modelFactory.sourceOf(node);
+		Iterator<ContractNode> bodyNodesIter = node.getBody().iterator();
+		Expression communicator = translateExpressionNode(node.getMPIComm(),
+				scope, true);
+
+		switch (node.getCollectiveKind()) {
+		case P2P:
+			result = contractFactory.newMPICollectiveBehavior(source,
+					communicator, MPICommunicationPattern.P2P);
+			break;
+		case COL:
+			result = contractFactory.newMPICollectiveBehavior(source,
+					communicator, MPICommunicationPattern.COL);
+			break;
+		default:
+			throw new CIVLSyntaxException("Unsupported MPI Collective kind: "
+					+ node.getCollectiveKind());
+		}
+		while (bodyNodesIter.hasNext())
+			translateContractNodeWork(bodyNodesIter.next(), functionContract,
+					result, null);
 		return result;
 	}
 }

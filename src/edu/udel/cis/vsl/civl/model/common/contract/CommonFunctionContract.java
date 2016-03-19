@@ -2,10 +2,14 @@ package edu.udel.cis.vsl.civl.model.common.contract;
 
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.common.CommonSourceable;
@@ -18,6 +22,8 @@ public class CommonFunctionContract extends CommonSourceable implements
 	private Expression guard = null;
 
 	private FunctionBehavior defaultBehavior;
+
+	private List<MPICollectiveBehavior> mpiCollectiveBehaviors = null;
 
 	private HashMap<String, NamedFunctionBehavior> namedBehaviors = new HashMap<>();
 
@@ -107,8 +113,22 @@ public class CommonFunctionContract extends CommonSourceable implements
 
 	@Override
 	public boolean hasRequirementsOrEnsurances() {
-		return (defaultBehavior.numPostconditions() + defaultBehavior
-				.numPreconditions()) > 0;
+		return (defaultBehavior.numEnsurances() + defaultBehavior
+				.numRequirements()) > 0;
+	}
+
+	@Override
+	public void addMPICollectiveBehavior(MPICollectiveBehavior behavior) {
+		if (mpiCollectiveBehaviors == null)
+			mpiCollectiveBehaviors = new LinkedList<>();
+		mpiCollectiveBehaviors.add(behavior);
+	}
+
+	@Override
+	public Iterator<MPICollectiveBehavior> getMPIBehaviors() {
+		if (mpiCollectiveBehaviors == null)
+			mpiCollectiveBehaviors = new LinkedList<>();
+		return mpiCollectiveBehaviors.iterator();
 	}
 
 }

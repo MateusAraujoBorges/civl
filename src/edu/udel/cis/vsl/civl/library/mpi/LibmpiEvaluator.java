@@ -7,6 +7,7 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
+import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
@@ -162,4 +163,13 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 		place = (NumericExpression) universe.tupleRead(p2pComm, zeroObject);
 		return new Pair<>(place, queueID);
 	}
+
+	/********************* Contracts methods *********************/
+	public State setupMPIEnviroment(State state, int pid,
+			Expression communicator, Scope scope) {
+		
+		
+		return null;
+	}
+
 }

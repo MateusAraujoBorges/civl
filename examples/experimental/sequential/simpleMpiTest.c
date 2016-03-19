@@ -1,21 +1,28 @@
 #include<mpi.h>
+#include<assert.h>
 
 double * u;
 int nx = 10;
 
 /*@
-  @ requires \valid(u + (0 .. 10));
-  @ requires nx == 10;
+  @ \mpi_collective(MPI_COMM_WORLD, P2P):
+  @ requires \mpi_comm_size == 2;
+  @ requires \mpi_comm_rank == x;
   @*/
-void update(int x) {
-  for (int i = 0; i < nx; i++)
-    u[i] = u[i]*2;
+void exchange(int x) {
+  int y;
+  int neighbor = 1 - x;
+
+  MPI_Sendrecv(&x, 1, MPI_INT, neighbor, 0, &y, 
+	       1, MPI_INT, neighbor, 0, 
+	       MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  assert(x + y == 1);
 }
 
 
 int main() {
   int dummy = 7;
-  update(0);
+  exchange(0);
   dummy=8;
   return 0;
 }

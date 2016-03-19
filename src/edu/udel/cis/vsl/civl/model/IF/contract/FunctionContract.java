@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.model.IF.contract;
 
 import java.io.PrintStream;
+import java.util.Iterator;
 
 import edu.udel.cis.vsl.civl.model.IF.Sourceable;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -72,6 +73,20 @@ public interface FunctionContract extends Sourceable {
 	 * @param behavior
 	 */
 	void addNamedBehavior(NamedFunctionBehavior behavior);
+
+	/**
+	 * Add an {@link MPICollectiveBehavior}
+	 * 
+	 * @param behavior
+	 */
+	void addMPICollectiveBehavior(MPICollectiveBehavior behavior);
+
+	/**
+	 * Returns a {@link Iterator} of a set of {@link MPICollectiveBehavior}s.
+	 * 
+	 * @return
+	 */
+	Iterator<MPICollectiveBehavior> getMPIBehaviors();
 
 	/**
 	 * returns the behavior with the given name; null if no such behavior

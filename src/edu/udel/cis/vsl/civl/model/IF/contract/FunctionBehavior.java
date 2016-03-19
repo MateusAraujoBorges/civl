@@ -20,14 +20,14 @@ public interface FunctionBehavior extends Sourceable {
 	 * 
 	 * @return
 	 */
-	Iterable<Expression> preconditions();
+	Iterable<Expression> requirements();
 
 	/**
 	 * Returns the postconditions of this behavior.
 	 * 
 	 * @return
 	 */
-	Iterable<Expression> postconditions();
+	Iterable<Expression> ensurances();
 
 	/**
 	 * Returns the assigns clause of this behavior.
@@ -150,14 +150,14 @@ public interface FunctionBehavior extends Sourceable {
 	 * 
 	 * @return
 	 */
-	int numPreconditions();
+	int numRequirements();
 
 	/**
 	 * Returns the number of postconditions of this behavior.
 	 * 
 	 * @return
 	 */
-	int numPostconditions();
+	int numEnsurances();
 
 	/**
 	 * Returns the number of assigns clauses of this behavior.
