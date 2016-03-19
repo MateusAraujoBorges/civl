@@ -430,7 +430,7 @@ public class ContractTranslator extends FunctionTranslator {
 		Variable result;
 
 		switch (kind) {
-		case MPI_COMM_RANK:
+		case MPI_COMM_RANK: 
 			variableIdent = modelFactory.identifier(source,
 					contractMPICommRankName);
 			break;
