@@ -51,12 +51,6 @@ public class TransformerFactory {
 
 	private Transformer contractTransformer;
 
-	public Transformer getContractTransformer() {
-		if (contractTransformer == null)
-			contractTransformer = new ContractTransformer(astFactory);
-		return contractTransformer;
-	}
-
 	public TransformerFactory(ASTFactory astFactory) {
 		this.astFactory = astFactory;
 	}
@@ -65,6 +59,12 @@ public class TransformerFactory {
 		if (generalTransformer == null)
 			generalTransformer = new GeneralTransformer(astFactory, config);
 		return generalTransformer;
+	}
+
+	public Transformer getContractTransformer() {
+		if (contractTransformer == null)
+			contractTransformer = new ContractTransformer(astFactory);
+		return contractTransformer;
 	}
 
 	public Transformer getMacroTransformer() {
