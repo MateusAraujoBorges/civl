@@ -49,6 +49,14 @@ public class TransformerFactory {
 
 	private Transformer svcompTransformer;
 
+	private Transformer contractTransformer;
+
+	public Transformer getContractTransformer() {
+		if (contractTransformer == null)
+			contractTransformer = new ContractTransformer(astFactory);
+		return contractTransformer;
+	}
+
 	public TransformerFactory(ASTFactory astFactory) {
 		this.astFactory = astFactory;
 	}

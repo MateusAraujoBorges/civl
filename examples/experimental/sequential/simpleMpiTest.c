@@ -1,5 +1,6 @@
 #include<mpi.h>
 #include<assert.h>
+#include<civlc.cvh>
 
 double * u;
 int nx = 10;
@@ -24,5 +25,6 @@ int main() {
   int dummy = 7;
   exchange(0);
   dummy=8;
+  $havoc(NULL);
   return 0;
 }
