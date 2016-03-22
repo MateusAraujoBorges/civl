@@ -6,7 +6,7 @@ void main(){
   char* s;
   int len;
   
-  s = (char*)malloc(sizeof(char) * 4);
+  s = (char*)malloc(sizeof(char) * 5);
   
   //s[0] = 'a';
   //s[1] = 'b';

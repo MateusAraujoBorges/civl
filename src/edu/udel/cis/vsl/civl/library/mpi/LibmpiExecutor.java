@@ -396,7 +396,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		if (symbolicUtil.isNullPointer(pointer))
 			return state;
 		// this assertion doesn't need recovery:
-		if (!pointer.operator().equals(SymbolicOperator.CONCRETE)) {
+		if (!pointer.operator().equals(SymbolicOperator.TUPLE)) {
 			errorLogger
 					.logSimpleError(arguments[0].getSource(), state, process,
 							this.symbolicAnalyzer.stateInformation(state),

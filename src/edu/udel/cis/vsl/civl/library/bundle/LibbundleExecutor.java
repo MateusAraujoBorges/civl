@@ -274,7 +274,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 		Evaluation eval;
 		int elementTypeIndex;
 
-		if (pointer.operator() != SymbolicOperator.CONCRETE) {
+		if (pointer.operator() != SymbolicOperator.TUPLE) {
 			errorLogger.logSimpleError(arguments[1].getSource(), state,
 					process, this.symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,
@@ -389,7 +389,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 		Pair<Evaluation, SymbolicExpression> eval_and_pointer;
 
 		// checking if pointer is valid
-		if (pointer.operator() != SymbolicOperator.CONCRETE) {
+		if (pointer.operator() != SymbolicOperator.TUPLE) {
 			errorLogger.logSimpleError(arguments[1].getSource(), state,
 					process, symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,
@@ -473,7 +473,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 		Evaluation eval = null;
 
 		// Checking if pointer is valid.
-		if (pointer.operator() != SymbolicOperator.CONCRETE) {
+		if (pointer.operator() != SymbolicOperator.TUPLE) {
 			errorLogger.logSimpleError(source, state, process,
 					this.symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,

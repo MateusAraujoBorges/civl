@@ -18,7 +18,6 @@ import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicSequence;
 
 /**
  * A SymbolicUtility provides all the common operations of symbolic expressions.
@@ -56,7 +55,7 @@ public interface SymbolicUtility {
 	 * @return the string representation from the given character array with
 	 */
 	StringBuffer charArrayToString(CIVLSource source,
-			SymbolicSequence<?> charArray, int startIndex, boolean forPrint);
+			SymbolicExpression charArray, int startIndex, boolean forPrint);
 
 	/**
 	 * Checks if the object that the container pointer points to contains that

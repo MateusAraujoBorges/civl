@@ -1176,7 +1176,7 @@ public class AmpleSetWorker {
 				SymbolicExpression eval;
 				Variable variable;
 
-				if (expr.operator() != SymbolicOperator.CONCRETE
+				if (expr.operator() != SymbolicOperator.TUPLE
 						|| symbolicAnalyzer.isDerefablePointer(state, expr).right != ResultType.YES)
 					return;
 				variable = state
@@ -1187,7 +1187,7 @@ public class AmpleSetWorker {
 					return;
 				// result =
 				this.memUnitFactory.add(result, expr);
-				if (expr.operator() == SymbolicOperator.CONCRETE) {
+				if (expr.operator() == SymbolicOperator.TUPLE) {
 					/*
 					 * If the expression is an arrayElementReference expression,
 					 * and finally it turns that the array type has length 0,
@@ -1207,7 +1207,7 @@ public class AmpleSetWorker {
 					// TODO what's this?
 					if (pointerValue == null)
 						return;
-					if (pointerValue.operator() == SymbolicOperator.CONCRETE
+					if (pointerValue.operator() == SymbolicOperator.TUPLE
 							&& pointerValue.type() != null
 							&& pointerValue.type().equals(
 									typeFactory.pointerSymbolicType()))

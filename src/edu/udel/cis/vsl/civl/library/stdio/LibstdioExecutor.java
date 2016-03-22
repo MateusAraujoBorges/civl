@@ -47,7 +47,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicSequence;
 
 /**
  * Executor for stdio function calls. Some methods may be used elsewhere so this
@@ -413,7 +412,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression fileSystemStructure;
 		SymbolicExpression fileArray;
 		SymbolicExpression filename;
-		SymbolicSequence<?> fileSequence;
+		// SymbolicSequence<?> fileSequence;
 		int numFiles;
 		int fileIndex;
 		SymbolicExpression length;
@@ -446,13 +445,14 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		// fileNameString = fileNameStringPair.right.toString();
 		// does a file by that name already exist in the filesystem?
 		// assume all are concrete.
-		if (fileArray.operator() != SymbolicOperator.CONCRETE)
+		if (fileArray.operator() != SymbolicOperator.ARRAY)
 			throw new CIVLUnimplementedFeatureException(
 					"non-concrete file system", expressions[0]);
-		fileSequence = (SymbolicSequence<?>) fileArray.argument(0);
-		numFiles = fileSequence.size();
+		// fileSequence = (SymbolicSequence<?>) fileArray.argument(0);
+		numFiles = fileArray.numArguments();
 		for (fileIndex = 0; fileIndex < numFiles; fileIndex++) {
-			SymbolicExpression tmpFile = fileSequence.get(fileIndex);
+			SymbolicExpression tmpFile = (SymbolicExpression) fileArray
+					.argument(fileIndex);
 			SymbolicExpression tmpFilename = universe.tupleRead(tmpFile,
 					zeroObject);
 
@@ -654,7 +654,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression filesystemPointer;
 		SymbolicExpression fileSystemStructure;
 		SymbolicExpression fileArray;
-		SymbolicSequence<?> fileSequence;
+		// SymbolicSequence<?> fileSequence;
 		SymbolicExpression filename;
 		int numFiles;
 		int fileIndex;
@@ -675,13 +675,14 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 
 		// does a file by that name already exist in the filesystem?
 		// assume all are concrete.
-		if (fileArray.operator() != SymbolicOperator.CONCRETE)
+		if (fileArray.operator() != SymbolicOperator.ARRAY)
 			throw new CIVLUnimplementedFeatureException(
 					"non-concrete file system", arguments[0]);
-		fileSequence = (SymbolicSequence<?>) fileArray.argument(0);
-		numFiles = fileSequence.size();
+		// fileSequence = (SymbolicSequence<?>) fileArray.argument(0);
+		numFiles = fileArray.numArguments();
 		for (fileIndex = 0; fileIndex < numFiles; fileIndex++) {
-			SymbolicExpression tmpFile = fileSequence.get(fileIndex);
+			SymbolicExpression tmpFile = (SymbolicExpression) fileArray
+					.argument(fileIndex);
 			SymbolicExpression tmpFilename = universe.tupleRead(tmpFile,
 					zeroObject);
 
@@ -1050,7 +1051,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 
 			if (argumentType instanceof CIVLPointerType
 					&& ((CIVLPointerType) argumentType).baseType().isCharType()
-					&& argumentValue.operator() == SymbolicOperator.CONCRETE) {
+					&& argumentValue.operator() == SymbolicOperator.TUPLE) {
 				// also check format code is %s before doing this
 				if (!sIndexes.contains(i)) {
 					throw new CIVLSyntaxException("Array pointer unaccepted",

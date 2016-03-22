@@ -102,6 +102,7 @@ public class CommonContractConditionGenerator extends CommonEvaluator implements
 	 */
 	private final SymbolicType pointerType;
 
+	@SuppressWarnings("unused")
 	private CIVLTypeFactory typeFactory;
 
 	/*********** Verification conditions **********/
@@ -219,6 +220,7 @@ public class CommonContractConditionGenerator extends CommonEvaluator implements
 		return null;
 	}
 
+	@SuppressWarnings("unused")
 	private Evaluation deriveContractWorker(FunctionBehavior behavior) {
 		return null;
 	}
@@ -351,7 +353,7 @@ public class CommonContractConditionGenerator extends CommonEvaluator implements
 		state = derivedPointer.first;
 		pointer = derivedPointer.second;
 		offset = derivedPointer.third;
-		if ((pointer.operator().equals(SymbolicOperator.CONCRETE))) {
+		if ((pointer.operator().equals(SymbolicOperator.TUPLE))) {
 			return new Evaluation(state, pointer);
 		} else if ((pointer.operator().equals(SymbolicOperator.LAMBDA))) {
 			pointer = universe.apply(pointer, Arrays.asList(offset));

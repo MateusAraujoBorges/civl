@@ -77,7 +77,7 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator implements
 		int pidValue;
 		Expression joinProcessExpr = arguments[0];
 
-		if (joinProcess.operator() != SymbolicOperator.CONCRETE) {
+		if (joinProcess.operator() != SymbolicOperator.TUPLE) {
 			String process = state.getProcessState(pid).name() + "(id=" + pid
 					+ ")";
 

@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.dynamic.common;
 
-import java.util.Iterator;
 import java.util.List;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -18,7 +17,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.UnionMemberReference;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicSequence;
 
 /**
  * This class implements operations on a heap. A heap consists of a fixed number
@@ -201,21 +199,18 @@ public class HeapAnalyzer {
 		if (heapValue.isNull())
 			return true;
 		else {
-			SymbolicSequence<?> heapFields = (SymbolicSequence<?>) heapValue
-					.argument(0);
-			int count = heapFields.size();
+			int count = heapValue.numArguments();
 
 			for (int i = 0; i < count; i++) {
-				SymbolicExpression heapField = heapFields.get(i);
-				SymbolicSequence<?> heapObjects = (SymbolicSequence<?>) heapField
-						.argument(0);
-				Iterator<? extends SymbolicExpression> iter = heapObjects
-						.iterator();
+				SymbolicExpression heapField = (SymbolicExpression) heapValue
+						.argument(i);
+				int numObjects = heapField.numArguments();
 
-				while (iter.hasNext()) {
-					SymbolicExpression expr = iter.next();
+				for (int j = 0; j < numObjects; j++) {
+					SymbolicExpression heapObj = (SymbolicExpression) heapField
+							.argument(j);
 
-					if (!this.isInvalidHeapObject(expr))
+					if (!this.isInvalidHeapObject(heapObj))
 						return false;
 				}
 			}
@@ -286,7 +281,7 @@ public class HeapAnalyzer {
 	 * @return True iff the pointer points to a certain part of some heap.
 	 */
 	boolean isPointerToHeap(SymbolicExpression pointer) {
-		if (pointer.operator() != SymbolicOperator.CONCRETE)
+		if (pointer.operator() != SymbolicOperator.TUPLE)
 			return false;
 
 		int vid = symbolicUtil.getVariableId(null, pointer);

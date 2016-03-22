@@ -631,9 +631,9 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 		firstInit = secondInit = true;
 		firstPtr = argumentValues[0];
 		secondPtr = argumentValues[1];
-		if (firstPtr.operator() != SymbolicOperator.CONCRETE)
+		if (firstPtr.operator() != SymbolicOperator.TUPLE)
 			firstPtrDefined = false;
-		if (secondPtr.operator() != SymbolicOperator.CONCRETE)
+		if (secondPtr.operator() != SymbolicOperator.TUPLE)
 			secPtrDefined = false;
 		if (!firstPtrDefined || !secPtrDefined) {
 			String msg = new String();
@@ -843,7 +843,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 		Reasoner reasoner;
 		ResultType resultType;
 
-		if (!ptr.operator().equals(SymbolicOperator.CONCRETE)) {
+		if (!ptr.operator().equals(SymbolicOperator.TUPLE)) {
 			errorLogger.logSimpleError(
 					source,
 					state,

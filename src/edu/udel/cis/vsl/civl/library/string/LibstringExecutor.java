@@ -45,7 +45,6 @@ import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicSequence;
 
 /**
  * Executor for stdlib function calls.
@@ -160,25 +159,26 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 		int lStartIndex;
 		SymbolicExpression lhsPointer = argumentValues[0];
 		// symbolicUtil.parentPointer(source, argumentValues[0]);
-		SymbolicSequence<?> originalArray;
+		// SymbolicSequence<?> originalArray;
+		SymbolicExpression originalArray = null;
 		int numChars;
 		int vid = symbolicUtil.getVariableId(source, lhsPointer);
 		int scopeId = symbolicUtil.getDyscopeId(source, lhsPointer);
 		ReferenceExpression symRef = ((ArrayElementReference) symbolicUtil
 				.getSymRef(lhsPointer)).getParent();
 
-		if (charPointer.operator() == SymbolicOperator.CONCRETE)
+		if (charPointer.operator() == SymbolicOperator.TUPLE)
 			startIndex = symbolicUtil.getArrayIndex(source, charPointer);
 		else
 			throw new CIVLUnimplementedFeatureException(
 					"Do strcpy() on a non-concrete string", source);
-		if (lhsPointer.operator() == SymbolicOperator.CONCRETE)
+		if (lhsPointer.operator() == SymbolicOperator.TUPLE)
 			lStartIndex = symbolicUtil.getArrayIndex(source, lhsPointer);
 		else
 			throw new CIVLUnimplementedFeatureException(
 					"Assign to a non-concrete string", source);
 		if (charPointer.type() instanceof SymbolicArrayType) {
-			originalArray = (SymbolicSequence<?>) charPointer.argument(0);
+			originalArray = charPointer;
 		} else {
 			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(
 					source, charPointer);
@@ -191,22 +191,24 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 			state = eval.state;
 			// TODO: implement getStringConcrete() as an underneath
 			// implementation of getString()
-			originalArray = (SymbolicSequence<?>) eval.value.argument(0);
+			originalArray = eval.value;
 			startIndex = symbolicUtil.extractInt(source, arrayIndex);
 		}
-		numChars = originalArray.size();
+		numChars = originalArray.numArguments();
+		assert originalArray.operator() == SymbolicOperator.ARRAY;
 		for (int i = 0; i < numChars; i++) {
-			SymbolicExpression charExpr = originalArray.get(i + startIndex);
+			SymbolicExpression charExpr = (SymbolicExpression) originalArray
+					.argument(i + startIndex);
 			Character theChar = universe.extractCharacter(charExpr);
 			ReferenceExpression eleRef = universe.arrayElementReference(symRef,
 					universe.integer(i + lStartIndex));
 			SymbolicExpression pointer = symbolicUtil.makePointer(scopeId, vid,
 					eleRef);
 
-			if (theChar == '\0')
-				break;
 			state = primaryExecutor.assign(source, state, process, pointer,
 					charExpr);
+			if (theChar == '\0')
+				break;
 		}
 		if (lhs != null)
 			state = primaryExecutor.assign(state, pid, process, lhs,
@@ -252,14 +254,14 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 		Triple<State, StringBuffer, Boolean> strEval2 = null;
 		StringBuffer str1, str2;
 
-		if ((charPointer1.operator() != SymbolicOperator.CONCRETE)) {
+		if ((charPointer1.operator() != SymbolicOperator.TUPLE)) {
 			errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,
 					"attempt to read/write from an invalid pointer");
 			throw new UnsatisfiablePathConditionException();
 		}
-		if ((charPointer2.operator() != SymbolicOperator.CONCRETE)) {
+		if ((charPointer2.operator() != SymbolicOperator.TUPLE)) {
 			errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,
@@ -332,17 +334,18 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 		Evaluation eval;
 		SymbolicExpression charPointer = argumentValues[0];
 		int startIndex;
-		SymbolicSequence<?> originalArray = null;
+		// SymbolicSequence<?> originalArray = null;
+		SymbolicExpression originalArray = null;
 		int numChars;
 		int length = 0;
 
-		if (charPointer.operator() == SymbolicOperator.CONCRETE)
+		if (charPointer.operator() == SymbolicOperator.TUPLE)
 			startIndex = symbolicUtil.getArrayIndex(source, charPointer);
 		else
 			throw new CIVLUnimplementedFeatureException(
 					"Do strlen() on a non-concrete string", source);
 		if (charPointer.type() instanceof SymbolicArrayType) {
-			originalArray = (SymbolicSequence<?>) charPointer.argument(0);
+			originalArray = charPointer;
 		} else {
 			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(
 					source, charPointer);
@@ -351,23 +354,28 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 			NumericExpression arrayIndex = arrayRef.getIndex();
 			eval = evaluator.dereference(source, state, process, null,
 					arrayPointer, false);
-			int numOfArgs;
+			// int numOfArgs;
 
 			state = eval.state;
-			numOfArgs = eval.value.numArguments();
-
-			for (int i = 0; i < numOfArgs; i++) {
-				if (eval.value.argument(i) instanceof SymbolicSequence<?>) {
-					originalArray = (SymbolicSequence<?>) eval.value
-							.argument(i);
-					break;
-				}
-			}
+			originalArray = eval.value;
+			// numOfArgs = eval.value.numArguments();
+			//
+			// for (int i = 0; i < numOfArgs; i++) {
+			// SymbolicObject arg = eval.value.argument(i);
+			// if (arg instanceof SymbolicExpression) {
+			// SymbolicExpression argExpr = (SymbolicExpression) arg;
+			// if (argExpr.operator() == SymbolicOperator.ARRAY) {
+			// originalArray = argExpr;
+			// break;
+			// }
+			// }
+			// }
 			startIndex = symbolicUtil.extractInt(source, arrayIndex);
 		}
-		numChars = originalArray.size();
+		numChars = originalArray.numArguments();
 		for (int i = 0; i < numChars - startIndex; i++) {
-			SymbolicExpression charExpr = originalArray.get(i + startIndex);
+			SymbolicExpression charExpr = (SymbolicExpression) originalArray
+					.argument(i + startIndex);
 			Character theChar = universe.extractCharacter(charExpr);
 
 			if (theChar == '\0')
@@ -426,7 +434,7 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 		pointer = argumentValues[0];
 		c = argumentValues[1];
 		// check if pointer is valid first
-		if (pointer.operator() != SymbolicOperator.CONCRETE) {
+		if (pointer.operator() != SymbolicOperator.TUPLE) {
 			errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,

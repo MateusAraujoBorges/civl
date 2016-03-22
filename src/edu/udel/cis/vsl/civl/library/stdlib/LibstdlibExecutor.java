@@ -138,7 +138,7 @@ public class LibstdlibExecutor extends BaseLibraryExecutor implements
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression intValue = null;
 
-		if (argumentValues[0].operator() != SymbolicOperator.CONCRETE) {
+		if (argumentValues[0].operator() != SymbolicOperator.TUPLE) {
 			intValue = universe.apply(atoiFunction,
 					Arrays.asList(argumentValues[0]));
 		} else {

@@ -437,7 +437,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 				arguments[0], arrayPtr, false);
 		state = eval.state;
 		arrayValue = eval.value;
-		if (arrayValue.operator() != SymbolicOperator.CONCRETE) {
+		if (arrayValue.operator() != SymbolicOperator.ARRAY) {
 			this.errorLogger
 					.logSimpleError(
 							source,

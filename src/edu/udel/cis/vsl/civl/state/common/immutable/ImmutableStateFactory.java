@@ -1624,7 +1624,7 @@ public class ImmutableStateFactory implements StateFactory {
 					}
 				}
 			}
-		} else if (value.operator() != SymbolicOperator.CONCRETE) {
+		} else if (value.operator() != SymbolicOperator.TUPLE) {
 			return;
 		} else if (symbolicUtil.isHeapPointer(value)) {
 			SymbolicExpression heapObjPtr = this.symbolicUtil

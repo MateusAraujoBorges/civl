@@ -160,7 +160,7 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 		if (lowInt == null || highInt == null)
 			throw new CIVLUnimplementedFeatureException(
 					"Reasoning on $range with non-concrete parameters.");
-		if (pointer.operator().equals(SymbolicOperator.CONCRETE)) {
+		if (pointer.operator().equals(SymbolicOperator.TUPLE)) {
 			if (lowInt.intValue() > highInt.intValue())
 				throw new CIVLSyntaxException(
 						"A range in \\valid must has a step with value one.");

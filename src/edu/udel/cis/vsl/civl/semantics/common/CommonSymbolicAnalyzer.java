@@ -464,7 +464,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		StringBuffer result = new StringBuffer();
 
 		if (pointer.operator() == SymbolicOperator.NULL
-				|| pointer.operator() != SymbolicOperator.CONCRETE)
+				|| pointer.operator() != SymbolicOperator.TUPLE)
 			return result.append(pointer);
 		else {
 			int dyscopeId = this.symbolicUtil.getDyscopeId(source, pointer);
@@ -761,7 +761,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		StringBuffer result = new StringBuffer();
 
 		if (pointer.operator() == SymbolicOperator.NULL
-				|| pointer.operator() != SymbolicOperator.CONCRETE)
+				|| pointer.operator() != SymbolicOperator.TUPLE)
 			result.append(pointer);
 		else {
 			SymbolicTupleType pointerType = (SymbolicTupleType) pointer.type();
@@ -805,8 +805,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 					result.append("\"");
 					result.append(this.symbolicUtil.charArrayToString(source,
-							(SymbolicSequence<?>) stringExpression.argument(0),
-							0, true));
+							stringExpression, 0, true));
 					result.append("\"");
 				} else {
 					if (!isMu)
@@ -908,18 +907,17 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			// heap
 			return heapValueToString(source, state, symbolicExpression, prefix,
 					separator);
-		} else if (symbolicExpression.operator() == SymbolicOperator.CONCRETE
+		} else if (symbolicExpression.operator() == SymbolicOperator.ARRAY
 				&& type instanceof SymbolicArrayType
 				&& ((SymbolicArrayType) type).elementType().equals(charType)) {
 			// string literal
 			result.append("\"");
 			result.append(this.symbolicUtil.charArrayToString(source,
-					(SymbolicSequence<?>) symbolicExpression.argument(0), 0,
-					true));
+					symbolicExpression, 0, true));
 			result.append("\"");
 		} else if (type.equals(procType)) {
 			// $proc's
-			if (symbolicExpression.operator() != SymbolicOperator.CONCRETE)
+			if (symbolicExpression.operator() != SymbolicOperator.TUPLE)
 				result.append(symbolicExpression);
 			else {
 				int pid = modelFactory.getProcessId(source, symbolicExpression);
@@ -941,7 +939,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			}
 		} else if (type.equals(scopeType)) {
 			// $scope's
-			if (symbolicExpression.operator() != SymbolicOperator.CONCRETE)
+			if (symbolicExpression.operator() != SymbolicOperator.TUPLE)
 				result.append(symbolicExpression);
 			else {
 				int scopeId = modelFactory.getScopeId(source,
@@ -958,14 +956,14 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			// The structure of a symbolic expression has changed.
 			// Symbolic collections are no longer used as arguments.
 			// This code must be updated accordingly.
-			if (operator == SymbolicOperator.CONCRETE) {
+			if (operator == SymbolicOperator.TUPLE) {
 				if (type.toString().equals("$domain")) {
-					SymbolicSequence<? extends SymbolicExpression> symbolicSequence = (SymbolicSequence<? extends SymbolicExpression>) symbolicExpression
+					SymbolicExpression dimension = (SymbolicExpression) symbolicExpression
 							.argument(0);
-					SymbolicExpression dimension = symbolicSequence.get(0);
-					String unionKind = symbolicSequence.get(1)
+					String unionKind = symbolicExpression.argument(1)
 							.toStringBuffer(false).toString();
-					SymbolicExpression value = symbolicSequence.get(2);
+					SymbolicExpression value = (SymbolicExpression) symbolicExpression
+							.argument(2);
 
 					if (unionKind.equals("0")) {
 						result.append("($domain(");
@@ -975,63 +973,68 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append(this.symbolicExpressionToString(source,
 							state, null, value, false, "", ""));
 				} else if (type.toString().equals("$regular_range")) {
-					SymbolicCollection<? extends SymbolicExpression> symbolicCollection = (SymbolicCollection<? extends SymbolicExpression>) symbolicExpression
-							.argument(0);
-					int elementIndex = 0;
+					int numArgs = symbolicExpression.numArguments();
 
 					result.append("(");
-					for (SymbolicExpression symbolicElement : symbolicCollection) {
-						if (elementIndex == 1)
+					for (int i = 0; i < numArgs; i++) {
+						if (i == 1)
 							result.append("..");
-						else if (elementIndex == 2) {
+						else if (i == 2) {
 							result.append("#");
 						}
-						result.append(this
-								.symbolicExpressionToString(source, state,
-										null, symbolicElement, prefix,
-										separator));
-						elementIndex++;
+						result.append(this.symbolicExpressionToString(source,
+								state, null,
+								(SymbolicExpression) symbolicExpression
+										.argument(i), prefix, separator));
 					}
 					result.append(")");
 				} else {
-					SymbolicTypeKind tk = type.typeKind();
+					result.append(symbolicTupleOrArrayToString(source, state,
+							symbolicExpression, civlType, separator, prefix));
+				}
+				return result;
+			} else if (operator == SymbolicOperator.ARRAY) {
+				result.append(symbolicTupleOrArrayToString(source, state,
+						symbolicExpression, civlType, separator, prefix));
+				return result;
+			} else if (operator == SymbolicOperator.CONCRETE) {
+				SymbolicTypeKind tk = type.typeKind();
 
-					// if (showType
-					// && (type instanceof SymbolicArrayType || type instanceof
-					// SymbolicTupleType)) {
-					// result.append('(');
-					// result.append(type.toStringBuffer(false));
-					// result.append(')');
-					// }
-					if (tk == SymbolicTypeKind.CHAR) {
-						result.append("'");
-						result.append(symbolicExpression.argument(0)
-								.toStringBuffer(false));
-						result.append("'");
+				// if (showType
+				// && (type instanceof SymbolicArrayType || type instanceof
+				// SymbolicTupleType)) {
+				// result.append('(');
+				// result.append(type.toStringBuffer(false));
+				// result.append(')');
+				// }
+				if (tk == SymbolicTypeKind.CHAR) {
+					result.append("'");
+					result.append(symbolicExpression.argument(0)
+							.toStringBuffer(false));
+					result.append("'");
+				} else {
+					if (symbolicExpression.type().equals(
+							symbolicUtil.dynamicType())) {
+						result.append(this.symbolicUtil
+								.getStaticTypeOfDynamicType(symbolicExpression)
+								.toString());
 					} else {
-						if (symbolicExpression.type().equals(
-								symbolicUtil.dynamicType())) {
-							result.append(this.symbolicUtil
-									.getStaticTypeOfDynamicType(
-											symbolicExpression).toString());
-						} else {
-							SymbolicObjectKind objectKind = symbolicExpression
-									.argument(0).symbolicObjectKind();
+						SymbolicObjectKind objectKind = symbolicExpression
+								.argument(0).symbolicObjectKind();
 
-							if (objectKind == SymbolicObjectKind.EXPRESSION_COLLECTION) {
-								result.append(symbolicSequenceToString(
-										source,
-										state,
-										(SymbolicCollection<? extends SymbolicExpression>) symbolicExpression
-												.argument(0), civlType,
-										separator, prefix));
-							} else {
-								result.append(symbolicExpression.argument(0)
-										.toStringBuffer(true));
-							}
-							if (type.isHerbrand())
-								result.append('h');
+						if (objectKind == SymbolicObjectKind.EXPRESSION_COLLECTION) {
+							result.append(symbolicSequenceToString(
+									source,
+									state,
+									(SymbolicCollection<? extends SymbolicExpression>) symbolicExpression
+											.argument(0), civlType, separator,
+									prefix));
+						} else {
+							result.append(symbolicExpression.argument(0)
+									.toStringBuffer(true));
 						}
+						if (type.isHerbrand())
+							result.append('h');
 					}
 				}
 				return result;
@@ -1486,6 +1489,54 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				}
 			}
 		}
+		return result;
+	}
+
+	private StringBuffer symbolicTupleOrArrayToString(CIVLSource source,
+			State state, SymbolicExpression tuppleOrArray, CIVLType civlType,
+			String separator, String prefix) {
+		StringBuffer result = new StringBuffer();
+		// int elementIndex = 0;
+		boolean allSubtypesScalar = civlType != null ? civlType
+				.areSubtypesScalar() : false;
+		boolean needNewLine = !separator.isEmpty() && !allSubtypesScalar;
+		String padding = "\n" + prefix + separator;
+		String newPrefix = needNewLine ? prefix + separator : prefix;
+		int numArgs = tuppleOrArray.numArguments();
+		boolean needBrackets = allSubtypesScalar || numArgs == 0;
+		boolean isArray = civlType != null ? civlType.isArrayType() : false;
+
+		if (needBrackets)
+			result.append("{");
+		for (int i = 0; i < numArgs; i++) {
+			Pair<String, CIVLType> elementNameAndType = this.subType(civlType,
+					i);
+			CIVLType eleType = elementNameAndType.right;
+			boolean subtypesOfEleScalar = eleType != null ? eleType
+					.areSubtypesScalar() : false;
+			boolean eleEmpty = false;
+			SymbolicExpression symbolicElement = (SymbolicExpression) tuppleOrArray
+					.argument(i);
+
+			eleEmpty = symbolicElement.numArguments() == 0;
+			if (i != 0 && !needNewLine)
+				result.append(", ");
+			if (needNewLine)
+				result.append(padding);
+			if (elementNameAndType.left != null)
+				result.append("." + elementNameAndType.left);
+			else if (isArray)
+				result.append("[" + i + "]");
+			if (subtypesOfEleScalar || eleEmpty)
+				result.append("=");
+			else if (eleType != null)
+				result.append(": " + eleType);
+			result.append(symbolicExpressionToString(source, state,
+					elementNameAndType.right, symbolicElement, false,
+					newPrefix, separator));
+		}
+		if (needBrackets)
+			result.append("}");
 		return result;
 	}
 

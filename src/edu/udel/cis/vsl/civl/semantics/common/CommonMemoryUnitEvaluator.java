@@ -252,7 +252,7 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 						symbolicUtil.getSymRef(expr)));
 				// set.add(expr);
 				try {
-					if (expr.operator() == SymbolicOperator.CONCRETE
+					if (expr.operator() == SymbolicOperator.TUPLE
 							&& symbolicUtil.getDyscopeId(null, expr) >= 0) {
 						/*
 						 * If the expression is an arrayElementReference

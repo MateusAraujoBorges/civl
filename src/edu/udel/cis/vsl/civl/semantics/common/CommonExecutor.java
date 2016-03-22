@@ -1045,7 +1045,7 @@ public class CommonExecutor implements Executor {
 
 			if (argumentType instanceof CIVLPointerType
 					&& ((CIVLPointerType) argumentType).baseType().isCharType()
-					&& argumentValue.operator() == SymbolicOperator.CONCRETE) {
+					&& argumentValue.operator() == SymbolicOperator.TUPLE) {
 				Format myFormat = nonVoidFormats.get(i - 1);
 
 				if (myFormat.type == ConversionType.STRING) {

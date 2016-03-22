@@ -444,7 +444,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			SymbolicExpression pointer, SymbolicExpression value,
 			boolean isInitialization)
 			throws UnsatisfiablePathConditionException {
-		if (pointer.operator().equals(SymbolicOperator.CONCRETE))
+		if (pointer.operator().equals(SymbolicOperator.TUPLE))
 			return super.assign(source, state, process, pointer, value,
 					isInitialization);
 		else

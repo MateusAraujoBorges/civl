@@ -419,49 +419,54 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	 */
 	@Override
 	public StringBuffer charArrayToString(CIVLSource source,
-			SymbolicSequence<?> charArray, int startIndex, boolean forPrint) {
+			SymbolicExpression charArray, int startIndex, boolean forPrint) {
 		StringBuffer result = new StringBuffer();
-		int numChars = charArray.size();
+		int numChars = charArray.numArguments();
 
+		// assert charArray.operator() == SymbolicOperator.ARRAY;
 		// ignoring the '\0' at the end of the string.
 		for (int j = startIndex; j < numChars; j++) {
-			SymbolicExpression charExpr = charArray.get(j);
+			SymbolicExpression charExpr = (SymbolicExpression) charArray
+					.argument(j);
 			Character theChar = universe.extractCharacter(charExpr);
 
 			if (theChar == null)
 				throw new CIVLUnimplementedFeatureException(
 						"non-concrete character in string at position " + j,
 						source);
-			if (theChar != '\0') {
-				if (forPrint) {
-					String theCharToString;
-					switch (theChar) {
-					case '\u000C':
-						theCharToString = "\\f";
-						break;
-					case '\u0007':
-						theCharToString = "\\a";
-						break;
-					case '\b':
-						theCharToString = "\\b";
-						break;
-					case '\n':
-						theCharToString = "\\n";
-						break;
-					case '\t':
-						theCharToString = "\\t";
-						break;
-					case '\r':
-						theCharToString = "\\r";
-						break;
-					default:
-						theCharToString = theChar.toString();
-					}
-					result.append(theCharToString);
-				} else {
-					result.append(theChar);
+			// if (theChar != '\0') {
+			if (forPrint) {
+				String theCharToString;
+				switch (theChar) {
+				case '\0':
+					theCharToString = "\\0";
+					break;
+				case '\u000C':
+					theCharToString = "\\f";
+					break;
+				case '\u0007':
+					theCharToString = "\\a";
+					break;
+				case '\b':
+					theCharToString = "\\b";
+					break;
+				case '\n':
+					theCharToString = "\\n";
+					break;
+				case '\t':
+					theCharToString = "\\t";
+					break;
+				case '\r':
+					theCharToString = "\\r";
+					break;
+				default:
+					theCharToString = theChar.toString();
 				}
+				result.append(theCharToString);
+			} else {
+				result.append(theChar);
 			}
+			// }
 		}
 		return result;
 	}

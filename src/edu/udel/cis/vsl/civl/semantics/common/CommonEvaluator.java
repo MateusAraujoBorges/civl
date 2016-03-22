@@ -113,7 +113,6 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.number.IF.Numbers;
 
 /**
@@ -467,7 +466,7 @@ public class CommonEvaluator implements Evaluator {
 					ErrorKind.UNDEFINED_VALUE,
 					"attempt to deference an invalid pointer");
 			throwPCException = true;
-		} else if (pointer.operator() != SymbolicOperator.CONCRETE) {
+		} else if (pointer.operator() != SymbolicOperator.TUPLE) {
 			errorLogger.logSimpleError(source, state, process,
 					this.symbolicAnalyzer.stateInformation(state),
 					ErrorKind.UNDEFINED_VALUE,
@@ -2823,7 +2822,7 @@ public class CommonEvaluator implements Evaluator {
 			}
 		} else if (expressionValue.type().equals(this.pointerType)) {
 			if (this.civlConfig.svcomp()) {
-				if (expressionValue.operator() != SymbolicOperator.CONCRETE)
+				if (expressionValue.operator() != SymbolicOperator.TUPLE)
 					return;
 			}
 			if (this.symbolicUtil.isNullPointer(expressionValue))
@@ -2831,7 +2830,7 @@ public class CommonEvaluator implements Evaluator {
 			if (this.symbolicUtil.applyReverseFunction(INT_TO_POINTER_FUNCTION,
 					expressionValue) != null)
 				return;
-			if (expressionValue.operator() != SymbolicOperator.CONCRETE)
+			if (expressionValue.operator() != SymbolicOperator.TUPLE)
 				return;
 			// try {
 			int scopeID = symbolicUtil.getDyscopeId(source, expressionValue);
@@ -3273,71 +3272,103 @@ public class CommonEvaluator implements Evaluator {
 			State state, String process, Expression charPointerExpr,
 			SymbolicExpression charPointer)
 			throws UnsatisfiablePathConditionException {
-		if (charPointer.operator() == SymbolicOperator.CONCRETE) {
-			SymbolicSequence<?> originalArray = null;
-			int int_arrayIndex = -1;
-			StringBuffer result = new StringBuffer();
+		SymbolicExpression originalArray = null;
+		SymbolicOperator operator = charPointer.operator();
+		int int_arrayIndex = -1;
+		StringBuffer result = new StringBuffer();
+
+		if (operator == SymbolicOperator.ARRAY) {//string literal
+			originalArray = charPointer;
+			int_arrayIndex = 0;
+		} else if (operator == SymbolicOperator.TUPLE) {
 			ReferenceExpression ref = null;
 			Evaluation eval;
 
-			if (charPointer.type() instanceof SymbolicCompleteArrayType) {
-				originalArray = (SymbolicSequence<?>) charPointer.argument(0);
-				int_arrayIndex = 0;
+			ref = symbolicUtil.getSymRef(charPointer);
+			if (ref instanceof ArrayElementReference) {
+				SymbolicExpression pointerCharArray = symbolicUtil
+						.parentPointer(source, charPointer);
+				SymbolicExpression charArray;
+
+				eval = dereference(source, state, process, null,
+						pointerCharArray, false);
+				state = eval.state;
+				charArray = eval.value;
+				originalArray = charArray;
+				int_arrayIndex = symbolicUtil.extractInt(source,
+						((ArrayElementReference) ref).getIndex());
+
 			} else {
-				ref = symbolicUtil.getSymRef(charPointer);
-				if (ref instanceof ArrayElementReference) {
-					SymbolicExpression pointerCharArray = symbolicUtil
-							.parentPointer(source, charPointer);
-					SymbolicExpression charArray;
-
-					eval = dereference(source, state, process, null,
-							pointerCharArray, false);
-					state = eval.state;
-					charArray = eval.value;
-					try {
-						originalArray = (SymbolicSequence<?>) charArray
-								.argument(0);
-					} catch (ClassCastException e) {
-						// throw new CIVLUnimplementedFeatureException(
-						// "non-concrete strings", source);
-						return new Triple<>(state,
-								charArray.toStringBuffer(true), false);
-					} catch (ArrayIndexOutOfBoundsException e) {
-						errorLogger.logSimpleError(source, state, process,
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.UNDEFINED_VALUE,
-								"reading undefined or uninitialized value from some pointer to heap: "
-										+ charArray.argument(0));
-						throw new UnsatisfiablePathConditionException();
-					}
-					int_arrayIndex = symbolicUtil.extractInt(source,
-							((ArrayElementReference) ref).getIndex());
-
+				eval = dereference(source, state, process, charPointerExpr,
+						charPointer, false);
+				state = eval.state;
+				// A single character is not acceptable.
+				if (eval.value.numArguments() <= 1) {
+					this.errorLogger.logSimpleError(source, state, process,
+							this.symbolicAnalyzer.stateInformation(state),
+							ErrorKind.OTHER,
+							"Try to obtain a string from a sequence of char has length"
+									+ " less than or equal to one");
+					throw new UnsatisfiablePathConditionException();
 				} else {
-					eval = dereference(source, state, process, charPointerExpr,
-							charPointer, false);
-					state = eval.state;
-					// A single character is not acceptable.
-					if (eval.value.numArguments() <= 1) {
-						this.errorLogger.logSimpleError(source, state, process,
-								this.symbolicAnalyzer.stateInformation(state),
-								ErrorKind.OTHER,
-								"Try to obtain a string from a sequence of char has length"
-										+ " less than or equal to one");
-						throw new UnsatisfiablePathConditionException();
-					} else {
-						originalArray = (SymbolicSequence<?>) eval.value
-								.argument(0);
-						int_arrayIndex = 0;
-					}
+					originalArray = eval.value;
+					int_arrayIndex = 0;
 				}
 			}
-			result = symbolicUtil.charArrayToString(source, originalArray,
-					int_arrayIndex, false);
-			return new Triple<>(state, result, true);
 		} else
 			throw new CIVLUnimplementedFeatureException(
 					"access on a non-concrete string", source);
+		result = symbolicUtil.charArrayToString(source, originalArray,
+				int_arrayIndex, false);
+		return new Triple<>(state, result, true);
+		// if (charPointer.operator() == SymbolicOperator.ARRAY) {
+		// // SymbolicSequence<?> originalArray = null;
+		// StringBuffer result = new StringBuffer();
+		// ReferenceExpression ref = null;
+		// Evaluation eval;
+		//
+		// if (charPointer.type() instanceof SymbolicCompleteArrayType) {
+		// originalArray = charPointer;
+		// int_arrayIndex = 0;
+		// } else {
+		// ref = symbolicUtil.getSymRef(charPointer);
+		// if (ref instanceof ArrayElementReference) {
+		// SymbolicExpression pointerCharArray = symbolicUtil
+		// .parentPointer(source, charPointer);
+		// SymbolicExpression charArray;
+		//
+		// eval = dereference(source, state, process, null,
+		// pointerCharArray, false);
+		// state = eval.state;
+		// charArray = eval.value;
+		// originalArray = charArray;
+		// int_arrayIndex = symbolicUtil.extractInt(source,
+		// ((ArrayElementReference) ref).getIndex());
+		//
+		// } else {
+		// eval = dereference(source, state, process, charPointerExpr,
+		// charPointer, false);
+		// state = eval.state;
+		// // A single character is not acceptable.
+		// if (eval.value.numArguments() <= 1) {
+		// this.errorLogger.logSimpleError(source, state, process,
+		// this.symbolicAnalyzer.stateInformation(state),
+		// ErrorKind.OTHER,
+		// "Try to obtain a string from a sequence of char has length"
+		// + " less than or equal to one");
+		// throw new UnsatisfiablePathConditionException();
+		// } else {
+		// originalArray = eval.value;
+		// int_arrayIndex = 0;
+		// }
+		// }
+		// }
+		// result = symbolicUtil.charArrayToString(source, originalArray,
+		// int_arrayIndex, false);
+		// return new Triple<>(state, result, true);
+		// } else
+		// throw new CIVLUnimplementedFeatureException(
+		// "access on a non-concrete string", source);
 	}
 
 	@Override
