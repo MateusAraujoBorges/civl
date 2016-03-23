@@ -2270,6 +2270,7 @@ public class FunctionTranslator {
 				case "$assert":
 				case "$assume":
 				case "$defined":
+				case "$havoc":
 					libName = "civlc";
 					break;
 				case "$assert_equals":
