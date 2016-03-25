@@ -1611,7 +1611,7 @@ public class ImmutableStateFactory implements StateFactory {
 						reachableHeapObjectsOfValue(state,
 								(SymbolicExpression) arg, reachable);
 						break;
-					case EXPRESSION_COLLECTION: {
+					case SEQUENCE: {
 						Iterator<? extends SymbolicExpression> iter = ((SymbolicCollection<?>) arg)
 								.iterator();
 
@@ -1722,7 +1722,7 @@ public class ImmutableStateFactory implements StateFactory {
 						computeNewHeapPointer((SymbolicExpression) arg,
 								heapMemUnitsMap, oldToNewHeapPointers);
 						break;
-					case EXPRESSION_COLLECTION: {
+					case SEQUENCE: {
 						Iterator<? extends SymbolicExpression> iter = ((SymbolicCollection<?>) arg)
 								.iterator();
 

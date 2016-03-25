@@ -1022,7 +1022,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						SymbolicObjectKind objectKind = symbolicExpression
 								.argument(0).symbolicObjectKind();
 
-						if (objectKind == SymbolicObjectKind.EXPRESSION_COLLECTION) {
+						if (objectKind == SymbolicObjectKind.SEQUENCE) {
 							result.append(symbolicSequenceToString(
 									source,
 									state,

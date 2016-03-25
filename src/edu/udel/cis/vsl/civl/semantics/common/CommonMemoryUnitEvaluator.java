@@ -318,7 +318,7 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 			findPointersInExpression((SymbolicExpression) object, set, state,
 					process);
 			break;
-		case EXPRESSION_COLLECTION:
+		case SEQUENCE:
 			for (SymbolicExpression expr : (SymbolicCollection<?>) object)
 				findPointersInExpression(expr, set, state, process);
 			break;

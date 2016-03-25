@@ -1243,7 +1243,7 @@ public class AmpleSetWorker {
 			findPointersInExpression((SymbolicExpression) object, muSet, state);
 			return;
 		}
-		case EXPRESSION_COLLECTION: {
+		case SEQUENCE: {
 			MemoryUnitSet result = muSet;
 
 			for (SymbolicExpression expr : (SymbolicCollection<?>) object)
