@@ -1088,6 +1088,15 @@ public class CommonEvaluator implements Evaluator {
 			return eval;
 		} else if (argType.isPointerType() && castType.isPointerType()) {
 			// pointer to pointer: for now...no change.
+			CIVLType argBaseType = ((CIVLPointerType) argType).baseType(), castBaseType = ((CIVLPointerType) castType)
+					.baseType();
+
+			if (!castBaseType.isVoidType() && !argBaseType.equals(castBaseType)) {
+				throw new CIVLUnimplementedFeatureException(
+						"type conversion from pointer-to-" + argBaseType
+								+ " to pointer-to-" + castBaseType,
+						arg.getSource());
+			}
 			return eval;
 		} else if (argType.isIntegerType() && castType.isBoolType()) {
 			if (value.type().isBoolean())

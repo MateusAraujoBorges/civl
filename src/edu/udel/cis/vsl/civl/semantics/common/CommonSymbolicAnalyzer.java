@@ -729,6 +729,10 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			Pair<CIVLType, String> parentResult = this.referenceToString(
 					source, type, tupleComponentRef.getParent());
 			String parent = parentResult.right;
+
+			if (!parentResult.left.isStructType())
+				return parentResult;
+
 			CIVLStructOrUnionType structOrUnionType = (CIVLStructOrUnionType) parentResult.left;
 			StructOrUnionField field = structOrUnionType.getField(index
 					.getInt());
