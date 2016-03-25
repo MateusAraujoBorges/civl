@@ -35,8 +35,8 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicCollection;
 
 /**
  * This is responsible for evaluating memory unit expressions. (IN PROGRESS)
@@ -319,7 +319,7 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 					process);
 			break;
 		case SEQUENCE:
-			for (SymbolicExpression expr : (SymbolicCollection<?>) object)
+			for (SymbolicExpression expr : (SymbolicSequence<?>) object)
 				findPointersInExpression(expr, set, state, process);
 			break;
 		default:

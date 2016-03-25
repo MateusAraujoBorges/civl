@@ -40,8 +40,8 @@ import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicCollection;
 
 /**
  * This class is responsible for computing the ample processes set at a given
@@ -1246,7 +1246,7 @@ public class AmpleSetWorker {
 		case SEQUENCE: {
 			MemoryUnitSet result = muSet;
 
-			for (SymbolicExpression expr : (SymbolicCollection<?>) object)
+			for (SymbolicExpression expr : (SymbolicSequence<?>) object)
 				findPointersInExpression(expr, result, state);
 
 			return;

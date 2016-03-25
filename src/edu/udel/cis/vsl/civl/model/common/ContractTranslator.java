@@ -23,7 +23,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractConstantNode.MPIConstantKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ReadOrWriteEventNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MemoryEventNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
@@ -304,8 +304,8 @@ public class ContractTranslator extends FunctionTranslator {
 		CIVLSource source = this.modelFactory.sourceOf(eventNode);
 
 		switch (kind) {
-		case READ_WRITE: {
-			ReadOrWriteEventNode readWriteEvent = (ReadOrWriteEventNode) eventNode;
+		case MEMORY: {
+			MemoryEventNode readWriteEvent = (MemoryEventNode) eventNode;
 			Set<Expression> muSet = new HashSet<>();
 			SequenceNode<ExpressionNode> muNodeSet = readWriteEvent
 					.getMemoryList();
@@ -430,7 +430,7 @@ public class ContractTranslator extends FunctionTranslator {
 		Variable result;
 
 		switch (kind) {
-		case MPI_COMM_RANK: 
+		case MPI_COMM_RANK:
 			variableIdent = modelFactory.identifier(source,
 					contractMPICommRankName);
 			break;

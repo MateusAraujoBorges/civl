@@ -75,14 +75,13 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType.SymbolicTypeKind;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicCollection;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicSequence;
 
 public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
@@ -361,7 +360,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 *            collection of Symbolic Objects
 	 */
 	private void accumulate(CIVLSource source, State state,
-			StringBuffer buffer, String opString, SymbolicCollection<?> operands) {
+			StringBuffer buffer, String opString, SymbolicSequence<?> operands) {
 		boolean first = true;
 
 		for (SymbolicExpression arg : operands) {
@@ -681,7 +680,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 		if (numArgs == 1)
 			accumulate(source, state, buffer, opString,
-					(SymbolicCollection<?>) symbolicExpression.argument(0));
+					(SymbolicSequence<?>) symbolicExpression.argument(0));
 		else
 			processBinary(buffer, opString, symbolicExpression.argument(0),
 					symbolicExpression.argument(1), atomizeArgs);
@@ -1026,7 +1025,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							result.append(symbolicSequenceToString(
 									source,
 									state,
-									(SymbolicCollection<? extends SymbolicExpression>) symbolicExpression
+									(SymbolicSequence<? extends SymbolicExpression>) symbolicExpression
 											.argument(0), civlType, separator,
 									prefix));
 						} else {
@@ -1066,7 +1065,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append(function);
 					result.append("(");
 					accumulate(source, state, result, ",",
-							(SymbolicCollection<?>) symbolicExpression
+							(SymbolicSequence<?>) symbolicExpression
 									.argument(1));
 					result.append(")");
 					break;
@@ -1540,10 +1539,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		return result;
 	}
 
-	private StringBuffer symbolicSequenceToString(
-			CIVLSource source,
+	private StringBuffer symbolicSequenceToString(CIVLSource source,
 			State state,
-			SymbolicCollection<? extends SymbolicExpression> symbolicCollection,
+			SymbolicSequence<? extends SymbolicExpression> symbolicCollection,
 			CIVLType civlType, String separator, String prefix) {
 		StringBuffer result = new StringBuffer();
 		int elementIndex = 0;
@@ -1566,9 +1564,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					.areSubtypesScalar() : false;
 			boolean eleEmpty = false;
 
-			if (symbolicElement.argument(0) instanceof SymbolicCollection) {
+			if (symbolicElement.argument(0) instanceof SymbolicSequence) {
 				@SuppressWarnings("unchecked")
-				SymbolicCollection<? extends SymbolicExpression> symbolicEleCollection = (SymbolicCollection<? extends SymbolicExpression>) symbolicElement
+				SymbolicSequence<? extends SymbolicExpression> symbolicEleCollection = (SymbolicSequence<? extends SymbolicExpression>) symbolicElement
 						.argument(0);
 
 				eleEmpty = symbolicEleCollection.size() == 0;

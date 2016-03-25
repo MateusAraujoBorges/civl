@@ -124,7 +124,7 @@ public class UserInterface {
 
 	/** Stdout: where most output is going to go, including error reports */
 	private PrintStream out = System.out;
-	
+
 	private PrintStream dump = new PrintStream(new OutputStream() {
 		@Override
 		public void write(int b) throws IOException {
@@ -401,6 +401,7 @@ public class UserInterface {
 
 		if (civlConfig.debugOrVerbose())
 			out.println("Generating composite program...");
+		// specProgram.prettyPrint(System.out);
 		combinedAST = combiner.combine(specProgram.getAST(),
 				implProgram.getAST());
 		// combinedAST.prettyPrint(System.out, true);
@@ -763,9 +764,10 @@ public class UserInterface {
 					model.printUnreachedCode(out);
 				}
 				if (modelTranslator.config.analyzeAbs()) {
-					if(modelTranslator.config.isQuiet()){
-						Analysis.printResults(model.factory().codeAnalyzers(), dump);
-					}else{
+					if (modelTranslator.config.isQuiet()) {
+						Analysis.printResults(model.factory().codeAnalyzers(),
+								dump);
+					} else {
 						Analysis.printResults(model.factory().codeAnalyzers(),
 								out);
 					}

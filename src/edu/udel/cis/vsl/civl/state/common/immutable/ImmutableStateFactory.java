@@ -53,9 +53,9 @@ import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.collections.IF.SymbolicCollection;
 
 /**
  * An implementation of StateFactory based on the Immutable Pattern.
@@ -1612,7 +1612,7 @@ public class ImmutableStateFactory implements StateFactory {
 								(SymbolicExpression) arg, reachable);
 						break;
 					case SEQUENCE: {
-						Iterator<? extends SymbolicExpression> iter = ((SymbolicCollection<?>) arg)
+						Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg)
 								.iterator();
 
 						while (iter.hasNext()) {
@@ -1723,7 +1723,7 @@ public class ImmutableStateFactory implements StateFactory {
 								heapMemUnitsMap, oldToNewHeapPointers);
 						break;
 					case SEQUENCE: {
-						Iterator<? extends SymbolicExpression> iter = ((SymbolicCollection<?>) arg)
+						Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg)
 								.iterator();
 
 						while (iter.hasNext()) {
