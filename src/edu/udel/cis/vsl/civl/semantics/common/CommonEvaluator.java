@@ -1091,7 +1091,9 @@ public class CommonEvaluator implements Evaluator {
 			CIVLType argBaseType = ((CIVLPointerType) argType).baseType(), castBaseType = ((CIVLPointerType) castType)
 					.baseType();
 
-			if (!castBaseType.isVoidType() && !argBaseType.equals(castBaseType)) {
+			if (!castBaseType.isVoidType() && !argBaseType.isVoidType()
+					&& !argBaseType.equals(castBaseType)) {
+				// eval.value.type()
 				throw new CIVLUnimplementedFeatureException(
 						"type conversion from pointer-to-" + argBaseType
 								+ " to pointer-to-" + castBaseType,
