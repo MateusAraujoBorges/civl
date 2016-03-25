@@ -3277,7 +3277,7 @@ public class CommonEvaluator implements Evaluator {
 		int int_arrayIndex = -1;
 		StringBuffer result = new StringBuffer();
 
-		if (operator == SymbolicOperator.ARRAY) {//string literal
+		if (operator == SymbolicOperator.ARRAY) {// string literal
 			originalArray = charPointer;
 			int_arrayIndex = 0;
 		} else if (operator == SymbolicOperator.TUPLE) {
@@ -3462,7 +3462,7 @@ public class CommonEvaluator implements Evaluator {
 							symbolicAnalyzer.stateInformation(state),
 							checkPointer.left, checkPointer.right,
 							ErrorKind.DEREFERENCE,
-							"Attempt to performs pointer addition upon an undefined pointer");
+							"Attempt to perform pointer addition upon an undefined pointer");
 			throw new UnsatisfiablePathConditionException();
 		} else {
 			ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
@@ -3492,7 +3492,7 @@ public class CommonEvaluator implements Evaluator {
 												.stateInformation(state),
 										claim, resultType,
 										ErrorKind.OUT_OF_BOUNDS,
-										"Pointer addition resulted in out of bounds.\nobject pointer:"
+										"Pointer addition results in out of bounds.\nobject pointer:"
 												+ pointer + "\n" + "offset = "
 												+ offset);
 						// recovered, invalid pointer cannot be dereferenced,
@@ -3525,7 +3525,7 @@ public class CommonEvaluator implements Evaluator {
 					state = errorLogger.logError(expression.getSource(), state,
 							process, symbolicAnalyzer.stateInformation(state),
 							claim, resultType, ErrorKind.OUT_OF_BOUNDS,
-							"Pointer addition resulted in out of bounds.\nobject pointer:"
+							"Pointer addition results in out of bounds.\nobject pointer:"
 									+ pointer + "\noffset = " + offset);
 					// recovered, invalid pointer cannot be dereferenced, but
 					// execution is not suppose to stop here:
@@ -3915,8 +3915,8 @@ public class CommonEvaluator implements Evaluator {
 			SymbolicExpression array, SymbolicExpression pointer,
 			SymbolicExpression offset, boolean multiDimensional)
 			throws UnsatisfiablePathConditionException {
-		String msg = (multiDimensional) ? "Array object"
-				: "A allocated sequence of memory space";
+		String msg = (multiDimensional) ? "array object"
+				: "a heap-allocated object";
 
 		return errorLogger.logError(
 				source,
