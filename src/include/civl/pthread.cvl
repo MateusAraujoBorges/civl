@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <seq.cvh>
 
+const $scope _root = $here;
 struct pthread_mutexattr_t{
   int robust;
   int pshared;
@@ -290,7 +291,6 @@ int pthread_barrierattr_destroy(pthread_barrierattr_t *attr){
   *            be null for default values to be initialized.
   * @return Returns 0 upon successful completion
   */
-
 int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t *attr, int count){
   if(attr == NULL){
     barrier->attr.pshared = 0;
@@ -298,7 +298,7 @@ int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t
   else{
     barrier->attr = *attr;
   }
-  barrier->barr = $gbarrier_create($root, count);
+  barrier->barr = $gbarrier_create(_root, count);
   barrier->size = count;
   barrier->numThrds = 0;
   return 0;

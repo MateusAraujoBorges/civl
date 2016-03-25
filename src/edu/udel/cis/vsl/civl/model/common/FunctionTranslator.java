@@ -1237,16 +1237,14 @@ public class FunctionTranslator {
 							+ "such as (double*)$malloc($here, n*sizeof(double))",
 					source);
 		}
-		if (callNode.getNumberOfArguments() == 1) {
-			scopeExpression = modelFactory.hereOrRootExpression(source, true);
-			sizeExpression = translateExpressionNode(callNode.getArgument(0),
-					scope, true);
-		} else {
-			scopeExpression = translateExpressionNode(callNode.getArgument(0),
-					scope, true);
-			sizeExpression = translateExpressionNode(callNode.getArgument(1),
-					scope, true);
-		}
+		if (callNode.getNumberOfArguments() == 1)
+			throw new CIVLInternalException(
+					"$malloc only has one argument. Transformers are responsible to cover this",
+					source);
+		scopeExpression = translateExpressionNode(callNode.getArgument(0),
+				scope, true);
+		sizeExpression = translateExpressionNode(callNode.getArgument(1),
+				scope, true);
 		result = modelFactory.mallocStatement(source, location, lhs,
 				elementType, scopeExpression, sizeExpression, mallocId, null);
 		modelBuilder.mallocStatements.add(result);

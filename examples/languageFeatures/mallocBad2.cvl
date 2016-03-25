@@ -3,7 +3,7 @@
  * */
 #include <civlc.cvh>
 void main() {
-  $scope s=$root;
+  $scope s=$here;
   double *p;
   
   // Uses pointer without malloc.

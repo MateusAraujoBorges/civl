@@ -31,7 +31,7 @@
 
 $input int N;               /* size of square matrix                   */
 $input int TILE_WIDTH;
-
+$scope root = $here;
 
 /* MM kernel using global (not shared) memory.                          */
 void _kernel_myMM_global (dim3 gridDim, dim3 blockDim, cudaStream_t s, const double * const A, const double * const B, double *C, int width) {
@@ -207,11 +207,11 @@ int main (int argc, char** argv) {
 
 		/* 2)  Copy operands from CPU memory to GPGPU memory.                */
 		//cudaMalloc((void**)&G_A,size_a*sizeof(double));  /* alloc A in GPGPU */
-        G_A = (double*)$malloc($root, size_a*sizeof(double));
+        G_A = (double*)$malloc(root, size_a*sizeof(double));
 		//cudaMalloc((void**)&G_B,size_b*sizeof(double));  /* alloc B in GPGPU */
-        G_B = (double*)$malloc($root, size_b*sizeof(double));
+        G_B = (double*)$malloc(root, size_b*sizeof(double));
 		//cudaMalloc((void**)&G_C,size_c*sizeof(double));  /* alloc C in GPGPU */
-        G_C = (double*)$malloc($root, size_c*sizeof(double));
+        G_C = (double*)$malloc(root, size_c*sizeof(double));
 		cudaMemcpy(G_A,A,size_a*sizeof(double),cudaMemcpyHostToDevice);
 		cudaMemcpy(G_B,B,size_b*sizeof(double),cudaMemcpyHostToDevice);
 
@@ -248,9 +248,9 @@ int main (int argc, char** argv) {
 		cudaEventRecord(start,0);
 
 		/* 2)  Copy operands from CPU memory to GPGPU memory.                */
-        G_A = (double*)$malloc($root, size_a*sizeof(double));
-        G_B = (double*)$malloc($root, size_b*sizeof(double));
-        G_C = (double*)$malloc($root, size_c*sizeof(double));
+        G_A = (double*)$malloc(root, size_a*sizeof(double));
+        G_B = (double*)$malloc(root, size_b*sizeof(double));
+        G_C = (double*)$malloc(root, size_c*sizeof(double));
 		cudaMemcpy(G_A,A,size_a*sizeof(double),cudaMemcpyHostToDevice);
 		cudaMemcpy(G_B,B,size_b*sizeof(double),cudaMemcpyHostToDevice);
 

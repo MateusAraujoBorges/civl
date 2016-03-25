@@ -2,6 +2,7 @@
 
 int *x;
 int *p;
+$scope root = $here;
 
 void f() {
   int y=0;
@@ -15,7 +16,7 @@ void f() {
 void main() {
   $proc fp;
   
-  x = (int*) $malloc($root, sizeof(int));
+  x = (int*) $malloc(root, sizeof(int));
   p = x;
   *x = 0;
   fp = $spawn f(); 

@@ -1,5 +1,6 @@
 #include<civlc.cvh>
 
+$scope root = $here;
 int main(){
   int *ptr, x=1, y=2;
 
@@ -17,7 +18,7 @@ int main(){
 	x=z;
       }
     }
-    {ptr=(int*)$malloc($root, sizeof(int)); $free(ptr);}
+    {ptr=(int*)$malloc(root, sizeof(int)); $free(ptr);}
     {int q=sizeof(int); ptr=(int*)$malloc($here, q); $free(ptr);}
   }
 }

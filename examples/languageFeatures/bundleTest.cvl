@@ -9,6 +9,9 @@ $input int N;
 $input int inputs1[3][N];
 $input int inputs2[N][3];
 $assume(N > 4);
+
+$scope root = $here;
+
 void main(){
   int integerObj_send = 1;
   int integerObj_recv;
@@ -22,11 +25,11 @@ void main(){
   int intSize = sizeof(int);
 
   //Initialization of message data
-  p = (int *)$malloc($root, sizeof(int) * 4);
-  pp = (int **)$malloc($root, sizeof(int *) * 4);
+  p = (int *)$malloc(root, sizeof(int) * 4);
+  pp = (int **)$malloc(root, sizeof(int *) * 4);
   for(int i=0; i<4; i++){
     p[i] = i;
-    pp[i] = (int *)$malloc($root, sizeof(int) * 2);
+    pp[i] = (int *)$malloc(root, sizeof(int) * 2);
     for(int j=0; j<2; j++)
       pp[i][j] = i * 4 + j;
   }
@@ -35,7 +38,7 @@ void main(){
     for(int j=0; j<4; j++)
       for(int k=0; k<5; k++)
 	a3d[i][j][k] = counter++;
-  buf = (int *)$malloc($root, sizeof(int) * 8);
+  buf = (int *)$malloc(root, sizeof(int) * 8);
   
   // send integer object "1"
   bun = $bundle_pack(&integerObj_send, intSize);

@@ -6,6 +6,8 @@ typedef struct cqueue_t{
   $proc owner;
 } cqueue;
 
+$scope root = $here;
+
 /*@ guards \true;
   @ depends \noact;
   @ assigns \nothing;
@@ -13,7 +15,7 @@ typedef struct cqueue_t{
   @*/
 $atomic_f void create(cqueue* q)
 {
-  q = (cqueue*)$malloc($root, sizeof(cqueue));
+  q = (cqueue*)$malloc(root, sizeof(cqueue));
   q->owner=$proc_null;
   $seq_init(&q->data, 0, NULL);
 }

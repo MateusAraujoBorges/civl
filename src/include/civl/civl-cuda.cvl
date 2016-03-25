@@ -4,7 +4,7 @@
  */
 
 #include <string.h>
-//#include <stdio.h>
+#include <stdlib.h>
 #include <concurrency.cvh>
 #include <civl-cuda.cvh>
 
@@ -169,7 +169,7 @@ $cuda_context_t $cuda_current_context = {
  */
 $cuda_kernel_instance_t *$cuda_kernel_instance_create() {
   //printf("mallocing kernel instance\n");
-  $cuda_kernel_instance_t *i = ($cuda_kernel_instance_t*)$malloc($root, sizeof($cuda_kernel_instance_t));
+  $cuda_kernel_instance_t *i = ($cuda_kernel_instance_t*)malloc(sizeof($cuda_kernel_instance_t));
 
   i->process = $proc_null;
   i->status = $cuda_kernel_status_waiting;
@@ -188,7 +188,7 @@ void $cuda_kernel_instance_destroy($cuda_kernel_instance_t *i) {
  */
 $cuda_kernel_instance_node_t *$cuda_kernel_instance_node_create() {
   //printf("mallocing kernel instance node\n");
-  $cuda_kernel_instance_node_t *node = ($cuda_kernel_instance_node_t*)$malloc($root, sizeof($cuda_kernel_instance_node_t));
+  $cuda_kernel_instance_node_t *node = ($cuda_kernel_instance_node_t*)malloc(sizeof($cuda_kernel_instance_node_t));
 
   node->instance = NULL;
   node->next = NULL;
@@ -209,7 +209,7 @@ cudaStream_t $cuda_stream_create() {
   cudaStream_t s;
 
   //printf("mallocing cuda stream\n");
-  s = (cudaStream_t)$malloc($root, sizeof(_CUstream));
+  s = (cudaStream_t)malloc(sizeof(_CUstream));
   s->mostRecent = $cuda_kernel_instance_node_create();
   s->mostRecent->instance = $cuda_kernel_instance_create();
   s->mostRecent->instance->status = $cuda_kernel_status_finished;
@@ -256,7 +256,7 @@ void $cuda_stream_destroy(cudaStream_t s) {
  */
 $cuda_stream_node_t *$cuda_stream_node_create() {
   //printf("mallocing cuda stream node\n");
-  $cuda_stream_node_t *node = ($cuda_stream_node_t*)$malloc($root, sizeof($cuda_stream_node_t));
+  $cuda_stream_node_t *node = ($cuda_stream_node_t*)malloc(sizeof($cuda_stream_node_t));
 
   node->stream = NULL;
   node->next = NULL;
@@ -290,7 +290,7 @@ void $cuda_stream_node_destroy_all() {
  */
 cudaEvent_t $cuda_event_create() {
   //printf("mallocing event\n");
-  cudaEvent_t e = (cudaEvent_t)$malloc($root, sizeof(_CUevent));
+  cudaEvent_t e = (cudaEvent_t)malloc(sizeof(_CUevent));
 
   e->numInstances = 0;
   e->instances = NULL;
@@ -339,7 +339,7 @@ $cuda_kernel_instance_t **$cuda_all_most_recent_kernels() {
   int n = $cuda_current_context.numStreams + 1;
   $cuda_stream_node_t *curNode = $cuda_current_context.headNode;
   //printf("mallocing instance list a\n");
-  $cuda_kernel_instance_t **insts = ($cuda_kernel_instance_t**)$malloc($root, n * sizeof($cuda_kernel_instance_t*)) ;
+  $cuda_kernel_instance_t **insts = ($cuda_kernel_instance_t**)malloc(n * sizeof($cuda_kernel_instance_t*)) ;
 
   insts[0] = $cuda_current_context.nullStream->mostRecent->instance;
   for (int i = 1; i < n; i++, curNode = curNode->next) {
@@ -363,7 +363,7 @@ void $cuda_enqueue_kernel(cudaStream_t stream, void (*k)($cuda_kernel_instance_t
   } else {
     e->numInstances = 2;
     //printf("mallocing instance list b\n");
-    e->instances = ($cuda_kernel_instance_t**)$malloc($root, 2 * sizeof($cuda_kernel_instance_t*)) ;
+    e->instances = ($cuda_kernel_instance_t**)malloc(2 * sizeof($cuda_kernel_instance_t*)) ;
     e->instances[0] = stream->mostRecent->instance;
     e->instances[1] = $cuda_current_context.nullStream->mostRecent->instance;
     s = stream;

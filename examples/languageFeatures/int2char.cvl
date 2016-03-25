@@ -3,12 +3,15 @@
 
 $input int num;
 $assume(num > 0 && num < 255);
+
+$scope root = $here;
+
 void main(){
   char c[3];
   char * pc;
   int b = 98; // 'b'
 
-  pc = (char*)$malloc($root, sizeof(char) * 3);
+  pc = (char*)$malloc(root, sizeof(char) * 3);
   c[0] = num;
   c[1] = 'a';
   c[2] = b - 1;

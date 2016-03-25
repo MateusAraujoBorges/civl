@@ -20,6 +20,7 @@
 #include <cuda.h>
 
 #define imin(a,b) (a<b?a:b)
+$scope root = $here;
 
 _Bool isPowerOfTwo(int x) {
 	if (x == 1) {
@@ -117,14 +118,14 @@ int main ( void ) {
     float   *dev_a, *dev_b, *dev_partial_c;
 
     // allocate memory on the cpu side
-    a = (float*)$malloc($root,  N*sizeof(float) );
-    b = (float*)$malloc($root,  N*sizeof(float) );
-    partial_c = (float*)$malloc($root, blocksPerGrid*sizeof(float) );
+    a = (float*)$malloc(root,  N*sizeof(float) );
+    b = (float*)$malloc(root,  N*sizeof(float) );
+    partial_c = (float*)$malloc(root, blocksPerGrid*sizeof(float) );
 
     // allocate the memory on the GPU
-    dev_a = (float *)$malloc($root, N*sizeof(float) );
-    dev_b = (float *)$malloc($root, N*sizeof(float) );
-    dev_partial_c = (float *)$malloc($root, blocksPerGrid*sizeof(float) );
+    dev_a = (float *)$malloc(root, N*sizeof(float) );
+    dev_b = (float *)$malloc(root, N*sizeof(float) );
+    dev_partial_c = (float *)$malloc(root, blocksPerGrid*sizeof(float) );
 
     // fill in the host memory with data
     for (int i=0; i<N; i++) {

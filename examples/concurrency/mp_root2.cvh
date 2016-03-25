@@ -4,7 +4,7 @@
 $input int NPROCS = 3;
 $proc __procs[NPROCS];
 _Bool __start = 0;
-$gcomm __MPI_Comm_World = $gcomm_create($root, NPROCS);
+$gcomm __MPI_Comm_World = $gcomm_create($here, NPROCS);
 
 typedef $comm MPI_Comm;
 

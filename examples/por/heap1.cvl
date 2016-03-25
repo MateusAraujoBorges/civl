@@ -2,10 +2,10 @@
 
 int *p;
 _Bool start = $false;
-
+$scope root = $here;
 void f(){
   $when(start);
-  p = (int*) $malloc($root, sizeof(int));
+  p = (int*) $malloc(root, sizeof(int));
   h = &fh;
   //$free(&fh, p);
 }

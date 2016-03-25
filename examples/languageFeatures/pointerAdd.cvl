@@ -5,22 +5,25 @@ $input double a1d[10];
 $input double a2d[10][10];
 $input double a3d[10][10][10];
 $input double a4d[5][10][15][20];
+
+$scope root = $here;
+
 void main(){
   double * p1d;
   double ** p2d;
   double *** p3d;
 
 
-  p1d = (double *)$malloc($root, sizeof(double) * 10);
-  p2d = (double **)$malloc($root, sizeof(double *) * 10);
-  p3d = (double ***)$malloc($root, sizeof(double **) * 10);
+  p1d = (double *)$malloc(root, sizeof(double) * 10);
+  p2d = (double **)$malloc(root, sizeof(double *) * 10);
+  p3d = (double ***)$malloc(root, sizeof(double **) * 10);
   for(int i=0; i<10; i++){
     p1d[i] = i;
-    p2d[i] = (double *)$malloc($root, sizeof(double) * 10);
-    p3d[i] = (double **)$malloc($root, sizeof(double *) * 10);
+    p2d[i] = (double *)$malloc(root, sizeof(double) * 10);
+    p3d[i] = (double **)$malloc(root, sizeof(double *) * 10);
     for(int j=0; j<10; j++){
       p2d[i][j] = i * 10 + j;
-      p3d[i][j] = (double *)$malloc($root, sizeof(double) * 10);
+      p3d[i][j] = (double *)$malloc(root, sizeof(double) * 10);
       for(int k=0; k<10; k++){
 	p3d[i][j][k] = i * 100 + j * 10 + k;
       }

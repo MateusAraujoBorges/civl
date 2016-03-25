@@ -27,7 +27,8 @@ $input $proc p;
 $input Point pt;
 $assume(p != $self);
 $input $scope sc;
-$assume(sc != $root);
+$scope root = $here;
+$assume(sc != root);
 $assume(dx!=0);
 $proc p1;
 $abstract int random(int t);
@@ -99,7 +100,7 @@ void main(){
   d2=MU.b;
   mu.a=n6;
   structs();
-  p=(int*)$malloc($root, sizeof(int)*10);
+  p=(int*)$malloc(root, sizeof(int)*10);
   call(k, 2);
   p1=$spawn sum(1);
   p[5]=5;

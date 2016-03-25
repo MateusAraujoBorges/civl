@@ -1,14 +1,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <civlc.cvh>
-
+$scope root = $here;
 int main(){
 
-  char * strin = (char*)$malloc($root, sizeof(char) * 4);
+  char * strin = (char*)$malloc(root, sizeof(char) * 4);
   //copy by strcpy()
-  char * cpystr = (char*)$malloc($root, sizeof(char) * 4);
+  char * cpystr = (char*)$malloc(root, sizeof(char) * 4);
   //copy by memcpy()
-  char * memstr = (char*)$malloc($root, sizeof(char) * 4);
+  char * memstr = (char*)$malloc(root, sizeof(char) * 4);
   int ret;
 
   strin[0]='a';
