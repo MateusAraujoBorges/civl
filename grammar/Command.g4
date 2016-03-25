@@ -160,6 +160,7 @@ OPTION_NAME
     | '-sysIncludePath'
     | '-timeout'
     | '-trace'
+    | '-unpreproc'
     | '-userIncludePath'
     | '-verbose'
     | '-web'

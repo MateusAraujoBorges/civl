@@ -51,6 +51,7 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.svcomp16O;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.sysIncludePathO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.timeoutO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.traceO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.unpreprocO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.userIncludePathO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.verboseO;
 
@@ -78,7 +79,7 @@ public class CIVLCommand {
 		CIVLCommand.addShowOption(showModelO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, svcomp16O, showInputVarsO,
 				showProgramO, ompNoSimplifyO, ompLoopDecompO, macroO, preprocO,
-				astO, showTimeO, CIVLMacroO, quietO);
+				astO, showTimeO, CIVLMacroO, quietO, unpreprocO);
 		CIVLCommand.addVerifyOrCompareOption(errorBoundO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO,
@@ -90,7 +91,7 @@ public class CIVLCommand {
 				collectScopesO, collectHeapsO, macroO, preprocO, astO,
 				showTimeO, showMemoryUnitsO, CIVLMacroO, showUnreachedCodeO,
 				analyzeAbsO, collectOutputO, checkDivisionByZeroO,
-				checkMemoryLeakO, timeoutO, quietO);
+				checkMemoryLeakO, timeoutO, quietO, unpreprocO);
 		CIVLCommand.addCompareOption(errorBoundO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO,
@@ -102,13 +103,14 @@ public class CIVLCommand {
 				collectHeapsO, macroO, preprocO, astO, showTimeO,
 				showMemoryUnitsO, CIVLMacroO, showUnreachedCodeO, analyzeAbsO,
 				strictCompareO, checkDivisionByZeroO, checkMemoryLeakO,
-				timeoutO, quietO);
+				timeoutO, quietO, unpreprocO);
 		CIVLCommand.addReplayOption(showModelO, verboseO, debugO,
 				showTransitionsO, showStatesO, showSavedStatesO, showQueriesO,
 				showProverQueriesO, idO, traceO, enablePrintfO, showAmpleSetO,
 				showAmpleSetWtStatesO, statelessPrintfO, guiO, showProgramO,
 				showPathConditionO, preprocO, astO, showMemoryUnitsO,
-				collectOutputO, checkDivisionByZeroO, checkMemoryLeakO, quietO);
+				collectOutputO, checkDivisionByZeroO, checkMemoryLeakO, quietO,
+				unpreprocO);
 		CIVLCommand.addRunOption(errorBoundO, verboseO, randomO, guidedO,
 				seedO, debugO, userIncludePathO, sysIncludePathO,
 				showTransitionsO, showStatesO, showSavedStatesO, showQueriesO,
@@ -118,7 +120,8 @@ public class CIVLCommand {
 				showPathConditionO, ompNoSimplifyO, ompLoopDecompO,
 				collectProcessesO, collectScopesO, collectHeapsO, macroO,
 				preprocO, astO, showMemoryUnitsO, CIVLMacroO, collectOutputO,
-				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, quietO);
+				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, quietO,
+				unpreprocO);
 	}
 
 	private static void addShowOption(Option... options) {

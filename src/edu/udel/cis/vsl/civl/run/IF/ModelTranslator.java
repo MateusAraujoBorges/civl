@@ -315,7 +315,7 @@ public class ModelTranslator {
 			// throw new SvcompException();
 			// }
 			// parsing preprocessed .i file
-			if (userFileName.endsWith(".i")) {
+			if (userFileName.endsWith(".i") || this.config.unpreproc()) {
 				frontEnd.getStandardAnalyzer(Language.CIVL_C).clear(userAST);
 				frontEnd.getStandardAnalyzer(Language.CIVL_C).analyze(userAST);
 				userAST = Transform.newTransformer("prune",

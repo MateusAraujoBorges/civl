@@ -126,6 +126,7 @@ public class CIVLConstants {
 	public static String SEED = "seed";
 	public static String ANALYZE_ABS = "analyze_abs";
 	public static String AST = "ast";
+	public static String UNPREPROC = "unpreproc";
 	public static String SHOW_AMPLE_SET = "showAmpleSet";
 	public static String SHOW_AMPLE_SET_STATES = "showAmpleSetWtStates";
 	public static String SHOW_MEM_UNITS = "showMemoryUnits";
@@ -414,6 +415,12 @@ public class CIVLConstants {
 			null);
 
 	/**
+	 * Unpreprocess the source? false by default.
+	 */
+	public final static Option unpreprocO = Option.newScalarOption(UNPREPROC,
+			BOOLEAN, "unpreprocess the source?", false);
+
+	/**
 	 * File name of trace to replay
 	 */
 	public final static Option traceO = Option.newScalarOption(TRACE, STRING,
@@ -571,7 +578,7 @@ public class CIVLConstants {
 				simplifyO, solveO, statelessPrintfO, svcomp16O, quietO,
 				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
 				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
-				checkDivisionByZeroO, checkMemoryLeakO, timeoutO };
+				checkDivisionByZeroO, checkMemoryLeakO, timeoutO,unpreprocO };
 	}
 
 	// headers...

@@ -223,6 +223,8 @@ public class CIVLConfiguration {
 
 	private int timeout = -1;
 
+	private boolean unpreproc = false;
+
 	// private boolean pthreadOnly = true;
 
 	/**
@@ -315,6 +317,7 @@ public class CIVLConfiguration {
 		this.setShowAST(config.isTrue(CIVLConstants.astO));
 		this.setShowModel(config.isTrue(CIVLConstants.showModelO));
 		this.showInputVars = config.isTrue(CIVLConstants.showInputVarsO);
+		this.setUnpreproc(config.isTrue(CIVLConstants.unpreprocO));
 		this.showTime = config.isTrue(CIVLConstants.showTimeO);
 		this.procBound = (Integer) config
 				.getValueOrDefault(CIVLConstants.procBoundO);
@@ -705,6 +708,14 @@ public class CIVLConfiguration {
 	 */
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
+	}
+
+	public boolean unpreproc() {
+		return unpreproc;
+	}
+
+	public void setUnpreproc(boolean unpreproc) {
+		this.unpreproc = unpreproc;
 	}
 
 	// /**
