@@ -972,7 +972,7 @@ public class ModelTranslator {
 					// be found in either /include/civl or /include/abc.
 					CivlcTokenSource tokens = preprocessor.outputTokenSource(
 							civlSysPathArray, emptyFileArray, macroMaps,
-							systemFilename);
+							systemFilename, true);
 					AST newAST = parse(Language.CIVL_C, tokens);
 
 					workList.add(newAST);

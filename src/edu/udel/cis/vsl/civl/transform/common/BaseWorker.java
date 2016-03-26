@@ -478,7 +478,7 @@ public abstract class BaseWorker {
 		try {
 			tokenSource = preprocessor.outputTokenSource(
 					new File[] { CIVLConstants.CIVL_INCLUDE_PATH },
-					new File[0], new HashMap<String, Macro>(), filename);
+					new File[0], new HashMap<String, Macro>(), filename, true);
 			tree = frontEnd.getParser(Language.CIVL_C).parse(tokenSource);
 		} catch (PreprocessorException | IOException | ParseException e) {
 			return null;
