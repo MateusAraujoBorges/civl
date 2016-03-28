@@ -847,7 +847,39 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				universe.intObject(LibcommEvaluator.messageBufferField));
 	}
 
-	// TODO: doc !!!
+	/**
+	 * * Executes the system functions
+	 * <code>$system void $mpi_p2pSendShot(int commID, int source, int dest, int tag);</code>
+	 * and
+	 * <code>$system void $mpi_colSendShot(int commID, int source, int dest, int tag);</code>
+	 * 
+	 * <p>
+	 * This method finds out the corresponding snapshots queue then do a message
+	 * send on all unrecorded snapshot entries in that queue. Here an unrecorded
+	 * snapshot entry is the entry that hasn't been reached by this process.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param function
+	 *            The function name of the executed function, used for error
+	 *            reporting
+	 * @param arguments
+	 *            Expression arrays of arguments.
+	 * @param argumentValues
+	 *            SymbolicExpression arrays of arguments
+	 * @param channelIdx
+	 *            The channel index. It shall be either zero or one which
+	 *            denotes weather the modification happens on point-2-point
+	 *            buffer or collective buffer
+	 * @param civlsource
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private State executeSendShot(State state, int pid, String process,
 			String function, Expression[] arguments,
 			SymbolicExpression[] argumentValues, NumericExpression channelIdx,
@@ -894,6 +926,40 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		return state;
 	}
 
+	/**
+	 * Executes the system functions
+	 * <code>$system void $mpi_p2pRecvShot(int commID, int source, int dest, int tag);</code>
+	 * and
+	 * <code>$system void $mpi_colRecvShot(int commID, int source, int dest, int tag);</code>
+	 * 
+	 * <p>
+	 * This method finds out the corresponding snapshots queue then do a message
+	 * receive on all unrecorded snapshot entries in that queue. Here an
+	 * unrecorded snapshot entry is the entry that hasn't been reached by this
+	 * process.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param function
+	 *            The function name of the executed function, used for error
+	 *            reporting
+	 * @param arguments
+	 *            Expression arrays of arguments.
+	 * @param argumentValues
+	 *            SymbolicExpression arrays of arguments
+	 * @param channelIdx
+	 *            The channel index. It shall be either zero or one which
+	 *            denotes weather the modification happens on point-2-point
+	 *            buffer or collective buffer
+	 * @param civlsource
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private State executeRecvShot(State state, int pid, String process,
 			String function, Expression[] arguments,
 			SymbolicExpression[] argumentValues, NumericExpression channelIdx,
@@ -905,6 +971,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		NumericExpression src, dest, tag;
 		// Flag: is there any entry in queue being modified.
 		boolean anyEntryModified = false;
+		int place;
 
 		src = (NumericExpression) argumentValues[1];
 		dest = (NumericExpression) argumentValues[2];
@@ -914,6 +981,9 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				.extractNumber((NumericExpression) argumentValues[0]))
 				.intValue();
 		queue = stateFactory.getSnapshotsQueue(tmpState, mpiCommIdInt);
+		place = ((IntegerNumber) universe
+				.extractNumber((NumericExpression) argumentValues[2]))
+				.intValue();
 		if (queue != null && queue.length > 0) {
 			// change entries in the queue
 			queueLength = queue.length;
@@ -921,9 +991,6 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			for (int i = 0; i < queueLength; i++) {
 				SymbolicExpression twoMsgBuffers;
 				ImmutableCollectiveSnapshotsEntry entry = queue[i];
-				int place = ((IntegerNumber) universe
-						.extractNumber((NumericExpression) argumentValues[2]))
-						.intValue();
 
 				if (!entry.isRecorded(place)) {
 					twoMsgBuffers = entry.getMsgBuffers();

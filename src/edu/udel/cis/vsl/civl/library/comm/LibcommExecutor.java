@@ -894,6 +894,13 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		return msgIndex;
 	}
 
+	/**
+	 * Make up an empty message. An empty message has only one canonical form.
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @return
+	 */
 	private SymbolicExpression getEmptyMessage(State state) {
 		SymbolicExpression message;
 		CIVLType messageType = model.mesageType();
@@ -921,7 +928,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	 * position of a given message buffer. The function may be called by other
 	 * library (e.g. MPI Library).
 	 * 
-	 * @param channel
+	 * @param messageBuffer
 	 *            The message buffer which is a 2-d array of message queues.
 	 * @param source
 	 *            The place where the message comes from
@@ -933,9 +940,9 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	 *            The CIVLSource of this action
 	 * @return
 	 */
-	public SymbolicExpression putMsgInChannel(SymbolicExpression channel,
+	public SymbolicExpression putMsgInChannel(SymbolicExpression messageBuffer,
 			SymbolicExpression message, CIVLSource civlsource) {
-		SymbolicExpression buf = channel;
+		SymbolicExpression buf = messageBuffer;
 		SymbolicExpression bufRow, queue, messages;
 		NumericExpression queueLength, source, dest;
 		int int_queueLength;
@@ -957,18 +964,40 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		return buf;
 	}
 
+	/**
+	 * Public helper method for getting a message out of the given message
+	 * buffer. Pre-condition: The message must already exist in the channel.
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param messageBuffer
+	 *            The message buffer
+	 * @param source
+	 *            The source of the message
+	 * @param dest
+	 *            The destination of the message
+	 * @param tag
+	 *            The message tag
+	 * @param civlsource
+	 * @return The received message and the updated message buffer.
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	public Pair<SymbolicExpression, SymbolicExpression> getMsgOutofChannel(
-			State state, int pid, String process, SymbolicExpression channel,
-			NumericExpression source, NumericExpression dest,
-			NumericExpression tag, CIVLSource civlsource)
+			State state, int pid, String process,
+			SymbolicExpression messageBuffer, NumericExpression source,
+			NumericExpression dest, NumericExpression tag, CIVLSource civlsource)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression bufRow, queue, messages;
 		SymbolicExpression message, buf;
 		NumericExpression queueLength;
 		int msgIdx;
 
-		buf = channel;
-		bufRow = universe.arrayRead(channel, source);
+		buf = messageBuffer;
+		bufRow = universe.arrayRead(messageBuffer, source);
 		queue = universe.arrayRead(bufRow, dest);
 		queueLength = (NumericExpression) universe.tupleRead(queue, zeroObject);
 		messages = universe.tupleRead(queue, oneObject);
