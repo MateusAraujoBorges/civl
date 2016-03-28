@@ -17,7 +17,6 @@ import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
-
 public class ArithmeticTest {
 
 	/* *************************** Static Fields *************************** */
@@ -45,8 +44,7 @@ public class ArithmeticTest {
 
 	@Test
 	public void assoc() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				"-inputB=10", filename("assoc.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputB=10", filename("assoc.cvl")));
 	}
 
 	@Test
@@ -66,8 +64,7 @@ public class ArithmeticTest {
 
 	@Test
 	public void divisionBad() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				filename("divisionBad.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("divisionBad.cvl")));
 	}
 
 	@Test
@@ -77,90 +74,73 @@ public class ArithmeticTest {
 
 	@Test
 	public void matmat() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				"-inputBOUND=3", filename("matmat.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputBOUND=3", filename("matmat.cvl")));
 	}
 
 	@Test
 	public void matmatBad() {
-		assertFalse(ui
-				.run(VERIFY, QUIET,
-						"-inputBOUND=3", filename("matmatBad.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, "-inputBOUND=3", filename("matmatBad.cvl")));
 	}
 
 	@Test
 	public void mean() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				"-inputB=10", filename("mean.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputB=10", filename("mean.cvl")));
 	}
 
 	@Test
 	public void meanBad() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				"-inputB=10", MIN,
-				filename("meanBad.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, "-inputB=10", MIN, filename("meanBad.cvl")));
 	}
 
 	@Test
 	public void multiplicationInLoopCondition() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				filename("multiplicationInLoopCondition.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("multiplicationInLoopCondition.cvl")));
 	}
 
 	@Test
 	public void math() {
-		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF,
-				filename("mathematical.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF, filename("mathematical.cvl")));
 	}
 
 	@Test
 	public void exp1() {
-		assertFalse(ui.run(RUN, QUIET,
-				filename("div0.cvl")));
-		assertFalse(ui.run(RUN, QUIET,
-				filename("div0.cvl")));
+		assertFalse(ui.run(RUN, QUIET, filename("div0.cvl")));
+		assertFalse(ui.run(RUN, QUIET, filename("div0.cvl")));
 	}
 
 	@Test
 	public void sqrt() {
-		assertTrue(ui.run(VERIFY, QUIET
-				, filename("sqrt.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("sqrt.cvl")));
 	}
 
 	@Test
 	public void sqrt_elaborate() {
-		assertTrue(ui.run(VERIFY, DMATH_ELABORATE_ASSUMPTIONS,
-				QUIET, filename("sqrt.cvl")));
+		assertTrue(ui.run(VERIFY, DMATH_ELABORATE_ASSUMPTIONS, QUIET, filename("sqrt.cvl")));
 	}
 
 	@Test
 	public void sqrt_no_assumptions() {
-		assertFalse(ui.run(VERIFY, DMATH_NO_ASSUMPTIONS,
-				QUIET, filename("sqrt.cvl")));
+		assertFalse(ui.run(VERIFY, DMATH_NO_ASSUMPTIONS, QUIET, filename("sqrt.cvl")));
 	}
 
 	@Test
 	public void sqrtBad1() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				filename("sqrtBad1.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("sqrtBad1.cvl")));
 	}
 
 	@Test
 	public void sqrtBad1_elaborate() {
-		assertFalse(ui.run(VERIFY, DMATH_ELABORATE_ASSUMPTIONS,
-				QUIET, filename("sqrtBad1.cvl")));
+		assertFalse(ui.run(VERIFY, DMATH_ELABORATE_ASSUMPTIONS, QUIET, filename("sqrtBad1.cvl")));
 	}
 
 	@Test
 	public void sqrtBad2() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				filename("sqrtBad2.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("sqrtBad2.cvl")));
 	}
 
 	@Test
 	public void sqrtBad2_elaborate() {
-		assertFalse(ui.run(VERIFY, DMATH_ELABORATE_ASSUMPTIONS,
-				QUIET, filename("sqrtBad2.cvl")));
+		assertFalse(ui.run(VERIFY, DMATH_ELABORATE_ASSUMPTIONS, QUIET, filename("sqrtBad2.cvl")));
 	}
 
 	@Test
@@ -171,6 +151,11 @@ public class ArithmeticTest {
 	@Test
 	public void quadratic2() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("quadratic2.cvl")));
+	}
+
+	@Test
+	public void sqrtCall() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("trySimple.cvl")));
 	}
 
 	@AfterClass
