@@ -901,68 +901,18 @@ long double fabsl(long double x) {
 }
 
 double sqrt(double x) {
-  $abstract double SQRT(double x);
-  double result;
-
   $assert(x >= 0, "Argument x should be greater than 0.");
-  result = SQRT(x);
-#ifdef MATH_ELABORATE_ASSUMPTIONS
-  if(x == 0)
-    return 0;
-  else {
-    $assume(result > 0);
-    $assume(x>0 => result*result==x);
-    return result;
-  }
-#elif defined(MATH_NO_ASSUMPTIONS)
-  return result;
-#else
-  $assume((x == 0 => result == 0) && (x > 0 => result > 0));
-  $assume(x>0 => result*result==x);
-  return result;
-#endif
+  return $pow(x, 0.5);
 }
 
 float sqrtf(float x) {
-  $abstract float SQRTF(float x);
-  double result;
-
   $assert(x >= 0, "Argument x should be greater than 0.");
-  result = SQRTF(x);
-#ifdef MATH_ELABORATE_ASSUMPTIONS
-  if(x == 0)
-    return 0;
-  else {
-    $assume(result > 0);
-    return result;
-  }
-#elif defined(MATH_NO_ASSUMPTIONS)
-  return result;
-#else
-  $assume((x == 0 => result == 0) && (x > 0 => result > 0));
-  return result;
-#endif
+  return $pow(x, 0.5);
 }
 
 long double sqrtl(long double x) {
-  $abstract long double SQRTL(long double x);
-  double result;
-
   $assert(x >= 0, "Argument x should be greater than 0.");
-  result = SQRTL(x);
-#ifdef MATH_ELABORATE_ASSUMPTIONS
-  if(x == 0)
-    return 0;
-  else {
-    $assume(result > 0);
-    return result;
-  }
-#elif defined(MATH_NO_ASSUMPTIONS)
-  return result;
-#else
-  $assume((x == 0 => result == 0) && (x > 0 => result > 0));
-  return result;
-#endif
+  return $pow(x, 0.5);
 }
 
 double hypot(double x, double y) {
