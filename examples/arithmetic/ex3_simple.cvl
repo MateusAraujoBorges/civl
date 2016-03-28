@@ -4,7 +4,7 @@
 
 #define L 5
 $input double a, b;
-$assume(a < 0);
+$assume(a > 0);
 $assume(a == b);
 
 void main() {
