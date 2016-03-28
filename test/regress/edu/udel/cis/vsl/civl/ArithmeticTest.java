@@ -155,7 +155,7 @@ public class ArithmeticTest {
 
 	@Test
 	public void sqrtCall() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("trySimple.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("sqrtCall.cvl")));
 	}
 
 	@AfterClass
