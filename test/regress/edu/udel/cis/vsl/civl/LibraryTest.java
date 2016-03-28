@@ -315,6 +315,11 @@ public class LibraryTest {
 		assertFalse(ui.run("verify", filename(CIVLC, "heap.cvl")));
 	}
 
+	@Test
+	public void power() {
+		assertTrue(ui.run("verify", filename(CIVLC, "pow.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
