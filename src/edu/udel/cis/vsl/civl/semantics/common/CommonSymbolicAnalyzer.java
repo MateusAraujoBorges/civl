@@ -683,7 +683,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					(SymbolicSequence<?>) symbolicExpression.argument(0));
 		else
 			processBinary(buffer, opString, symbolicExpression.argument(0),
-					symbolicExpression.argument(1), atomizeArgs);
+					symbolicExpression.argument(1), true);
 		if (atomizeResult) {
 			buffer.insert(0, '(');
 			buffer.append(')');
