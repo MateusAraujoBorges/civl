@@ -105,7 +105,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.TupleComponentReference;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Interval;
 import edu.udel.cis.vsl.sarl.IF.number.NumberFactory;
-import edu.udel.cis.vsl.sarl.IF.object.CharObject;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
@@ -125,10 +124,10 @@ import edu.udel.cis.vsl.sarl.number.IF.Numbers;
 public class CommonEvaluator implements Evaluator {
 
 	private static String ABSTRACT_FUNCTION_PREFIX = "_uf_";
-	private static String POINTER_TO_INT_FUNCTION = "_pointer2Int";
-	private static String INT_TO_POINTER_FUNCTION = "_int2Pointer";
-	private static String CHAR_TO_INT_FUNCTION = "_char2int";
-	private static String INT_TO_CHAR_FUNCTION = "_int2char";
+	public static String POINTER_TO_INT_FUNCTION = "_pointer2Int";
+	public static String INT_TO_POINTER_FUNCTION = "_int2Pointer";
+	public static String CHAR_TO_INT_FUNCTION = "_char2int";
+	public static String INT_TO_CHAR_FUNCTION = "_int2char";
 
 	/* *************************** Instance Fields ************************* */
 
@@ -328,9 +327,9 @@ public class CommonEvaluator implements Evaluator {
 
 	private SymbolicConstant int2PointerFunc;
 
-	private SymbolicConstant char2IntFunc;
+	private UFExtender char2IntCaster;
 
-	private SymbolicConstant int2CharFunc;
+	private UFExtender int2CharCaster;
 
 	/* ***************************** Constructors ************************** */
 
@@ -370,7 +369,6 @@ public class CommonEvaluator implements Evaluator {
 		functionPointerType = typeFactory.functionPointerSymbolicType();
 		heapType = typeFactory.heapSymbolicType();
 		zeroObj = (IntObject) universe.canonic(universe.intObject(0));
-		// oneObj = (IntObject) universe.canonic(universe.intObject(1));
 		twoObj = (IntObject) universe.canonic(universe.intObject(2));
 		identityReference = (ReferenceExpression) universe.canonic(universe
 				.identityReference());
@@ -416,16 +414,12 @@ public class CommonEvaluator implements Evaluator {
 		int2PointerFunc = universe.symbolicConstant(universe
 				.stringObject(INT_TO_POINTER_FUNCTION), universe.functionType(
 				Arrays.asList(this.universe.integerType()), this.pointerType));
-		this.char2IntFunc = universe.symbolicConstant(
-				universe.stringObject(CHAR_TO_INT_FUNCTION),
-				universe.functionType(
-						Arrays.asList(this.universe.characterType()),
-						universe.integerType()));
-		this.int2CharFunc = universe.symbolicConstant(
-				universe.stringObject(INT_TO_CHAR_FUNCTION),
-				universe.functionType(
-						Arrays.asList(this.universe.integerType()),
-						universe.characterType()));
+		this.char2IntCaster = new UFExtender(this.universe,
+				CHAR_TO_INT_FUNCTION, charType, universe.integerType(),
+				new Char2IntCaster(this.universe, this.symbolicUtil));
+		this.int2CharCaster = new UFExtender(this.universe,
+				INT_TO_CHAR_FUNCTION, universe.integerType(), charType,
+				new Int2CharCaster(this.universe, this.symbolicUtil));
 		this.civlConfig = config;
 		// this.zeroOrOne = (NumericExpression) universe.symbolicConstant(
 		// universe.stringObject("ZeroOrOne"), universe.integerType());
@@ -1107,82 +1101,10 @@ public class CommonEvaluator implements Evaluator {
 				eval.value = universe.not(universe.equals(value, zero));
 			return eval;
 		} else if (argType.isIntegerType() && castType.isCharType()) {
-			NumericExpression integerValue = (NumericExpression) value;
-			Number concreteValue = null;
-			Reasoner reasoner = universe.reasoner(state.getPathCondition());
-			CIVLSource source = arg.getSource();
-
-			// If integerValue is concrete and is inside the range [0, 255],
-			// return corresponding character by using java casting.
-			// Else if it's only outside of the range [0, 255], return abstract
-			// function.
-			if (integerValue.operator() == SymbolicOperator.CONCRETE) {
-				int int_value;
-
-				concreteValue = symbolicUtil.extractInt(source, integerValue);
-				assert (concreteValue != null) : "NumericExpression with concrete operator cannot "
-						+ "provide concrete numeric value";
-				assert (!(concreteValue instanceof IntegerNumber)) : "A Number object which suppose "
-						+ "has integer type cannot cast to IntegerNumber type";
-				int_value = concreteValue.intValue();
-				if (int_value < 0 || int_value > 255) {
-					throw new CIVLUnimplementedFeatureException(
-							"Converting integer whose value is larger than UCHAR_MAX or is less than UCHAR_MIN to char type\n");
-				} else
-					eval.value = universe.character((char) int_value);
-			} else {
-				BooleanExpression insideRangeClaim;
-				SymbolicExpression newCharValue;
-				ResultType retType;
-
-				insideRangeClaim = universe.and(
-						universe.lessThan(zero, integerValue),
-						universe.lessThan(integerValue, universe.integer(255)));
-				retType = reasoner.valid(insideRangeClaim).getResultType();
-				if (retType == ResultType.YES) {
-					// If not concrete, return abstract function.
-					newCharValue = universe.apply(this.int2CharFunc,
-							Arrays.asList(integerValue));
-					eval.value = newCharValue;
-				} else {
-					eval.state = errorLogger
-							.logError(
-									source,
-									state,
-									process,
-									this.symbolicAnalyzer
-											.stateInformation(state),
-									insideRangeClaim,
-									retType,
-									ErrorKind.INVALID_CAST,
-									"Cast operation may involve casting a integer, "
-											+ "whose value is larger than UCHAR_MAX or less than UCHAR_MIN, "
-											+ "to char type object which is considered as unimplemented feature of CIVL");
-					throw new UnsatisfiablePathConditionException();
-				}
-
-			}
+			eval.value = this.int2CharCaster.apply(value);
 			return eval;
 		} else if (argType.isCharType() && castType.isIntegerType()) {
-			// cast a char into an integer
-			// 1. if concrete, use the Java cast;
-			// 2. if non-concrete and if it is a char2Int abstract function
-			// representation, unfold the function call;
-			// otherwise, use abstract function
-			if (value.operator() == SymbolicOperator.CONCRETE) {
-				CharObject charObj = (CharObject) value.argument(0);
-
-				eval.value = this.universe.integer((int) charObj.getChar());
-			} else {
-				SymbolicExpression castedValue = this.symbolicUtil
-						.applyReverseFunction(INT_TO_CHAR_FUNCTION, value);
-
-				if (castedValue != null)
-					eval.value = castedValue;
-				else
-					eval.value = universe.apply(this.char2IntFunc,
-							Arrays.asList(value));
-			}
+			eval.value = this.char2IntCaster.apply(value);
 			return eval;
 		}
 		try {
@@ -1888,7 +1810,7 @@ public class CommonEvaluator implements Evaluator {
 		}
 	}
 
-	//TODO break into small functions
+	// TODO break into small functions
 	private Evaluation evaluateQuantifiedExpression(State state, int pid,
 			QuantifiedExpression expression)
 			throws UnsatisfiablePathConditionException {

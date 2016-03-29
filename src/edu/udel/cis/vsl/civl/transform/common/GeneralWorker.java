@@ -11,9 +11,12 @@ import java.util.Map;
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.entity.IF.Entity;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Entity.EntityKind;
 import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
 import edu.udel.cis.vsl.abc.ast.entity.IF.OrdinaryEntity;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Variable;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.DeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
@@ -83,6 +86,8 @@ public class GeneralWorker extends BaseWorker {
 	 * static variable declaration nodes of this AST
 	 */
 	private List<VariableDeclarationNode> static_variables = new LinkedList<>();
+	private boolean argcUsed = false;
+	private boolean argvUsed = false;
 
 	public GeneralWorker(ASTFactory astFactory, CIVLConfiguration config) {
 		super(GeneralTransformer.LONG_NAME, astFactory);
@@ -112,6 +117,7 @@ public class GeneralWorker extends BaseWorker {
 		}
 		mainFunction = (Function) mainEntity;
 		mainDef = mainFunction.getDefinition();
+		checkAgumentsOfMainFunction(mainDef, root);
 		unit = renameStaticVariables(unit);
 		unit.release();
 		root = moveStaticVariables(root);
@@ -158,6 +164,46 @@ public class GeneralWorker extends BaseWorker {
 				unit.isWholeProgram());
 		// newAst.prettyPrint(System.out, true);
 		return newAst;
+	}
+
+	private void checkAgumentsOfMainFunction(FunctionDefinitionNode main,
+			SequenceNode<BlockItemNode> root) {
+		FunctionTypeNode functionType = main.getTypeNode();
+		SequenceNode<VariableDeclarationNode> parameters = functionType
+				.getParameters();
+
+		if (parameters.numChildren() == 2)
+			this.checkAgumentsOfMainFunctionWorker(
+					parameters.getSequenceChild(0),
+					parameters.getSequenceChild(1), main.getBody());
+	}
+
+	private void checkAgumentsOfMainFunctionWorker(
+			VariableDeclarationNode argc, VariableDeclarationNode argv,
+			ASTNode node) {
+		if (node instanceof IdentifierExpressionNode) {
+			IdentifierNode identifier = ((IdentifierExpressionNode) node)
+					.getIdentifier();
+			Entity entity = identifier.getEntity();
+
+			if (entity.getEntityKind() == EntityKind.VARIABLE) {
+				VariableDeclarationNode variable = ((Variable) entity)
+						.getDefinition();
+
+				if (variable.equals(argc))
+					this.argcUsed = true;
+				else if (variable.equals(argv))
+					this.argvUsed = true;
+			}
+		} else {
+			for (ASTNode child : node.children()) {
+				if (child == null)
+					continue;
+				checkAgumentsOfMainFunctionWorker(argc, argv, child);
+				if (this.argcUsed && this.argvUsed)
+					return;
+			}
+		}
 	}
 
 	private VariableDeclarationNode create_argv() throws SyntaxException {
@@ -423,7 +469,6 @@ public class GeneralWorker extends BaseWorker {
 			FunctionDefinitionNode mainFunction) throws SyntaxException {
 		List<VariableDeclarationNode> inputVars = new ArrayList<>();
 		FunctionTypeNode functionType = mainFunction.getTypeNode();
-
 		SequenceNode<VariableDeclarationNode> parameters = functionType
 				.getParameters();
 		int count = parameters.numChildren();
@@ -439,7 +484,7 @@ public class GeneralWorker extends BaseWorker {
 						"The main function should have 0 or 2 parameters instead of "
 								+ count, mainFunction.getSource());
 		}
-		if (count == 2) {
+		if (count == 2 && (this.argvUsed || this.argcUsed)) {
 			VariableDeclarationNode argc = parameters.getSequenceChild(0);
 			VariableDeclarationNode argv = parameters.getSequenceChild(1);
 			VariableDeclarationNode CIVL_argc = argc.copy();
@@ -458,6 +503,10 @@ public class GeneralWorker extends BaseWorker {
 					|| !config.inputVariables().containsKey(CIVL_argc_name))
 				this.argcAssumption = this.argcAssumption(argc.getSource(),
 						this.CIVL_argc_name);
+		} else if (count == 2) {
+			functionType.setParameters(this.nodeFactory.newSequenceNode(
+					parameters.getSource(), "Formal Parameter List",
+					new ArrayList<VariableDeclarationNode>(0)));
 		}
 		return inputVars;
 	}
