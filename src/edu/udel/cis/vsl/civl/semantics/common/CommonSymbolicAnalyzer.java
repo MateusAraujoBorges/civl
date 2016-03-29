@@ -66,6 +66,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NTReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
+import edu.udel.cis.vsl.sarl.IF.expr.OffsetReference;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
@@ -741,6 +742,18 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			result.append('.');
 			result.append(field.name());
 			return new Pair<CIVLType, String>(field.type(), result.toString());
+		} else if (reference.isOffsetReference()) {
+			OffsetReference offsetRef = (OffsetReference) reference;
+			NumericExpression offset = offsetRef.getOffset();
+			Pair<CIVLType, String> parentResult = this.referenceToString(
+					source, type, offsetRef.getParent());
+			String parent = parentResult.right;
+
+			result.append(parent);
+			result.append('+');
+			result.append(offset.atomString());
+			return new Pair<CIVLType, String>(parentResult.left,
+					result.toString());
 		} else {
 			throw new CIVLInternalException("Unreachable", source);
 		}
