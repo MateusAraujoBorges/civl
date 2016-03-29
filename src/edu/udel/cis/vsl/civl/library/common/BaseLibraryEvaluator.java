@@ -762,7 +762,7 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 						null, arrayLength);
 
 		errorLogger.logError(source, state, process,
-				symbolicAnalyzer.stateToString(state), claim, resultType,
+				symbolicAnalyzer.stateInformation(state), claim, resultType,
 				ErrorKind.OUT_OF_BOUNDS, message);
 		throw new UnsatisfiablePathConditionException();
 	}

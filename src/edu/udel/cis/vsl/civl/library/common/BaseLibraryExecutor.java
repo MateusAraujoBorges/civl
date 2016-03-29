@@ -122,19 +122,19 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			Pair<State, String> messageResult = this.symbolicAnalyzer
 					.expressionEvaluation(state, pid, arguments[0], false);
 			String firstEvaluation, secondEvaluation, result;
-			StringBuffer inputVariableMap;
+			// StringBuffer inputVariableMap;
 
 			state = messageResult.left;
-			inputVariableMap = symbolicAnalyzer
-					.inputVariablesToStringBuffer(state);
-			if (!inputVariableMap.toString().isEmpty()) {
-				message.append("\nInput variables:");
-				message.append(inputVariableMap);
-			}
-			message.append("\n\nContext: ");
-			message.append(this.symbolicAnalyzer.pathconditionToString(source,
-					state, "  ", reasoner.getReducedContext()));
-			message.append("\n\nAssertion:\n");
+			// inputVariableMap = symbolicAnalyzer
+			// .inputVariablesToStringBuffer(state);
+			// if (!inputVariableMap.toString().isEmpty()) {
+			// message.append("\nInput variables:");
+			// message.append(inputVariableMap);
+			// }
+			// message.append("\n\nContext: ");
+			// message.append(this.symbolicAnalyzer.pathconditionToString(source,
+			// state, "  ", reasoner.getReducedContext()));
+			message.append("\nAssertion:\n");
 			message.append("   ");
 			message.append(this.symbolicAnalyzer.statementEvaluation(state,
 					state, pid, statement));
@@ -158,8 +158,8 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 				message.append(result);
 			}
 			state = this.reportAssertionFailure(state, pid, process,
-					resultType, message.toString(), arguments,
-					argumentValues, source, assertValue, 1);
+					resultType, message.toString(), arguments, argumentValues,
+					source, assertValue, 1);
 			state = state.setPathCondition(this.universe.and(
 					state.getPathCondition(),
 					(BooleanExpression) argumentValues[0]));
@@ -282,10 +282,9 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	protected State reportAssertionFailure(State state, int pid,
-			String process, ResultType resultType,
-			String message, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source,
-			BooleanExpression claim, int msgOffset)
+			String process, ResultType resultType, String message,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source, BooleanExpression claim, int msgOffset)
 			throws UnsatisfiablePathConditionException {
 		assert resultType != ResultType.YES;
 		if (arguments.length > msgOffset) {

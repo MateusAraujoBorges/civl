@@ -1888,6 +1888,7 @@ public class CommonEvaluator implements Evaluator {
 		}
 	}
 
+	//TODO break into small functions
 	private Evaluation evaluateQuantifiedExpression(State state, int pid,
 			QuantifiedExpression expression)
 			throws UnsatisfiablePathConditionException {

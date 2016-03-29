@@ -34,15 +34,7 @@ public class CommonIdentifier extends CommonSourceable implements Identifier {
 	public String name() {
 		return stringObject.getString();
 	}
-
-	// /**
-	// * @param name
-	// * The name associated with this identifier.
-	// */
-	// public void setName(String name) {
-	// this.name = name;
-	// }
-
+	
 	@Override
 	public String toString() {
 		return stringObject.toString();

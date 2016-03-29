@@ -16,8 +16,10 @@ public class CIVLExecutionException extends CIVLException {
 	 * Added by Eclipse.
 	 */
 	private static final long serialVersionUID = 1L;
-	
+
 	private State state = null;
+
+	private StringBuffer stateString;
 
 	private Certainty certainty;
 
@@ -54,6 +56,13 @@ public class CIVLExecutionException extends CIVLException {
 		this.certainty = certainty;
 	}
 
+	public CIVLExecutionException(ErrorKind kind, Certainty certainty,
+			String process, String message, StringBuffer stateString,
+			State state, CIVLSource source) {
+		this(kind, certainty, process, message, state, source);
+		this.stateString = stateString;
+	}
+
 	/**
 	 * @return the certainty of this error.
 	 */
@@ -67,7 +76,7 @@ public class CIVLExecutionException extends CIVLException {
 	public ErrorKind kind() {
 		return kind;
 	}
-	
+
 	/**
 	 * @return the state in which this error occurred.
 	 */
@@ -113,7 +122,10 @@ public class CIVLExecutionException extends CIVLException {
 		}
 		result.append(":\n");
 		result.append(this.getMessage());
-		if (this.state != null) {
+		if (this.stateString != null) {
+			result.append("\n");
+			result.append(stateString);
+		} else if (this.state != null) {
 			result.append("\n");
 			result.append(this.state.callStackToString());
 		}

@@ -2327,11 +2327,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		result.append("\nContext:");
 		result.append(this.pathconditionToString(null, state, "  ",
 				state.getPathCondition()));
-		// result.append(this.symbolicExpressionToString(null, state,
-		// this.modelFactory.typeFactory().booleanType(),
-		// state.getPathCondition()));
-		// result.append("\n");
-		// result.append(state.callStackToString());
+		result.append(state.callStackToString());
 		return result;
 	}
 

@@ -4425,14 +4425,15 @@ public class FunctionTranslator {
 			throw new CIVLUnimplementedFeatureException("quantifier "
 					+ expressionNode.quantifier(), source);
 		}
+		quantifiedExpression = modelFactory
+				.booleanExpression(translateExpressionNode(
+						expressionNode.expression(), scope, true));
 		if (expressionNode.isRange()) {
 			Expression lower = translateExpressionNode(expressionNode.lower(),
 					scope, true);
 			Expression upper = translateExpressionNode(expressionNode.upper(),
 					scope, true);
 
-			quantifiedExpression = translateExpressionNode(
-					expressionNode.expression(), scope, true);
 			result = modelFactory.quantifiedExpression(source, quantifier,
 					variableName, variableType, lower, upper,
 					quantifiedExpression);
@@ -4440,8 +4441,6 @@ public class FunctionTranslator {
 			Expression restriction = translateExpressionNode(
 					expressionNode.restriction(), scope, true);
 
-			quantifiedExpression = translateExpressionNode(
-					expressionNode.expression(), scope, true);
 			result = modelFactory.quantifiedExpression(source, quantifier,
 					variableName, variableType, restriction,
 					quantifiedExpression);

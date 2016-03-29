@@ -33,7 +33,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 public class CIVLErrorLogger extends ErrorLog {
 
 	private GMCConfiguration gmcConfig;
-	
+
 	private CIVLConfiguration civlConfig;
 
 	/**
@@ -63,7 +63,8 @@ public class CIVLErrorLogger extends ErrorLog {
 	 * @param solve
 	 */
 	public CIVLErrorLogger(File directory, String sessionName, PrintStream out,
-			CIVLConfiguration civlConfig, GMCConfiguration gmcConfig, SymbolicUniverse universe, boolean solve) {
+			CIVLConfiguration civlConfig, GMCConfiguration gmcConfig,
+			SymbolicUniverse universe, boolean solve) {
 		super(directory, sessionName, out);
 		this.civlConfig = civlConfig;
 		this.gmcConfig = gmcConfig;
@@ -183,7 +184,7 @@ public class CIVLErrorLogger extends ErrorLog {
 			}
 		}
 		error = new CIVLExecutionException(errorKind, certainty, process,
-				message, state, source);
+				message, stateString, state, source);
 		reportError(error);
 		newPc = universe.and(pc, claim);
 		// need to check satisfiability again because failure to do so
@@ -258,7 +259,7 @@ public class CIVLErrorLogger extends ErrorLog {
 		}
 		// TODO if pc has no symbolic constant
 		error = new CIVLExecutionException(errorKind, certainty, process,
-				message, state, source);
+				message, stateString, state, source);
 		reportError(error);
 	}
 }

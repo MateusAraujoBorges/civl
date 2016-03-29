@@ -24,11 +24,4 @@ public interface Identifier extends Sourceable {
 	 * @return name as string object
 	 */
 	public StringObject stringObject();
-
-	// /**
-	// * @param name
-	// * The name associated with this identifier.
-	// */
-	// public void setName(String name);
-
 }
