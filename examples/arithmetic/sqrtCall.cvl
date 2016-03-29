@@ -1,5 +1,6 @@
 #include <civlc.cvh>
 #include <math.h>
+
 $input double a;
 $assume(a > 0);
 
