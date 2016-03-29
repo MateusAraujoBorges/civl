@@ -1,12 +1,12 @@
 package edu.udel.cis.vsl.civl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static edu.udel.cis.vsl.civl.TestConstants.SHOW_TRANSITIONS;
-import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
+import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
 import static edu.udel.cis.vsl.civl.TestConstants.errorBound;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -32,35 +32,39 @@ public class BackendTest {
 	/* **************************** Test Methods *************************** */
 	@Test
 	public void printExpr() {
-		assertTrue(ui.run(
-				VERIFY,
-				QUIET, filename("printExpr.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("printExpr.cvl")));
 	}
 
 	@Test
 	public void arrayWrite() {
-		assertTrue(ui.run(
-				VERIFY,
-				QUIET, filename("arrayWrite.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("arrayWrite.cvl")));
 	}
 
 	@Test
 	public void showTrans() {
-		assertTrue(ui.run(VERIFY, SHOW_TRANSITIONS, QUIET, 
+		assertTrue(ui.run(VERIFY, SHOW_TRANSITIONS, QUIET,
 				filename("showTrans.cvl")));
 	}
 
 	@Test
 	public void sizeOfTypes() {
-		assertTrue(ui.run(VERIFY, QUIET, 
-				filename("sizeOfTypes.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("sizeOfTypes.c")));
 	}
 
 	@Test
 	public void returnNull() throws ABCException {
-		assertFalse(ui.run(VERIFY, errorBound(2),
-				NO_PRINTF, QUIET, 
+		assertFalse(ui.run(VERIFY, errorBound(2), NO_PRINTF, QUIET,
 				filename("returnNull.cvl")));
+	}
+
+	@Test
+	public void quantified() {
+		ui.run(VERIFY, QUIET, filename("quantified.cvl"));
+	}
+
+	@Test
+	public void arrayIndex() {
+		ui.run(VERIFY, QUIET, filename("arrayIndex.cvl"));
 	}
 
 	@AfterClass

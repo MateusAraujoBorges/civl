@@ -8,7 +8,7 @@ public class RuntimeCommandException extends RuntimeException {
 	private static final long serialVersionUID = 5805087439514397831L;
 
 	public RuntimeCommandException() {
-		super("Command line sytax error");
+		super("Command line syntax error");
 	}
 
 	public RuntimeCommandException(String msg) {

@@ -2322,7 +2322,6 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	public StringBuffer stateInformation(State state) {
 		StringBuffer result = new StringBuffer();
 
-		result.append("\nInputs:");
 		result.append(this.inputVariablesToStringBuffer(state));
 		result.append("\nContext:");
 		result.append(this.pathconditionToString(null, state, "  ",
@@ -2337,6 +2336,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				.stateFactory().inputVariableValueMap(state);
 		StringBuffer result = new StringBuffer("");
 
+		if (!inputVariableValues.isEmpty())
+			result.append("\nInput:");
 		for (Map.Entry<Variable, SymbolicExpression> entry : inputVariableValues
 				.entrySet()) {
 			result.append("\n  ");

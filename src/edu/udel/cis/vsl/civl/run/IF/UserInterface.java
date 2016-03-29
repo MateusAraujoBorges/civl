@@ -817,11 +817,10 @@ public class UserInterface {
 				SymbolicExpression[] outputs = stateAndoutputs.right;
 
 				if (j > 0)
-					result.append("or\n");
-				result.append("input:");
+					result.append("or");
 				result.append(symbolicAnalyzer
 						.inputVariablesToStringBuffer(state));
-				result.append("\noutput:\n");
+				result.append("\nOutput:\n");
 				// result.append("(");
 				for (int k = 0; k < numOutputs; k++) {
 					if (l > 0)
