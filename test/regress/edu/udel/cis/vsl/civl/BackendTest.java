@@ -62,11 +62,6 @@ public class BackendTest {
 		ui.run(VERIFY, QUIET, filename("quantified.cvl"));
 	}
 
-	@Test
-	public void arrayIndex() {
-		ui.run(VERIFY, QUIET, filename("arrayIndex.cvl"));
-	}
-
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
