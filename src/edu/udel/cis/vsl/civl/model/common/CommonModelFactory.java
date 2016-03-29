@@ -55,6 +55,8 @@ import edu.udel.cis.vsl.civl.model.IF.expression.HereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
@@ -116,6 +118,7 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonFunctionIdentifierExp
 import edu.udel.cis.vsl.civl.model.common.expression.CommonHereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonInitialValueExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonIntegerLiteralExpression;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonMPIContractExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonMemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonNothing;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonPointerSetExpression;
@@ -2203,5 +2206,34 @@ public class CommonModelFactory implements ModelFactory {
 		return new CommonPointerSetExpression(source, expressionScope,
 				lowestScope, typeFactory.incompleteArrayType(basePointer
 						.getExpressionType()), basePointer, range);
+	}
+
+	@Override
+	public MPIContractExpression mpiContractExpression(CIVLSource source,
+			Scope scope, Expression communicator, Expression[] arguments,
+			MPI_CONTRACT_EXPRESSION_KIND kind) {
+		Scope lowestScope = getLower(communicator.lowestScope(), scope);
+		CIVLType type;
+
+		for (int i = 0; i < arguments.length; i++)
+			lowestScope = getLower(arguments[i].lowestScope(), lowestScope);
+		switch (kind) {
+		case MPI_EQUALS:
+		case MPI_EMPTY_IN:
+		case MPI_EMPTY_OUT:
+			type = typeFactory.booleanType;
+			break;
+		case MPI_SIZE:
+			type = typeFactory.integerType;
+			break;
+		case MPI_REGION: // location type or $mem type in fact
+			type = typeFactory.voidType;
+			break;
+		default:
+			throw new CIVLInternalException("unreachable", source);
+
+		}
+		return new CommonMPIContractExpression(source, scope, lowestScope,
+				type, kind, communicator, arguments);
 	}
 }

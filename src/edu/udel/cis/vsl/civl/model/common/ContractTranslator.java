@@ -54,6 +54,7 @@ import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
@@ -84,6 +85,8 @@ public class ContractTranslator extends FunctionTranslator {
 	private ContractFactory contractFactory = new CommonContractFactory();
 
 	private ContractKind currentContractKind;
+
+	private Expression currentMPICommunicator;
 
 	/******************** Constructor ********************/
 	ContractTranslator(ModelBuilderWorker modelBuilder,
@@ -282,9 +285,15 @@ public class ContractTranslator extends FunctionTranslator {
 			break;
 		}
 		case MPI_COLLECTIVE:
-			MPICollectiveBehavior newCollectiveBehavior = translateMPICollectiveBehavior(
+			MPICollectiveBehavior newCollectiveBehavior;
+
+			currentMPICommunicator = translateExpressionNode(
+					((MPICollectiveBlockNode) contractNode).getMPIComm(),
+					scope, true);
+			newCollectiveBehavior = translateMPICollectiveBehavior(
 					(MPICollectiveBlockNode) contractNode, scope,
 					functionContract);
+			currentMPICommunicator = null;
 			functionContract.addMPICollectiveBehavior(newCollectiveBehavior);
 			break;
 		case PURE:
@@ -408,17 +417,48 @@ public class ContractTranslator extends FunctionTranslator {
 	private Expression translateMPIContractExpression(
 			MPIContractExpressionNode node, Scope scope) {
 		MPIContractExpressionKind kind = node.MPIContractExpressionKind();
+		MPI_CONTRACT_EXPRESSION_KIND civlMpiContractKind = null;
+		int numArgs = 0;
+
 		switch (kind) {
 		case MPI_INTEGER_CONSTANT:
 			return translateMPIIntegerConstantNode(
 					(CommonMPIConstantNode) node, scope);
 		case MPI_EMPTY_IN:
+			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_IN;
+			numArgs = 1;
+			break;
 		case MPI_EMPTY_OUT:
+			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_OUT;
+			numArgs = 1;
+			break;
 		case MPI_EQUALS:
+			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EQUALS;
+			numArgs = 2;
+			break;
 		case MPI_REGION:
+			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_REGION;
+			numArgs = 3;
+			break;
 		case MPI_SIZE:
+			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_SIZE;
+			numArgs = 4;
+			break;
 		}
-		return null;
+		if (currentMPICommunicator == null) {
+			throw new CIVLSyntaxException("MPI Contract expression: "
+					+ civlMpiContractKind
+					+ " can only be used in MPI collective behaviors");
+		}
+		assert numArgs > 0 && civlMpiContractKind != null;
+
+		Expression[] arguments = new Expression[numArgs];
+
+		for (int i = 0; i < numArgs; i++)
+			arguments[i] = this.translateExpressionNode(node.getArgument(i),
+					scope, true);
+		return modelFactory.mpiContractExpression(modelFactory.sourceOf(node),
+				scope, currentMPICommunicator, arguments, civlMpiContractKind);
 
 	}
 

@@ -35,6 +35,8 @@ import edu.udel.cis.vsl.civl.model.IF.expression.HereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
@@ -1626,6 +1628,10 @@ public interface ModelFactory {
 	 * @return
 	 */
 	WildcardExpression wildcardExpression(CIVLSource source, CIVLType type);
+
+	MPIContractExpression mpiContractExpression(CIVLSource source, Scope scope,
+			Expression communicator, Expression[] arguments,
+			MPI_CONTRACT_EXPRESSION_KIND kind);
 
 	Nothing nothing(CIVLSource source);
 }
