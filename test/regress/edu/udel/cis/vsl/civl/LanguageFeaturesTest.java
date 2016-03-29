@@ -682,11 +682,7 @@ public class LanguageFeaturesTest {
 		assertFalse(ui.run(VERIFY, QUIET, filename("splitFormatBad3.cvl")));
 	}
 
-	// quantifiedComp.cvl
-	@Test
-	public void quantifiedComp() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("quantifiedComp.cvl")));
-	}
+	
 
 	@Test
 	public void atomicFunctionSpecifier() {
