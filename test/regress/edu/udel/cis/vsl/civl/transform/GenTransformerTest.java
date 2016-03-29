@@ -28,27 +28,24 @@ public class GenTransformerTest {
 
 	@Test
 	public void gen() {
-		assertTrue(ui.run("verify -enablePrintf=false",
-				TestConstants.QUIET, filename("gen.c")));
+		assertTrue(ui.run("verify -enablePrintf=false", TestConstants.QUIET,
+				filename("gen.c")));
 	}
 
 	@Test
 	public void gen_argc() {
-		assertTrue(ui.run("verify -input_gen_argc=5",
-				TestConstants.QUIET, filename("gen.c")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, filename("gen.c")));
 	}
 
 	@Test
 	public void simpleMPI() {
-		assertTrue(ui.run(
-				"verify -input_mpi_nprocs=2 -enablePrintf=false",
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -enablePrintf=false",
 				TestConstants.QUIET, filename("simpleMPI.c")));
 	}
 
 	@Test
 	public void simpleMPI2() {
-		assertTrue(ui.run(
-				"verify -input_mpi_nprocs=2 -enablePrintf=false",
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -enablePrintf=false",
 				TestConstants.QUIET, filename("simpleMPI2.c")));
 	}
 
