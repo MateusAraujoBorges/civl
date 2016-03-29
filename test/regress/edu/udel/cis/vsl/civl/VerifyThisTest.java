@@ -21,8 +21,35 @@ public class VerifyThisTest {
 	}
 	
 	// quantifiedComp.cvl
-		@Test
-		public void quantifiedComp() {
-			assertTrue(ui.run(VERIFY, QUIET, filename("quantifiedComp.cvl")));
-		}
+	@Test
+	public void quantifiedComp() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("quantifiedComp.cvl")));
+	}
+
+	@Test
+	public void dancingLinks() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("DancingLinks.c")));
+	}
+	
+	@Test
+	public void lcp() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("lcp.c")));
+	}
+	
+	@Test
+	public void parallelGCD_2015_2() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("ParallelGCD_2015_2.c")));
+	}
+	
+	@Test
+	public void relaxedPrefix_2015_1() {
+		// have not solved yet
+		//assertTrue(ui.run(VERIFY, QUIET, filename("RelaxedPrefix_2015_1.c")));
+	}
+	
+	@Test
+	public void lrs() {
+		// have not solved yet
+		//assertTrue(ui.run(VERIFY, QUIET, filename("lrs.c")));
+	}
 }
