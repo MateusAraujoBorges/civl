@@ -1,4 +1,6 @@
 /*
+Note: This problem has not been solved yet
+
 This is a problem in 2012 as an advance problem for LCP
 
 Here is the description:
