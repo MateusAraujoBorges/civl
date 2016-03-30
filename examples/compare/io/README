@@ -1,0 +1,2 @@
+This example is to demonstrates that two programs reading from the same file
+should get the same data.

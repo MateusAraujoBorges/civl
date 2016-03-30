@@ -1,10 +1,4 @@
-CIVL = civl
-COMPARE = $(CIVL) compare
-ADDER_PATH = ./adder/
-DIFFUSION_PATH = ./diffusion1d/
-MAX_PATH = ./max/
-
-all: sumN add diff1d maxN
+all: sumN add diff1d maxN output outputF queueT simpleT svector
 
 sumN: sum/Makefile
 	cd sum && make
@@ -15,9 +9,26 @@ add: adder/Makefile
 diff1d: diffusion1d/Makefile
 	cd diffusion1d && make
 
-maxN: $(MAX_PATH)max.cvl $(MAX_PATH)max_seq.cvl $(MAX_PATH)max_par.cvl
-	$(COMPARE) -inputB=4 -spec $(MAX_PATH)max.cvl $(MAX_PATH)max_seq.cvl \
-	-impl -inputNPROCS=2 -inputBLOCK_SIZE=2 $(MAX_PATH)max.cvl $(MAX_PATH)max_par.cvl
+dotP: dot/Makefile
+	cd dot && make
+
+maxN: max/Makefile
+	cd max && make
+
+output:	outputTest/Makefile
+	cd outputTest && make
+
+outputF: outputfile/Makefile
+	cd outputfile && make
+
+queueT: queue/Makefile
+	cd queue && make
+
+simpleT: simple/Makefile
+	cd simple && make
+
+svector: sliced_vector/Makefile
+	cd sliced_vector && make
 
 clean: 
 	rm -f *~
