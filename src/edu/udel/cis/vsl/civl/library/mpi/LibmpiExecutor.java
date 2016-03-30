@@ -13,7 +13,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
@@ -258,25 +257,28 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	}
 
 	/**
-	 * TODO: I think this is a correct version of
-	 * {@link State#getDyscope(int, Scope)} First searching the processState
-	 * call stack, if the dynamic scope in the bottom of the stack is not
-	 * corresponding to the given static scope, searching ancestors of that
+	 * Search a variable with a scoping rule similar to dynamic scoping. Given a
+	 * variable name and a function name, this method will search for each call
+	 * stack entry e and all ancestors of e from the top stack entry e0, it
+	 * looks for the first matched variable appears in the matched function
 	 * scope.
 	 * 
 	 * @param state
+	 *            The current state
 	 * @param pid
-	 * @param targetScope
+	 *            The PID of the process
+	 * @param functionName
+	 *            The name of the function
+	 * @param varName
+	 *            The name of the variable
 	 * @return
 	 */
-	@SuppressWarnings("unused")
 	private Pair<Integer, Variable> getVariableWTDynamicScoping(State state,
 			int pid, String functionName, String varName) {
 		Iterator<? extends StackEntry> stackIter = state.getProcessState(pid)
 				.getStackEntries().iterator();
 		DynamicScope currDyscope = null;
 		int currDyscopeId = -1;
-		int currStaticSid;
 
 		while (stackIter.hasNext()) {
 			currDyscopeId = stackIter.next().scope();

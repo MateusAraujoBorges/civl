@@ -947,7 +947,7 @@ public class ModelTranslator {
 	 *             if there is a problem reading the implementation file of a
 	 *             library
 	 */
-	private List<AST> systemImplASTs(List<AST> userASTs) 
+	private List<AST> systemImplASTs(List<AST> userASTs)
 			throws PreprocessorException, SyntaxException, ParseException,
 			IOException {
 		List<AST> result = new ArrayList<>();
