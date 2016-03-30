@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.sarl.IF.SARLInternalException;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
-import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
@@ -31,7 +31,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
  * @author siegel
  *
  */
-public class UFExtender implements UnaryOperator<SymbolicExpression> {
+public class UFExtender implements CIVLUnaryOperator<SymbolicExpression> {
 
 	/**
 	 * The name you want to use for the uninterpreted functions that will be
@@ -45,7 +45,7 @@ public class UFExtender implements UnaryOperator<SymbolicExpression> {
 	 * defined everywhere, even if it just applies an uninterpreted functions
 	 * most of the time.
 	 */
-	private UnaryOperator<SymbolicExpression> rootOperation;
+	private CIVLUnaryOperator<SymbolicExpression> rootOperation;
 
 	/**
 	 * The input type of the root operation.
@@ -66,7 +66,7 @@ public class UFExtender implements UnaryOperator<SymbolicExpression> {
 
 	public UFExtender(SymbolicUniverse universe, String rootName,
 			SymbolicType inputType, SymbolicType outputType,
-			UnaryOperator<SymbolicExpression> rootFunction) {
+			CIVLUnaryOperator<SymbolicExpression> rootFunction) {
 		this.rootName = universe.stringObject(rootName);
 		this.rootOperation = rootFunction;
 		this.inputType = inputType;
@@ -129,20 +129,23 @@ public class UFExtender implements UnaryOperator<SymbolicExpression> {
 	}
 
 	@Override
-	public SymbolicExpression apply(SymbolicExpression expr) {
+	public SymbolicExpression apply(BooleanExpression context,
+			SymbolicExpression expr, CIVLType civlType) {
 		SymbolicOperator op = expr.operator();
 		SymbolicType type = expr.type();
 
 		switch (op) {
 		case ARRAY_READ:
 			return universe.arrayRead(
-					apply((SymbolicExpression) expr.argument(0)),
-					(NumericExpression) expr.argument(1));
+					apply(context, (SymbolicExpression) expr.argument(0),
+							civlType), (NumericExpression) expr.argument(1));
 		case ARRAY_WRITE:
 			return universe.arrayWrite(
-					apply((SymbolicExpression) expr.argument(0)),
+					apply(context, (SymbolicExpression) expr.argument(0),
+							civlType),
 					(NumericExpression) expr.argument(1),
-					apply((SymbolicExpression) expr.argument(2)));
+					apply(context, (SymbolicExpression) expr.argument(2),
+							civlType));
 		case DENSE_ARRAY_WRITE: {
 			@SuppressWarnings("unchecked")
 			SymbolicSequence<? extends SymbolicExpression> oldElements = (SymbolicSequence<? extends SymbolicExpression>) expr
@@ -151,44 +154,56 @@ public class UFExtender implements UnaryOperator<SymbolicExpression> {
 			SymbolicExpression[] newElements = new SymbolicExpression[size];
 
 			for (int i = 0; i < size; i++)
-				newElements[i] = apply(oldElements.get(i));
+				newElements[i] = apply(context, oldElements.get(i), civlType);
 			return universe.denseArrayWrite(
-					apply((SymbolicExpression) expr.argument(0)),
-					Arrays.asList(newElements));
+					apply(context, (SymbolicExpression) expr.argument(0),
+							civlType), Arrays.asList(newElements));
 		}
 		case LAMBDA:
-			return universe.lambda((SymbolicConstant) expr.argument(0),
-					apply((SymbolicExpression) expr.argument(1)));
+			return universe.lambda(
+					(SymbolicConstant) expr.argument(0),
+					apply(context, (SymbolicExpression) expr.argument(1),
+							civlType));
 		case TUPLE_READ:
 			return universe.tupleRead(
-					apply((SymbolicExpression) expr.argument(0)),
-					(IntObject) expr.argument(1));
+					apply(context, (SymbolicExpression) expr.argument(0),
+							civlType), (IntObject) expr.argument(1));
 		case ARRAY: {
 			int n = expr.numArguments();
 			SymbolicExpression[] newArgs = new SymbolicExpression[n];
 
 			for (int i = 0; i < n; i++)
-				newArgs[i] = apply((SymbolicExpression) expr.argument(i));
+				newArgs[i] = apply(context,
+						(SymbolicExpression) expr.argument(i), civlType);
 			return universe.array(
 					newType(((SymbolicArrayType) type).elementType()), newArgs);
 		}
 		case TUPLE: {
+			if (type.equals(this.inputType))
+				return this.rootOperation.apply(context, expr, civlType);
+
 			int n = expr.numArguments();
 			SymbolicExpression[] newArgs = new SymbolicExpression[n];
 
 			for (int i = 0; i < n; i++)
-				newArgs[i] = apply((SymbolicExpression) expr.argument(i));
+				newArgs[i] = apply(context,
+						(SymbolicExpression) expr.argument(i), civlType);
 			return universe.tuple((SymbolicTupleType) newType(type), newArgs);
 		}
 		case ARRAY_LAMBDA:
 			// TODO
 		case COND:
-			return universe.cond((BooleanExpression) expr.argument(0),
-					apply((SymbolicExpression) expr.argument(1)),
-					apply((SymbolicExpression) expr.argument(2)));
+			return universe.cond(
+					(BooleanExpression) expr.argument(0),
+					apply(context, (SymbolicExpression) expr.argument(1),
+							civlType),
+					apply(context, (SymbolicExpression) expr.argument(2),
+							civlType));
 		default:
 			if (type.equals(inputType))
-				return rootOperation.apply(expr);
+				return rootOperation.apply(context, expr, civlType);
+			if (type.equals(outputType))
+				return expr;
 
 			SymbolicConstant f = uninterpretedFunctions.get(type);
 
@@ -202,5 +217,4 @@ public class UFExtender implements UnaryOperator<SymbolicExpression> {
 			return universe.apply(f, Arrays.asList(expr));
 		}
 	}
-
 }

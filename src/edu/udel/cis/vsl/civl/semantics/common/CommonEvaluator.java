@@ -323,13 +323,15 @@ public class CommonEvaluator implements Evaluator {
 
 	private CIVLTypeFactory typeFactory;
 
-	private SymbolicConstant pointer2IntFunc;
-
-	private SymbolicConstant int2PointerFunc;
+	// private SymbolicConstant pointer2IntFunc;
+	//
+	// private SymbolicConstant int2PointerFunc;
 
 	private UFExtender char2IntCaster;
 
 	private UFExtender int2CharCaster;
+	private UFExtender pointer2IntCaster;
+	private UFExtender int2PointerCaster;
 
 	/* ***************************** Constructors ************************** */
 
@@ -408,18 +410,26 @@ public class CommonEvaluator implements Evaluator {
 				.stringObject("shiftright"), universe.functionType(
 				Arrays.asList(universe.integerType(), universe.integerType()),
 				universe.integerType()));
-		pointer2IntFunc = universe.symbolicConstant(universe
-				.stringObject(POINTER_TO_INT_FUNCTION), universe.functionType(
-				Arrays.asList(this.pointerType), this.universe.integerType()));
-		int2PointerFunc = universe.symbolicConstant(universe
-				.stringObject(INT_TO_POINTER_FUNCTION), universe.functionType(
-				Arrays.asList(this.universe.integerType()), this.pointerType));
+		// pointer2IntFunc = universe.symbolicConstant(universe
+		// .stringObject(POINTER_TO_INT_FUNCTION), universe.functionType(
+		// Arrays.asList(this.pointerType), this.universe.integerType()));
+		// int2PointerFunc = universe.symbolicConstant(universe
+		// .stringObject(INT_TO_POINTER_FUNCTION), universe.functionType(
+		// Arrays.asList(this.universe.integerType()), this.pointerType));
 		this.char2IntCaster = new UFExtender(this.universe,
 				CHAR_TO_INT_FUNCTION, charType, universe.integerType(),
 				new Char2IntCaster(this.universe, this.symbolicUtil));
 		this.int2CharCaster = new UFExtender(this.universe,
 				INT_TO_CHAR_FUNCTION, universe.integerType(), charType,
 				new Int2CharCaster(this.universe, this.symbolicUtil));
+		pointer2IntCaster = new UFExtender(this.universe,
+				POINTER_TO_INT_FUNCTION, this.pointerType,
+				universe.integerType(), new Pointer2IntCaster(universe,
+						symbolicUtil, this.pointerType));
+		int2PointerCaster = new UFExtender(this.universe,
+				INT_TO_POINTER_FUNCTION, universe.integerType(),
+				this.pointerType, new Int2PointerCaster(universe, symbolicUtil,
+						this.pointerType));
 		this.civlConfig = config;
 		// this.zeroOrOne = (NumericExpression) universe.symbolicConstant(
 		// universe.stringObject("ZeroOrOne"), universe.integerType());
@@ -1035,50 +1045,12 @@ public class CommonEvaluator implements Evaluator {
 			eval.value = this.booleanToInteger(value);
 			return eval;
 		} else if (argType.isIntegerType() && castType.isPointerType()) {
-			// only good cast for:
-			// 1. from 0 to null pointer
-			// 2. pointer2Int(x) back to x;
-			BooleanExpression assumption = state.getPathCondition();
-			BooleanExpression claim = universe.equals(zero, value);
-			ResultType resultType = universe.reasoner(assumption).valid(claim)
-					.getResultType();
-
-			if (resultType != ResultType.YES) {
-				SymbolicExpression castedValue = this.symbolicUtil
-						.applyReverseFunction(POINTER_TO_INT_FUNCTION, value);
-
-				if (castedValue != null)
-					eval.value = castedValue;
-				else if (((CIVLPointerType) castType).baseType().isVoidType()) {
-					eval.value = value;
-				} else {
-					eval.value = universe.apply(this.int2PointerFunc,
-							Arrays.asList(value));
-					// state = errorLogger.logError(arg.getSource(), state,
-					// process,
-					// this.symbolicAnalyzer.stateInformation(state),
-					// claim, resultType, ErrorKind.INVALID_CAST,
-					// "Cast from non-zero integer to pointer");
-					// eval.state = state;
-				}
-			} else
-				eval.value = this.symbolicUtil.nullPointer();
+			eval.value = this.int2PointerCaster.apply(state.getPathCondition(),
+					value, castType);
 			return eval;
 		} else if (argType.isPointerType() && castType.isIntegerType()) {
-			if (this.symbolicUtil.isNullPointer(value))
-				eval.value = universe.integer(0);
-			else if (value.type().equals(universe.integerType()))
-				eval.value = value;
-			else {
-				SymbolicExpression castedValue = this.symbolicUtil
-						.applyReverseFunction(INT_TO_POINTER_FUNCTION, value);
-
-				if (castedValue != null)
-					eval.value = castedValue;
-				else
-					eval.value = universe.apply(this.pointer2IntFunc,
-							Arrays.asList(value));
-			}
+			eval.value = this.pointer2IntCaster.apply(state.getPathCondition(),
+					value, null);
 			return eval;
 		} else if (argType.isPointerType() && castType.isPointerType()) {
 			// pointer to pointer: for now...no change.
@@ -1101,10 +1073,12 @@ public class CommonEvaluator implements Evaluator {
 				eval.value = universe.not(universe.equals(value, zero));
 			return eval;
 		} else if (argType.isIntegerType() && castType.isCharType()) {
-			eval.value = this.int2CharCaster.apply(value);
+			eval.value = this.int2CharCaster.apply(state.getPathCondition(),
+					value, null);
 			return eval;
 		} else if (argType.isCharType() && castType.isIntegerType()) {
-			eval.value = this.char2IntCaster.apply(value);
+			eval.value = this.char2IntCaster.apply(state.getPathCondition(),
+					value, null);
 			return eval;
 		}
 		try {

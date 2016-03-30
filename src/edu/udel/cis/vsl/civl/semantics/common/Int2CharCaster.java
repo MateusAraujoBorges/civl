@@ -4,8 +4,9 @@ import java.util.Arrays;
 
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
-import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -13,7 +14,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 
 //int to char
-public class Int2CharCaster implements UnaryOperator<SymbolicExpression> {
+public class Int2CharCaster implements CIVLUnaryOperator<SymbolicExpression> {
 	private SymbolicUniverse universe;
 	private SymbolicConstant int2CharFunc;
 	private SymbolicUtility symbolicUtil;
@@ -30,7 +31,8 @@ public class Int2CharCaster implements UnaryOperator<SymbolicExpression> {
 	}
 
 	@Override
-	public SymbolicExpression apply(SymbolicExpression value) {
+	public SymbolicExpression apply(BooleanExpression context,
+			SymbolicExpression value, CIVLType type) {
 		NumericExpression integerValue = (NumericExpression) value;
 		Number concreteValue = null;
 

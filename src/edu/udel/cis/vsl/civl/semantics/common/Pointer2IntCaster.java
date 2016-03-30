@@ -3,14 +3,15 @@ package edu.udel.cis.vsl.civl.semantics.common;
 import java.util.Arrays;
 
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
-import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 //pointer to int
-public class Pointer2IntCaster implements UnaryOperator<SymbolicExpression> {
+public class Pointer2IntCaster implements CIVLUnaryOperator<SymbolicExpression> {
 	private SymbolicUniverse universe;
 	private SymbolicConstant pointer2IntFunc;
 	private SymbolicUtility symbolicUtil;
@@ -26,7 +27,8 @@ public class Pointer2IntCaster implements UnaryOperator<SymbolicExpression> {
 	}
 
 	@Override
-	public SymbolicExpression apply(SymbolicExpression value) {
+	public SymbolicExpression apply(BooleanExpression context,
+			SymbolicExpression value, CIVLType castType) {
 		if (this.symbolicUtil.isNullPointer(value))
 			value = universe.integer(0);
 		else if (!value.type().equals(universe.integerType())) {
