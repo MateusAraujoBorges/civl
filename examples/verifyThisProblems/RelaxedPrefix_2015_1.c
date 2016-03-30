@@ -3,7 +3,6 @@
 #include <civlc.cvh>
 
 /*
-NOTE: THIS PROBLEM HAS NOT BEEN SOLVED YET
 
 problem description:
 Verify a function isRelaxedPrefix determining if a list _pat_ (for
@@ -36,32 +35,31 @@ $input int X2[n2];
 bool isRelaxedPrefix(int* pat, int patLen, int* a, int aLen){
   int shift = 0;
   int i;
-
   if(patLen > aLen+1) return false;
+  if(aLen == 0) return true;
   for(i=0; i<patLen; i++){
-    if(i == aLen)
-      return true;
-    if(pat[i] != a[i-shift]){
+     if(pat[i] != a[i-shift]){
       if(shift == 0)
         shift = 1;
       else
         return false;
     }
-  }
+     if(i == aLen - 1 && shift == 0) return true;
+   }
   return true;
 }
 
-void test2(){
-  bool result = isRelaxedPrefix(X1, n1, X2, n2);
+void main(){
+	bool result = isRelaxedPrefix(X1, n1, X2, n2);
+  
   if(n1 > n2+1){
     $assert(!result);
   }else if(n1 == n2+1){
-    $assert(result ==
-      ($exists {int k | k >= 0 && k <n1}
+    $assert( result ==
+      ($exists {int k | k >= 0 && k < n1}
         (
           ($forall {int i | i >= 0 && i < k} X1[i] == X2[i]) &&
           ($forall {int i | i > k && i < n1} X1[i] == X2[i-1])
-          //$forall {int i, j | i >= 0 && i < k && j >k && j <n1} X1[i] == X2[i] && X1[j] == X2[j-1])
         )
       )
     );
@@ -75,9 +73,5 @@ void test2(){
         )
       )
     );
-  }
-}
-
-void main(){
-  test2();
+    }
 }
