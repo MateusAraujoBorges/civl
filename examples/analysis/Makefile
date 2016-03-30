@@ -8,7 +8,7 @@ max: unreached.c
 
 abs: abs.c
 	${VERIFY} -analyze_abs abs.c
-	
+
 abs2: abs2.c
 	${VERIFY} -analyze_abs abs2.c
 
