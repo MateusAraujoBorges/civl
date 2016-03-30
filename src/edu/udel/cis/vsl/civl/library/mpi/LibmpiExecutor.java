@@ -1,10 +1,7 @@
 package edu.udel.cis.vsl.civl.library.mpi;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -67,11 +64,6 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  */
 public class LibmpiExecutor extends BaseLibraryExecutor implements
 		LibraryExecutor {
-	/**
-	 * A map stores MPI process-status variables and the dynamic scopes in where
-	 * they are. Key for the information is the process id of the process.
-	 */
-	private Map<Integer, Pair<Scope, Variable>> processStatusVariables;
 
 	public LibmpiExecutor(String name, Executor primaryExecutor,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -81,7 +73,6 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		super(name, primaryExecutor, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
-		this.processStatusVariables = new HashMap<>();
 	}
 
 	@Override
@@ -234,42 +225,13 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			CallOrSpawnStatement call, Expression[] arguments,
 			SymbolicExpression[] argumentValues) {
 		SymbolicExpression newStatus = argumentValues[0];
-		Variable myStatusVar = null;
-		// variable (right in pair) and it's dyscope
-		Pair<Scope, Variable> myStatusVarInfo;
+		Pair<Integer, Variable> myStatusVarInfo;
 		State newState;
-		int dyscopeId = -1;
 
-		if (!this.processStatusVariables.keySet().contains(pid)) {
-			// Set of children scopes of MPI_Process function
-			Set<Scope> mpiProcChildren = model.function("_mpi_process")
-					.outerScope().children();
-			Scope procStaticScope;
-
-			// It should exactly have a child which is the scope of the body
-			assert mpiProcChildren.size() == 1;
-			procStaticScope = mpiProcChildren.iterator().next();
-			assert procStaticScope != null : "Failure of getting static scope of the body function of MPI process "
-					+ pid + " .\n";
-			myStatusVar = procStaticScope.variable("_mpi_status");
-			assert myStatusVar != null : "Failure of getting variable '_mpi_status' in function '_mpi_process()'";
-			// dyscopeId = this
-			// .getScopeInProcessStack(state, pid, procStaticScope);
-			dyscopeId = state.getDyscope(pid, procStaticScope);
-
-			this.processStatusVariables.put(pid, new Pair<>(procStaticScope,
-					myStatusVar));
-		} else {
-			myStatusVarInfo = this.processStatusVariables.get(pid);
-			myStatusVar = myStatusVarInfo.right;
-			// dyscopeId = this.getScopeInProcessStack(state, pid,
-			// myStatusVarInfo.left);
-			dyscopeId = state.getDyscope(pid, myStatusVarInfo.left);
-
-		}
-
-		newState = this.stateFactory.setVariable(state, myStatusVar.vid(),
-				dyscopeId, newStatus);
+		myStatusVarInfo = getVariableWTDynamicScoping(state, pid,
+				"_mpi_process", "_mpi_status");
+		newState = this.stateFactory.setVariable(state,
+				myStatusVarInfo.right.vid(), myStatusVarInfo.left, newStatus);
 		return newState;
 	}
 
@@ -280,40 +242,15 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 
 		if (lhs != null) {
 			// variable (right in pair) and it's static scope
-			Pair<Scope, Variable> myStatusVarInfo;
-			int dyscopeId = -1;
-			Variable myStatusVar;
+			Pair<Integer, Variable> myStatusVarInfo;
 			SymbolicExpression valueOfMyStatusVar;
 			String process = state.getProcessState(pid).name() + "(id=" + pid
 					+ ")";
 
-			if (!this.processStatusVariables.keySet().contains(pid)) {
-				// Set of children scopes of MPI_Process function
-				Set<Scope> mpiProcChildren = model.function("_mpi_process")
-						.outerScope().children();
-				Scope procStaticScope;
-
-				// It should exactly have a child which is the scope of the body
-				assert mpiProcChildren.size() == 1;
-				procStaticScope = mpiProcChildren.iterator().next();
-				assert procStaticScope != null : "Failure of getting static scope of the body function of MPI process "
-						+ pid + " .\n";
-				myStatusVar = procStaticScope.variable("_mpi_status");
-				assert myStatusVar != null : "Failure of getting variable '_mpi_status' in function '_mpi_process()'";
-				// dyscopeId = this.getScopeInProcessStack(state, pid,
-				// procStaticScope);
-				dyscopeId = state.getDyscope(pid, procStaticScope);
-				this.processStatusVariables.put(pid, new Pair<>(
-						procStaticScope, myStatusVar));
-			} else {
-				myStatusVarInfo = this.processStatusVariables.get(pid);
-				myStatusVar = myStatusVarInfo.right;
-				// dyscopeId = this.getScopeInProcessStack(state, pid,
-				// myStatusVarInfo.left);
-				dyscopeId = state.getDyscope(pid, myStatusVarInfo.left);
-			}
-			valueOfMyStatusVar = state.getDyscope(dyscopeId).getValue(
-					myStatusVar.vid());
+			myStatusVarInfo = getVariableWTDynamicScoping(state, pid,
+					"_mpi_process", "_mpi_status");
+			valueOfMyStatusVar = state.getDyscope(myStatusVarInfo.left)
+					.getValue(myStatusVarInfo.right.vid());
 			return this.primaryExecutor.assign(state, pid, process, lhs,
 					valueOfMyStatusVar);
 		}
@@ -333,31 +270,28 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 */
 	@SuppressWarnings("unused")
-	private int getScopeInProcessStack(State state, int pid, Scope targetScope) {
+	private Pair<Integer, Variable> getVariableWTDynamicScoping(State state,
+			int pid, String functionName, String varName) {
 		Iterator<? extends StackEntry> stackIter = state.getProcessState(pid)
 				.getStackEntries().iterator();
-		int staticSid = targetScope.id();
 		DynamicScope currDyscope = null;
+		int currDyscopeId = -1;
 		int currStaticSid;
 
 		while (stackIter.hasNext()) {
-			int currDySid = stackIter.next().scope();
+			currDyscopeId = stackIter.next().scope();
 
-			currDyscope = state.getDyscope(currDySid);
-			currStaticSid = currDyscope.lexicalScope().id();
-			if (currStaticSid == staticSid)
-				return currDySid;
+			while (currDyscopeId > 0) {
+				currDyscope = state.getDyscope(currDyscopeId);
+				if (currDyscope.lexicalScope().containsVariable(varName))
+					if (currDyscope.lexicalScope().function().name().name()
+							.equals(functionName))
+						return new Pair<>(currDyscopeId, currDyscope
+								.lexicalScope().variable(varName));
+				currDyscopeId = currDyscope.getParent();
+			}
 		}
-		// if the target scope is not in process call stack, search all parents
-		// of the scope in the bottom of the call stack
-		while (currDyscope.getParent() >= 0) {
-			int currDySid = currDyscope.getParent();
-
-			currDyscope = state.getDyscope(currDySid);
-			if (currDyscope.lexicalScope().id() == staticSid)
-				return currDySid;
-		}
-		return -1;
+		return new Pair<>(currDyscopeId, null);
 	}
 
 	/**
