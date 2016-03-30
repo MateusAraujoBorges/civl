@@ -1,3 +1,0 @@
-This example is to demonstrate the comparison of file I/O.
-CIVL should be able to say that the same files opens by two different
-processes are equivalent.

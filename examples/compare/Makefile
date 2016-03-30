@@ -1,4 +1,4 @@
-all: sumN add diff1d maxN output outputF queueT simpleT svector
+all: sumN add diff1d maxN output queueT simpleT svector
 
 sumN: sum/Makefile
 	cd sum && make
@@ -15,20 +15,11 @@ dotP: dot/Makefile
 maxN: max/Makefile
 	cd max && make
 
-output:	outputTest/Makefile
-	cd outputTest && make
-
-outputF: outputfile/Makefile
-	cd outputfile && make
+output: io/Makefile
+	cd io && make
 
 queueT: queue/Makefile
 	cd queue && make
-
-simpleT: simple/Makefile
-	cd simple && make
-
-svector: sliced_vector/Makefile
-	cd sliced_vector && make
 
 clean: 
 	rm -f *~

@@ -129,7 +129,7 @@ vector *vector_addin_using_sliced(vector *a, const vector *b){
 }
 
 int main(){
-    int n = 128;
+    int n = 8;
     vector x; vector_init(&x, n);
     vector y; vector_init(&y, n);
 	for (int i = 0; i < x.n; ++i) {	x.a[i] = i%3; y.a[i] = (i/3)%3;		}

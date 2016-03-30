@@ -18,7 +18,7 @@ vector *vector_addin(vector * a, const vector *b){// vector a += b;
 }
 
 int main(){
-    int n = 128;
+    int n = 8;
     vector x; vector_init(&x, n);
     vector y; vector_init(&y, n);
 	for (int i = 0; i < x.n; ++i) {	x.a[i] = i%3; y.a[i] = (i/3)%3;		}
@@ -29,5 +29,9 @@ int main(){
 	for (int i = 0; i < x.n; ++i) if (x.a[i] != (i+i/3)%3) error += 1;
 	if (error) printf("Unsliced Error\n");
 	else printf("Unsliced Good\n");
+#ifdef _CIVL
+	free(x.a);
+	free(y.a);
+#endif
 	return error ? -1 : 0;
 }

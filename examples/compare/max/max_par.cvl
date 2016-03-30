@@ -1,3 +1,6 @@
+/** This implements an algorithm for finding the max element of an array
+ *  in parallel. It has a defect, because there is data race.
+ */
 #include<civlc.cvh>
 
 $input int BLOCK_SIZE;
