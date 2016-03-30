@@ -12,8 +12,9 @@ int N=10;
 #endif
 
 /**
+@author Yihao Yan
 
-NOTE: still need improvement
+Link(chanllege 3): http://etaps2015.verifythis.org/challenges
 
 problem description:
 Dancing links is a technique introduced in 1979 by Hitotumatu and
@@ -37,14 +38,6 @@ will put x back into the list again.
 
 command: civl verify -inputN=10 DancingLinks.c
 
-************TODO*************
-check the left and right node during iteration
-
-store pointers and compare them
-
-modify to c program
-
-function to check if insert or delete is correct
 */
 struct Node{
     struct Node *left;
@@ -65,9 +58,11 @@ void delete(struct Node *x){
 struct Node* init(int n){
   struct Node *head = (struct Node *)malloc(sizeof(struct Node));
   struct Node *temp = head;
+
   temp->left = NULL;
   while(n > 1){
     struct Node *new = (struct Node *)malloc(sizeof(struct Node));
+
     temp->right = new;
     new->left = temp;
     temp = temp->right;
@@ -79,6 +74,7 @@ struct Node* init(int n){
 
 struct Node* getNode(struct Node* list, int index){
   struct Node *result = list;
+
   while(index >1){
     result = result->right;
     index--;
@@ -89,6 +85,7 @@ struct Node* getNode(struct Node* list, int index){
 void initNodeArray(struct Node** array, struct Node* list, int n){
   struct Node *cur = list;
   int index=0;
+
   while(n > 0){
     array[index++] = cur;
     cur = cur->right;
@@ -98,6 +95,7 @@ void initNodeArray(struct Node** array, struct Node* list, int n){
 
 void verifyDelete(struct Node *list, struct Node **nodeArray, int index, int n){
   struct Node *temp1 = list;
+
   for(int i=0; i<index-1; i++){
     assert(temp1 == nodeArray[i]);
     assert(temp1->left == (nodeArray[i])->left);
@@ -131,6 +129,7 @@ void verifyDelete(struct Node *list, struct Node **nodeArray, int index, int n){
 
 void verifyInsert(struct Node *list, struct Node **nodeArray, int index, int n){
   struct Node *temp1 = list;
+
   for(int k=0;k < n; k++){
     assert(temp1 == nodeArray[k]);
     assert(temp1->left == (nodeArray[k])->left);
@@ -158,20 +157,19 @@ int main(){
 
   struct Node *x = getNode(list, index);
   struct Node *nodeArray[n];
+
   initNodeArray(nodeArray, list, n);
-
   delete(x);
-
   verifyDelete(list, nodeArray, index, n);
-
   insert(x);
-
   verifyInsert(list, nodeArray, index, n);
 
   int t = n;
   struct Node *temp1 = list;
+
   while(t >0){
     struct Node *temp2 = temp1;
+
     temp1 = temp1->right;
     free(temp2);
     t--;
