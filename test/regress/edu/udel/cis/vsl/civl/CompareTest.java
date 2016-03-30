@@ -5,7 +5,6 @@ import static edu.udel.cis.vsl.civl.TestConstants.IMPL;
 import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static edu.udel.cis.vsl.civl.TestConstants.REPLAY;
-import static edu.udel.cis.vsl.civl.TestConstants.SHOW;
 import static edu.udel.cis.vsl.civl.TestConstants.SPEC;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -31,16 +30,13 @@ public class CompareTest {
 		return new File(new File(rootDir, subfolder), name).getPath();
 	}
 
-	private static String filename(String name) {
-		return filename(".", name);
-	}
-
 	/* **************************** Test Methods *************************** */
 
 	@Test
 	public void sumN() {
 		assertTrue(ui.run(COMPARE, "-inputN=10", QUIET, SPEC,
-				filename("sumNspec.cvl"), IMPL, filename("sumNimpl.cvl")));
+				filename("sum", "sumNspec.cvl"), IMPL,
+				filename("sum", "sumNimpl.cvl")));
 	}
 
 	@Test
@@ -52,15 +48,14 @@ public class CompareTest {
 
 	@Test
 	public void max() {
-		ui.run(SHOW, QUIET, filename("max", "max.cvl"),
-				filename("max", "max_seq.cvl"));
-		// assertFalse(ui.run("compare -inputB=4 -min -spec",
-		// filename("max", "max.cvl"), filename("max", "max_seq.cvl"),
-		// "-impl -inputNPROCS=2 -inputBLOCK_SIZE=2",
-		// filename("max", "max.cvl"), filename("max", "max_par.cvl")));
-		// assertFalse(ui.run("replay -min -spec", filename("max", "max.cvl"),
-		// filename("max", "max_seq.cvl"), "-impl",
-		// filename("max", "max.cvl"), filename("max", "max_par.cvl")));
+		assertFalse(ui.run(COMPARE, QUIET, NO_PRINTF, "-inputB=4 -min -spec",
+				filename("max", "max.cvl"), filename("max", "max_seq.cvl"),
+				"-impl -inputNPROCS=2 -inputBLOCK_SIZE=2",
+				filename("max", "max.cvl"), filename("max", "max_par.cvl")));
+		assertFalse(ui.run(REPLAY, QUIET, NO_PRINTF, "-spec",
+				filename("max", "max.cvl"), filename("max", "max_seq.cvl"),
+				"-impl", filename("max", "max.cvl"),
+				filename("max", "max_par.cvl")));
 	}
 
 	@Test
@@ -104,8 +99,6 @@ public class CompareTest {
 				filename("dot", "mpithreads_both.c")));
 	}
 
-	// civl compare -inputVECLEN=5 -input_mpi_nprocs=2 -spec mpithreads_mpi.c
-	// -impl -inputMAXTHRDS=2 mpithreads_both.c
 	@Test
 	public void dotMpiHybrid() {
 		ui.run(COMPARE, QUIET, "-inputVECLEN=5 -input_mpi_nprocs=2", SPEC,
@@ -115,16 +108,8 @@ public class CompareTest {
 
 	@Test
 	public void outputfiles() {
-		assertTrue(ui.run(COMPARE, QUIET, SPEC,
-				filename("outputTest", "out1.c"), IMPL,
-				filename("outputTest", "out2.c")));
-	}
-
-	@Test
-	public void outputfile() {
-		assertTrue(ui.run(COMPARE, QUIET, SPEC,
-				filename("outputfile", "spec.c"), IMPL,
-				filename("outputfile", "impl.c")));
+		assertTrue(ui.run(COMPARE, QUIET, SPEC, filename("io", "out1.c"), IMPL,
+				filename("io", "out2.c")));
 	}
 
 	@AfterClass
