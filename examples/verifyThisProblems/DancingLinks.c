@@ -1,16 +1,3 @@
-#include <stdlib.h>
-#include <stdbool.h>
-#include <assert.h>
-#include <time.h>
-
-#ifdef _CIVL
-#include <civlc.cvh>
-$input int N=10;
-$assume (N >= 3);
-#else
-int N=10;
-#endif
-
 /**
 @author Yihao Yan
 
@@ -39,6 +26,20 @@ will put x back into the list again.
 command: civl verify -inputN=10 DancingLinks.c
 
 */
+
+#include <stdlib.h>
+#include <stdbool.h>
+#include <assert.h>
+#include <time.h>
+
+#ifdef _CIVL
+#include <civlc.cvh>
+$input int N=10;
+$assume (N >= 3);
+#else
+int N=10;
+#endif
+
 struct Node{
     struct Node *left;
     struct Node *right;

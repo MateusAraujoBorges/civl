@@ -1,5 +1,3 @@
-#include <civlc.cvh>
-
 /*
 @author: Yihao Yan
 
@@ -10,6 +8,9 @@ Input:  an integer array X1[n], and two indices x and y into this array
 Output: length of the longest common prefix of the subarrays of a
         starting at x and y respectively.
 */
+
+#include <civlc.cvh>
+
 $input int N_BOUND=4;
 $input int n;
 $input int x;

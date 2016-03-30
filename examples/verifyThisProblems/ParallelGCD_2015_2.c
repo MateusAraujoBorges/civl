@@ -1,3 +1,17 @@
+/*
+@author: Yihao Yan
+
+Link(challenge 2): http://etaps2015.verifythis.org/challenges
+
+problem description:
+Various parallel GCD algorithms exist. In this challenge, we consider a
+simple Euclid-like algorithm with two parallel threads. One thread
+subtracts in one direction, the other thread subtracts in the other
+direction, and eventually this procedure converges on GCD.
+
+command: civl verify ParallelGCD_2015_2.c
+*/
+
 #include <civlc.cvh>
 #include <stdio.h>
 
@@ -7,18 +21,6 @@ $input int A;
 $input int B;
 // assume the bound of A and B
 $assume (A>0 && B>0 && A<A_BOUND && B<B_BOUND);
-
-/*
-NOTE: CVC4 ERROR
-
-problem description:
-Various parallel GCD algorithms exist. In this challenge, we consider a
-simple Euclid-like algorithm with two parallel threads. One thread
-subtracts in one direction, the other thread subtracts in the other
-direction, and eventually this procedure converges on GCD.
-
-command: civl verify -inputA_BOUND=6 -inputB_BOUND=4 ParallelGCD_2015_2.c
-*/
 
 int myGCD(int a, int b){
   $proc proc_a;
@@ -62,10 +64,7 @@ int seqGCD(int a, int b){
 void main(){
   int result1 = myGCD(A, B);
   int minAB = A < B ? A : B;
+
   $assert($forall {i = (result1+1) .. (minAB)} (A%i != 0 || B%i != 0));
   $assert( A%result1 == 0 && B%result1 == 0);
-
-  // $assert($forall {int i | i >=(result1+1) && i < minAB} (A%i != 0 || B%i != 0));
-  // $assert( A%result1 == 0 && B%result1 == 0);
-  //$assert(!($exists {int i | i > result1 && i <= minAB} (A%i==0 && B%i==0)));
 }
