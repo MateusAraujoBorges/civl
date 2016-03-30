@@ -1,6 +1,10 @@
 #include <civlc.cvh>
 
 /*
+@author: Yihao Yan
+
+Link(LCP.zip): http://fm2012.verifythis.org/challenges
+
 Longest Common Prefix (LCP)
 Input:  an integer array X1[n], and two indices x and y into this array
 Output: length of the longest common prefix of the subarrays of a
@@ -16,6 +20,7 @@ $assume (x < n && y < n && x >=0 && y>=0 && n > 0 && n <= N_BOUND);
 
 int lcp(int *arr, int n, int x, int y){
   int l=0;
+
   while (x+l<n && y+l<n && arr[x+l]==arr[y+l]) {
       l++;
   }
@@ -24,8 +29,11 @@ int lcp(int *arr, int n, int x, int y){
 
 void main(){
   int result = lcp(X1, n, x, y);
+
   $assert($forall {i = 0 .. (result-1)} X1[x+i] == X1[y+i]);
+
   int maxXY = x > y ? x : y;
+
   if(result + maxXY < n){
     $assert(X1[x+result] != X1[y+result]);
   }
