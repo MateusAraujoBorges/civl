@@ -1,6 +1,4 @@
 /*
-Note: This problem has not been solved yet
-
 This is a problem in 2012 as an advance problem for LCP
 
 Here is the description:
@@ -31,8 +29,10 @@ sorted suffix array is:
 #include <civlc.cvh>
 #include <assert.h>
 
-$input int N=4;
+$input int N_BOUND = 4;
+$input int N;
 $input int X1[N];
+$assume (N < N_BOUND && N >= 0);
 
 int lcp1(int *arr, int n, int x, int y){
   int l=0;
@@ -100,9 +100,13 @@ int main(){
   lrs(X1, N, result);
   int index = result[0];
   int maxLen = result[1];
-   $assert($exists {int k | k >= 0 && k < N - maxLen && k != maxLen}(
-     $forall {i = 0 .. maxLen} X1[k+i] == X1[index+i]
+  if(N > 1){
+   $assert($exists {int k | k >= 0 && k <= N - maxLen && k != index}(
+     $forall {i = 0 .. maxLen-1} X1[k+i] == X1[index+i]
    ));
+  }else{
+    $assert(index == 0 && maxLen == 0);
+  }
 
   // printf("index:%d\n", result[0]);
   // printf("length:%d\n", result[1]);
