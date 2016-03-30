@@ -1,4 +1,5 @@
 /* matmat_mw.c : parallel multiplication of two matrices.
+ *
  * To execute: mpicc matmat_mw.c ; mpiexec -n 4 ./a.out N L M
  * Or replace "4" with however many procs you want to use.
  * Arguments N L M should be replaced with any integer numbers which is 
@@ -16,20 +17,20 @@
 $input int _mpi_nprocs_lo = 2;
 $input int _mpi_nprocs_hi = 4;
 /* Dimensions of 2 matrices: a[N][L] * b[L][M] */
-$input int NB = 3;              // upper bound of N
+$input int NB = 3;      // upper bound of N
 $input int N;
 $assume(0 < N && N <= NB);
-$input int LB = 3;              // upper bound of L
+$input int LB = 3;      // upper bound of L
 $input int L;
 $assume(0 < L && L <= LB);
-$input int MB = 3;              // upper bound of M
+$input int MB = 3;      // upper bound of M
 $input int M;
 $assume(0 < M && M <= MB);
-$input double a[N][L];          // input data for matrix a
-$input double b[L][M];          // input data for matrix b
-double oracle[N][M];            // matrix stores results of a sequential run
+$input double a[N][L];  // input data for matrix a
+$input double b[L][M];  // input data for matrix b
+double oracle[N][M];    // matrix stores results of a sequential run
 #else
-FILE * fp;                      // pointer to the data file which gives two matrices
+FILE * fp;              // pointer to the data file which gives two matrices
 int N, L, M;
 #endif
 
@@ -42,8 +43,10 @@ void printMatrix(int numRows, int numCols, double *m) {
     for (j = 0; j < numCols; j++) {
       printf("%f ", m[i*numCols + j]);
 #ifdef _CIVL
-      $assert(m[i*numCols + j] == oracle[i][j], "The calculated value at position [%d][%d] is %f"
-	" but the expected one is %f", i, j, m[i*numCols+j], oracle[i][j]);
+      $assert(m[i*numCols + j] == oracle[i][j], 
+	      "The calculated value at position [%d][%d] is %f"
+	      " but the expected one is %f", 
+	      i, j, m[i*numCols+j], oracle[i][j]);
 #endif
     }
     printf("\n");
@@ -86,15 +89,11 @@ int main(int argc, char *argv[]) {
       for (j = 0; j < M; j++)
 	fscanf(fp,"%lf",&b[i][j]);
 #else
-    // elaborating N, L, M....
-    //$elaborate(N);
-    //$elaborate(L);
-    //$elaborate(M);
     // sequential run
     for(int i=0; i < N; i++) {
       vecmat(a[i], b, &oracle[i][0]);
-  }
-
+    }
+    
 #endif
     MPI_Bcast(b, L*M, MPI_DOUBLE, 0, comm);
     for (count = 0; count < nprocs-1 && count < N; count++)
