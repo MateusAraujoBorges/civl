@@ -60,6 +60,7 @@ void init_globals() {
   // nxl+2: size of array (incl. ghost cells)
   first = firstForProc(rank);  
   nxl = countForProc(rank);
+  $elaborate(nxl);
   left = first==0 || nxl==0 ? MPI_PROC_NULL : OWNER(first-1);
   right = first+nxl >= nx || nxl == 0 ? MPI_PROC_NULL : OWNER(first+nxl);
   u = (double*)malloc((nxl+2)*sizeof(double));
