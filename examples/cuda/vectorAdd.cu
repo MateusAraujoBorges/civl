@@ -24,10 +24,10 @@
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda.h>
 
-$input int N;
+$input int N=8;
 $input int B;
 $assume(0 < N && N <= B);
-$input int THREADS;
+$input int THREADS=2;
 $input int THREADS_B;
 $assume(0 < THREADS && THREADS <= THREADS_B);
 
