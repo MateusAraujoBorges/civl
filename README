@@ -55,6 +55,7 @@ licenses.  See directory licenses for the license of each component.
 	simplifying the representation of symbolic expressions in SARL
 - New Features:
   	system function $pow (in civlc.cvh) for power operations
+  	examples from VerifyThis competition are added
 	
    
 ------------------------- Binary Installation -------------------------
