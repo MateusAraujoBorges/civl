@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.6
+                               v1.7
 
 ------------------------------ Overview -------------------------------
 
@@ -23,16 +23,20 @@ CIVL is developed by the Verified Software Laboratory at the
 University of Delaware Department of Computer Science.
 For more information, visit http://vsl.cis.udel.edu/civl
 
-Developers:
-
+Active Developers:
 Matthew B. Dwyer
-John Edenhofner
 Mitchell Gerrard
+Si Li
 Ziqing Luo
+Stephen F. Siegel
+Wenhao Wu
+Yihao Yan
+Manchun Zheng
+
+Inactive Developers:
+John Edenhofner
 Andre Marianiello
 Michael Rogers
-Stephen F. Siegel
-Manchun Zheng
 Timothy K. Zirkel
 
 ------------------------------- License -------------------------------
@@ -42,14 +46,16 @@ General Public License.  However, the libraries used by CIVL
 (and incorporated into the complete distribution) use various
 licenses.  See directory licenses for the license of each component.
 
--------------------------- Updates from v1.5 -------------------------
-- improving the reasoning ability of SARL
-- adding a prototype of Fortran front end which supports a small 
-  subset of Fortran language
-- supporting the CUDA function specifier __device__ and more CUDA libraries
-- fixing various bugs in ABC's parsing and analysis functionality
-- fixing bugs in the core of CIVL related to integer and pointer conversion,
-  and so on
+-------------------------- Updates from v1.6 -------------------------
+- ABC: 
+  	fixing bugs in side-effect remover regarding the translation of 
+  	logical and/or operators;
+  	fixing a bug in grammar related to variable declarations.
+- SARL: 
+	simplifying the representation of symbolic expressions in SARL
+- New Features:
+  	system function $pow (in civlc.cvh) for power operations
+	
    
 ------------------------- Binary Installation -------------------------
 
