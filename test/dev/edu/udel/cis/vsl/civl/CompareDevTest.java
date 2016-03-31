@@ -34,8 +34,8 @@ public class CompareDevTest {
 
 	@Test
 	public void queue() {
-		ui.run(COMPARE, QUIET, SPEC, filename("driver.cvl", "queue_two_lock.c"), IMPL,
-				filename("driver.cvl", "queue_non_blocking.c"));
+		ui.run(COMPARE, QUIET, SPEC, filename("queue", "driver.cvl"), filename("queue", "queue_two_lock.c"), IMPL,
+				filename("queue", "driver.cvl"), filename("queue", "queue_non_blocking.c"));
 	}
 
 	@AfterClass
