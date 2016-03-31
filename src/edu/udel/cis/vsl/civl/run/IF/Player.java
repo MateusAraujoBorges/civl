@@ -185,7 +185,7 @@ public abstract class Player {
 		}
 		stateManager = Kripkes.newStateManager((Enabler) enabler, executor,
 				symbolicAnalyzer, log, civlConfig);
-		universe.setErrFile("CIVLREP/ProverOutput.txt");
+		universe.setErrFile("CIVLREP/ProverOutput_" + sessionName + ".txt");
 	}
 
 	// protected CIVLExecutionException getCurrentViolation() {
