@@ -27,12 +27,6 @@ public class GenTransformerTest {
 	/* **************************** Test Methods *************************** */
 
 	@Test
-	public void gen() {
-		assertTrue(ui.run("verify -enablePrintf=false", TestConstants.QUIET,
-				filename("gen.c")));
-	}
-
-	@Test
 	public void gen_argc() {
 		assertTrue(ui.run("verify", TestConstants.QUIET, filename("gen.c")));
 	}

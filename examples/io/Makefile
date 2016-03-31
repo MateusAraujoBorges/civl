@@ -1,13 +1,17 @@
 CIVL=civl
 VERIFY=$(CIVL) verify
 
-all: io fscanf defaultLength
+all: printf fscanf fopen
 
-io: io.cvl
-	$(VERIFY) io.cvl
+printf: printf.cvl
+	$(VERIFY) printf.cvl
 
 fscanf: fscanf.cvl
 	$(VERIFY) fscanf.cvl
 
-defaultLength: defaultLength.cvl
-	$(VERIFY) defaultLength.cvl
+fopen: fileOpen.cvl
+	$(VERIFY) fileOpen.cvl
+
+clean:
+	rm -rf CIVLREP
+	rm -rf ~

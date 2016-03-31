@@ -2,6 +2,7 @@
    understandable for human beings. The main purpose is testing
    different forms of char array or pointer to char as an argument of
    a function expecting the "char *" type. */
+
 #include<civlc.cvh>
 #include<stdio.h>
 #include<civl-stdio.cvh>

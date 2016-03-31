@@ -28,31 +28,33 @@ public class IOTransformerTest {
 	/* **************************** Test Methods *************************** */
 
 	@Test
-	public void io() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", TestConstants.QUIET, filename("io.cvl")));
+	public void printf() {
+		assertTrue(ui.run("verify", TestConstants.NO_PRINTF,
+				TestConstants.QUIET, filename("printf.cvl")));
 	}
 
 	@Test
 	public void scanf() {
-		assertTrue(ui.run("verify", TestConstants.QUIET, filename("fscanf.cvl")));
+		assertTrue(ui
+				.run("verify", TestConstants.QUIET, filename("fscanf.cvl")));
 	}
 
 	@Test
 	public void stringTestBad() {
 		try {
-			assertFalse(ui.run("verify -DNEGINDEX", TestConstants.QUIET, filename("fileOpen.cvl")));
+			assertFalse(ui.run("verify -DNEGINDEX", TestConstants.QUIET,
+					filename("fileOpen.cvl")));
 		} catch (CIVLInternalException e) {
 			System.out.println(e.getMessage());
 		}
-		assertFalse(ui.run("verify", TestConstants.QUIET, filename("fileOpen.cvl")));
-		assertFalse(ui.run("verify -DNCINDEX", TestConstants.QUIET, filename("fileOpen.cvl")));
-		assertFalse(ui.run("verify -DNCARRAY", TestConstants.QUIET, filename("fileOpen.cvl")));
-		assertFalse(ui.run("verify -DSCHAR", TestConstants.QUIET, filename("fileOpen.cvl")));
-	}
-
-	@Test
-	public void defaultLength() {
-		assertTrue(ui.run("verify", TestConstants.QUIET, filename("defaultLength.cvl")));
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				filename("fileOpen.cvl")));
+		assertFalse(ui.run("verify -DNCINDEX", TestConstants.QUIET,
+				filename("fileOpen.cvl")));
+		assertFalse(ui.run("verify -DNCARRAY", TestConstants.QUIET,
+				filename("fileOpen.cvl")));
+		assertFalse(ui.run("verify -DSCHAR", TestConstants.QUIET,
+				filename("fileOpen.cvl")));
 	}
 
 	@AfterClass
