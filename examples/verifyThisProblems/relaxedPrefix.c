@@ -20,6 +20,8 @@ pat = {1,2,4} is not a relaxed prefix of a = {1,3,2,3}.
 
 command: civl verify RelaxedPrefix_2015_1.c
 
+result: the problem is solved.
+
 */
 
 #include <stdio.h>

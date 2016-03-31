@@ -23,7 +23,9 @@ R[L[x]] := x;
 
 will put x back into the list again.
 
-command: civl verify -inputN=10 DancingLinks.c
+command: civl verify DancingLinks.c
+
+result: the problem is solved
 
 */
 

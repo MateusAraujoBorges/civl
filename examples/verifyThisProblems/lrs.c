@@ -25,6 +25,10 @@ For the above, example (assuming pointers are 0-based integers), the
 sorted suffix array is:
 
 [3,0,2,1]
+
+command: civl verify lrs.c
+
+result: the problem is solved
 */
 
 #include <stdlib.h>

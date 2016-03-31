@@ -10,6 +10,8 @@ subtracts in one direction, the other thread subtracts in the other
 direction, and eventually this procedure converges on GCD.
 
 command: civl verify ParallelGCD_2015_2.c
+
+result: the problem is solved
 */
 
 #include <civlc.cvh>

@@ -7,6 +7,10 @@ Longest Common Prefix (LCP)
 Input:  an integer array X1[n], and two indices x and y into this array
 Output: length of the longest common prefix of the subarrays of a
         starting at x and y respectively.
+        
+command: civl verify lcp.c
+
+result: the problem is solved
 */
 
 #include <civlc.cvh>
