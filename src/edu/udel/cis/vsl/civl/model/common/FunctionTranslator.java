@@ -4050,9 +4050,8 @@ public class FunctionTranslator {
 					BINARY_OPERATOR.BITAND, arguments.get(0), arguments.get(1));
 			break;
 		case BITCOMPLEMENT:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.BITCOMPLEMENT, arguments.get(0),
-					arguments.get(1));
+			result = modelFactory.unaryExpression(source,
+					UNARY_OPERATOR.BITCOMPLEMENT, arguments.get(0));
 			break;
 		case BITOR:
 			result = modelFactory.binaryExpression(source,

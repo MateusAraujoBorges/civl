@@ -824,6 +824,10 @@ public class CommonModelFactory implements ModelFactory {
 			assert operand instanceof PointerSetExpression;
 			return new CommonUnaryExpression(source, typeFactory.booleanType,
 					operator, operand);
+		case BITCOMPLEMENT:
+			assert operand.getExpressionType().isIntegerType();
+			return new CommonUnaryExpression(source, typeFactory.integerType,
+					operator, operand);
 		default:
 			throw new CIVLInternalException("Unknown unary operator: "
 					+ operator, source);

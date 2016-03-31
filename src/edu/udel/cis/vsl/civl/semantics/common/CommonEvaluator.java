@@ -392,8 +392,7 @@ public class CommonEvaluator implements Evaluator {
 				universe.integerType()));
 		this.bitComplementFunc = universe.symbolicConstant(universe
 				.stringObject("bitcomplement"), universe.functionType(
-				Arrays.asList(universe.integerType(), universe.integerType()),
-				universe.integerType()));
+				Arrays.asList(universe.integerType()), universe.integerType()));
 		this.bitOrFunc = universe.symbolicConstant(universe
 				.stringObject("bitor"), universe.functionType(
 				Arrays.asList(universe.integerType(), universe.integerType()),
@@ -811,8 +810,6 @@ public class CommonEvaluator implements Evaluator {
 			return evaluateImplies(state, pid, expression);
 		case BITAND:
 			return evaluateBitand(state, pid, expression);
-		case BITCOMPLEMENT:
-			return evaluateBitcomplement(state, pid, expression);
 		case BITOR:
 			return evaluateBitor(state, pid, expression);
 		case BITXOR:
@@ -888,16 +885,13 @@ public class CommonEvaluator implements Evaluator {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private Evaluation evaluateBitcomplement(State state, int pid,
-			BinaryExpression expression)
+			UnaryExpression expression)
 			throws UnsatisfiablePathConditionException {
-		Evaluation eval = evaluate(state, pid, expression.left());
-		SymbolicExpression left = eval.value, right, result;
+		Evaluation eval = evaluate(state, pid, expression.operand());
+		SymbolicExpression operand = eval.value, result;
 
-		eval = evaluate(eval.state, pid, expression.right());
-		right = eval.value;
 		state = eval.state;
-		result = universe.apply(this.bitComplementFunc,
-				Arrays.asList(left, right));
+		result = universe.apply(this.bitComplementFunc, Arrays.asList(operand));
 		return new Evaluation(state, result);
 	}
 
@@ -2372,6 +2366,8 @@ public class CommonEvaluator implements Evaluator {
 			eval.value = universe.apply(bigOFunction,
 					new Singleton<SymbolicExpression>(eval.value));
 			break;
+		case BITCOMPLEMENT:
+			return evaluateBitcomplement(state, pid, expression);
 		default:
 			throw new CIVLUnimplementedFeatureException(
 					"evaluating unary operator " + expression.operator(),
