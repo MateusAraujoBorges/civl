@@ -15,6 +15,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 public class CommonArrayLiteralExpression extends CommonExpression implements
 		ArrayLiteralExpression {
@@ -154,6 +155,7 @@ public class CommonArrayLiteralExpression extends CommonExpression implements
 	@Override
 	public void calculateConstantValueWork(SymbolicUniverse universe) {
 		List<SymbolicExpression> elementValues = new ArrayList<>();
+		SymbolicType elementType = this.elementType().getDynamicType(universe);
 
 		for (Expression element : elements) {
 			SymbolicExpression elementValue;
@@ -163,9 +165,9 @@ public class CommonArrayLiteralExpression extends CommonExpression implements
 			if (elementValue == null)
 				return;
 			elementValues.add(elementValue);
+			elementType = elementValue.type();
 		}
-		this.constantValue = universe.array(this.arrayType().elementType()
-				.getDynamicType(universe), elementValues);
+		this.constantValue = universe.array(elementType, elementValues);
 	}
 
 	@Override

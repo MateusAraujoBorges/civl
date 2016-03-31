@@ -3896,6 +3896,14 @@ public class CommonEvaluator implements Evaluator {
 		eval = dereference(source, state, process, null, arrayRootPtr, false);
 		state = eval.state;
 		wholeArray = eval.value;
+		if (!(eval.value.type() instanceof SymbolicCompleteArrayType)) {
+			this.errorLogger
+					.logSimpleError(source, state, process,
+							this.symbolicAnalyzer.stateInformation(state),
+							ErrorKind.POINTER,
+							"unable to perform pointer arithmetics on pointer to incomplete arrays");
+			throw new UnsatisfiablePathConditionException();
+		}
 		coordinateSizes = symbolicUtil
 				.arrayCoordinateSizes((SymbolicCompleteArrayType) eval.value
 						.type());
