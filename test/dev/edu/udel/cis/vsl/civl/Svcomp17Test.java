@@ -60,7 +60,7 @@ public class Svcomp17Test {
 	@Test
 	public void Problem01() {
 		assertFalse(ui.run(
-				"verify -svcomp16 -errorBound=1000 -errorStateEquiv=FULL",
+				"verify -svcomp16 -unpreproc -errorBound=1000 -errorStateEquiv=FULL",
 				filename("Problem01_label15_false-unreach-call.c")));
 	}
 
