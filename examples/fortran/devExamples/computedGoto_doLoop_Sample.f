@@ -2,7 +2,9 @@
       integer size, case, i, n
       double precision sum
       double precision array(size)
-
+      
+      !This file is used to test the translation of 
+      !computed goto statement and do loop statement
 	
       sum = 0.0d0
       n = 10
