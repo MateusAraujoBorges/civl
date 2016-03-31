@@ -1,5 +1,5 @@
 /*
-@author: Yihao Yan
+author: Yihao
 
 Link(LCP.zip): http://fm2012.verifythis.org/challenges
 
@@ -19,7 +19,7 @@ $input int X1[n];
 
 $assume (x < n && y < n && x >=0 && y>=0 && n > 0 && n <= N_BOUND);
 
-int lcp(int *arr, int n, int x, int y){
+int lcp(int *arr, int n, int x, int y) {
   int l=0;
 
   while (x+l<n && y+l<n && arr[x+l]==arr[y+l]) {
@@ -28,14 +28,14 @@ int lcp(int *arr, int n, int x, int y){
   return l;
 }
 
-void main(){
+void main() {
   int result = lcp(X1, n, x, y);
 
   $assert($forall {i = 0 .. (result-1)} X1[x+i] == X1[y+i]);
 
   int maxXY = x > y ? x : y;
 
-  if(result + maxXY < n){
+  if(result + maxXY < n) {
     $assert(X1[x+result] != X1[y+result]);
   }
 }

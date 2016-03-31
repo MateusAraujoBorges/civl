@@ -1,5 +1,5 @@
 /*
-@author: Yihao Yan
+author: Yihao
 
 Link(challenge 2): http://etaps2015.verifythis.org/challenges
 
@@ -22,7 +22,7 @@ $input int B;
 // assume the bound of A and B
 $assume (A>0 && B>0 && A<A_BOUND && B<B_BOUND);
 
-int myGCD(int a, int b){
+int myGCD(int a, int b) {
   $proc proc_a;
   $proc proc_b;
 
@@ -35,9 +35,9 @@ int myGCD(int a, int b){
       }
     }
   }
-  void worker2(){
-    while(a != b){
-      if(b>a){
+  void worker2() {
+    while(a != b) {
+      if(b>a) {
         int t1 = a;
         int t2 = b-t1;
         b = t2;
@@ -51,8 +51,8 @@ int myGCD(int a, int b){
   return a;
 }
 
-int seqGCD(int a, int b){
-  while(a != b){
+int seqGCD(int a, int b) {
+  while(a != b) {
     if(a > b)
       a = a-b;
     if(b > a)
@@ -61,10 +61,10 @@ int seqGCD(int a, int b){
   return a;
 }
 
-void main(){
+void main() {
   int result1 = myGCD(A, B);
   int minAB = A < B ? A : B;
 
   $assert($forall {i = (result1+1) .. (minAB)} (A%i != 0 || B%i != 0));
-  $assert( A%result1 == 0 && B%result1 == 0);
+  $assert(A%result1 == 0 && B%result1 == 0);
 }

@@ -1,5 +1,5 @@
 /**
-author Yihao Yan
+author Yihao
 
 Link(chanllege 3): http://etaps2015.verifythis.org/challenges
 

@@ -1,9 +1,5 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <civlc.cvh>
-
 /*
-@author: Yihao Yan
+author: Yihao
 
 Link(challenge 1): http://etaps2015.verifythis.org/challenges
 
@@ -25,6 +21,11 @@ pat = {1,2,4} is not a relaxed prefix of a = {1,3,2,3}.
 command: civl verify RelaxedPrefix_2015_1.c
 
 */
+
+#include <stdio.h>
+#include <stdbool.h>
+#include <civlc.cvh>
+
 $input int N1_BOUND = 4;
 $input int N2_BOUND = 3;
 $input int n1;
@@ -34,7 +35,7 @@ $input int X1[n1];
 $assume (n2>=0 && n2 < N2_BOUND);
 $assume (n1>=0 && n1 < N1_BOUND);
 
-bool isRelaxedPrefix(int* pat, int patLen, int* a, int aLen){
+bool isRelaxedPrefix(int* pat, int patLen, int* a, int aLen) {
   int shift = 0;
   int i;
 
@@ -42,8 +43,8 @@ bool isRelaxedPrefix(int* pat, int patLen, int* a, int aLen){
 
   if(aLen == 0) return true;
 
-  for(i=0; i<patLen; i++){
-     if(pat[i] != a[i-shift]){
+  for(i=0; i<patLen; i++) {
+     if(pat[i] != a[i-shift]) {
       if(shift == 0)
         shift = 1;
       else
@@ -54,12 +55,12 @@ bool isRelaxedPrefix(int* pat, int patLen, int* a, int aLen){
   return true;
 }
 
-void main(){
+void main() {
 	bool result = isRelaxedPrefix(X1, n1, X2, n2);
 
-  if(n1 > n2+1){
+  if(n1 > n2+1) {
     $assert(!result);
-  }else if(n1 == n2+1){
+  } else if(n1 == n2+1) {
     $assert( result ==
       ($exists {int k | k >= 0 && k < n1}
         (
@@ -68,7 +69,7 @@ void main(){
         )
       )
     );
-  }else{
+  } else {
     $assert(result ==
       ($exists {int k | k >= 0 && k <=n1}
         (
