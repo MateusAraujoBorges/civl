@@ -1,6 +1,10 @@
 package edu.udel.cis.vsl.civl;
 
 import java.io.File;
+import static edu.udel.cis.vsl.civl.TestConstants.COMPARE;
+import static edu.udel.cis.vsl.civl.TestConstants.IMPL;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.SPEC;
 
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -26,6 +30,12 @@ public class CompareDevTest {
 	@Test
 	public void vector() {
 		ui.run("verify", filename("sliced_vector", "sliced_vector_addin.c"));
+	}
+
+	@Test
+	public void queue() {
+		ui.run(COMPARE, QUIET, SPEC, filename("driver.cvl", "queue_two_lock.c"), IMPL,
+				filename("driver.cvl", "queue_non_blocking.c"));
 	}
 
 	@AfterClass
