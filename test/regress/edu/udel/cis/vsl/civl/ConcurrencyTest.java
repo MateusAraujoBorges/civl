@@ -1,13 +1,13 @@
 package edu.udel.cis.vsl.civl;
 
+import static edu.udel.cis.vsl.civl.TestConstants.MIN;
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
+import static edu.udel.cis.vsl.civl.TestConstants.POTENTIAL_DEADLOCK;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.REPLAY;
+import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
-import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
-import static edu.udel.cis.vsl.civl.TestConstants.MIN;
-import static edu.udel.cis.vsl.civl.TestConstants.REPLAY;
-import static edu.udel.cis.vsl.civl.TestConstants.POTENTIAL_DEADLOCK;
-import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 
 import java.io.File;
 
@@ -34,70 +34,72 @@ public class ConcurrencyTest {
 
 	@Test
 	public void adder() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				"-inputB=5", filename("adder.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputB=5", filename("adder.cvl")));
 	}
 
 	@Test
 	public void adderBad() {
-		assertFalse(ui.run(VERIFY, "-inputB=4", "-showAmpleSet", MIN,
-				QUIET, filename("adderBad.cvl")));
-		assertFalse(ui.run(REPLAY, QUIET,
+		assertFalse(ui.run(VERIFY, "-inputB=4", "-showAmpleSet", MIN, QUIET,
 				filename("adderBad.cvl")));
+		assertFalse(ui.run(REPLAY, QUIET, filename("adderBad.cvl")));
 	}
 
 	@Test
 	public void bank() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				"-inputNUM_ACCOUNTS=3", filename("bank.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputNUM_ACCOUNTS=3",
+				filename("bank.cvl")));
 	}
 
 	@Test
 	public void barrier() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				"-inputB=4", filename("barrier.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputB=4", filename("barrier.cvl")));
 	}
 
 	@Test
 	public void barrier2() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				"-inputB=4", filename("barrier2.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputB=4", filename("barrier2.cvl")));
 	}
 
 	@Test
 	public void barrierBad() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				MIN, "-inputB=4", filename("barrierBad.cvl")));
-		assertFalse(ui.run(REPLAY, QUIET, "-id=0",
+		assertFalse(ui.run(VERIFY, QUIET, MIN, "-inputB=4",
 				filename("barrierBad.cvl")));
+		assertFalse(ui.run(REPLAY, QUIET, "-id=0", filename("barrierBad.cvl")));
 	}
 
 	@Test
 	public void blockAdder() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				"-inputB=6", "-inputW=3", filename("blockAdder.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputB=6", "-inputW=3",
+				filename("blockAdder.cvl")));
 	}
 
 	@Test
 	public void blockAdderBad() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				"-inputB=6", "-inputW=3", MIN,
+		assertFalse(ui.run(VERIFY, QUIET, "-inputB=6", "-inputW=3", MIN,
 				filename("blockAdderBad.cvl")));
-		assertFalse(ui.run(REPLAY, QUIET,
-				filename("blockAdderBad.cvl")));
+		assertFalse(ui.run(REPLAY, QUIET, filename("blockAdderBad.cvl")));
+	}
+
+	@Test
+	public void boundedBuffer() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("boundedBuffer.cvl")));
+	}
+
+	@Test
+	public void boundedBufferBad() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("boundedBuffer_bad.cvl")));
 	}
 
 	@Test
 	public void dining() {
-		assertTrue(ui.run(VERIFY, "-inputBOUND=4",
-				QUIET, filename("dining.cvl")));
+		assertTrue(ui.run(VERIFY, "-inputBOUND=4", QUIET,
+				filename("dining.cvl")));
 	}
 
 	@Test
 	public void diningBad() {
-		assertFalse(
-				ui.run(VERIFY, "-inputB=4", QUIET,
-						MIN, filename("diningBad.cvl")));
+		assertFalse(ui.run(VERIFY, "-inputB=4", QUIET, MIN,
+				filename("diningBad.cvl")));
 
 		assertFalse(ui.run(TestConstants.REPLAY, TestConstants.QUIET,
 				filename("diningBad.cvl")));
@@ -105,62 +107,54 @@ public class ConcurrencyTest {
 
 	@Test
 	public void locksBad() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				filename("locksBad.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("locksBad.cvl")));
 	}
 
 	@Test
 	public void locksBad10() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				filename("locksBad10.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("locksBad10.cvl")));
 	}
 
 	@Test
 	public void locksGood() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				filename("locksGood.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("locksGood.cvl")));
 	}
 
 	@Test
 	public void spawn() {
-		assertTrue(ui.run(VERIFY, "-inputN=10",
-				QUIET, filename("spawn.cvl")));
+		assertTrue(ui.run(VERIFY, "-inputN=10", QUIET, filename("spawn.cvl")));
 	}
 
 	@Test
 	public void spawn2() {
-		assertTrue(ui.run(VERIFY, "-inputN=10",
-				QUIET, filename("spawn2.cvl")));
+		assertTrue(ui.run(VERIFY, "-inputN=10", QUIET, filename("spawn2.cvl")));
 	}
 
 	@Test
 	public void spawnBad() {
-		assertFalse(ui.run(VERIFY, "-inputN=10",
-				QUIET, filename("spawnBad.cvl")));
+		assertFalse(ui.run(VERIFY, "-inputN=10", QUIET,
+				filename("spawnBad.cvl")));
 	}
 
 	@Test
 	public void waitSelf() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				filename("waitSelf.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("waitSelf.cvl")));
 	}
 
 	@Test
 	public void dlqueue() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				filename("dlqueue.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("dlqueue.cvl")));
 	}
 
 	@Test
 	public void hybrid() {
-		assertFalse(ui.run(VERIFY, "-inputNPROCS=2",
-				QUIET, filename("hybrid.cvl")));
+		assertFalse(ui.run(VERIFY, "-inputNPROCS=2", QUIET,
+				filename("hybrid.cvl")));
 	}
 
 	@Test
 	public void mpiPthreads() {
-		assertFalse(ui.run(VERIFY, QUIET,
-				filename("mpi-pthreads.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("mpi-pthreads.cvl")));
 	}
 
 	@Test
@@ -170,45 +164,45 @@ public class ConcurrencyTest {
 
 	@Test
 	public void ring() {
-		assertTrue(
-				ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET, " -inputNPROCS_BOUND=8",
-						"-inputN_BOUND=4", filename("ring.cvl")));
+		assertTrue(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET,
+				" -inputNPROCS_BOUND=8", "-inputN_BOUND=4",
+				filename("ring.cvl")));
 	}
 
 	@Test
 	public void ring1Bad() {
-		assertFalse(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET,
-				"-inputNPROCS=3", filename("ring1Bad.cvl")));
+		assertFalse(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET, "-inputNPROCS=3",
+				filename("ring1Bad.cvl")));
 	}
 
 	@Test
 	public void ring1() {
-		assertTrue(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET,
-				"-inputNPROCS=3", filename("ring1.cvl")));
+		assertTrue(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET, "-inputNPROCS=3",
+				filename("ring1.cvl")));
 	}
 
 	@Test
 	public void ring2() {
-		assertTrue(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET,
-				"-inputNPROCS=3", filename("ring2.cvl")));
+		assertTrue(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET, "-inputNPROCS=3",
+				filename("ring2.cvl")));
 	}
 
 	@Test
 	public void ring2Bad() {
-		assertFalse(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET,
-				"-inputNPROCS=3", filename("ring2Bad.cvl")));
+		assertFalse(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET, "-inputNPROCS=3",
+				filename("ring2Bad.cvl")));
 	}
 
 	@Test
 	public void ring3() {
-		assertTrue(
-				ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET, filename("ring3.cvl")));
+		assertTrue(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET,
+				filename("ring3.cvl")));
 	}
 
 	@Test
 	public void ring3Bad() {
-		assertFalse(
-				ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET, filename("ring3Bad.cvl")));
+		assertFalse(ui.run(VERIFY, POTENTIAL_DEADLOCK, QUIET,
+				filename("ring3Bad.cvl")));
 	}
 
 	@Test
