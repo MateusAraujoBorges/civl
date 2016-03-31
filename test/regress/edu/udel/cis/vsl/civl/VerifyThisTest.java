@@ -28,7 +28,7 @@ public class VerifyThisTest {
 
 	@Test
 	public void dancingLinks() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("DancingLinks.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("dancingLinks.c")));
 	}
 	
 	@Test
@@ -38,12 +38,12 @@ public class VerifyThisTest {
 	
 	@Test
 	public void parallelGCD_2015_2() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("ParallelGCD_2015_2.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("parallelGCD.c")));
 	}
 	
 	@Test
 	public void relaxedPrefix_2015_1() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("RelaxedPrefix_2015_1.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("relaxedPrefix.c")));
 	}
 	
 	@Test
