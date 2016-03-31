@@ -1,6 +1,9 @@
+/* This example demonstrates the use of comma operators.
+ * It has no violation.
+ */
 #include<civlc.cvh>
 
-$input int n;
+$input int n=5;
 
 void main() {
   int i,j, k;
