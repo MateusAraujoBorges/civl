@@ -2,13 +2,13 @@
 CIVL=civl
 VERIFY=$(CIVL) verify
 
-all: badDivideZero badIndex
+all: badDivideByZero badIndexOutOfBound
 
-badDivideZero: badDivideZero.f
-	$(VERIFY) badDivideZero.f
+badDivideByZero: badDivideByZero.f
+	$(VERIFY) badDivideByZero.f
 
-badIndex: badIndex.f
-	$(VERIFY) badIndex.f
+badIndexOutOfBound: badIndexOutOfBound.f
+	$(VERIFY) badIndexOutOfBound.f
 
 clean:
 	rm -rf CIVLREP *~
