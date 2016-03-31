@@ -1,5 +1,5 @@
 /*
-Author Yihao
+Author: Yihao Yan
 
 See challenge 3 of: http://etaps2015.verifythis.org/challenges
 
@@ -27,10 +27,16 @@ Verification task:
 Implement the data structure with these operations, and specify and
 verify that they behave in the way described above.
 
+command: civl verify dancingLinks.c
 
-command: civl verify DancingLinks.c
+result: 
+After deleting Node n, all the node remains the same except the left of n 
+(if there is any) or the right of n (if there is any). Also, the right of the left of
+n points at the right of n; the left of the right of n points at the left of n.
 
-result: the problem is solved
+Then after insertion, the list is restored, which means every node in the list is 
+the same with the orignial.
+
 */
 
 #include <stdlib.h>

@@ -1,5 +1,5 @@
 /*
-Author: Yihao
+Author: Yihao Yan
 
 See challenge 1 of: http://etaps2015.verifythis.org/challenges
 
@@ -25,7 +25,10 @@ as input and verify that it behaves as described.
 
 command: civl verify relaxedPrefix.c
 
-result: the problem is solved
+result: 
+For any array X1 with length less than 5 and any array X2 with length less than 4, 
+function isRelaxedPrefix will tell if X1 can become a prefix of X2 by removing at 
+most one element.
 
 */
 

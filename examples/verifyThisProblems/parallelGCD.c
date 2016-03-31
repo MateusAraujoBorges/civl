@@ -1,5 +1,5 @@
 /*
-Author: Yihao
+Author: Yihao Yan
 
 See challenge 2 of: http://etaps2015.verifythis.org/challenges
 
@@ -21,7 +21,9 @@ Output: a positive number that is the greatest common divisor of a and b
 
 command: civl verify parallelGCD.c
 
-result: the problem is solved
+result: 
+For any numbers A less than 5 and B less than 7, myGCD returns the greatest common
+divisor of them.
 */
 
 #include <civlc.cvh>

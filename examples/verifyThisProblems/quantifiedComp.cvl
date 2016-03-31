@@ -18,7 +18,10 @@ and verify that it behaves as described.
 
 command: civl verify quantifiedComp.cvl
 
-result: the problem is solved
+result: 
+For arrays with length less than 5, lcp function returns an integer n which is
+the length of the longest common prefix between its two suffixes: The two suffixes
+are the same with indexes from 0 to n-1 while they are different at index n.
 */
 
 #include <civlc.cvh>
