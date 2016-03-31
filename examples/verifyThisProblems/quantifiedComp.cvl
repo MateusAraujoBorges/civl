@@ -1,13 +1,20 @@
 /*
-author: Yihao
+Author: Yihao
 
-Link(LCP.zip): http://fm2012.verifythis.org/challenges
+Download LCP.zip from: http://fm2012.verifythis.org/challenges
+
+-----------------
+Problem description:
 
 This is a verifyThis problem in 2012.
 This task asks you to get the longest common prefix of
 two subStrings.
 
-Input: an integer array arr, the length of the array, and two indices x and y.
+-----------------
+Verification task:
+
+Implement a the lcp function which takes an array, its length and two indices as input
+and verify that it behaves as described.
 
 command: civl verify quantifiedComp.cvl
 

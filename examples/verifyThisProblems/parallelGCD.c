@@ -1,15 +1,25 @@
 /*
-author: Yihao
+Author: Yihao
 
-Link(challenge 2): http://etaps2015.verifythis.org/challenges
+See challenge 2 of: http://etaps2015.verifythis.org/challenges
 
-problem description:
+-----------------
+Problem description:
+
 Various parallel GCD algorithms exist. In this challenge, we consider a
 simple Euclid-like algorithm with two parallel threads. One thread
 subtracts in one direction, the other thread subtracts in the other
 direction, and eventually this procedure converges on GCD.
 
-command: civl verify ParallelGCD_2015_2.c
+Verification tasks
+------------------
+
+Specify and verify the following behaviour of this parallel GCD algorithm:
+
+Input:  two positive integers a and b
+Output: a positive number that is the greatest common divisor of a and b
+
+command: civl verify parallelGCD.c
 
 result: the problem is solved
 */
@@ -21,7 +31,6 @@ $input int A_BOUND=4;
 $input int B_BOUND=6;
 $input int A;
 $input int B;
-// assume the bound of A and B
 $assume (A>0 && B>0 && A<A_BOUND && B<B_BOUND);
 
 int myGCD(int a, int b) {

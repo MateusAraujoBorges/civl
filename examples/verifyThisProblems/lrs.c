@@ -1,7 +1,10 @@
 /*
-author: Yihao
+Author: Yihao
 
-Link(LCP.zip): http://fm2012.verifythis.org/challenges 
+Download LCP.zip from: http://fm2012.verifythis.org/challenges 
+
+-----------------
+Problem description:
 
 This is a problem in 2012 as an advance problem for LCP
 Here is the description:
@@ -23,8 +26,12 @@ array.
 
 For the above, example (assuming pointers are 0-based integers), the
 sorted suffix array is:
-
 [3,0,2,1]
+
+-----------------
+Verification task:
+
+Implement the lrs function, and verify that it behaves in the way described above.
 
 command: civl verify lrs.c
 
@@ -41,7 +48,7 @@ $input int N;
 $input int X1[N];
 $assume (N < N_BOUND && N >= 0);
 
-int lcp1(int *arr, int n, int x, int y) {
+int lcp1(int *arr, int n, int x, int y){
   int l=0;
 
   while (x+l<n && y+l<n && arr[x+l]==arr[y+l]) {
@@ -67,7 +74,7 @@ int compare(int *a, int n, int x, int y) {
 }
 
 void sort(int *a, int n, int *data) {
-    for (int i = 0; i < n + 0; i++) {
+    for(int i = 0; i < n + 0; i++) {
         for(int j = i; j > 0 && compare(a, n, data[j - 1], data[j]) > 0; j--) {
             int b = j - 1;
             int t = data[j];
@@ -86,17 +93,17 @@ int lcp2(int *a, int n, int index, int* suffixes){
 result[0]: index
 result[1]: length
 */
-void lrs(int* a, int n, int *result) {
+void lrs(int* a, int n, int *result){
   int suffixes[n];
 
-  for (int i=0; i<n; i++) {
+  for(int i=0; i<n; i++){
     suffixes[i] = i;
   }
   sort(a, n, suffixes);
-  for (int i=1; i<n; i++) {
+  for(int i=1; i<n; i++){
     int len = lcp2(a, n, i,suffixes);
 
-    if (len > result[1]) {
+    if(len > result[1]){
       result[0] = suffixes[i];
       result[1] = len;
     }
@@ -113,11 +120,11 @@ int main(){
   int index = result[0];
   int maxLen = result[1];
 
-  if (N > 1) {
+  if(N > 1){
    $assert($exists {int k | k >= 0 && k <= N - maxLen && k != index}(
      $forall {i = 0 .. maxLen-1} X1[k+i] == X1[index+i]
    ));
-  } else {
+  }else{
     $assert(index == 0 && maxLen == 0);
   }
   free(result);

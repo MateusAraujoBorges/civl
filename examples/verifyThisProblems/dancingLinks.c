@@ -1,9 +1,11 @@
 /*
-author Yihao
+Author Yihao
 
-Link(chanllege 3): http://etaps2015.verifythis.org/challenges
+See challenge 3 of: http://etaps2015.verifythis.org/challenges
 
-problem description:
+-----------------
+Problem description:
+
 Dancing links is a technique introduced in 1979 by Hitotumatu and
 Noshita and later popularized by Knuth. The technique can be used to
 efficiently implement a search for all solutions of the exact cover
@@ -12,21 +14,23 @@ N-Queens, and other problems.
 
 Suppose x points to a node of a doubly linked list; let L[x] and R[x]
 point to the predecessor and successor of that node. Then the operations
-
 L[R[x]] := L[x];
 R[L[x]] := R[x];
-
 remove x from the list. The subsequent operations
-
 L[R[x]] := x;
 R[L[x]] := x;
-
 will put x back into the list again.
+
+-----------------
+Verification task:
+
+Implement the data structure with these operations, and specify and
+verify that they behave in the way described above.
+
 
 command: civl verify DancingLinks.c
 
 result: the problem is solved
-
 */
 
 #include <stdlib.h>
@@ -43,8 +47,8 @@ int N=10;
 #endif
 
 struct Node {
-    struct Node *left;
-    struct Node *right;
+  struct Node *left;
+  struct Node *right;
 };
 
 void insert(struct Node *x) {
@@ -151,7 +155,7 @@ int main() {
 #endif
 
   struct Node *list = init(n);
-  // the index of the node who get deleted
+  // the index of the node which will be deleted
 #ifdef _CIVL
   int index = $choose_int(n-2)+2;
 #else

@@ -1,9 +1,11 @@
 /*
-author: Yihao
+Author: Yihao
 
-Link(challenge 1): http://etaps2015.verifythis.org/challenges
+See challenge 1 of: http://etaps2015.verifythis.org/challenges
 
-problem description:
+-----------------
+Problem description:
+
 Verify a function isRelaxedPrefix determining if a list _pat_ (for
 pattern) is a relaxed prefix of another list _a_.
 
@@ -11,16 +13,19 @@ The relaxed prefix property holds iff _pat_ is a prefix of _a_ after
 removing at most one element from _pat_.
 
 examples:
-
 pat = {1,3}   is a relaxed prefix of a = {1,3,2,3} (standard prefix)
-
 pat = {1,2,3} is a relaxed prefix of a = {1,3,2,3} (remove 2 from pat)
-
 pat = {1,2,4} is not a relaxed prefix of a = {1,3,2,3}.
 
-command: civl verify RelaxedPrefix_2015_1.c
+-----------------
+Verification Task:
 
-result: the problem is solved.
+Implement the isRelaxedPrefix function which takes two arrays and their length
+as input and verify that it behaves as described.
+
+command: civl verify relaxedPrefix.c
+
+result: the problem is solved
 
 */
 
