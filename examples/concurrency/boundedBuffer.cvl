@@ -23,8 +23,9 @@ int emptyCount = BUFFER_SIZE;
 void producer() {
   while ($true) {
     // produce item
-    $when(emptyCount > 0);
-    $assert(emptyCount > 0);
+    $when(emptyCount > 0){
+      $assert(emptyCount > 0);
+    }
     emptyCount--;
     // put item into buffer
     fillCount++;
@@ -33,8 +34,9 @@ void producer() {
  
 void consumer() {
   while ($true) {
-    $when(fillCount > 0);
-    $assert(fillCount > 0);
+    $when(fillCount > 0){
+      $assert(fillCount > 0);
+    }
     fillCount--;
     // remove item from buffer
     emptyCount++;
