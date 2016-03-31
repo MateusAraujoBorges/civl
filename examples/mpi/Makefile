@@ -5,6 +5,9 @@ CC = cc
 
 all: mpi_wave1d mpi_diff2d mpi_diff1d mpi_pi mpi_gather mpi_scatter mpi_gatherv mpi_scatterv mpi_reduce mpi_sysStatus mpi_sysStatusBad mpi_sysStatusBad2 mpi_prime mpi_matmat sum_array
 
+mpi_adder: adder_par.c
+	$(VERIFY) -input_mpi_nprocs=10 -inputNB=20 adder_par.c
+
 mpi_wave1d: wave1d.c
 	$(VERIFY) wave1d.c
 
