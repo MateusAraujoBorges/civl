@@ -59,7 +59,7 @@ public class BackendTest {
 
 	@Test
 	public void quantified() {
-		ui.run(VERIFY, QUIET, filename("quantified.cvl"));
+		assertTrue(ui.run(VERIFY, QUIET, filename("quantified.cvl")));
 	}
 
 	@AfterClass
