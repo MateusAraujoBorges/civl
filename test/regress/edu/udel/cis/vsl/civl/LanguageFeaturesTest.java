@@ -1,12 +1,12 @@
 package edu.udel.cis.vsl.civl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
-import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static edu.udel.cis.vsl.civl.TestConstants.NO_CHECK_DIVISION_BY_ZERO;
 import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
 import static edu.udel.cis.vsl.civl.TestConstants.errorBound;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,8 +40,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void abstractFun() throws ABCException {
-		assertTrue(
-				ui.run(VERIFY, QUIET, NO_PRINTF, filename("abstractFun.cvl")));
+		assertTrue(ui
+				.run(VERIFY, QUIET, NO_PRINTF, filename("abstractFun.cvl")));
 	}
 
 	@Test
@@ -52,8 +52,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void arrayLiteral() throws ABCException {
-		assertTrue(
-				ui.run(VERIFY, QUIET, NO_PRINTF, filename("arrayLiteral.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF,
+				filename("arrayLiteral.cvl")));
 	}
 
 	@Test
@@ -64,6 +64,12 @@ public class LanguageFeaturesTest {
 	@Test
 	public void arrays() throws ABCException {
 		assertTrue(ui.run(VERIFY, QUIET, filename("arrays.cvl")));
+	}
+
+	@Test
+	public void arrayDefProblem() throws ABCException {
+		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF,
+				filename("arrayDefProblem.cvl")));
 	}
 
 	@Test
@@ -78,8 +84,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void assertPrintf() throws ABCException {
-		assertFalse(
-				ui.run(VERIFY, QUIET, NO_PRINTF, filename("assertPrintf.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, NO_PRINTF,
+				filename("assertPrintf.cvl")));
 	}
 
 	@Test
@@ -104,8 +110,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void atomicWait() throws ABCException {
-		assertTrue(
-				ui.run(VERIFY, "-inputN=3", QUIET, filename("atomicWait.cvl")));
+		assertTrue(ui.run(VERIFY, "-inputN=3", QUIET,
+				filename("atomicWait.cvl")));
 	}
 
 	@Test
@@ -189,8 +195,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void choose_int() throws ABCException {
-		assertTrue(
-				ui.run(VERIFY, QUIET, NO_PRINTF, filename("choose_int.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF, filename("choose_int.cvl")));
 	}
 
 	@Test
@@ -200,8 +205,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void conditionalExpression() throws ABCException {
-		assertTrue(
-				ui.run(VERIFY, QUIET, filename("conditionalExpression.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("conditionalExpression.cvl")));
 	}
 
 	@Test
@@ -292,8 +296,8 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
-	public void nonbooleanCondition() throws IOException, PreprocessorException,
-			ParseException, SyntaxException {
+	public void nonbooleanCondition() throws IOException,
+			PreprocessorException, ParseException, SyntaxException {
 		assertTrue(ui.run(VERIFY, QUIET, filename("nonbooleanCondition.cvl")));
 	}
 
@@ -316,8 +320,8 @@ public class LanguageFeaturesTest {
 				filename("pointersBad.cvl")));
 		assertFalse(ui.run("verify -DNCLeafNode", QUIET,
 				filename("pointersBad.cvl")));
-		assertFalse(
-				ui.run("verify -DUNION", QUIET, filename("pointersBad.cvl")));
+		assertFalse(ui
+				.run("verify -DUNION", QUIET, filename("pointersBad.cvl")));
 	}
 
 	@Test
@@ -471,8 +475,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void assignInput() throws ABCException {
-		assertFalse(
-				ui.run(VERIFY, QUIET, NO_PRINTF, filename("assignInput.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, NO_PRINTF,
+				filename("assignInput.cvl")));
 	}
 
 	@Test
@@ -493,8 +497,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void functionBad() throws ABCException {
-		assertFalse(
-				ui.run(VERIFY, QUIET, NO_PRINTF, filename("functionBad.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, NO_PRINTF,
+				filename("functionBad.cvl")));
 	}
 
 	@Test
@@ -542,8 +546,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void civlParfor() throws ABCException {
-		assertTrue(
-				ui.run(VERIFY, NO_PRINTF, QUIET, filename("civlParfor.cvl")));
+		assertTrue(ui.run(VERIFY, NO_PRINTF, QUIET, filename("civlParfor.cvl")));
 	}
 
 	@Test
@@ -559,14 +562,14 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void pointerSubBad() {
-		assertFalse(
-				ui.run(VERIFY, QUIET, filename("pointerSubtractionBad.cvl")));
+		assertFalse(ui
+				.run(VERIFY, QUIET, filename("pointerSubtractionBad.cvl")));
 	}
 
 	@Test
 	public void pointerSubBad2() {
-		assertFalse(
-				ui.run(VERIFY, QUIET, filename("pointerSubtractionBad2.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET,
+				filename("pointerSubtractionBad2.cvl")));
 	}
 
 	@Test
@@ -591,9 +594,9 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void include1() {
-		assertFalse(
-				ui.run(VERIFY, QUIET, "-userIncludePath=" + rootDir.getPath(),
-						filename("include1.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET,
+				"-userIncludePath=" + rootDir.getPath(),
+				filename("include1.cvl")));
 	}
 
 	@Test
@@ -615,10 +618,10 @@ public class LanguageFeaturesTest {
 	@Test
 	public void pointerAdd1() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("pointerAdd1.cvl")));
-		assertFalse(
-				ui.run(VERIFY, "-DWRONG", QUIET, filename("pointerAdd1.cvl")));
-		assertTrue(
-				ui.run(VERIFY, "-DARRAY", QUIET, filename("pointerAdd1.cvl")));
+		assertFalse(ui.run(VERIFY, "-DWRONG", QUIET,
+				filename("pointerAdd1.cvl")));
+		assertTrue(ui
+				.run(VERIFY, "-DARRAY", QUIET, filename("pointerAdd1.cvl")));
 		assertFalse(ui.run(VERIFY, "-DARRAY -DWRONG", QUIET,
 				filename("pointerAdd1.cvl")));
 	}
@@ -663,8 +666,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void splitFormat() {
-		assertTrue(
-				ui.run(VERIFY, QUIET, NO_PRINTF, filename("splitFormat.cvl")));
+		assertTrue(ui
+				.run(VERIFY, QUIET, NO_PRINTF, filename("splitFormat.cvl")));
 	}
 
 	@Test
@@ -681,8 +684,6 @@ public class LanguageFeaturesTest {
 	public void splitFormatBad3() {
 		assertFalse(ui.run(VERIFY, QUIET, filename("splitFormatBad3.cvl")));
 	}
-
-	
 
 	@Test
 	public void atomicFunctionSpecifier() {
