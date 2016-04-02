@@ -141,6 +141,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 						(call.lhs() instanceof InitialValueExpression));
 				assignmentCall.setTargetTemp(call.target());
 				assignmentCall.setTarget(call.target());
+				assignmentCall.source().removeOutgoing(assignmentCall);
 				localTransitions.add(Semantics.newTransition(pathCondition,
 						pid, processIdentifier, assignmentCall,
 						atomicLockAction));

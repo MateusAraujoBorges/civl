@@ -155,6 +155,7 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 					null, call.lhs(), decompsConstantExpr, false);
 			assignStatement.setTargetTemp(call.target());
 			assignStatements.add(assignStatement);
+			assignStatement.source().removeOutgoing(assignStatement);
 		}
 		return assignStatements;
 	}
