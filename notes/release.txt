@@ -25,7 +25,7 @@ the release (e.g., 0.14).
 (to any part of CIVL). If you don't want to wait, you can trigger it
 manually by executing from vsl, in ~/scripts/autotest:
 
- ./build_and_test.sh CIVL $version civl $rev
+ ./build_and_test.sh CIVL $BRANCH civl $revision_number(optional)
 
 where $version is the new version number for release and $rev is 
 whatever the revision number was for the release, e.g.,
