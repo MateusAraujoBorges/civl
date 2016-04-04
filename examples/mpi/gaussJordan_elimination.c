@@ -22,9 +22,9 @@ $input int _mpi_nprocs_lo=1;
 $input int ROWB = 3;                      // upper bound of numRow
 $input int numRow;                        // number of rows in the matrix
 $assume(0 < numRow && numRow <= ROWB);
-$input int COLB = 3;                      // upper bound of numCol
+$input int COLB = 4;                      // upper bound of numCol
 $input int numCol;                        // number of columns in the matrix
-$assume(0 < numCol && numCol <= COLB);
+$assume(0 < numCol && numCol <= COLB && numCol > numRow);
 $input long double data[numRow][numCol];  // input matrix
 long double oracle[numRow][numCol];       // results of sequential run
 #else
@@ -397,9 +397,12 @@ int main(int argc, char *argv[]) {
     printf("Expecting the arguments: numberOfRows  numberOfColumns\n");
   numRow = atoi(argv[1]);
   numCol = atoi(argv[2]);
-  //#else
-  //$elaborate(numRow);
-  //$elaborate(numCol);
+#else
+  $elaborate(numRow);
+  $elaborate(numCol);
+  for(int i = 0; i < numRow; i++)
+    for(int j = 0; j < numCol; j++)
+      $assume(data[i][j] != 0);
 #endif
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
