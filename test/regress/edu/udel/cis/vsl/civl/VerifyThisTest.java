@@ -20,7 +20,6 @@ public class VerifyThisTest {
 		return new File(rootDir, name).getPath();
 	}
 
-	// quantifiedComp.cvl
 	@Test
 	public void quantifiedComp() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("quantifiedComp.cvl")));
@@ -45,4 +44,20 @@ public class VerifyThisTest {
 	public void relaxedPrefix_2015_1() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("relaxedPrefix.c")));
 	}
+
+	@Test
+	public void matrixMult() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("matrixMult.cvl")));
+	}
+
+	@Test
+	public void binaryTreeTraversal() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("binaryTreeTraversal.cvl")));
+	}
+
+	@Test
+	public void treeBarrier() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("treeBarrier.cvl")));
+	}
+
 }
