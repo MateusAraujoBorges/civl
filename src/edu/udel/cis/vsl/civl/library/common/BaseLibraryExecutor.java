@@ -134,12 +134,13 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			// message.append("\n\nContext: ");
 			// message.append(this.symbolicAnalyzer.pathconditionToString(source,
 			// state, "  ", reasoner.getReducedContext()));
-			message.append("\nAssertion:\n");
-			message.append("   ");
-			message.append(this.symbolicAnalyzer.statementEvaluation(state,
-					state, pid, statement));
-			// message.append(statement.toString());
-			message.append("\n-> ");
+			message.append("\nAssertion: ");
+			message.append(arguments[0]);
+			message.append("\n        -> ");
+			// message.append(this.symbolicAnalyzer.statementEvaluation(state,
+			// state, pid, statement));
+			// // message.append(statement.toString());
+			// message.append("\n   -> ");
 			message.append(messageResult.right);
 			firstEvaluation = messageResult.right;
 			messageResult = this.symbolicAnalyzer.expressionEvaluation(state,
@@ -147,14 +148,14 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			state = messageResult.left;
 			secondEvaluation = messageResult.right;
 			if (!firstEvaluation.equals(secondEvaluation)) {
-				message.append("\n-> ");
+				message.append("\n        -> ");
 				message.append(secondEvaluation);
 			}
 			result = this.symbolicAnalyzer.symbolicExpressionToString(
 					arguments[0].getSource(), state, null, assertValue)
 					.toString();
 			if (!secondEvaluation.equals(result)) {
-				message.append("\n-> ");
+				message.append("\n        -> ");
 				message.append(result);
 			}
 			state = this.reportAssertionFailure(state, pid, process,
@@ -194,14 +195,12 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 				.isDefinedPointer(state, firstElementPointer);
 
 		if (checkPointer.right != ResultType.YES) {
-			this.errorLogger
+			state = this.errorLogger
 					.logError(source, state, process,
 							symbolicAnalyzer.stateInformation(state),
 							checkPointer.left, checkPointer.right,
 							ErrorKind.MEMORY_MANAGE,
 							"attempt to deallocate memory space through an undefined pointer");
-			state = state.setPathCondition(universe.and(
-					state.getPathCondition(), checkPointer.left));
 			// dont report unsatisfiable path condition exception
 		} else if (this.symbolicUtil.isNullPointer(firstElementPointer)) {
 			// does nothing for null pointer.
@@ -299,7 +298,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			civlConfig.out().println();
 			// }
 		}
-		errorLogger.logError(source, state, process,
+		state = errorLogger.logError(source, state, process,
 				this.symbolicAnalyzer.stateInformation(state), claim,
 				resultType, ErrorKind.ASSERTION_VIOLATION, message);
 		// errorLogger.logSimpleError(source, state, process,

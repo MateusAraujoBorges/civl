@@ -76,8 +76,8 @@ public class CIVLErrorLogger extends ErrorLog {
 	/**
 	 * <p>
 	 * Report a (possible) error detected in the course of evaluating an
-	 * expression. This is the method that should normally be used for logging
-	 * and reporting errors.
+	 * expression. This is the method that should normally be used for logging,
+	 * reporting, and recovering from errors.
 	 * </p>
 	 * 
 	 * <p>

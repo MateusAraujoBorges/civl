@@ -1600,11 +1600,11 @@ public class CommonEvaluator implements Evaluator {
 		case DIVIDE: {
 			BooleanExpression assumption = eval.state.getPathCondition();
 			NumericExpression denominator = (NumericExpression) right;
+			SymbolicExpression zero = zeroOf(expression.getSource(),
+					expression.getExpressionType());
 
 			if (this.civlConfig.checkDivisionByZero()) {
-				BooleanExpression claim = universe.neq(
-						zeroOf(expression.getSource(),
-								expression.getExpressionType()), denominator);
+				BooleanExpression claim = universe.neq(zero, denominator);
 				ResultType resultType = universe.reasoner(assumption)
 						.valid(claim).getResultType();
 
@@ -1630,7 +1630,6 @@ public class CommonEvaluator implements Evaluator {
 															state,
 															divisor.getExpressionType(),
 															right));
-					throw new UnsatisfiablePathConditionException();
 				}
 			}
 			eval.value = universe.divide((NumericExpression) left, denominator);
@@ -1684,14 +1683,12 @@ public class CommonEvaluator implements Evaluator {
 				ResultType resultType = universe.reasoner(assumption)
 						.valid(claim).getResultType();
 
-				// TODO: check not negative
 				if (resultType != ResultType.YES) {
 					eval.state = errorLogger.logError(expression.getSource(),
 							eval.state, process,
 							this.symbolicAnalyzer.stateInformation(eval.state),
 							claim, resultType, ErrorKind.DIVISION_BY_ZERO,
 							"Modulus denominator is zero");
-					throw new UnsatisfiablePathConditionException();
 				}
 			}
 			eval.value = universe.modulo((NumericExpression) left, denominator);
@@ -2166,7 +2163,6 @@ public class CommonEvaluator implements Evaluator {
 						symbolicAnalyzer.stateInformation(state), claim,
 						resultType, ErrorKind.OUT_OF_BOUNDS,
 						"possible negative array index: " + index);
-				throw new UnsatisfiablePathConditionException();
 			}
 			if (addressOnly)
 				claim = universe.lessThanEquals(index, length);
@@ -2179,7 +2175,6 @@ public class CommonEvaluator implements Evaluator {
 						resultType, ErrorKind.OUT_OF_BOUNDS,
 						"out of bounds array index:\nindex = " + index
 								+ "\nlength = " + length);
-				throw new UnsatisfiablePathConditionException();
 			}
 		}
 		return state;

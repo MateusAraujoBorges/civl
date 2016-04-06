@@ -1330,8 +1330,8 @@ public class CommonExecutor implements Executor {
 		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer
 				.isDerefablePointer(state, pointer);
 
-		if (checkPointer.right != ResultType.YES) {
-			errorLogger.logError(
+		if (checkPointer.right != ResultType.YES) // {
+			state = errorLogger.logError(
 					source,
 					state,
 					process,
@@ -1343,73 +1343,71 @@ public class CommonExecutor implements Executor {
 							+ this.symbolicAnalyzer.symbolicExpressionToString(
 									source, state, null, pointer)
 							+ " which can't be dereferenced");
+		// throw new UnsatisfiablePathConditionException();
+		// } else {
+
+		int vid = symbolicUtil.getVariableId(source, pointer);
+		int sid = symbolicUtil.getDyscopeId(source, pointer);
+		ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
+		State result;
+		Variable variable;
+		Evaluation eval;
+
+		eval = evaluator.dereference(source, state, process, null, pointer,
+				false);
+		state = eval.state;
+		if (sid < 0) {
+			errorLogger
+					.logSimpleError(source, state, process,
+							symbolicAnalyzer.stateInformation(state),
+							ErrorKind.DEREFERENCE,
+							"Attempt to dereference pointer into scope which has been removed from state");
 			throw new UnsatisfiablePathConditionException();
-		} else {
-			int vid = symbolicUtil.getVariableId(source, pointer);
-			int sid = symbolicUtil.getDyscopeId(source, pointer);
-			ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
-			State result;
-			Variable variable;
-			Evaluation eval;
-
-			eval = evaluator.dereference(source, state, process, null, pointer,
-					false);
-			state = eval.state;
-
-			if (sid < 0) {
+		}
+		variable = state.getDyscope(sid).lexicalScope().variable(vid);
+		if (!isInitialization) {
+			if (variable.isInput()) {
 				errorLogger
 						.logSimpleError(source, state, process,
 								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.DEREFERENCE,
-								"Attempt to dereference pointer into scope which has been removed from state");
+								ErrorKind.INPUT_WRITE,
+								"Attempt to write to input variable "
+										+ variable.name());
+				throw new UnsatisfiablePathConditionException();
+			} else if (variable.isConst()) {
+				errorLogger.logSimpleError(
+						source,
+						state,
+						process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.CONSTANT_WRITE,
+						"Attempt to write to constant variable "
+								+ variable.name());
 				throw new UnsatisfiablePathConditionException();
 			}
-			variable = state.getDyscope(sid).lexicalScope().variable(vid);
-			if (!isInitialization) {
-				if (variable.isInput()) {
-					errorLogger.logSimpleError(
-							source,
-							state,
-							process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.INPUT_WRITE,
-							"Attempt to write to input variable "
-									+ variable.name());
-					throw new UnsatisfiablePathConditionException();
-				} else if (variable.isConst()) {
-					errorLogger.logSimpleError(
-							source,
-							state,
-							process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.CONSTANT_WRITE,
-							"Attempt to write to constant variable "
-									+ variable.name());
-					throw new UnsatisfiablePathConditionException();
-				}
-			}
-			if (symRef.isIdentityReference()) {
-				result = stateFactory.setVariable(state, vid, sid, value);
-			} else {
-				SymbolicExpression oldVariableValue = state.getVariableValue(
-						sid, vid);
-
-				try {
-					SymbolicExpression newVariableValue = universe.assign(
-							oldVariableValue, symRef, value);
-
-					result = stateFactory.setVariable(state, vid, sid,
-							newVariableValue);
-				} catch (SARLException e) {
-					errorLogger.logSimpleError(source, state, process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.DEREFERENCE,
-							"Invalid assignment: " + e.getMessage());
-					throw new UnsatisfiablePathConditionException();
-				}
-			}
-			return result;
 		}
+		if (symRef.isIdentityReference()) {
+			result = stateFactory.setVariable(state, vid, sid, value);
+		} else {
+			SymbolicExpression oldVariableValue = state.getVariableValue(sid,
+					vid);
+
+			try {
+				SymbolicExpression newVariableValue = universe.assign(
+						oldVariableValue, symRef, value);
+
+				result = stateFactory.setVariable(state, vid, sid,
+						newVariableValue);
+			} catch (SARLException e) {
+				errorLogger.logSimpleError(source, state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.DEREFERENCE,
+						"Invalid assignment: " + e.getMessage());
+				throw new UnsatisfiablePathConditionException();
+			}
+		}
+		return result;
+		// }
 	}
 
 	protected State assign(State state, int pid, String process,

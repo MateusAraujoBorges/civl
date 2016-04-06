@@ -214,8 +214,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer
 				.isDerefablePointer(state, pointer);
 
-		if (checkPointer.right != ResultType.YES) {
-			this.errorLogger.logError(
+		if (checkPointer.right != ResultType.YES)
+			state = this.errorLogger.logError(
 					source,
 					state,
 					process,
@@ -226,16 +226,15 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 					"can't apply $havoc to a pointer that can't be dereferenced.\npointer: "
 							+ this.symbolicAnalyzer.symbolicExpressionToString(
 									source, state, null, pointer));
-		} else {
-			Evaluation havocEval;
+		// } else {
 
-			type = this.symbolicAnalyzer.typeOfObjByPointer(source, state,
-					pointer);
-			havocEval = this.evaluator.havoc(state,
-					type.getDynamicType(universe));
-			state = this.primaryExecutor.assign(source, havocEval.state,
-					process, pointer, havocEval.value);
-		}
+		Evaluation havocEval;
+
+		type = this.symbolicAnalyzer.typeOfObjByPointer(source, state, pointer);
+		havocEval = this.evaluator.havoc(state, type.getDynamicType(universe));
+		state = this.primaryExecutor.assign(source, havocEval.state, process,
+				pointer, havocEval.value);
+		// }
 		return state;
 	}
 

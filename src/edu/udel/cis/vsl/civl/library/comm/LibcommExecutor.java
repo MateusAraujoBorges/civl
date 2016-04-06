@@ -101,7 +101,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 					argumentValues);
 			break;
 		case "$comm_defined":
-			state = this.executeCommDefined(state, pid, process, lhs,
+			state = this.executeGcommOrCommDefined(state, pid, process, lhs,
 					arguments, argumentValues);
 			break;
 		case "$comm_dequeue":
@@ -145,7 +145,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 					argumentValues, call.getSource());
 			break;
 		case "$gcomm_defined":
-			state = this.executeGcommDefined(state, pid, process, lhs,
+			state = this.executeGcommOrCommDefined(state, pid, process, lhs,
 					arguments, argumentValues);
 			break;
 		}
@@ -237,8 +237,9 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	}
 
 	/**
-	 * Checks if a $comm object is defined, i.e., it doesn't point to the heap
-	 * of an invalid scope, implementing the function $comm_defined($comm comm).
+	 * Checks if a $gcomm or $comm object is defined, i.e., it doesn't point to
+	 * the heap of an invalid scope, implementing the function
+	 * $gcomm_defined($gcomm gcomm) / $comm_defined($comm comm).
 	 * 
 	 * @param state
 	 *            The state where the checking happens.
@@ -253,15 +254,30 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeCommDefined(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
+	private State executeGcommOrCommDefined(State state, int pid,
+			String process, LHSExpression lhs, Expression[] arguments,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression result = symbolicAnalyzer.isDerefablePointer(state,
-				argumentValues[0]).left;
+		Pair<BooleanExpression, ResultType> result = symbolicAnalyzer
+				.isDerefablePointer(state, argumentValues[0]);
 
+		if (result.right != ResultType.YES)
+			state = this.errorLogger.logError(
+					arguments[0].getSource(),
+					state,
+					process,
+					this.symbolicAnalyzer.stateInformation(state),
+					result.left,
+					result.right,
+					ErrorKind.DEREFERENCE,
+					"attempt to access a memory location that can't be dereferenced: "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									arguments[0].getSource(), state,
+									arguments[0].getExpressionType(),
+									argumentValues[0]));
 		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs, result);
+			state = primaryExecutor.assign(state, pid, process, lhs,
+					result.left);
 		return state;
 	}
 
@@ -643,36 +659,6 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	}
 
 	/**
-	 * Checks if a $gcomm object is defined, i.e., it doesn't point to the heap
-	 * of an invalid scope, implementing the function $gcomm_defined($gcomm
-	 * gcomm).
-	 * 
-	 * @param state
-	 *            The state where the checking happens.
-	 * @param pid
-	 *            The ID of the process that this computation belongs to.
-	 * @param lhs
-	 *            The left hand side expression of this function call.
-	 * @param arguments
-	 *            The static arguments of the function call.
-	 * @param argumentValues
-	 *            The symbolic values of the arguments of the function call
-	 * @return The new state after executing the function call.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private State executeGcommDefined(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
-			SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
-		SymbolicExpression result = symbolicAnalyzer.isDerefablePointer(state,
-				argumentValues[0]).left;
-
-		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs, result);
-		return state;
-	}
-
-	/**
 	 * Frees the gcomm object and gives a CIVL sequence ($seq) of remaining
 	 * messages if there are any of them through the output argument.Returns the
 	 * number of remaining messages.
@@ -1011,7 +997,6 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 					"There is no matched message [source:" + source
 							+ ", destication:" + dest + ", tag:" + tag
 							+ " ] in the message buffer.");
-			throw new UnsatisfiablePathConditionException();
 		}
 		message = universe.arrayRead(messages, universe.integer(msgIdx));
 		messages = universe.removeElementAt(messages, msgIdx);

@@ -342,11 +342,11 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		}
 		checkPointer = symbolicAnalyzer.isDerefablePointer(state, pointer);
 		if (checkPointer.right != ResultType.YES) {
-			errorLogger.logError(arguments[0].getSource(), state, process,
-					this.symbolicAnalyzer.stateInformation(state),
+			state = errorLogger.logError(arguments[0].getSource(), state,
+					process, this.symbolicAnalyzer.stateInformation(state),
 					checkPointer.left, checkPointer.right, ErrorKind.POINTER,
 					"attempt to read/write a invalid pointer type variable");
-			return state;
+			// return state;
 		}
 		reasoner = universe.reasoner(state.getPathCondition());
 		realType = symbolicAnalyzer.getArrayBaseType(state, ptrSource, pointer);

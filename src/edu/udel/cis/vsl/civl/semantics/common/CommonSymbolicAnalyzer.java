@@ -621,7 +621,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 			if (arg instanceof SymbolicExpression)
 				argString = this.symbolicExpressionToString(source, state,
-						null, (SymbolicExpression) arg);
+						null, (SymbolicExpression) arg, true, "", "")
+						.toString();
 			else
 				argString = symbolicExpression.argument(i)
 						.toStringBuffer(atomizeArgs).toString();
@@ -1073,7 +1074,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					break;
 				case AND:
 					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, " && ", true, atomize);
+							result, "&&", true, atomize);
 					break;
 				case APPLY: {
 					String function = symbolicExpression.argument(0)
@@ -1332,44 +1333,17 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append(")");
 					break;
 				case LESS_THAN:
-					processFlexibleBinary(source, state, symbolicExpression,
+					processFlexibleBinaryNew(source, state, symbolicExpression,
 							result, "<", true, atomize);
-					break; // result.append(this.symbolicExpressionToString(source,
-				// state, null, (SymbolicExpression) arguments[0],
-				// true, "", ""));
-				// result.append("<");
-				// result.append(this.symbolicExpressionToString(source,
-				// state, null, (SymbolicExpression) arguments[1],
-				// true, "", ""));
-				// if (atomize)
-				// atomize(result);
-				// return result.toString();
+					break;
 				case LESS_THAN_EQUALS:
-					processFlexibleBinary(source, state, symbolicExpression,
+					processFlexibleBinaryNew(source, state, symbolicExpression,
 							result, "<=", true, atomize);
-					break; // result.append(this.symbolicExpressionToString(source,
-				// state, null, (SymbolicExpression) arguments[0], true,"",
-				// ""));
-				// result.append("<=");
-				// result.append(this.symbolicExpressionToString(source,
-				// state, null, (SymbolicExpression) arguments[1],true, "",
-				// ""));
-				// if (atomize)
-				// atomize(result);
-				// return result.toString();
+					break;
 				case MODULO:
 					processFlexibleBinary(source, state, symbolicExpression,
 							result, "%", true, atomize);
-					break; // result.append(this.symbolicExpressionToString(source,
-				// state, null, (SymbolicExpression) arguments[0], true,"",
-				// ""));
-				// result.append("%");
-				// result.append(this.symbolicExpressionToString(source,
-				// state, null, (SymbolicExpression) arguments[1],true, "",
-				// ""));
-				// if (atomize)
-				// atomize(result);
-				// return result.toString();
+					break;
 				case MULTIPLY:
 					processFlexibleBinaryNew(source, state, symbolicExpression,
 							result, "*", true, atomize);
@@ -1380,7 +1354,6 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							.symbolicExpressionToString(source, state, null,
 									(SymbolicExpression) symbolicExpression
 											.argument(0), "", ""));
-					// if (atomize)
 					atomize(result);
 					break;
 				case NEQ:
@@ -1410,28 +1383,15 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					break;
 				case OR:
 					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, " || ", false, atomize);
-					// if (atomize)
-					// atomize(result);
+							result, "||", false, atomize);
 					break;
 				case POWER:
 					processFlexibleBinary(source, state, symbolicExpression,
 							result, "^", false, atomize);
-					// if (atomize)
-					// atomize(result);
-					break; // result.append(this.symbolicExpressionToString(source,
-				// state, null, (SymbolicExpression) arguments[0], "",
-				// ""));
-				// result.append("^");
-				// result.append(arguments[1].toStringBuffer(false));
-				// if (atomize)
-				// atomize(result);
-				// return result.toString();
+					break;
 				case SUBTRACT:
 					processFlexibleBinary(source, state, symbolicExpression,
 							result, "-", false, atomize);
-					// if (atomize)
-					// atomize(result);
 					break;
 				case SYMBOLIC_CONSTANT:
 					result.append(symbolicExpression.argument(0)
@@ -1464,12 +1424,10 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						result.append(padding);
 					result.append(".");
 					result.append(field.name().name());
-					// result.append(arguments[1].toStringBuffer(false));
 					result.append(":=");
 					result.append(this.symbolicExpressionToString(source,
 							state, field.type(), symbolicExpression, newPrefix,
 							separator));
-					// result.append(arguments[2].toStringBuffer(false));
 					result.append("}");
 					break;
 				}
@@ -2114,28 +2072,6 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		CIVLType exprType = expression.getExpressionType();
 
 		if (resultOnly && !isTopLevel) {
-			// if (expression instanceof AddressOfExpression) {
-			// AddressOfExpression addressof = (AddressOfExpression) expression;
-			// LHSExpression operand = addressof.operand();
-			//
-			// if (operand instanceof SubscriptExpression) {
-			// LHSExpression array = ((SubscriptExpression) operand)
-			// .array();
-			//
-			// if(array instanceof VariableExpression){
-			// Variable variable=((VariableExpression)array).variable();
-			//
-			// if(variable.name().name().startsWith(ModelConfiguration.ANONYMOUS_VARIABLE_PREFIX)){
-			// Triple<StringBuffer,Boolean> evaluator.getString(source, state,
-			// "na", expression, symbolicExpression)
-			// }
-			// }
-			//
-			//
-			// }
-			//
-			// }
-
 			Evaluation eval;
 
 			try {
@@ -2145,7 +2081,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			}
 			state = eval.state;
 			result.append(this.symbolicExpressionToString(
-					expression.getSource(), state, exprType, eval.value, "", ""));
+					expression.getSource(), state, exprType, eval.value,
+					!isTopLevel, "", ""));
 		} else {
 			switch (kind) {
 			case ABSTRACT_FUNCTION_CALL: {
@@ -2446,6 +2383,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	private Triple<SymbolicExpression, BooleanExpression, ResultType> isValidRefOfValue(
 			Reasoner reasoner, boolean derefable, ReferenceExpression ref,
 			SymbolicExpression value) {
+		BooleanExpression predicate = universe.falseExpression();
+
 		if (ref.isIdentityReference())
 			return new Triple<>(value, universe.trueExpression(),
 					ResultType.YES);
@@ -2488,6 +2427,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							}
 						} else if (result == ResultType.MAYBE)
 							return new Triple<>(null, claim, result);
+						predicate = claim;
 					} else {
 						return new Triple<>(universe.arrayRead(targetValue,
 								index), universe.trueExpression(),
@@ -2526,7 +2466,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						ResultType.YES);
 			}
 		}
-		return new Triple<>(null, universe.falseExpression(), ResultType.NO);
+		return new Triple<>(null, predicate, ResultType.NO);
 	}
 
 	/**
@@ -2546,65 +2486,6 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				reasoner, derefable, reference, object);
 
 		return new Pair<>(result.second, result.third);
-		// SymbolicType objType = object.type();
-		//
-		// if (reference.isArrayElementReference()) {
-		// ArrayElementReference arrayEleRef = (ArrayElementReference)
-		// reference;
-		//
-		// if (objType instanceof SymbolicArrayType) {
-		// NumericExpression index = arrayEleRef.getIndex();
-		// NumericExpression length = universe.length(object);
-		// BooleanExpression boundedIndex = derefable ? universe.lessThan(
-		// index, length) : universe.lessThanEquals(index, length);
-		// ResultType result = reasoner.valid(boundedIndex)
-		// .getResultType();
-		//
-		// switch (result) {
-		// case YES:
-		// return this.checkReference(derefable, reasoner,
-		// arrayEleRef.getParent(),
-		// universe.arrayRead(object, index));
-		// case NO:
-		// case MAYBE:
-		// return new Pair<>(boundedIndex, result);
-		// default:
-		// throw new CIVLInternalException(
-		// "Unexpected result type of a claim",
-		// (CIVLSource) null);
-		// }
-		// }
-		// } else if (reference.isTupleComponentReference()) {
-		// TupleComponentReference tupleCompRef = (TupleComponentReference)
-		// reference;
-		// IntObject index = tupleCompRef.getIndex();
-		//
-		// if (objType instanceof SymbolicTupleType) {
-		// int length = ((SymbolicTupleType) objType).sequence()
-		// .numTypes();
-		//
-		// if (index.getInt() < length)
-		// return this.checkReference(derefable, reasoner,
-		// tupleCompRef.getParent(),
-		// universe.tupleRead(object, index));
-		// }
-		// } else if (reference.isUnionMemberReference()) {
-		// UnionMemberReference unionMemRef = (UnionMemberReference) reference;
-		// IntObject index = unionMemRef.getIndex();
-		//
-		// if (objType instanceof SymbolicUnionType) {
-		// int length = ((SymbolicUnionType) objType).sequence()
-		// .numTypes();
-		//
-		// if (index.getInt() < length)
-		// return this.checkReference(derefable, reasoner,
-		// unionMemRef.getParent(),
-		// universe.unionExtract(index, object));
-		// }
-		// } else {// if (reference.isIdentityReference()) {
-		// return new Pair<>(universe.trueExpression(), ResultType.YES);
-		// }
-		// return new Pair<>(universe.falseExpression(), ResultType.NO);
 	}
 
 	@Override
