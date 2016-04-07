@@ -15,13 +15,17 @@ Output: length of the longest common prefix of the subarrays of a
 Verification task:
 
 Implement the lcp function, and verify that it behaves in the way described above.
+      
+-----------------
+Result:
 
-command: civl verify lcp.c
-        
-result: 
 For arrays with length less than 5, lcp function returns an integer n which is
 the length of the longest common prefix between its two suffixes: The two suffixes
-are the same with indexes from 0 to n-1 while they are different at index n.
+are the same with indexes from 0 to n-1 while they are different at index n. Therefore
+the lcp function behave correctly.
+
+-----------------
+command: civl verify lcp.c
 */
 
 #include <civlc.cvh>

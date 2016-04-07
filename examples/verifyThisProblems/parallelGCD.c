@@ -19,11 +19,15 @@ Specify and verify the following behaviour of this parallel GCD algorithm:
 Input:  two positive integers a and b
 Output: a positive number that is the greatest common divisor of a and b
 
-command: civl verify parallelGCD.c
+-----------------
+Result:
 
-result: 
-For any numbers A less than 5 and B less than 7, myGCD returns the greatest common
-divisor of them.
+For any numbers A less than 5 and B less than 7, myGCD returns a common divisor d
+of them and the verification shows that there exists no common divisor of A and
+B that is greater than d. Therefore, myGCD behaves correctly.
+
+-----------------
+command: civl verify parallelGCD.c
 */
 
 #include <civlc.cvh>
