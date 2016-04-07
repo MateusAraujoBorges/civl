@@ -34,6 +34,11 @@ public class VerifyThisTest {
 	public void lcp() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("lcp.c")));
 	}
+	
+	@Test
+	public void lrs() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("lrs.c")));
+	}
 
 	@Test
 	public void parallelGCD_2015_2() {
