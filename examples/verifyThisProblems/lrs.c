@@ -34,6 +34,9 @@ For all strings with length less than 5, the lrs function returns an index i and
 The verification shows that the sub string with length l starting from index i is repeated in 
 the original string and also, there exists no repeated string with length greater than l. Therefore
 the implemented function lrs behaves correctly. 
+
+-----------------  
+command: minor changes
 */
 
 #include <stdlib.h>
