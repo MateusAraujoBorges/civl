@@ -1,4 +1,4 @@
-package edu.udel.cis.vsl.civl;
+package edu.udel.cis.vsl.civl.transform;
 
 import static edu.udel.cis.vsl.civl.TestConstants.COMPARE;
 import static edu.udel.cis.vsl.civl.TestConstants.IMPL;
@@ -14,6 +14,7 @@ import java.io.File;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import edu.udel.cis.vsl.civl.TestConstants;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class CompareTest {
