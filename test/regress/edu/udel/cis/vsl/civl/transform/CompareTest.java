@@ -70,7 +70,7 @@ public class CompareTest {
 	@Test
 	public void dotHybrid() {
 		assertTrue(ui.run(TestConstants.VERIFY, QUIET,
-				"-inputVECLEN=2 -input_mpi_nprocs=2 -inputMAXTHRDS=2",
+				"-inputVECLEN=1 -input_mpi_nprocs=2 -inputMAXTHRDS=2",
 				filename("dot", "mpithreads_both.c")));
 	}
 
@@ -102,9 +102,10 @@ public class CompareTest {
 
 	@Test
 	public void dotMpiHybrid() {
-		ui.run(COMPARE, QUIET, "-inputVECLEN=5 -input_mpi_nprocs=2", SPEC,
+		assertFalse(ui.run(COMPARE, QUIET,
+				"-inputVECLEN=4 -input_mpi_nprocs=2", SPEC,
 				filename("dot", "mpithreads_mpi.c"), IMPL, "-inputMAXTHRDS=2",
-				filename("dot", "mpithreads_both.c"));
+				filename("dot", "mpithreads_both.c")));
 	}
 
 	@Test
