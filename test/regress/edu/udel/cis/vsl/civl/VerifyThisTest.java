@@ -34,7 +34,7 @@ public class VerifyThisTest {
 	public void lcp() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("lcp.c")));
 	}
-	
+
 	@Test
 	public void lrs() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("lrs.c")));
@@ -57,7 +57,8 @@ public class VerifyThisTest {
 
 	@Test
 	public void binaryTreeTraversal() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("binaryTreeTraversal.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputDB=4",
+				filename("binaryTreeTraversal.cvl")));
 	}
 
 	@Test
