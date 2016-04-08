@@ -58,6 +58,11 @@ public class BackendTest {
 	}
 
 	@Test
+	public void pathCondition() throws ABCException {
+		assertTrue(ui.run(VERIFY, QUIET, filename("pathCondition.cvl")));
+	}
+
+	@Test
 	public void quantified() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("quantified.cvl")));
 	}
