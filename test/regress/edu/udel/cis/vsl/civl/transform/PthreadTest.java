@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 
 import org.junit.AfterClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -92,19 +91,6 @@ public class PthreadTest {
 		assertFalse(ui.run("verify", "-svcomp16 -debug=false",
 				"-input_gen_argc=1", QUIET,
 				filename("reorder_2_false-unreach-call.c")));
-	}
-
-	@Ignore
-	@Test
-	public void reorder_5_false() throws ABCException {
-		assertFalse(ui.run("verify", "-svcomp16", "-input_gen_argc=1", QUIET,
-				filename("reorder_5_false-unreach-call.c")));
-	}
-
-	@Test
-	public void sigma_false() throws ABCException {
-		assertFalse(ui.run("verify", "-svcomp16", QUIET,
-				filename("sigma_false-unreach-call.i")));
 	}
 
 	@Test

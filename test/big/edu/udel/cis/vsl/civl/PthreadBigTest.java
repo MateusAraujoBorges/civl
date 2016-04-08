@@ -1,5 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -30,6 +32,18 @@ public class PthreadBigTest {
 	public void fib_bench_longer_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16", "-inputNUM=6",
 				filename("fib_bench_longer_true-unreach-call.c")));
+	}
+
+	@Test
+	public void sigma_false() throws ABCException {
+		assertFalse(ui.run("verify", "-svcomp16", QUIET,
+				filename("sigma_false-unreach-call.i")));
+	}
+
+	@Test
+	public void reorder_5_false() throws ABCException {
+		assertFalse(ui.run("verify", "-svcomp16", "-input_gen_argc=1", QUIET,
+				filename("reorder_5_false-unreach-call.i")));
 	}
 
 	@AfterClass

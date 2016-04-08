@@ -190,10 +190,11 @@ public class GeneralWorker extends BaseWorker {
 				VariableDeclarationNode variable = ((Variable) entity)
 						.getDefinition();
 
-				if (variable.equals(argc))
-					this.argcUsed = true;
-				else if (variable.equals(argv))
-					this.argvUsed = true;
+				if (variable != null)
+					if (variable.equals(argc))
+						this.argcUsed = true;
+					else if (variable.equals(argv))
+						this.argvUsed = true;
 			}
 		} else {
 			for (ASTNode child : node.children()) {

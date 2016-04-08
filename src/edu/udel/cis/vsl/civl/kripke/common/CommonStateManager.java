@@ -364,8 +364,11 @@ public class CommonStateManager implements StateManager {
 			State updatedState = stack.peek().state();
 
 			config.out().println(
-					"ample set at state " + updatedState.getCanonicId()
+					"\nample set at state " + updatedState.getCanonicId()
 							+ " fully expanded");
+			if (config.showAmpleSetWtStates())
+				config.out().println(
+						updatedState.callStackToString());
 		}
 		if (printSavedStates
 				&& (!config.saveStates() || this.maxCanonicId > oldMaxCanonicId)) {

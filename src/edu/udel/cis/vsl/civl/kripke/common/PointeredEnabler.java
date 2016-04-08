@@ -90,7 +90,7 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 				ampleSetResult.left);
 		if (debugging || showAmpleSet) {
 			if (processStates.size() > 1) {
-				debugOut.print("ample processes at state "
+				debugOut.print("\nample processes at state "
 						+ state.getCanonicId() + ":\t");
 				for (ProcessState p : processStates) {
 					debugOut.print(p.getPid() + "\t");
