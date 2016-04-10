@@ -405,6 +405,108 @@ public abstract class CommonEnabler implements Enabler {
 		return localTransitions;
 	}
 
+	// private List<Transition> enabledTransitionsOfContractVerifyStatement(
+	// State state, ContractVerifyStatement statement,
+	// BooleanExpression pathCondition, int pid, int processIdentifier,
+	// AtomicLockAction atomicLockAction)
+	// throws UnsatisfiablePathConditionException {
+	// CIVLFunction verifyingFunction = statement.function();
+	// Expression[] requiredRemoteProcs;
+	// List<BooleanExpression> newClauses = new LinkedList<>();
+	// List<Transition> transitions = new LinkedList<>();
+	// Triple<State, CIVLFunction, Integer> funcEval;
+	// SymbolicExpression[] arguments = new SymbolicExpression[statement
+	// .arguments().size()];
+	// Evaluation eval;
+	// State tmpState;
+	// BooleanExpression context = state.getPathCondition();
+	// String process = "p" + processIdentifier + " (id = " + pid + ")";
+	//
+	// for (int i = 0; i < statement.arguments().size(); i++) {
+	// eval = evaluator.evaluate(state, pid, statement.arguments().get(i));
+	//
+	// state = eval.state;
+	// arguments[i] = eval.value;
+	// }
+	// funcEval = evaluator.evaluateFunctionIdentifier(state, pid,
+	// statement.functionExpression(), statement.getSource());
+	// tmpState = stateFactory.pushCallStack(state, pid, verifyingFunction,
+	// funcEval.third, arguments);
+	// for (Expression requires : verifyingFunction.functionContract()
+	// .defaultBehavior().requirements()) {
+	// eval = conditionGenerator.deriveExpression(tmpState, pid, requires);
+	//
+	// context = universe.and(context, (BooleanExpression) eval.value);
+	// }
+	// for (MPICollectiveBehavior collective : verifyingFunction
+	// .functionContract().getMPIBehaviors()) {
+	// Reasoner reasoner;
+	//
+	// requiredRemoteProcs = collective.requiredRemoteProcs();
+	// tmpState = ((ContractEvaluator) evaluator)
+	// .deriveMPICollectiveTitle(tmpState, pid, process,
+	// collective, verifyingFunction.outerScope()).first;
+	// for (Expression requires : collective.requirements()) {
+	// eval = conditionGenerator.deriveExpression(tmpState, pid,
+	// requires);
+	//
+	// context = universe.and(context, (BooleanExpression) eval.value);
+	// }
+	// reasoner = universe.reasoner(context);
+	// for (int i = 0; i < requiredRemoteProcs.length; i++) {
+	// Set<SymbolicConstant> symbolicConstants;
+	//
+	// // TODO: need to say remote expression cannot be nested:
+	// eval = evaluator
+	// .evaluate(tmpState, pid, requiredRemoteProcs[i]);
+	// symbolicConstants = universe
+	// .getFreeSymbolicConstants(eval.value);
+	// for (SymbolicConstant var : symbolicConstants) {
+	// Interval interval = reasoner.assumptionAsInterval(var);
+	//
+	// if (interval != null && interval.isIntegral()) {
+	// Number lowerNum = interval.lower();
+	// Number upperNum = interval.upper();
+	// int lower, upper;
+	//
+	// if (lowerNum != null && upperNum != null) {
+	// BooleanExpression[] clause;
+	//
+	// assert !interval.strictLower();
+	// assert !interval.strictUpper();
+	// lower = ((IntegerNumber) lowerNum).intValue();
+	// upper = ((IntegerNumber) upperNum).intValue();
+	// clause = generateElaborateConditions(var, lower,
+	// upper);
+	// newClauses.addAll(Arrays.asList(clause));
+	// }
+	// }
+	// }
+	// }
+	// }
+	//
+	// for (BooleanExpression myClause : newClauses) {
+	// BooleanExpression newPathCondition = (BooleanExpression) universe
+	// .canonic(universe.and(pathCondition, myClause));
+	//
+	// transitions.add(Semantics.newTransition(newPathCondition, pid,
+	// processIdentifier, statement, atomicLockAction));
+	// }
+	// return transitions;
+	// }
+	//
+	// private BooleanExpression[] generateElaborateConditions(
+	// SymbolicConstant var, int lower, int upper) {
+	// assert lower <= upper;
+	// BooleanExpression result[] = new BooleanExpression[upper - lower + 1];
+	//
+	// result[0] = universe.equals(var, universe.integer(lower));
+	// for (int i = lower + 1; i <= upper; i++) {
+	// result[upper - i + 1] = universe.equals(var, universe.integer(i));
+	// }
+	// return result;
+	// }
+
 	/**
 	 * Computes the set of enabled transitions of a system function call.
 	 * 
