@@ -9,6 +9,7 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -28,6 +29,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
@@ -624,38 +626,74 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression procArray;
 		SymbolicExpression initArray;
 		SymbolicExpression buf;
-		SymbolicExpression bufRow;
-		SymbolicExpression queueLength = universe.integer(0);
-		SymbolicExpression emptyQueue;
-		SymbolicExpression emptyMessages;
+		// SymbolicExpression bufRow;
+		// SymbolicExpression queueLength = universe.integer(0);
+		// SymbolicExpression emptyQueue;
+		// SymbolicExpression emptyMessages;
 		CIVLType queueType = model.queueType();
-		CIVLType messageType = model.mesageType();
+		// CIVLType messageType = model.mesageType();
 		CIVLType gcommType = typeFactory
 				.systemType(ModelConfiguration.GCOMM_TYPE);
 		SymbolicType dynamicQueueType = queueType.getDynamicType(universe);
-		SymbolicType dynamicMessageType = messageType.getDynamicType(universe);
+		// SymbolicType dynamicMessageType =
+		// messageType.getDynamicType(universe);
 		SymbolicType procType = typeFactory.processSymbolicType();
 		BooleanExpression context = state.getPathCondition();
 
 		procNegOne = modelFactory.processValue(-1);
-		emptyMessages = universe.array(dynamicMessageType,
-				new LinkedList<SymbolicExpression>());
+		// emptyMessages = universe.array(dynamicMessageType,
+		// new LinkedList<SymbolicExpression>());
 		assert dynamicQueueType instanceof SymbolicTupleType;
-		emptyQueue = universe.tuple((SymbolicTupleType) dynamicQueueType,
-				Arrays.asList(queueLength, emptyMessages));
+		// emptyQueue = universe.tuple((SymbolicTupleType) dynamicQueueType,
+		// Arrays.asList(queueLength, emptyMessages));
 		procArray = symbolicUtil
 				.newArray(context, procType, nprocs, procNegOne);
 		initArray = symbolicUtil.newArray(context, universe.booleanType(),
 				nprocs, falseValue);
-		bufRow = symbolicUtil.newArray(context, emptyQueue.type(), nprocs,
-				emptyQueue);
-		buf = symbolicUtil.newArray(context, bufRow.type(), nprocs, bufRow);
+		// bufRow = symbolicUtil.newArray(context, emptyQueue.type(), nprocs,
+		// emptyQueue);
+		// buf = symbolicUtil.newArray(context, bufRow.type(), nprocs, bufRow);
+		buf = newGcommBuffer(universe, model, symbolicUtil, context, nprocs);
 		gcomm = universe.tuple(
 				(SymbolicTupleType) gcommType.getDynamicType(universe),
 				Arrays.asList(nprocs, procArray, initArray, buf));
 		state = primaryExecutor.malloc(source, state, pid, process, lhs,
 				scopeExpression, scope, gcommType, gcomm);
 		return state;
+	}
+
+	/**
+	 * Helper function for creating an empty buffer
+	 * 
+	 * @param universe
+	 *            The Symbolic Universe
+	 * @param model
+	 *            The CIVL model of the program
+	 * @param symbolicUtil
+	 *            The SymbolicUtility
+	 * @param context
+	 *            The path condition of the current state
+	 * @param nprocs
+	 *            The NumericExpression of the number of processes
+	 * @return
+	 */
+	public static SymbolicExpression newGcommBuffer(SymbolicUniverse universe,
+			Model model, SymbolicUtility symbolicUtil,
+			BooleanExpression context, NumericExpression nprocs) {
+		SymbolicExpression queueLength = universe.integer(0);
+		CIVLType messageType = model.mesageType();
+		CIVLType queueType = model.queueType();
+		SymbolicType dynamicQueueType = queueType.getDynamicType(universe);
+		SymbolicType dynamicMessageType = messageType.getDynamicType(universe);
+		SymbolicExpression emptyMessages = universe.array(dynamicMessageType,
+				new LinkedList<SymbolicExpression>());
+		SymbolicExpression emptyQueue = universe.tuple(
+				(SymbolicTupleType) dynamicQueueType,
+				Arrays.asList(queueLength, emptyMessages));
+		SymbolicExpression bufRow = symbolicUtil.newArray(context,
+				emptyQueue.type(), nprocs, emptyQueue);
+
+		return symbolicUtil.newArray(context, bufRow.type(), nprocs, bufRow);
 	}
 
 	/**
