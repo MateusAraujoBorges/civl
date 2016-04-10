@@ -34,8 +34,8 @@ import edu.udel.cis.vsl.civl.model.IF.expression.reference.SelfReference;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
@@ -278,6 +278,8 @@ public class MemoryUnitExpressionAnalyzer {
 			computeImpactMemoryUnitsOfExpression(writableVars,
 					((CivlParForSpawnStatement) statement).domain(), result);
 			break;
+		case CONTRACT_VERIFY:
+			break;
 		case MALLOC: {
 			MallocStatement mallocStatement = (MallocStatement) statement;
 
@@ -291,9 +293,6 @@ public class MemoryUnitExpressionAnalyzer {
 		}
 		case NOOP:
 			break;
-		case CONTRACT:
-			break;// TODO: if in the future, there are contracts for shared
-					// storage, this cannot be no operation
 		case RETURN: {
 			ReturnStatement returnStatement = (ReturnStatement) statement;
 
@@ -313,7 +312,8 @@ public class MemoryUnitExpressionAnalyzer {
 	private void computeImpactMemoryUnitsOfExpression(
 			Set<Variable> writableVars, Expression expression,
 			Set<MemoryUnitExpression> result) {
-		this.computeImpactMemoryUnitsOfExpression(writableVars, expression, result, 0);
+		this.computeImpactMemoryUnitsOfExpression(writableVars, expression,
+				result, 0);
 	}
 
 	private boolean isLowerThan(Scope s0, Scope s1) {
@@ -523,9 +523,6 @@ public class MemoryUnitExpressionAnalyzer {
 		case PROC_NULL:
 			break;
 		case SYSTEM_FUNC_CALL:// TODO check
-			break;
-		case REMOTE_REFERENCE:// TODO: currently remote reference only allows
-								// reading
 			break;
 		default:
 			throw new CIVLUnimplementedFeatureException(

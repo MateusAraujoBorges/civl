@@ -12,9 +12,11 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
@@ -23,26 +25,35 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.FunctionType;
-import edu.udel.cis.vsl.abc.ast.type.IF.ObjectType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
+import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.ContractTransformer;
 
+/**
+ * This transformer serves for CIVL Contracts mode.
+ * 
+ * @author ziqingluo
+ *
+ */
 public class ContractTransformerWorker extends BaseWorker {
 
 	private final static String CONTRACT_PREFIX = "_contract_";
 
-	private final static String CONTRACT_VAR_NAME = "gen";
+	private final static String CONTRACT_VAR_NAME = "_gen";
+
+	private final static String HAVOC_ID = "$havoc";
+
+	private final static String MPI_COMM_TYPE = "MPI_Comm";
+
+	private final static String MPI_COMM_WORLD = "MPI_COMM_WORLD";
 
 	public ContractTransformerWorker(ASTFactory astFactory) {
 		super(ContractTransformer.LONG_NAME, astFactory);
 		identifierPrefix = CONTRACT_PREFIX;
 	}
 
-	/**
-	 * Pre-condition: only giving the ast of the main source file
-	 */
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
 		SequenceNode<BlockItemNode> root = ast.getRootNode();
@@ -50,12 +61,21 @@ public class ContractTransformerWorker extends BaseWorker {
 		List<FunctionDefinitionNode> funcDefInSrc = new LinkedList<>();
 		List<BlockItemNode> externalList = new LinkedList<>();
 		SequenceNode<BlockItemNode> newRootNode;
+		FunctionDeclarationNode havocDecl;
 		AST newAst;
 		int count;
 
 		ast.release();
 		transformMainFunction(root);
+		havocDecl = createHavocFunctionDeclaration();
+		havocDecl.setSystemFunctionSpeciier(true);
+		externalList.add(havocDecl);
 		for (ASTNode child : root) {
+			// TODO: some transformers happened previously make some child null
+			// ?
+			// TODO: get rid of null source !!!!
+			if (child == null || child.getSource() == null)
+				continue;
 			sourceFileName = child.getSource().getFirstToken().getSourceFile()
 					.getName();
 			if (!sourceFileName.endsWith(".cvl")
@@ -94,7 +114,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			List<FunctionDefinitionNode> funcDefsInSrc) throws SyntaxException {
 		List<BlockItemNode> items = new LinkedList<BlockItemNode>();
 		List<VariableDeclarationNode> declsComponents = new LinkedList<>();
-		List<StatementNode> functionCalls = new LinkedList<>();
+		List<StatementNode> callOrConVerifys = new LinkedList<>();
 		SequenceNode<VariableDeclarationNode> formals;
 		FunctionTypeNode mainType;
 		FunctionDefinitionNode mainFunction;
@@ -105,13 +125,13 @@ public class ContractTransformerWorker extends BaseWorker {
 		for (FunctionDefinitionNode funcDef : funcDefsInSrc) {
 			Function funcDecl = funcDef.getEntity();
 			FunctionType funcType = funcDecl.getType();
-			int numParameters = funcType.getNumParameters();
 			List<ExpressionNode> parameterIDs = new LinkedList<>();
-			ExpressionNode funcCall;
+			FunctionCallNode funcCall;
 
 			// creating variables for parameters:
-			for (int i = 0; i < numParameters; i++) {
-				ObjectType parameterType = funcType.getParameterType(i);
+			for (VariableDeclarationNode formalVar : funcDef.getTypeNode()
+					.getParameters()) {
+				TypeNode varTypeNode = formalVar.getTypeNode().copy();
 				String varName = CONTRACT_PREFIX + CONTRACT_VAR_NAME
 						+ varaibleNameCounter++;
 				IdentifierNode varNameNode = nodeFactory.newIdentifierNode(
@@ -119,11 +139,19 @@ public class ContractTransformerWorker extends BaseWorker {
 								"variable " + varName + " for "
 										+ funcDecl.getName(),
 								CivlcTokenConstant.DECLARATION), varName);
-				TypeNode varTypeNode = typeNode(parameterType);
 				VariableDeclarationNode varDecl;
 				OperatorNode addressOfVar;
 				ExpressionNode havocCall;
 
+				if (formalVar.getTypeNode().getType() instanceof StructureOrUnionType) {
+					StructureOrUnionType structType = (StructureOrUnionType) formalVar
+							.getTypeNode().getType();
+
+					if (structType.getName().equals(MPI_COMM_TYPE)) {
+						parameterIDs.add(identifierExpression(MPI_COMM_WORLD));
+						continue;
+					}
+				}
 				parameterIDs.add(identifierExpression(varName));
 				varDecl = nodeFactory.newVariableDeclarationNode(
 						varNameNode.getSource(), varNameNode, varTypeNode);
@@ -135,27 +163,35 @@ public class ContractTransformerWorker extends BaseWorker {
 				// create $havoc call for it:
 
 				havocCall = nodeFactory.newFunctionCallNode(
-						newSource("$havoc(" + varName + ")",
+						newSource(HAVOC_ID + "(" + varName + ")",
 								CivlcTokenConstant.CALL),
-						identifierExpression("$havoc"), Arrays
+						identifierExpression(HAVOC_ID), Arrays
 								.asList(addressOfVar), null);
-				functionCalls.add(nodeFactory
+				callOrConVerifys.add(nodeFactory
 						.newExpressionStatementNode(havocCall));
 			}
 			// TODO: improve source here:
 			// TODO: solve main function problem:
 			if (!funcDecl.getName().equals("main")) {
-				funcCall = nodeFactory.newFunctionCallNode(
+				ExpressionNode contractVerifyNode;
+
+				// funcCall = nodeFactory.newFunctionCallNode(
+				// newSource(funcDecl.getName() + "(...)",
+				// CivlcTokenConstant.CALL),
+				// identifierExpression(funcDecl.getName()), parameterIDs,
+				// null);
+				contractVerifyNode = nodeFactory.newContractVerifyNode(
 						newSource(funcDecl.getName() + "(...)",
-								CivlcTokenConstant.CALL),
+								CivlcTokenConstant.SPAWN),
 						identifierExpression(funcDecl.getName()), parameterIDs,
 						null);
-				functionCalls.add(nodeFactory
-						.newExpressionStatementNode(funcCall));
+				callOrConVerifys.add(nodeFactory
+						.newExpressionStatementNode(contractVerifyNode));
+				// callOrConVerifys.add(contractVerifyNode);
 			}
 		}
 		items.addAll(declsComponents);
-		items.addAll(functionCalls);
+		items.addAll(callOrConVerifys);
 		mainBody = nodeFactory.newCompoundStatementNode(this.newSource(
 				"main body", CivlcTokenConstant.COMPOUND_STATEMENT), items);
 		formals = nodeFactory.newSequenceNode(this.newSource(
@@ -171,6 +207,33 @@ public class ContractTransformerWorker extends BaseWorker {
 				CivlcTokenConstant.FUNCTION_DEFINITION), this
 				.identifier("main"), mainType, null, mainBody);
 		return mainFunction;
+	}
+
+	private FunctionDeclarationNode createHavocFunctionDeclaration() {
+		IdentifierNode havocNode = nodeFactory.newIdentifierNode(
+				newSource("$havoc", CivlcTokenConstant.IDENTIFIER), HAVOC_ID);
+		IdentifierNode havocFormalIdNode = nodeFactory.newIdentifierNode(
+				newSource("ptr", CivlcTokenConstant.IDENTIFIER), "ptr");
+		VariableDeclarationNode havocFormal = nodeFactory
+				.newVariableDeclarationNode(
+						newSource("void *ptr", CivlcTokenConstant.DECLARATION),
+						havocFormalIdNode, nodeFactory.newPointerTypeNode(
+								newSource("void *", CivlcTokenConstant.TYPE),
+								nodeFactory.newVoidTypeNode(newSource("void",
+										CivlcTokenConstant.TYPE))));
+		FunctionTypeNode funcTypeNode;
+
+		funcTypeNode = nodeFactory.newFunctionTypeNode(
+				newSource("void $havoc(void *)", CivlcTokenConstant.TYPE),
+				nodeFactory.newVoidTypeNode(newSource("void",
+						CivlcTokenConstant.TYPE)), nodeFactory.newSequenceNode(
+						newSource("void *ptr",
+								CivlcTokenConstant.PARAMETER_LIST),
+						"void *ptr", Arrays.asList(havocFormal)), false);
+		return nodeFactory.newFunctionDeclarationNode(
+				newSource("$system void $havoc(void *ptr)",
+						CivlcTokenConstant.DECLARATION), havocNode,
+				funcTypeNode, null);
 	}
 
 	// private Pair<List<BlockItemNode>, List<VariableDeclarationNode>>

@@ -14,8 +14,18 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
  */
 public interface FunctionContract extends Sourceable {
 
+	/**
+	 * ContractKind: This kind is used to denotes weather the contracts are
+	 * requirements ,ensurances or inferences. see
+	 * {@link ContractConditionGeneration}. Here INFER stands for the
+	 * inferential conditions after a function call which in fact are ensurances
+	 * of the called function contracts.
+	 * 
+	 * @author ziqingluo
+	 *
+	 */
 	static public enum ContractKind {
-		REQUIRES, ENSURES, ASSIGNS // TODO: complete this
+		REQUIRES, ENSURES, INFER
 	}
 
 	/**
@@ -86,7 +96,7 @@ public interface FunctionContract extends Sourceable {
 	 * 
 	 * @return
 	 */
-	Iterator<MPICollectiveBehavior> getMPIBehaviors();
+	Iterable<MPICollectiveBehavior> getMPIBehaviors();
 
 	/**
 	 * returns the behavior with the given name; null if no such behavior
@@ -133,4 +143,11 @@ public interface FunctionContract extends Sourceable {
 	 * @return
 	 */
 	boolean hasRequirementsOrEnsurances();
+
+	/**
+	 * Returns the number of {@link MPICollectiveBehavior}s.
+	 * 
+	 * @return
+	 */
+	int numMPICollectiveBehaviors();
 }

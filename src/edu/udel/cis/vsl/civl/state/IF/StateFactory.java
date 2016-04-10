@@ -3,6 +3,7 @@
  */
 package edu.udel.cis.vsl.civl.state.IF;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -714,7 +715,9 @@ public interface StateFactory {
 	 */
 	ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state,
 			int pid, int numProcesses, int place, int queueID,
-			Expression assertion, SymbolicExpression channels, ContractKind kind);
+			Expression assertion, SymbolicExpression channels,
+			ContractKind kind,
+			List<Pair<Variable, SymbolicExpression>> pickUpStation);
 
 	/**
 	 * Dequeues an {@link CollectiveSnapshotsEntry} from the specific snapshots
@@ -774,6 +777,9 @@ public interface StateFactory {
 	 */
 	ImmutableCollectiveSnapshotsEntry[] getSnapshotsQueue(State state,
 			int queueID);
+
+	// TODO:doc
+	ImmutableState copySnapshotsQueues(State fromState, State toState);
 	/* ****************** End of Snapshots related method ****************** */
 
 }

@@ -23,7 +23,9 @@ import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
@@ -38,7 +40,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.ContractConditionGenerator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.semantics.common.CommonEvaluator;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
@@ -64,8 +65,8 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * @author ziqingluo
  *
  */
-public class CommonContractConditionGenerator extends CommonEvaluator implements
-		ContractConditionGenerator {
+public class CommonContractConditionGenerator extends ContractEvaluator
+		implements ContractConditionGenerator {
 
 	/**
 	 * String identifier for using uninterpreted functions to represent
@@ -270,6 +271,38 @@ public class CommonContractConditionGenerator extends CommonEvaluator implements
 		}
 	}
 
+	@Override
+	protected Evaluation evaluateRemoteExpression(State state, int pid,
+			String process, BinaryExpression expression)
+			throws UnsatisfiablePathConditionException {
+		Expression proc;
+		Variable variable;
+		NumericExpression procVal;
+		SymbolicConstant varNameVal, result;
+		SymbolicType varType, funcType;
+		Evaluation eval;
+
+		// derivation phase doesn't care remote expressions and results are not
+		// saved in path conditions.
+		proc = expression.right();
+		eval = evaluate(state, pid, proc);
+		state = eval.state;
+		procVal = (NumericExpression) universe.symbolicConstant(
+				universe.stringObject("$" + proc.toString()),
+				universe.integerType());
+		variable = ((VariableExpression) expression.left()).variable();
+		varType = variable.type().getDynamicType(universe);
+		varNameVal = universe.symbolicConstant(
+				universe.stringObject("$" + variable.name().name()), varType);
+		funcType = universe.functionType(
+				Arrays.asList(varType, universe.integerType()), varType);
+		result = universe.symbolicConstant(universe.stringObject("\\remote"),
+				funcType);
+		eval.value = universe.apply(result, Arrays.asList(varNameVal, procVal));
+		eval.state = state;
+		return eval;
+	}
+
 	/**
 	 * A worker method for {@link #deriveExpression(State, int, Expression)}.
 	 * This method derives:
@@ -403,6 +436,25 @@ public class CommonContractConditionGenerator extends CommonEvaluator implements
 		eval.state = state;
 		eval.value = dynamicMpiCommValue;
 		return eval;
+	}
+
+	/**
+	 * Override for pointers: In a contract system, a pointer will be
+	 * initialized as a symbolic constant "XP[sid, vid]", where "sid" is the
+	 * lexical scope id. A pointer will be initialized only if it's a parameter
+	 * of the verifying function or it is a global variable.
+	 */
+	@Override
+	protected Evaluation evaluateInitialValue(State state, int pid,
+			InitialValueExpression expression)
+			throws UnsatisfiablePathConditionException {
+		CIVLType exprType = expression.getExpressionType();
+
+		if (exprType.isPointerType()) {
+			return new Evaluation(state,
+					initializePointer(expression.variable()));
+		} else
+			return super.evaluateInitialValue(state, pid, expression);
 	}
 
 	/********************** Parse Pointer Section ***************************/
@@ -737,5 +789,21 @@ public class CommonContractConditionGenerator extends CommonEvaluator implements
 					return null;
 			}
 		};
+	}
+
+	/**
+	 * Override, because in derivation phase, it doesn't need to consider MPI
+	 * contract expression, just make them dummy expressions.
+	 */
+	@Override
+	protected Evaluation evaluateMPIContractExpression(State state, int pid,
+			String process, MPIContractExpression expression)
+			throws UnsatisfiablePathConditionException {
+		// TODO: need a better dummy represatation or fixing
+		// assumptionAsInterval can help this:
+
+		return new Evaluation(state, universe.symbolicConstant(universe
+				.stringObject(expression.toString()), expression
+				.getExpressionType().getDynamicType(universe)));
 	}
 }

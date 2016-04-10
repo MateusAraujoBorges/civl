@@ -185,6 +185,8 @@ public class ImmutableStateFactory implements StateFactory {
 
 	protected Set<HeapErrorKind> emptyHeapErrorSet = new HashSet<>(0);
 
+	protected GMCConfiguration gmcConfig;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -205,6 +207,7 @@ public class ImmutableStateFactory implements StateFactory {
 				.processSymbolicType());
 		isReservedSymbolicConstant = new ReservedConstant();
 		this.config = config;
+		this.gmcConfig = gmcConfig;
 	}
 
 	/* ********************** Methods from StateFactory ******************** */
@@ -894,32 +897,18 @@ public class ImmutableStateFactory implements StateFactory {
 					newDynamicScopes, newPathCondition);
 			theState.simplifiedState = theState;
 		}
-		// if (enableMpiContract) {
-		// Map<Integer, ArrayList<ImmutableCollectiveSnapshotsEntry>> newMap =
-		// new HashMap<>();
-		// Map<Integer, ArrayList<ImmutableCollectiveSnapshotsEntry>> oldMap =
-		// theState
-		// .getSnapshotsQueues();
-		// Iterator<Integer> keyIter = oldMap.keySet().iterator();
-		//
-		// while (keyIter.hasNext()) {
-		// int key = keyIter.next();
-		// ArrayList<ImmutableCollectiveSnapshotsEntry> queue = oldMap
-		// .get(key);
-		//
-		// if (queue != null) {
-		// for (int i = 0; i < queue.size(); i++) {
-		// ImmutableCollectiveSnapshotsEntry entry = queue.get(i);
-		//
-		// entry = (ImmutableCollectiveSnapshotsEntry) entry
-		// .simplify();
-		// queue.set(i, entry);
-		// }
-		// }
-		// newMap.put(key, queue);
-		// }
-		// theState = theState.setSnapshotsQueues(newMap);
-		// }
+		if (config.isEnableMpiContract()) {
+			ImmutableCollectiveSnapshotsEntry[][] queues = theState
+					.getSnapshotsQueues();
+			ImmutableCollectiveSnapshotsEntry[][] newQueues = new ImmutableCollectiveSnapshotsEntry[queues.length][];
+
+			for (int i = 0; i < queues.length; i++) {
+				newQueues[i] = queues[i].clone();
+				for (int j = 0; j < newQueues[i].length; j++)
+					newQueues[i][j] = newQueues[i][j].simplify(state);
+			}
+			theState = theState.setSnapshotsQueues(newQueues);
+		}
 		return theState;
 	}
 
@@ -1961,7 +1950,9 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state,
 			int pid, int numProcesses, int place, int queueID,
-			Expression assertion, SymbolicExpression channels, ContractKind kind) {
+			Expression assertion, SymbolicExpression channels,
+			ContractKind kind,
+			List<Pair<Variable, SymbolicExpression>> pickUpStation) {
 		ImmutableCollectiveSnapshotsEntry[] queue = state.getSnapshots(queueID);
 		ImmutableCollectiveSnapshotsEntry[] newQueue;
 		ImmutableCollectiveSnapshotsEntry entry = new ImmutableCollectiveSnapshotsEntry(
@@ -1972,6 +1963,7 @@ public class ImmutableStateFactory implements StateFactory {
 		snapshot = this.takeSnapshot((ImmutableState) state, pid);
 		entry = entry.insertMonoState(place, snapshot, assertion);
 		entry = entry.setMsgBuffers(channels);
+		entry = entry.deliverJointVariables(pickUpStation);
 		assert queue != null;
 		newQueue = new ImmutableCollectiveSnapshotsEntry[queue.length + 1];
 		for (int i = 0; i < queue.length; i++)
@@ -1990,7 +1982,7 @@ public class ImmutableStateFactory implements StateFactory {
 		if (queue.length == 1)
 			queue = new ImmutableCollectiveSnapshotsEntry[0];
 		else
-			queue = Arrays.copyOfRange(queue, 1, queue.length - 1);
+			queue = Arrays.copyOfRange(queue, 1, queue.length);
 		return immuState.updateQueue(queueID, queue);
 	}
 
@@ -2012,6 +2004,14 @@ public class ImmutableStateFactory implements StateFactory {
 	public ImmutableCollectiveSnapshotsEntry[] getSnapshotsQueue(State state,
 			int queueID) {
 		return ((ImmutableState) state).getSnapshots(queueID);
+	}
+
+	@Override
+	public ImmutableState copySnapshotsQueues(State fromState, State toState) {
+		ImmutableCollectiveSnapshotsEntry[][] queues = ((ImmutableState) fromState)
+				.getSnapshotsQueues();
+
+		return ((ImmutableState) toState).setSnapshotsQueues(queues);
 	}
 
 	/**

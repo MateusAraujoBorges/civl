@@ -17,34 +17,43 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
  * ContractConditionGenerator provides a set of interfaces for deriving contract
- * clauses.
+ * clauses. <br>
  * 
- * Naming specifications:
+ * Terms:
  * <ol>
- * <li>axiom:</li>
- * <li>consequence:</li>
- * <li>valid</li>
+ * <li>Verifying function: the function which is being verified using contracts.
+ * </li>
+ * </ol>
+ * Abstract interpretation:
+ * <ol>
+ * conditions: All conditions expressed in contracts are evaluate to boolean
+ * expression. The evaluation of all kinds of expressions is not guaranteed to
+ * have a absolute boolean value (true or false), but they shall have canonical
+ * forms so that they can be used to do reasoing and derivation.
  * </ol>
  * 
  * Pointer abstract representations:
  * <ol>
- * <li>lambda:</li>
- * <li>uninterpreted function:</li>
- * <li>dereference</li>
- * <li>lazy initialization:</li>
+ * <li>lambda: Pointer type parameters and global variables will be initialized
+ * as an lambda expression: <code> lambda offset : ptr(XP, offset);</code> where
+ * XP is an uninterpreted function whose duo inputs are scope ID and variable ID
+ * of the parameter or global variable, the output is a unique pointer type
+ * expression.</li>
+ * <li>\valid: This class will evaluate \valid expressions to canonical boolean
+ * abstract functions.</li>
+ * <li>\remote:This class will evaluate \remote expressions to canonical
+ * abstract functions.</li>
+ * <li>lazy initialization: current pointers are initialized at the beginning of
+ * verifying a function. Lazy initialization will be considered in the future.</li>
  * </ol>
  * 
- * Abstract interpretation:
- * <ol>
- * predicates:
- * </ol>
  * 
  * miscellaneous:
  * <ol>
- * <li>Multiple-level pointers:</li>
+ * <li>Multiple-level pointers: multiple level pointers are pointers point to
+ * pointers. Since contract clauses don't have orders, they are parallel
+ * conditions. CIVL should be able to figure out dependencies among pointers.</li>
  * </ol>
- * 
- * 
  * 
  * @author ziqingluo
  *

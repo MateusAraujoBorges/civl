@@ -1,10 +1,15 @@
 package edu.udel.cis.vsl.civl.state.common.immutable;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.CollectiveSnapshotsEntry;
+import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -65,6 +70,13 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	 */
 	private SymbolicExpression channels;
 
+	/**
+	 * A pick up station is a {@link List} of <vid, value> pairs. For some cases
+	 * that all processes have the same properties, the first process deliveries
+	 * the values of all of these variables.
+	 */
+	private List<Pair<Variable, SymbolicExpression>> pickUpStation;
+
 	private SymbolicUniverse universe;
 
 	/* *********************** Constructor ************************* */
@@ -100,6 +112,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		this.universe = universe;
 		this.maxPid = 0;
 		this.kind = null;
+		this.pickUpStation = null;
 	}
 
 	ImmutableCollectiveSnapshotsEntry(int numProcesses,
@@ -118,6 +131,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		this.universe = universe;
 		this.maxPid = 0;
 		this.kind = kind;
+		this.pickUpStation = null;
 	}
 
 	public ImmutableCollectiveSnapshotsEntry copy() {
@@ -132,6 +146,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		clone.maxPid = this.maxPid;
 		clone.channels = channels;
 		clone.kind = this.kind;
+		clone.pickUpStation = copyJointVariables();
 		return clone;
 	}
 
@@ -184,6 +199,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		newEntry.numMonoStates++;
 		newEntry.isRecorded[place] = true;
 		newEntry.kind = kind;
+		newEntry.pickUpStation = copyJointVariables();
 		if (pid >= newEntry.maxPid)
 			newEntry.maxPid = pid;
 		// If all snapshots are taken, check if they are coming from the correct
@@ -208,23 +224,27 @@ public class ImmutableCollectiveSnapshotsEntry implements
 			if (state != null)
 				state.makeCanonic(canonicId, universe, scopeMap, processesMap);
 		channels = (channels != null) ? universe.canonic(channels) : null;
+		if (pickUpStation != null) {
+			for (Pair<Variable, SymbolicExpression> jointVal : pickUpStation) {
+				jointVal.right = universe.canonic(jointVal.right);
+			}
+		}
 	}
 
-	CollectiveSnapshotsEntry simplify() {
+	ImmutableCollectiveSnapshotsEntry simplify(State state) {
 		ImmutableMonoState[] newMonoStates;
 		ImmutableCollectiveSnapshotsEntry newCollectiveEntry;
 		BooleanExpression newPathCondition;
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 
 		newMonoStates = this.monoStates.clone();
 		for (int place = 0; place < this.numProcesses; place++) {
 			if (isRecorded[place]) {
-				Reasoner reasoner;
 				ImmutableMonoState monoState = monoStates[place];
 				ImmutableDynamicScope[] newScopes;
 				int numDyscopes = monoState.numDyscopes();
 
 				newScopes = new ImmutableDynamicScope[numDyscopes];
-				reasoner = universe.reasoner(monoState.getPathCondition());
 				for (int sid = 0; sid < numDyscopes; sid++) {
 					ImmutableDynamicScope oldDyscope = monoState
 							.getDyscope(sid);
@@ -243,7 +263,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 					newScopes[sid] = newDyscope;
 				}
 				newMonoStates[place] = monoState.setDyscopes(newScopes);
-				newPathCondition = reasoner.getReducedContext();
+				newPathCondition = reasoner.simplify(state.getPathCondition());
 				if (newPathCondition != monoState.getPathCondition()) {
 					newMonoStates[place] = newMonoStates[place]
 							.setPathCondition(newPathCondition);
@@ -252,6 +272,10 @@ public class ImmutableCollectiveSnapshotsEntry implements
 			}
 		}
 		newCollectiveEntry = copy();
+		// Simplify pick up station:
+		if (newCollectiveEntry.pickUpStation != null)
+			for (Pair<Variable, SymbolicExpression> pickup : newCollectiveEntry.pickUpStation)
+				pickup.right = reasoner.simplify(pickup.right);
 		newCollectiveEntry.monoStates = newMonoStates;
 		return newCollectiveEntry;
 	}
@@ -267,7 +291,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 
 	@Override
 	public String toString() {
-		return "Snapshot entry: " + instanceId;
+		return "Snapshot entry: " + identifier;
 	}
 
 	ImmutableCollectiveSnapshotsEntry setMsgBuffers(SymbolicExpression channels) {
@@ -283,5 +307,37 @@ public class ImmutableCollectiveSnapshotsEntry implements
 
 		newEntry.kind = kind;
 		return newEntry;
+	}
+
+	@Override
+	public Iterable<Pair<Variable, SymbolicExpression>> pickupJointVariables() {
+		return this.copyJointVariables();
+	}
+
+	@Override
+	public ImmutableCollectiveSnapshotsEntry deliverJointVariables(
+			List<Pair<Variable, SymbolicExpression>> vars) {
+		ImmutableCollectiveSnapshotsEntry clone = copy();
+
+		if (vars != null) {
+			clone.pickUpStation = new LinkedList<>();
+			for (Pair<Variable, SymbolicExpression> item : vars) {
+				clone.pickUpStation.add(new Pair<>(item.left, universe
+						.canonic(item.right)));
+			}
+		}
+		return clone;
+	}
+
+	// TODO:optimize this:
+	private List<Pair<Variable, SymbolicExpression>> copyJointVariables() {
+		List<Pair<Variable, SymbolicExpression>> clone = new LinkedList<>();
+
+		if (pickUpStation == null)
+			return new LinkedList<>();
+		for (Pair<Variable, SymbolicExpression> item : pickUpStation) {
+			clone.add(new Pair<>(item.left, universe.canonic(item.right)));
+		}
+		return clone;
 	}
 }

@@ -27,6 +27,7 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.predicate.IF.AndPredicate;
 import edu.udel.cis.vsl.civl.predicate.IF.CIVLStatePredicate;
 import edu.udel.cis.vsl.civl.predicate.IF.Predicates;
+import edu.udel.cis.vsl.civl.semantics.IF.ContractConditionGenerator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -150,13 +151,18 @@ public abstract class Player {
 		this.libraryExecutorLoader = Semantics.newLibraryExecutorLoader(
 				this.libraryEvaluatorLoader, this.civlConfig);
 		if (this.civlConfig.isEnableMpiContract()) {
+			ContractConditionGenerator conditionGenerator = Semantics
+					.newContractConditionGenerator(modelFactory, stateFactory,
+							libraryEvaluatorLoader, symbolicUtil,
+							symbolicAnalyzer, memUnitFactory, log, civlConfig);
+
 			this.evaluator = Semantics.newContractEvaluator(modelFactory,
 					stateFactory, libraryEvaluatorLoader, symbolicUtil,
 					symbolicAnalyzer, memUnitFactory, log, this.civlConfig);
 			this.executor = Semantics.newContractExecutor(modelFactory,
 					stateFactory, log, libraryExecutorLoader,
 					(ContractEvaluator) evaluator, symbolicAnalyzer, log,
-					civlConfig);
+					civlConfig, conditionGenerator);
 		} else {
 			this.evaluator = Semantics.newEvaluator(modelFactory, stateFactory,
 					libraryEvaluatorLoader, symbolicUtil, symbolicAnalyzer,

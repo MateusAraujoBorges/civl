@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.model.common;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -27,8 +28,10 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MemoryEventNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonMPIConstantNode;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -38,6 +41,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.contract.CallEvent;
@@ -51,14 +55,17 @@ import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
+import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
+import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
@@ -66,15 +73,6 @@ import edu.udel.cis.vsl.civl.model.common.contract.CommonContractFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 
 public class ContractTranslator extends FunctionTranslator {
-	/**
-	 * The string type name of the Result Expression:<br>
-	 * An special expression used to represent the result of a function in
-	 * function contracts.
-	 */
-	// TODO: move this to model configuration
-	public static final String contractResultName = "\\result";
-	public static final String contractMPICommRankName = "\\mpi_comm_rank";
-	public static final String contractMPICommSizeName = "\\mpi_comm_size";
 
 	private CIVLFunction function;
 
@@ -84,8 +82,22 @@ public class ContractTranslator extends FunctionTranslator {
 
 	private ContractFactory contractFactory = new CommonContractFactory();
 
+	/**
+	 * Current contract kind: {@link ContractKind} which informs the current
+	 * contract kind during recursive parsing.
+	 */
 	private ContractKind currentContractKind;
 
+	/**
+	 * A set of variables that are required to be the exactly same at the
+	 * beginning of a verifying function.
+	 */
+	private List<Variable> agreedVaraibles;
+
+	/**
+	 * This field informs the attached MPI communicator with the current parsing
+	 * MPI collective behavior block.
+	 */
 	private Expression currentMPICommunicator;
 
 	/******************** Constructor ********************/
@@ -286,14 +298,22 @@ public class ContractTranslator extends FunctionTranslator {
 		}
 		case MPI_COLLECTIVE:
 			MPICollectiveBehavior newCollectiveBehavior;
+			Variable[] jointVariableCopy;
 
 			currentMPICommunicator = translateExpressionNode(
 					((MPICollectiveBlockNode) contractNode).getMPIComm(),
 					scope, true);
+			// Since MPI_Collective behavior cannot be nested, such a global
+			// collection will be correct, other wise, it will be over written:
+			agreedVaraibles = new LinkedList<>();
 			newCollectiveBehavior = translateMPICollectiveBehavior(
 					(MPICollectiveBlockNode) contractNode, scope,
 					functionContract);
+			jointVariableCopy = new Variable[agreedVaraibles.size()];
+			agreedVaraibles.toArray(jointVariableCopy);
+			newCollectiveBehavior.setAgreedVariables(jointVariableCopy);
 			currentMPICommunicator = null;
+			agreedVaraibles = null;
 			functionContract.addMPICollectiveBehavior(newCollectiveBehavior);
 			break;
 		case PURE:
@@ -401,6 +421,9 @@ public class ContractTranslator extends FunctionTranslator {
 					this.translateABCType(source, scope,
 							expressionNode.getConvertedType()));
 		}
+		case REMOTE_REFERENCE:
+			return translateRemoteReferenceNode(
+					(RemoteExpressionNode) expressionNode, scope);
 		default:
 			return super.translateExpressionNode(expressionNode, scope,
 					translateConversions);
@@ -408,10 +431,13 @@ public class ContractTranslator extends FunctionTranslator {
 	}
 
 	/**
-	 * Translate a {@link MPIContractExpressionNode} into a CIVL Expression
+	 * Translate a {@link MPIContractExpressionNode} into a
+	 * {@link MPIContractExpression}.
 	 * 
 	 * @param node
+	 *            a {@link MPIContractExpressionNode}
 	 * @param scope
+	 *            the current scope
 	 * @return
 	 */
 	private Expression translateMPIContractExpression(
@@ -434,15 +460,15 @@ public class ContractTranslator extends FunctionTranslator {
 			break;
 		case MPI_EQUALS:
 			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EQUALS;
-			numArgs = 2;
+			numArgs = 4;
 			break;
 		case MPI_REGION:
 			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_REGION;
 			numArgs = 3;
 			break;
-		case MPI_SIZE:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_SIZE;
-			numArgs = 4;
+		case MPI_AGREE:
+			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE;
+			numArgs = 1;
 			break;
 		}
 		if (currentMPICommunicator == null) {
@@ -455,13 +481,31 @@ public class ContractTranslator extends FunctionTranslator {
 		Expression[] arguments = new Expression[numArgs];
 
 		for (int i = 0; i < numArgs; i++)
-			arguments[i] = this.translateExpressionNode(node.getArgument(i),
-					scope, true);
+			arguments[i] = translateExpressionNode(node.getArgument(i), scope,
+					true);
+		// Saving \mpi_agree variables:
+		if (civlMpiContractKind == MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE)
+			if (currentContractKind == ContractKind.REQUIRES) {
+				if (currentContractKind == ContractKind.REQUIRES) {
+					agreedVaraibles.add(((VariableExpression) arguments[0])
+							.variable());
+				}
+			} else
+				throw new CIVLSyntaxException(
+						"\\mpi_agree currently can only be used in requirements.",
+						modelFactory.sourceOf(node));
 		return modelFactory.mpiContractExpression(modelFactory.sourceOf(node),
 				scope, currentMPICommunicator, arguments, civlMpiContractKind);
 
 	}
 
+	/**
+	 * Translate a {@link MPIConstantNode} to constant {@link Variable}
+	 * 
+	 * @param node
+	 * @param scope
+	 * @return
+	 */
 	private Expression translateMPIIntegerConstantNode(
 			CommonMPIConstantNode node, Scope scope) {
 		MPIConstantKind kind = node.getMPIConstantKind();
@@ -472,11 +516,11 @@ public class ContractTranslator extends FunctionTranslator {
 		switch (kind) {
 		case MPI_COMM_RANK:
 			variableIdent = modelFactory.identifier(source,
-					contractMPICommRankName);
+					ModelConfiguration.contractMPICommRankName);
 			break;
 		case MPI_COMM_SIZE:
 			variableIdent = modelFactory.identifier(source,
-					contractMPICommSizeName);
+					ModelConfiguration.contractMPICommSizeName);
 			break;
 		default:
 			throw new CIVLInternalException("Unreachable", (CIVLSource) null);
@@ -496,9 +540,9 @@ public class ContractTranslator extends FunctionTranslator {
 		CIVLSource resultSource = modelFactory.sourceOf(resultNode);
 		Variable resultVariable;
 		Identifier resultIdentifier = modelFactory.identifier(resultSource,
-				contractResultName);
+				ModelConfiguration.contractResultName);
 
-		if (!scope.containsVariable(contractResultName)) {
+		if (!scope.containsVariable(ModelConfiguration.contractResultName)) {
 			CIVLType resultType = this.translateABCType(resultSource, scope,
 					resultNode.getType());
 
@@ -668,5 +712,29 @@ public class ContractTranslator extends FunctionTranslator {
 			translateContractNodeWork(bodyNodesIter.next(), functionContract,
 					result, null);
 		return result;
+	}
+
+	/**
+	 * Translate a {@link RemoteExpressionNode} to a {@link BinaryExpression}
+	 * whose operator is {@link BINARY_OPERATOR#REMOTE}.
+	 * 
+	 * @param expressionNode
+	 * @param scope
+	 * @return
+	 */
+	private Expression translateRemoteReferenceNode(
+			RemoteExpressionNode expressionNode, Scope scope) {
+		ExpressionNode processNode = expressionNode.getProcessExpression();
+		IdentifierExpressionNode identifierNode = expressionNode
+				.getIdentifierNode();
+		VariableExpression variable;
+		Expression process;
+
+		variable = (VariableExpression) this.translateExpressionNode(
+				identifierNode, scope, true);
+		process = this.translateExpressionNode(processNode, scope, false);
+		return modelFactory.binaryExpression(
+				modelFactory.sourceOf(expressionNode), BINARY_OPERATOR.REMOTE,
+				variable, process);
 	}
 }

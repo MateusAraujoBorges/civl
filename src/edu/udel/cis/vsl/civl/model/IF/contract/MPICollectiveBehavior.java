@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.model.IF.contract;
 import java.util.List;
 
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
 public interface MPICollectiveBehavior extends FunctionBehavior {
 	public static enum MPICommunicationPattern {
@@ -10,6 +11,10 @@ public interface MPICollectiveBehavior extends FunctionBehavior {
 	};
 
 	Expression communicator();
+
+	Variable[] agreedVariables();
+
+	void setAgreedVariables(Variable[] jointVariables);
 
 	MPICommunicationPattern mpiCommunicationPattern();
 

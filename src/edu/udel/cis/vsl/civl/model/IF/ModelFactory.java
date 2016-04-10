@@ -46,7 +46,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier
 import edu.udel.cis.vsl.civl.model.IF.expression.RealLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RecDomainLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RegularRangeExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.RemoteExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ScopeofExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SelfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SizeofExpression;
@@ -67,6 +66,7 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
@@ -1590,18 +1590,6 @@ public interface ModelFactory {
 	void addInputVariable(Variable variable);
 
 	/**
-	 * Creates a remote reference expression with a numeric expression
-	 * represents a process and a variable identifier expression.
-	 * 
-	 * @param source
-	 * @param process
-	 * @param scope
-	 * @return
-	 */
-	RemoteExpression remoteExpression(CIVLSource source, Expression expression,
-			Expression process, Scope scope);
-
-	/**
 	 * Creates a {@link PointerSetExpression}.
 	 * 
 	 * @param source
@@ -1619,6 +1607,11 @@ public interface ModelFactory {
 	PointerSetExpression pointerSetExpression(CIVLSource source, Scope scope,
 			LHSExpression basePointer, Expression range);
 
+	ContractVerifyStatement contractVerifyStatement(CIVLSource civlSource,
+			Scope scope, Location source,
+			FunctionIdentifierExpression functionExpression,
+			List<Expression> arguments);
+
 	/**
 	 * Creates a wildcard expression <code>...</code>, which is only used in
 	 * contract.
@@ -1629,6 +1622,16 @@ public interface ModelFactory {
 	 */
 	WildcardExpression wildcardExpression(CIVLSource source, CIVLType type);
 
+	/**
+	 * TODO: doc
+	 * 
+	 * @param source
+	 * @param scope
+	 * @param communicator
+	 * @param arguments
+	 * @param kind
+	 * @return
+	 */
 	MPIContractExpression mpiContractExpression(CIVLSource source, Scope scope,
 			Expression communicator, Expression[] arguments,
 			MPI_CONTRACT_EXPRESSION_KIND kind);

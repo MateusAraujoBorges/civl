@@ -662,6 +662,13 @@ public class ModelTranslator {
 			if (config.debugOrVerbose())
 				program.prettyPrint(out);
 		}
+		if (config.isEnableMpiContract()) {
+			if (config.debugOrVerbose())
+				this.out.println("Apply Contract transformer...");
+			program.apply(transformerFactory.getContractTransformer());
+			if (config.debugOrVerbose())
+				program.prettyPrint(out);
+		}
 		if (hasMpi) {
 			if (config.debugOrVerbose())
 				this.out.println("Apply MPI transformer...");

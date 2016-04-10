@@ -793,7 +793,7 @@ public class CommonEvaluator implements Evaluator {
 	 *         there is side-effect.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation evaluateBinary(State state, int pid, String process,
+	protected Evaluation evaluateBinary(State state, int pid, String process,
 			BinaryExpression expression)
 			throws UnsatisfiablePathConditionException {
 		BINARY_OPERATOR operator = expression.operator();
@@ -801,8 +801,6 @@ public class CommonEvaluator implements Evaluator {
 		switch (operator) {
 		case AND:
 			return evaluateAnd(state, pid, expression);
-		case HASH:
-			return this.evaluateRemoteExpression(state, pid, expression);
 		case OR:
 			return evaluateOr(state, pid, expression);
 			// TODO code review
@@ -1578,7 +1576,7 @@ public class CommonEvaluator implements Evaluator {
 	private Evaluation evaluateNumericOperations(State state, int pid,
 			String process, BinaryExpression expression)
 			throws UnsatisfiablePathConditionException {
-		Evaluation eval = evaluate(state, pid, expression.left());
+		Evaluation eval = this.evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value;
 		SymbolicExpression right;
 
@@ -1942,74 +1940,6 @@ public class CommonEvaluator implements Evaluator {
 		}
 		boundVariables.pop();
 		return result;
-	}
-
-	/**
-	 * the rule of remote accessing is the remote variable is reachable from the
-	 * current scope where the remote process is now in.
-	 * 
-	 * @param state
-	 * @param pid
-	 * @param expression
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation evaluateRemoteExpression(State state, int pid,
-			BinaryExpression expression)
-			throws UnsatisfiablePathConditionException {
-		String process = state.getProcessState(pid).name() + "(id = " + pid
-				+ ")";
-		Evaluation eval;
-		SymbolicExpression symProc, value = null;
-		int remotePid;
-		int dyscopeId;
-		int vid = -1;
-		Expression processExpr = expression.right();
-		VariableExpression variableExpr = (VariableExpression) expression
-				.left();
-		Variable variable = null;
-
-		eval = this.evaluate(state, pid, processExpr);
-		state = eval.state;
-		symProc = eval.value;
-		// If the process expression is not a NumericExpression, report the
-		// error.
-		if (!(symProc instanceof NumericExpression)) {
-			errorLogger.logSimpleError(expression.getSource(), state, process,
-					symbolicAnalyzer.stateToString(state), ErrorKind.OTHER,
-					"The right-hand side expression of a remote access "
-							+ " must be a numeric expression.");
-			throw new UnsatisfiablePathConditionException();
-		}
-		remotePid = ((IntegerNumber) universe
-				.extractNumber((NumericExpression) symProc)).intValue();
-		dyscopeId = state.getProcessState(remotePid).getDyscopeId();
-		variable = variableExpr.variable();
-		while (dyscopeId != -1) {
-			Scope scope1 = state.getDyscope(dyscopeId).lexicalScope();
-
-			if (scope1.containsVariable(variable.name().name())) {
-				vid = scope1.variable(variable.name()).vid();
-				break;
-			}
-			dyscopeId = state.getParentId(dyscopeId);
-		}
-		if (dyscopeId != -1 && vid != -1)
-			value = state.getVariableValue(dyscopeId, vid);
-		else {
-			this.errorLogger.logSimpleError(expression.getSource(), state,
-					process, symbolicAnalyzer.stateToString(state),
-					ErrorKind.OTHER,
-					"Remote access failure: The remote variable "
-							+ variableExpr.toString()
-							+ "doesn't reachable by the remote process:"
-							+ remotePid);
-			throw new UnsatisfiablePathConditionException();
-		}
-		if (value == null)
-			throw new UnsatisfiablePathConditionException();
-		eval = new Evaluation(state, value);
-		return eval;
 	}
 
 	private Evaluation evaluateRegularRange(State state, int pid,

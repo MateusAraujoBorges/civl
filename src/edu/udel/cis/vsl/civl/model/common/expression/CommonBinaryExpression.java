@@ -364,8 +364,8 @@ public class CommonBinaryExpression extends CommonExpression implements
 		case SHIFTRIGHT:
 			op = ">>";
 			break;
-		case HASH:
-			op = "#";
+		case REMOTE:
+			op = ":Remote:";
 			break;
 		default:
 			throw new CIVLInternalException("Unknown operator: " + operator,

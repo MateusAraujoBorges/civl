@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -23,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
 import edu.udel.cis.vsl.civl.log.IF.CIVLLogEntry;
-import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Model;
@@ -31,12 +29,8 @@ import edu.udel.cis.vsl.civl.predicate.IF.Predicates;
 import edu.udel.cis.vsl.civl.run.common.VerificationStatus;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
-import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
-import edu.udel.cis.vsl.civl.semantics.contract.ContractExecutor;
 import edu.udel.cis.vsl.civl.state.IF.CIVLStateException;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableContractStateFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Printable;
 import edu.udel.cis.vsl.gmc.CommandLineException;
@@ -339,8 +333,10 @@ public class Verifier extends Player {
 			final Callable<Boolean> verify_run_work = new Callable<Boolean>() {
 				public Boolean call() {
 					try {
-						return civlConfig.isEnableMpiContract() ? contract_run_work()
-								: run_work();
+						// return civlConfig.isEnableMpiContract() ?
+						// contract_run_work()
+						// : run_work();
+						return run_work();
 					} catch (FileNotFoundException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -374,9 +370,9 @@ public class Verifier extends Player {
 				return (boolean) tmp;
 			return false;
 		} else {
-
-			return civlConfig.isEnableMpiContract() ? contract_run_work()
-					: run_work();
+			return run_work();
+			// return civlConfig.isEnableMpiContract() ? contract_run_work()
+			// : run_work();
 		}
 	}
 
@@ -446,106 +442,6 @@ public class Verifier extends Player {
 					stateException.source());
 		}
 
-	}
-
-	public boolean contract_run_work() throws FileNotFoundException {
-		try {
-			// for each verifying function, there is a initial state:
-			boolean violationFound = false;
-
-			// TODO: times including initial state building time ...
-			updateThread = new Thread(new UpdaterRunnable(updatePeriod * 1000));
-			updateThread.start();
-			try {
-				// non-contracted function and system function won't be verified
-				Iterator<CIVLFunction> funcIter = model.functions().iterator();
-
-				while (funcIter.hasNext()) {
-					CIVLFunction function = funcIter.next();
-					State initialState;
-
-					if (function.isContracted() && !function.isSystemFunction()) {
-						ImmutableContractStateFactory stateFactory;
-
-						((ContractEvaluator) evaluator)
-								.setVerifyingFunction(function);
-						stateFactory = new ImmutableContractStateFactory(
-								modelFactory, symbolicUtil, memUnitFactory,
-								config, civlConfig,
-								(ContractEvaluator) evaluator,
-								(ContractExecutor) executor);
-						// TODO: stateFactory have to be reset for some global
-						// counters:
-						this.stateFactory = stateFactory;
-						initialState = stateFactory.initialState(function, 1);
-						if (civlConfig.debugOrVerbose()
-								|| civlConfig.showStates()) {
-							civlConfig.out().println();
-							// stateFactory.printState(out, initialState);
-							civlConfig.out().print(
-									symbolicAnalyzer
-											.stateInformation(initialState));
-							// initialState.print(out);
-						}
-
-						while (true) {
-							boolean workRemains;
-
-							if (violationFound) {
-								// may throw ExcessiveErrorException...
-								workRemains = searcher.proceedToNewState() ? searcher
-										.search() : false;
-							} else {
-								// may throw ExcessiveErrorException...
-								workRemains = searcher.search(initialState);
-							}
-							if (!workRemains)
-								break;
-							violationFound = true;
-							config.setQuiet(civlConfig.isQuiet());
-							CIVLLogEntry entry = new CIVLLogEntry(civlConfig,
-									config,
-									this.predicate.getUnreportedViolation());
-
-							log.report(entry); // may throw
-												// ExcessiveErrorException
-						}
-					}
-				}
-			} catch (ExcessiveErrorException
-					| UnsatisfiablePathConditionException e) {
-				violationFound = true;
-				if (!civlConfig.isQuiet()) {
-					civlConfig.out().println(errorBoundExceeds);
-				}
-			}
-			terminateUpdater();
-			if (violationFound || log.numEntries() > 0) {
-				result = "The program MAY NOT be correct.  See "
-						+ log.getLogFile();
-				try {
-					log.save();
-				} catch (FileNotFoundException e) {
-					System.err.println("Failed to print log file "
-							+ log.getLogFile());
-				}
-			} else {
-				result = "The standard properties hold for all executions.";
-				// result = "No violations found.";
-			}
-			this.verificationStatus = new VerificationStatus(
-					stateManager.maxProcs(), stateManager.numStatesExplored(),
-					stateManager.getNumStatesSaved(),
-					searcher.numStatesMatched(), executor.getNumSteps(),
-					searcher.numTransitions());
-			return !violationFound && log.numEntries() == 0;
-
-		} catch (CIVLStateException stateException) {
-			throw new CIVLExecutionException(stateException.kind(),
-					stateException.certainty(), "",
-					stateException.getMessage(), stateException.state(),
-					stateException.source());
-		}
 	}
 
 	/**

@@ -84,4 +84,17 @@ public class CommonMPIContractExpression extends CommonExpression implements
 		return false;
 	}
 
+	@Override
+	public String toString() {
+		StringBuffer result = new StringBuffer();
+
+		result.append(mpiContractKind + " (");
+		result.append(arguments[0]);
+		for (int i = 1; i < this.arguments.length; i++) {
+			result.append(", " + arguments[i]);
+		}
+		result.append(")");
+		return result.toString();
+	}
+
 }

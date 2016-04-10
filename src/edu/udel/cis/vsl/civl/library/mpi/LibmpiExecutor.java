@@ -2,6 +2,8 @@ package edu.udel.cis.vsl.civl.library.mpi;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -14,6 +16,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
@@ -21,14 +24,12 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
-import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
 import edu.udel.cis.vsl.civl.state.IF.DynamicScope;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -108,7 +109,22 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		state = eval.state;
 		argumentValues[0] = eval.value;
 		state = executeCoassertWorker(state, pid, process, args,
-				argumentValues, source, true, kind);
+				argumentValues, source, true, kind, null);
+		return state;
+	}
+
+	public State executeCollectiveContract(State state, int pid,
+			String process, Expression[] args,
+			MPICollectiveBehavior collectiveBehavior, ContractKind kind,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		SymbolicExpression[] argumentValues = new SymbolicExpression[1];
+		Evaluation eval;
+
+		eval = evaluator.evaluate(state, pid, args[0]);
+		state = eval.state;
+		argumentValues[0] = eval.value;
+		state = executeCoassertWorker(state, pid, process, args,
+				argumentValues, source, true, kind, collectiveBehavior);
 		return state;
 	}
 
@@ -466,6 +482,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		return state;
 	}
 
+	/**************************** Contract section ****************************/
 	/**
 	 * Execute $mpi_coassert(MPI_Comm, _Bool). The second argument shall not be
 	 * evaluated at calling phase. It will be evaluated at some point following
@@ -495,7 +512,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		state = eval.state;
 		argumentValues[0] = eval.value;
 		state = executeCoassertWorker(state, pid, process, arguments,
-				argumentValues, source, false, null);
+				argumentValues, source, false, null, null);
 		return state;
 	}
 
@@ -531,7 +548,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 */
 	private State executeCoassertWorker(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source, boolean isContract, ContractKind kind)
+			CIVLSource source, boolean isContract, ContractKind kind,
+			MPICollectiveBehavior collectiveBehavior)
 			throws UnsatisfiablePathConditionException {
 		ImmutableState tmpState = (ImmutableState) state;
 		Expression MPICommExpr = arguments[0];
@@ -593,6 +611,16 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 					createNewEntry = false;
 					tmpState = stateFactory.addToCollectiveSnapshotsEntry(
 							tmpState, pid, place, queueID, entryPos, assertion);
+					// Pick up:
+					if (kind == ContractKind.REQUIRES)
+						for (Pair<Variable, SymbolicExpression> jointVar : entry
+								.pickupJointVariables()) {
+							int dyscopeId = tmpState.getDyscope(pid,
+									jointVar.left.scope().id());
+							tmpState = (ImmutableState) stateFactory
+									.setVariable(tmpState, jointVar.left.vid(),
+											dyscopeId, jointVar.right);
+						}
 					entryComplete = stateFactory.getSnapshotsQueue(tmpState,
 							queueID)[0].isComplete();
 					break;
@@ -602,6 +630,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		// CASE TWO: if it needs a new entry, then create it
 		if (createNewEntry) {
 			SymbolicExpression channels = null;
+			List<Pair<Variable, SymbolicExpression>> pickUpStation = null;
 
 			if (civlConfig.isEnableMpiContract()) {
 				SymbolicExpression colChannel = universe
@@ -615,9 +644,18 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				channels = universe.array(colChannel.type(),
 						Arrays.asList(p2pChannel, colChannel));
 			}
+			if (collectiveBehavior != null && kind == ContractKind.REQUIRES) {
+				pickUpStation = new LinkedList<>();
+				for (Variable var : collectiveBehavior.agreedVariables()) {
+					SymbolicExpression value = tmpState.valueOf(pid, var);
+
+					pickUpStation.add(new Pair<>(var, value));
+				}
+			}
 			// change the corresponding CollectiveSnapshotsEntry
 			tmpState = stateFactory.createCollectiveSnapshotsEnrty(tmpState,
-					pid, nprocs, place, queueID, assertion, channels, kind);
+					pid, nprocs, place, queueID, assertion, channels, kind,
+					pickUpStation);
 			entryComplete = (1 == nprocs);
 		}
 		// CASE THREE: if the entry is completed ?
@@ -724,11 +762,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		String process;
 		Evaluation eval;
 		Reasoner reasoner;
-		Evaluator coEvaluator;
 
-		coEvaluator = (isContract) ? new ContractEvaluator(modelFactory,
-				stateFactory, libEvaluatorLoader, symbolicUtil,
-				symbolicAnalyzer, null, errorLogger, civlConfig) : evaluator;
 		stateFactory.simplify(mergedState);
 		for (int place = 0; place < assertions.length; place++) {
 			Expression snapShotAssertion = assertions[place];
@@ -736,7 +770,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			ResultType resultType;
 			String message;
 
-			eval = coEvaluator.evaluate(mergedState, place, snapShotAssertion);
+			eval = evaluator.evaluate(mergedState, place, snapShotAssertion);
 			mergedState = eval.state;
 			assertionVal = (BooleanExpression) eval.value;
 			reasoner = universe.reasoner(mergedState.getPathCondition());

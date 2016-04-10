@@ -76,8 +76,8 @@ public class TmpContractTest {
 
 	@Test
 	public void pointers4() {
-		assertTrue(ui.run("verify  -errorBound=10", enableContract,
-				filename("sequential/pointers4.c")));
+		assertTrue(ui.run("verify  -showProgram -errorBound=10",
+				enableContract, filename("sequential/pointers4.c")));
 	}
 
 	@Test
@@ -94,8 +94,8 @@ public class TmpContractTest {
 
 	@Test
 	public void globalPointers() {
-		assertTrue(ui.run("verify  -errorBound=10", enableContract,
-				filename("sequential/globalPointers.c")));
+		assertTrue(ui.run("verify  -showProgram -errorBound=10",
+				enableContract, filename("sequential/globalPointers.c")));
 	}
 
 	@Test
@@ -107,13 +107,34 @@ public class TmpContractTest {
 	/************************ concurrent section ***********************/
 	@Test
 	public void dummyMPITest() {
-		assertTrue(ui.run("verify  -showAmpleSet -errorBound=10",
-				enableContract, filename("sequential/dummyMpiTest.c")));
+		assertTrue(ui
+				.run("verify  -input_mpi_nprocs=2 -showProgram -showAmpleSet -errorBound=10",
+						enableContract, filename("sequential/dummyMpiTest.c")));
 	}
 
 	@Test
 	public void simpleMPITest() {
-		assertTrue(ui.run("verify  -showProgram -errorBound=10",
+		assertTrue(ui.run(
+				"verify  -showAmpleSet -input_mpi_nprocs=2 -errorBound=10",
 				enableContract, filename("sequential/simpleMpiTest.c")));
+	}
+
+	@Test
+	public void simpleMPITest3() {
+		assertTrue(ui.run(
+				"verify  -showAmpleSet -input_mpi_nprocs=5 -errorBound=10",
+				enableContract, filename("sequential/simpleMpiTest3.c")));
+	}
+
+	@Test
+	public void broadcast() {
+		assertTrue(ui.run("verify  -input_mpi_nprocs=4 -errorBound=1",
+				enableContract, filename("sequential/broadcast.c")));
+	}
+
+	@Test
+	public void broadcastBad() {
+		assertFalse(ui.run("verify  -input_mpi_nprocs=4 -errorBound=1",
+				enableContract, filename("sequential/broadcast_bad.c")));
 	}
 }

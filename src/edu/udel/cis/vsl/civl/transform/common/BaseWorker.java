@@ -10,6 +10,7 @@ import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Entity;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
@@ -28,6 +29,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.ArrayType;
+import edu.udel.cis.vsl.abc.ast.type.IF.EnumerationType;
 import edu.udel.cis.vsl.abc.ast.type.IF.PointerType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
@@ -793,6 +795,14 @@ public abstract class BaseWorker {
 			return nodeFactory.newStructOrUnionTypeNode(source,
 					structOrUnionType.isStruct(),
 					this.identifier(structOrUnionType.getTag()), null);
+		}
+		case ENUMERATION: {
+			EnumerationType enumType = (EnumerationType) type;
+			Entity test = enumType.getDefinition().getScope()
+					.getLexicalTaggedEntity(enumType.getTag());
+
+			return nodeFactory.newTypedefNameNode(
+					identifier(enumType.getTag()), null);
 		}
 		default:
 		}

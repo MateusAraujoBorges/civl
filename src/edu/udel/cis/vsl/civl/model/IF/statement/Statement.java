@@ -41,7 +41,7 @@ public interface Statement extends Sourceable {
 		// CHOOSE, /** Non-deterministic choice */
 		DOMAIN_ITERATOR, /** CIVL for loop ($for) enter statement */
 		CIVL_PAR_FOR_ENTER, /** CIVL parallel for ($par) enter statement */
-		CONTRACT, /* contracts statement */
+		CONTRACT_VERIFY, /* $contractVerify statement */
 		MALLOC, /** Memory allocation */
 		NOOP, /** No operation */
 		// TODO get rid of this

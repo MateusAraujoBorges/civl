@@ -15,6 +15,7 @@ import edu.udel.cis.vsl.civl.semantics.common.CommonNoopTransition;
 import edu.udel.cis.vsl.civl.semantics.common.CommonSymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.common.CommonTransition;
 import edu.udel.cis.vsl.civl.semantics.common.CommonTransitionSequence;
+import edu.udel.cis.vsl.civl.semantics.contract.CommonContractConditionGenerator;
 import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
 import edu.udel.cis.vsl.civl.semantics.contract.ContractExecutor;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
@@ -108,9 +109,11 @@ public class Semantics {
 			ModelFactory modelFactory, StateFactory stateFactory, ErrorLog log,
 			LibraryExecutorLoader loader, ContractEvaluator evaluator,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errLogger,
-			CIVLConfiguration civlConfig) {
+			CIVLConfiguration civlConfig,
+			ContractConditionGenerator conditionGenerator) {
 		return new ContractExecutor(modelFactory, stateFactory, log, loader,
-				evaluator, symbolicAnalyzer, errLogger, civlConfig);
+				evaluator, symbolicAnalyzer, errLogger, civlConfig,
+				conditionGenerator);
 	}
 
 	/**
@@ -169,6 +172,37 @@ public class Semantics {
 		return new ContractEvaluator(modelFactory, stateFactory, loader,
 				symbolicUtil, symbolicAnalyzer, memUnitFactory, errLogger,
 				config);
+	}
+
+	/**
+	 * Creates a new instance of CIVL {@link ContractConditionGenerator}.
+	 * 
+	 * @param modelFactory
+	 *            The model factory of the system.
+	 * @param stateFactory
+	 *            The state factory of the system.
+	 * @param loader
+	 *            The library evaluator loader for evaluating the guards of
+	 *            system functions.
+	 * @param symbolicUtil
+	 *            The symbolic utility for manipulations of symbolic
+	 *            expressions.
+	 * @param symbolicAnalyzer
+	 *            The symbolic analyzer used in the system.
+	 * @param errLogger
+	 *            The error logger for reporting execution errors.
+	 * @return The new CIVL evaluator.
+	 * @return The ContractConditionGenerator
+	 */
+	public static ContractConditionGenerator newContractConditionGenerator(
+			ModelFactory modelFactory, StateFactory stateFactory,
+			LibraryEvaluatorLoader loader, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer,
+			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errLogger,
+			CIVLConfiguration config) {
+		return new CommonContractConditionGenerator(modelFactory, stateFactory,
+				symbolicUtil, symbolicAnalyzer, loader, memUnitFactory,
+				errLogger, config);
 	}
 
 	/**

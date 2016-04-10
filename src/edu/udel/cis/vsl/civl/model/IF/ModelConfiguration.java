@@ -242,4 +242,64 @@ public final class ModelConfiguration {
 	 */
 	public static final String ANONYMOUS_VARIABLE_PREFIX = "_anon_";
 
+	// TODO: following constant can replace ones in MPI2CIVLWorker
+	/**
+	 * The name of the identifier of the MPI_Comm variable in the final CIVL
+	 * program.
+	 */
+	public final static String COMM_WORLD = "MPI_COMM_WORLD";
+
+	/**
+	 * The name of the identifier of the CMPI_Gcomm variable in the final CIVL
+	 * program.
+	 */
+	public final static String GCOMM_WORLD = "_mpi_gcomm";
+
+	/**
+	 * The name of the identifier of the CMPI_Gcomm sequence variable in the
+	 * final CIVL-MPI program
+	 */
+	public final static String GCOMMS = "_mpi_gcomms";
+
+	/**
+	 * The name of the variable representing the status of an MPI process, which
+	 * is modified by MPI_Init() and MPI_Finalized().
+	 */
+	public final static String MPI_SYS_STATUS = "_mpi_status";
+
+	/**
+	 * The name of the input variable denoting the number of MPI processes in
+	 * the final CIVL-C program.
+	 */
+	public final static String NPROCS = "_mpi_nprocs";
+
+	/**
+	 * The name of the input variable denoting the upper bound of the number of
+	 * MPI processes in the final CIVL-C program.
+	 */
+	public final static String NPROCS_UPPER_BOUND = "_mpi_nprocs_hi";
+
+	/**
+	 * The name of the input variable denoting the lower bound of the number of
+	 * MPI processes in the final CIVL-C program.
+	 */
+	public final static String NPROCS_LOWER_BOUND = "_mpi_nprocs_lo";
+
+	/**
+	 * The "\result" constant used in ACSL contracts which stands for the
+	 * returned value.
+	 */
+	public static final String contractResultName = "\\result";
+
+	/**
+	 * The extended "\mpi_comm_rank" constant used in CIVL-ACSL contracts which
+	 * stands for the rank in a specific communicator of an MPI process.
+	 */
+	public static final String contractMPICommRankName = "\\mpi_comm_rank";
+
+	/**
+	 * The extended "\mpi_comm_size" constant used in CIVL-ACSL contracts which
+	 * stands for the number of MPI processes in a specific communicator.
+	 */
+	public static final String contractMPICommSizeName = "\\mpi_comm_size";
 }

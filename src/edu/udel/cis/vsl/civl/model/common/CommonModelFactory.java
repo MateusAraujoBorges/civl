@@ -66,7 +66,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier
 import edu.udel.cis.vsl.civl.model.IF.expression.RealLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RecDomainLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RegularRangeExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.RemoteExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ScopeofExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SelfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SizeofExpression;
@@ -88,6 +87,7 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
@@ -127,7 +127,6 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonRealLiteralExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonRecDomainLiteralExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonRegularRangeExpression;
-import edu.udel.cis.vsl.civl.model.common.expression.CommonRemoteExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonScopeofExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonSelfExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonSizeofExpression;
@@ -150,6 +149,7 @@ import edu.udel.cis.vsl.civl.model.common.statement.CommonAtomicLockAssignStatem
 import edu.udel.cis.vsl.civl.model.common.statement.CommonCallStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonCivlForEnterStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonCivlParForSpawnStatement;
+import edu.udel.cis.vsl.civl.model.common.statement.CommonContractVerifyStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonGotoBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonIfElseBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonLoopBranchStatement;
@@ -434,6 +434,18 @@ public class CommonModelFactory implements ModelFactory {
 		Scope lowestScope = getLower(left.lowestScope(), right.lowestScope());
 
 		switch (operator) {
+		case REMOTE:
+			CIVLType processExpr = right.getExpressionType();
+
+			if (!processExpr.isIntegerType())
+				throw new CIVLException(
+						"Incompatible types to "
+								+ BINARY_OPERATOR.REMOTE
+								+ " operand. The left hand side expression must have a integer type.",
+						source);
+			return new CommonBinaryExpression(source, expressionScope,
+					lowestScope, left.getExpressionType(), operator, left,
+					right);
 		case AND:
 		case EQUAL:
 		case LESS_THAN:
@@ -737,14 +749,6 @@ public class CommonModelFactory implements ModelFactory {
 			Expression argument) {
 		return new CommonSizeofExpression(source, typeFactory.integerType,
 				argument);
-	}
-
-	@Override
-	public RemoteExpression remoteExpression(CIVLSource source,
-			Expression expression, Expression process, Scope scope) {
-		// TODO: what's lowest scope ?
-		return new CommonRemoteExpression(source, scope, process.lowestScope(),
-				expression.getExpressionType(), expression, process);
 	}
 
 	@Override
@@ -2213,6 +2217,21 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
+	public ContractVerifyStatement contractVerifyStatement(
+			CIVLSource civlSource, Scope scope, Location source,
+			FunctionIdentifierExpression functionExpression,
+			List<Expression> arguments) {
+		Scope lowestScope = functionExpression.lowestScope();
+		Expression guard;
+
+		for (Expression arg : arguments)
+			lowestScope = this.getLower(scope, arg.lowestScope());
+		guard = this.trueExpression(null);
+		return new CommonContractVerifyStatement(civlSource, scope,
+				lowestScope, source, functionExpression, arguments, guard);
+	}
+
+	@Override
 	public MPIContractExpression mpiContractExpression(CIVLSource source,
 			Scope scope, Expression communicator, Expression[] arguments,
 			MPI_CONTRACT_EXPRESSION_KIND kind) {
@@ -2227,8 +2246,8 @@ public class CommonModelFactory implements ModelFactory {
 		case MPI_EMPTY_OUT:
 			type = typeFactory.booleanType;
 			break;
-		case MPI_SIZE:
-			type = typeFactory.integerType;
+		case MPI_AGREE:
+			type = typeFactory.booleanType;
 			break;
 		case MPI_REGION: // location type or $mem type in fact
 			type = typeFactory.voidType;

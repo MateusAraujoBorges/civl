@@ -2,7 +2,6 @@ package edu.udel.cis.vsl.civl.model.common.contract;
 
 import java.io.PrintStream;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -125,10 +124,18 @@ public class CommonFunctionContract extends CommonSourceable implements
 	}
 
 	@Override
-	public Iterator<MPICollectiveBehavior> getMPIBehaviors() {
+	public Iterable<MPICollectiveBehavior> getMPIBehaviors() {
 		if (mpiCollectiveBehaviors == null)
 			mpiCollectiveBehaviors = new LinkedList<>();
-		return mpiCollectiveBehaviors.iterator();
+		return mpiCollectiveBehaviors;
+	}
+
+	@Override
+	public int numMPICollectiveBehaviors() {
+		if (mpiCollectiveBehaviors == null)
+			return 0;
+		else
+			return mpiCollectiveBehaviors.size();
 	}
 
 }

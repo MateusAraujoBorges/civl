@@ -39,6 +39,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CompoundLiteralNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode.ConstantKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ContractVerifyNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DerivativeExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DotNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.EnumerationConstantNode;
@@ -52,7 +53,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ScopeOfNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.SizeableNode;
@@ -1970,6 +1970,10 @@ public class FunctionTranslator {
 			// result = new CommonFragment(noopStatement);
 			// }
 			// break;
+		case CONTRACT_VERIFY:
+			result = translateContractVerifyExpression(
+					(ContractVerifyNode) expressionNode, scope);
+			break;
 		default: {
 			Expression expression = this.translateExpressionNode(
 					expressionNode, scope, true);
@@ -3609,10 +3613,6 @@ public class FunctionTranslator {
 		case SIZEOF:
 			result = translateSizeofNode((SizeofNode) expressionNode, scope);
 			break;
-		case REMOTE_REFERENCE:
-			result = translateRemoteReferenceNode(
-					(RemoteExpressionNode) expressionNode, scope);
-			break;
 		case RESULT:
 			result = translateResultNode((ResultNode) expressionNode, scope);
 			break;
@@ -3965,6 +3965,37 @@ public class FunctionTranslator {
 					callNode.getSource());
 	}
 
+	protected Fragment translateContractVerifyExpression(
+			ContractVerifyNode conVeriNode, Scope scope) {
+		ExpressionNode functionExpressionNode = conVeriNode.getFunction();
+		Expression functionExpression;
+		Statement stmt;
+		// String functionName;
+
+		functionExpression = translateExpressionNode(functionExpressionNode,
+				scope, true);
+		if (functionExpression.expressionKind() != edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind.FUNCTION_IDENTIFIER)
+			throw new CIVLUnimplementedFeatureException(
+					"$contractVerify call must use identifier for now: "
+							+ functionExpression.getSource());
+
+		List<Expression> arguments = new ArrayList<Expression>();
+		int numArgs = conVeriNode.getNumberOfArguments();
+		CIVLSource civlSource = modelFactory.sourceOf(conVeriNode);
+
+		for (int i = 0; i < numArgs; i++) {
+			Expression actual = translateExpressionNode(
+					conVeriNode.getArgument(i), scope, true);
+
+			actual = arrayToPointer(actual);
+			arguments.add(actual);
+		}
+		stmt = modelFactory.contractVerifyStatement(civlSource, scope,
+				modelFactory.location(civlSource, scope),
+				(FunctionIdentifierExpression) functionExpression, arguments);
+		return new CommonFragment(stmt);
+	}
+
 	/**
 	 * Translate an IdentifierExpressionNode object from the AST into a CIVL
 	 * VariableExpression object.
@@ -4039,8 +4070,8 @@ public class FunctionTranslator {
 						(LHSExpression) arguments.get(0));
 			break;
 		case HASH:
-			return modelFactory.binaryExpression(source, BINARY_OPERATOR.HASH,
-					arguments.get(0), arguments.get(1));
+			return modelFactory.binaryExpression(source,
+					BINARY_OPERATOR.REMOTE, arguments.get(0), arguments.get(1));
 		case BIG_O:
 			result = modelFactory.unaryExpression(source, UNARY_OPERATOR.BIG_O,
 					arguments.get(0));
@@ -4481,22 +4512,6 @@ public class FunctionTranslator {
 					+ sizeofNode, source);
 		}
 		return result;
-	}
-
-	private Expression translateRemoteReferenceNode(
-			RemoteExpressionNode expressionNode, Scope scope) {
-		ExpressionNode processNode = expressionNode.getProcessExpression();
-		IdentifierExpressionNode identifierNode = expressionNode
-				.getIdentifierNode();
-		VariableExpression variable;
-		Expression process;
-
-		variable = (VariableExpression) this.translateIdentifierNode(
-				identifierNode, scope);
-		process = this.translateExpressionNode(processNode, scope, false);
-		return modelFactory
-				.remoteExpression(modelFactory.sourceOf(expressionNode),
-						process, variable, scope);
 	}
 
 	/**

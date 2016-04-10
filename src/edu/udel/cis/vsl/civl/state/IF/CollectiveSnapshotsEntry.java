@@ -1,9 +1,13 @@
 package edu.udel.cis.vsl.civl.state.IF;
 
+import java.util.List;
+
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableCollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableMonoState;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
@@ -97,4 +101,9 @@ public interface CollectiveSnapshotsEntry {
 	 */
 	ImmutableCollectiveSnapshotsEntry insertMonoState(int place,
 			ImmutableMonoState monoState, Expression assertion);
+
+	Iterable<Pair<Variable, SymbolicExpression>> pickupJointVariables();
+
+	ImmutableCollectiveSnapshotsEntry deliverJointVariables(
+			List<Pair<Variable, SymbolicExpression>> vars);
 }

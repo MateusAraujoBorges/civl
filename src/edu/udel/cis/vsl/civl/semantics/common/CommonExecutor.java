@@ -134,7 +134,7 @@ public class CommonExecutor implements Executor {
 
 	private CIVLErrorLogger errorLogger;
 
-	private CIVLConfiguration civlConfig;
+	protected CIVLConfiguration civlConfig;
 
 	private SymbolicAnalyzer symbolicAnalyzer;
 

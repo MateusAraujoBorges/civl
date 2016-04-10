@@ -186,14 +186,14 @@ int $mpi_recv(void *buf, int count, MPI_Datatype datatype, int source,
 	      int tag, MPI_Comm comm, MPI_Status *status) {
   if (source >= 0 || source == MPI_ANY_SOURCE) {
     $message in;
+    int place = $comm_place(comm.p2p);
 
-    $elaborate(source);
 #ifdef _MPI_CONTRACT
     $atomic{
       in = $comm_dequeue(comm.p2p, source, tag);
-      int place = $message_source(in);
+      int nonWildsrc = $message_source(in);
 
-      $mpi_p2pRecvShot(comm.gcommIndex, source, place, tag);
+      $mpi_p2pRecvShot(comm.gcommIndex, nonWildsrc, place, tag);
     }
 #else
     in = $comm_dequeue(comm.p2p, source, tag);
@@ -222,7 +222,6 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     int place = $comm_place(comm.p2p);
 
     out = $message_pack(place, dest, sendtag, sendbuf, size);
-    $elaborate(source);
     $choose {
       $when($true){
 	$atomic{
@@ -300,7 +299,6 @@ int $mpi_collective_recv(void *buf, int count, MPI_Datatype datatype,
 			 int source, int tag, MPI_Comm comm, 
 			 MPI_Status * status, char * routName) {
   if(source >= 0 || source == MPI_ANY_SOURCE) {
-    $elaborate(source);
     $message in = $comm_dequeue(comm.col, source, MPI_ANY_TAG);
     int size = count*sizeofDatatype(datatype);
     int recvTag;
