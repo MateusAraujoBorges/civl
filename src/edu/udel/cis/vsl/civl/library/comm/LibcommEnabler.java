@@ -369,7 +369,20 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 		FunctionIdentifierExpression dequeueWorkPointer;
 		Location newLocation = null;
 		String dequeueWork = "$comm_dequeue_work";
+		List<Variable> parametersCopy = new LinkedList<>();
 
+		// copy new instances of parameters:
+		for (Variable var : parameters)
+			parametersCopy.add(modelFactory.variable(var.getSource(),
+					var.type(), var.name(), var.vid()));
+		dequeueWorkFunction = modelFactory.systemFunction(civlsource,
+				modelFactory.identifier(civlsource, dequeueWork), parameters,
+				returnType, containingScope, this.name);
+		dequeueWorkPointer = modelFactory.functionIdentifierExpression(
+				civlsource, dequeueWorkFunction);
+		newArgs = new LinkedList<Expression>(arguments);
+		// dummy location:
+		newLocation = modelFactory.location(civlsource, containingScope);
 		for (NumericExpression newSource : possibleSources) {
 			int int_newSource;
 
@@ -381,16 +394,10 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 						"Unexpected exception when casting Number object of a value of a message source to IntegerNumber object.\n",
 						civlsource);
 			}
-			dequeueWorkFunction = modelFactory.systemFunction(civlsource,
-					modelFactory.identifier(civlsource, dequeueWork),
-					parameters, returnType, containingScope, this.name);
-			dequeueWorkPointer = modelFactory.functionIdentifierExpression(
-					civlsource, dequeueWorkFunction);
 			newArgs = new LinkedList<Expression>(arguments);
 			newArgs.set(1, modelFactory.integerLiteralExpression(
 					arguments.get(1).getSource(),
 					BigInteger.valueOf(int_newSource)));
-			newLocation = modelFactory.location(civlsource, containingScope);
 			callWorker = modelFactory.callOrSpawnStatement(civlsource,
 					newLocation, true, dequeueWorkPointer, newArgs, callGuard);
 			callWorker.setTargetTemp(callTarget);
