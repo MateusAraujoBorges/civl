@@ -41,7 +41,7 @@ public class MPICollectivePart2Test {
 	}
 
 	@Test
-	public void bcast_ex04() {
+	public void bcast_ex04() { 
 		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET, 
 				NO_PRINTF, filename("c_ex04.c")));
 	}
