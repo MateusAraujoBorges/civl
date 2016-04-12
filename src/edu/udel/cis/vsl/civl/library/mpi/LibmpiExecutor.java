@@ -569,7 +569,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		IntegerNumber tmpNumber;
 		int place, nprocs;
 		int queueLength;
-		int queueID;
+		int queueID; 
 		Evaluation eval;
 
 		eval = evaluator.dereference(MPICommExpr.getSource(), tmpState,
