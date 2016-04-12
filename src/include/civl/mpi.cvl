@@ -61,7 +61,7 @@ int MPI_Comm_rank(MPI_Comm comm, int *rank) {
   return 0;
 }
 
-int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest,
+int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest,
 	     int tag, MPI_Comm comm) {
   $mpi_sys_status curr_status;
 
@@ -151,7 +151,7 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype, int root,
 }
 
 /* Reduces values on all processes to a single value */
-int MPI_Reduce(const void* sendbuf, void* recvbuf, int count,
+int MPI_Reduce(void* sendbuf, void* recvbuf, int count,
 	       MPI_Datatype datatype, MPI_Op op, int root,
 	       MPI_Comm comm) {
   $mpi_sys_status curr_status;
@@ -178,7 +178,7 @@ int MPI_Reduce(const void* sendbuf, void* recvbuf, int count,
 
 /* Combines values from all processes and distributes the result back to all processes */
 /* default root is 0 */
-int MPI_Allreduce(const void* sendbuf, void* recvbuf, int count,
+int MPI_Allreduce(void* sendbuf, void* recvbuf, int count,
 		  MPI_Datatype datatype,
 		  MPI_Op op, MPI_Comm comm) {
   int root = 0;
@@ -230,7 +230,7 @@ int MPI_Barrier(MPI_Comm comm){
    of its send buffer to the root process. Root process receives the messages and stores 
    them in rank order 
    2. TODO: If comm is an intercommunicator, it's not supported yet */
-int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype sendtype, 
+int MPI_Gather(void* sendbuf, int sendcount, MPI_Datatype sendtype, 
 	       void* recvbuf, int recvcount, MPI_Datatype recvtype, 
 	       int root, MPI_Comm comm){
   $mpi_sys_status curr_status;
@@ -256,7 +256,7 @@ int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
 }
 
 /* The inverse operation of MPI_Gather() */
-int MPI_Scatter(const void* sendbuf, int sendcount, MPI_Datatype sendtype, 
+int MPI_Scatter(void* sendbuf, int sendcount, MPI_Datatype sendtype, 
 		void* recvbuf, int recvcount, MPI_Datatype recvtype, int root,
 		MPI_Comm comm){
   $mpi_sys_status curr_status;
@@ -284,8 +284,8 @@ int MPI_Scatter(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
 
 
 /* MPI_Gatherv extends the functionality of MPI_Gather by allowing a varying count of data to be sent to root process, since recvcounts is now an array.*/
-int MPI_Gatherv(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
-		void* recvbuf, const int recvcounts[], const int displs[],
+int MPI_Gatherv(void* sendbuf, int sendcount, MPI_Datatype sendtype,
+		void* recvbuf, int recvcounts[], int displs[],
 		MPI_Datatype recvtype, int root, MPI_Comm comm){
   $mpi_sys_status curr_status;
   int place = $comm_place(comm.col);
@@ -311,8 +311,8 @@ int MPI_Gatherv(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
 }
 
 /* MPI_Scatterv extends the functionality of MPI_Scatter by allowing a varying count of data to be sent to each process, since sendcounts is now an array.*/
-int MPI_Scatterv(const void* sendbuf, const int sendcounts[], const
-		 int displs[], MPI_Datatype sendtype, void* recvbuf,
+int MPI_Scatterv(void* sendbuf, int sendcounts[], int displs[], 
+                 MPI_Datatype sendtype, void* recvbuf,
 		 int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm){
   $mpi_sys_status curr_status;
   int place = $comm_place(comm.col);
@@ -340,7 +340,7 @@ int MPI_Scatterv(const void* sendbuf, const int sendcounts[], const
   return 0;
 }
 
-int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype,
                   MPI_Comm comm){
   int place = $comm_place(comm.col);
@@ -369,7 +369,7 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   return 0;
 }
 
-int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcount[],
+int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int recvcount[],
 		       MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) {
   int total_count, i;
   int nprocs = $comm_size(comm.col);
@@ -409,7 +409,7 @@ int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcount[]
   return 0;
 }
 
-int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
                  MPI_Comm comm) {
   int nprocs = $comm_size(comm.col);
@@ -446,9 +446,9 @@ int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   return 0;
 }
 
-int MPI_Alltoallv(const void* sendbuf, const int sendcounts[], 
-		  const int sdispls[], MPI_Datatype sendtype, void* recvbuf, 
-		  const int recvcounts[], const int rdispls[], MPI_Datatype recvtype, 
+int MPI_Alltoallv(void* sendbuf, int sendcounts[], 
+		  int sdispls[], MPI_Datatype sendtype, void* recvbuf, 
+		  int recvcounts[], int rdispls[], MPI_Datatype recvtype, 
 		  MPI_Comm comm) {
   int nprocs = $comm_size(comm.col);
   int place = $comm_place(comm.col);
@@ -477,10 +477,10 @@ int MPI_Alltoallv(const void* sendbuf, const int sendcounts[],
   return 0;
 }
 
-int MPI_Alltoallw(const void* sendbuf, const int sendcounts[], const int sdispls[], 
-		  const MPI_Datatype sendtypes[], void* recvbuf,
-		  const int recvcounts[], const int rdispls[], 
-		  const MPI_Datatype recvtypes[], MPI_Comm comm) {
+int MPI_Alltoallw(void* sendbuf, int sendcounts[], int sdispls[], 
+		  MPI_Datatype sendtypes[], void* recvbuf,
+		  int recvcounts[], int rdispls[], 
+		  MPI_Datatype recvtypes[], MPI_Comm comm) {
   int nprocs = $comm_size(comm.col);
   int place = $comm_place(comm.col);
   $mpi_sys_status curr_status;
