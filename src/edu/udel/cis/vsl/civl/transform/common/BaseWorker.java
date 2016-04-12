@@ -423,7 +423,7 @@ public abstract class BaseWorker {
 		FunctionDeclarationNode function = nodeFactory
 				.newFunctionDeclarationNode(source, name, funcType, null);
 
-		function.setSystemFunctionSpeciier(true);
+		function.setSystemFunctionSpecifier(true);
 		return function;
 	}
 

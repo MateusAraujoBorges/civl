@@ -68,7 +68,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		ast.release();
 		transformMainFunction(root);
 		havocDecl = createHavocFunctionDeclaration();
-		havocDecl.setSystemFunctionSpeciier(true);
+		havocDecl.setSystemFunctionSpecifier(true);
 		externalList.add(havocDecl);
 		for (ASTNode child : root) {
 			// TODO: some transformers happened previously make some child null
