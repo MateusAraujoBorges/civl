@@ -25,6 +25,8 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 
 	private List<Expression> arguments;
 
+	private boolean isWorker = false;
+
 	public CommonContractVerifyStatement(CIVLSource civlSource, Scope hscope,
 			Scope lscope, Location source,
 			FunctionIdentifierExpression functionExpression,
@@ -112,7 +114,7 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 	}
 
 	@Override
-	public Expression functionExpression() {
+	public FunctionIdentifierExpression functionExpression() {
 		return functionExpression;
 	}
 
@@ -129,12 +131,27 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 		StringBuffer buffer = new StringBuffer();
 		Iterator<Expression> argIter = arguments.iterator();
 
-		buffer.append("$contractVerify " + functionExpression.toString() + "(");
+		if (!isWorker)
+			buffer.append("$contractVerify " + functionExpression.toString()
+					+ "(");
+		else
+			buffer.append("$contractVerifyWorker "
+					+ functionExpression.toString() + "(");
 		if (argIter.hasNext())
 			buffer.append(argIter.next());
 		while (argIter.hasNext()) {
 			buffer.append(" ," + argIter.next());
 		}
 		return buffer.toString();
+	}
+
+	@Override
+	public void setAsWorker() {
+		isWorker = true;
+	}
+
+	@Override
+	public boolean isWorker() {
+		return isWorker;
 	}
 }

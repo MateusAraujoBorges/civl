@@ -5,11 +5,9 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.mpi.LibmpiEvaluator;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
-import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
-import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
@@ -31,7 +29,6 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.util.IF.Triple;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
@@ -199,34 +196,6 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 			throw new UnsatisfiablePathConditionException();
 		eval = new Evaluation(state, value);
 		return eval;
-	}
-
-	/**
-	 * TODO: Is this function useful ?
-	 * 
-	 * @param state
-	 * @param pid
-	 * @param process
-	 * @param collective
-	 * @param function
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	public Triple<State, SymbolicExpression, SymbolicExpression> deriveMPICollectiveTitle(
-			State state, int pid, String process,
-			MPICollectiveBehavior collective, CIVLFunction function)
-			throws UnsatisfiablePathConditionException {
-		LibmpiEvaluator mpiEvaluator;
-
-		try {
-			mpiEvaluator = (LibmpiEvaluator) libLoader.getLibraryEvaluator(
-					"mpi", this, modelFactory, symbolicUtil, symbolicAnalyzer);
-			return mpiEvaluator.deriveMPICollectiveBlockTitle(state, pid,
-					process, collective, function);
-		} catch (LibraryLoaderException e) {
-			e.printStackTrace();
-			return null;
-		}
 	}
 
 	/**

@@ -41,5 +41,19 @@ public interface ContractVerifyStatement extends Statement {
 	 */
 	boolean isSystemCall();
 
-	Expression functionExpression();
+	/**
+	 * Denotes that this statement is a worker statement. A worker statement
+	 * won't be processed by enabler
+	 */
+	void setAsWorker();
+
+	/**
+	 * Returns true if and only if this statement is a worker statement. A
+	 * worker statement won't be processed by enabler
+	 * 
+	 * @return
+	 */
+	boolean isWorker();
+
+	FunctionIdentifierExpression functionExpression();
 }

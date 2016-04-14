@@ -150,6 +150,8 @@ public abstract class Player {
 				guiO);
 		this.libraryExecutorLoader = Semantics.newLibraryExecutorLoader(
 				this.libraryEvaluatorLoader, this.civlConfig);
+		this.libraryEnablerLoader = Kripkes.newLibraryEnablerLoader(
+				this.libraryEvaluatorLoader, this.civlConfig);
 		if (this.civlConfig.isEnableMpiContract()) {
 			ContractConditionGenerator conditionGenerator = Semantics
 					.newContractConditionGenerator(modelFactory, stateFactory,
@@ -163,6 +165,10 @@ public abstract class Player {
 					stateFactory, log, libraryExecutorLoader,
 					(ContractEvaluator) evaluator, symbolicAnalyzer, log,
 					civlConfig, conditionGenerator);
+			enabler = Kripkes.newEnabler(stateFactory, evaluator,
+					symbolicAnalyzer, memUnitFactory,
+					this.libraryEnablerLoader, log, civlConfig,
+					conditionGenerator);
 		} else {
 			this.evaluator = Semantics.newEvaluator(modelFactory, stateFactory,
 					libraryEvaluatorLoader, symbolicUtil, symbolicAnalyzer,
@@ -170,15 +176,14 @@ public abstract class Player {
 			this.executor = Semantics.newExecutor(modelFactory, stateFactory,
 					log, libraryExecutorLoader, evaluator, symbolicAnalyzer,
 					log, civlConfig);
+			enabler = Kripkes.newEnabler(stateFactory, evaluator,
+					symbolicAnalyzer, memUnitFactory,
+					this.libraryEnablerLoader, log, civlConfig, null);
 		}
 		this.random = gmcConfig.getAnonymousSection().isTrue(randomO);
 		this.minimize = gmcConfig.getAnonymousSection().isTrue(minO);
 		this.maxdepth = (int) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(maxdepthO);
-		this.libraryEnablerLoader = Kripkes.newLibraryEnablerLoader(
-				this.libraryEvaluatorLoader, this.civlConfig);
-		enabler = Kripkes.newEnabler(stateFactory, evaluator, symbolicAnalyzer,
-				memUnitFactory, this.libraryEnablerLoader, log, civlConfig);
 		if (civlConfig.deadlock() == DeadlockKind.ABSOLUTE) {
 			this.addPredicate(Predicates.newDeadlock(universe,
 					(Enabler) this.enabler, symbolicAnalyzer));

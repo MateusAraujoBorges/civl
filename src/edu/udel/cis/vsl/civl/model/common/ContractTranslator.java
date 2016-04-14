@@ -525,13 +525,7 @@ public class ContractTranslator extends FunctionTranslator {
 		default:
 			throw new CIVLInternalException("Unreachable", (CIVLSource) null);
 		}
-		if (!scope.containsVariable(variableIdent.name())) {
-			result = modelFactory.variable(source, modelFactory.typeFactory()
-					.integerType(), variableIdent, scope.numVariables());
-			scope.addVariable(result);
-			result.setScope(scope);
-		} else
-			result = scope.variable(variableIdent);
+		result = scope.variable(variableIdent);
 		return modelFactory.variableExpression(source, result);
 	}
 

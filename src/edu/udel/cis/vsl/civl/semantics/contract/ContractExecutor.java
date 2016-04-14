@@ -22,6 +22,7 @@ import edu.udel.cis.vsl.civl.model.IF.contract.FunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
+import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
@@ -139,18 +140,6 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	 */
 	private ContractConditionGenerator conditionGenerator;
 
-	/**
-	 * Cached expressions: wild-card MPI_EMPTY_IN can be cached to avoid
-	 * repeatedly creating.
-	 */
-	private MPIContractExpression wildcard_mpiemptyIn = null;
-
-	/**
-	 * Cached expressions: wild-card MPI_EMPTY_OUT can be cached to avoid
-	 * repeatedly creating.
-	 */
-	private MPIContractExpression wildcard_mpiemptyOut = null;
-
 	public ContractExecutor(ModelFactory modelFactory,
 			StateFactory stateFactory, ErrorLog log,
 			LibraryExecutorLoader loader, ContractEvaluator evaluator,
@@ -240,6 +229,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			}
 			return super.executeStatement(state, pid, statement);
 		case CONTRACT_VERIFY:
+			assert ((ContractVerifyStatement) statement).isWorker();
 			return executeContractVerifyCall(state, pid, process,
 					(ContractVerifyStatement) statement);
 		default:
@@ -612,36 +602,48 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	 *            The function
 	 * @param contracts
 	 *            The function contracts
+	 * @param names
+	 *            Output argument: A container for valid behavior names.
 	 * @return The state whose path condition has been updated by the derivation
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private State deriveContractsAtBegin(State state, int pid, String process,
-			CIVLFunction function, FunctionContract contracts)
-			throws UnsatisfiablePathConditionException {
+			CIVLFunction function, FunctionContract contracts,
+			List<String> names) throws UnsatisfiablePathConditionException {
 		FunctionBehavior defaultBehavior = contracts.defaultBehavior();
+		Reasoner reasoner;
 
 		state = deriveConditionsWorker(state, pid, process,
 				defaultBehavior.requirements());
 		// TODO: it's better to hide the MPI information
-
 		for (MPICollectiveBehavior mpiCollective : contracts.getMPIBehaviors()) {
-			Triple<State, SymbolicExpression, SymbolicExpression> eval;
-
-			eval = evaluator.deriveMPICollectiveTitle(state, pid, process,
-					mpiCollective, function);
-			state = eval.first;
-
-			// TODO: currently try not to collectively execute everything but
-			// just empty buffer:
 			Iterable<Expression> emptyIOs = wildcardMPIEmptyIO(state, pid,
 					process, mpiCollective.communicator(),
 					mpiCollective.getSource(), function);
-
 			state = executeCollectiveChecking(state, pid, process, emptyIOs,
 					ContractKind.REQUIRES, mpiCollective,
 					mpiCollective.getSource());
 			state = deriveConditionsWorker(state, pid, process,
 					mpiCollective.requirements());
+			reasoner = universe.reasoner(state.getPathCondition());
+			for (NamedFunctionBehavior namedBehavior : mpiCollective
+					.namedBehaviors()) {
+				Evaluation evaluation;
+				BooleanExpression assumps = universe.trueExpression();
+
+				for (Expression assump : namedBehavior.assumptions()) {
+					evaluation = evaluator.evaluate(state, pid, assump);
+					state = evaluation.state;
+					assumps = universe.and(assumps,
+							(BooleanExpression) evaluation.value);
+				}
+				// If behavior assumption is satisfiable, derive it:
+				if (reasoner.valid(assumps).getResultType() != ResultType.NO) {
+					state = deriveConditionsWorker(state, pid, process,
+							namedBehavior.requirements());
+					names.add(namedBehavior.name());
+				}
+			}
 		}
 		return state;
 	}
@@ -665,7 +667,6 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			Iterable<Expression> conditions)
 			throws UnsatisfiablePathConditionException {
 		BooleanExpression context = state.getPathCondition();
-		Reasoner reasoner = universe.reasoner(context);
 
 		for (Expression condition : conditions) {
 			Evaluation eval = conditionGenerator.deriveExpression(state, pid,
@@ -674,8 +675,8 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			state = eval.state;
 			context = universe.and(context, (BooleanExpression) eval.value);
 		}
-		context = reasoner.simplify(context);
-		return state.setPathCondition(context);
+		state = state.setPathCondition(context);
+		return stateFactory.simplify(state);
 	}
 
 	/**
@@ -706,16 +707,37 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 				defaultBehavior.ensurances(), function.name().name());
 		// TODO: it's better to hide the MPI information
 		for (MPICollectiveBehavior mpiCollective : contracts.getMPIBehaviors()) {
-			Iterable<Expression> wildcardEmptyIO = wildcardMPIEmptyIO(state,
-					pid, process, mpiCollective.communicator(),
+			List<Expression> ensuredConditions = wildcardMPIEmptyIO(state, pid,
+					process, mpiCollective.communicator(),
 					mpiCollective.getSource(), function);
 
+			for (Expression ensuredCondition : mpiCollective.ensurances())
+				ensuredConditions.add(ensuredCondition);
+
+			// TODO:which process deal with which behaviors should be decided at
+			// the pre-state:
+			Reasoner reasoner = universe.reasoner(state.getPathCondition());
+
+			for (NamedFunctionBehavior namedBehav : mpiCollective
+					.namedBehaviors()) {
+				Evaluation evaluation;
+				BooleanExpression assumps = universe.trueExpression();
+
+				for (Expression assump : namedBehav.assumptions()) {
+					evaluation = evaluator.evaluate(state, pid, assump);
+					state = evaluation.state;
+					assumps = universe.and(assumps,
+							(BooleanExpression) evaluation.value);
+				}
+				// If behavior assumption is satisfiable, derive it:
+				if (reasoner.valid(assumps).getResultType() != ResultType.NO) {
+					for (Expression ensuredCondition : namedBehav.ensurances())
+						ensuredConditions.add(ensuredCondition);
+				}
+			}
 			state = executeCollectiveChecking(state, pid, process,
-					wildcardEmptyIO, ContractKind.ENSURES, mpiCollective,
+					ensuredConditions, ContractKind.ENSURES, mpiCollective,
 					mpiCollective.getSource());
-			state = executeCollectiveChecking(state, pid, process,
-					mpiCollective.ensurances(), ContractKind.ENSURES,
-					mpiCollective, mpiCollective.getSource());
 			// state = verifyConditionsAtReturnWorker(state, pid, process,
 			// mpiCollective.ensurances(), function.name().name());
 		}
@@ -850,15 +872,11 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		BooleanExpression context = universe.trueExpression();
 		FunctionContract contracts = function.functionContract();
 		List<Pair<PointerSetExpression, Integer>> validConsequences = new LinkedList<>();
+		List<String> names = new LinkedList<>();
 
-		requiresIter = contracts.defaultBehavior().requirements().iterator();
-		state = deriveContractsAtBegin(state, pid, process, function, contracts);
-		while (requiresIter.hasNext()) {
-			eval = conditionGenerator.deriveExpression(state, pid,
-					requiresIter.next());
-			state = (ImmutableState) eval.state;
-			context = universe.and(context, (BooleanExpression) eval.value);
-		}
+		state = deriveContractsAtBegin(state, pid, process, function,
+				contracts, names);
+		context = deriveAllRequirementExpressions(state, pid, contracts, names);
 		// PHASE 2: Reasoning some clauses that need special handling:
 		// TODO: reasoning is depend on process but current valid consequences
 		// are not stored by PID
@@ -1038,23 +1056,25 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	 * @param function
 	 * @return
 	 */
-	private Iterable<Expression> wildcardMPIEmptyIO(State state, int pid,
+	private List<Expression> wildcardMPIEmptyIO(State state, int pid,
 			String process, Expression communicator, CIVLSource source,
 			CIVLFunction function) {
 		Expression[] argument = new Expression[1];
+		List<Expression> result = new LinkedList<>();
+		MPIContractExpression wildcard_mpiemptyIn = null;
+		MPIContractExpression wildcard_mpiemptyOut = null;
 
-		if (this.wildcard_mpiemptyIn == null
-				|| this.wildcard_mpiemptyOut == null) {
-			argument[0] = modelFactory.wildcardExpression(null, modelFactory
-					.typeFactory().integerType());
-			wildcard_mpiemptyIn = modelFactory.mpiContractExpression(source,
-					function.outerScope(), communicator, argument,
-					MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_IN);
-			wildcard_mpiemptyOut = modelFactory.mpiContractExpression(source,
-					function.outerScope(), communicator, argument,
-					MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_OUT);
-		}
-		return Arrays.asList(wildcard_mpiemptyIn, wildcard_mpiemptyOut);
+		argument[0] = modelFactory.wildcardExpression(null, modelFactory
+				.typeFactory().integerType());
+		wildcard_mpiemptyIn = modelFactory.mpiContractExpression(source,
+				function.outerScope(), communicator, argument,
+				MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_IN);
+		wildcard_mpiemptyOut = modelFactory.mpiContractExpression(source,
+				function.outerScope(), communicator, argument,
+				MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_OUT);
+		result.add(wildcard_mpiemptyIn);
+		result.add(wildcard_mpiemptyOut);
+		return result;
 	}
 
 	/**
@@ -1093,6 +1113,42 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		return newContext;
 	}
 
+	private BooleanExpression deriveAllRequirementExpressions(State state,
+			int pid, FunctionContract contracts, Iterable<String> behaviorNames)
+			throws UnsatisfiablePathConditionException {
+		FunctionBehavior defaultBehavior = contracts.defaultBehavior();
+		List<Expression> requires = new LinkedList<>();
+		BooleanExpression result = universe.trueExpression();
+		Evaluation eval;
+
+		for (Expression require : defaultBehavior.requirements())
+			requires.add(require);
+		for (String behavName : behaviorNames) {
+			FunctionBehavior behav = contracts.getBehavior(behavName);
+
+			if (behav != null)
+				for (Expression require : behav.requirements())
+					requires.add(require);
+		}
+		for (MPICollectiveBehavior collective : contracts.getMPIBehaviors()) {
+			for (Expression require : collective.requirements())
+				requires.add(require);
+			for (String behavName : behaviorNames) {
+				FunctionBehavior behav = collective.namedBahavior(behavName);
+
+				if (behav != null)
+					for (Expression require : behav.requirements())
+						requires.add(require);
+			}
+		}
+		for (Expression require : requires) {
+			eval = conditionGenerator.deriveExpression(state, pid, require);
+			state = eval.state;
+			result = universe.and(result, (BooleanExpression) eval.value);
+		}
+		return result;
+	}
+
 	// TODO: completes this. Currently it just ignores all variables created by
 	// CIVL that is ones whose name starts with an underscore.
 	private boolean canIInitThisVariable(Scope scope, Variable var) {
@@ -1113,6 +1169,8 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		case ModelConfiguration.NPROCS:
 		case ModelConfiguration.NPROCS_LOWER_BOUND:
 		case ModelConfiguration.NPROCS_UPPER_BOUND:
+		case ModelConfiguration.contractMPICommRankName:
+		case ModelConfiguration.contractMPICommSizeName:
 			return false;
 		default:
 			return true;

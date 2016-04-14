@@ -174,7 +174,7 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 						reachablePtrWritableMap, reachablePtrReadonlyMap,
 						reachableNonPtrWritableMap, reachableNonPtrReadonlyMap);
 			} else {
-				for (int otherPid : this.procIdsInComm(state, pid, process,
+				for (int otherPid : procIdsInComm(state, pid, process,
 						arguments, argumentValues))
 					ampleSet.set(otherPid);
 			}

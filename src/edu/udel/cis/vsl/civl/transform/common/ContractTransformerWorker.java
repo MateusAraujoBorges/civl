@@ -24,7 +24,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
-import edu.udel.cis.vsl.abc.ast.type.IF.FunctionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
@@ -49,6 +48,14 @@ public class ContractTransformerWorker extends BaseWorker {
 
 	private final static String MPI_COMM_WORLD = "MPI_COMM_WORLD";
 
+	private final static String MPI_COMM_SIZE_CONST = "\\mpi_comm_size";
+
+	private final static String MPI_COMM_RANK_CONST = "\\mpi_comm_rank";
+
+	private final static String MPI_COMM_SIZE = "MPI_Comm_size";
+
+	private final static String MPI_COMM_RANK = "MPI_Comm_rank";
+
 	public ContractTransformerWorker(ASTFactory astFactory) {
 		super(ContractTransformer.LONG_NAME, astFactory);
 		identifierPrefix = CONTRACT_PREFIX;
@@ -61,7 +68,9 @@ public class ContractTransformerWorker extends BaseWorker {
 		List<FunctionDefinitionNode> funcDefInSrc = new LinkedList<>();
 		List<BlockItemNode> externalList = new LinkedList<>();
 		SequenceNode<BlockItemNode> newRootNode;
+		List<ASTNode> sourceFiles = new LinkedList<>();
 		FunctionDeclarationNode havocDecl;
+		boolean hasMPI = false;
 		AST newAst;
 		int count;
 
@@ -70,6 +79,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		havocDecl = createHavocFunctionDeclaration();
 		havocDecl.setSystemFunctionSpecifier(true);
 		externalList.add(havocDecl);
+		externalList.addAll(declareMPICommConstants());
 		for (ASTNode child : root) {
 			// TODO: some transformers happened previously make some child null
 			// ?
@@ -80,14 +90,21 @@ public class ContractTransformerWorker extends BaseWorker {
 					.getName();
 			if (!sourceFileName.endsWith(".cvl")
 					&& !sourceFileName.endsWith(".cvh"))
-				transformWorker(child, funcDefInSrc);
+				sourceFiles.add(child);
+			// short circuit to avoid string comparison:
+			if (!hasMPI && sourceFileName.equals("mpi.h"))
+				hasMPI = true;
 		}
+		for (ASTNode sourceFile : sourceFiles)
+			transformWorker(sourceFile, funcDefInSrc);
 		count = root.numChildren();
 		for (int i = 0; i < count; i++) {
 			BlockItemNode child = root.getSequenceChild(i);
 			root.removeChild(i);
 			externalList.add(child);
 		}
+		if (hasMPI)
+			externalList.addAll(assignsMPICommConstants());
 		externalList.add(mainFunction(funcDefInSrc));
 		newRootNode = nodeFactory.newSequenceNode(null, "TranslationUnit",
 				externalList);
@@ -124,9 +141,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		// constructing main function body:
 		for (FunctionDefinitionNode funcDef : funcDefsInSrc) {
 			Function funcDecl = funcDef.getEntity();
-			FunctionType funcType = funcDecl.getType();
 			List<ExpressionNode> parameterIDs = new LinkedList<>();
-			FunctionCallNode funcCall;
 
 			// creating variables for parameters:
 			for (VariableDeclarationNode formalVar : funcDef.getTypeNode()
@@ -236,6 +251,52 @@ public class ContractTransformerWorker extends BaseWorker {
 				funcTypeNode, null);
 	}
 
+	private List<BlockItemNode> declareMPICommConstants() {
+		List<BlockItemNode> result = new LinkedList<>();
+
+		TypeNode intTypeNode = nodeFactory.newBasicTypeNode(
+				newSource("int", CivlcTokenConstant.TYPE), BasicTypeKind.INT);
+		VariableDeclarationNode mpiCommSizeDecl = nodeFactory
+				.newVariableDeclarationNode(
+						newSource("int \\mpi_comm_size",
+								CivlcTokenConstant.DECLARATION),
+						identifier(MPI_COMM_SIZE_CONST), intTypeNode);
+
+		result.add(mpiCommSizeDecl);
+
+		VariableDeclarationNode mpiCommRankDecl = nodeFactory
+				.newVariableDeclarationNode(
+						newSource("int \\mpi_comm_rank",
+								CivlcTokenConstant.DECLARATION),
+						identifier(MPI_COMM_RANK_CONST), intTypeNode.copy());
+		result.add(mpiCommRankDecl);
+		return result;
+	}
+
+	private List<BlockItemNode> assignsMPICommConstants() {
+		List<BlockItemNode> result = new LinkedList<>();
+
+		ExpressionNode mpiCommSizeFuncExpr = identifierExpression(MPI_COMM_SIZE);
+		ExpressionNode addressOfSize = nodeFactory.newOperatorNode(
+				newSource("&\\mpi_comm_size", CivlcTokenConstant.OPERATOR),
+				Operator.ADDRESSOF, identifierExpression(MPI_COMM_SIZE_CONST));
+		FunctionCallNode mpiCommSizeCall = nodeFactory.newFunctionCallNode(
+				mpiCommSizeFuncExpr.getSource(), mpiCommSizeFuncExpr, Arrays
+						.asList(identifierExpression(MPI_COMM_WORLD),
+								addressOfSize), null);
+		result.add(nodeFactory.newExpressionStatementNode(mpiCommSizeCall));
+
+		ExpressionNode mpiCommRankFuncExpr = identifierExpression(MPI_COMM_RANK);
+		ExpressionNode addressOfRank = nodeFactory.newOperatorNode(
+				newSource("&\\mpi_comm_rank", CivlcTokenConstant.OPERATOR),
+				Operator.ADDRESSOF, identifierExpression(MPI_COMM_RANK_CONST));
+		FunctionCallNode mpiCommRankCall = nodeFactory.newFunctionCallNode(
+				mpiCommRankFuncExpr.getSource(), mpiCommRankFuncExpr, Arrays
+						.asList(identifierExpression(MPI_COMM_WORLD),
+								addressOfRank), null);
+		result.add(nodeFactory.newExpressionStatementNode(mpiCommRankCall));
+		return result;
+	}
 	// private Pair<List<BlockItemNode>, List<VariableDeclarationNode>>
 	// processOldProgram(
 	// SequenceNode<BlockItemNode> root) {

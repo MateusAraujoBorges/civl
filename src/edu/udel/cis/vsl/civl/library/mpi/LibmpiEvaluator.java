@@ -2,21 +2,15 @@ package edu.udel.cis.vsl.civl.library.mpi;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
-import edu.udel.cis.vsl.civl.library.comm.LibcommExecutor;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
-import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.Scope;
-import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
-import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
-import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluator;
@@ -26,7 +20,6 @@ import edu.udel.cis.vsl.civl.state.IF.CollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.civl.util.IF.Triple;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
@@ -398,72 +391,5 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 			result = universe.and(result, universe.equals(result0, result1));
 		}
 		return new Evaluation(state, result);
-	}
-
-	// TODO: insert snapshots:
-	/**
-	 * This method is responsible for a set of initialization works for an MPI
-	 * collective behavior block. It assigns \mpi_comm_rank and \mpi_comm_size
-	 * and creates or inserts snapshots (TODO) for collective properties.
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The PID of the process
-	 * @param process
-	 *            The String identifier of the process
-	 * @param behavior
-	 *            The {@link MPICollectiveBehavior}
-	 * @param function
-	 *            The verifying function who owns the contracts
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	public Triple<State, SymbolicExpression, SymbolicExpression> deriveMPICollectiveBlockTitle(
-			State state, int pid, String process,
-			MPICollectiveBehavior behavior, CIVLFunction function)
-			throws UnsatisfiablePathConditionException {
-		SymbolicExpression commHandle, comm, gcommHandle, gcomm, place;
-		NumericExpression nprocs;
-		SymbolicExpression newBuffer;
-		Evaluation eval;
-		Scope verifyingFunctionOuter = function.outerScope();
-		Expression communicator = behavior.communicator();
-
-		eval = evaluator.evaluate(state, pid, communicator);
-		state = eval.state;
-		if (behavior.mpiCommunicationPattern() == MPICommunicationPattern.P2P)
-			commHandle = universe.tupleRead(eval.value,
-					universe.intObject(p2pCommField));
-		else
-			commHandle = universe.tupleRead(eval.value,
-					universe.intObject(colCommField));
-		eval = evaluator.dereference(communicator.getSource(), state, process,
-				communicator, commHandle, false);
-		state = eval.state;
-		comm = eval.value;
-		gcommHandle = universe.tupleRead(comm, oneObject);
-		place = universe.tupleRead(comm, zeroObject);
-		eval = evaluator.dereference(communicator.getSource(), state, process,
-				communicator, gcommHandle, false);
-		state = eval.state;
-		gcomm = eval.value;
-		nprocs = (NumericExpression) universe.tupleRead(gcomm, zeroObject);
-		// clear buffer:
-		newBuffer = LibcommExecutor.newGcommBuffer(universe, model,
-				symbolicUtil, state.getPathCondition(), nprocs);
-		gcomm = universe.tupleWrite(gcomm, this.threeObject, newBuffer);
-		// assign \mpi_comm_rank and \mpi_comm_nprocs if they exist:
-		if (verifyingFunctionOuter.containsVariable("\\mpi_comm_rank")) {
-			Variable var = verifyingFunctionOuter.variable("\\mpi_comm_rank");
-
-			state = stateFactory.setVariable(state, var, pid, place);
-		}
-		if (verifyingFunctionOuter.containsVariable("\\mpi_comm_size")) {
-			Variable var = verifyingFunctionOuter.variable("\\mpi_comm_size");
-
-			state = stateFactory.setVariable(state, var, pid, nprocs);
-		}
-		return new Triple<>(state, gcommHandle, gcomm);
 	}
 }

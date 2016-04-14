@@ -684,17 +684,6 @@ public class CommonContractConditionGenerator extends ContractEvaluator
 	}
 
 	@Override
-	public BooleanExpression pointerIsValid(SymbolicExpression basePointer) {
-		SymbolicFunctionType isValidFuncType = universe.functionType(
-				Arrays.asList(pointerType), universe.booleanType());
-		SymbolicConstant validAbstractFunc = universe.symbolicConstant(
-				IsValidStrObject, isValidFuncType);
-		BooleanExpression predicate = (BooleanExpression) universe.apply(
-				validAbstractFunc, Arrays.asList(basePointer));
-		return predicate;
-	}
-
-	@Override
 	public BooleanExpression pointerIsValidForall(
 			SymbolicExpression basePointer, NumericExpression low,
 			NumericExpression high) {
@@ -704,24 +693,20 @@ public class CommonContractConditionGenerator extends ContractEvaluator
 		SymbolicFunctionType validFuncType;
 		SymbolicConstant validAbstractFunc;
 		BooleanExpression predicate;
+		SymbolicType integerType = universe.integerType();
 
-		validFuncType = universe.functionType(Arrays.asList(pointerType),
+		validFuncType = universe.functionType(
+				Arrays.asList(pointerType, integerType, integerType),
 				universe.booleanType());
 		validAbstractFunc = universe.symbolicConstant(IsValidStrObject,
 				validFuncType);
 		if (basePointer.operator().equals(SymbolicOperator.LAMBDA)) {
-			SymbolicExpression pointer;
-
-			pointer = universe.apply(basePointer, Arrays.asList(idx));
-			predicate = (BooleanExpression) universe.apply(validAbstractFunc,
-					Arrays.asList(pointer));
-		} else {
-			predicate = (BooleanExpression) universe.apply(validAbstractFunc,
-					Arrays.asList(basePointer));
+			basePointer = universe.apply(basePointer, Arrays.asList(idx));
 		}
+		predicate = (BooleanExpression) universe.apply(validAbstractFunc,
+				Arrays.asList(basePointer, low, high));
 		// universe.forallInt takes low and high as [low, high):
-		return universe.forallInt(idx, low,
-				universe.add(high, universe.oneInt()), predicate);
+		return predicate;
 	}
 
 	/****************************************************************************

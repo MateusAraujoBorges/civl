@@ -128,7 +128,7 @@ public class TmpContractTest {
 
 	@Test
 	public void broadcast() {
-		assertTrue(ui.run("verify  -input_mpi_nprocs=4 -errorBound=1",
+		assertTrue(ui.run("verify -input_mpi_nprocs=4 -errorBound=1",
 				enableContract, filename("sequential/broadcast.c")));
 	}
 
@@ -136,5 +136,23 @@ public class TmpContractTest {
 	public void broadcastBad() {
 		assertFalse(ui.run("verify  -input_mpi_nprocs=4 -errorBound=1",
 				enableContract, filename("sequential/broadcast_bad.c")));
+	}
+
+	@Test
+	public void gather() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=4 -errorBound=1",
+				enableContract, filename("sequential/gather.c")));
+	}
+
+	@Test
+	public void gatherBad() {
+		assertFalse(ui.run("verify -input_mpi_nprocs=4 -errorBound=1",
+				enableContract, filename("sequential/gather_bad.c")));
+	}
+
+	@Test
+	public void allgather() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -errorBound=1",
+				enableContract, filename("sequential/allgather.c")));
 	}
 }

@@ -2313,7 +2313,7 @@ public class CommonEvaluator implements Evaluator {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation evaluateVariable(State state, int pid, String process,
+	protected Evaluation evaluateVariable(State state, int pid, String process,
 			VariableExpression expression, boolean checkUndefinedValue)
 			throws UnsatisfiablePathConditionException {
 		if (expression.variable().isOutput()) {

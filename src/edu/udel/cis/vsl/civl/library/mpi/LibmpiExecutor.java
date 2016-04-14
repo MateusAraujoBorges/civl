@@ -763,7 +763,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		Evaluation eval;
 		Reasoner reasoner;
 
-		stateFactory.simplify(mergedState);
+		mergedState = stateFactory.simplify(mergedState);
 		for (int place = 0; place < assertions.length; place++) {
 			Expression snapShotAssertion = assertions[place];
 			BooleanExpression assertionVal;

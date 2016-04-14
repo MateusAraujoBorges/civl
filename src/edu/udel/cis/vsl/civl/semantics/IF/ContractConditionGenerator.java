@@ -113,15 +113,6 @@ public interface ContractConditionGenerator {
 			NumericExpression low, NumericExpression high);
 
 	/**
-	 * Encodes a \valid predicate on a symbolic pointer expression p. The
-	 * predicate states that <code>\valid(p)</code>
-	 * 
-	 * @param pointer
-	 * @return A boolean predicate
-	 */
-	BooleanExpression pointerIsValid(SymbolicExpression pointer);
-
-	/**
 	 * Initialize a pointer type variable v. v can only be the parameter of the
 	 * function that is been verifying. v will be initialize as a lambda
 	 * expression: <code> v = lambda(i) ;

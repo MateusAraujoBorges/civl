@@ -908,6 +908,7 @@ public class ImmutableStateFactory implements StateFactory {
 					newQueues[i][j] = newQueues[i][j].simplify(state);
 			}
 			theState = theState.setSnapshotsQueues(newQueues);
+			theState.simplifiedState = theState;
 		}
 		return theState;
 	}

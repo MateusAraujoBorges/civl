@@ -40,11 +40,6 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	 */
 	private boolean isComplete;
 
-	/**
-	 * Indicating if this entry has been simplified.
-	 */
-	private boolean[] isSimplified;
-
 	private boolean[] isRecorded;
 
 	/**
@@ -103,10 +98,8 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		this.numMonoStates = 0;
 		this.monoStates = new ImmutableMonoState[numProcesses];
 		this.predicates = new Expression[numProcesses];
-		this.isSimplified = new boolean[numProcesses];
 		this.isRecorded = new boolean[numProcesses];
 		for (int i = 0; i < numProcesses; i++) {
-			this.isSimplified[i] = false;
 			this.isRecorded[i] = false;
 		}
 		this.universe = universe;
@@ -122,10 +115,8 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		this.numMonoStates = 0;
 		this.monoStates = new ImmutableMonoState[numProcesses];
 		this.predicates = new Expression[numProcesses];
-		this.isSimplified = new boolean[numProcesses];
 		this.isRecorded = new boolean[numProcesses];
 		for (int i = 0; i < numProcesses; i++) {
-			this.isSimplified[i] = false;
 			this.isRecorded[i] = false;
 		}
 		this.universe = universe;
@@ -141,7 +132,6 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		clone.numMonoStates = numMonoStates;
 		clone.monoStates = monoStates.clone();
 		clone.predicates = predicates.clone();
-		clone.isSimplified = isSimplified.clone();
 		clone.isRecorded = this.isRecorded.clone();
 		clone.maxPid = this.maxPid;
 		clone.channels = channels;
@@ -268,7 +258,6 @@ public class ImmutableCollectiveSnapshotsEntry implements
 					newMonoStates[place] = newMonoStates[place]
 							.setPathCondition(newPathCondition);
 				}
-				this.isSimplified[place] = true;
 			}
 		}
 		newCollectiveEntry = copy();

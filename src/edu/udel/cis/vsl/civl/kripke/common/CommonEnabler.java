@@ -2,9 +2,11 @@ package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
@@ -12,12 +14,19 @@ import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnabler;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionBehavior;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
+import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
+import edu.udel.cis.vsl.civl.semantics.IF.ContractConditionGenerator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
@@ -34,6 +43,11 @@ import edu.udel.cis.vsl.gmc.EnablerIF;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Interval;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 
 /**
  * CommonEnabler implements {@link EnablerIF} for CIVL models. It is an abstract
@@ -121,6 +135,8 @@ public abstract class CommonEnabler implements Enabler {
 	private static final HashMap<Integer, Map<Statement, BooleanExpression>> EMPTY_STATEMENT_GUARD_MAP = new HashMap<Integer, Map<Statement, BooleanExpression>>(
 			0);
 
+	private ContractConditionGenerator conditionGenerator;
+
 	/* ***************************** Constructor *************************** */
 
 	/**
@@ -142,7 +158,8 @@ public abstract class CommonEnabler implements Enabler {
 	 */
 	protected CommonEnabler(StateFactory stateFactory, Evaluator evaluator,
 			SymbolicAnalyzer symbolicAnalyzer, LibraryEnablerLoader libLoader,
-			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig) {
+			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig,
+			ContractConditionGenerator conditionGenerator) {
 		this.errorLogger = errorLogger;
 		this.evaluator = evaluator;
 		this.symbolicAnalyzer = symbolicAnalyzer;
@@ -158,6 +175,7 @@ public abstract class CommonEnabler implements Enabler {
 		this.stateFactory = stateFactory;
 		this.showMemoryUnits = civlConfig.showMemoryUnits();
 		this.procBound = civlConfig.getProcBound();
+		this.conditionGenerator = conditionGenerator;
 	}
 
 	/* ************************ Methods from EnablerIF ********************* */
@@ -397,6 +415,13 @@ public abstract class CommonEnabler implements Enabler {
 					return localTransitions;
 				}
 			}
+			if (statement instanceof ContractVerifyStatement) {
+				if (!((ContractVerifyStatement) statement).isWorker())
+					return this.enabledTransitionsOfContractVerifyStatement(
+							state, (ContractVerifyStatement) statement,
+							pathCondition, pid, processIdentifier,
+							atomicLockAction);
+			}
 			localTransitions.add(Semantics.newTransition(pathCondition, pid,
 					processIdentifier, statement, atomicLockAction));
 		} catch (UnsatisfiablePathConditionException e) {
@@ -405,107 +430,135 @@ public abstract class CommonEnabler implements Enabler {
 		return localTransitions;
 	}
 
-	// private List<Transition> enabledTransitionsOfContractVerifyStatement(
-	// State state, ContractVerifyStatement statement,
-	// BooleanExpression pathCondition, int pid, int processIdentifier,
-	// AtomicLockAction atomicLockAction)
-	// throws UnsatisfiablePathConditionException {
-	// CIVLFunction verifyingFunction = statement.function();
-	// Expression[] requiredRemoteProcs;
-	// List<BooleanExpression> newClauses = new LinkedList<>();
-	// List<Transition> transitions = new LinkedList<>();
-	// Triple<State, CIVLFunction, Integer> funcEval;
-	// SymbolicExpression[] arguments = new SymbolicExpression[statement
-	// .arguments().size()];
-	// Evaluation eval;
-	// State tmpState;
-	// BooleanExpression context = state.getPathCondition();
-	// String process = "p" + processIdentifier + " (id = " + pid + ")";
-	//
-	// for (int i = 0; i < statement.arguments().size(); i++) {
-	// eval = evaluator.evaluate(state, pid, statement.arguments().get(i));
-	//
-	// state = eval.state;
-	// arguments[i] = eval.value;
-	// }
-	// funcEval = evaluator.evaluateFunctionIdentifier(state, pid,
-	// statement.functionExpression(), statement.getSource());
-	// tmpState = stateFactory.pushCallStack(state, pid, verifyingFunction,
-	// funcEval.third, arguments);
-	// for (Expression requires : verifyingFunction.functionContract()
-	// .defaultBehavior().requirements()) {
-	// eval = conditionGenerator.deriveExpression(tmpState, pid, requires);
-	//
-	// context = universe.and(context, (BooleanExpression) eval.value);
-	// }
-	// for (MPICollectiveBehavior collective : verifyingFunction
-	// .functionContract().getMPIBehaviors()) {
-	// Reasoner reasoner;
-	//
-	// requiredRemoteProcs = collective.requiredRemoteProcs();
-	// tmpState = ((ContractEvaluator) evaluator)
-	// .deriveMPICollectiveTitle(tmpState, pid, process,
-	// collective, verifyingFunction.outerScope()).first;
-	// for (Expression requires : collective.requirements()) {
-	// eval = conditionGenerator.deriveExpression(tmpState, pid,
-	// requires);
-	//
-	// context = universe.and(context, (BooleanExpression) eval.value);
-	// }
-	// reasoner = universe.reasoner(context);
-	// for (int i = 0; i < requiredRemoteProcs.length; i++) {
-	// Set<SymbolicConstant> symbolicConstants;
-	//
-	// // TODO: need to say remote expression cannot be nested:
-	// eval = evaluator
-	// .evaluate(tmpState, pid, requiredRemoteProcs[i]);
-	// symbolicConstants = universe
-	// .getFreeSymbolicConstants(eval.value);
-	// for (SymbolicConstant var : symbolicConstants) {
-	// Interval interval = reasoner.assumptionAsInterval(var);
-	//
-	// if (interval != null && interval.isIntegral()) {
-	// Number lowerNum = interval.lower();
-	// Number upperNum = interval.upper();
-	// int lower, upper;
-	//
-	// if (lowerNum != null && upperNum != null) {
-	// BooleanExpression[] clause;
-	//
-	// assert !interval.strictLower();
-	// assert !interval.strictUpper();
-	// lower = ((IntegerNumber) lowerNum).intValue();
-	// upper = ((IntegerNumber) upperNum).intValue();
-	// clause = generateElaborateConditions(var, lower,
-	// upper);
-	// newClauses.addAll(Arrays.asList(clause));
-	// }
-	// }
-	// }
-	// }
-	// }
-	//
-	// for (BooleanExpression myClause : newClauses) {
-	// BooleanExpression newPathCondition = (BooleanExpression) universe
-	// .canonic(universe.and(pathCondition, myClause));
-	//
-	// transitions.add(Semantics.newTransition(newPathCondition, pid,
-	// processIdentifier, statement, atomicLockAction));
-	// }
-	// return transitions;
-	// }
-	//
-	// private BooleanExpression[] generateElaborateConditions(
-	// SymbolicConstant var, int lower, int upper) {
-	// assert lower <= upper;
-	// BooleanExpression result[] = new BooleanExpression[upper - lower + 1];
-	//
-	// result[0] = universe.equals(var, universe.integer(lower));
-	// for (int i = lower + 1; i <= upper; i++) {
-	// result[upper - i + 1] = universe.equals(var, universe.integer(i));
-	// }
-	// return result;
-	// }
+	/**
+	 * Enable transitions right after a $contractVerify statement. Followings
+	 * are situations that may need explore all possible transitions:
+	 * <ul>
+	 * <li>Elaborate free symbolic constants in behavior assumptions. (done)</li>
+	 * <li>Enable transitions for each behavior. (not started)</li>
+	 * <li>Pointer lazy initialization .(not started)</li>
+	 * </ul>
+	 *
+	 * @param state
+	 *            The current state
+	 * @param statement
+	 *            The {@link ContractVerifyStatement}
+	 * @param pathCondition
+	 *            Current path condition
+	 * @param pid
+	 *            The PID of the process
+	 * @param processIdentifier
+	 *            The String identifier of the process
+	 * @param atomicLockAction
+	 *            The {@link AtomicLockAction}
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	public List<Transition> enabledTransitionsOfContractVerifyStatement(
+			State state, ContractVerifyStatement statement,
+			BooleanExpression pathCondition, int pid, int processIdentifier,
+			AtomicLockAction atomicLockAction)
+			throws UnsatisfiablePathConditionException {
+		List<Transition> transitions = new LinkedList<>();
+		List<BooleanExpression> newPCs = this
+				.elaboratesAssumptions4ContractVerify(state, statement,
+						pathCondition, pid, processIdentifier, atomicLockAction);
+		// TODO: make each behavior deterministic
+		// TODO: pointer lazy initialization
+		// Creates ContractVerifyStatement workers:
+		Location newSource = modelFactory.location(statement.getSource(),
+				statement.statementScope());
+		ContractVerifyStatement worker = modelFactory.contractVerifyStatement(
+				statement.getSource(), statement.statementScope(), newSource,
+				statement.functionExpression(), statement.arguments());
+
+		worker.setAsWorker();
+		for (BooleanExpression newPC : newPCs) {
+
+			transitions.add(Semantics.newTransition(newPC, pid,
+					processIdentifier, worker, atomicLockAction));
+		}
+		return transitions;
+	}
+
+	/**
+	 * Returns a set of path conditions by elaborating all assumptions. Here
+	 * elaborating a assumption means elaborating all possible values of each
+	 * free symbolic constant in the assumption.
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param statement
+	 *            The {@link ContractVerifyStatement}
+	 * @param pathCondition
+	 *            The current path condition
+	 * @param pid
+	 *            The PID of the process
+	 * @param processIdentifier
+	 *            The String identifier of the process
+	 * @param atomicLockAction
+	 *            The {@link AtomicLockAction}
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private List<BooleanExpression> elaboratesAssumptions4ContractVerify(
+			State state, ContractVerifyStatement statement,
+			BooleanExpression pathCondition, int pid, int processIdentifier,
+			AtomicLockAction atomicLockAction)
+			throws UnsatisfiablePathConditionException {
+		CIVLFunction verifyingFunction = statement.function();
+		Evaluation eval;
+		State dummyState;
+		BooleanExpression context = pathCondition;
+		SymbolicExpression arguments[] = new SymbolicExpression[statement
+				.arguments().size()];
+		// Two path condition collections so that they can be used in turns:
+		List<BooleanExpression> pathConds = new LinkedList<>();
+		List<BooleanExpression> anotherPCs = new LinkedList<>();
+		Set<SymbolicConstant> elaborateSet = new HashSet<>();
+		int count = 0;
+
+		// Push call entry to make a dummy state:
+		for (Expression argument : statement.arguments()) {
+			eval = evaluator.evaluate(state, pid, argument);
+			state = eval.state;
+			arguments[count++] = eval.value;
+		}
+		dummyState = stateFactory.pushCallStack(state, pid, verifyingFunction,
+				arguments);
+
+		// For each defaultBehavior or MPICollectiveBehavior, collect free
+		// symbolic constants from assumptions first, then do intersection with
+		// free symbolic constants in requirement expressions. With such a
+		// strategy, if there is no NamedBehaviors in contracts, there is no
+		// need to explore free symbolic constants.
+		for (NamedFunctionBehavior namedBehavior : verifyingFunction
+				.functionContract().namedBehaviors()) {
+			elaborateSet.addAll(getFreeSymbolicConstantFromAssumption(
+					dummyState, pid, namedBehavior));
+		}
+		context = retainSymbolicConstantWithRequirements(dummyState, pid,
+				elaborateSet, verifyingFunction.functionContract()
+						.defaultBehavior());
+		pathConds = elaboratePathConditionsWithFreeSymbolicConstants(context,
+				elaborateSet, pathCondition);
+		// MPI collective blocks
+		elaborateSet.clear();
+		for (BooleanExpression pathCond : pathConds)
+			for (MPICollectiveBehavior collective : verifyingFunction
+					.functionContract().getMPIBehaviors()) {
+				for (NamedFunctionBehavior nameBehav : collective
+						.namedBehaviors())
+					elaborateSet.addAll(getFreeSymbolicConstantFromAssumption(
+							dummyState, pid, nameBehav));
+				context = retainSymbolicConstantWithRequirements(dummyState,
+						pid, elaborateSet, collective);
+				anotherPCs
+						.addAll(elaboratePathConditionsWithFreeSymbolicConstants(
+								context, elaborateSet, pathCond));
+			}
+		return anotherPCs.isEmpty() ? pathConds : anotherPCs;
+	}
 
 	/**
 	 * Computes the set of enabled transitions of a system function call.
@@ -596,5 +649,156 @@ public abstract class CommonEnabler implements Enabler {
 	public List<Transition> enabledTransitionsOfProcess(State state, int pid) {
 		return this.enabledTransitionsOfProcess(state, pid,
 				new HashMap<Integer, Map<Statement, BooleanExpression>>(0));
+	}
+
+	/********************** Private helper method *************************/
+	// TODO: some method can be shared with LibcivlcEnabler for $elaborate.
+	/**
+	 * Given an old path condition and a set of free symbolic constants,
+	 * elaborate all possible values for each symbolic constant, returns a set
+	 * of new path conditions.
+	 * 
+	 * @param context
+	 *            The context for inferring possible values for symbolic
+	 *            constants.
+	 * @param elaborateSet
+	 *            The free symbolic constants set.
+	 * @param pathCondition
+	 *            The old path condition
+	 * @return
+	 */
+	private List<BooleanExpression> elaboratePathConditionsWithFreeSymbolicConstants(
+			BooleanExpression context, Set<SymbolicConstant> elaborateSet,
+			BooleanExpression pathCondition) {
+		List<BooleanExpression> newPCs = new LinkedList<>();
+
+		if (elaborateSet.isEmpty()) {
+			newPCs.add(pathCondition);
+			return newPCs;
+		}
+
+		// Reasoning the possible interval:
+		Reasoner reasoner = universe.reasoner(context);
+
+		// Elaborates the elaborateSet:
+		for (SymbolicConstant symConst : elaborateSet) {
+			Interval interval = reasoner.assumptionAsInterval(symConst);
+
+			if (interval != null) {
+				Number lowerNum = interval.lower();
+				Number upperNum = interval.upper();
+				int lower, upper;
+
+				if (lowerNum != null && upperNum != null) {
+					BooleanExpression[] clauses;
+
+					assert !interval.strictLower();
+					assert !interval.strictUpper();
+					lower = ((IntegerNumber) lowerNum).intValue();
+					upper = ((IntegerNumber) upperNum).intValue();
+					clauses = generateElaborateConditions(symConst, lower,
+							upper);
+					for (BooleanExpression clause : clauses)
+						newPCs.add(universe.and(pathCondition, clause));
+				}
+			}
+		}
+		if (newPCs.isEmpty())
+			newPCs.add(pathCondition);
+		return newPCs;
+	}
+
+	/**
+	 * Given a {@link FunctionBehavior} and a set of free symbolic constant s0.
+	 * All free symbolic constants appears in requirements of the
+	 * FunctionBehavior forms set s1. The elaborateSet will be updated to the
+	 * intersection of s0 and s1. This method returns the conjunction of
+	 * requirements of the FunctionBehavior.
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param elaborateSet
+	 *            The Free Symbolic Constant Set
+	 * @param behavior
+	 *            The {@link FunctionBehavior}
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private BooleanExpression retainSymbolicConstantWithRequirements(
+			State state, int pid, Set<SymbolicConstant> elaborateSet,
+			FunctionBehavior behavior)
+			throws UnsatisfiablePathConditionException {
+		if (elaborateSet.isEmpty())
+			return universe.trueExpression();
+
+		Set<SymbolicConstant> symConsts = new HashSet<>();
+		BooleanExpression context = universe.trueExpression();
+
+		for (Expression assumption : behavior.requirements()) {
+			Evaluation eval = conditionGenerator.deriveExpression(state, pid,
+					assumption);
+
+			state = eval.state;
+			symConsts.addAll(universe.getFreeSymbolicConstants(eval.value));
+			context = universe.and(context, (BooleanExpression) eval.value);
+		}
+		elaborateSet.retainAll(symConsts);
+		return context;
+	}
+
+	/**
+	 * Given an {@link NamedFunctionBehavior}, returns all free symbolic
+	 * constants appears in the assumptions of the NamedFunctionBehavior
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            Thd PID of the process
+	 * @param behavior
+	 *            The {@link NamedFunctionBehavior}
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Set<SymbolicConstant> getFreeSymbolicConstantFromAssumption(
+			State state, int pid, NamedFunctionBehavior behavior)
+			throws UnsatisfiablePathConditionException {
+		Set<SymbolicConstant> symConsts = new HashSet<>();
+
+		for (Expression assumption : behavior.assumptions()) {
+			Evaluation eval = conditionGenerator.deriveExpression(state, pid,
+					assumption);
+
+			state = eval.state;
+			symConsts.addAll(universe.getFreeSymbolicConstants(eval.value));
+		}
+		return symConsts;
+	}
+
+	/**
+	 * Given a symbolic constant a, a lower bound l and a higher bound h, this
+	 * method returns a set of boolean expressions:
+	 * 
+	 * a == l, a == l + 1, ... a == h
+	 * 
+	 * @param var
+	 *            The symbolic constant
+	 * @param lower
+	 *            The lower bound
+	 * @param upper
+	 *            The higher bound
+	 * @return
+	 */
+	private BooleanExpression[] generateElaborateConditions(
+			SymbolicConstant var, int lower, int upper) {
+		assert lower <= upper;
+		BooleanExpression result[] = new BooleanExpression[upper - lower + 1];
+
+		result[0] = universe.equals(var, universe.integer(lower));
+		for (int i = lower + 1; i <= upper; i++) {
+			result[upper - i + 1] = universe.equals(var, universe.integer(i));
+		}
+		return result;
 	}
 }

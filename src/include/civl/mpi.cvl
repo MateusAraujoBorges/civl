@@ -42,21 +42,25 @@ double MPI_Wtime() {
 }
 
 int MPI_Comm_size(MPI_Comm comm, int *size) {
+#ifndef _MPI_CONTRACT
   $mpi_sys_status curr_status;
 
   curr_status = $mpi_get_status();
   $assert(curr_status == __INIT, "MPI_Comm_size() cannot be "
     "invoked without MPI_Init() being called before.\n");
+#endif
   *size = $comm_size(comm.p2p);
   return 0;
 }
 
 int MPI_Comm_rank(MPI_Comm comm, int *rank) {
+#ifndef _MPI_CONTRACT
   $mpi_sys_status curr_status;
 
   curr_status = $mpi_get_status();
   $assert(curr_status == __INIT, "MPI_Comm_rank() cannot be "
     "invoked without MPI_Init() being called before.\n");
+#endif
   *rank = $comm_place(comm.p2p);
   return 0;
 }
