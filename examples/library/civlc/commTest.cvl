@@ -1,0 +1,31 @@
+#include<comm.cvh>
+
+$input int N=2;
+$input int M=2;
+
+$gcomm gcomm=$gcomm_create($here, N);
+
+void process(int id){
+  $comm comm=$comm_create($here, gcomm, id);
+
+  void thread(int tid){
+    int size, src;
+    $message msg;
+    int data=(id+1)*(id+1);
+    
+    size=$comm_size(comm);
+    src=$comm_place(comm);
+    msg=$message_pack(src, (src+1)%N, 0, &data, sizeof(int));
+    $comm_enqueue(comm, msg);
+    msg=$comm_dequeue(comm, (src-1)%N, 0);
+  }
+  $parfor(int i: 0 .. M-1)
+    thread(i);
+  $comm_destroy(comm);
+}
+
+int main(void){
+  $parfor(int i: 0 .. N-1)
+    process(i);
+  $gcomm_destroy(gcomm, NULL);
+}

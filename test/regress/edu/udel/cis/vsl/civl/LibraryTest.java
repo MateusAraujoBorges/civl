@@ -101,6 +101,11 @@ public class LibraryTest {
 	}
 
 	@Test
+	public void commTest() throws ABCException {
+		assertTrue(ui.run("verify", QUIET, filename(CIVLC, "commTest.cvl")));
+	}
+
+	@Test
 	public void malloc1() throws ABCException {
 		assertTrue(ui.run("verify", QUIET, filename(STDLIB, "malloc.cvl")));
 	}
@@ -137,7 +142,7 @@ public class LibraryTest {
 
 	@Test
 	public void barrier() throws ABCException {
-		assertTrue(ui.run("verify", "-inputB=5", QUIET,
+		assertTrue(ui.run("verify", "-inputN=2", "-showAmpleSet",
 				filename(CIVLC, "barrier.cvl")));
 	}
 
@@ -255,7 +260,7 @@ public class LibraryTest {
 
 	@Test
 	public void fprintfExit() throws ABCException {
-		assertTrue(ui.run("verify", QUIET, NO_PRINTF,
+		assertTrue(ui.run("verify", // QUIET, NO_PRINTF,
 				filename(STDIO, "fprintfExit.cvl")));
 	}
 

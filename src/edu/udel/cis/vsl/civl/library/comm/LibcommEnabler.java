@@ -376,8 +376,8 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 			parametersCopy.add(modelFactory.variable(var.getSource(),
 					var.type(), var.name(), var.vid()));
 		dequeueWorkFunction = modelFactory.systemFunction(civlsource,
-				modelFactory.identifier(civlsource, dequeueWork), parameters,
-				returnType, containingScope, this.name);
+				modelFactory.identifier(civlsource, dequeueWork),
+				parametersCopy, returnType, containingScope, this.name);
 		dequeueWorkPointer = modelFactory.functionIdentifierExpression(
 				civlsource, dequeueWorkFunction);
 		newArgs = new LinkedList<Expression>(arguments);
@@ -403,9 +403,9 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 			callWorker.setTargetTemp(callTarget);
 			// callWorker.setFunction(dequeueWorkPointer);
 			callWorker.setLhs(lhs);
+			callWorker.source().removeOutgoing(callWorker);
 			transitionStatements.add(callWorker);
 		}
-
 		return transitionStatements;
 	}
 
