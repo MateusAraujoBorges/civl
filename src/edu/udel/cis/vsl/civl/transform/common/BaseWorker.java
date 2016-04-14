@@ -10,7 +10,6 @@ import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
-import edu.udel.cis.vsl.abc.ast.entity.IF.Entity;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
@@ -798,8 +797,6 @@ public abstract class BaseWorker {
 		}
 		case ENUMERATION: {
 			EnumerationType enumType = (EnumerationType) type;
-			Entity test = enumType.getDefinition().getScope()
-					.getLexicalTaggedEntity(enumType.getTag());
 
 			return nodeFactory.newTypedefNameNode(
 					identifier(enumType.getTag()), null);
