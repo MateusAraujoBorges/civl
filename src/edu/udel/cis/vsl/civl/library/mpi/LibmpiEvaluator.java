@@ -243,17 +243,14 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval;
 		SymbolicExpression p2pComm, p2pCommHandle, gcomm;
-		NumericExpression place, queueID, nprocs;
+		NumericExpression nprocs;
 		int nprocsInt;
 
-		queueID = (NumericExpression) universe.tupleRead(MPICommVal,
-				universe.intObject(4));
 		p2pCommHandle = universe.tupleRead(MPICommVal, zeroObject);
 		eval = evaluator.dereference(source, state, process, MPIComm,
 				p2pCommHandle, false);
 		state = eval.state;
 		p2pComm = eval.value;
-		place = (NumericExpression) universe.tupleRead(p2pComm, zeroObject);
 		eval = evaluator.dereference(source, state, process, MPIComm,
 				universe.tupleRead(p2pComm, oneObject), false);
 		state = eval.state;
