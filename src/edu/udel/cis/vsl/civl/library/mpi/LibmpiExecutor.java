@@ -109,7 +109,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		state = eval.state;
 		argumentValues[0] = eval.value;
 		state = executeCoassertWorker(state, pid, process, args,
-				argumentValues, source, true, kind, null);
+				argumentValues, source, true, kind, null).left;
 		return state;
 	}
 
@@ -124,8 +124,23 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		state = eval.state;
 		argumentValues[0] = eval.value;
 		state = executeCoassertWorker(state, pid, process, args,
-				argumentValues, source, true, kind, collectiveBehavior);
+				argumentValues, source, true, kind, collectiveBehavior).left;
 		return state;
+	}
+
+	public Pair<State, Boolean> executeCollectiveSynchronization(State state,
+			int pid, String process, Expression[] args,
+			MPICollectiveBehavior collectiveBehavior, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		SymbolicExpression[] argumentValues = new SymbolicExpression[1];
+		Evaluation eval;
+		Expression communicator = args[0];
+
+		eval = evaluator.evaluate(state, pid, communicator);
+		state = eval.state;
+		argumentValues[0] = eval.value;
+		return executeCoassertWorker(state, pid, process, args, argumentValues,
+				source, true, ContractKind.SYNC, collectiveBehavior);
 	}
 
 	/* ************************* private methods **************************** */
@@ -512,7 +527,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		state = eval.state;
 		argumentValues[0] = eval.value;
 		state = executeCoassertWorker(state, pid, process, arguments,
-				argumentValues, source, false, null, null);
+				argumentValues, source, false, null, null).left;
 		return state;
 	}
 
@@ -546,9 +561,10 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeCoassertWorker(State state, int pid, String process,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source, boolean isContract, ContractKind kind,
+	private Pair<State, Boolean> executeCoassertWorker(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source,
+			boolean isContract, ContractKind kind,
 			MPICollectiveBehavior collectiveBehavior)
 			throws UnsatisfiablePathConditionException {
 		ImmutableState tmpState = (ImmutableState) state;
@@ -569,7 +585,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		IntegerNumber tmpNumber;
 		int place, nprocs;
 		int queueLength;
-		int queueID; 
+		int queueID;
 		Evaluation eval;
 
 		eval = evaluator.dereference(MPICommExpr.getSource(), tmpState,
@@ -607,7 +623,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			for (int entryPos = 0; entryPos < queueLength; entryPos++) {
 				ImmutableCollectiveSnapshotsEntry entry = queue[entryPos];
 
-				if (!entry.isRecorded(place)) {
+				if (!entry.isRecorded(place) && entry.contractKind() == kind) {
 					createNewEntry = false;
 					tmpState = stateFactory.addToCollectiveSnapshotsEntry(
 							tmpState, pid, place, queueID, entryPos, assertion);
@@ -660,9 +676,9 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		}
 		// CASE THREE: if the entry is completed ?
 		if (entryComplete)
-			return dequeueCollectiveEntryAndEvaluation(tmpState, queueID,
-					MPICommExpr, isContract);
-		return tmpState;
+			return new Pair<>(dequeueCollectiveEntryAndEvaluation(tmpState,
+					queueID, MPICommExpr, isContract), true);
+		return new Pair<>(tmpState, false);
 	}
 
 	private CIVLPrimitiveType mpiTypeToCIVLType(int MPI_TYPE, CIVLSource source) {

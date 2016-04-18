@@ -237,6 +237,32 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 		return new Pair<>(place, queueID);
 	}
 
+	public Pair<SymbolicExpression, Integer> getProcArrayFromMPIComm(
+			State state, int pid, String process, Expression MPIComm,
+			SymbolicExpression MPICommVal, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		Evaluation eval;
+		SymbolicExpression p2pComm, p2pCommHandle, gcomm;
+		NumericExpression place, queueID, nprocs;
+		int nprocsInt;
+
+		queueID = (NumericExpression) universe.tupleRead(MPICommVal,
+				universe.intObject(4));
+		p2pCommHandle = universe.tupleRead(MPICommVal, zeroObject);
+		eval = evaluator.dereference(source, state, process, MPIComm,
+				p2pCommHandle, false);
+		state = eval.state;
+		p2pComm = eval.value;
+		place = (NumericExpression) universe.tupleRead(p2pComm, zeroObject);
+		eval = evaluator.dereference(source, state, process, MPIComm,
+				universe.tupleRead(p2pComm, oneObject), false);
+		state = eval.state;
+		gcomm = eval.value;
+		nprocs = (NumericExpression) universe.tupleRead(gcomm, zeroObject);
+		nprocsInt = ((IntegerNumber) universe.extractNumber(nprocs)).intValue();
+		return new Pair<>(universe.tupleRead(gcomm, oneObject), nprocsInt);
+	}
+
 	/**************************** Contract section ****************************/
 	/**
 	 * Evaluates an {@link MPIContractExpression}.

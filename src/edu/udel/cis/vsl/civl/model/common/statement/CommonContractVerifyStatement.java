@@ -27,13 +27,16 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 
 	private boolean isWorker = false;
 
+	private Variable syncGuardVar;
+
 	public CommonContractVerifyStatement(CIVLSource civlSource, Scope hscope,
 			Scope lscope, Location source,
 			FunctionIdentifierExpression functionExpression,
-			List<Expression> arguments, Expression guard) {
+			List<Expression> arguments, Expression guard, Variable syncGuardVar) {
 		super(civlSource, hscope, lscope, source, guard);
 		this.functionExpression = functionExpression;
 		this.arguments = arguments;
+		this.syncGuardVar = syncGuardVar;
 	}
 
 	@Override
@@ -49,7 +52,7 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 		}
 		return new CommonContractVerifyStatement(this.getSource(),
 				this.statementScope, this.lowestScope, this.source(),
-				functionExpression, arguments, guard());
+				functionExpression, arguments, guard(), syncGuardVar);
 	}
 
 	@Override
@@ -153,5 +156,10 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 	@Override
 	public boolean isWorker() {
 		return isWorker;
+	}
+
+	@Override
+	public Variable syncGuardVariable() {
+		return this.syncGuardVar;
 	}
 }

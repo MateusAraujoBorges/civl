@@ -137,6 +137,11 @@ public abstract class CommonEnabler implements Enabler {
 
 	private ContractConditionGenerator conditionGenerator;
 
+	/**
+	 * CIVL configuration file, which is associated with the given command line.
+	 */
+	protected CIVLConfiguration civlConfig;
+
 	/* ***************************** Constructor *************************** */
 
 	/**
@@ -176,6 +181,7 @@ public abstract class CommonEnabler implements Enabler {
 		this.showMemoryUnits = civlConfig.showMemoryUnits();
 		this.procBound = civlConfig.getProcBound();
 		this.conditionGenerator = conditionGenerator;
+		this.civlConfig = civlConfig;
 	}
 
 	/* ************************ Methods from EnablerIF ********************* */

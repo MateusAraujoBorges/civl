@@ -140,7 +140,8 @@ public class TmpContractTest {
 
 	@Test
 	public void gather() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=4 -errorBound=1",
+		assertTrue(ui.run(
+				"verify -input_mpi_nprocs=2 -showProgram -errorBound=1",
 				enableContract, filename("sequential/gather.c")));
 	}
 

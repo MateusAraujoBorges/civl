@@ -5,6 +5,7 @@ import java.util.List;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
+import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
 public interface ContractVerifyStatement extends Statement {
 
@@ -56,4 +57,6 @@ public interface ContractVerifyStatement extends Statement {
 	boolean isWorker();
 
 	FunctionIdentifierExpression functionExpression();
+
+	Variable syncGuardVariable();
 }

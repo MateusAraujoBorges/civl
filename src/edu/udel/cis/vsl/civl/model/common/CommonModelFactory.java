@@ -2222,13 +2222,27 @@ public class CommonModelFactory implements ModelFactory {
 			FunctionIdentifierExpression functionExpression,
 			List<Expression> arguments) {
 		Scope lowestScope = functionExpression.lowestScope();
-		Expression guard;
+		Expression guard = this.trueExpression(civlSource);
+		Variable guardVar = null;
 
 		for (Expression arg : arguments)
 			lowestScope = this.getLower(scope, arg.lowestScope());
-		guard = this.trueExpression(null);
+		while (scope != null) {
+			guardVar = scope.variable(ModelConfiguration.ContractMpiSyncGuard);
+			if (guardVar == null)
+				scope = scope.parent();
+			else
+				break;
+		}
+		if (guardVar == null)
+			throw new CIVLInternalException(
+					"$contractVerify ... statement requires a boolean variable :"
+							+ ModelConfiguration.ContractMpiSyncGuard
+							+ " used as a guard.", civlSource);
+		guard = variableExpression(guardVar.getSource(), guardVar);
 		return new CommonContractVerifyStatement(civlSource, scope,
-				lowestScope, source, functionExpression, arguments, guard);
+				lowestScope, source, functionExpression, arguments, guard,
+				guardVar);
 	}
 
 	@Override

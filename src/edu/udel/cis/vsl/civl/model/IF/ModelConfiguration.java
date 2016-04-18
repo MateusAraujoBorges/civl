@@ -289,17 +289,23 @@ public final class ModelConfiguration {
 	 * The "\result" constant used in ACSL contracts which stands for the
 	 * returned value.
 	 */
-	public static final String contractResultName = "\\result";
+	public static final String ContractResultName = "\\result";
 
 	/**
 	 * The extended "\mpi_comm_rank" constant used in CIVL-ACSL contracts which
 	 * stands for the rank in a specific communicator of an MPI process.
 	 */
-	public static final String contractMPICommRankName = "\\mpi_comm_rank";
+	public static final String ContractMPICommRankName = "\\mpi_comm_rank";
 
 	/**
 	 * The extended "\mpi_comm_size" constant used in CIVL-ACSL contracts which
 	 * stands for the number of MPI processes in a specific communicator.
 	 */
-	public static final String contractMPICommSizeName = "\\mpi_comm_size";
+	public static final String ContractMPICommSizeName = "\\mpi_comm_size";
+
+	/**
+	 * The extended "\mpi_comm_size" constant used in CIVL-ACSL contracts which
+	 * stands for the number of MPI processes in a specific communicator.
+	 */
+	public static final String ContractMpiSyncGuard = "_mpi_sync_guard";
 }

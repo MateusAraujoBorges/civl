@@ -15,17 +15,31 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 public interface FunctionContract extends Sourceable {
 
 	/**
-	 * ContractKind: This kind is used to denotes weather the contracts are
-	 * requirements ,ensurances or inferences. see
-	 * {@link ContractConditionGeneration}. Here INFER stands for the
-	 * inferential conditions after a function call which in fact are ensurances
-	 * of the called function contracts.
+	 * ContractKind: This kind is used to denotes all kinds of contracts.
+	 * Currently, there are 5 kinds of contracts:
+	 * <ul>
+	 * <li>
+	 * REQUIRES: denotes that the requirements of the contracts are used to
+	 * infer some states.</li>
+	 * <li>
+	 * ENSURES:denotes that the ensurances of the contracts are guaranteed by
+	 * some states.</li>
+	 * <li>
+	 * DELIVERED: denotes that the requirements of the contracts are guaranteed
+	 * by some states.</li>
+	 * <li>
+	 * INFER: denotes that the ensurances of the contracts are used to infer
+	 * some states.</li>
+	 * <li>
+	 * SYNC: denote that this implicit or explicit contract is a synchronization
+	 * knowledge.</li>
+	 * </ul>
 	 * 
 	 * @author ziqingluo
 	 *
 	 */
 	static public enum ContractKind {
-		REQUIRES, ENSURES, INFER
+		REQUIRES, ENSURES, DELIVERED, INFER, SYNC
 	}
 
 	/**

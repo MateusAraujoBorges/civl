@@ -29,6 +29,7 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
@@ -347,6 +348,40 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 					ErrorKind.LIBRARY,
 					"unable to load the library evaluator for the library "
 							+ "mpi" + " for the MPI expression " + expression);
+			throw new UnsatisfiablePathConditionException();
+		}
+	}
+
+	public int[] getAllInvolvedPIDs(State state, int pid, String process,
+			Expression MPIComm) throws UnsatisfiablePathConditionException {
+		LibmpiEvaluator mpiEvaluator;
+		Pair<SymbolicExpression, Integer> procArray;
+		Evaluation eval;
+		int[] PIDs;
+
+		try {
+			mpiEvaluator = (LibmpiEvaluator) this.libLoader
+					.getLibraryEvaluator("mpi", this, modelFactory,
+							symbolicUtil, this.symbolicAnalyzer);
+			eval = evaluate(state, pid, MPIComm);
+			state = eval.state;
+			procArray = mpiEvaluator.getProcArrayFromMPIComm(state, pid,
+					process, MPIComm, eval.value, MPIComm.getSource());
+			PIDs = new int[procArray.right];
+			for (int i = 0; i < procArray.right; i++) {
+				PIDs[i] = modelFactory
+						.getProcessId(
+								MPIComm.getSource(),
+								universe.arrayRead(procArray.left,
+										universe.integer(i)));
+			}
+			return PIDs;
+		} catch (LibraryLoaderException e) {
+			this.errorLogger.logSimpleError(MPIComm.getSource(), state,
+					process, symbolicAnalyzer.stateInformation(state),
+					ErrorKind.LIBRARY,
+					"unable to load the library evaluator for the library "
+							+ "mpi" + " for the MPI expression " + MPIComm);
 			throw new UnsatisfiablePathConditionException();
 		}
 	}

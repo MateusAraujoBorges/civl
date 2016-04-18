@@ -83,7 +83,7 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 		List<ProcessState> processStates;
 		AmpleSetWorker ampleWorker = new AmpleSetWorker(state, this, evaluator,
 				memUnitFactory, this.procBound, debugging
-						|| this.showMemoryUnits, debugOut);
+						|| this.showMemoryUnits, debugOut, civlConfig);
 		Pair<Boolean, Set<ProcessState>> ampleSetResult = ampleWorker
 				.ampleProcesses();
 

@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.semantics.contract;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +30,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
@@ -308,7 +310,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 				Variable resultVar;
 
 				resultVar = function.outerScope().variable(
-						ModelConfiguration.contractResultName);
+						ModelConfiguration.ContractResultName);
 				if (resultVar != null)
 					state = stateFactory.setVariable(state, resultVar, pid,
 							returnedValue);
@@ -449,7 +451,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		tmpRetVal = universe.apply(tmpRetExpr, Arrays.asList(arguments));
 		// Insert the value of \result into the temporary state:
 		result = function.outerScope().variable(
-				ModelConfiguration.contractResultName);
+				ModelConfiguration.ContractResultName);
 		if (result != null)
 			tmpState = stateFactory.setVariable(tmpState, result, pid,
 					tmpRetVal);
@@ -492,6 +494,10 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		// Function identifier evaluation
 		Triple<State, CIVLFunction, Integer> funcEval;
 		Evaluation eval;
+		boolean guard = true;
+		Variable guardVar = conVeri.syncGuardVariable();
+		// Processes what should be released at the same time:
+		BitSet procsBits = null;
 
 		// Evaluating arguments:
 		arguments = new SymbolicExpression[conVeri.arguments().size()];
@@ -507,9 +513,48 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 				conVeri.functionExpression(), conVeri.getSource());
 		tmpState = stateFactory.pushCallStack(state, pid, function,
 				funcEval.third, arguments);
-		tmpState = enterContractVerifyState(tmpState, pid, process, function);
-		return tmpState;
+		/*
+		 * For each MPI collective behavior block in the function contracts, the
+		 * guard will be true if and only if all processes in all involved MPI
+		 * communicators are reached:
+		 */
+		for (MPICollectiveBehavior collectBehav : function.functionContract()
+				.getMPIBehaviors()) {
+			Pair<State, Boolean> result = executeCollectiveSynchronization(
+					tmpState, pid, process, collectBehav, conVeri.getSource());
 
+			tmpState = result.left;
+			guard &= result.right;
+			if (result.right) {
+				// TODO: cannot assign the guard variable until all MPI
+				// collective behaviors are checked, this is true for one MPI
+				// collective beahavior:
+				// assign guardVar for all involved processes
+				int[] procArray = evaluator.getAllInvolvedPIDs(tmpState, pid,
+						process, collectBehav.communicator());
+
+				procsBits = (procsBits == null) ? new BitSet() : procsBits;
+				for (int i = 0; i < procArray.length; i++) {
+					tmpState = stateFactory.setVariable(tmpState, guardVar,
+							procArray[i], universe.bool(true));
+					// TODO: figure out if bit set will expand automatically.
+					procsBits.set(procArray[i]);
+				}
+			} else
+				tmpState = stateFactory.setVariable(tmpState, guardVar, pid,
+						universe.bool(guard));
+		}
+		if (guard) {
+			if (procsBits != null)
+				for (int currPid = procsBits.nextSetBit(0); currPid >= 0; currPid = procsBits
+						.nextSetBit(currPid + 1))
+					tmpState = enterContractVerifyState(tmpState, currPid,
+							process, function, null);
+			else
+				tmpState = enterContractVerifyState(tmpState, pid, process,
+						function, null);
+		}
+		return tmpState;
 	}
 
 	/*********************** Reasoning contracts in execution **************************/
@@ -810,12 +855,15 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private State enterContractVerifyState(State state, int pid,
-			String process, CIVLFunction function)
+			String process, CIVLFunction function, VariableExpression guard)
 			throws UnsatisfiablePathConditionException {
 		// initialize all visible variables
 		Scope outScope = function.outerScope().parent();
 		Evaluation eval;
+		Reasoner reasoner;
 
+		// If the control got here, all involved processes are synchronized
+		// here:
 		while (outScope != null) {
 			Set<Variable> variables = outScope.variables();
 			int dyscope = state.getDyscope(pid, outScope);
@@ -899,8 +947,6 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		state = concretizeAllPointers(state, pid, function, conditionGenerator);
 
 		// PHASE 3: Evaluating contracts phase:
-		Reasoner reasoner;
-
 		context = state.getPathCondition();
 		requiresIter = contracts.defaultBehavior().requirements().iterator();
 		while (requiresIter.hasNext()) {
@@ -1045,6 +1091,45 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	}
 
 	/**
+	 * Using collective entry to synchronize MPI processes.
+	 * 
+	 * @param state
+	 * @param pid
+	 * @param process
+	 * @param collectBehav
+	 * @param source
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Pair<State, Boolean> executeCollectiveSynchronization(State state,
+			int pid, String process, MPICollectiveBehavior collectBehav,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		Expression[] args = new Expression[2];
+		LibmpiExecutor mpiExecutor;
+		Expression communicator = collectBehav.communicator();
+
+		// Creating an entry
+		try {
+			mpiExecutor = (LibmpiExecutor) loader.getLibraryExecutor("mpi",
+					this, modelFactory, symbolicUtil, symbolicAnalyzer);
+			args[0] = communicator;
+			args[1] = modelFactory.trueExpression(communicator.getSource());
+			return mpiExecutor.executeCollectiveSynchronization(state, pid,
+					process, args, collectBehav, source);
+		} catch (LibraryLoaderException e) {
+			StringBuffer message = new StringBuffer();
+
+			message.append("unable to load the library evaluator for the library ");
+			message.append("mpi");
+			message.append(" for the \\mpi_collective(...) contracts ");
+			errorLogger.logSimpleError(source, state, process,
+					this.symbolicAnalyzer.stateInformation(state),
+					ErrorKind.LIBRARY, message.toString());
+			throw new UnsatisfiablePathConditionException();
+		}
+	}
+
+	/**
 	 * Helper method. Creates and caches wildcard \mpi_empty_in and
 	 * \mpi_empty_out expressions.
 	 * 
@@ -1169,8 +1254,8 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		case ModelConfiguration.NPROCS:
 		case ModelConfiguration.NPROCS_LOWER_BOUND:
 		case ModelConfiguration.NPROCS_UPPER_BOUND:
-		case ModelConfiguration.contractMPICommRankName:
-		case ModelConfiguration.contractMPICommSizeName:
+		case ModelConfiguration.ContractMPICommRankName:
+		case ModelConfiguration.ContractMPICommSizeName:
 			return false;
 		default:
 			return true;

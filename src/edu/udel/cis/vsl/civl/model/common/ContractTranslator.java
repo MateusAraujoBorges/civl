@@ -516,11 +516,11 @@ public class ContractTranslator extends FunctionTranslator {
 		switch (kind) {
 		case MPI_COMM_RANK:
 			variableIdent = modelFactory.identifier(source,
-					ModelConfiguration.contractMPICommRankName);
+					ModelConfiguration.ContractMPICommRankName);
 			break;
 		case MPI_COMM_SIZE:
 			variableIdent = modelFactory.identifier(source,
-					ModelConfiguration.contractMPICommSizeName);
+					ModelConfiguration.ContractMPICommSizeName);
 			break;
 		default:
 			throw new CIVLInternalException("Unreachable", (CIVLSource) null);
@@ -534,9 +534,9 @@ public class ContractTranslator extends FunctionTranslator {
 		CIVLSource resultSource = modelFactory.sourceOf(resultNode);
 		Variable resultVariable;
 		Identifier resultIdentifier = modelFactory.identifier(resultSource,
-				ModelConfiguration.contractResultName);
+				ModelConfiguration.ContractResultName);
 
-		if (!scope.containsVariable(ModelConfiguration.contractResultName)) {
+		if (!scope.containsVariable(ModelConfiguration.ContractResultName)) {
 			CIVLType resultType = this.translateABCType(resultSource, scope,
 					resultNode.getType());
 

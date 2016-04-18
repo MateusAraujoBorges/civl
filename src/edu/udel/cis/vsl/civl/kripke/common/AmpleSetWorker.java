@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnabler;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
@@ -19,7 +20,9 @@ import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
+import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
@@ -33,6 +36,7 @@ import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -271,6 +275,11 @@ public class AmpleSetWorker {
 	 */
 	private BitSet infiniteLoopProcesses = new BitSet();
 
+	/**
+	 * CIVL configuration file, which is associated with the given command line.
+	 */
+	CIVLConfiguration civlConfig;
+
 	// private BitSet noLoopProcesses = new BitSet();
 
 	// private SymbolicAnalyzer symbolicAnalyzer;
@@ -296,7 +305,7 @@ public class AmpleSetWorker {
 	 */
 	AmpleSetWorker(State state, CommonEnabler enabler, Evaluator evaluator,
 			MemoryUnitFactory muFactory, int procBound, boolean debug,
-			PrintStream debugOut) {
+			PrintStream debugOut, CIVLConfiguration civlConfig) {
 		this.memUnitExprEvaluator = evaluator.memoryUnitEvaluator();
 		this.modelFactory = evaluator.modelFactory();
 		this.typeFactory = this.modelFactory.typeFactory();
@@ -310,6 +319,7 @@ public class AmpleSetWorker {
 		impactMemUnits = new MemoryUnitSet[state.numProcs()];
 		this.memUnitFactory = muFactory;
 		this.procBound = procBound;
+		this.civlConfig = civlConfig;
 		// this.symbolicAnalyzer = evaluator.symbolicAnalyzer();
 	}
 
@@ -446,6 +456,29 @@ public class AmpleSetWorker {
 				ampleProcessIDs = activeProcesses;
 				return ampleProcessIDs;
 			}
+			// If in MPI-contracts mode: the $contractVerify statement should
+			// have an implicit barrier:
+			if (civlConfig.isEnableMpiContract())
+				if (procState.stackSize() > 1) {
+					Location procLoc = procState.peekSecondLastStack()
+							.location();
+					Statement stmt;
+
+					if (procLoc.getNumOutgoing() == 1
+							&& (stmt = procLoc.getSoleOutgoing())
+									.statementKind() == StatementKind.CONTRACT_VERIFY) {
+						ContractVerifyStatement conVeri = (ContractVerifyStatement) stmt;
+						Variable syncGuard = conVeri.syncGuardVariable();
+						int dyscopeId = state.getDyscopeID(pid, syncGuard);
+						BooleanExpression guardVal = (BooleanExpression) state
+								.getVariableValue(dyscopeId, syncGuard.vid());
+						Reasoner reasoner = universe.reasoner(state
+								.getPathCondition());
+
+						if (!reasoner.isValid(guardVal))
+							return activeProcesses;
+					}
+				}
 			if (procBound > 0) {
 				for (Statement statement : procState.getLocation().outgoing()) {
 					if (statement instanceof CallOrSpawnStatement) {

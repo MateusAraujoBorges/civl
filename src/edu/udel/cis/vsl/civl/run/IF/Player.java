@@ -21,6 +21,7 @@ import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.Kripkes;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.kripke.IF.StateManager;
+import edu.udel.cis.vsl.civl.kripke.common.ContractEnabler;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
@@ -165,10 +166,14 @@ public abstract class Player {
 					stateFactory, log, libraryExecutorLoader,
 					(ContractEvaluator) evaluator, symbolicAnalyzer, log,
 					civlConfig, conditionGenerator);
-			enabler = Kripkes.newEnabler(stateFactory, evaluator,
+			enabler = new ContractEnabler(stateFactory, evaluator,
 					symbolicAnalyzer, memUnitFactory,
 					this.libraryEnablerLoader, log, civlConfig,
 					conditionGenerator);
+			// enabler = Kripkes.newEnabler(stateFactory, evaluator,
+			// symbolicAnalyzer, memUnitFactory,
+			// this.libraryEnablerLoader, log, civlConfig,
+			// conditionGenerator);
 		} else {
 			this.evaluator = Semantics.newEvaluator(modelFactory, stateFactory,
 					libraryEvaluatorLoader, symbolicUtil, symbolicAnalyzer,
