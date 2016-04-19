@@ -11,7 +11,7 @@ import edu.udel.cis.vsl.civl.model.IF.Sourceable;
  */
 public interface DependsEvent extends Sourceable {
 	public enum DependsEventKind {
-		READ, WRITE, CALL, COMPOSITE, ANYACT, NOACT
+		READ, WRITE, REACH, CALL, COMPOSITE, ANYACT, NOACT
 	}
 
 	/**

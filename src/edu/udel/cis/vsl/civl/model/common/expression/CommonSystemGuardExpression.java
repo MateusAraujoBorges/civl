@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.model.common.expression;
 import java.util.List;
 import java.util.Set;
 
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -29,9 +30,9 @@ public class CommonSystemGuardExpression extends CommonExpression implements
 	private String library;
 
 	/**
-	 * The name of the invoked function.
+	 * The invoked function.
 	 */
-	private String functionName;
+	private CIVLFunction function;
 
 	/**
 	 * The list of arguments that the function call uses.
@@ -55,11 +56,11 @@ public class CommonSystemGuardExpression extends CommonExpression implements
 	 *            The type of this expression (should be always boolean type).
 	 */
 	public CommonSystemGuardExpression(CIVLSource source, Scope scope,
-			String library, String function, List<Expression> args,
+			String library, CIVLFunction function, List<Expression> args,
 			CIVLType type) {
 		super(source, scope, scope, type);
 		this.library = library;
-		this.functionName = function;
+		this.function = function;
 		this.arguments = args;
 	}
 
@@ -90,8 +91,8 @@ public class CommonSystemGuardExpression extends CommonExpression implements
 	}
 
 	@Override
-	public String functionName() {
-		return this.functionName;
+	public CIVLFunction function() {
+		return this.function;
 	}
 
 	@Override
@@ -102,7 +103,7 @@ public class CommonSystemGuardExpression extends CommonExpression implements
 	/* *********************** Methods from Object ********************* */
 	@Override
 	public String toString() {
-		return "guard[" + this.library + "." + this.functionName + "()]";
+		return "guard[" + this.library + "." + this.function + "()]";
 	}
 
 	@Override

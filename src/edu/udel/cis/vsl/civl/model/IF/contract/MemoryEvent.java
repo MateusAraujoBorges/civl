@@ -11,7 +11,37 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
  * @author Manchun Zheng
  *
  */
-public interface ReadOrWriteEvent extends DependsEvent {
+public interface MemoryEvent extends DependsEvent {
+
+	// /**
+	// * The types of memory event
+	// *
+	// * @author Manchun
+	// *
+	// */
+	// public enum MemoryEventKind {
+	// /**
+	// * a <code>\read</code> event
+	// */
+	// READ,
+	// /**
+	// * a <code>\write</code> event
+	// */
+	// WRITE,
+	// /**
+	// * a <code>\reach</code> event
+	// */
+	// REACH
+	// }
+	//
+	// /**
+	// * Returns the kind of this memory event. See also {@link
+	// MemoryEventKind}.
+	// *
+	// * @return
+	// */
+	// MemoryEventKind memoryEventKind();
+
 	/**
 	 * Returns the memory units associated with this event.
 	 * 
@@ -39,4 +69,11 @@ public interface ReadOrWriteEvent extends DependsEvent {
 	 * @return
 	 */
 	boolean isWrite();
+
+	/**
+	 * Is this a <code>\reach</code> event?
+	 * 
+	 * @return
+	 */
+	boolean isReach();
 }

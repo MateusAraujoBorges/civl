@@ -2318,65 +2318,6 @@ public class FunctionTranslator {
 						functionIdentifier, parameters, returnType, scope,
 						continuity);
 			}
-			// if (entity.getDefinition() == null) { // abstract or system
-			// function
-			// if (node instanceof AbstractFunctionDefinitionNode) {
-			// if (parameters.isEmpty())
-			// throw new CIVLSyntaxException(
-			// "$abstract functions must have at least one input.\n"
-			// + "An abstract function with 0 inputs is a constant.\n"
-			// +
-			// "It can be declared as an unconstrained input variable instead, e.g.\n"
-			// + "$input int N;", node.getSource());
-			// result = modelFactory.abstractFunction(nodeSource,
-			// functionIdentifier, parameters, returnType, scope,
-			// ((AbstractFunctionDefinitionNode) node)
-			// .continuity());
-			// } else {
-			// Source declSource = node.getIdentifier().getSource();
-			// CivlcToken token = declSource.getFirstToken();
-			// File file = token.getSourceFile().getFile();
-			// // fileName will be something like "stdlib.h" or "civlc.h"
-			// String fileName = file.getName();
-			// String libName;
-			//
-			// switch (functionIdentifier.name()) {
-			// case "$assert":
-			// case "$assume":
-			// case "$defined":
-			// libName = "civlc";
-			// break;
-			// case "$assert_equals":
-			// case "$equals":
-			// libName = "pointer";
-			// break;
-			// default:
-			// if (!fileName.contains("."))
-			// throw new CIVLInternalException(
-			// "Malformed file name " + fileName
-			// + " containing system function "
-			// + functionName, nodeSource);
-			// libName = fileNameWithoutExtension(fileName);
-			// }
-			// // if (functionIdentifier.name().equals("$assert"))
-			// // libName = "civlc";
-			// // else if (functionIdentifier.name().equals("$equals"))
-			// // libName = "pointer";
-			// // else
-			// // libName = fileNameWithoutExtension(fileName);
-			// result = modelFactory.systemFunction(nodeSource,
-			// functionIdentifier, parameters, returnType, scope,
-			// libName);
-			// scope.addFunction(result);
-			// }
-			// } else { // regular function
-			// result = modelFactory
-			// .function(nodeSource, entity.isAtomic(),
-			// functionIdentifier, parameters, returnType,
-			// scope, null);
-			// scope.addFunction(result);
-			// modelBuilder.unprocessedFunctions.add(entity.getDefinition());
-			// }
 			modelBuilder.functionMap.put(entity, result);
 		}
 		if (contract != null) {

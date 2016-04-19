@@ -25,11 +25,4 @@ public interface StackEntry {
 	 */
 	int scope();
 
-	/**
-	 * 
-	 * @return The identifier of the dynamic scope of the process at the time of
-	 *         the function call.
-	 */
-	int dyscopeIdentifier();
-
 }

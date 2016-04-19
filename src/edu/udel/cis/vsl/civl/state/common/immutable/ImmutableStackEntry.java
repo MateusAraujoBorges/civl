@@ -39,11 +39,6 @@ public class ImmutableStackEntry implements StackEntry {
 	 */
 	private int dyscopeId;
 
-	/**
-	 * The identifier of the dynamic scope, which is not part of the state.
-	 */
-	private int dyscopeIdentifier;
-
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -79,11 +74,6 @@ public class ImmutableStackEntry implements StackEntry {
 	@Override
 	public int scope() {
 		return dyscopeId;
-	}
-
-	@Override
-	public int dyscopeIdentifier() {
-		return this.dyscopeIdentifier;
 	}
 
 	/* ************************* Methods from Object ************************* */
@@ -124,8 +114,8 @@ public class ImmutableStackEntry implements StackEntry {
 				+ source.getSummary();
 
 		return "Frame[function=" + location.function().name() + ", location="
-				+ location.id() + locationString + ", dyscope=d"
-				+ dyscopeIdentifier + "]";
+				+ location.id() + locationString + ", dyscope=d" + dyscopeId
+				+ "]";
 	}
 
 }

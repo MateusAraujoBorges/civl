@@ -338,14 +338,23 @@ public class ContractTranslator extends FunctionTranslator {
 			Set<Expression> muSet = new HashSet<>();
 			SequenceNode<ExpressionNode> muNodeSet = readWriteEvent
 					.getMemoryList();
+			DependsEventKind memoryKind;
 
 			for (ExpressionNode muNode : muNodeSet) {
 				muSet.add(this.translateExpressionNode(muNode, scope, true));
 			}
-			if (readWriteEvent.isRead())
-				return this.contractFactory.newReadEvent(source, muSet);
-			else
-				return this.contractFactory.newWriteEvent(source, muSet);
+			switch (readWriteEvent.memoryEventKind()) {
+			case READ:
+				memoryKind = DependsEventKind.READ;
+				break;
+			case WRITE:
+				memoryKind = DependsEventKind.WRITE;
+				break;
+			default:// REACH
+				memoryKind = DependsEventKind.REACH;
+			}
+			return this.contractFactory.newMemoryEvent(source, memoryKind,
+					muSet);
 		}
 		case CALL: {
 			CallEventNode callEvent = (CallEventNode) eventNode;

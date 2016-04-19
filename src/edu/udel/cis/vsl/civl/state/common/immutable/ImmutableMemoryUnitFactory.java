@@ -2,19 +2,24 @@ package edu.udel.cis.vsl.civl.state.common.immutable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnit;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitSet;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NTReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.TupleComponentReference;
+import edu.udel.cis.vsl.sarl.IF.expr.UnionMemberReference;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 
@@ -92,8 +97,28 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 	@Override
 	public ImmutableMemoryUnitSet union(MemoryUnitSet muSet1,
 			MemoryUnitSet muSet2) {
-		// TODO Auto-generated method stub
-		return null;
+		Set<MemoryUnit> mus = new HashSet<>();
+
+		for (MemoryUnit mu1 : muSet1) {
+			mus.add(mu1);
+		}
+		for (MemoryUnit mu2 : muSet2) {
+			boolean isNew = true;
+
+			for (MemoryUnit mu1 : muSet1) {
+				if (this.contains(mu1, mu2)) {
+					isNew = false;
+					break;
+				} else if (this.contains(mu2, mu1)) {
+					mus.remove(mu1);
+					mus.add(mu2);
+					break;
+				}
+			}
+			if (isNew)
+				mus.add(mu2);
+		}
+		return new ImmutableMemoryUnitSet(mus);
 	}
 
 	@Override
@@ -189,6 +214,32 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 		for (MemoryUnit mu1 : muSet1.memoryUnits())
 			if (this.isJoint(muSet2, mu1))
 				return true;
+		return false;
+	}
+
+	@Override
+	public MemoryUnit extendReference(MemoryUnit mu,
+			ReferenceExpression extraRef) {
+		if (extraRef.isIdentityReference())
+			return mu;
+
+		ReferenceExpression newRef = null, parent = mu.reference();
+
+		if (extraRef.isArrayElementReference())
+			newRef = this.universe.arrayElementReference(parent,
+					((ArrayElementReference) extraRef).getIndex());
+		else if (extraRef.isTupleComponentReference())
+			newRef = this.universe.tupleComponentReference(parent,
+					((TupleComponentReference) extraRef).getIndex());
+		else if (extraRef.isUnionMemberReference())
+			newRef = this.universe.unionMemberReference(parent,
+					((UnionMemberReference) extraRef).getIndex());
+		return this.newMemoryUnit(mu.dyscopeID(), mu.varID(), newRef);
+	}
+
+	@Override
+	public boolean contains(MemoryUnit mu1, MemoryUnit mu2) {
+		// TODO Auto-generated method stub
 		return false;
 	}
 }

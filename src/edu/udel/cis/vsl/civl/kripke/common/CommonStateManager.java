@@ -389,6 +389,7 @@ public class CommonStateManager implements StateManager {
 	}
 
 	void expandTransitionSequence(TransitionSequence transitionSequence) {
+		// TODO mark all processes of the source state for backtracking
 		if (!transitionSequence.containsAllEnabled()) {
 			State state = transitionSequence.state();
 			TransitionSequence ampleSet = enabler.enabledTransitionsPOR(state);

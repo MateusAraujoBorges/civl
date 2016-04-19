@@ -583,6 +583,10 @@ public class CIVLConfiguration {
 		this.showMemoryUnits = showMemoryUnits;
 	}
 
+	/**
+	 * returns the maximal number of processes allowed in a state. -1 means
+	 * infinitely many processes are allowed.
+	 */
 	public int getProcBound() {
 		return procBound;
 	}

@@ -143,4 +143,9 @@ public class ImmutableMemoryUnit implements MemoryUnit {
 		out.print(toString());
 	}
 
+	@Override
+	public MemoryUnit setReference(ReferenceExpression ref) {
+		return new ImmutableMemoryUnit(this.dyscopeID, this.varID, ref);
+	}
+
 }

@@ -15,8 +15,8 @@ import edu.udel.cis.vsl.civl.model.IF.contract.FunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
+import edu.udel.cis.vsl.civl.model.IF.contract.MemoryEvent;
 import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
-import edu.udel.cis.vsl.civl.model.IF.contract.ReadOrWriteEvent;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
 public class CommonContractFactory implements ContractFactory {
@@ -50,17 +50,9 @@ public class CommonContractFactory implements ContractFactory {
 	}
 
 	@Override
-	public ReadOrWriteEvent newReadEvent(CIVLSource source,
+	public MemoryEvent newMemoryEvent(CIVLSource source, DependsEventKind kind,
 			Set<Expression> memoryUnits) {
-		return new CommonReadOrWriteEvent(source, DependsEventKind.READ,
-				memoryUnits);
-	}
-
-	@Override
-	public ReadOrWriteEvent newWriteEvent(CIVLSource source,
-			Set<Expression> memoryUnits) {
-		return new CommonReadOrWriteEvent(source, DependsEventKind.WRITE,
-				memoryUnits);
+		return new CommonMemoryEvent(source, kind, memoryUnits);
 	}
 
 	@Override

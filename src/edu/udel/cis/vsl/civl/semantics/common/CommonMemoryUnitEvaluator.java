@@ -4,12 +4,24 @@ import java.util.HashSet;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
+import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
+import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference.ArraySliceKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.MemoryUnitReference;
@@ -18,6 +30,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.reference.StructOrUnionFieldRef
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLCompleteArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.MemoryUnitExpressionEvaluator;
@@ -25,10 +38,12 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnit;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitSet;
 import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -36,6 +51,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
@@ -68,6 +84,14 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 
 	private MemoryUnitFactory muFactory;
 
+	@SuppressWarnings("unused")
+	private StateFactory stateFactory;
+
+	private SymbolicTupleType pointerType;
+
+	@SuppressWarnings("unused")
+	private SymbolicType rangeType;
+
 	public CommonMemoryUnitEvaluator(SymbolicUtility symbolicUtil,
 			Evaluator evaluator, MemoryUnitFactory muFactory,
 			SymbolicUniverse universe) {
@@ -77,6 +101,8 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 		this.muFactory = muFactory;
 		this.modelFactory = evaluator.modelFactory();
 		this.typeFactory = this.modelFactory.typeFactory();
+		this.pointerType = typeFactory.pointerSymbolicType();
+		this.rangeType = typeFactory.rangeType().getDynamicType(universe);
 	}
 
 	/**
@@ -276,7 +302,7 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 								null, expr, false, true);
 						pointerValue = eval.value;
 						state = eval.state;
-						if (pointerValue.operator() == SymbolicOperator.CONCRETE
+						if (pointerValue.operator() == SymbolicOperator.TUPLE
 								&& pointerValue.type() != null
 								&& pointerValue.type().equals(
 										typeFactory.pointerSymbolicType()))
@@ -326,6 +352,167 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 			// ignore types and primitives, they don't have any pointers
 			// you can dereference.
 		}
+	}
+
+	@Override
+	public MemoryUnitSet evaluateMemoryUnit(State state,
+			Pair<Scope, SymbolicExpression[]> parameterScope, int pid,
+			Expression muExpr) throws UnsatisfiablePathConditionException {
+		ExpressionKind exprKind = muExpr.expressionKind();
+		MemoryUnitSet result = this.muFactory.newMemoryUnitSet();
+		Evaluation eval;
+
+		// DEREFERENCE, DOT, SUBSCRIPT, VARIABLE
+		switch (exprKind) {
+		case BINARY: {
+			BinaryExpression binary = (BinaryExpression) muExpr;
+
+			if (binary.operator() != BINARY_OPERATOR.POINTER_ADD) {
+				throw new CIVLInternalException(
+						"invalid expression for memory units",
+						muExpr.getSource());
+			}
+
+			MemoryUnitSet leftMus = this.evaluateMemoryUnit(state,
+					parameterScope, pid, binary.left());
+			SymbolicType offsetType;
+
+			eval = this.evaluator.evaluate(state, pid, binary.right());
+			offsetType = eval.value.type();
+			state = eval.state;
+
+			NumericExpression offset = (NumericExpression) eval.value;
+
+			if (!offsetType.isInteger()
+					&& !offsetType.equals(this.typeFactory.rangeType()
+							.getDynamicType(universe))) {
+				throw new CIVLInternalException(
+						"invalid pointer addition: "
+								+ "the right hand side operand should be either of integer or range type",
+						muExpr.getSource());
+			}
+			for (MemoryUnit mu : leftMus) {
+				ReferenceExpression reference = mu.reference();
+
+				if (!reference.isArrayElementReference())
+					throw new CIVLInternalException("invalid pointer addition",
+							muExpr.getSource());
+
+				ArrayElementReference arrayEle = (ArrayElementReference) reference;
+
+				arrayEle = universe.arrayElementReference(arrayEle.getParent(),
+						universe.add(arrayEle.getIndex(), offset));
+				result.add(mu.setReference(arrayEle));
+			}
+			break;
+		}
+		case DOT: {
+			DotExpression dotExpr = (DotExpression) muExpr;
+			Expression structOrUnion = dotExpr.structOrUnion();
+			MemoryUnitSet suMus = this.evaluateMemoryUnit(state,
+					parameterScope, pid, structOrUnion);
+			int index = dotExpr.fieldIndex();
+
+			for (MemoryUnit mu : suMus) {
+				result.add(this.muFactory.extendReference(mu, this.universe
+						.tupleComponentReference(mu.reference(),
+								universe.intObject(index))));
+			}
+			break;
+		}
+		case ADDRESS_OF: {
+			return lhs2MemoryUnit(state, parameterScope, pid,
+					((AddressOfExpression) muExpr).operand());
+		}
+		case VARIABLE: {
+			Variable variable = ((VariableExpression) muExpr).variable();
+			SymbolicExpression value;
+
+			if (parameterScope.left == variable.scope()) {
+				value = parameterScope.right[variable.vid()];
+			} else
+				value = state.valueOf(pid, variable);
+			if (isPointer(value))
+				result.add(this.pointer2MemoryUnit(value));
+			break;
+		}
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"invalid kind of memory unit expression: " + exprKind);
+		}
+		return result;
+	}
+
+	private MemoryUnitSet lhs2MemoryUnit(State state,
+			Pair<Scope, SymbolicExpression[]> parameterScope, int pid,
+			LHSExpression lhs) throws UnsatisfiablePathConditionException {
+		MemoryUnitSet result = this.muFactory.newMemoryUnitSet();
+		LHSExpressionKind kind = lhs.lhsExpressionKind();
+		Evaluation eval;
+
+		switch (kind) {
+		case DEREFERENCE: {
+			return this.evaluateMemoryUnit(state, parameterScope, pid,
+					((DereferenceExpression) lhs).pointer());
+		}
+		case DOT: {
+			DotExpression dotExpression = (DotExpression) lhs;
+			int index = dotExpression.fieldIndex();
+			boolean isStruct = dotExpression.getExpressionType().isStructType();
+
+			if (dotExpression.structOrUnion() instanceof LHSExpression) {
+				MemoryUnitSet subResult = this.lhs2MemoryUnit(state,
+						parameterScope, pid,
+						(LHSExpression) dotExpression.structOrUnion());
+
+				for (MemoryUnit mu : subResult) {
+					if (isStruct)
+						result.add(mu.setReference(universe
+								.tupleComponentReference(mu.reference(),
+										universe.intObject(index))));
+					else
+						result.add(mu.setReference(universe
+								.unionMemberReference(mu.reference(),
+										universe.intObject(index))));
+				}
+			}
+			break;
+		}
+		case SUBSCRIPT: {
+			SubscriptExpression subscript = (SubscriptExpression) lhs;
+			MemoryUnitSet subResult = this.lhs2MemoryUnit(state,
+					parameterScope, pid, subscript.array());
+			NumericExpression index;
+
+			eval = this.evaluator.evaluate(state, pid, subscript.index());
+			index = (NumericExpression) eval.value;
+			for (MemoryUnit mu : subResult) {
+				result.add(mu.setReference(universe.arrayElementReference(
+						mu.reference(), index)));
+			}
+			break;
+		}
+		case VARIABLE: {
+			Variable variable = ((VariableExpression) lhs).variable();
+			int dyscopeId = state.getDyscope(pid, variable.scope().id());
+
+			result.add(muFactory.newMemoryUnit(dyscopeId, variable.vid(),
+					universe.identityReference()));
+			break;
+		}
+		}
+		return result;
+	}
+
+	private boolean isPointer(SymbolicExpression value) {
+		return value.type().equals(this.pointerType);
+	}
+
+	private MemoryUnit pointer2MemoryUnit(SymbolicExpression pointer) {
+		return this.muFactory.newMemoryUnit(
+				this.symbolicUtil.getDyscopeId(null, pointer),
+				symbolicUtil.getVariableId(null, pointer),
+				this.symbolicUtil.getSymRef(pointer));
 	}
 
 }

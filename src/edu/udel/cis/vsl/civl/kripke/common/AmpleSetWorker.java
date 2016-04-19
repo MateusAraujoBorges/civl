@@ -10,13 +10,23 @@ import java.util.Set;
 import java.util.Stack;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConstants.DeadlockKind;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnabler;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
+import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
+import edu.udel.cis.vsl.civl.model.IF.contract.CompositeEvent;
+import edu.udel.cis.vsl.civl.model.IF.contract.CompositeEvent.CompositeEventOperator;
+import edu.udel.cis.vsl.civl.model.IF.contract.DependsEvent;
+import edu.udel.cis.vsl.civl.model.IF.contract.DependsEvent.DependsEventKind;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
+import edu.udel.cis.vsl.civl.model.IF.contract.MemoryEvent;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
@@ -24,6 +34,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.MemoryUnitExpressionEvaluator;
@@ -214,7 +225,7 @@ public class AmpleSetWorker {
 	 * infinite. If non-negative, then executing $spawn statements becomes
 	 * dependent with other $spawn statements.
 	 */
-	private int procBound = -1;
+	// private int procBound = -1;
 
 	/**
 	 * map of process ID's and the set of enabled system call statements.
@@ -275,14 +286,7 @@ public class AmpleSetWorker {
 	 */
 	private BitSet infiniteLoopProcesses = new BitSet();
 
-	/**
-	 * CIVL configuration file, which is associated with the given command line.
-	 */
-	CIVLConfiguration civlConfig;
-
-	// private BitSet noLoopProcesses = new BitSet();
-
-	// private SymbolicAnalyzer symbolicAnalyzer;
+	private CIVLConfiguration config;
 
 	/* ***************************** Constructors ************************** */
 
@@ -304,23 +308,20 @@ public class AmpleSetWorker {
 	 *            The print stream for debugging information.
 	 */
 	AmpleSetWorker(State state, CommonEnabler enabler, Evaluator evaluator,
-			MemoryUnitFactory muFactory, int procBound, boolean debug,
-			PrintStream debugOut, CIVLConfiguration civlConfig) {
+			MemoryUnitFactory muFactory, CIVLConfiguration config) {
 		this.memUnitExprEvaluator = evaluator.memoryUnitEvaluator();
 		this.modelFactory = evaluator.modelFactory();
 		this.typeFactory = this.modelFactory.typeFactory();
 		this.state = state;
 		this.enabler = enabler;
-		this.debugging = debug;
-		this.debugOut = debugOut;
 		this.symbolicUtil = evaluator.symbolicUtility();
 		this.symbolicAnalyzer = evaluator.symbolicAnalyzer();
 		this.universe = evaluator.universe();
 		impactMemUnits = new MemoryUnitSet[state.numProcs()];
 		this.memUnitFactory = muFactory;
-		this.procBound = procBound;
-		this.civlConfig = civlConfig;
-		// this.symbolicAnalyzer = evaluator.symbolicAnalyzer();
+		this.config = config;
+		this.debugging = config.debug() || config.showMemoryUnits();
+		this.debugOut = config.out();
 	}
 
 	/* *********************** Package-private Methods ********************* */
@@ -458,7 +459,7 @@ public class AmpleSetWorker {
 			}
 			// If in MPI-contracts mode: the $contractVerify statement should
 			// have an implicit barrier:
-			if (civlConfig.isEnableMpiContract())
+			if (config.isEnableMpiContract())
 				if (procState.stackSize() > 1) {
 					Location procLoc = procState.peekSecondLastStack()
 							.location();
@@ -479,7 +480,7 @@ public class AmpleSetWorker {
 							return activeProcesses;
 					}
 				}
-			if (procBound > 0) {
+			if (config.getProcBound() > 0) {
 				for (Statement statement : procState.getLocation().outgoing()) {
 					if (statement instanceof CallOrSpawnStatement) {
 						CallOrSpawnStatement callOrSpawn = (CallOrSpawnStatement) statement;
@@ -522,27 +523,50 @@ public class AmpleSetWorker {
 					SystemFunction systemFunction = (SystemFunction) call
 							.function();
 					BitSet ampleSubSet = null;
+					Scope parameterScope = systemFunction.outerScope();
+					SymbolicExpression[] argumentValues = new SymbolicExpression[parameterScope
+							.numVariables()];
+					Evaluation eval = null;
 
-					try {
-						LibraryEnabler lib = enabler.libraryEnabler(
-								call.getSource(), systemFunction.getLibrary());
+					for (int i = 1; i < parameterScope.numVariables(); i++) {
+						try {
+							eval = this.enabler.evaluator.evaluate(state, pid,
+									call.arguments().get(i - 1));
+						} catch (UnsatisfiablePathConditionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						argumentValues[i] = eval.value;
+						state = eval.state;
+					}
+					ampleSubSet = ampleSetByContract(new Pair<>(parameterScope,
+							argumentValues), ampleProcessIDs, pid,
+							systemFunction);
+					if (ampleSubSet == null) {
+						try {
+							LibraryEnabler lib = enabler.libraryEnabler(
+									call.getSource(),
+									systemFunction.getLibrary());
 
-						ampleSubSet = lib.ampleSet(state, pid, call,
-								this.reachablePtrWritable,
-								this.reachablePtrReadonly,
-								this.reachableNonPtrWritable,
-								this.reachableNonPtrReadonly);
-					} catch (LibraryLoaderException e) {
-						throw new CIVLInternalException(
-								"This is unreachable because the earlier execution "
-										+ "has already checked that the library enabler "
-										+ "gets loaded successfully otherwise an error should have been reported there",
-								call.getSource());
-					} catch (UnsatisfiablePathConditionException e) {
-						// error occur in the library enabler, returns all
-						// processes as the ample set.
-						ampleProcessIDs = activeProcesses;
-						return ampleProcessIDs;
+							ampleSubSet = lib.ampleSet(state, pid, call,
+									this.reachablePtrWritable,
+									this.reachablePtrReadonly,
+									this.reachableNonPtrWritable,
+									this.reachableNonPtrReadonly);
+						} catch (LibraryLoaderException e) {
+							// when neither dependency contract nor library
+							// enabler is present,
+							// we have to assume that the system function is
+							// unsafe and all processes should be explored.
+							// this is the worst case and should be always
+							// avoided if possible
+							return activeProcesses;
+						} catch (UnsatisfiablePathConditionException e) {
+							// error occur in the library enabler, returns all
+							// processes as the ample set.
+							ampleProcessIDs = activeProcesses;
+							return ampleProcessIDs;
+						}
 					}
 					if (ampleSubSet != null && !ampleSubSet.isEmpty()) {
 						for (int amplePid = 0; amplePid < ampleSubSet.length(); amplePid++) {
@@ -564,9 +588,6 @@ public class AmpleSetWorker {
 								if (myAmpleSetActiveSize >= minAmpleSize
 										|| myAmpleSetActiveSize == activeProcesses
 												.cardinality()) {
-									// ampleProcessIDs = intersects(
-									// ampleProcessIDs, activeProcesses);
-									// ampleProcessIDs.retainAll(activeProcesses);
 									return intersects(ampleProcessIDs,
 											activeProcesses);
 								}
@@ -601,6 +622,165 @@ public class AmpleSetWorker {
 			}
 		}
 		return this.intersects(ampleProcessIDs, activeProcesses);
+	}
+
+	/**
+	 * decides the ample set of a function by its contract.
+	 * 
+	 * This function returns null when:
+	 * <ul>
+	 * <li>
+	 * If the function is neither a system function nor an atomic function,
+	 * returns null;</li>
+	 * <li>if the contract is absent or there is no depends clause, returns
+	 * null.</li>
+	 * </ul>
+	 * 
+	 * When this function returns null, it means that there is no valid contract
+	 * for dependency and the library enabler needs to be invoked for computing
+	 * the ample set.
+	 * 
+	 * @param function
+	 * @return
+	 */
+	private BitSet ampleSetByContract(
+			Pair<Scope, SymbolicExpression[]> parameterScope,
+			BitSet currentAmpleSet, int pid, SystemFunction function) {
+		if (!function.isSystemFunction() && !function.isAtomicFunction())
+			return null;
+		if (function.name().name().equals("$comm_enqueue")
+				&& function.getLibrary().equals("comm")
+				&& this.config.deadlock() == DeadlockKind.POTENTIAL)
+			return null;
+		if (function.name().name().equals("$comm_dequeue")
+				&& function.getLibrary().equals("comm")) {
+			// check for wildcard
+			return null;
+		}
+
+		BitSet result = new BitSet();
+		FunctionContract functionContract = function.functionContract();
+
+		if (functionContract != null) {
+			if (functionContract.defaultBehavior().dependsNoact())
+				return new BitSet();
+			else if (functionContract.defaultBehavior().numDependsEvents() > 0) {
+				for (DependsEvent event : functionContract.defaultBehavior()
+						.dependsEvents()) {
+					result.or(this.ampleSetByDependsEvent(parameterScope,
+							currentAmpleSet, pid, event));
+				}
+				return result;
+			}
+		}
+		return null;
+	}
+
+	private BitSet ampleSetByDependsEvent(
+			Pair<Scope, SymbolicExpression[]> parameterScope,
+			BitSet currentAmpleSet, int pid, DependsEvent event) {
+		DependsEventKind kind = event.dependsEventKind();
+		BitSet result = new BitSet();
+
+		switch (kind) {
+		case READ:
+		case WRITE:
+		case REACH: {
+			MemoryEvent memoryEvent = (MemoryEvent) event;
+			Set<Expression> mus = memoryEvent.memoryUnits();
+
+			result = ampleSetByMemoryEvent(parameterScope, currentAmpleSet,
+					pid, kind, mus);
+			break;
+		}
+		case CALL:
+			break;
+		case COMPOSITE: {
+			CompositeEvent compositeEvent = (CompositeEvent) event;
+			CompositeEventOperator operator = compositeEvent.operator();
+			BitSet right = this.ampleSetByDependsEvent(parameterScope,
+					currentAmpleSet, pid, compositeEvent.right());
+
+			result = this.ampleSetByDependsEvent(parameterScope,
+					currentAmpleSet, pid, compositeEvent.left());
+			switch (operator) {
+			case UNION:
+				result.or(right);
+				break;
+			case DIFFERENCE:
+				result.xor(right);
+				break;
+			case INTERSECT:
+				result.and(right);
+				break;
+			default:
+				throw new CIVLUnimplementedFeatureException(
+						"unknown composite event operator: " + operator);
+			}
+			break;
+		}
+		case ANYACT:
+			result = this.activeProcesses;
+			break;
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"unknown kind of depends evnet: " + kind);
+		}
+		return result;
+	}
+
+	/**
+	 * computes the ample set of a given process by some memory event, which
+	 * could be either READ, WRITE or REACH.
+	 * 
+	 * @param pid
+	 * @param kind
+	 * @param mus
+	 * @return
+	 */
+	private BitSet ampleSetByMemoryEvent(
+			Pair<Scope, SymbolicExpression[]> parameterScope,
+			BitSet currentAmpleSet, int pid, DependsEventKind kind,
+			Set<Expression> muExprs) {
+		BitSet result = new BitSet();
+		MemoryUnitSet criticalMuSet = this.memUnitFactory.newMemoryUnitSet();
+
+		for (Expression muExpr : muExprs) {
+			try {
+				criticalMuSet = memUnitFactory.union(criticalMuSet,
+						this.memUnitExprEvaluator.evaluateMemoryUnit(state,
+								parameterScope, pid, muExpr));
+			} catch (UnsatisfiablePathConditionException ex) {
+				// ignore the exception
+			}
+		}
+		switch (kind) {
+		case READ:
+			break;
+		case WRITE:
+			break;
+		case REACH: {
+			for (int thatPid = 0; thatPid < this.nonEmptyProcesses.length(); thatPid++) {
+				thatPid = nonEmptyProcesses.nextSetBit(thatPid);
+				if (thatPid == pid || currentAmpleSet.get(thatPid))
+					continue;
+				if (memUnitFactory.isJoint(criticalMuSet,
+						this.reachableNonPtrReadonly[thatPid])
+						|| memUnitFactory.isJoint(criticalMuSet,
+								this.reachableNonPtrWritable[thatPid])
+						|| memUnitFactory.isJoint(criticalMuSet,
+								this.reachablePtrReadonly[thatPid])
+						|| memUnitFactory.isJoint(criticalMuSet,
+								this.reachablePtrWritable[thatPid]))
+					result.set(thatPid);
+			}
+			break;
+		}
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"unknown memory event kind " + kind);
+		}
+		return result;
 	}
 
 	// is pid1 waiting for pid2?
@@ -686,9 +866,10 @@ public class AmpleSetWorker {
 			for (Statement s : p.getLocation().outgoing()) {
 				BooleanExpression myGuard;
 
-				if (this.procBound > 0 && s instanceof CallOrSpawnStatement
+				if (config.getProcBound() > 0
+						&& s instanceof CallOrSpawnStatement
 						&& ((CallOrSpawnStatement) s).isSpawn()
-						&& state.numLiveProcs() >= this.procBound)
+						&& state.numLiveProcs() >= config.getProcBound())
 					continue;
 				// side-effect of evaluating the guard is ignored here
 				myGuard = (BooleanExpression) enabler.getGuard(s, pid, state).value;

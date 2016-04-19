@@ -320,4 +320,6 @@ public interface CIVLFunction extends Sourceable {
 	void setFunctionContract(FunctionContract contract);
 
 	void computePathconditionOfLocations(ModelFactory modelFactory);
+	
+	boolean dependsNoact();
 }

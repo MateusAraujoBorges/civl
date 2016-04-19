@@ -13,7 +13,6 @@ import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnabler;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
-import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
@@ -132,6 +131,8 @@ public abstract class CommonEnabler implements Enabler {
 	 */
 	protected SymbolicAnalyzer symbolicAnalyzer;
 
+	protected CIVLConfiguration config;
+
 	private static final HashMap<Integer, Map<Statement, BooleanExpression>> EMPTY_STATEMENT_GUARD_MAP = new HashMap<Integer, Map<Statement, BooleanExpression>>(
 			0);
 
@@ -168,6 +169,7 @@ public abstract class CommonEnabler implements Enabler {
 		this.errorLogger = errorLogger;
 		this.evaluator = evaluator;
 		this.symbolicAnalyzer = symbolicAnalyzer;
+		this.config = civlConfig;
 		this.debugOut = civlConfig.out();
 		this.debugging = civlConfig.debug();
 		this.showAmpleSet = civlConfig.showAmpleSet()
@@ -592,16 +594,11 @@ public abstract class CommonEnabler implements Enabler {
 			return libEnabler.enabledTransitions(state, call, pathCondition,
 					pid, processIdentifier, atomicLockAction);
 		} catch (LibraryLoaderException exception) {
-			String process = state.getProcessState(pid).name() + "(id=" + pid
-					+ ")";
+			List<Transition> localTransitions = new LinkedList<>();
 
-			this.errorLogger.logSimpleError(source, state, process,
-					symbolicAnalyzer.stateInformation(state),
-					ErrorKind.LIBRARY,
-					"unable to load the library enabler for the library "
-							+ libraryName + " for the function "
-							+ call.function().name().name());
-			throw new UnsatisfiablePathConditionException();
+			localTransitions.add(Semantics.newTransition(pathCondition, pid,
+					processIdentifier, call, atomicLockAction));
+			return localTransitions;
 		}
 	}
 

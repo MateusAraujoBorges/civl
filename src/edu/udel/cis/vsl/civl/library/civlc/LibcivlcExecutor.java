@@ -168,6 +168,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 					argumentValues, call.getSource());
 			break;
 		case "$pow":
+		case "$powr":
 			state = this.executePow(state, pid, process, lhs, arguments,
 					argumentValues);
 			break;

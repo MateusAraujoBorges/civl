@@ -51,8 +51,15 @@ struct $collect_checker {
 
 /* *********************** Functions *********************** */
 
+/*@ depends \noact;
+  @ assigns \nothing;
+  @ guards \true;
+  @ */ 
 $system void $barrier_enter($barrier barrier);
 
+/*@ depends \noact;
+  @ assigns \nothing;
+  @ */
 $system void $barrier_exit($barrier barrier);
 
 void $barrier_call($barrier barrier) {

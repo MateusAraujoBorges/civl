@@ -8,7 +8,7 @@ import java.io.PrintStream;
  * @author Manchun Zheng
  *
  */
-public interface MemoryUnitSet {
+public interface MemoryUnitSet extends Iterable<MemoryUnit> {
 	/**
 	 * Gets the memory units of this set.
 	 * 

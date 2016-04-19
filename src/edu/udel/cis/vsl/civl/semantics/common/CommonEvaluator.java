@@ -2354,8 +2354,16 @@ public class CommonEvaluator implements Evaluator {
 	private Evaluation evaluateSystemGuard(State state, int pid,
 			SystemGuardExpression expression)
 			throws UnsatisfiablePathConditionException {
+		CIVLFunction function = expression.function();
+
+		if (function.functionContract() != null) {
+			Expression guard = function.functionContract().guard();
+
+			if (guard != null)
+				return this.evaluate(state, pid, guard);
+		}
 		return getSystemGuard(expression.getSource(), state, pid,
-				expression.library(), expression.functionName(),
+				expression.library(), expression.function().name().name(),
 				expression.arguments());
 	}
 

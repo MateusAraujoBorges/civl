@@ -6,18 +6,19 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.contract.DependsEvent;
-import edu.udel.cis.vsl.civl.model.IF.contract.ReadOrWriteEvent;
+import edu.udel.cis.vsl.civl.model.IF.contract.MemoryEvent;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
-public class CommonReadOrWriteEvent extends CommonDependsEvent implements
-		ReadOrWriteEvent {
+public class CommonMemoryEvent extends CommonDependsEvent implements
+		MemoryEvent {
 
 	private Set<Expression> memoryUnits = new HashSet<>();
 
-	public CommonReadOrWriteEvent(CIVLSource source, DependsEventKind kind,
+	public CommonMemoryEvent(CIVLSource source, DependsEventKind kind,
 			Set<Expression> memoryUnits) {
 		super(source, kind);
-		assert kind == DependsEventKind.READ || kind == DependsEventKind.WRITE;
+		assert kind == DependsEventKind.READ || kind == DependsEventKind.WRITE
+				|| kind == DependsEventKind.REACH;
 		this.memoryUnits = memoryUnits;
 	}
 
@@ -44,7 +45,7 @@ public class CommonReadOrWriteEvent extends CommonDependsEvent implements
 	@Override
 	public boolean equalsWork(DependsEvent that) {
 		if (that.dependsEventKind() == this.dependsEventKind()) {
-			ReadOrWriteEvent readOrWrite = (ReadOrWriteEvent) that;
+			MemoryEvent readOrWrite = (MemoryEvent) that;
 
 			if (this.numMemoryUnits() != readOrWrite.numMemoryUnits())
 				return false;
@@ -61,8 +62,10 @@ public class CommonReadOrWriteEvent extends CommonDependsEvent implements
 
 		if (isRead())
 			result.append("read");
-		else
+		else if (isWrite())
 			result.append("write");
+		else
+			result.append("reach");
 		result.append("(");
 		for (Expression mu : this.memoryUnits) {
 			if (!first)
@@ -73,5 +76,10 @@ public class CommonReadOrWriteEvent extends CommonDependsEvent implements
 		}
 		result.append(")");
 		return result.toString();
+	}
+
+	@Override
+	public boolean isReach() {
+		return this.dependsEventKind() == DependsEventKind.REACH;
 	}
 }

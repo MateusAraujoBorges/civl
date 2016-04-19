@@ -1704,9 +1704,8 @@ public class CommonModelFactory implements ModelFactory {
 	public Expression systemGuardExpression(CallOrSpawnStatement call) {
 		SystemGuardExpression systemGuard = new CommonSystemGuardExpression(
 				call.getSource(), call.statementScope(),
-				((SystemFunction) call.function()).getLibrary(), call
-						.function().name().name(), call.arguments(),
-				typeFactory.booleanType);
+				((SystemFunction) call.function()).getLibrary(),
+				call.function(), call.arguments(), typeFactory.booleanType);
 
 		if (this.isTrue(call.guard()))
 			return systemGuard;

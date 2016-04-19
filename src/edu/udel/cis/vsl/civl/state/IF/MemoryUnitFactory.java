@@ -106,4 +106,27 @@ public interface MemoryUnitFactory {
 			ReferenceExpression reference);
 
 	MemoryUnitSet newMemoryUnitSet();
+
+	/**
+	 * extends a memory unit with extra references.
+	 * 
+	 * For example, the mu could be an are
+	 * 
+	 * @param mu
+	 * @param ref
+	 * @return
+	 */
+	MemoryUnit extendReference(MemoryUnit mu, ReferenceExpression extraRef);
+
+	/**
+	 * Does mu1 contains mu2?
+	 * 
+	 * returns true iff mu1 equals mu2, or mu1 and mu2 are referring to the same
+	 * object and mu1 is containing mu2.
+	 * 
+	 * @param mu1
+	 * @param mu2
+	 * @return
+	 */
+	boolean contains(MemoryUnit mu1, MemoryUnit mu2);
 }

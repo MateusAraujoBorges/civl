@@ -202,20 +202,35 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	@Override
 	public void print(String prefix, PrintStream out, boolean isDebug) {
-		Iterator<Variable> iter;
-
-		out.println(prefix + "function " + name);
-		out.println(prefix + "| formal parameters");
-		iter = parameters.iterator();
-		while (iter.hasNext()) {
-			out.println(prefix + "| | " + iter.next().name());
+		out.print(prefix + "function " + name);
+		if (this.isSystem)
+			out.print(" [$system]");
+		else if (this.isAtomic)
+			out.print(" [$atomic_f]");
+		out.println();
+		// if (containingScope != null)
+		// out.println(prefix + "| parent: scope " + this.containingScope.id());
+		if (parameters.size() > 0) {
+			out.print(prefix + "| formal parameters");
+			if (containingScope != null) {
+				out.print(" (scope=" + containingScope.id());
+				if (containingScope.parent() != null) {
+					out.print(", parent=" + containingScope.parent().id());
+				}
+				out.print(")");
+			}
+			out.println();
+			for (Variable parameter : this.parameters) {
+				out.println(prefix + "| | " + parameter.name() + " : "
+						+ parameter.type());
+			}
 		}
 		// print contracts
 		if (contract != null) {
 			contract.print(prefix + "| ", out, isDebug);
 		}
 		// print scopes
-		outerScope.print(prefix + "| ", out, isDebug);
+		// outerScope.print(prefix + "| ", out, isDebug);
 		// print locations
 		if (!isRootFunction()) {
 			out.println(prefix + "| locations (start=" + startLocation.id()
@@ -602,5 +617,14 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 			}
 		}
 
+	}
+
+	@Override
+	public boolean dependsNoact() {
+		if (this.contract != null) {
+			if (this.contract.defaultBehavior().dependsNoact())
+				return true;
+		}
+		return false;
 	}
 }

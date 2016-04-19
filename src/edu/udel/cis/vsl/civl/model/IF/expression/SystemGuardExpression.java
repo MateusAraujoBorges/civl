@@ -2,6 +2,8 @@ package edu.udel.cis.vsl.civl.model.IF.expression;
 
 import java.util.List;
 
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
+
 /**
  * A system guard expression is a sudo guard expression for system function
  * calls. Its evaluation is actually done in the corresponding library executor.
@@ -18,11 +20,11 @@ public interface SystemGuardExpression extends Expression {
 	String library();
 
 	/**
-	 * The name of the invoked function.
+	 * The invoked function.
 	 * 
 	 * @return
 	 */
-	String functionName();
+	CIVLFunction function();
 
 	/**
 	 * The list of arguments that this function call uses.

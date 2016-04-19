@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.state.common.immutable;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +27,10 @@ public class ImmutableMemoryUnitSet implements MemoryUnitSet {
 
 	ImmutableMemoryUnitSet(ImmutableMemoryUnitSet muSet) {
 		this.memUnits = new HashSet<>(muSet.memUnits);
+	}
+
+	ImmutableMemoryUnitSet(Set<MemoryUnit> mus) {
+		this.memUnits = new HashSet<>(mus);
 	}
 
 	ImmutableMemoryUnitSet() {
@@ -152,8 +157,9 @@ public class ImmutableMemoryUnitSet implements MemoryUnitSet {
 		result.append("}");
 		return result.toString();
 	}
-	
-	// @Override
-	// public int hashCode(){}
-	
+
+	@Override
+	public Iterator<MemoryUnit> iterator() {
+		return this.memUnits.iterator();
+	}
 }

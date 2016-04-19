@@ -34,6 +34,17 @@ public interface MemoryUnit {
 	 */
 	ReferenceExpression reference();
 
-	void print(PrintStream out);
+	/**
+	 * updates the reference of this memory unit
+	 * 
+	 * @param ref
+	 * @return a new memory unit with the new reference
+	 */
+	MemoryUnit setReference(ReferenceExpression ref);
 
+	/**
+	 * 
+	 * @param out
+	 */
+	void print(PrintStream out);
 }

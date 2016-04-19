@@ -6,6 +6,7 @@ import java.util.Set;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.contract.CompositeEvent.CompositeEventOperator;
+import edu.udel.cis.vsl.civl.model.IF.contract.DependsEvent.DependsEventKind;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
@@ -66,23 +67,27 @@ public interface ContractFactory {
 			CompositeEventOperator op, DependsEvent left, DependsEvent right);
 
 	/**
-	 * Creates a new instance of <code>\read</code> event.
+	 * Creates a new instance of memory event of the given kind.
 	 * 
 	 * @param source
+	 * @param kind
+	 *            the kind of this memory event, which could be either READ,
+	 *            WRITE or REACH.
 	 * @param memoryUnits
 	 * @return
 	 */
-	ReadOrWriteEvent newReadEvent(CIVLSource source, Set<Expression> memoryUnits);
-
-	/**
-	 * Creates a new instance of <code>\read</code> event.
-	 * 
-	 * @param source
-	 * @param memoryUnits
-	 * @return
-	 */
-	ReadOrWriteEvent newWriteEvent(CIVLSource source,
+	MemoryEvent newMemoryEvent(CIVLSource source, DependsEventKind kind,
 			Set<Expression> memoryUnits);
+
+	// /**
+	// * Creates a new instance of <code>\read</code> event.
+	// *
+	// * @param source
+	// * @param memoryUnits
+	// * @return
+	// */
+	// MemoryEvent newWriteEvent(CIVLSource source, Set<Expression>
+	// memoryUnits);
 
 	/**
 	 * Creates a new instance of <code>\anyact</code> event
