@@ -1,0 +1,12 @@
+#include <civlc.cvh>
+#include <stdio.h>
+#include <math.h>
+
+int main (void) {
+  double x = 0.02;
+
+  printf("x is %f", x);
+  double y = sqrt(x);
+  double z = pow(y, 0.5);
+  $assert(x == z);
+}
