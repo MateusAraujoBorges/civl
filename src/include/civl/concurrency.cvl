@@ -51,18 +51,22 @@ struct $collect_checker {
 
 /* *********************** Functions *********************** */
 
-/*@ depends \noact;
+/*@ depends_on \nothing;
   @ assigns \nothing;
-  @ guards \true;
+  @ executes_when \true;
   @ */ 
 $system void $barrier_enter($barrier barrier);
 
-/*@ depends \noact;
+/*@ depends_on \nothing;
   @ assigns \nothing;
   @ */
 $system void $barrier_exit($barrier barrier);
 
-void $barrier_call($barrier barrier) {
+/*@ pure;
+  @ depends_on \nothing;
+  @ executes_when \true;
+  @ */
+$atomic_f void $barrier_call($barrier barrier) {
   $barrier_enter(barrier);
   $barrier_exit(barrier);
 }
