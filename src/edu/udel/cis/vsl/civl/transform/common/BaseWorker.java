@@ -408,7 +408,7 @@ public abstract class BaseWorker {
 	}
 
 	protected FunctionDeclarationNode assumeFunctionDeclaration(Source source) {
-		IdentifierNode name = nodeFactory.newIdentifierNode(source, "$assume");
+		IdentifierNode name = nodeFactory.newIdentifierNode(source, "$assume"); 
 		FunctionTypeNode funcType = nodeFactory.newFunctionTypeNode(source,
 				nodeFactory.newVoidTypeNode(source), nodeFactory
 						.newSequenceNode(source, "Formals", Arrays
