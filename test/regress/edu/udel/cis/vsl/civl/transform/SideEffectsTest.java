@@ -32,6 +32,11 @@ public class SideEffectsTest {
 		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("postIncr.cvl")));
 	}
 
+	@Test
+	public void forLoopIncrSE() throws ABCException {
+		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("forLoopIncretSE.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
