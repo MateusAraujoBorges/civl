@@ -156,14 +156,16 @@ public abstract class Player {
 		if (this.civlConfig.isEnableMpiContract()) {
 			ContractConditionGenerator conditionGenerator = Semantics
 					.newContractConditionGenerator(modelFactory, stateFactory,
-							libraryEvaluatorLoader, symbolicUtil,
-							symbolicAnalyzer, memUnitFactory, log, civlConfig);
+							libraryEvaluatorLoader, libraryExecutorLoader,
+							symbolicUtil, symbolicAnalyzer, memUnitFactory,
+							log, civlConfig);
 
 			this.evaluator = Semantics.newContractEvaluator(modelFactory,
-					stateFactory, libraryEvaluatorLoader, symbolicUtil,
-					symbolicAnalyzer, memUnitFactory, log, this.civlConfig);
+					stateFactory, libraryEvaluatorLoader,
+					libraryExecutorLoader, symbolicUtil, symbolicAnalyzer,
+					memUnitFactory, log, this.civlConfig);
 			this.executor = Semantics.newContractExecutor(modelFactory,
-					stateFactory, log, libraryExecutorLoader,
+					stateFactory, libraryExecutorLoader,
 					(ContractEvaluator) evaluator, symbolicAnalyzer, log,
 					civlConfig, conditionGenerator);
 			enabler = new ContractEnabler(stateFactory, evaluator,
@@ -176,11 +178,12 @@ public abstract class Player {
 			// conditionGenerator);
 		} else {
 			this.evaluator = Semantics.newEvaluator(modelFactory, stateFactory,
-					libraryEvaluatorLoader, symbolicUtil, symbolicAnalyzer,
-					memUnitFactory, log, this.civlConfig);
+					libraryEvaluatorLoader, libraryExecutorLoader,
+					symbolicUtil, symbolicAnalyzer, memUnitFactory, log,
+					this.civlConfig);
 			this.executor = Semantics.newExecutor(modelFactory, stateFactory,
-					log, libraryExecutorLoader, evaluator, symbolicAnalyzer,
-					log, civlConfig);
+					libraryExecutorLoader, evaluator, symbolicAnalyzer, log,
+					civlConfig);
 			enabler = Kripkes.newEnabler(stateFactory, evaluator,
 					symbolicAnalyzer, memUnitFactory,
 					this.libraryEnablerLoader, log, civlConfig, null);

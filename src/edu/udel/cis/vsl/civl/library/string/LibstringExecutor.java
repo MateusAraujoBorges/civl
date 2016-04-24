@@ -17,8 +17,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
@@ -78,15 +76,7 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 				libEvaluatorLoader);
 	}
 
-	/* ******************** Methods from LibraryExecutor ******************* */
-
-	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement statement,
-			String functionName) throws UnsatisfiablePathConditionException {
-		return executeWork(state, pid, statement, functionName);
-	}
-
-	/* *************************** Private Methods ************************* */
+	/* ******************** Methods from BaseLibraryExecutor ******************* */
 
 	/**
 	 * Executes a system function call, updating the left hand side expression
@@ -101,65 +91,49 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeWork(State state, int pid, CallOrSpawnStatement call,
-			String functionName) throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		SymbolicExpression[] argumentValues;
-		int numArgs;
-		int processIdentifier = state.getProcessState(pid).identifier();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
-		LHSExpression lhs = call.lhs();
+	@Override
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Evaluation callEval = null;
 
-		numArgs = call.arguments().size();
-		arguments = new Expression[numArgs];
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			arguments[i] = call.arguments().get(i);
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
 		switch (functionName) {
 		case "strcpy":
-			state = execute_strcpy(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
+			callEval = execute_strcpy(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "strlen":
-			state = execute_strlen(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
+			callEval = execute_strlen(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "strcmp":
-			state = execute_strcmp(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
+			callEval = execute_strcmp(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "memset":
-			state = execute_memset(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
+			callEval = execute_memset(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		default:
 			throw new CIVLInternalException("Unknown string function: "
-					+ functionName, call);
+					+ functionName, source);
 		}
-		state = stateFactory.setLocation(state, pid, call.target(),
-				call.lhs() != null);
-		return state;
+		return callEval;
 	}
+
+	/* *************************** Private Methods ************************* */
 
 	// TODO: this function assume the "lhsPointer" which is argument[0] is a
 	// pointer to heap object element which needs being improved.
-	private State execute_strcpy(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation execute_strcpy(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		Evaluation eval;
 		SymbolicExpression charPointer = argumentValues[1];
 		int startIndex;
 		int lStartIndex;
 		SymbolicExpression lhsPointer = argumentValues[0];
-		// symbolicUtil.parentPointer(source, argumentValues[0]);
-		// SymbolicSequence<?> originalArray;
 		SymbolicExpression originalArray = null;
 		int numChars;
 		int vid = symbolicUtil.getVariableId(source, lhsPointer);
@@ -210,10 +184,7 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 			if (theChar == '\0')
 				break;
 		}
-		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs,
-					argumentValues[0]);
-		return state;
+		return new Evaluation(state, argumentValues[0]);
 	}
 
 	/**
@@ -242,10 +213,9 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State execute_strcmp(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation execute_strcmp(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		int output = 0;
 		NumericExpression result;
 		SymbolicExpression charPointer1 = argumentValues[0];
@@ -310,10 +280,7 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 					symResult = universe.apply(func,
 							Arrays.asList(charPointer1, charPointer2));
 				}
-				if (lhs != null)
-					state = primaryExecutor.assign(state, pid, process, lhs,
-							symResult);
-				return state;
+				return new Evaluation(state, symResult);
 			} else {
 				assert (strEval1.second != null && strEval2.second != null) : "Evaluating String failed";
 				str1 = strEval1.second;
@@ -322,19 +289,15 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 				result = universe.integer(output);
 			}
 		}
-		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs, result);
-		return state;
+		return new Evaluation(state, result);
 	}
 
-	private State execute_strlen(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation execute_strlen(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		Evaluation eval;
 		SymbolicExpression charPointer = argumentValues[0];
 		int startIndex;
-		// SymbolicSequence<?> originalArray = null;
 		SymbolicExpression originalArray = null;
 		int numChars;
 		int length = 0;
@@ -354,22 +317,9 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 			NumericExpression arrayIndex = arrayRef.getIndex();
 			eval = evaluator.dereference(source, state, process, null,
 					arrayPointer, false);
-			// int numOfArgs;
 
 			state = eval.state;
 			originalArray = eval.value;
-			// numOfArgs = eval.value.numArguments();
-			//
-			// for (int i = 0; i < numOfArgs; i++) {
-			// SymbolicObject arg = eval.value.argument(i);
-			// if (arg instanceof SymbolicExpression) {
-			// SymbolicExpression argExpr = (SymbolicExpression) arg;
-			// if (argExpr.operator() == SymbolicOperator.ARRAY) {
-			// originalArray = argExpr;
-			// break;
-			// }
-			// }
-			// }
 			startIndex = symbolicUtil.extractInt(source, arrayIndex);
 		}
 		numChars = originalArray.numArguments();
@@ -382,10 +332,7 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 				break;
 			length++;
 		}
-		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs,
-					universe.integer(length));
-		return state;
+		return new Evaluation(state, universe.integer(length));
 	}
 
 	/**
@@ -410,10 +357,9 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 	 * @throws UnsatisfiablePathConditionException
 	 * @author ziqing luo
 	 */
-	private State execute_memset(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation execute_memset(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression pointer, c;
 		NumericExpression size, length, dataTypeSize;
 		SymbolicExpression zerosArray;
@@ -532,9 +478,6 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 					"Failure of loading library evaluator of library 'string'",
 					source);
 		}
-		if (lhs != null) {
-			state = primaryExecutor.assign(state, pid, process, lhs, pointer);
-		}
-		return state;
+		return new Evaluation(state, pointer);
 	}
 }

@@ -49,6 +49,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DynamicTypeOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.HereOrRootExpression;
@@ -72,7 +73,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.SizeofExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SizeofTypeExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SystemGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
@@ -113,6 +113,7 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonDerivativeCallExpress
 import edu.udel.cis.vsl.civl.model.common.expression.CommonDomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonDotExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonDynamicTypeOfExpression;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonFunctionGuardExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonFunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonHereOrRootExpression;
@@ -133,7 +134,6 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonSizeofExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonSizeofTypeExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonStructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonSubscriptExpression;
-import edu.udel.cis.vsl.civl.model.common.expression.CommonSystemFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonSystemGuardExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonUnaryExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonUndefinedProcessExpression;
@@ -797,10 +797,10 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public SystemFunctionCallExpression systemFunctionCallExpression(
+	public FunctionCallExpression functionCallExpression(
 			CallOrSpawnStatement callStatement) {
-		return new CommonSystemFunctionCallExpression(
-				callStatement.getSource(), callStatement);
+		return new CommonFunctionCallExpression(callStatement.getSource(),
+				callStatement);
 	}
 
 	/**
@@ -1426,24 +1426,25 @@ public class CommonModelFactory implements ModelFactory {
 
 	@Override
 	public AbstractFunction abstractFunction(CIVLSource source,
-			Identifier name, List<Variable> parameters, CIVLType returnType,
-			Scope containingScope, int continuity) {
-		return new CommonAbstractFunction(source, name, parameters, returnType,
-				containingScope, containingScope.numFunctions(), continuity,
-				this);
+			Identifier name, Scope parameterScope, List<Variable> parameters,
+			CIVLType returnType, Scope containingScope, int continuity,
+			ModelFactory factory) {
+		return new CommonAbstractFunction(source, name, parameterScope,
+				parameters, returnType, containingScope,
+				containingScope.numFunctions(), continuity, factory);
 	}
 
 	@Override
 	public CIVLFunction function(CIVLSource source, boolean isAtomic,
-			Identifier name, List<Variable> parameters, CIVLType returnType,
-			Scope containingScope, Location startLocation) {
-		for (Variable v : parameters) {
+			Identifier name, Scope parameterScope, List<Variable> parameters,
+			CIVLType returnType, Scope containingScope, Location startLocation) {
+		for (Variable v : parameterScope.variables()) {
 			if (v.type().isArrayType()) {
 				throw new CIVLInternalException("Parameter of array type.", v);
 			}
 		}
-		return new CommonFunction(source, isAtomic, name, parameters,
-				returnType, containingScope,
+		return new CommonFunction(source, isAtomic, name, parameterScope,
+				parameters, returnType, containingScope,
 				containingScope != null ? containingScope.numFunctions() : -1,
 				startLocation, this);
 	}
@@ -1475,7 +1476,7 @@ public class CommonModelFactory implements ModelFactory {
 
 	@Override
 	public Scope scope(CIVLSource source, Scope parent,
-			Set<Variable> variables, CIVLFunction function) {
+			List<Variable> variables, CIVLFunction function) {
 		Scope newScope;
 		Variable heapVariable;
 		Set<Variable> myVariables = new HashSet<Variable>();
@@ -1506,8 +1507,8 @@ public class CommonModelFactory implements ModelFactory {
 
 	@Override
 	public SystemFunction systemFunction(CIVLSource source, Identifier name,
-			List<Variable> parameters, CIVLType returnType,
-			Scope containingScope, String libraryName) {
+			Scope parameterScope, List<Variable> parameters,
+			CIVLType returnType, Scope containingScope, String libraryName) {
 		if (libraryName.startsWith("civl-")) {
 			libraryName = libraryName.substring(5, libraryName.length());
 		} else if (libraryName.endsWith("-common")) {
@@ -1531,9 +1532,10 @@ public class CommonModelFactory implements ModelFactory {
 			default:
 			}
 		}
-		return new CommonSystemFunction(source, name, parameters, returnType,
-				containingScope, containingScope.numFunctions(),
-				(Location) null, this, libraryName);
+		return new CommonSystemFunction(source, name, parameterScope,
+				parameters, returnType, containingScope,
+				containingScope.numFunctions(), (Location) null, libraryName,
+				this);
 	}
 
 	@Override
@@ -1831,15 +1833,18 @@ public class CommonModelFactory implements ModelFactory {
 		if (this.waitallFuncPointer == null) {
 			List<Variable> parameters = new ArrayList<>(2);
 			CIVLFunction function;
+			Scope paraScope;
 
 			parameters.add(this.variable(systemSource,
 					typeFactory.pointerType(typeFactory.processType),
 					this.identifier(systemSource, "procs"), 1));
 			parameters.add(this.variable(systemSource, typeFactory.integerType,
 					this.identifier(systemSource, "num"), 2));
+			paraScope = this.scope(systemSource, systemScope, parameters, null);
 			function = this.systemFunction(systemSource,
-					this.identifier(systemSource, "$waitall"), parameters,
-					typeFactory.voidType, systemScope, "civlc");
+					this.identifier(systemSource, "$waitall"), paraScope,
+					parameters, typeFactory.voidType, systemScope, "civlc");
+			paraScope.setFunction(function);
 			this.waitallFuncPointer = this.functionIdentifierExpression(
 					systemSource, function);
 		}
@@ -2155,13 +2160,17 @@ public class CommonModelFactory implements ModelFactory {
 		if (this.elaborateDomainFuncPointer == null) {
 			List<Variable> parameters = new ArrayList<>(2);
 			CIVLFunction function;
+			Scope paraScope;
 
 			parameters.add(this.variable(systemSource,
 					typeFactory.domainType(),
 					this.identifier(systemSource, "domain"), 1));
+			paraScope = this.scope(systemSource, systemScope, parameters, null);
 			function = this.systemFunction(systemSource,
 					this.identifier(systemSource, "$elaborate_domain"),
-					parameters, typeFactory.voidType, systemScope, "civlc");
+					paraScope, parameters, typeFactory.voidType, systemScope,
+					"civlc");
+			paraScope.setFunction(function);
 			this.elaborateDomainFuncPointer = this
 					.functionIdentifierExpression(systemSource, function);
 		}

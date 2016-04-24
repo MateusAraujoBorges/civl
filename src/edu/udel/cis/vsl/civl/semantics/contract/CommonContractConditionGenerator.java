@@ -39,6 +39,7 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.ContractConditionGenerator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
+import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -149,9 +150,9 @@ public class CommonContractConditionGenerator extends ContractEvaluator
 	public CommonContractConditionGenerator(ModelFactory modelFactory,
 			StateFactory stateFactory, SymbolicUtility symbolicUtil,
 			SymbolicAnalyzer symbolicAnalyzer, LibraryEvaluatorLoader loader,
-			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errorLogger,
-			CIVLConfiguration config) {
-		super(modelFactory, stateFactory, loader, symbolicUtil,
+			LibraryExecutorLoader loaderExec, MemoryUnitFactory memUnitFactory,
+			CIVLErrorLogger errorLogger, CIVLConfiguration config) {
+		super(modelFactory, stateFactory, loader, loaderExec, symbolicUtil,
 				symbolicAnalyzer, memUnitFactory, errorLogger, config);
 		this.DerefStrObject = universe.stringObject("$deref");
 		this.IsValidStrObject = universe.stringObject("$isValid");

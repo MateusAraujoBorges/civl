@@ -37,6 +37,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DynamicTypeOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.HereOrRootExpression;
@@ -77,6 +78,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
+import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.MemoryUnitExpressionEvaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
@@ -333,6 +335,8 @@ public class CommonEvaluator implements Evaluator {
 	private UFExtender pointer2IntCaster;
 	private UFExtender int2PointerCaster;
 
+	private FunctionCallExecutor functionCallExecutor;
+
 	/* ***************************** Constructors ************************** */
 
 	/**
@@ -353,7 +357,8 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	public CommonEvaluator(ModelFactory modelFactory,
 			StateFactory stateFactory, LibraryEvaluatorLoader loader,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
+			LibraryExecutorLoader loaderExec, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer,
 			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errorLogger,
 			CIVLConfiguration config) {
 		this.libLoader = loader;
@@ -432,6 +437,9 @@ public class CommonEvaluator implements Evaluator {
 		this.civlConfig = config;
 		// this.zeroOrOne = (NumericExpression) universe.symbolicConstant(
 		// universe.stringObject("ZeroOrOne"), universe.integerType());
+		this.functionCallExecutor = new FunctionCallExecutor(modelFactory,
+				stateFactory, loaderExec, this, symbolicAnalyzer, errorLogger,
+				civlConfig);
 	}
 
 	/* ************************** Private Methods ************************** */
@@ -2993,7 +3001,10 @@ public class CommonEvaluator implements Evaluator {
 			result = evaluateQuantifiedExpression(state, pid,
 					(QuantifiedExpression) expression);
 			break;
-		case SYSTEM_FUNC_CALL:
+		case FUNC_CALL:
+			result = evaluateFunctionCallExpression(state, pid,
+					(FunctionCallExpression) expression);
+			break;
 		case MEMORY_UNIT:
 		case NULL_LITERAL:
 		case STRING_LITERAL:
@@ -3003,6 +3014,13 @@ public class CommonEvaluator implements Evaluator {
 			throw new CIVLInternalException("unreachable", expression);
 		}
 		return result;
+	}
+
+	private Evaluation evaluateFunctionCallExpression(State state, int pid,
+			FunctionCallExpression expression)
+			throws UnsatisfiablePathConditionException {
+		return this.functionCallExecutor.evaluateAtomicPureFunction(state, pid,
+				expression.callStatement());
 	}
 
 	@Override

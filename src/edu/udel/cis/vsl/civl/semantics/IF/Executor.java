@@ -12,7 +12,6 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -135,10 +134,9 @@ public interface Executor {
 	 *         and the pointer of the object in the heap.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Pair<State, SymbolicExpression> malloc(CIVLSource source, State state,
-			int pid, String process, Expression scopeExpression,
-			SymbolicExpression scopeValue, CIVLType objectType,
-			SymbolicExpression objectValue)
+	Evaluation malloc(CIVLSource source, State state, int pid, String process,
+			Expression scopeExpression, SymbolicExpression scopeValue,
+			CIVLType objectType, SymbolicExpression objectValue)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -163,8 +161,8 @@ public interface Executor {
 	 */
 	CIVLErrorLogger errorLogger();
 
-	State execute_printf(CIVLSource source, State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	Evaluation execute_printf(CIVLSource source, State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException;
 

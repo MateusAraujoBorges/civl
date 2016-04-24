@@ -15,8 +15,6 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -46,12 +44,6 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 				libEvaluatorLoader);
 	}
 
-	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement statement,
-			String functionName) throws UnsatisfiablePathConditionException {
-		return executeWork(state, pid, statement, functionName);
-	}
-
 	/**
 	 * Executes a system function call, updating the left hand side expression
 	 * with the returned value if any.
@@ -65,70 +57,37 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeWork(State state, int pid, CallOrSpawnStatement call,
-			String functionName) throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		SymbolicExpression[] argumentValues;
-		LHSExpression lhs;
-		int numArgs;
-		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Evaluation callEval = null;
 
-		numArgs = call.arguments().size();
-		lhs = call.lhs();
-		arguments = new Expression[numArgs];
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			arguments[i] = call.arguments().get(i);
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
 		switch (functionName) {
 		case "$seq_init":
-			state = executeSeqInit(state, pid, process, arguments,
-					argumentValues, call.getSource());
+			callEval = executeSeqInit(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$seq_insert":
-			state = executeSeqInsert(state, pid, process, arguments,
-					argumentValues, call.getSource());
+			callEval = executeSeqInsert(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$seq_length":
-			state = executeSeqLength(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
+			callEval = executeSeqLength(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$seq_remove":
-			state = executeSeqRemove(state, pid, process, arguments,
-					argumentValues, call.getSource());
+			callEval = executeSeqRemove(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		default:
 			throw new CIVLUnimplementedFeatureException("the function " + name
-					+ " of library seq.cvh", call.getSource());
+					+ " of library seq.cvh", source);
 		}
-		state = stateFactory.setLocation(state, pid, call.target(),
-				call.lhs() != null);
-		return state;
+		return callEval;
 	}
 
-	// /**
-	// *
-	// * @param state
-	// * @param pid
-	// * @param process
-	// * @param arguments
-	// * @param argumentValues
-	// * @param source
-	// * @return
-	// */
-	// private State executeSeqAppend(State state, int pid, String process,
-	// Expression[] arguments, SymbolicExpression[] argumentValues,
-	// CIVLSource source) {
-	// // TODO Auto-generated method stub
-	// return null;
-	// }
-
-	private State executeSeqInit(State state, int pid, String process,
+	private Evaluation executeSeqInit(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression arrayPtr = argumentValues[0];
@@ -152,7 +111,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 					universe.array(
 							arrayType.elementType().getDynamicType(universe),
 							new LinkedList<SymbolicExpression>()));
-			return state;
+			return new Evaluation(state, null);
 		}
 		if (symbolicUtil.isNullPointer(arrayPtr)
 				|| symbolicUtil.isNullPointer(elePointer)) {
@@ -210,7 +169,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 											+ "\n"
 											+ "actual type of object pointed to by the third argument: "
 											+ eleType);
-					return state;
+					return new Evaluation(state, null);
 				} else {
 					SymbolicExpression eleValue, arrayValue;
 					Evaluation eval = evaluator.dereference(elePtrSource,
@@ -226,7 +185,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 				}
 			}
 		}
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -267,7 +226,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeSeqInsert(State state, int pid, String process,
+	private Evaluation executeSeqInsert(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		return executeSeqInsertOrRemove(state, pid, process, arguments,
@@ -286,12 +245,12 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeSeqLength(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation executeSeqLength(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression seqPtr = argumentValues[0];
 		CIVLSource seqSource = arguments[0].getSource();
+		SymbolicExpression result = null;
 
 		if (symbolicUtil.isNullPointer(seqPtr)) {
 			this.errorLogger.logSimpleError(
@@ -325,21 +284,20 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 								+ symbolicAnalyzer.symbolicExpressionToString(
 										seqSource, state, null, seq));
 				throw new UnsatisfiablePathConditionException();
-			} else if (lhs != null)
-				state = primaryExecutor.assign(state, pid, process, lhs,
-						universe.length(seq));
+			} else
+				result = universe.length(seq);
 		}
-		return state;
+		return new Evaluation(state, result);
 	}
 
-	private State executeSeqRemove(State state, int pid, String process,
+	private Evaluation executeSeqRemove(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		return executeSeqInsertOrRemove(state, pid, process, arguments,
 				argumentValues, source, false);
 	}
 
-	private State executeSeqInsertOrRemove(State state, int pid,
+	private Evaluation executeSeqInsertOrRemove(State state, int pid,
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source,
 			boolean isInsert) throws UnsatisfiablePathConditionException {
@@ -374,7 +332,7 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 			throw new UnsatisfiablePathConditionException();
 		}
 		if (count.isZero())// no op
-			return state;
+			return new Evaluation(state, null);
 		if (isInsert && symbolicUtil.isNullPointer(valuesPtr)) {
 			this.errorLogger.logSimpleError(
 					source,
@@ -524,6 +482,6 @@ public class LibseqExecutor extends BaseLibraryExecutor implements
 					elements);
 		state = primaryExecutor.assign(source, state, process, arrayPtr,
 				arrayValue);
-		return state;
+		return new Evaluation(state, null);
 	}
 }

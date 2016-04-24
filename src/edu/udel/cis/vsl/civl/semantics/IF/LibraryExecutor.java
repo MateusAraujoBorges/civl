@@ -40,6 +40,6 @@ public interface LibraryExecutor {
 	 * @return The resulting state after executing the call statement.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	State execute(State state, int pid, CallOrSpawnStatement statement,
+	Evaluation execute(State state, int pid, CallOrSpawnStatement statement,
 			String functionName) throws UnsatisfiablePathConditionException;
 }

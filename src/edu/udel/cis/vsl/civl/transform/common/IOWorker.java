@@ -11,6 +11,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
@@ -169,6 +170,12 @@ public class IOWorker extends BaseWorker {
 
 	private final static String CIVL_EXIT = "$exit";
 
+	private boolean hasCIVLfileSystem = false;
+
+	private boolean hasStdout = false;
+	private boolean hasStdin = false;
+	private boolean hasStderr = false;
+
 	/* ****************************** Constructor ************************** */
 
 	/**
@@ -274,7 +281,8 @@ public class IOWorker extends BaseWorker {
 						List<BlockItemNode> newItems = new LinkedList<>();
 
 						node.remove();
-						newItems.add(this.copyFilesToOutput(source));
+						if (this.hasCIVLfileSystem)
+							newItems.add(this.copyFilesToOutput(source));
 						newItems.addAll(this.freeCalls(source));
 						newItems.add((BlockItemNode) node);
 						parent.setChild(
@@ -336,6 +344,7 @@ public class IOWorker extends BaseWorker {
 	 * @throws SyntaxException
 	 */
 	private List<StatementNode> freeCalls(Source source) throws SyntaxException {
+		List<StatementNode> result = new ArrayList<>();
 		ExpressionStatementNode freeFilesystemStatement, freeStdoutStatement, freeStdinStatement, freeStderrStatement;
 		StatementNode ifStdoutStatement, ifStdinStatement, ifStderrStatement;
 		FunctionCallNode freeFilesystem, freeStdout, freeStdin, freeStderr;
@@ -344,57 +353,79 @@ public class IOWorker extends BaseWorker {
 				source, nodeFactory.newIdentifierNode(source, CIVL_FILESYSTEM));
 		ExpressionNode nullPointer;
 
-		freeFilesystem = nodeFactory.newFunctionCallNode(source, nodeFactory
-				.newIdentifierExpressionNode(source, nodeFactory
-						.newIdentifierNode(source, FILESYSTEM_DESTROY)), Arrays
-				.asList(argument), null);
-		freeFilesystemStatement = nodeFactory
-				.newExpressionStatementNode(freeFilesystem);
-		argument = nodeFactory.newIdentifierExpressionNode(source,
-				nodeFactory.newIdentifierNode(source, STDOUT));
-		freeStdout = nodeFactory.newFunctionCallNode(
-				source,
-				nodeFactory.newIdentifierExpressionNode(source,
-						nodeFactory.newIdentifierNode(source, FREE)),
-				Arrays.asList(argument), null);
-		freeStdoutStatement = nodeFactory
-				.newExpressionStatementNode(freeStdout);
-		nullPointer = nodeFactory.newCastNode(
-				source,
-				nodeFactory.newPointerTypeNode(source,
-						nodeFactory.newVoidTypeNode(source)),
-				nodeFactory.newIntegerConstantNode(source, "0"));
-		condition = nodeFactory.newOperatorNode(source, Operator.NEQ,
-				Arrays.asList(argument.copy(), nullPointer));
-		ifStdoutStatement = nodeFactory.newIfNode(source, condition,
-				freeStdoutStatement);
-		argument = nodeFactory.newIdentifierExpressionNode(source,
-				nodeFactory.newIdentifierNode(source, STDIN));
-		freeStdin = nodeFactory.newFunctionCallNode(
-				source,
-				nodeFactory.newIdentifierExpressionNode(source,
-						nodeFactory.newIdentifierNode(source, FREE)),
-				Arrays.asList(argument), null);
-		freeStdinStatement = nodeFactory.newExpressionStatementNode(freeStdin);
-		condition = nodeFactory.newOperatorNode(source, Operator.NEQ,
-				Arrays.asList(argument.copy(), nullPointer.copy()));
-		ifStdinStatement = nodeFactory.newIfNode(source, condition,
-				freeStdinStatement);
-		argument = nodeFactory.newIdentifierExpressionNode(source,
-				nodeFactory.newIdentifierNode(source, STDERR));
-		freeStderr = nodeFactory.newFunctionCallNode(
-				source,
-				nodeFactory.newIdentifierExpressionNode(source,
-						nodeFactory.newIdentifierNode(source, FREE)),
-				Arrays.asList(argument), null);
-		freeStderrStatement = nodeFactory
-				.newExpressionStatementNode(freeStderr);
-		condition = nodeFactory.newOperatorNode(source, Operator.NEQ,
-				Arrays.asList(argument.copy(), nullPointer.copy()));
-		ifStderrStatement = nodeFactory.newIfNode(source, condition,
-				freeStderrStatement);
-		return Arrays.asList(freeFilesystemStatement, ifStdoutStatement,
-				ifStdinStatement, ifStderrStatement);
+		if (this.hasCIVLfileSystem) {
+			freeFilesystem = nodeFactory.newFunctionCallNode(source,
+					nodeFactory.newIdentifierExpressionNode(source, nodeFactory
+							.newIdentifierNode(source, FILESYSTEM_DESTROY)),
+					Arrays.asList(argument), null);
+			freeFilesystemStatement = nodeFactory
+					.newExpressionStatementNode(freeFilesystem);
+			result.add(freeFilesystemStatement);
+		}
+		if (this.hasStdout) {
+			argument = nodeFactory.newIdentifierExpressionNode(source,
+					nodeFactory.newIdentifierNode(source, STDOUT));
+			freeStdout = nodeFactory.newFunctionCallNode(
+					source,
+					nodeFactory.newIdentifierExpressionNode(source,
+							nodeFactory.newIdentifierNode(source, FREE)),
+					Arrays.asList(argument), null);
+			freeStdoutStatement = nodeFactory
+					.newExpressionStatementNode(freeStdout);
+			nullPointer = nodeFactory.newCastNode(
+					source,
+					nodeFactory.newPointerTypeNode(source,
+							nodeFactory.newVoidTypeNode(source)),
+					nodeFactory.newIntegerConstantNode(source, "0"));
+			condition = nodeFactory.newOperatorNode(source, Operator.NEQ,
+					Arrays.asList(argument.copy(), nullPointer));
+			ifStdoutStatement = nodeFactory.newIfNode(source, condition,
+					freeStdoutStatement);
+			result.add(ifStdoutStatement);
+		}
+		if (this.hasStdin) {
+			argument = nodeFactory.newIdentifierExpressionNode(source,
+					nodeFactory.newIdentifierNode(source, STDIN));
+			freeStdin = nodeFactory.newFunctionCallNode(
+					source,
+					nodeFactory.newIdentifierExpressionNode(source,
+							nodeFactory.newIdentifierNode(source, FREE)),
+					Arrays.asList(argument), null);
+			freeStdinStatement = nodeFactory
+					.newExpressionStatementNode(freeStdin);
+			nullPointer = nodeFactory.newCastNode(
+					source,
+					nodeFactory.newPointerTypeNode(source,
+							nodeFactory.newVoidTypeNode(source)),
+					nodeFactory.newIntegerConstantNode(source, "0"));
+			condition = nodeFactory.newOperatorNode(source, Operator.NEQ,
+					Arrays.asList(argument.copy(), nullPointer));
+			ifStdinStatement = nodeFactory.newIfNode(source, condition,
+					freeStdinStatement);
+			result.add(ifStdinStatement);
+		}
+		if (this.hasStderr) {
+			argument = nodeFactory.newIdentifierExpressionNode(source,
+					nodeFactory.newIdentifierNode(source, STDERR));
+			freeStderr = nodeFactory.newFunctionCallNode(
+					source,
+					nodeFactory.newIdentifierExpressionNode(source,
+							nodeFactory.newIdentifierNode(source, FREE)),
+					Arrays.asList(argument), null);
+			freeStderrStatement = nodeFactory
+					.newExpressionStatementNode(freeStderr);
+			nullPointer = nodeFactory.newCastNode(
+					source,
+					nodeFactory.newPointerTypeNode(source,
+							nodeFactory.newVoidTypeNode(source)),
+					nodeFactory.newIntegerConstantNode(source, "0"));
+			condition = nodeFactory.newOperatorNode(source, Operator.NEQ,
+					Arrays.asList(argument.copy(), nullPointer));
+			ifStderrStatement = nodeFactory.newIfNode(source, condition,
+					freeStderrStatement);
+			result.add(ifStderrStatement);
+		}
+		return result;
 	}
 
 	/**
@@ -739,6 +770,36 @@ public class IOWorker extends BaseWorker {
 		}
 	}
 
+	private void checkStdioVariables(SequenceNode<BlockItemNode> rootNode) {
+		int count = 0;
+
+		for (BlockItemNode node : rootNode) {
+			if (node instanceof VariableDeclarationNode) {
+				String name = ((VariableDeclarationNode) node).getName();
+
+				if (name.equals(CIVL_FILESYSTEM)) {
+					if (!this.hasCIVLfileSystem)
+						count++;
+					this.hasCIVLfileSystem = true;
+				} else if (name.equals(STDOUT)) {
+					if (!this.hasStdout)
+						count++;
+					this.hasStdout = true;
+				} else if (name.equals(STDIN)) {
+					if (!this.hasStdin)
+						count++;
+					this.hasStdin = true;
+				} else if (name.equals(STDERR)) {
+					if (!this.hasStderr)
+						count++;
+					this.hasStderr = true;
+				}
+				if (count == 4)
+					break;
+			}
+		}
+	}
+
 	/* ********************* Methods From BaseTransformer ****************** */
 
 	@Override
@@ -753,6 +814,7 @@ public class IOWorker extends BaseWorker {
 		unit.release();
 		removeFflushCalls(rootNode);
 		if (transformationNeeded) {
+			checkStdioVariables(rootNode);
 			this.renameFunctionCalls(rootNode);
 			this.transformMain(rootNode);
 			this.transformExit(rootNode);

@@ -13,8 +13,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
@@ -61,15 +59,7 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 				libEvaluatorLoader);
 	}
 
-	/* ******************** Methods from LibraryExecutor ******************* */
-
-	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement statement,
-			String functionName) throws UnsatisfiablePathConditionException {
-		return executeWork(state, pid, statement, functionName);
-	}
-
-	/* ************************** Private Methods ************************** */
+	/* ******************** Methods from BaseLibraryExecutor ******************* */
 
 	/**
 	 * Executes a system function call, updating the left hand side expression
@@ -84,75 +74,62 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeWork(State state, int pid, CallOrSpawnStatement call,
-			String functionName) throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		SymbolicExpression[] argumentValues;
-		LHSExpression lhs;
-		int numArgs;
-		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Evaluation callEval = null;
 
-		numArgs = call.arguments().size();
-		lhs = call.lhs();
-		arguments = new Expression[numArgs];
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			arguments[i] = call.arguments().get(i);
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
 		switch (functionName) {
 		case "$barrier_create":
-			state = executeBarrierCreate(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
+			callEval = executeBarrierCreate(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$barrier_enter":
-			state = executeBarrierEnter(state, pid, process, arguments,
+			callEval = executeBarrierEnter(state, pid, process, arguments,
 					argumentValues);
 			break;
 		case "$barrier_exit":
 			// does nothing
+			callEval = new Evaluation(state, null);
 			break;
 		case "$gbarrier_create":
-			state = executeGbarrierCreate(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
+			callEval = executeGbarrierCreate(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$barrier_destroy":
 		case "$gbarrier_destroy":
-			state = executeFree(state, pid, process, arguments, argumentValues,
-					call.getSource());
+			callEval = executeFree(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$gcollect_checker_create":
-			state = executeGcollectCheckerCreate(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
+			callEval = executeGcollectCheckerCreate(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$gcollect_checker_destroy":
-			state = executeGcollectCheckerDestroy(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
+			callEval = executeGcollectCheckerDestroy(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$collect_checker_create":
-			state = executeCollectCheckerCreate(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
+			callEval = executeCollectCheckerCreate(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$collect_checker_destroy":
-			state = this.executeFree(state, pid, process, arguments,
-					argumentValues, call.getSource());
+			callEval = this.executeFree(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$collect_check":
-			state = executeCollectCheck(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
+			callEval = executeCollectCheck(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		default:
 			throw new CIVLUnimplementedFeatureException("the function " + name
-					+ " of library concurrency.cvh", call.getSource());
+					+ " of library concurrency.cvh", source);
 		}
-		state = stateFactory.setLocation(state, pid, call.target(),
-				call.lhs() != null);
-		return state;
+		return callEval;
 	}
+
+	/* ************************** Private Methods ************************** */
 
 	/**
 	 * Creates a new local communicator object and returns a handle to it. The
@@ -185,8 +162,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeBarrierCreate(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
+	private Evaluation executeBarrierCreate(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression scope = argumentValues[0];
@@ -201,21 +178,11 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		CIVLType barrierType = typeFactory
 				.systemType(ModelConfiguration.BARRIER_TYPE);
 		Evaluation eval;
-		// int place_num = ((IntegerNumber) universe
-		// .extractNumber((NumericExpression) place)).intValue();
 		NumericExpression totalPlaces;
 		BooleanExpression claim;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 		ResultType resultType;
 
-		// if (place_num < 0) {
-		// CIVLExecutionException error = new CIVLExecutionException(
-		// ErrorKind.OTHER, Certainty.PROVEABLE, process,
-		// "$barrier_create() requires a non-negative place", source);
-		//
-		// this.errorLogger.reportError(error);
-		// throw new UnsatisfiablePathConditionException();
-		// }
 		eval = this.evaluator.dereference(civlsource, state, process,
 				arguments[1], gbarrier, false);
 		state = eval.state;
@@ -260,9 +227,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		barrierObj = universe.tuple(
 				(SymbolicTupleType) barrierType.getDynamicType(universe),
 				barrierComponents);
-		state = this.primaryExecutor.malloc(civlsource, state, pid, process,
-				lhs, scopeExpression, scope, barrierType, barrierObj);
-		return state;
+		return this.primaryExecutor.malloc(civlsource, state, pid, process,
+				scopeExpression, scope, barrierType, barrierObj);
 	}
 
 	/**
@@ -285,8 +251,9 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeBarrierEnter(State state, int pid, String process,
-			Expression[] arguments, SymbolicExpression[] argumentValues)
+	private Evaluation executeBarrierEnter(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		CIVLSource civlsource = arguments[0].getSource();
 		SymbolicExpression barrier = argumentValues[0];
@@ -340,7 +307,7 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 				numInBarrier);
 		state = this.primaryExecutor.assign(civlsource, state, process,
 				gbarrier, gbarrierObj);
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -373,8 +340,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeGbarrierCreate(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
+	private Evaluation executeGbarrierCreate(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression gbarrierObj;
@@ -396,9 +363,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		gbarrierObj = universe.tuple((SymbolicTupleType) gbarrierType
 				.getDynamicType(universe), Arrays.asList(nprocs, procMapArray,
 				inBarrierArray, numInBarrier));
-		state = primaryExecutor.malloc(source, state, pid, process, lhs,
+		return primaryExecutor.malloc(source, state, pid, process,
 				scopeExpression, scope, gbarrierType, gbarrierObj);
-		return state;
 	}
 
 	// TODO: Make the collective operation checking mechanism more general
@@ -426,8 +392,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeGcollectCheckerCreate(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation executeGcollectCheckerCreate(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression scope = argumentValues[0];
@@ -448,9 +414,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 				(SymbolicTupleType) gcollectCheckerType
 						.getDynamicType(universe), Arrays.asList(zero,
 						imcompRecordsArray));
-		state = this.primaryExecutor.malloc(source, state, pid, process, lhs,
+		return this.primaryExecutor.malloc(source, state, pid, process,
 				arguments[0], scope, gcollectCheckerType, gcollectChecker);
-		return state;
 	}
 
 	/**
@@ -473,8 +438,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeCollectCheckerCreate(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation executeCollectCheckerCreate(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression scope = argumentValues[0];
@@ -487,9 +452,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		checker = universe
 				.tuple((SymbolicTupleType) collectCheckerType
 						.getDynamicType(universe), Arrays.asList(gchecker));
-		state = primaryExecutor.malloc(source, state, pid, process, lhs,
+		return primaryExecutor.malloc(source, state, pid, process,
 				arguments[0], scope, collectCheckerType, checker);
-		return state;
 	}
 
 	/**
@@ -513,8 +477,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeGcollectCheckerDestroy(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation executeGcollectCheckerDestroy(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression gcheckerHandle = argumentValues[0];
@@ -528,12 +492,9 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		gchecker = eval.value;
 		records_length = (NumericExpression) universe.tupleRead(gchecker,
 				zeroObject);
-		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs,
-					records_length);
 		state = this.executeFree(state, pid, process, arguments,
-				argumentValues, source);
-		return state;
+				argumentValues, source).state;
+		return new Evaluation(state, records_length);
 	}
 
 	/**
@@ -567,8 +528,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeCollectCheck(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
+	private Evaluation executeCollectCheck(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression checkhandle = argumentValues[0];
@@ -676,11 +637,8 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		gcheck = universe.tupleWrite(gcheck, oneObject, records);
 		state = primaryExecutor.assign(source, state, process, gcheckHandle,
 				gcheck);
-		if (lhs != null) {
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					universe.tupleRead(modifiedRecord, this.zeroObject));
-		}
-		return state;
+		return new Evaluation(state, universe.tupleRead(modifiedRecord,
+				this.zeroObject));
 	}
 
 	/**

@@ -279,6 +279,14 @@ public interface CIVLFunction extends Sourceable {
 	 */
 	StringBuffer unreachedCode();
 
+	/**
+	 * is this a pure function? i.e., a function that doesn't has side effect in
+	 * the state
+	 * 
+	 * @return
+	 */
+	boolean isPureFunction();
+
 	/********************** Function contracts methods ***********************/
 	/**
 	 * Possible valid consequence is a valid contract expression which is
@@ -320,6 +328,6 @@ public interface CIVLFunction extends Sourceable {
 	void setFunctionContract(FunctionContract contract);
 
 	void computePathconditionOfLocations(ModelFactory modelFactory);
-	
+
 	boolean dependsNoact();
 }

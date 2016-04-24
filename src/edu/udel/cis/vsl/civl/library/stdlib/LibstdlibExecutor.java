@@ -13,8 +13,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -73,14 +71,6 @@ public class LibstdlibExecutor extends BaseLibraryExecutor implements
 
 	/* ******************** Methods from LibraryExecutor ******************* */
 
-	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement statement,
-			String functionName) throws UnsatisfiablePathConditionException {
-		return executeWork(state, pid, statement, functionName);
-	}
-
-	/* *************************** Private Methods ************************* */
-
 	/**
 	 * Executes a system function call, updating the left hand side expression
 	 * with the returned value if any.
@@ -94,48 +84,34 @@ public class LibstdlibExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeWork(State state, int pid, CallOrSpawnStatement call,
-			String functionName) throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		SymbolicExpression[] argumentValues;
-		int numArgs;
-		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
-		LHSExpression lhs = call.lhs();
-		CIVLSource source = call.getSource();
+	@Override
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Evaluation callEval = null;
 
-		numArgs = call.arguments().size();
-		arguments = new Expression[numArgs];
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			arguments[i] = call.arguments().get(i);
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
 		switch (functionName) {
 		case "free":
-			state = executeFree(state, pid, process, arguments, argumentValues,
-					call.getSource());
+			callEval = executeFree(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "atoi":
-			state = execute_atoi(state, pid, process, lhs, arguments,
+			callEval = execute_atoi(state, pid, process, arguments,
 					argumentValues, source);
 			break;
 		default:
 			throw new CIVLInternalException("Unknown stdlib function: "
-					+ functionName, call);
+					+ functionName, source);
 		}
-		state = stateFactory.setLocation(state, pid, call.target(),
-				call.lhs() != null);
-		return state;
+		return callEval;
 	}
 
-	private State execute_atoi(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	/* *************************** Private Methods ************************* */
+
+	private Evaluation execute_atoi(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression intValue = null;
 
 		if (argumentValues[0].operator() != SymbolicOperator.TUPLE) {
@@ -151,15 +127,6 @@ public class LibstdlibExecutor extends BaseLibraryExecutor implements
 				intValue = universe.apply(atoiFunction,
 						Arrays.asList(argumentValues[0]));
 			} else {
-				// try {
-				// argStringPair = this.evaluator.getString(
-				// arguments[0].getSource(), state, process,
-				// argumentValues[0]);
-				// } catch (CIVLUnimplementedFeatureException e) {
-				// intValue = universe.apply(atoiFunction,
-				// Arrays.asList(argumentValues[0]));
-				// }
-				// if (argStringPair != null) {
 				state = argStringPair.first;
 				argString = argStringPair.second.toString();
 				try {
@@ -176,9 +143,7 @@ public class LibstdlibExecutor extends BaseLibraryExecutor implements
 				}
 			}
 		}
-		if (lhs != null && intValue != null)
-			state = primaryExecutor.assign(state, pid, process, lhs, intValue);
-		return state;
+		return new Evaluation(state, intValue);
 	}
 
 }

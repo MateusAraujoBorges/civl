@@ -5,17 +5,17 @@ import java.util.Set;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
-public class CommonSystemFunctionCallExpression extends CommonExpression
-		implements SystemFunctionCallExpression {
+public class CommonFunctionCallExpression extends CommonExpression
+		implements FunctionCallExpression {
 
 	CallOrSpawnStatement callStatement;
 
-	public CommonSystemFunctionCallExpression(CIVLSource source,
+	public CommonFunctionCallExpression(CIVLSource source,
 			CallOrSpawnStatement callStatement) {
 		super(source, callStatement.statementScope(), callStatement
 				.lowestScope(), null);
@@ -24,7 +24,7 @@ public class CommonSystemFunctionCallExpression extends CommonExpression
 
 	@Override
 	public ExpressionKind expressionKind() {
-		return ExpressionKind.SYSTEM_FUNC_CALL;
+		return ExpressionKind.FUNC_CALL;
 	}
 
 	@Override

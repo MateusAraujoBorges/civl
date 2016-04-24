@@ -15,7 +15,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -109,72 +108,37 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 				symbolicUtil, symbolicAnalyzer, civlConfig, libEvaluatorLoader);
 	}
 
-	/* ******************** Methods from LibraryExecutor ******************* */
+	/* ******************** Methods from BaseLibraryExecutor ******************* */
 
 	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement statement,
-			String functionName) throws UnsatisfiablePathConditionException {
-		return executeWork(state, pid, statement, functionName);
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Evaluation callEval = null;
+
+		switch (functionName) {
+		case "$bundle_pack":
+			callEval = executeBundlePack(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$bundle_size":
+			callEval = executeBundleSize(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$bundle_unpack":
+			callEval = executeBundleUnpack(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$bundle_unpack_apply":
+			callEval = executeBundleUnpackApply(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		}
+		return callEval;
 	}
 
 	/* ************************** Private Methods ************************** */
-
-	/**
-	 * Executes a system function call, updating the left hand side expression
-	 * with the returned value if any.
-	 * 
-	 * @param state
-	 *            The current state.
-	 * @param pid
-	 *            The ID of the process that the function call belongs to.
-	 * @param call
-	 *            The function call statement to be executed.
-	 * @return The new state after executing the function call.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private State executeWork(State state, int pid, CallOrSpawnStatement call,
-			String functionName) throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		SymbolicExpression[] argumentValues;
-		LHSExpression lhs;
-		int numArgs;
-		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
-
-		numArgs = call.arguments().size();
-		lhs = call.lhs();
-		arguments = new Expression[numArgs];
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			arguments[i] = call.arguments().get(i);
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
-		switch (functionName) {
-		case "$bundle_pack":
-			state = executeBundlePack(state, pid, process,
-					(CIVLBundleType) call.function().returnType(), lhs,
-					arguments, argumentValues, call.getSource());
-			break;
-		case "$bundle_size":
-			state = executeBundleSize(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
-			break;
-		case "$bundle_unpack":
-			state = executeBundleUnpack(state, pid, process, arguments,
-					argumentValues, call.getSource());
-			break;
-		case "$bundle_unpack_apply":
-			state = executeBundleUnpackApply(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
-			break;
-		}
-		state = stateFactory.setLocation(state, pid, call.target(),
-				call.lhs() != null);
-		return state;
-	}
 
 	/**
 	 * Returns the size of a bundle.
@@ -198,10 +162,9 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeBundleSize(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource civlSource)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation executeBundleSize(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource civlSource) throws UnsatisfiablePathConditionException {
 		SymbolicObject arrayObject;
 		SymbolicExpression array;
 		NumericExpression size;
@@ -215,9 +178,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 		array = (SymbolicExpression) arrayObject;
 		size = symbolicUtil.sizeof(civlSource,
 				typeFactory.incompleteArrayType(baseType), array.type());
-		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs, size);
-		return state;
+		return new Evaluation(state, size);
 	}
 
 	/**
@@ -259,8 +220,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeBundlePack(State state, int pid, String process,
-			CIVLBundleType bundleType, LHSExpression lhs,
+	private Evaluation executeBundlePack(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression pointer = argumentValues[0];
@@ -273,6 +233,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 		IntObject elementTypeIndexObj;
 		Evaluation eval;
 		int elementTypeIndex;
+		CIVLBundleType bundleType = this.typeFactory.bundleType();
 
 		if (pointer.operator() != SymbolicOperator.TUPLE) {
 			errorLogger.logSimpleError(arguments[1].getSource(), state,
@@ -345,9 +306,9 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 			bundle = universe.unionInject(symbolicBundleType,
 					elementTypeIndexObj, arrayInBundle);
 		}
-		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs, bundle);
-		return state;
+		// if (lhs != null)
+		// state = primaryExecutor.assign(state, pid, process, lhs, bundle);
+		return new Evaluation(state, bundle);
 	}
 
 	/**
@@ -378,9 +339,10 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeBundleUnpack(State state, int pid, String process,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeBundleUnpack(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression bundle = argumentValues[0];
 		SymbolicExpression pointer = argumentValues[1];
 		SymbolicExpression targetObject = null;
@@ -417,7 +379,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 					"Cannot complete unpack.\nAssigned pointer: " + bufPointer
 							+ "\nAssigning object: " + targetObject, source);
 
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -446,8 +408,8 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 	 * @return the state after execution.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeBundleUnpackApply(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation executeBundleUnpackApply(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression bundle = argumentValues[0];
@@ -495,7 +457,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 		operandElementType = ((SymbolicArrayType) firOperand.type())
 				.elementType();
 		if (firOperand.isNull() || firOperand == null)
-			return state;
+			return new Evaluation(state, null);
 		// Get the second operand from pointer
 		eval = libevaluator.getDataFrom(state, process, arguments[1], pointer,
 				universe.multiply(count, universe.integer(countStep)), false,
@@ -541,7 +503,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 			state = eval.state;
 			state = primaryExecutor.assign(source, state, process, assignPtr,
 					eval.value);
-			return state;
+			return new Evaluation(state, null);
 		}
 		i = zero;
 		claim = universe.lessThan(i, count);
@@ -624,7 +586,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor implements
 		assert (eval != null) : "Unknown bug in CIVL: evaluation is null";
 		state = primaryExecutor.assign(source, state, process, assignPtr,
 				eval.value);
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**

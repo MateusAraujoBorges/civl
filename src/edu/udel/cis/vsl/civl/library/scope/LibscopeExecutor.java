@@ -6,8 +6,6 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -31,12 +29,6 @@ public class LibscopeExecutor extends BaseLibraryExecutor implements
 				libEvaluatorLoader);
 	}
 
-	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement statement,
-			String functionName) throws UnsatisfiablePathConditionException {
-		return executeWork(state, pid, statement, functionName);
-	}
-
 	/**
 	 * Executes a system function call, updating the left hand side expression
 	 * with the returned value if any.
@@ -50,35 +42,20 @@ public class LibscopeExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeWork(State state, int pid, CallOrSpawnStatement call,
-			String functionName) throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		SymbolicExpression[] argumentValues;
-		LHSExpression lhs;
-		int numArgs;
-		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
+	@Override
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Evaluation callEval = null;
 
-		numArgs = call.arguments().size();
-		lhs = call.lhs();
-		arguments = new Expression[numArgs];
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			arguments[i] = call.arguments().get(i);
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
 		switch (functionName) {
 		case "$scope_parent":
-			state = this.executeScopeParent(state, pid, process, lhs,
-					arguments, argumentValues);
+			callEval = this.executeScopeParent(state, pid, process, arguments,
+					argumentValues);
 			break;
 		}
-		state = stateFactory.setLocation(state, pid, call.target(),
-				call.lhs() != null);
-		return state;
+		return callEval;
 	}
 
 	/**
@@ -101,9 +78,8 @@ public class LibscopeExecutor extends BaseLibraryExecutor implements
 	 * @throws UnsatisfiablePathConditionException
 	 *             if the assignment of the left hand side expression fails.
 	 */
-	private State executeScopeParent(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
-			SymbolicExpression[] argumentValues)
+	private Evaluation executeScopeParent(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression scopeValue = argumentValues[0];
 		Expression scopeExpression = arguments[0];
@@ -112,10 +88,6 @@ public class LibscopeExecutor extends BaseLibraryExecutor implements
 		int parentID = state.getParentId(scopeID);
 		SymbolicExpression parentScope = modelFactory.scopeValue(parentID);
 
-		if (lhs != null) {
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					parentScope);
-		}
-		return state;
+		return new Evaluation(state, parentScope);
 	}
 }

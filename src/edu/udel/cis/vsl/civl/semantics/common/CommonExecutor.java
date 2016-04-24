@@ -70,7 +70,6 @@ import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Triple;
-import edu.udel.cis.vsl.gmc.ErrorLog;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SARLException;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
@@ -105,7 +104,7 @@ public class CommonExecutor implements Executor {
 	 * The loader used to find Executors for system functions declared in
 	 * libraries.
 	 */
-	private LibraryExecutorLoader loader;
+	protected LibraryExecutorLoader loader;
 
 	/**
 	 * The unique model factory used in the system.
@@ -175,7 +174,7 @@ public class CommonExecutor implements Executor {
 	 *            The CIVL configuration.
 	 */
 	public CommonExecutor(ModelFactory modelFactory, StateFactory stateFactory,
-			ErrorLog log, LibraryExecutorLoader loader, Evaluator evaluator,
+			LibraryExecutorLoader loader, Evaluator evaluator,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errorLogger,
 			CIVLConfiguration civlConfig) {
 		this.civlConfig = civlConfig;
@@ -261,14 +260,15 @@ public class CommonExecutor implements Executor {
 	 * @return The updated state of the program.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeCall(State state, int pid,
+	protected State executeCall(State state, int pid,
 			CallOrSpawnStatement statement)
 			throws UnsatisfiablePathConditionException {
-		if (statement.function() instanceof SystemFunction) {
+		CIVLFunction function = statement.function();
+
+		if (function != null && function.isSystemFunction()) {
 			state = this.executeSystemFunctionCall(state, pid, statement,
-					(SystemFunction) statement.function());
+					(SystemFunction) function).state;
 		} else {
-			CIVLFunction function = statement.function();
 			SymbolicExpression[] arguments;
 
 			arguments = new SymbolicExpression[statement.arguments().size()];
@@ -291,7 +291,7 @@ public class CommonExecutor implements Executor {
 				state = eval.first;
 				if (function.isRootFunction()) {
 					state = this.executeSystemFunctionCall(state, pid,
-							statement, (SystemFunction) function);
+							statement, (SystemFunction) function).state;
 				} else
 					state = stateFactory.pushCallStack(state, pid, function,
 							eval.third, arguments);
@@ -313,7 +313,7 @@ public class CommonExecutor implements Executor {
 		return state;
 	}
 
-	private State executeSystemFunctionCall(State state, int pid,
+	protected Evaluation executeSystemFunctionCall(State state, int pid,
 			CallOrSpawnStatement call, SystemFunction function)
 			throws UnsatisfiablePathConditionException {
 		String libraryName = function.getLibrary();
@@ -324,7 +324,7 @@ public class CommonExecutor implements Executor {
 					this, this.modelFactory, this.symbolicUtil,
 					symbolicAnalyzer);
 
-			state = executor.execute(state, pid, call, funcName);
+			return executor.execute(state, pid, call, funcName);
 		} catch (LibraryLoaderException exception) {
 			String process = state.getProcessState(pid).name() + "(id=" + pid
 					+ ")";
@@ -339,8 +339,8 @@ public class CommonExecutor implements Executor {
 				state = this.assign(state, pid, process, call.lhs(),
 						universe.nullExpression());
 			state = this.stateFactory.setLocation(state, pid, call.target());
+			return new Evaluation(state, universe.nullExpression());
 		}
-		return state;
 	}
 
 	/**
@@ -1018,8 +1018,8 @@ public class CommonExecutor implements Executor {
 	}
 
 	@Override
-	public State execute_printf(CIVLSource source, State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	public Evaluation execute_printf(CIVLSource source, State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		StringBuffer stringOfSymbolicExpression;
@@ -1077,7 +1077,7 @@ public class CommonExecutor implements Executor {
 		if (!civlConfig.isQuiet() && civlConfig.enablePrintf())
 			this.printf(civlConfig.out(), arguments[0].getSource(), process,
 					formats, printedContents);
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -1466,19 +1466,18 @@ public class CommonExecutor implements Executor {
 			SymbolicExpression scopeValue, CIVLType objectType,
 			SymbolicExpression objectValue)
 			throws UnsatisfiablePathConditionException {
-		Pair<State, SymbolicExpression> mallocResult = this.malloc(source,
-				state, pid, process, scopeExpression, scopeValue, objectType,
-				objectValue);
+		Evaluation eval = this.malloc(source, state, pid, process,
+				scopeExpression, scopeValue, objectType, objectValue);
 
-		state = mallocResult.left;
+		state = eval.state;
 		if (lhs != null)
-			state = assign(state, pid, process, lhs, mallocResult.right);
+			state = assign(state, pid, process, lhs, eval.value);
 		return state;
 	}
 
 	@Override
-	public Pair<State, SymbolicExpression> malloc(CIVLSource source,
-			State state, int pid, String process, Expression scopeExpression,
+	public Evaluation malloc(CIVLSource source, State state, int pid,
+			String process, Expression scopeExpression,
 			SymbolicExpression scopeValue, CIVLType objectType,
 			SymbolicExpression objectValue)
 			throws UnsatisfiablePathConditionException {
@@ -1487,11 +1486,13 @@ public class CommonExecutor implements Executor {
 		SymbolicExpression heapObject;
 		CIVLSource scopeSource = scopeExpression == null ? source
 				: scopeExpression.getSource();
+		Pair<State, SymbolicExpression> result;
 
 		dyscopeID = modelFactory.getScopeId(scopeSource, scopeValue);
 		heapObject = universe.array(objectType.getDynamicType(universe),
 				Arrays.asList(objectValue));
-		return stateFactory.malloc(state, dyscopeID, mallocId, heapObject);
+		result = stateFactory.malloc(state, dyscopeID, mallocId, heapObject);
+		return new Evaluation(result.left, result.right);
 	}
 
 	@Override

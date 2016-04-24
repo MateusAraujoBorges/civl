@@ -6,7 +6,6 @@ package edu.udel.cis.vsl.civl.model.IF;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.program.IF.Program;
@@ -30,6 +29,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DynamicTypeOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.HereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
@@ -52,7 +52,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.SizeofExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SizeofTypeExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
@@ -580,7 +579,7 @@ public interface ModelFactory {
 	 * @param callStatement
 	 * @return the new expression which contains a call to a system function.
 	 */
-	SystemFunctionCallExpression systemFunctionCallExpression(
+	FunctionCallExpression functionCallExpression(
 			CallOrSpawnStatement callStatement);
 
 	/**
@@ -1225,8 +1224,9 @@ public interface ModelFactory {
 	 * @return The abstract function.
 	 */
 	AbstractFunction abstractFunction(CIVLSource source, Identifier name,
-			List<Variable> parameters, CIVLType returnType,
-			Scope containingScope, int continuity);
+			Scope parameterScope, List<Variable> parameters,
+			CIVLType returnType, Scope containingScope, int continuity,
+			ModelFactory factory);
 
 	/**
 	 * Create a new function. When the function is constructed, its outermost
@@ -1250,8 +1250,8 @@ public interface ModelFactory {
 	 * @return The new function.
 	 */
 	CIVLFunction function(CIVLSource source, boolean isAtomic, Identifier name,
-			List<Variable> parameters, CIVLType returnType,
-			Scope containingScope, Location startLocation);
+			Scope parameterScope, List<Variable> parameters,
+			CIVLType returnType, Scope containingScope, Location startLocation);
 
 	/**
 	 * Get an identifier with the given name.
@@ -1302,7 +1302,7 @@ public interface ModelFactory {
 	 *            The function containing this scope.
 	 * @return A new scope
 	 */
-	Scope scope(CIVLSource source, Scope parent, Set<Variable> variables,
+	Scope scope(CIVLSource source, Scope parent, List<Variable> variables,
 			CIVLFunction function);
 
 	/**
@@ -1323,8 +1323,8 @@ public interface ModelFactory {
 	 * @return The system function
 	 */
 	SystemFunction systemFunction(CIVLSource source, Identifier name,
-			List<Variable> parameters, CIVLType returnType,
-			Scope containingScope, String libraryName);
+			Scope parameterScope, List<Variable> parameters,
+			CIVLType returnType, Scope containingScope, String libraryName);
 
 	/**
 	 * Create a new variable.

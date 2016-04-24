@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.library.comm;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -370,14 +371,22 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 		Location newLocation = null;
 		String dequeueWork = "$comm_dequeue_work";
 		List<Variable> parametersCopy = new LinkedList<>();
+		Scope parameterScopeCopy = this.modelFactory.scope(civlsource,
+				containingScope, new ArrayList<>(0), null);
 
 		// copy new instances of parameters:
-		for (Variable var : parameters)
-			parametersCopy.add(modelFactory.variable(var.getSource(),
-					var.type(), var.name(), var.vid()));
+		for (Variable var : parameters) {
+			Variable parameter = modelFactory.variable(var.getSource(),
+					var.type(), var.name(), var.vid());
+
+			parametersCopy.add(parameter);
+			parameterScopeCopy.addVariable(parameter);
+		}
 		dequeueWorkFunction = modelFactory.systemFunction(civlsource,
 				modelFactory.identifier(civlsource, dequeueWork),
-				parametersCopy, returnType, containingScope, this.name);
+				parameterScopeCopy, parametersCopy, returnType,
+				containingScope, this.name);
+		parameterScopeCopy.setFunction(dequeueWorkFunction);
 		dequeueWorkPointer = modelFactory.functionIdentifierExpression(
 				civlsource, dequeueWorkFunction);
 		newArgs = new LinkedList<Expression>(arguments);

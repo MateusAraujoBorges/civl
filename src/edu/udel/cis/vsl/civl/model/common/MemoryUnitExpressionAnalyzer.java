@@ -522,7 +522,7 @@ public class MemoryUnitExpressionAnalyzer {
 			break;
 		case PROC_NULL:
 			break;
-		case SYSTEM_FUNC_CALL:// TODO check
+		case FUNC_CALL:// TODO check
 			break;
 		default:
 			throw new CIVLUnimplementedFeatureException(

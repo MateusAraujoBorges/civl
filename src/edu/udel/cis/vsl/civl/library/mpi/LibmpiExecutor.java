@@ -18,8 +18,6 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
@@ -73,12 +71,6 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		super(name, primaryExecutor, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
-	}
-
-	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement statement,
-			String functionName) throws UnsatisfiablePathConditionException {
-		return this.executeWork(state, pid, statement, functionName);
 	}
 
 	/**
@@ -144,92 +136,62 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	}
 
 	/* ************************* private methods **************************** */
-	private State executeWork(State state, int pid,
-			CallOrSpawnStatement statement, String functionName)
+
+	@Override
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		LHSExpression lhs;
-		SymbolicExpression[] argumentValues;
-		CallOrSpawnStatement call;
-		int numArgs;
-		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
+		Evaluation callEval = null;
 
-		call = statement;
-		numArgs = call.arguments().size();
-		arguments = new Expression[numArgs];
-		for (int i = 0; i < numArgs; i++)
-			arguments[i] = call.arguments().get(i);
-		// If the function is $mpi_coassert, call function
-		// "mpiCollectiveAssert()" which is a public re-usable function. It
-		// deals with arguments of $mpi_coassert differently with other normal
-		// system functions:
-		if (functionName.equals("$mpi_coassert")) {
-			state = executeCoassertArrive(state, pid, process, arguments,
-					statement.getSource());
-			return stateFactory.setLocation(state, pid, call.target(),
-					call.lhs() != null);
-		}
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
-		lhs = call.lhs();
 		switch (functionName) {
 		case "$mpi_set_status":
-			state = executeSetStatus(state, pid, call, arguments,
-					argumentValues);
+			callEval = executeSetStatus(state, pid, arguments, argumentValues);
 			break;
 		case "$mpi_get_status":
-			state = executeGetStatus(state, pid, call);
+			callEval = executeGetStatus(state, pid);
 			break;
 		case "$mpi_assertConsistentType":
-			state = executeAssertConsistentType(state, pid, process, arguments,
-					argumentValues, statement.getSource());
+			callEval = executeAssertConsistentType(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$mpi_newGcomm":
-			state = executeNewGcomm(state, pid, process, lhs, arguments,
-					argumentValues, statement.getSource());
+			callEval = executeNewGcomm(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$mpi_getGcomm":
-			state = executeGetGcomm(state, pid, process, lhs, arguments,
-					argumentValues, statement.getSource());
+			callEval = executeGetGcomm(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$mpi_root_scope":
-			state = executeRootScope(state, pid, process, lhs, arguments,
-					argumentValues, statement.getSource());
+			callEval = executeRootScope(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$mpi_proc_scope":
-			state = executeProcScope(state, pid, process, lhs, arguments,
-					argumentValues, statement.getSource());
+			callEval = executeProcScope(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$mpi_p2pSendShot":
-			state = executeSendShot(state, pid, process, functionName,
-					arguments, argumentValues, zero, statement.getSource());
+			callEval = executeSendShot(state, pid, process, functionName,
+					arguments, argumentValues, zero, source);
 			break;
-		case "$mpi_colSendShot": {
-			state = executeSendShot(state, pid, process, functionName,
-					arguments, argumentValues, one, statement.getSource());
+		case "$mpi_colSendShot":
+			callEval = executeSendShot(state, pid, process, functionName,
+					arguments, argumentValues, one, source);
 			break;
-		}
 		case "$mpi_p2pRecvShot":
-			state = executeRecvShot(state, pid, process, functionName,
-					arguments, argumentValues, zero, statement.getSource());
+			callEval = executeRecvShot(state, pid, process, functionName,
+					arguments, argumentValues, zero, source);
 			break;
 		case "$mpi_colRecvShot":
-			state = executeRecvShot(state, pid, process, functionName,
-					arguments, argumentValues, one, statement.getSource());
+			callEval = executeRecvShot(state, pid, process, functionName,
+					arguments, argumentValues, one, source);
 			break;
 		default:
 			throw new CIVLInternalException("Unknown civl-mpi function: "
-					+ name, statement);
+					+ name, source);
 		}
-		state = stateFactory.setLocation(state, pid, call.target(),
-				call.lhs() != null);
-		return state;
+		return callEval;
 	}
 
 	/**
@@ -251,9 +213,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 *            an array of symbolic expressions of arguments of the function
 	 * @return
 	 */
-	private State executeSetStatus(State state, int pid,
-			CallOrSpawnStatement call, Expression[] arguments,
-			SymbolicExpression[] argumentValues) {
+	private Evaluation executeSetStatus(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues) {
 		SymbolicExpression newStatus = argumentValues[0];
 		Pair<Integer, Variable> myStatusVarInfo;
 		State newState;
@@ -262,29 +223,22 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				"_mpi_process", "_mpi_status");
 		newState = this.stateFactory.setVariable(state,
 				myStatusVarInfo.right.vid(), myStatusVarInfo.left, newStatus);
-		return newState;
+		return new Evaluation(newState, null);
 	}
 
-	private State executeGetStatus(State state, int pid,
-			CallOrSpawnStatement call)
+	private Evaluation executeGetStatus(State state, int pid)
 			throws UnsatisfiablePathConditionException {
-		LHSExpression lhs = call.lhs();
+		// variable (right in pair) and it's static scope
+		Pair<Integer, Variable> myStatusVarInfo;
+		SymbolicExpression valueOfMyStatusVar;
+		// String process = state.getProcessState(pid).name() + "(id=" + pid +
+		// ")";
 
-		if (lhs != null) {
-			// variable (right in pair) and it's static scope
-			Pair<Integer, Variable> myStatusVarInfo;
-			SymbolicExpression valueOfMyStatusVar;
-			String process = state.getProcessState(pid).name() + "(id=" + pid
-					+ ")";
-
-			myStatusVarInfo = getVariableWTDynamicScoping(state, pid,
-					"_mpi_process", "_mpi_status");
-			valueOfMyStatusVar = state.getDyscope(myStatusVarInfo.left)
-					.getValue(myStatusVarInfo.right.vid());
-			return this.primaryExecutor.assign(state, pid, process, lhs,
-					valueOfMyStatusVar);
-		}
-		return state;
+		myStatusVarInfo = getVariableWTDynamicScoping(state, pid,
+				"_mpi_process", "_mpi_status");
+		valueOfMyStatusVar = state.getDyscope(myStatusVarInfo.left).getValue(
+				myStatusVarInfo.right.vid());
+		return new Evaluation(state, valueOfMyStatusVar);
 	}
 
 	/**
@@ -347,7 +301,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeAssertConsistentType(State state, int pid,
+	private Evaluation executeAssertConsistentType(State state, int pid,
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
@@ -361,7 +315,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		Pair<BooleanExpression, ResultType> checkPointer;
 
 		if (symbolicUtil.isNullPointer(pointer))
-			return state;
+			return new Evaluation(state, null);
 		// this assertion doesn't need recovery:
 		if (!pointer.operator().equals(SymbolicOperator.TUPLE)) {
 			errorLogger
@@ -369,7 +323,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 							this.symbolicAnalyzer.stateInformation(state),
 							ErrorKind.POINTER,
 							"attempt to read/write a non-concrete pointer type variable");
-			return state;
+			return new Evaluation(state, null);
 		}
 		checkPointer = symbolicAnalyzer.isDerefablePointer(state, pointer);
 		if (checkPointer.right != ResultType.YES) {
@@ -403,7 +357,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 									+ "] of"
 									+ " MPI routines is not consistent with the specified MPI_Datatype.");
 		}
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -418,10 +372,9 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeNewGcomm(State state, int pid, String process,
-			LHSExpression lhs, Expression arguments[],
-			SymbolicExpression argumentValues[], CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation executeNewGcomm(State state, int pid, String process,
+			Expression arguments[], SymbolicExpression argumentValues[],
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression mpiRootScope = argumentValues[0];
 		SymbolicExpression newCMPIGcomm = argumentValues[1];
 		int sid = modelFactory.getScopeId(arguments[0].getSource(),
@@ -435,15 +388,12 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		idx = universe.length(gcomms);
 		gcomms = universe.append(gcomms, newCMPIGcomm);
 		state = stateFactory.setVariable(state, gcommsVar.vid(), sid, gcomms);
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs, idx);
-		return state;
+		return new Evaluation(state, idx);
 	}
 
-	private State executeGetGcomm(State state, int pid, String process,
-			LHSExpression lhs, Expression arguments[],
-			SymbolicExpression argumentValues[], CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation executeGetGcomm(State state, int pid, String process,
+			Expression arguments[], SymbolicExpression argumentValues[],
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		NumericExpression index = (NumericExpression) argumentValues[1];
 		SymbolicExpression scope = argumentValues[0];
 		SymbolicExpression gcomms, gcomm;
@@ -453,16 +403,12 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 
 		gcomms = state.getVariableValue(sid, gcommsVar.vid());
 		gcomm = universe.arrayRead(gcomms, index);
-		if (lhs != null)
-			state = this.primaryExecutor
-					.assign(state, pid, process, lhs, gcomm);
-		return state;
+		return new Evaluation(state, gcomm);
 	}
 
-	private State executeRootScope(State state, int pid, String process,
-			LHSExpression lhs, Expression arguments[],
-			SymbolicExpression argumentValues[], CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation executeRootScope(State state, int pid, String process,
+			Expression arguments[], SymbolicExpression argumentValues[],
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression commHandle = argumentValues[0];
 		SymbolicExpression gcommHandle;
 		SymbolicExpression scopeVal;
@@ -475,26 +421,19 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		gcommHandle = universe.tupleRead(eval.value, oneObject);
 		sid = symbolicUtil.getDyscopeId(source, gcommHandle);
 		scopeVal = modelFactory.scopeValue(sid);
-		if (lhs != null)
-			return this.primaryExecutor.assign(state, pid, process, lhs,
-					scopeVal);
-		return state;
+		return new Evaluation(state, scopeVal);
 	}
 
-	private State executeProcScope(State state, int pid, String process,
-			LHSExpression lhs, Expression arguments[],
-			SymbolicExpression argumentValues[], CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation executeProcScope(State state, int pid, String process,
+			Expression arguments[], SymbolicExpression argumentValues[],
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression commHandle = argumentValues[0];
 		SymbolicExpression scopeVal;
 		int sid;
 
 		sid = symbolicUtil.getDyscopeId(source, commHandle);
 		scopeVal = modelFactory.scopeValue(sid);
-		if (lhs != null)
-			return this.primaryExecutor.assign(state, pid, process, lhs,
-					scopeVal);
-		return state;
+		return new Evaluation(state, scopeVal);
 	}
 
 	/**************************** Contract section ****************************/
@@ -517,8 +456,9 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeCoassertArrive(State state, int pid, String process,
-			Expression[] arguments, CIVLSource source)
+	@SuppressWarnings("unused")
+	private Evaluation executeCoassertArrive(State state, int pid,
+			String process, Expression[] arguments, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression[] argumentValues = new SymbolicExpression[1];
 		Evaluation eval;
@@ -528,7 +468,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		argumentValues[0] = eval.value;
 		state = executeCoassertWorker(state, pid, process, arguments,
 				argumentValues, source, false, null, null).left;
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -866,7 +806,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeSendShot(State state, int pid, String process,
+	private Evaluation executeSendShot(State state, int pid, String process,
 			String function, Expression[] arguments,
 			SymbolicExpression[] argumentValues, NumericExpression channelIdx,
 			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
@@ -909,7 +849,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			state = stateFactory.commitUpdatedChannelsToEntries(tmpState,
 					mpiCommIdInt, msgBuffers);
 		}
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -946,7 +886,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeRecvShot(State state, int pid, String process,
+	private Evaluation executeRecvShot(State state, int pid, String process,
 			String function, Expression[] arguments,
 			SymbolicExpression[] argumentValues, NumericExpression channelIdx,
 			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
@@ -1000,7 +940,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				state = stateFactory.commitUpdatedChannelsToEntries(tmpState,
 						mpiCommIdInt, msgBuffers);
 		}
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**

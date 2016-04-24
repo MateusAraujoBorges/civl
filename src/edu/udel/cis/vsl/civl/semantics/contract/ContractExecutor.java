@@ -57,7 +57,6 @@ import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableState;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Triple;
-import edu.udel.cis.vsl.gmc.ErrorLog;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
@@ -143,13 +142,12 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	private ContractConditionGenerator conditionGenerator;
 
 	public ContractExecutor(ModelFactory modelFactory,
-			StateFactory stateFactory, ErrorLog log,
-			LibraryExecutorLoader loader, ContractEvaluator evaluator,
-			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errorLogger,
-			CIVLConfiguration civlConfig,
+			StateFactory stateFactory, LibraryExecutorLoader loader,
+			ContractEvaluator evaluator, SymbolicAnalyzer symbolicAnalyzer,
+			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig,
 			ContractConditionGenerator conditionGenerator) {
-		super(modelFactory, stateFactory, log, loader, evaluator,
-				symbolicAnalyzer, errorLogger, civlConfig);
+		super(modelFactory, stateFactory, loader, evaluator, symbolicAnalyzer,
+				errorLogger, civlConfig);
 		this.evaluator = evaluator;
 		this.stateFactory = stateFactory;
 		this.universe = modelFactory.universe();

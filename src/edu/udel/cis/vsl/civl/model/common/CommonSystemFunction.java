@@ -32,11 +32,11 @@ public class CommonSystemFunction extends CommonFunction implements
 	 * @param factory
 	 */
 	public CommonSystemFunction(CIVLSource source, Identifier name,
-			List<Variable> parameters, CIVLType returnType,
-			Scope containingScope, int fid, Location startLocation,
-			ModelFactory factory, String libraryName) {
-		super(source, true, name, parameters, returnType, containingScope, fid,
-				startLocation, factory);
+			Scope parameterScope, List<Variable> parameters,
+			CIVLType returnType, Scope containingScope, int fid,
+			Location startLocation, String libraryName, ModelFactory factory) {
+		super(source, true, name, parameterScope, parameters, returnType,
+				containingScope, fid, startLocation, factory);
 		this.isSystem = true;
 		this.library = libraryName;
 	}

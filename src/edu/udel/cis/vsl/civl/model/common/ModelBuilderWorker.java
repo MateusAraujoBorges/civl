@@ -31,6 +31,7 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
+import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
 import edu.udel.cis.vsl.civl.model.IF.Model;
@@ -902,11 +903,18 @@ public class ModelBuilderWorker {
 		CIVLFunction system;
 		ASTNode rootNode = program.getAST().getRootNode();
 		FunctionTranslator systemFunctionTranslator;
+		CIVLSource rootFunctionSource = factory.sourceOf(program.getAST()
+				.getMain().getDefinition());
+		Scope rootFunctionScope;
 
 		preprocess();
+		rootFunctionScope = this.factory.scope(rootFunctionSource, null,
+				new ArrayList<Variable>(0), null);
 		system = factory.function(
 				factory.sourceOf(program.getAST().getMain().getDefinition()),
-				false, systemID, new ArrayList<Variable>(), null, null, null);
+				false, systemID, rootFunctionScope, new ArrayList<Variable>(),
+				null, null, null);
+		rootFunctionScope.setFunction(system);
 		systemFunctionTranslator = new FunctionTranslator(this, factory, system);
 		initialization(system);
 		systemFunctionTranslator.translateRootFunction(systemScope, rootNode);

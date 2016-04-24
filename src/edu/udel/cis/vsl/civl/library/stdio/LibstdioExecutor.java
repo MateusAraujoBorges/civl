@@ -19,8 +19,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -372,9 +370,9 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State execute_filesystem_create(CIVLSource source, State state,
-			int pid, String process, LHSExpression lhs,
-			Expression[] expressions, SymbolicExpression[] argumentValues)
+	private Evaluation execute_filesystem_create(CIVLSource source,
+			State state, int pid, String process, Expression[] expressions,
+			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression scope = argumentValues[0];
 		LinkedList<SymbolicExpression> filesystemComponents = new LinkedList<>();
@@ -387,9 +385,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		filesystemComponents.add(filesArray);
 		filesystem = universe.tuple(filesystemStructSymbolicType,
 				filesystemComponents);
-		state = primaryExecutor.malloc(source, state, pid, process, lhs,
+		return primaryExecutor.malloc(source, state, pid, process,
 				expressions[0], scope, filesystemStructType, filesystem);
-		return state;
 	}
 
 	/**
@@ -399,8 +396,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	 * </pre>
 	 * 
 	 */
-	private State execute_fopen(CIVLSource source, State state, int pid,
-			String process, LHSExpression lhs, Expression[] expressions,
+	private Evaluation execute_fopen(CIVLSource source, State state, int pid,
+			String process, Expression[] expressions,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression filesystemPointer = argumentValues[0];
@@ -412,7 +409,6 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression fileSystemStructure;
 		SymbolicExpression fileArray;
 		SymbolicExpression filename;
-		// SymbolicSequence<?> fileSequence;
 		int numFiles;
 		int fileIndex;
 		SymbolicExpression length;
@@ -427,9 +423,6 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 				expressions[0].getSource(), filesystemPointer);
 		ReferenceExpression fileSystemRef = symbolicUtil
 				.getSymRef(filesystemPointer);
-		// Pair<State, StringBuffer> fileNameStringPair;
-		// String fileNameString;
-
 		state = eval.state;
 		fileSystemStructure = eval.value;
 		fileArray = universe.tupleRead(fileSystemStructure, oneObject);
@@ -437,18 +430,11 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 				expressions[1].getSource(), argumentValues[1]);
 		state = eval.state;
 		filename = eval.value;
-
-		// fileNameStringPair = this.evaluator.getString(
-		// expressions[1].getSource(), state, process,
-		// argumentValues[1]);
-		// state = fileNameStringPair.left;
-		// fileNameString = fileNameStringPair.right.toString();
 		// does a file by that name already exist in the filesystem?
 		// assume all are concrete.
 		if (fileArray.operator() != SymbolicOperator.ARRAY)
 			throw new CIVLUnimplementedFeatureException(
 					"non-concrete file system", expressions[0]);
-		// fileSequence = (SymbolicSequence<?>) fileArray.argument(0);
 		numFiles = fileArray.numArguments();
 		for (fileIndex = 0; fileIndex < numFiles; fileIndex++) {
 			SymbolicExpression tmpFile = (SymbolicExpression) fileArray
@@ -546,15 +532,14 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 					(SymbolicTupleType) FILEtype.getDynamicType(universe),
 					streamComponents);
 			// do malloc, get pointer, do the assignments.
-			// state = primaryExecutor.assign(state, pid, lhs, fileStream);
-			state = primaryExecutor.malloc(source, state, pid, process, lhs,
+			return primaryExecutor.malloc(source, state, pid, process,
 					expressions[0],
 					modelFactory.scopeValue(filesystemDyscopeId), FILEtype,
 					fileStream);
-
 		}
-		return state;
 	}
+
+	/* ******************** Methods from BaseLibraryExecutor ******************* */
 
 	/**
 	 * Execute a function call statement for a certain process at a given state.
@@ -568,84 +553,69 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the call statement.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeWork(State state, int pid,
-			CallOrSpawnStatement statement, String functionName)
+	@Override
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		SymbolicExpression[] argumentValues;
-		int numArgs;
-		CIVLSource source = statement.getSource();
-		LHSExpression lhs = statement.lhs();
-		int processIdentifier = state.getProcessState(pid).identifier();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		Evaluation callEval = null;
 
-		numArgs = statement.arguments().size();
-		arguments = new Expression[numArgs];
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			arguments[i] = statement.arguments().get(i);
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
 		switch (functionName) {
 		case "$fopen":
-			state = execute_fopen(source, state, pid, process, lhs, arguments,
+			callEval = execute_fopen(source, state, pid, process, arguments,
 					argumentValues);
 			break;
 		case "$filesystem_create":
-			state = execute_filesystem_create(source, state, pid, process, lhs,
+			callEval = execute_filesystem_create(source, state, pid, process,
 					arguments, argumentValues);
 			break;
 		case "$filesystem_destroy":
-			state = executeFree(state, pid, process, arguments, argumentValues,
-					source);
+			callEval = executeFree(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "fclose":
-			state = executeFree(state, pid, process, arguments, argumentValues,
-					source);
+			callEval = executeFree(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "fprintf":
-			state = execute_fprintf(source, state, pid, process, lhs,
-					arguments, argumentValues);
+			callEval = execute_fprintf(source, state, pid, process, arguments,
+					argumentValues);
 			break;
 		case "printf":
 			if (civlConfig.enablePrintf())
-				state = this.primaryExecutor.execute_printf(source, state, pid,
-						process, lhs, arguments, argumentValues);
+				callEval = this.primaryExecutor.execute_printf(source, state,
+						pid, process, arguments, argumentValues);
+			else
+				callEval = new Evaluation(state, null);
 			break;
 		case "fscanf":
-			state = execute_fscanf(source, state, pid, process, lhs, arguments,
+			callEval = execute_fscanf(source, state, pid, process, arguments,
 					argumentValues);
 			break;
 		case "fflush":
 		case "_fflush":
 			break;
 		case "$filesystem_copy_output":
-			state = execute_filesystem_copy_output(source, state, pid, process,
-					arguments, argumentValues);
+			callEval = execute_filesystem_copy_output(source, state, pid,
+					process, arguments, argumentValues);
 			break;
 		case "$textFileLength":
-			state = execute_text_file_length(source, state, pid, process, lhs,
+			callEval = execute_text_file_length(source, state, pid, process,
 					arguments, argumentValues);
 			break;
 		case "sprintf":
-			state = this.execute_fprintf(source, state, pid, process, lhs,
+			callEval = this.execute_fprintf(source, state, pid, process,
 					arguments, argumentValues);
 			break;
 		default:
-			throw new CIVLUnimplementedFeatureException(functionName, statement);
+			throw new CIVLUnimplementedFeatureException(functionName, source);
 
 		}
-		state = stateFactory.setLocation(state, pid, statement.target(),
-				statement.lhs() != null);
-		return state;
+		return callEval;
 	}
 
-	private State execute_text_file_length(CIVLSource source, State state,
-			int pid, String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_text_file_length(CIVLSource source, State state,
+			int pid, String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		Expression fileSystemExpression = modelFactory
@@ -654,7 +624,6 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression filesystemPointer;
 		SymbolicExpression fileSystemStructure;
 		SymbolicExpression fileArray;
-		// SymbolicSequence<?> fileSequence;
 		SymbolicExpression filename;
 		int numFiles;
 		int fileIndex;
@@ -719,12 +688,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 			}
 			length = universe.tupleRead(theFile, universe.intObject(6));
 		}
-		if (lhs != null)
-			state = primaryExecutor.assign(state, pid, process, lhs, length);
-		return state;
+		return new Evaluation(state, length);
 	}
 
-	private State execute_filesystem_copy_output(CIVLSource source,
+	private Evaluation execute_filesystem_copy_output(CIVLSource source,
 			State state, int pid, String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
@@ -760,7 +727,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 						universe.identityReference()));
 		state = primaryExecutor.assign(arraySource, state, process,
 				arrayPointer, outputArray);
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -785,8 +752,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State execute_fscanf(CIVLSource source, State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_fscanf(CIVLSource source, State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression fileStream;
@@ -825,11 +792,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 					positionExceedFileLength).getResultType();
 
 			if (positionExceedFileLengthValid == ResultType.YES) {
-				if (lhs != null) {
-					state = primaryExecutor.assign(state, pid, process, lhs,
-							this.EOF);
-				}
-				return state;
+				return new Evaluation(state, this.EOF);
 			}
 		}
 		formatString = this.evaluator.getString(arguments[1].getSource(),
@@ -968,14 +931,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 			fileStream = universe.tupleWrite(fileStream, twoObject, position);
 			state = primaryExecutor.assign(source, state, process,
 					argumentValues[0], fileStream);
-			if (lhs != null) {
-				SymbolicExpression countValue = universe.integer(count);
-
-				state = primaryExecutor.assign(state, pid, process, lhs,
-						countValue);
-			}
+			return new Evaluation(state, universe.integer(count));
 		}
-		return state;
 	}
 
 	/**
@@ -1000,8 +957,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State execute_fprintf(CIVLSource source, State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_fprintf(CIVLSource source, State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression fileStream;
@@ -1074,7 +1031,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 						arguments[1].getSource(), process, formats,
 						printedContents);
 			if (civlConfig.statelessPrintf())
-				return state;
+				return new Evaluation(state, null);
 		} else if (fileNameString.compareTo(STDIN) == 0) {
 			// TODO: stdin
 		} else if (fileNameString.equals(STDERR)) {
@@ -1130,7 +1087,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 			state = primaryExecutor.assign(source, state, process, filePointer,
 					fileObject);
 		}
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -1192,14 +1149,5 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 			return 1;
 		else
 			return length;
-	}
-
-	/* ******************** Methods from LibraryExecutor ******************* */
-
-	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement statement,
-			String functionName) throws UnsatisfiablePathConditionException {
-		return executeWork(state, pid, (CallOrSpawnStatement) statement,
-				functionName);
 	}
 }

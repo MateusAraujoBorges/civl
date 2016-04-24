@@ -5,12 +5,11 @@ import java.util.Arrays;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
+import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -29,11 +28,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 public class LibtimeExecutor extends BaseLibraryExecutor implements
 		LibraryExecutor {
 
-	// private SymbolicConstant timeFunc;
 	private SymbolicConstant localtimeFunc;
 	private CIVLType tmType;
 	private SymbolicType tmSymbolicType;
-	// private SymbolicType stringSymbolicType;
 	private SymbolicConstant tmToStrFunc;
 	private SymbolicArrayType stringSymbolicType;
 	private SymbolicConstant tmToStrSizeFunc;
@@ -51,12 +48,6 @@ public class LibtimeExecutor extends BaseLibraryExecutor implements
 			this.tmSymbolicType = tmType.getDynamicType(universe);
 		this.stringSymbolicType = (SymbolicArrayType) universe.canonic(universe
 				.arrayType(universe.characterType()));
-		// this.timeFunc = (SymbolicConstant) universe.canonic(universe
-		// .symbolicConstant(
-		// universe.stringObject("time"),
-		// universe.functionType(
-		// Arrays.asList(universe.integerType()),
-		// universe.realType())));
 		if (tmType != null)
 			this.localtimeFunc = (SymbolicConstant) universe.canonic(universe
 					.symbolicConstant(universe.stringObject("localtime"),
@@ -82,40 +73,26 @@ public class LibtimeExecutor extends BaseLibraryExecutor implements
 	}
 
 	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement statement,
-			String functionName) throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		SymbolicExpression[] argumentValues;
-		CallOrSpawnStatement call;
-		int numArgs;
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Evaluation callEval = null;
 
-		call = (CallOrSpawnStatement) statement;
-		numArgs = call.arguments().size();
-		arguments = new Expression[numArgs];
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			arguments[i] = call.arguments().get(i);
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
 		switch (functionName) {
 		case "localtime":
-			state = this.executeLocalTime(state, pid, call.lhs(), arguments,
+			callEval = this.executeLocalTime(state, pid, arguments,
 					argumentValues);
 			break;
 		case "strftime":
-			state = this.executeStrftime(state, pid, call.lhs(), arguments,
+			callEval = this.executeStrftime(state, pid, arguments,
 					argumentValues);
 			break;
 		default:
 			throw new CIVLUnimplementedFeatureException(
 					"execution of function " + name + " in time library");
 		}
-		state = stateFactory.setLocation(state, pid, statement.target());
-		return state;
+		return callEval;
 	}
 
 	/**
@@ -134,11 +111,9 @@ public class LibtimeExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeStrftime(State state, int pid, LHSExpression lhs,
+	private Evaluation executeStrftime(State state, int pid,
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
-		// TODO Auto-generated method stub
-		// @SuppressWarnings("unused")
 		SymbolicExpression resultPointer = argumentValues[0];
 		String process = state.getProcessState(pid).name();
 		Evaluation eval = this.evaluator.dereference(arguments[3].getSource(),
@@ -155,10 +130,7 @@ public class LibtimeExecutor extends BaseLibraryExecutor implements
 				process, resultPointer, tmStr);
 		sizeValue = universe.apply(tmToStrSizeFunc,
 				Arrays.asList(argumentValues[1], argumentValues[2], tmValue));
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					sizeValue);
-		return state;
+		return new Evaluation(state, sizeValue);
 	}
 
 	/**
@@ -184,14 +156,13 @@ public class LibtimeExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeLocalTime(State state, int pid, LHSExpression lhs,
+	private Evaluation executeLocalTime(State state, int pid,
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		String process = state.getProcessState(pid).name();
 		Evaluation eval = this.evaluator.dereference(arguments[0].getSource(),
 				state, process, arguments[0], argumentValues[0], false);
 		SymbolicExpression result;
-		// Pair<State, SymbolicExpression> tmObjtResult;
 		Variable brokenTimeVar = this.modelFactory.brokenTimeVariable();
 		SymbolicExpression brokenTimePointer;
 
@@ -199,57 +170,9 @@ public class LibtimeExecutor extends BaseLibraryExecutor implements
 		result = universe.apply(localtimeFunc, Arrays.asList(eval.value));
 		state = this.stateFactory
 				.setVariable(state, brokenTimeVar, pid, result);
-		// //TODO
-		// tmObjtResult = this.primaryExecutor.malloc(lhs.getSource(), state,
-		// pid,
-		// process,
-		// modelFactory.hereOrRootExpression(lhs.getSource(), true),
-		// modelFactory.scopeValue(0),
-		// modelFactory.getSystemType(Model.TM_TYPE), result);
-		// /
-		// state = tmObjtResult.left;
 		brokenTimePointer = this.symbolicUtil.makePointer(
 				state.getDyscope(pid, brokenTimeVar.scope()),
 				brokenTimeVar.vid(), universe.identityReference());
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					brokenTimePointer);
-		return state;
+		return new Evaluation(state, brokenTimePointer);
 	}
-
-	// private State executeTime(State state, int pid, LHSExpression lhs,
-	// Expression[] arguments, SymbolicExpression[] argumentValues)
-	// throws UnsatisfiablePathConditionException {
-	// Variable timeCountVar = this.modelFactory.timeCountVariable();
-	// NumericExpression timeCountValue = (NumericExpression) state.valueOf(
-	// pid, timeCountVar);
-	// NumericExpression timeValue = (NumericExpression) universe.apply(
-	// timeFunc, Arrays.asList(timeCountValue));
-	// BooleanExpression timeValueAssumption, newPathCondition;
-	//
-	// state = this.stateFactory.setVariable(state, timeCountVar, pid,
-	// universe.add(timeCountValue, this.one));
-	// // if(time_count == 0) $assume timeValue > 0;
-	// if (timeCountValue.isZero()) {
-	// timeValueAssumption = universe.lessThan(universe.zeroReal(),
-	// timeValue);
-	// } else {
-	// // if(time_count > 0) $assume timeValue > time(time_count - 1);
-	// timeValueAssumption = universe.lessThan(
-	// (NumericExpression) universe.apply(timeFunc, Arrays
-	// .asList(universe.subtract(timeCountValue, one))),
-	// timeValue);
-	// }
-	// if (lhs != null)
-	// state = this.primaryExecutor.assign(state, pid, state
-	// .getProcessState(pid).name(), lhs, timeValue);
-	// if (!symbolicUtil.isNullPointer(argumentValues[0]))
-	// state = this.primaryExecutor.assign(arguments[0].getSource(),
-	// state, state.getProcessState(pid).name(),
-	// argumentValues[0], timeValue);
-	// newPathCondition = universe.and(state.getPathCondition(),
-	// timeValueAssumption);
-	// state = state.setPathCondition(newPathCondition);
-	// return state;
-	// }
 }

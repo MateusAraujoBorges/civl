@@ -15,8 +15,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLDomainType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -49,141 +47,108 @@ public class LibdomainExecutor extends BaseLibraryExecutor implements
 	}
 
 	@Override
-	public State execute(State state, int pid, CallOrSpawnStatement call,
-			String functionName) throws UnsatisfiablePathConditionException {
-		Expression[] arguments;
-		SymbolicExpression[] argumentValues;
-		LHSExpression lhs;
-		int numArgs;
-		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Evaluation callEval = null;
 
-		numArgs = call.arguments().size();
-		lhs = call.lhs();
-		arguments = new Expression[numArgs];
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval;
-
-			arguments[i] = call.arguments().get(i);
-			eval = evaluator.evaluate(state, pid, arguments[i]);
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
 		switch (functionName) {
 		case "$dimension_of":
-			state = execute_dimension_of(state, pid, process, lhs, arguments,
-					argumentValues, call.getSource());
+			callEval = execute_dimension_of(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$domain_partition":
-			state = execute_domain_partition(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
+			callEval = execute_domain_partition(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$high_of_regular_range":
-			state = execute_high_of_regular_range(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
+			callEval = execute_high_of_regular_range(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$is_rectangular_domain":
-			state = execute_is_rectangular_domain(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
+			callEval = execute_is_rectangular_domain(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$is_regular_range":
-			state = execute_is_regular_range(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
+			callEval = execute_is_regular_range(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$low_of_regular_range":
-			state = execute_low_of_regular_range(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
+			callEval = execute_low_of_regular_range(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$range_of_rectangular_domain":
-			state = execute_range_of_rectangular_domain(state, pid, process,
-					lhs, arguments, argumentValues, call.getSource());
+			callEval = execute_range_of_rectangular_domain(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$step_of_regular_range":
-			state = execute_step_of_regular_range(state, pid, process, lhs,
-					arguments, argumentValues, call.getSource());
+			callEval = execute_step_of_regular_range(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		}
-		state = stateFactory.setLocation(state, pid, call.target(),
-				call.lhs() != null);
-		return state;
+		return callEval;
 	}
 
-	private State execute_dimension_of(State state, int pid, String process,
-			LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_dimension_of(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					this.symbolicUtil.getDimensionOf(argumentValues[0]));
-		return state;
+		return new Evaluation(state,
+				this.symbolicUtil.getDimensionOf(argumentValues[0]));
+
 	}
 
-	private State execute_range_of_rectangular_domain(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_range_of_rectangular_domain(State state,
+			int pid, String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		int index = this.symbolicUtil.extractInt(source,
 				(NumericExpression) argumentValues[1]);
 
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					this.symbolicUtil.getRangeOfRectangularDomain(
-							argumentValues[0], index));
-		return state;
+		return new Evaluation(state,
+				this.symbolicUtil.getRangeOfRectangularDomain(
+						argumentValues[0], index));
 	}
 
-	private State execute_is_rectangular_domain(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_is_rectangular_domain(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					universe.bool(this.symbolicUtil
-							.isRectangularDomain(argumentValues[0])));
-		return state;
+		return new Evaluation(state, universe.bool(this.symbolicUtil
+				.isRectangularDomain(argumentValues[0])));
 	}
 
-	private State execute_is_regular_range(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_is_regular_range(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					universe.bool(this.symbolicUtil
-							.isRegularRange(argumentValues[0])));
-		return state;
+		return new Evaluation(state, universe.bool(this.symbolicUtil
+				.isRegularRange(argumentValues[0])));
 	}
 
-	private State execute_step_of_regular_range(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_step_of_regular_range(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					this.symbolicUtil.getStepOfRegularRange(argumentValues[0]));
-		return state;
+		return new Evaluation(state,
+				this.symbolicUtil.getStepOfRegularRange(argumentValues[0]));
 	}
 
-	private State execute_low_of_regular_range(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_low_of_regular_range(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					this.symbolicUtil.getLowOfRegularRange(argumentValues[0]));
-
-		return state;
+		return new Evaluation(state,
+				this.symbolicUtil.getLowOfRegularRange(argumentValues[0]));
 	}
 
-	private State execute_high_of_regular_range(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_high_of_regular_range(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					this.symbolicUtil.getHighOfRegularRange(argumentValues[0]));
-
-		return state;
+		return new Evaluation(state,
+				this.symbolicUtil.getHighOfRegularRange(argumentValues[0]));
 	}
 
 	/**
@@ -207,8 +172,8 @@ public class LibdomainExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State execute_domain_partition(State state, int pid,
-			String process, LHSExpression lhs, Expression[] arguments,
+	private Evaluation execute_domain_partition(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression domain = argumentValues[0];
@@ -253,10 +218,7 @@ public class LibdomainExecutor extends BaseLibraryExecutor implements
 				resultType,
 				Arrays.asList(numParts,
 						universe.array(domain.type(), subDomains)));
-		if (lhs != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					result);
-		return state;
+		return new Evaluation(state, result);
 	}
 
 	/**

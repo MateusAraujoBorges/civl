@@ -570,17 +570,6 @@ public class FunctionTranslator {
 		CallOrSpawnStatement callWaitAll;
 		Location location;
 		Expression domain;
-		// CallOrSpawnStatement call = null;
-
-		// if (bodyFuncCall != null) {
-		// // $parfor(...) func(); -- no need for _par_for_proc function
-		// call = (CallOrSpawnStatement) this.translateFunctionCall(
-		// initResults.first, null, bodyFuncCall, true,
-		// parForEndSource);
-		//
-		// // modelBuilder.callStatements.put(call, value)
-		// procFunc = call.function();
-		// } else {
 
 		// even when the body is a single function call statement, we still need
 		// to introduce a new proc function to wrap that single function call
@@ -591,6 +580,8 @@ public class FunctionTranslator {
 				.sourceOfBeginning(bodyNode);
 		List<Variable> loopVars = initResults.third;
 		int numOfLoopVars = loopVars.size();
+		Scope parameterScope = this.modelFactory.scope(procFuncSource, scope,
+				new ArrayList<>(0), null);
 		List<Variable> procFuncParameters = new ArrayList<>(numOfLoopVars);
 
 		for (int i = 0; i < numOfLoopVars; i++) {
@@ -599,27 +590,26 @@ public class FunctionTranslator {
 					loopVar.type(), loopVar.name(), i + 1);
 
 			procFuncParameters.add(parameter);
+			parameterScope.addVariable(parameter);
 		}
 		procFunc = modelFactory.function(
 				procFuncSource,
 				false,
 				modelFactory.identifier(procFuncStartSource, PAR_FUNC_NAME
 						+ modelBuilder.parProcFunctions.size()),
-				procFuncParameters, typeFactory.voidType(), scope, null);
+				parameterScope, procFuncParameters, typeFactory.voidType(),
+				scope, null);
 		scope.addFunction(procFunc);
+		parameterScope.setFunction(procFunc);
 		modelBuilder.parProcFunctions.put(procFunc, bodyNode);
-		// }
 		domain = this.translateExpressionNode(civlForNode.getDomain(), scope,
 				true);
 		result = new CommonFragment(this.elaborateDomainCall(scope, domain));
-		// this.civlParForCount++;
 		location = modelFactory.location(parForBeginSource, scope);
 		parForEnter = modelFactory.civlParForEnterStatement(parForBeginSource,
 				location, domain, domSizeVar, parProcs, procFunc);
 		assert procFunc != null;
 		parForEnter.setParProcFunction(procFunc);
-		// if (call != null)
-		// parForEnter.setArguments(call.arguments());
 		result = result.combineWith(new CommonFragment(parForEnter));
 		location = modelFactory.location(parForEndSource, scope);
 		callWaitAll = modelFactory.callOrSpawnStatement(parForEndSource,
@@ -1740,31 +1730,9 @@ public class FunctionTranslator {
 		// // In order to eliminate unnecessary scopes, do this loop twice.
 		// // The first time, just check if there are any declarations. If there
 		// // are, create newScope as usual. Otherwise, let newScope = scope.
-		// for (int i = 0; i < statementNode.numChildren(); i++) {
-		// BlockItemNode node = statementNode.getSequenceChild(i);
-		//
-		// if (node instanceof VariableDeclarationNode
-		// || node instanceof FunctionDeclarationNode) {
-		// newScopeNeeded = true;
-		// break;
-		// }
-		// if (node instanceof LabeledStatementNode) {
-		// StatementNode labeledStatementNode = ((LabeledStatementNode) node)
-		// .getStatement();
-		// if (labeledStatementNode instanceof VariableDeclarationNode) {
-		// newScopeNeeded = true;
-		// break;
-		// }
-		// }
-		// }
-		// if (!newScopeNeeded) {
-		// newScopeNeeded = needsNewScope(statementNode.parent().getScope(),
-		// statementNode);
-		// }
 		if (newScopeNeeded)
 			newScope = modelFactory.scope(modelFactory.sourceOf(statementNode),
-					scope, new LinkedHashSet<Variable>(),
-					functionInfo.function());
+					scope, new ArrayList<>(0), functionInfo.function());
 		else
 			newScope = scope;
 		location = modelFactory.location(
@@ -2045,8 +2013,7 @@ public class FunctionTranslator {
 			break;
 		case DECLARATION_LIST:
 			newScope = modelFactory.scope(modelFactory.sourceOf(initNode),
-					newScope, new LinkedHashSet<Variable>(),
-					functionInfo.function());
+					newScope, new ArrayList<>(0), functionInfo.function());
 			for (int i = 0; i < ((DeclarationListNode) initNode).numChildren(); i++) {
 				VariableDeclarationNode declaration = ((DeclarationListNode) initNode)
 						.getSequenceChild(i);
@@ -2223,10 +2190,13 @@ public class FunctionTranslator {
 			SequenceNode<VariableDeclarationNode> abcParameters = functionTypeNode
 					.getParameters();
 			int numParameters = abcParameters.numChildren();
+			Scope parameterScope;
 
 			if (scopedParameters != null) {
 				parameters.addAll(0, scopedParameters);
 			}
+			parameterScope = modelFactory.scope(nodeSource, scope,
+					new ArrayList<>(0), null);
 			for (int i = 0; i < numParameters; i++) {
 				VariableDeclarationNode decl = abcParameters
 						.getSequenceChild(i);
@@ -2237,7 +2207,7 @@ public class FunctionTranslator {
 					continue;
 				else {
 					CIVLType type = translateABCType(
-							modelFactory.sourceOf(decl), scope,
+							modelFactory.sourceOf(decl), parameterScope,
 							functionType.getParameterType(i));
 					CIVLSource source = modelFactory.sourceOf(decl);
 					String varName = decl.getName() == null ? "_arg" + i : decl
@@ -2250,15 +2220,14 @@ public class FunctionTranslator {
 					if (decl.getTypeNode().isConstQualified())
 						parameter.setConst(true);
 					parameters.add(parameter);
+					parameterScope.addVariable(parameter);
 				}
 			}
 			if (entity.getDefinition() != null) {
 				// regular function
-				result = modelFactory
-						.function(nodeSource, entity.isAtomic(),
-								functionIdentifier, parameters, returnType,
-								scope, null);
-				scope.addFunction(result);
+				result = modelFactory.function(nodeSource, entity.isAtomic(),
+						functionIdentifier, parameterScope, parameters,
+						returnType, scope, null);
 				modelBuilder.unprocessedFunctions.add(entity.getDefinition());
 			} else if (entity.isSystemFunction()) {
 				Source declSource = node.getIdentifier().getSource();
@@ -2286,16 +2255,9 @@ public class FunctionTranslator {
 								+ functionName, nodeSource);
 					libName = fileNameWithoutExtension(fileName);
 				}
-				// if (functionIdentifier.name().equals("$assert"))
-				// libName = "civlc";
-				// else if (functionIdentifier.name().equals("$equals"))
-				// libName = "pointer";
-				// else
-				// libName = fileNameWithoutExtension(fileName);
 				result = modelFactory.systemFunction(nodeSource,
-						functionIdentifier, parameters, returnType, scope,
-						libName);
-				scope.addFunction(result);
+						functionIdentifier, parameterScope, parameters,
+						returnType, scope, libName);
 			} else {
 				// functions with $abstract specifier, or functions without
 				// definition
@@ -2315,9 +2277,11 @@ public class FunctionTranslator {
 									+ "It can be declared as an unconstrained input variable instead, e.g.\n"
 									+ "$input int N;", node.getSource());
 				result = modelFactory.abstractFunction(nodeSource,
-						functionIdentifier, parameters, returnType, scope,
-						continuity);
+						functionIdentifier, parameterScope, parameters,
+						returnType, scope, continuity, modelFactory);
 			}
+			scope.addFunction(result);
+			parameterScope.setFunction(result);
 			modelBuilder.functionMap.put(entity, result);
 		}
 		if (contract != null) {
@@ -2339,7 +2303,6 @@ public class FunctionTranslator {
 				source, location, true, modelFactory.elaborateDomainPointer(),
 				Arrays.asList(domain), null);
 
-		// this.modelBuilder.elaborateDomainCalls.add(call);
 		return call;
 	}
 
@@ -3874,7 +3837,7 @@ public class FunctionTranslator {
 		ExpressionNode functionExpression = callNode.getFunction();
 		Function callee;
 		CIVLFunction civlFunction;
-		// String functionName;
+		CIVLSource source = modelFactory.sourceOf(callNode);
 
 		if (functionExpression instanceof IdentifierExpressionNode) {
 			callee = (Function) ((IdentifierExpressionNode) functionExpression)
@@ -3884,7 +3847,6 @@ public class FunctionTranslator {
 					"Function call must use identifier for now: "
 							+ functionExpression.getSource());
 		civlFunction = modelBuilder.functionMap.get(callee);
-		// functionName = civlFunction.name().name();
 		assert civlFunction != null;
 		if (civlFunction.isAbstractFunction()) {
 			List<Expression> arguments = new ArrayList<Expression>();
@@ -3896,9 +3858,18 @@ public class FunctionTranslator {
 				actual = arrayToPointer(actual);
 				arguments.add(actual);
 			}
-			result = modelFactory.abstractFunctionCallExpression(
-					modelFactory.sourceOf(callNode),
+			result = modelFactory.abstractFunctionCallExpression(source,
 					(AbstractFunction) civlFunction, arguments);
+			return result;
+		} else if (civlFunction.isSystemFunction()
+				&& civlFunction.isPureFunction()) {
+			Fragment fragment = this.translateFunctionCallNode(scope, callNode,
+					source);
+			CallOrSpawnStatement callStmt = (CallOrSpawnStatement) fragment
+					.uniqueFinalStatement();
+
+			callStmt.setLhs(null);
+			result = modelFactory.functionCallExpression(callStmt);
 			return result;
 		} else
 			throw new CIVLUnimplementedFeatureException(

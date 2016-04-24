@@ -72,6 +72,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	private FunctionContract contract = null;
 
+	private boolean isPure;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -93,28 +95,25 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	 *            The model factory
 	 */
 	public CommonFunction(CIVLSource source, boolean isAtomic, Identifier name,
-			List<Variable> parameters, CIVLType returnType,
-			Scope containingScope, int fid, Location startLocation,
-			ModelFactory factory) {
+			Scope parameterScope, List<Variable> parameters,
+			CIVLType returnType, Scope containingScope, int fid,
+			Location startLocation, ModelFactory factory) {
 		super(source);
 		this.name = name;
 		this.fid = fid;
 		this.parameters = parameters;
 		this.isAtomic = isAtomic;
+		this.outerScope = parameterScope;
 		if (parameters != null) {
 			int number = parameters.size();
 			CIVLType[] types = new CIVLType[number];
 
 			this.functionType = new CommonFunctionType(returnType, types,
 					factory.typeFactory().functionPointerSymbolicType());
-			outerScope = factory.scope(source, containingScope,
-					new LinkedHashSet<>(parameters), this);
 		} else {
 			this.functionType = new CommonFunctionType(returnType,
 					new CIVLType[0], factory.typeFactory()
 							.functionPointerSymbolicType());
-			outerScope = factory.scope(source, containingScope,
-					new LinkedHashSet<Variable>(), this);
 		}
 		this.containingScope = containingScope;
 		scopes = new HashSet<Scope>();
@@ -560,6 +559,11 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	@Override
 	public void setFunctionContract(FunctionContract contract) {
 		this.contract = contract;
+		if (contract != null) {
+			if (contract.isPure()) {
+				this.isPure = true;
+			}
+		}
 	}
 
 	@Override
@@ -626,5 +630,10 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 				return true;
 		}
 		return false;
+	}
+
+	@Override
+	public boolean isPureFunction() {
+		return this.isPure;
 	}
 }

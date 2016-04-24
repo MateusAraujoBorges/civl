@@ -22,6 +22,7 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
+import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.common.CommonEvaluator;
@@ -82,10 +83,11 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 
 	public ContractEvaluator(ModelFactory modelFactory,
 			StateFactory stateFactory, LibraryEvaluatorLoader loader,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
+			LibraryExecutorLoader loaderExec, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer,
 			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errorLogger,
 			CIVLConfiguration config) {
-		super(modelFactory, stateFactory, loader, symbolicUtil,
+		super(modelFactory, stateFactory, loader, loaderExec, symbolicUtil,
 				symbolicAnalyzer, memUnitFactory, errorLogger, config);
 		this.FINALIZED = universe.integer(2);
 		this.INITIALIZED = universe.oneInt();

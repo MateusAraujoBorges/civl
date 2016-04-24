@@ -10,6 +10,8 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
@@ -107,8 +109,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 
 	protected State executeAssert(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source, CallOrSpawnStatement statement)
-			throws UnsatisfiablePathConditionException {
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		BooleanExpression assertValue = (BooleanExpression) argumentValues[0];
 		Reasoner reasoner;
 		ValidityResult valid;
@@ -122,25 +123,11 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			Pair<State, String> messageResult = this.symbolicAnalyzer
 					.expressionEvaluation(state, pid, arguments[0], false);
 			String firstEvaluation, secondEvaluation, result;
-			// StringBuffer inputVariableMap;
 
 			state = messageResult.left;
-			// inputVariableMap = symbolicAnalyzer
-			// .inputVariablesToStringBuffer(state);
-			// if (!inputVariableMap.toString().isEmpty()) {
-			// message.append("\nInput variables:");
-			// message.append(inputVariableMap);
-			// }
-			// message.append("\n\nContext: ");
-			// message.append(this.symbolicAnalyzer.pathconditionToString(source,
-			// state, "  ", reasoner.getReducedContext()));
 			message.append("\nAssertion: ");
 			message.append(arguments[0]);
 			message.append("\n        -> ");
-			// message.append(this.symbolicAnalyzer.statementEvaluation(state,
-			// state, pid, statement));
-			// // message.append(statement.toString());
-			// message.append("\n   -> ");
 			message.append(messageResult.right);
 			firstEvaluation = messageResult.right;
 			messageResult = this.symbolicAnalyzer.expressionEvaluation(state,
@@ -187,7 +174,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	protected State executeFree(State state, int pid, String process,
+	protected Evaluation executeFree(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression firstElementPointer = argumentValues[0];
@@ -249,7 +236,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 						indexes.left, indexes.right);
 			}
 		}
-		return state;
+		return new Evaluation(state, null);
 	}
 
 	/**
@@ -287,23 +274,18 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			throws UnsatisfiablePathConditionException {
 		assert resultType != ResultType.YES;
 		if (arguments.length > msgOffset) {
-			// if (civlConfig.enablePrintf()) {
 			Expression[] pArguments = Arrays.copyOfRange(arguments, msgOffset,
 					arguments.length);
 			SymbolicExpression[] pArgumentValues = Arrays.copyOfRange(
 					argumentValues, msgOffset, argumentValues.length);
 
 			state = this.primaryExecutor.execute_printf(source, state, pid,
-					process, null, pArguments, pArgumentValues);
+					process, pArguments, pArgumentValues).state;
 			civlConfig.out().println();
-			// }
 		}
 		state = errorLogger.logError(source, state, process,
 				this.symbolicAnalyzer.stateInformation(state), claim,
 				resultType, ErrorKind.ASSERTION_VIOLATION, message);
-		// errorLogger.logSimpleError(source, state, process,
-		// this.symbolicAnalyzer.stateInformation(state),
-		// ErrorKind.ASSERTION_VIOLATION, message);
 		return state;
 	}
 
@@ -316,14 +298,51 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 	 *            The process ID of the process to be terminated.
 	 * @return The state resulting from removing the specified process.
 	 */
-	protected State executeExit(State state, int pid) {
+	protected Evaluation executeExit(State state, int pid) {
 		int atomicPID = stateFactory.processInAtomic(state);
 
 		if (atomicPID == pid) {
 			state = stateFactory.releaseAtomicLock(state);
 		}
-		return stateFactory.terminateProcess(state, pid);
+		return new Evaluation(stateFactory.terminateProcess(state, pid), null);
 	}
+
+	@Override
+	public Evaluation execute(State state, int pid, CallOrSpawnStatement call,
+			String functionName) throws UnsatisfiablePathConditionException {
+		Evaluation eval;
+		LHSExpression lhs = call.lhs();
+		Location target = call.target();
+		Expression[] arguments;
+		SymbolicExpression[] argumentValues;
+		int numArgs;
+		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
+
+		numArgs = call.arguments().size();
+		arguments = new Expression[numArgs];
+		argumentValues = new SymbolicExpression[numArgs];
+		for (int i = 0; i < numArgs; i++) {
+			arguments[i] = call.arguments().get(i);
+			eval = evaluator.evaluate(state, pid, arguments[i]);
+			argumentValues[i] = eval.value;
+			state = eval.state;
+		}
+		eval = this.executeValue(state, pid, process, call.getSource(),
+				functionName, arguments, argumentValues);
+		state = eval.state;
+		if (lhs != null && eval.value != null)
+			state = this.primaryExecutor.assign(state, pid, process, lhs,
+					eval.value);
+		if (target != null && !state.getProcessState(pid).hasEmptyStack())
+			state = this.stateFactory.setLocation(state, pid, target);
+		eval.state = state;
+		return eval;
+	}
+
+	abstract protected Evaluation executeValue(State state, int pid,
+			String process, CIVLSource source, String functionName,
+			Expression[] arguments, SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException;
 
 	/* ************************** Private Methods ************************** */
 

@@ -10,7 +10,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
-import edu.udel.cis.vsl.civl.model.IF.expression.SystemFunctionCallExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluator;
@@ -45,7 +45,7 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 	}
 
 	/**
-	 * Evaluate the {@link SystemFunctionCallExpression} $mpi_isRecvBufEmpty(int
+	 * Evaluate the {@link FunctionCallExpression} $mpi_isRecvBufEmpty(int
 	 * src, MPI_Comm comm). Note: the second argument "comm" is added by CIVL
 	 * model.
 	 * 

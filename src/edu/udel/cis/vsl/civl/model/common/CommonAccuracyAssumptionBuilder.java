@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.model.common;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -104,7 +105,7 @@ public class CommonAccuracyAssumptionBuilder implements
 		case STRING_LITERAL:
 		case STRUCT_OR_UNION_LITERAL:
 		case SUBSCRIPT:
-		case SYSTEM_FUNC_CALL:
+		case FUNC_CALL:
 		case UNARY:
 		case UNDEFINED_PROC:
 		case VARIABLE:
@@ -554,9 +555,13 @@ public class CommonAccuracyAssumptionBuilder implements
 									source, BINARY_OPERATOR.EQUAL, lhs, rhs)),
 					null);
 
+			Scope paraScope = factory.scope(source,
+					expression.expressionScope(), new ArrayList<Variable>(0),
+					null);
+
 			assumeCall.setFunction(factory.functionIdentifierExpression(source,
 					factory.systemFunction(source,
-							factory.identifier(source, "$assume"),
+							factory.identifier(source, "$assume"), paraScope,
 							new LinkedList<Variable>(), typeFactory.voidType(),
 							expression.expressionScope(), "civlc")));
 			result.addNewStatement(assumeCall);

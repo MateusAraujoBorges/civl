@@ -21,7 +21,6 @@ import edu.udel.cis.vsl.civl.semantics.contract.ContractExecutor;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
-import edu.udel.cis.vsl.gmc.ErrorLog;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 
@@ -76,11 +75,10 @@ public class Semantics {
 	 * @return The new CIVL executor.
 	 */
 	public static Executor newExecutor(ModelFactory modelFactory,
-			StateFactory stateFactory, ErrorLog log,
-			LibraryExecutorLoader loader, Evaluator evaluator,
-			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errLogger,
-			CIVLConfiguration civlConfig) {
-		return new CommonExecutor(modelFactory, stateFactory, log, loader,
+			StateFactory stateFactory, LibraryExecutorLoader loader,
+			Evaluator evaluator, SymbolicAnalyzer symbolicAnalyzer,
+			CIVLErrorLogger errLogger, CIVLConfiguration civlConfig) {
+		return new CommonExecutor(modelFactory, stateFactory, loader,
 				evaluator, symbolicAnalyzer, errLogger, civlConfig);
 	}
 
@@ -106,12 +104,12 @@ public class Semantics {
 	 * @return The new CIVL executor.
 	 */
 	public static ContractExecutor newContractExecutor(
-			ModelFactory modelFactory, StateFactory stateFactory, ErrorLog log,
+			ModelFactory modelFactory, StateFactory stateFactory,
 			LibraryExecutorLoader loader, ContractEvaluator evaluator,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errLogger,
 			CIVLConfiguration civlConfig,
 			ContractConditionGenerator conditionGenerator) {
-		return new ContractExecutor(modelFactory, stateFactory, log, loader,
+		return new ContractExecutor(modelFactory, stateFactory, loader,
 				evaluator, symbolicAnalyzer, errLogger, civlConfig,
 				conditionGenerator);
 	}
@@ -137,12 +135,13 @@ public class Semantics {
 	 */
 	public static Evaluator newEvaluator(ModelFactory modelFactory,
 			StateFactory stateFactory, LibraryEvaluatorLoader loader,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
+			LibraryExecutorLoader loaderExec, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer,
 			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errLogger,
 			CIVLConfiguration config) {
 		return new CommonEvaluator(modelFactory, stateFactory, loader,
-				symbolicUtil, symbolicAnalyzer, memUnitFactory, errLogger,
-				config);
+				loaderExec, symbolicUtil, symbolicAnalyzer, memUnitFactory,
+				errLogger, config);
 	}
 
 	/**
@@ -166,12 +165,13 @@ public class Semantics {
 	 */
 	public static Evaluator newContractEvaluator(ModelFactory modelFactory,
 			StateFactory stateFactory, LibraryEvaluatorLoader loader,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
+			LibraryExecutorLoader loaderExec, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer,
 			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errLogger,
 			CIVLConfiguration config) {
 		return new ContractEvaluator(modelFactory, stateFactory, loader,
-				symbolicUtil, symbolicAnalyzer, memUnitFactory, errLogger,
-				config);
+				loaderExec, symbolicUtil, symbolicAnalyzer, memUnitFactory,
+				errLogger, config);
 	}
 
 	/**
@@ -196,13 +196,13 @@ public class Semantics {
 	 */
 	public static ContractConditionGenerator newContractConditionGenerator(
 			ModelFactory modelFactory, StateFactory stateFactory,
-			LibraryEvaluatorLoader loader, SymbolicUtility symbolicUtil,
-			SymbolicAnalyzer symbolicAnalyzer,
+			LibraryEvaluatorLoader loader, LibraryExecutorLoader loaderExec,
+			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
 			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errLogger,
 			CIVLConfiguration config) {
 		return new CommonContractConditionGenerator(modelFactory, stateFactory,
-				symbolicUtil, symbolicAnalyzer, loader, memUnitFactory,
-				errLogger, config);
+				symbolicUtil, symbolicAnalyzer, loader, loaderExec,
+				memUnitFactory, errLogger, config);
 	}
 
 	/**

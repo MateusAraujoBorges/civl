@@ -37,10 +37,11 @@ public class CommonAbstractFunction extends CommonFunction implements
 	 *            The model factory
 	 */
 	public CommonAbstractFunction(CIVLSource source, Identifier name,
-			List<Variable> parameters, CIVLType returnType,
-			Scope containingScope, int fid, int continuity, ModelFactory factory) {
-		super(source, true, name, parameters, returnType, containingScope, fid,
-				null, factory);
+			Scope parameterScope, List<Variable> parameters,
+			CIVLType returnType, Scope containingScope, int fid,
+			int continuity, ModelFactory factory) {
+		super(source, true, name, parameterScope, parameters, returnType,
+				containingScope, fid, null, factory);
 		this.continuity = continuity;
 	}
 
