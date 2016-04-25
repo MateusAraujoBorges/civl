@@ -252,15 +252,15 @@ public class SvcompUnPPWorker extends BaseWorker {
 	}
 
 	private AST addHeaders(AST ast) throws SyntaxException {
-		if (needsIoHeader) {
-			AST ioHeaderAST = this.parseSystemLibrary(IO_HEADER);
-
-			ast = this.combineASTs(ioHeaderAST, ast);
-		}
 		if (needsStdlibHeader) {
 			AST stdlibHeaderAST = this.parseSystemLibrary(STDLIB_HEADER);
 
 			ast = this.combineASTs(stdlibHeaderAST, ast);
+		}
+		if (needsIoHeader) {
+			AST ioHeaderAST = this.parseSystemLibrary(IO_HEADER);
+
+			ast = this.combineASTs(ioHeaderAST, ast);
 		}
 		// ast = Transform.newTransformer("prune",
 		// ast.getASTFactory()).transform(

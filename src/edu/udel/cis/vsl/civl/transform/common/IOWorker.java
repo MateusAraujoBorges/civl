@@ -806,6 +806,7 @@ public class IOWorker extends BaseWorker {
 	public AST transform(AST unit) throws SyntaxException {
 		// boolean hasFflush = TransformerFactory.hasFunctionCalls(unit,
 		// Arrays.asList(FFLUSH));
+		// unit.prettyPrint(System.out, true);
 		boolean transformationNeeded = this.isTransformationNeeded(unit);
 		SequenceNode<BlockItemNode> rootNode = unit.getRootNode();
 
