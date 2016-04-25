@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -28,19 +29,11 @@ public class SvcompTest {
 
 	// Yes
 	// None
+	@Ignore
 	@Test
 	public void sync01_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
 				filename("sync01_true-unreach-call.i")));
-	}
-
-	// reorder_2_false-unreach-call.i
-	@Test
-	public void reorder_2_false() throws ABCException {
-		assertFalse(ui
-				.run("verify", "-svcomp16 -showProgram=false",
-						TestConstants.QUIET,
-						filename("reorder_2_false-unreach-call.i")));
 	}
 
 	// sigma_false-unreach-call.i
@@ -61,13 +54,6 @@ public class SvcompTest {
 	public void intPointer() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
 				filename("intPointer.c")));
-	}
-
-	@Test
-	public void mix023_tso() throws ABCException {
-		assertFalse(ui.run("verify -showProgram=false", "-svcomp16",
-				TestConstants.QUIET,
-				filename("mix023_tso.opt_false-unreach-call.i")));
 	}
 
 	// stack_longest_true-unreach-call.i
@@ -116,6 +102,7 @@ public class SvcompTest {
 				filename("threadLocal.c")));
 	}
 
+	@Ignore
 	@Test
 	public void fmaxsym_cas_true() {
 		assertTrue(ui.run("verify  -svcomp16", TestConstants.QUIET,
