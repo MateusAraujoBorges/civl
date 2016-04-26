@@ -8,6 +8,7 @@
   @   requires \mpi_agree(root) && \mpi_agree(count);
   @   requires 0 < count && count < 10;
   @   ensures \mpi_equals(buf, count, MPI_INT, \remote(buf, root));
+  @   waitsfor root;
   @*/
 int broadcast(int * buf, int count, 
 	      MPI_Datatype datatype, int root, MPI_Comm comm) {
