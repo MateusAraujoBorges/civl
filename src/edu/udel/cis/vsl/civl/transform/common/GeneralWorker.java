@@ -129,10 +129,10 @@ public class GeneralWorker extends BaseWorker {
 		unit.release();
 		
 		root = moveStaticVariables(root);
-		insertDeclOfIntdivAndIntmod(root);
+		
 		processMalloc(root);
 		//TODO test is needed for processDivisionAndModulo method.
-//		
+//		insertDeclOfIntdivAndIntmod(root);
 		processDivisionAndModulo(root);
 		// remove main prototypes...
 		for (DeclarationNode decl : mainFunction.getDeclarations()) {
