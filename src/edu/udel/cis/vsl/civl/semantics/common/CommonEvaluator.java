@@ -125,6 +125,7 @@ import edu.udel.cis.vsl.sarl.number.IF.Numbers;
  */
 public class CommonEvaluator implements Evaluator {
 
+	private static int INTEGER_BIT_LENGTH = 32;
 	private static String ABSTRACT_FUNCTION_PREFIX = "_uf_";
 	public static String POINTER_TO_INT_FUNCTION = "_pointer2Int";
 	public static String INT_TO_POINTER_FUNCTION = "_int2Pointer";
@@ -282,26 +283,6 @@ public class CommonEvaluator implements Evaluator {
 	protected CIVLErrorLogger errorLogger;
 
 	/**
-	 * The abstract function for bitwise and.
-	 */
-	private SymbolicConstant bitAndFunc;
-
-	/**
-	 * The abstract function for bitwise complement.
-	 */
-	private SymbolicConstant bitComplementFunc;
-
-	/**
-	 * The abstract function for bitwise or.
-	 */
-	private SymbolicConstant bitOrFunc;
-
-	/**
-	 * The abstract function for bitwise xor.
-	 */
-	private SymbolicConstant bitXorFunc;
-
-	/**
 	 * The abstract function for bitwise left shift.
 	 */
 	private SymbolicConstant shiftLeftFunc;
@@ -334,6 +315,13 @@ public class CommonEvaluator implements Evaluator {
 	private UFExtender int2CharCaster;
 	private UFExtender pointer2IntCaster;
 	private UFExtender int2PointerCaster;
+
+	/**
+	 * A bit-vector type which representing a boolean array with a concrete
+	 * length corresponding to the bit-length of an integer define by the
+	 * environment. (The default length is 32);
+	 */
+	private SymbolicCompleteArrayType bitVectorType;
 
 	private FunctionCallExecutor functionCallExecutor;
 
@@ -391,21 +379,6 @@ public class CommonEvaluator implements Evaluator {
 		bigOFunction = universe.canonic(bigOFunction);
 		charType = universe.characterType();
 		nullCharExpr = universe.canonic(universe.character('\u0000'));
-		this.bitAndFunc = universe.symbolicConstant(universe
-				.stringObject("bitand"), universe.functionType(
-				Arrays.asList(universe.integerType(), universe.integerType()),
-				universe.integerType()));
-		this.bitComplementFunc = universe.symbolicConstant(universe
-				.stringObject("bitcomplement"), universe.functionType(
-				Arrays.asList(universe.integerType()), universe.integerType()));
-		this.bitOrFunc = universe.symbolicConstant(universe
-				.stringObject("bitor"), universe.functionType(
-				Arrays.asList(universe.integerType(), universe.integerType()),
-				universe.integerType()));
-		this.bitXorFunc = universe.symbolicConstant(universe
-				.stringObject("bitxor"), universe.functionType(
-				Arrays.asList(universe.integerType(), universe.integerType()),
-				universe.integerType()));
 		this.shiftLeftFunc = universe.symbolicConstant(universe
 				.stringObject("shiftleft"), universe.functionType(
 				Arrays.asList(universe.integerType(), universe.integerType()),
@@ -437,6 +410,7 @@ public class CommonEvaluator implements Evaluator {
 		this.civlConfig = config;
 		// this.zeroOrOne = (NumericExpression) universe.symbolicConstant(
 		// universe.stringObject("ZeroOrOne"), universe.integerType());
+		this.bitVectorType = universe.bitVectorType(INTEGER_BIT_LENGTH);
 		this.functionCallExecutor = new FunctionCallExecutor(modelFactory,
 				stateFactory, loaderExec, this, symbolicAnalyzer, errorLogger,
 				civlConfig);
@@ -869,11 +843,16 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value, right, result;
+		SymbolicExpression leftBitVector = universe.integer2Bitvector(
+				(NumericExpression) left, bitVectorType), rightBitvector;
 
 		eval = evaluate(eval.state, pid, expression.right());
 		right = eval.value;
 		state = eval.state;
-		result = universe.apply(this.bitAndFunc, Arrays.asList(left, right));
+		rightBitvector = universe.integer2Bitvector((NumericExpression) right,
+				bitVectorType);
+		result = universe.bitand(leftBitVector, rightBitvector);
+		result = universe.bitvector2Integer(result);
 		return new Evaluation(state, result);
 	}
 
@@ -895,9 +874,12 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.operand());
 		SymbolicExpression operand = eval.value, result;
+		SymbolicExpression bitVector = universe.integer2Bitvector(
+				(NumericExpression) operand, bitVectorType);
 
 		state = eval.state;
-		result = universe.apply(this.bitComplementFunc, Arrays.asList(operand));
+		result = universe.bitnot(bitVector);
+		result = universe.bitvector2Integer(result);
 		return new Evaluation(state, result);
 	}
 
@@ -919,11 +901,16 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value, right, result;
+		SymbolicExpression leftBitVector = universe.integer2Bitvector(
+				(NumericExpression) left, bitVectorType), rightBitvector;
 
 		eval = evaluate(eval.state, pid, expression.right());
 		right = eval.value;
+		rightBitvector = universe.integer2Bitvector((NumericExpression) right,
+				bitVectorType);
 		state = eval.state;
-		result = universe.apply(this.bitOrFunc, Arrays.asList(left, right));
+		result = universe.bitor(leftBitVector, rightBitvector);
+		result = universe.bitvector2Integer(result);
 		return new Evaluation(state, result);
 	}
 
@@ -945,11 +932,16 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value, right, result;
+		SymbolicExpression leftBitVector = universe.integer2Bitvector(
+				(NumericExpression) left, bitVectorType), rightBitvector;
 
 		eval = evaluate(eval.state, pid, expression.right());
 		right = eval.value;
+		rightBitvector = universe.integer2Bitvector((NumericExpression) right,
+				bitVectorType);
 		state = eval.state;
-		result = universe.apply(this.bitXorFunc, Arrays.asList(left, right));
+		result = universe.bitxor(leftBitVector, rightBitvector);
+		result = universe.bitvector2Integer(result);
 		return new Evaluation(state, result);
 	}
 
