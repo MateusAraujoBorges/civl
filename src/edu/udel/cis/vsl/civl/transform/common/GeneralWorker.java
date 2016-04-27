@@ -19,6 +19,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.DeclarationNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
@@ -39,6 +40,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
+import edu.udel.cis.vsl.abc.ast.type.IF.Types;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -94,7 +96,10 @@ public class GeneralWorker extends BaseWorker {
 		this.identifierPrefix = "_gen_";
 		this.config = config;
 	}
-
+	
+	/**
+	 * TODO write a method to insert the $int_div and $int_mod declaration
+	 */
 	@Override
 	public AST transform(AST unit) throws SyntaxException {
 		SequenceNode<BlockItemNode> root = unit.getRootNode();
@@ -117,11 +122,18 @@ public class GeneralWorker extends BaseWorker {
 		}
 		mainFunction = (Function) mainEntity;
 		mainDef = mainFunction.getDefinition();
+//		System.out.println("main parent:"+ mainDef.parent().getClass().toString());
+
 		checkAgumentsOfMainFunction(mainDef, root);
 		unit = renameStaticVariables(unit);
 		unit.release();
+		
 		root = moveStaticVariables(root);
+		insertDeclOfIntdivAndIntmod(root);
 		processMalloc(root);
+		//TODO test is needed for processDivisionAndModulo method.
+//		
+		processDivisionAndModulo(root);
 		// remove main prototypes...
 		for (DeclarationNode decl : mainFunction.getDeclarations()) {
 			if (!decl.isDefinition()) {
@@ -164,6 +176,67 @@ public class GeneralWorker extends BaseWorker {
 				unit.isWholeProgram());
 		// newAst.prettyPrint(System.out, true);
 		return newAst;
+	}
+	
+	private void insertDeclOfIntdivAndIntmod(SequenceNode<BlockItemNode> root){
+		TypeNode intTypeNode = nodeFactory.newBasicTypeNode(
+				this.newSource("int", CivlcTokenConstant.TYPE), 
+				BasicTypeKind.INT);
+		/*
+		 * construct int_div function declaration
+		 */
+		Source int_divSource = this.newSource("$int_div(int, int)", CivlcTokenConstant.DECLARATION);
+		Source int_divIdSource = this.newSource("$int_div", CivlcTokenConstant.IDENTIFIER);
+		Source argOneSource = this.newSource("int numerator", CivlcTokenConstant.DECLARATION);
+		Source argOneIdSource = this.newSource("numerator", CivlcTokenConstant.DECLARATION);
+		Source argTwoSource = this.newSource("int denominator", CivlcTokenConstant.DECLARATION);
+		Source argTwoIdSource = this.newSource("denominator", CivlcTokenConstant.DECLARATION);
+		Source formalsSource = this.newSource("int numerator, int denominator", 
+				CivlcTokenConstant.SEQUENCE);
+		IdentifierNode int_divIdNode = nodeFactory.newIdentifierNode(int_divIdSource, "$int_div");
+		IdentifierNode arg1IdNode = nodeFactory.newIdentifierNode(argOneIdSource, "numerator");
+		IdentifierNode arg2IdNode = nodeFactory.newIdentifierNode(argTwoIdSource, "denominator");
+		VariableDeclarationNode var1DeclNode = nodeFactory.newVariableDeclarationNode(argOneSource, 
+				arg1IdNode.copy(),
+				intTypeNode.copy());
+		VariableDeclarationNode var2DeclNode = nodeFactory.newVariableDeclarationNode(argTwoSource, 
+				arg2IdNode.copy(),
+				intTypeNode.copy());
+		List<VariableDeclarationNode> int_divFormals = new ArrayList<>();
+		
+		int_divFormals.add(var1DeclNode);
+		int_divFormals.add(var2DeclNode);
+		SequenceNode<VariableDeclarationNode> divFormals = 
+				nodeFactory.newSequenceNode(formalsSource, 
+						"int_div_formals", int_divFormals);
+		FunctionTypeNode int_divFunctionType = nodeFactory.newFunctionTypeNode(int_divSource, 
+				intTypeNode.copy(), 
+				divFormals, false);
+		FunctionDeclarationNode int_divDecl = nodeFactory.newFunctionDeclarationNode(int_divSource, int_divIdNode, 
+				int_divFunctionType, null);
+		/*
+		 * construct int_mod function declaration
+		 */
+		Source int_modSource = this.newSource("$int_mod(int, int)", CivlcTokenConstant.DECLARATION);
+		Source int_modIdSource = this.newSource("$int_mod", CivlcTokenConstant.IDENTIFIER);
+		IdentifierNode int_modIdNode = nodeFactory.newIdentifierNode(int_modIdSource, "$int_mod");
+		List<VariableDeclarationNode> int_modFormals = new ArrayList<>();
+		
+		int_modFormals.add(var1DeclNode.copy());
+		int_modFormals.add(var2DeclNode.copy());
+		SequenceNode<VariableDeclarationNode> modFormals = 
+				nodeFactory.newSequenceNode(formalsSource, 
+						"int_mod_formals", int_modFormals);
+		FunctionTypeNode int_modFunctionType = nodeFactory.newFunctionTypeNode(int_modSource, 
+				intTypeNode.copy(), 
+				modFormals, false);
+		FunctionDeclarationNode int_modDecl = nodeFactory.newFunctionDeclarationNode(int_modSource, int_modIdNode, 
+				int_modFunctionType, null);
+		List<BlockItemNode> decls = new ArrayList<>();
+		
+		decls.add(int_modDecl);
+		decls.add(int_divDecl);
+		root.insertChildren(0, decls);
 	}
 
 	private void checkAgumentsOfMainFunction(FunctionDefinitionNode main,
@@ -446,6 +519,72 @@ public class GeneralWorker extends BaseWorker {
 			}
 		}
 
+	}
+	
+	/**
+	 * Process DIV and MOD operator node, replace each div and mod operator with
+	 * corresponding function define in civlc lib.
+	 * 
+	 * @param node
+	 */
+	private void processDivisionAndModulo(ASTNode node){
+		if(node instanceof FunctionDeclarationNode){
+			FunctionDeclarationNode funcDeclNode = (FunctionDeclarationNode)node;
+			IdentifierNode idNode = (IdentifierNode)funcDeclNode.child(0);
+			if(idNode.name().equals("$int_div")
+					|| idNode.name().equals("$int_mod"))
+				return;
+		}
+		
+		if (node instanceof OperatorNode
+				&& (((OperatorNode)node).getOperator() == Operator.DIV
+				|| ((OperatorNode)node).getOperator() == Operator.MOD)) {
+			OperatorNode opn = (OperatorNode)node;
+			
+			if(opn.getNumberOfArguments() != 2) {
+				throw new CIVLSyntaxException(
+						"div or mod operator can only have two operands");
+			}
+			ASTNode parent = opn.parent();
+			int childIndex = opn.childIndex();
+			Operator op = opn.getOperator();
+			ExpressionNode operand1 = opn.getArgument(0);
+			ExpressionNode operand2 = opn.getArgument(1);
+			
+			processDivisionAndModulo(operand1);
+			processDivisionAndModulo(operand2);
+			operand1 = opn.getArgument(0);
+			operand2 = opn.getArgument(1);
+			
+			if(operand1.getInitialType().equivalentTo(
+					Types.newTypeFactory().basicType(BasicTypeKind.INT)) && 
+			   operand2.getInitialType().equivalentTo(
+					Types.newTypeFactory().basicType(BasicTypeKind.INT))) {
+				/**
+				 * construct a new functionCallNode.
+				 */
+				String funcName = (op == Operator.DIV) ? "$int_div" : "$int_mod";
+				String method = (op == Operator.DIV) ? "$int_div()" : "$int_mod()";
+				Source source = this.newSource(method, CivlcTokenConstant.CALL);
+				IdentifierNode idNode = nodeFactory.newIdentifierNode(source, funcName);
+				IdentifierExpressionNode funcIdentifier = 
+						nodeFactory.newIdentifierExpressionNode(source, idNode);
+				List<ExpressionNode> args = new ArrayList<ExpressionNode>();
+				
+				args.add(operand1.copy());
+				args.add(operand2.copy());
+				FunctionCallNode funcCallNode = nodeFactory.newFunctionCallNode(
+						source, funcIdentifier, args, null); //TODO scopeList?
+				funcCallNode.setInitialType(Types.newTypeFactory().basicType(BasicTypeKind.INT));
+				node.remove();
+				parent.setChild(childIndex, funcCallNode);
+			}
+		} else {
+			for (ASTNode child : node.children()) {
+				if (child != null)
+					processDivisionAndModulo(child);
+			}
+		}
 	}
 
 	/**
