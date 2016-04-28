@@ -897,9 +897,6 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 */
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		
-		System.out.println("MPI transformer entered!!!!");
-		
 		SequenceNode<BlockItemNode> root = ast.getRootNode();
 		AST newAst;
 		FunctionDefinitionNode mpiProcess, mainFunction;
@@ -1004,8 +1001,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 		this.completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		System.out.println("******************after mpi Transformer");
-		 newAst.prettyPrint(System.out, true);
+//		 newAst.prettyPrint(System.out, true);
 		return newAst;
 	}
 
