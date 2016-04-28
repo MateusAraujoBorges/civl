@@ -683,6 +683,7 @@ public class ModelTranslator {
 			if (config.debugOrVerbose())
 				program.prettyPrint(out);
 		}
+		program.apply(transformerFactory.getIntDivTransformer());
 	}
 
 	/**
