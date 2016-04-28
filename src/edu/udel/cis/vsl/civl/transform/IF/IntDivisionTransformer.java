@@ -6,6 +6,13 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.BaseTransformer;
 import edu.udel.cis.vsl.civl.transform.common.IntDivWorker;;
 
+/**
+ * This transformer is used to replace division and mod in the program with
+ * $int_div(int, int) and $int_mod(int, int) functions.
+ * 
+ * @author yanyihao
+ *
+ */
 public class IntDivisionTransformer extends BaseTransformer{
 	public final static String CODE = "int division";
 	public final static String LONG_NAME = "IntDivisionTransformer";
