@@ -482,6 +482,7 @@ public abstract class BaseWorker {
 					new File[0], new HashMap<String, Macro>(), filename, true);
 			tree = frontEnd.getParser(Language.CIVL_C).parse(tokenSource);
 		} catch (PreprocessorException | IOException | ParseException e) {
+			e.printStackTrace();
 			return null;
 		}
 		return frontEnd.getASTBuilder(Language.CIVL_C).getTranslationUnit(tree);
