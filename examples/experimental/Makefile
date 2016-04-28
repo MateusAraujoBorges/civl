@@ -10,11 +10,19 @@ TARGETS = \
 	floatsum2 \
 	gaussElim \
 	multInLoopCond \
-	pathfinder_cuda
-	
+	pathfinder_cuda \
+	arrayWrite \ 
+	assignBad
+
 default: all
 
 all: $(TARGETS)
+
+arrayWrite: arrayWrite.cvl
+	$(VERIFY) arrayWrite.cvl
+
+assignBad: assignBad.cvl
+	$(VERIFY) assignBad.cvl
 
 collective: collective.cvl
 	$(VERIFY) collective.cvl
