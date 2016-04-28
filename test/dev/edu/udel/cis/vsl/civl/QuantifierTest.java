@@ -20,6 +20,6 @@ public class QuantifierTest {
 	
 	@Test
 	public void quantifier() {
-		assertTrue(ui.run("verify", "-showAmpleSet", filename("quantifier.c")));
+		assertTrue(ui.run("verify", "-showQueries", filename("quantifier.c")));
 	}
 }
