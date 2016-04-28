@@ -50,6 +50,8 @@ public class TransformerFactory {
 	private Transformer svcompTransformer;
 
 	private Transformer contractTransformer;
+	
+	private Transformer intDivTransformer;
 
 	public TransformerFactory(ASTFactory astFactory) {
 		this.astFactory = astFactory;
@@ -161,5 +163,11 @@ public class TransformerFactory {
 		if (svcompTransformer == null)
 			svcompTransformer = new SvcompTransformer(astFactory);
 		return svcompTransformer;
+	}
+
+	public Transformer getIntDivTransformer() {
+		if(intDivTransformer == null)
+			intDivTransformer = new IntDivisionTransformer(astFactory);
+		return intDivTransformer;
 	}
 }
