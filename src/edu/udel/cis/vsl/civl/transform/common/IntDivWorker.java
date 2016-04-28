@@ -34,6 +34,7 @@ public class IntDivWorker extends BaseWorker{
 	public AST transform(AST unit) throws SyntaxException {
 		SequenceNode<BlockItemNode> root = unit.getRootNode();
 		AST newAst;
+		
 		unit.release();
 		linkIntDivLibrary(root);
 		processDivisionAndModulo(root);
@@ -53,11 +54,11 @@ public class IntDivWorker extends BaseWorker{
 		if(node instanceof FunctionDeclarationNode){
 			FunctionDeclarationNode funcDeclNode = (FunctionDeclarationNode)node;
 			IdentifierNode idNode = (IdentifierNode)funcDeclNode.child(0);
+			
 			if(idNode.name().equals("$int_div")
 					|| idNode.name().equals("$int_mod"))
 				return;
 		}
-		
 		if (node instanceof OperatorNode
 				&& (((OperatorNode)node).getOperator() == Operator.DIV
 				|| ((OperatorNode)node).getOperator() == Operator.MOD)) {
@@ -77,7 +78,6 @@ public class IntDivWorker extends BaseWorker{
 			processDivisionAndModulo(operand2);
 			operand1 = opn.getArgument(0);
 			operand2 = opn.getArgument(1);
-			
 			if(operand1.getInitialType().equivalentTo(
 					Types.newTypeFactory().basicType(BasicTypeKind.INT)) && 
 			   operand2.getInitialType().equivalentTo(
@@ -96,7 +96,8 @@ public class IntDivWorker extends BaseWorker{
 				args.add(operand1.copy());
 				args.add(operand2.copy());
 				FunctionCallNode funcCallNode = nodeFactory.newFunctionCallNode(
-						source, funcIdentifier, args, null); //TODO scopeList?
+						source, funcIdentifier, args, null); 
+				
 				funcCallNode.setInitialType(Types.newTypeFactory().basicType(BasicTypeKind.INT));
 				node.remove();
 				parent.setChild(childIndex, funcCallNode);
@@ -112,21 +113,15 @@ public class IntDivWorker extends BaseWorker{
 	private void linkIntDivLibrary(SequenceNode<BlockItemNode> ast){
 		try {
 			AST intDivLib = this.parseSystemLibrary("int_div.cvl");
-//			System.out.println("heres:"+intDivLib.toString());
 			SequenceNode<BlockItemNode> root = intDivLib.getRootNode();
-//			System.out.println("size:"+ root.numChildren());
 			List<BlockItemNode> funcDefinitions = new ArrayList<>();
+			
 			for (ASTNode child : root.children()){
-				
 				if(child instanceof FunctionDefinitionNode){
-//					System.out.println("xxx");
 					funcDefinitions.add((FunctionDeclarationNode)child.copy());
 				}
 			}
-			
-//			System.out.println("root:"+ast.toString());
 			ast.insertChildren(0, funcDefinitions);
-//			intDivLib.print(System.out);
 		} catch (SyntaxException e) {
 			e.printStackTrace();
 		}
