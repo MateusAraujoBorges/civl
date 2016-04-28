@@ -1,0 +1,40 @@
+#ifndef _INT_DIV_CIVL_
+#define _INT_DIV_CIVL_
+
+#include <int_div.cvh>
+
+int $int_div(int numerator, int denominator) {
+  //$assert(denominator != 0, "Possible division by zero");
+  if (numerator == 0)
+    return 0;
+  if (numerator >= 0) {
+    if (denominator >= 0)
+      return numerator/denominator;
+    else
+      return -(numerator/(-denominator));
+  } else {
+    if (denominator >= 0)
+      return -((-numerator)/denominator);
+    else
+      return (-numerator)/(-denominator);
+  }
+}
+
+int $int_mod(int numerator, int denominator) {
+  //$assert(denominator != 0, "Possible division by zero in modulo");
+  if (numerator == 0)
+    return 0;
+  if (numerator >= 0) {
+    if (denominator >= 0)
+      return numerator%denominator;
+    else
+      return numerator%(-denominator);
+  } else {
+    if (denominator >= 0)
+      return -((-numerator)%denominator);
+    else
+      return -((-numerator)%(-denominator));
+  }
+}
+
+#endif
