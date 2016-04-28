@@ -32,7 +32,8 @@ public class SimpleMPITest {
 	@Test
 	public void simpleMPI() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2",
-				QUIET, filename("simpleMPI.c")));
+				QUIET, 
+				filename("simpleMPI.c")));
 	}
 
 	@Test
