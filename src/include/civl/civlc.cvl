@@ -14,7 +14,7 @@ struct $int_iter {
   int content[];
   int index; //initialized as 0
 };
-*/
+
 
 /*void $elaborate(int x) {
   if(!$is_concrete_int(x))
