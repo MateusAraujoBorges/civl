@@ -114,11 +114,21 @@ public class IntDivWorker extends BaseWorker{
 		try {
 			AST intDivLib = this.parseSystemLibrary("int_div.cvl");
 			SequenceNode<BlockItemNode> root = intDivLib.getRootNode();
+//			System.out.println("children #:"+ root.numChildren());
+//			System.out.println("root children:"+ root.children());
 			List<BlockItemNode> funcDefinitions = new ArrayList<>();
 			
 			for (ASTNode child : root.children()){
 				if(child instanceof FunctionDefinitionNode){
 					funcDefinitions.add((FunctionDeclarationNode)child.copy());
+				}else{
+					if(child instanceof FunctionDeclarationNode){
+						FunctionDeclarationNode funcDeclNode = (FunctionDeclarationNode)child;
+						
+						if(funcDeclNode.getIdentifier().name().equals("$assert")){
+							funcDefinitions.add((FunctionDeclarationNode)child.copy());
+						}
+					}
 				}
 			}
 			ast.insertChildren(0, funcDefinitions);

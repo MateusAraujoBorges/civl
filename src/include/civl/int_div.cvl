@@ -1,7 +1,6 @@
 #ifndef _INT_DIV_CIVL_
 #define _INT_DIV_CIVL_
 
-#include <civlc.cvh>
 #include <int_div.cvh>
 
 int $int_div(int numerator, int denominator) {
