@@ -153,6 +153,10 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
+				
+				// TODO: this seems to match a lot more than patter described
+				// above.
+				
 				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return true;
 				} else if (right.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
@@ -183,6 +187,7 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
+				
 				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return right;
 				} else if (right.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
@@ -213,6 +218,7 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
+				
 				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return (BoundVariableExpression) left;
 				} else if (right.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
@@ -250,6 +256,7 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable and dt is an input.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
+				
 				if (left.expressionKind() == ExpressionKind.VARIABLE) {
 					if (right.expressionKind() == ExpressionKind.VARIABLE) {
 						VariableExpression leftVariable = (VariableExpression) left;
@@ -312,8 +319,8 @@ public class CommonAccuracyAssumptionBuilder implements
 	}
 
 	/**
-	 * if a patter like "iter*dt", where iter is an integer and dt is an input
-	 * variable, is found, return a pair contaiing the iterator and the
+	 * If a pattern like "iter*dt", where iter is an integer and dt is an input
+	 * variable, is found, return a pair containing the iterator and the
 	 * expression.
 	 */
 	private Pair<Expression, Expression> iteratorPair(Expression expression) {
@@ -326,6 +333,7 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable and dt is an input.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
+				
 				if (left.expressionKind() == ExpressionKind.VARIABLE) {
 					if (right.expressionKind() == ExpressionKind.VARIABLE) {
 						VariableExpression leftVariable = (VariableExpression) left;
@@ -559,6 +567,9 @@ public class CommonAccuracyAssumptionBuilder implements
 					expression.expressionScope(), new ArrayList<Variable>(0),
 					null);
 
+			// TODO: should there be a method in factory to produce an $assume
+			// statement?
+			
 			assumeCall.setFunction(factory.functionIdentifierExpression(source,
 					factory.systemFunction(source,
 							factory.identifier(source, "$assume"), paraScope,
@@ -754,6 +765,8 @@ public class CommonAccuracyAssumptionBuilder implements
 	}
 
 	/**
+	 * TODO: is there a POWER expression we can use?
+	 * 
 	 * Why is this called multiple? Isn't it returning a power? Operand to the
 	 * "times" power? The expression returned has the form x*x*...*x (times
 	 * times), where x is the operand.

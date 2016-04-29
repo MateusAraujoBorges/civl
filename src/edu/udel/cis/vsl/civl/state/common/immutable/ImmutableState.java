@@ -89,11 +89,6 @@ public class ImmutableState implements State {
 	 */
 	static long instanceCount = 0;
 
-	/**
-	 * Snapshots queue array for MPI communicators, one MPI communicator has an
-	 * corresponding snapshot queue.
-	 */
-	private ImmutableCollectiveSnapshotsEntry[][] snapshotsQueues;
 	/* ************************** Instance Fields ************************** */
 
 	/**
@@ -101,6 +96,12 @@ public class ImmutableState implements State {
 	 * 
 	 */
 	private BooleanExpression pathCondition;
+
+	/**
+	 * Snapshots queue array for MPI communicators, one MPI communicator has an
+	 * corresponding snapshot queue.
+	 */
+	private ImmutableCollectiveSnapshotsEntry[][] snapshotsQueues;
 
 	/**
 	 * processes[i] contains the process of pid i. some entries may be null.
@@ -422,7 +423,8 @@ public class ImmutableState implements State {
 	 *         null
 	 */
 	ImmutableProcessState[] copyAndExpandProcesses() {
-		ImmutableProcessState[] newProcesses = new ImmutableProcessState[processStates.length + 1];
+		ImmutableProcessState[] newProcesses = new ImmutableProcessState[processStates.length
+				+ 1];
 
 		System.arraycopy(processStates, 0, newProcesses, 0,
 				processStates.length);
@@ -438,7 +440,8 @@ public class ImmutableState implements State {
 	 *         null
 	 */
 	ImmutableDynamicScope[] copyAndExpandScopes() {
-		ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[dyscopes.length + 1];
+		ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[dyscopes.length
+				+ 1];
 
 		System.arraycopy(dyscopes, 0, newScopes, 0, dyscopes.length);
 		return newScopes;
@@ -538,7 +541,8 @@ public class ImmutableState implements State {
 				scopeId = getParentId(scopeId);
 			}
 		}
-		throw new IllegalArgumentException("Variable not in scope: " + variable);
+		throw new IllegalArgumentException(
+				"Variable not in scope: " + variable);
 	}
 
 	/**
@@ -582,7 +586,8 @@ public class ImmutableState implements State {
 	 *            PID of process
 	 * @return new state with new process state
 	 */
-	ImmutableState setProcessState(int index, ImmutableProcessState processState) {
+	ImmutableState setProcessState(int index,
+			ImmutableProcessState processState) {
 		int n = processStates.length;
 		ImmutableProcessState[] newProcessStates = new ImmutableProcessState[n];
 		ImmutableState result;
@@ -648,14 +653,16 @@ public class ImmutableState implements State {
 	 *            The updated snapshot queue
 	 * @return
 	 */
-	ImmutableState updateQueue(int id, ImmutableCollectiveSnapshotsEntry[] queue) {
+	ImmutableState updateQueue(int id,
+			ImmutableCollectiveSnapshotsEntry[] queue) {
 		ImmutableState newState;
 		int newLength;
 
 		assert queue != null;
 		newState = newState(this, processStates, dyscopes, pathCondition);
 		if (newState.snapshotsQueues.length <= id)
-			newState.snapshotsQueues = new ImmutableCollectiveSnapshotsEntry[id + 1][];
+			newState.snapshotsQueues = new ImmutableCollectiveSnapshotsEntry[id
+					+ 1][];
 		else
 			newState.snapshotsQueues = this.snapshotsQueues.clone();
 		newLength = snapshotsQueues.length;
