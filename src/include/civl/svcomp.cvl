@@ -6,8 +6,21 @@
 #define SVCOM_INT_UPPER 5
 #endif
 
+#ifndef SVCOM_INT_LOWER
+#define SVCOM_INT_LOWER -5
+#endif
+
+
 #ifndef SVCOM_UINT_UPPER
 #define SVCOM_UINT_UPPER 4
+#endif
+
+#ifndef SVCOM_LONG_UPPER
+#define SVCOM_LONG_UPPER 5
+#endif
+
+#ifndef SVCOM_ULONG_UPPER
+#define SVCOM_ULONG_UPPER 4
 #endif
 
 int _bool_count=0;
@@ -18,11 +31,27 @@ void* __VERIFIER_nondet_pointer(){
   return __VERIFIER_nondet_pointer_worker(_pointer_count++);
 }
 
+long __VERIFIER_nondet_long(){
+  long temp;
+
+  $havoc(&temp);
+  $assume(temp<=SVCOM_LONG_UPPER);
+  return temp;
+}
+
+unsigned long __VERIFIER_nondet_ulong(){
+  unsigned long temp;
+
+  $havoc(&temp);
+  $assume(temp>=0 && temp<=SVCOM_ULONG_UPPER);
+  return temp;
+}
+
 int __VERIFIER_nondet_int(){
   int temp;
 
   $havoc(&temp);
-  $assume(temp<=SVCOM_INT_UPPER);
+  $assume(temp<=SVCOM_INT_UPPER && temp>=SVCOM_INT_LOWER);
   return temp;
 }
 

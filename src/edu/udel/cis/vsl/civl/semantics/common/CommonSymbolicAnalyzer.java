@@ -26,6 +26,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
@@ -2215,6 +2216,13 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			}
 			case INITIAL_VALUE: {
 				result.append(expression.toString());
+				break;
+			}
+			case FUNC_CALL: {
+				CallOrSpawnStatement call = ((FunctionCallExpression) expression)
+						.callStatement();
+
+				result.append(this.statementEvaluation(state, null, pid, call));
 				break;
 			}
 			case ADDRESS_OF:

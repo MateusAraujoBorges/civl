@@ -964,7 +964,7 @@ public class ImmutableStateFactory implements StateFactory {
 		SymbolicExpression heapField = universe.tupleRead(heapValue, index);
 		int length = ((IntegerNumber) universe.extractNumber(universe
 				.length(heapField))).intValue();
-		StringObject heapObjectName = universe.stringObject("Hop" + pid + "s"
+		StringObject heapObjectName = universe.stringObject("Hp" + pid + "s"
 				+ dyscopeId + "f" + mallocId + "o" + length);
 		SymbolicType heapObjectType = universe.arrayType(elementType,
 				elementCount);

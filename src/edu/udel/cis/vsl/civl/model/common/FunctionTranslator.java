@@ -2248,12 +2248,18 @@ public class FunctionTranslator {
 				case "$equals":
 					libName = "pointer";
 					break;
-				default:
-					if (!fileName.contains("."))
-						throw new CIVLInternalException("Malformed file name "
-								+ fileName + " containing system function "
-								+ functionName, nodeSource);
-					libName = fileNameWithoutExtension(fileName);
+				default: {
+					libName = entity.systemLibrary();
+
+					if (libName == null) {
+						if (!fileName.contains("."))
+							throw new CIVLInternalException(
+									"Malformed file name " + fileName
+											+ " containing system function "
+											+ functionName, nodeSource);
+						libName = fileNameWithoutExtension(fileName);
+					}
+				}
 				}
 				result = modelFactory.systemFunction(nodeSource,
 						functionIdentifier, parameterScope, parameters,

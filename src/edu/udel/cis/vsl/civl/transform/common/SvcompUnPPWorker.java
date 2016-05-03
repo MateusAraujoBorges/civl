@@ -7,6 +7,7 @@ import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Variable;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
@@ -20,7 +21,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.PointerTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
@@ -360,8 +361,12 @@ public class SvcompUnPPWorker extends BaseWorker {
 	}
 
 	private void checkBigLoopBound(ASTNode node) throws SyntaxException {
-		if (node instanceof ForLoopNode) {
-			ExpressionNode condition = ((ForLoopNode) node).getCondition();
+		// look for
+		// while(i<1000){...; i=i+1;} or
+		// do{...; i=i+1;}while(i<1000) or
+		// for(;i<1000;i++)
+		if (node instanceof LoopNode) {
+			ExpressionNode condition = ((LoopNode) node).getCondition();
 
 			if (condition instanceof OperatorNode) {
 				OperatorNode operatorNode = (OperatorNode) condition;
@@ -377,39 +382,26 @@ public class SvcompUnPPWorker extends BaseWorker {
 					argIndex = 0;
 				}
 				if (upper != null) {
-					if (upper instanceof IntegerConstantNode) {
-						ExpressionNode newArg = this.factorNewInputVariable(
-								this.getIntValue((IntegerConstantNode) upper),
+					ExpressionNode newUpper = transformBigValueNode(upper);
+
+					if (newUpper != null)
+						operatorNode.setArgument(argIndex, newUpper);
+				}
+				IdentifierExpressionNode array = findArrayReference(operatorNode);
+
+				if (array != null) {
+					Variable arrayVariable = (Variable) array.getIdentifier()
+							.getEntity();
+					VariableDeclarationNode arrayDef = arrayVariable
+							.getDefinition();
+					ArrayTypeNode arrayType = (ArrayTypeNode) arrayDef
+							.getTypeNode();
+					ExpressionNode extent = arrayType.getExtent();
+
+					if (extent instanceof IntegerConstantNode) {
+						this.factorNewInputVariable(
+								this.getIntValue((IntegerConstantNode) extent),
 								false);
-
-						if (newArg != null)
-							operatorNode.setArgument(argIndex, newArg);
-					} else if (upper instanceof IdentifierExpressionNode) {
-						String identifer = ((IdentifierExpressionNode) upper)
-								.getIdentifier().name();
-
-						// for(; i<N; ), and N is initialized with some big
-						// number
-						if (this.variableNamesIntializedBig
-								.containsKey(identifer)) {
-							int value = this.variableNamesIntializedBig
-									.get(identifer);
-							ExpressionNode newInit = null;
-
-							// update the declaration of N to be: int
-							// N=_svcomp_unppk_scale;
-							newInit = this.getDownScaledExpression(
-									upper.getSource(), value);
-							if (newInit == null) {
-								// create new scale variable for N
-								newInit = this.factorNewInputVariable(value,
-										false);
-							}
-							this.variablesIntializedBig.get(identifer)
-									.setInitializer(newInit);
-							variableNamesIntializedBig.remove(identifer);
-							variablesIntializedBig.remove(identifer);
-						}
 					}
 				}
 			}
@@ -419,6 +411,83 @@ public class SvcompUnPPWorker extends BaseWorker {
 					this.checkBigLoopBound(child);
 			}
 		}
+	}
+
+	private IdentifierExpressionNode findArrayReference(
+			OperatorNode operatorNode) {
+		Operator operator = operatorNode.getOperator();
+
+		if (operator == Operator.SUBSCRIPT) {
+			ExpressionNode array = operatorNode.getArgument(0);
+
+			if (array instanceof IdentifierExpressionNode)
+				return (IdentifierExpressionNode) array;
+			return null;
+		} else {
+			int num = operatorNode.numChildren();
+
+			for (int i = 0; i < num; i++) {
+				ASTNode child = operatorNode.child(i);
+
+				if (child instanceof OperatorNode) {
+					IdentifierExpressionNode result = findArrayReference((OperatorNode) child);
+
+					if (result != null)
+						return result;
+				}
+			}
+		}
+		return null;
+	}
+
+	private ExpressionNode transformBigValueNode(ExpressionNode bigValueNode)
+			throws SyntaxException {
+		if (bigValueNode instanceof IntegerConstantNode) {
+			ExpressionNode newArg = this
+					.factorNewInputVariable(this
+							.getIntValue((IntegerConstantNode) bigValueNode),
+							false);
+
+			return newArg;
+		} else if (bigValueNode instanceof OperatorNode) {
+			OperatorNode upperOperator = (OperatorNode) bigValueNode;
+			Operator operator = upperOperator.getOperator();
+
+			if (operator == Operator.DIV) {
+				ExpressionNode numerator = upperOperator.getArgument(0);
+				ExpressionNode newNumerator = this
+						.transformBigValueNode(numerator);
+
+				if (newNumerator != null)
+					upperOperator.setArgument(0, newNumerator);
+			}
+			return null;
+		} else if (bigValueNode instanceof IdentifierExpressionNode) {
+			String identifer = ((IdentifierExpressionNode) bigValueNode)
+					.getIdentifier().name();
+
+			// for(; i<N; ), and N is initialized with some big
+			// number
+			if (this.variableNamesIntializedBig.containsKey(identifer)) {
+				int value = this.variableNamesIntializedBig.get(identifer);
+				ExpressionNode newInit = null;
+
+				// update the declaration of N to be: int
+				// N=_svcomp_unppk_scale;
+				newInit = this.getDownScaledExpression(
+						bigValueNode.getSource(), value);
+				if (newInit == null) {
+					// create new scale variable for N
+					newInit = this.factorNewInputVariable(value, false);
+				}
+				this.variablesIntializedBig.get(identifer).setInitializer(
+						newInit);
+				variableNamesIntializedBig.remove(identifer);
+				variablesIntializedBig.remove(identifer);
+			}
+			return null;
+		}
+		return null;
 	}
 
 	/**

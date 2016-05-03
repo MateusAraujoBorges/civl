@@ -92,6 +92,7 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator implements
 				joinProcess);
 		if (modelFactory.isPocessIdDefined(pidValue)
 				&& !modelFactory.isProcessIdNull(pidValue)
+				&& state.getProcessState(pidValue) != null
 				&& !state.getProcessState(pidValue).hasEmptyStack())
 			guard = universe.falseExpression();
 		else

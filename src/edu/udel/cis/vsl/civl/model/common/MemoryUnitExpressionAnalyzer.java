@@ -21,6 +21,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RecDomainLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RegularRangeExpression;
@@ -522,8 +523,15 @@ public class MemoryUnitExpressionAnalyzer {
 			break;
 		case PROC_NULL:
 			break;
-		case FUNC_CALL:// TODO check
+		case FUNC_CALL: {
+			CallOrSpawnStatement callStmt = ((FunctionCallExpression) expression)
+					.callStatement();
+
+			this.computeImpactMemoryUnitsOfStatement(writableVars,
+					expression.expressionScope(), callStmt, result,
+					new HashSet<>(0));
 			break;
+		}
 		default:
 			throw new CIVLUnimplementedFeatureException(
 					"computing the impact memory units" + " of expressions of "
