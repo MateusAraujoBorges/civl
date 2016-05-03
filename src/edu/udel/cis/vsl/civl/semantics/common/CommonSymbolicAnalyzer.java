@@ -800,8 +800,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		StringBuffer result = new StringBuffer();
 
 		if (dyscopeId == -1 && vid == -1)
-			result.append("NULL");
-		if (dyscopeId < 0)
+			result.append("(void*)0");
+		else if (dyscopeId < 0)
 			result.append("UNDEFINED");
 		else {
 			DynamicScope dyscope = state.getDyscope(dyscopeId);
