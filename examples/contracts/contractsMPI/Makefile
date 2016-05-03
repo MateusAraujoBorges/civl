@@ -1,5 +1,5 @@
 CIVL=civl
-OPTION=-errorBound=10 -enablePrintf=false
+OPTION=-errorBound=10 -enablePrintf=false -mpiContract
 VERIFY=$(CIVL) verify $(OPTION)
 
 
