@@ -55,6 +55,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private final static String EXIT = "exit";
 
+	private final static String ABORT = "abort";
+
 	private final static String STDLIB_HEADER = "stdlib.h";
 
 	private boolean needsPthreadHeader = false;
@@ -65,8 +67,6 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private final static int UPPER_BOUND = 11;// has to use this because of
 												// pthread/fib_bench_longest_false-unreach-call.i
-
-	// private int scale_var_count = 0;
 
 	private final static String SCALE_VAR = "scale";
 
@@ -284,7 +284,7 @@ public class SvcompUnPPWorker extends BaseWorker {
 			if (!toRemove)
 				toRemove = isQualifiedPthreadNode(item);
 			if (!toRemove) {
-				isStdlibNode(item);
+				toRemove = isStdlibNode(item);
 			}
 			if (toRemove)
 				item.remove();
@@ -421,14 +421,25 @@ public class SvcompUnPPWorker extends BaseWorker {
 		}
 	}
 
-	private boolean isStdlibNode(BlockItemNode item) {
+	/**
+	 * checks if the given node is a declaration from stdlib.h.
+	 * 
+	 * This method assumes that only exit and abort are used in svcomp
+	 * benchmarks. If more functions are used, they need to be added here.
+	 * 
+	 * @param node
+	 *            the node to be checked
+	 * @return true iff the given node is a declaration from stdlib.h
+	 */
+	private boolean isStdlibNode(BlockItemNode node) {
 		// if (item.getSource().getFirstToken().getFormation() instanceof
 		// Inclusion)
 		// return false;
-		if (item instanceof FunctionDeclarationNode) {
-			FunctionDeclarationNode functionDecl = (FunctionDeclarationNode) item;
+		if (node instanceof FunctionDeclarationNode) {
+			FunctionDeclarationNode functionDecl = (FunctionDeclarationNode) node;
+			String name = functionDecl.getName();
 
-			if (functionDecl.getName().equals(EXIT)) {
+			if (name.equals(EXIT) || name.equals(ABORT)) {
 				this.needsStdlibHeader = true;
 				return true;
 			}
