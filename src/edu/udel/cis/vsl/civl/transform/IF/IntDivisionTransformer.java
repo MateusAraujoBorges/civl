@@ -14,11 +14,21 @@ import edu.udel.cis.vsl.civl.transform.common.IntDivWorker;;
  *
  */
 public class IntDivisionTransformer extends BaseTransformer{
-	public final static String CODE = "int division";
+	/**
+	 * The code (short name) of this transformer.
+	 */
+	public final static String CODE = "int_division";
+	/**
+	 * The long name of the transformer.
+	 */
 	public final static String LONG_NAME = "IntDivisionTransformer";
+	/**
+	 * The description of this transformer.
+	 */
 	public final static String SHORT_DESCRIPTION = "transforms division and mod operator in program "
 			+ "to $int_div and $int_mod functions";
-
+	
+	
 	public IntDivisionTransformer(ASTFactory astFactory) {
 		super(CODE, LONG_NAME, SHORT_DESCRIPTION, astFactory);
 	}
