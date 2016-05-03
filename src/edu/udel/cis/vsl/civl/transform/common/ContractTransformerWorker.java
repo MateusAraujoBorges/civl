@@ -28,7 +28,6 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.ContractTransformer;
 
 /**
@@ -81,24 +80,6 @@ public class ContractTransformerWorker extends BaseWorker {
 		havocDecl.setSystemFunctionSpecifier(true);
 		externalList.add(havocDecl);
 		externalList.addAll(declareMPICommConstants());
-		externalList.add(nodeFactory.newVariableDeclarationNode(
-				newSource("_Bool _mpi_sync_guard",
-						CivlcTokenConstant.DECLARATION),
-				identifier(ModelConfiguration.ContractMpiSyncGuard),
-				nodeFactory.newBasicTypeNode(
-						newSource("_Bool", CivlcTokenConstant.TYPE),
-						BasicTypeKind.BOOL), nodeFactory
-						.newBooleanConstantNode(
-								newSource("true", CivlcTokenConstant.BOOL),
-								true)));
-		externalList.add(nodeFactory.newIfNode(
-				newSource("if (_mpi_sync_guard)", CivlcTokenConstant.IF),
-				nodeFactory.newIdentifierExpressionNode(
-						newSource("_mpi_sync_guard",
-								CivlcTokenConstant.IDENTIFIER),
-						identifier(ModelConfiguration.ContractMpiSyncGuard)),
-				nodeFactory.newNullStatementNode(newSource(";",
-						CivlcTokenConstant.SEMI))));
 		for (ASTNode child : root) {
 			// TODO: some transformers happened previously make some child null
 			// ?

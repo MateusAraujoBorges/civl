@@ -26,11 +26,13 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MemoryEventNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.WaitsforNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonMPIConstantNode;
@@ -84,7 +86,8 @@ public class ContractTranslator extends FunctionTranslator {
 
 	/**
 	 * Current contract kind: {@link ContractKind} which informs the current
-	 * contract kind during recursive parsing.
+	 * contract kind during recursive parsing. {@link ContractKind} depends on a
+	 * contract clause, which cannot be nested, so no need to use a stack.
 	 */
 	private ContractKind currentContractKind;
 
@@ -95,10 +98,12 @@ public class ContractTranslator extends FunctionTranslator {
 	private List<Variable> agreedVaraibles;
 
 	/**
-	 * This field informs the attached MPI communicator with the current parsing
-	 * MPI collective behavior block.
+	 * This field informs title of the current parsing MPI collective behavior
+	 * block. It consists of an MPI communicator expression and a
+	 * {@link MPICommunicationPattern}. MPI collective behavior blocks cannot be
+	 * nested, so no need to use a stack.
 	 */
-	private Expression currentMPICommunicator;
+	private Pair<Expression, MPICommunicationPattern> currentMPICollectiveTitle;
 
 	/******************** Constructor ********************/
 	ContractTranslator(ModelBuilderWorker modelBuilder,
@@ -108,6 +113,7 @@ public class ContractTranslator extends FunctionTranslator {
 		this.modelFactory = modelFactory;
 		this.modelBuilder = modelBuilder;
 		this.function = function;
+		this.currentMPICollectiveTitle = new Pair<>(null, null);
 	}
 
 	public void translateFunctionContract(SequenceNode<ContractNode> contract) {
@@ -223,7 +229,16 @@ public class ContractTranslator extends FunctionTranslator {
 			assert targetBehavior instanceof NamedFunctionBehavior;
 			Expression expression = translateExpressionNode(
 					((AssumesNode) contractNode).getPredicate(), scope, true);
-			behavior.addAssumption(expression);
+			Expression existedAssumptions;
+
+			if ((existedAssumptions = behavior.assumptions()) != null) {
+				CIVLSource spanedSource = modelFactory.sourceOfSpan(
+						existedAssumptions.getSource(), expression.getSource());
+
+				expression = modelFactory.binaryExpression(spanedSource,
+						BINARY_OPERATOR.AND, existedAssumptions, expression);
+			}
+			behavior.setAssumption(expression);
 			break;
 		}
 		case BEHAVIOR: {
@@ -235,8 +250,8 @@ public class ContractTranslator extends FunctionTranslator {
 			SequenceNode<ContractNode> body = behaviorNode.getBody();
 
 			for (ContractNode item : body) {
-				this.translateContractNodeWork(item, null, collectiveBehavior,
-						namedBehavior);
+				this.translateContractNodeWork(item, functionContract,
+						collectiveBehavior, namedBehavior);
 			}
 			if (collectiveBehavior != null)
 				collectiveBehavior.addNamedBehaviors(namedBehavior);
@@ -298,23 +313,52 @@ public class ContractTranslator extends FunctionTranslator {
 		}
 		case MPI_COLLECTIVE:
 			MPICollectiveBehavior newCollectiveBehavior;
-			Variable[] jointVariableCopy;
+			Variable[] agreedVariablesCopy;
+			MPICollectiveBlockNode collectiveBlockNode = (MPICollectiveBlockNode) contractNode;
 
-			currentMPICommunicator = translateExpressionNode(
-					((MPICollectiveBlockNode) contractNode).getMPIComm(),
-					scope, true);
+			currentMPICollectiveTitle.left = translateExpressionNode(
+					collectiveBlockNode.getMPIComm(), scope, true);
+			switch (collectiveBlockNode.getCollectiveKind()) {
+			case P2P:
+				currentMPICollectiveTitle.right = MPICommunicationPattern.P2P;
+				break;
+			case COL:
+				currentMPICollectiveTitle.right = MPICommunicationPattern.COL;
+				break;
+			default:
+				throw new CIVLSyntaxException(
+						"Unknown MPICommunicationPattern: "
+								+ collectiveBlockNode.getCollectiveKind());
+			}
 			// Since MPI_Collective behavior cannot be nested, such a global
 			// collection will be correct, other wise, it will be over written:
 			agreedVaraibles = new LinkedList<>();
 			newCollectiveBehavior = translateMPICollectiveBehavior(
 					(MPICollectiveBlockNode) contractNode, scope,
 					functionContract);
-			jointVariableCopy = new Variable[agreedVaraibles.size()];
-			agreedVaraibles.toArray(jointVariableCopy);
-			newCollectiveBehavior.setAgreedVariables(jointVariableCopy);
-			currentMPICommunicator = null;
+			agreedVariablesCopy = new Variable[agreedVaraibles.size()];
+			agreedVaraibles.toArray(agreedVariablesCopy);
+			newCollectiveBehavior.setAgreedVariables(agreedVariablesCopy);
+			currentMPICollectiveTitle.left = null;
+			currentMPICollectiveTitle.right = null;
 			agreedVaraibles = null;
 			functionContract.addMPICollectiveBehavior(newCollectiveBehavior);
+			break;
+		case WAITSFOR:
+			WaitsforNode waitsforNode = (WaitsforNode) contractNode;
+			List<Expression> arguments = new LinkedList<>();
+
+			for (ExpressionNode arg : waitsforNode.getArguments()) {
+				Expression argExpr = translateExpressionNode(arg, scope, true);
+
+				if (!argExpr.getExpressionType().isIntegerType())
+					if (argExpr.expressionKind() != Expression.ExpressionKind.REGULAR_RANGE)
+						throw new CIVLSyntaxException(
+								"waitsfor clause only accepts arguments of integer type or regualr range type");
+				arguments.add(argExpr);
+			}
+			targetBehavior.setWaitsforList(arguments);
+			functionContract.setHasMPIWaitsfor(true);
 			break;
 		case PURE:
 			functionContract.setPure(true);
@@ -433,6 +477,9 @@ public class ContractTranslator extends FunctionTranslator {
 		case REMOTE_REFERENCE:
 			return translateRemoteReferenceNode(
 					(RemoteExpressionNode) expressionNode, scope);
+		case QUANTIFIED_EXPRESSION:
+			return translateQuantifiedExpressionNode(
+					(QuantifiedExpressionNode) expressionNode, scope);
 		default:
 			return super.translateExpressionNode(expressionNode, scope,
 					translateConversions);
@@ -480,7 +527,8 @@ public class ContractTranslator extends FunctionTranslator {
 			numArgs = 1;
 			break;
 		}
-		if (currentMPICommunicator == null) {
+		if (currentMPICollectiveTitle.left == null
+				|| currentMPICollectiveTitle.right == null) {
 			throw new CIVLSyntaxException("MPI Contract expression: "
 					+ civlMpiContractKind
 					+ " can only be used in MPI collective behaviors");
@@ -495,16 +543,16 @@ public class ContractTranslator extends FunctionTranslator {
 		// Saving \mpi_agree variables:
 		if (civlMpiContractKind == MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE)
 			if (currentContractKind == ContractKind.REQUIRES) {
-				if (currentContractKind == ContractKind.REQUIRES) {
+				if (currentContractKind == ContractKind.REQUIRES)
 					agreedVaraibles.add(((VariableExpression) arguments[0])
 							.variable());
-				}
 			} else
 				throw new CIVLSyntaxException(
 						"\\mpi_agree currently can only be used in requirements.",
 						modelFactory.sourceOf(node));
 		return modelFactory.mpiContractExpression(modelFactory.sourceOf(node),
-				scope, currentMPICommunicator, arguments, civlMpiContractKind);
+				scope, currentMPICollectiveTitle.left, arguments,
+				civlMpiContractKind, currentMPICollectiveTitle.right);
 
 	}
 

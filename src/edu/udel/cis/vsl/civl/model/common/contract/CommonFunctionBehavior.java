@@ -23,6 +23,8 @@ public class CommonFunctionBehavior extends CommonSourceable implements
 
 	private Set<DependsEvent> dependsEvents = new HashSet<>();
 
+	private Set<Expression> waitsfors = null;
+
 	private boolean assignsNothing = false;
 
 	private boolean readsNothing = false;
@@ -237,5 +239,21 @@ public class CommonFunctionBehavior extends CommonSourceable implements
 	@Override
 	public void clearDependsEvents() {
 		this.dependsEvents.clear();
+	}
+
+	@Override
+	public void setWaitsforList(Iterable<Expression> waitsforArgs) {
+		if (waitsfors == null)
+			waitsfors = new HashSet<>();
+		for (Expression waitsforArg : waitsforArgs)
+			waitsfors.add(waitsforArg);
+	}
+
+	@Override
+	public Set<Expression> getWaitsforList() {
+		if (waitsfors == null)
+			return new HashSet<>();
+		else
+			return waitsfors;
 	}
 }

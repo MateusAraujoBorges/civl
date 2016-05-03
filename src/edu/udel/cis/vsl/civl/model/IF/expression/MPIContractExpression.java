@@ -1,5 +1,7 @@
 package edu.udel.cis.vsl.civl.model.IF.expression;
 
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
+
 /**
  * This class represents a set of MPI contract expressions:
  * <ol>
@@ -42,4 +44,14 @@ public interface MPIContractExpression extends Expression {
 	 * @return
 	 */
 	Expression[] arguments();
+
+	/**
+	 * <p>
+	 * <b>Summary</b> Returns the MPI communication pattern. Currently it's
+	 * either P2P (point-2-point) or COL (collective)
+	 * </p>
+	 * 
+	 * @return
+	 */
+	MPICommunicationPattern getMpiCommunicationPattern();
 }

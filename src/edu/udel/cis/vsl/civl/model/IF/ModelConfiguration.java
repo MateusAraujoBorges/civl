@@ -313,10 +313,4 @@ public final class ModelConfiguration {
 	 * stands for the number of MPI processes in a specific communicator.
 	 */
 	public static final String ContractMPICommSizeName = "\\mpi_comm_size";
-
-	/**
-	 * The extended "\mpi_comm_size" constant used in CIVL-ACSL contracts which
-	 * stands for the number of MPI processes in a specific communicator.
-	 */
-	public static final String ContractMpiSyncGuard = "_mpi_sync_guard";
 }

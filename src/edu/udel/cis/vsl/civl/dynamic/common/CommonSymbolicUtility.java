@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.dynamic.common;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -1407,5 +1408,31 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public BitSet range2BitSet(SymbolicExpression range, Reasoner reasoner) {
+		BitSet results = new BitSet();
+
+		if (range.isNumeric()) {
+			results.set(((IntegerNumber) reasoner
+					.extractNumber((NumericExpression) range)).intValue());
+		} else {
+			// else it's range
+			NumericExpression high = getHighOfRegularRange(range);
+			NumericExpression low = getLowOfRegularRange(range);
+			NumericExpression step = getStepOfRegularRange(range);
+			int highInt, lowInt, stepInt;
+
+			highInt = ((IntegerNumber) reasoner
+					.extractNumber((NumericExpression) high)).intValue();
+			lowInt = ((IntegerNumber) reasoner
+					.extractNumber((NumericExpression) low)).intValue();
+			stepInt = ((IntegerNumber) reasoner
+					.extractNumber((NumericExpression) step)).intValue();
+			for (int i = lowInt; i <= highInt; i += stepInt)
+				results.set(i);
+		}
+		return results;
 	}
 }

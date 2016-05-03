@@ -121,14 +121,13 @@ public class TmpContractTest {
 
 	@Test
 	public void simpleMPITest3() {
-		assertTrue(ui.run(
-				"verify  -showAmpleSet -input_mpi_nprocs=5 -errorBound=10",
+		assertTrue(ui.run("verify -input_mpi_nprocs=5 -errorBound=10",
 				enableContract, filename("sequential/simpleMpiTest3.c")));
 	}
 
 	@Test
 	public void broadcast() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=4 -errorBound=1",
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -errorBound=1",
 				enableContract, filename("sequential/broadcast.c")));
 	}
 

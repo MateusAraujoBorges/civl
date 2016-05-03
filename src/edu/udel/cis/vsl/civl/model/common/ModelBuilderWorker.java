@@ -996,6 +996,13 @@ public class ModelBuilderWorker {
 	}
 
 	/**
+	 * @return the CIVL configuration
+	 */
+	public CIVLConfiguration getCIVLConfiguration() {
+		return civlConfig;
+	}
+
+	/**
 	 * @return the model
 	 */
 	public Model getModel() {

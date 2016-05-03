@@ -42,6 +42,7 @@ import edu.udel.cis.vsl.gmc.EnablerIF;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
@@ -439,13 +440,16 @@ public abstract class CommonEnabler implements Enabler {
 	}
 
 	/**
-	 * Enable transitions right after a $contractVerify statement. Followings
-	 * are situations that may need explore all possible transitions:
+	 * <p>
+	 * <b>Summary: </b> Enable transitions right after a $contractVerify
+	 * statement. Followings are situations that may need explore all possible
+	 * transitions:
 	 * <ul>
 	 * <li>Elaborate free symbolic constants in behavior assumptions. (done)</li>
 	 * <li>Enable transitions for each behavior. (not started)</li>
 	 * <li>Pointer lazy initialization .(not started)</li>
 	 * </ul>
+	 * </p>
 	 *
 	 * @param state
 	 *            The current state
@@ -481,18 +485,25 @@ public abstract class CommonEnabler implements Enabler {
 				statement.functionExpression(), statement.arguments());
 
 		worker.setAsWorker();
-		for (BooleanExpression newPC : newPCs) {
-
+		for (BooleanExpression newPC : newPCs)
 			transitions.add(Semantics.newTransition(newPC, pid,
 					processIdentifier, worker, atomicLockAction));
-		}
 		return transitions;
 	}
 
 	/**
-	 * Returns a set of path conditions by elaborating all assumptions. Here
-	 * elaborating a assumption means elaborating all possible values of each
-	 * free symbolic constant in the assumption.
+	 * <p>
+	 * <b>Summary: </b> Returns a set of path conditions by elaborating all
+	 * assumptions. Here elaborating a assumption means elaborating all possible
+	 * values of each free symbolic constant in the assumption.
+	 * </p>
+	 * <p>
+	 * <b>Details: </b> The elaboration procedure can be divided into two phase:
+	 * 1. Elaborating assumptions in default behavior; 2. Elaborating
+	 * assumptions in MPI collective behaviors. Note that phase 2 depends on
+	 * phase 1, i.e. phase 2 is elaborating assumptions with each new path
+	 * condition generated in phase 1.
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -534,17 +545,15 @@ public abstract class CommonEnabler implements Enabler {
 		}
 		dummyState = stateFactory.pushCallStack(state, pid, verifyingFunction,
 				arguments);
-
 		// For each defaultBehavior or MPICollectiveBehavior, collect free
 		// symbolic constants from assumptions first, then do intersection with
 		// free symbolic constants in requirement expressions. With such a
 		// strategy, if there is no NamedBehaviors in contracts, there is no
 		// need to explore free symbolic constants.
 		for (NamedFunctionBehavior namedBehavior : verifyingFunction
-				.functionContract().namedBehaviors()) {
+				.functionContract().namedBehaviors())
 			elaborateSet.addAll(getFreeSymbolicConstantFromAssumption(
 					dummyState, pid, namedBehavior));
-		}
 		context = retainSymbolicConstantWithRequirements(dummyState, pid,
 				elaborateSet, verifyingFunction.functionContract()
 						.defaultBehavior());
@@ -657,9 +666,11 @@ public abstract class CommonEnabler implements Enabler {
 	/********************** Private helper method *************************/
 	// TODO: some method can be shared with LibcivlcEnabler for $elaborate.
 	/**
-	 * Given an old path condition and a set of free symbolic constants,
-	 * elaborate all possible values for each symbolic constant, returns a set
-	 * of new path conditions.
+	 * <p>
+	 * <b>Summary: </b> Given an old path condition and a set of free symbolic
+	 * constants, elaborate all possible values for each symbolic constant,
+	 * returns a set of new path conditions.
+	 * </p>
 	 * 
 	 * @param context
 	 *            The context for inferring possible values for symbolic
@@ -685,7 +696,8 @@ public abstract class CommonEnabler implements Enabler {
 
 		// Elaborates the elaborateSet:
 		for (SymbolicConstant symConst : elaborateSet) {
-			Interval interval = reasoner.assumptionAsInterval(symConst);
+			Interval interval = reasoner
+					.intervalApproximation((NumericSymbolicConstant) symConst);
 
 			if (interval != null) {
 				Number lowerNum = interval.lower();
@@ -712,11 +724,13 @@ public abstract class CommonEnabler implements Enabler {
 	}
 
 	/**
-	 * Given a {@link FunctionBehavior} and a set of free symbolic constant s0.
-	 * All free symbolic constants appears in requirements of the
-	 * FunctionBehavior forms set s1. The elaborateSet will be updated to the
-	 * intersection of s0 and s1. This method returns the conjunction of
+	 * <p>
+	 * <b>Summary: </b> Given a {@link FunctionBehavior} and a set of free
+	 * symbolic constant s0. All free symbolic constants appears in requirements
+	 * of the FunctionBehavior forms set s1. The elaborateSet will be updated to
+	 * the intersection of s0 and s1. This method returns the conjunction of
 	 * requirements of the FunctionBehavior.
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -752,8 +766,11 @@ public abstract class CommonEnabler implements Enabler {
 	}
 
 	/**
-	 * Given an {@link NamedFunctionBehavior}, returns all free symbolic
-	 * constants appears in the assumptions of the NamedFunctionBehavior
+	 * <p>
+	 * <b>Summary: </b> Given an {@link NamedFunctionBehavior}, returns all free
+	 * symbolic constants appears in the assumptions of the
+	 * NamedFunctionBehavior
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -768,21 +785,19 @@ public abstract class CommonEnabler implements Enabler {
 			State state, int pid, NamedFunctionBehavior behavior)
 			throws UnsatisfiablePathConditionException {
 		Set<SymbolicConstant> symConsts = new HashSet<>();
+		Evaluation eval = conditionGenerator.deriveExpression(state, pid,
+				behavior.assumptions());
 
-		for (Expression assumption : behavior.assumptions()) {
-			Evaluation eval = conditionGenerator.deriveExpression(state, pid,
-					assumption);
-
-			state = eval.state;
-			symConsts.addAll(universe.getFreeSymbolicConstants(eval.value));
-		}
+		state = eval.state;
+		symConsts.addAll(universe.getFreeSymbolicConstants(eval.value));
 		return symConsts;
 	}
 
 	/**
-	 * Given a symbolic constant a, a lower bound l and a higher bound h, this
-	 * method returns a set of boolean expressions:
-	 * 
+	 * <p>
+	 * <b>Summary: </b> Given a symbolic constant a, a lower bound l and a
+	 * higher bound h, this method returns a set of boolean expressions:
+	 * </p>
 	 * a == l, a == l + 1, ... a == h
 	 * 
 	 * @param var

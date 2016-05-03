@@ -30,9 +30,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
-import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
@@ -47,7 +45,6 @@ import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -457,29 +454,6 @@ public class AmpleSetWorker {
 				ampleProcessIDs = activeProcesses;
 				return ampleProcessIDs;
 			}
-			// If in MPI-contracts mode: the $contractVerify statement should
-			// have an implicit barrier:
-			if (config.isEnableMpiContract())
-				if (procState.stackSize() > 1) {
-					Location procLoc = procState.peekSecondLastStack()
-							.location();
-					Statement stmt;
-
-					if (procLoc.getNumOutgoing() == 1
-							&& (stmt = procLoc.getSoleOutgoing())
-									.statementKind() == StatementKind.CONTRACT_VERIFY) {
-						ContractVerifyStatement conVeri = (ContractVerifyStatement) stmt;
-						Variable syncGuard = conVeri.syncGuardVariable();
-						int dyscopeId = state.getDyscopeID(pid, syncGuard);
-						BooleanExpression guardVal = (BooleanExpression) state
-								.getVariableValue(dyscopeId, syncGuard.vid());
-						Reasoner reasoner = universe.reasoner(state
-								.getPathCondition());
-
-						if (!reasoner.isValid(guardVal))
-							return activeProcesses;
-					}
-				}
 			if (config.getProcBound() > 0) {
 				for (Statement statement : procState.getLocation().outgoing()) {
 					if (statement instanceof CallOrSpawnStatement) {

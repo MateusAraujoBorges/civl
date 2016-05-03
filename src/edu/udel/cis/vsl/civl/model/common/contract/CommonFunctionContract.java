@@ -18,6 +18,8 @@ public class CommonFunctionContract extends CommonSourceable implements
 
 	private boolean pure = false;
 
+	private boolean hasMPIWaitsfors = false;
+
 	private Expression guard = null;
 
 	private FunctionBehavior defaultBehavior;
@@ -136,6 +138,16 @@ public class CommonFunctionContract extends CommonSourceable implements
 			return 0;
 		else
 			return mpiCollectiveBehaviors.size();
+	}
+
+	@Override
+	public boolean hasMPIWaitsfor() {
+		return hasMPIWaitsfors;
+	}
+
+	@Override
+	public void setHasMPIWaitsfor(boolean hasWaitsfor) {
+		this.hasMPIWaitsfors = hasWaitsfor;
 	}
 
 }

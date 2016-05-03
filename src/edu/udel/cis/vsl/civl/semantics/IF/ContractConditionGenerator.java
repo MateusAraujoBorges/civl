@@ -3,7 +3,6 @@ package edu.udel.cis.vsl.civl.semantics.IF;
 import java.util.Iterator;
 import java.util.List;
 
-import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
@@ -174,18 +173,4 @@ public interface ContractConditionGenerator {
 	 * @return
 	 */
 	List<Integer> getOrderedMallocId(int vid, int pointerLevels);
-
-	/**
-	 * TODO: experimental only
-	 * 
-	 * @param state
-	 * @param pid
-	 * @param numProcess
-	 * @param collectiveBehavior
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	Evaluation deriveMPICollectiveBehavior(State state, int pid,
-			int numProcess, MPICollectiveBehavior collectiveBehavior)
-			throws UnsatisfiablePathConditionException;
 }

@@ -13,6 +13,7 @@ import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
@@ -66,6 +67,8 @@ import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement.CONTRACTED_FUNCTION_CALL_KIND;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
@@ -1623,18 +1626,78 @@ public interface ModelFactory {
 	WildcardExpression wildcardExpression(CIVLSource source, CIVLType type);
 
 	/**
-	 * TODO: doc
+	 * Creates an {@link MPIContractExpression} which represents a special
+	 * construct in MPI contracts system. Different MPIContractExpressions have
+	 * different arguments and {@link MPI_CONTRACT_EXPRESSION_KIND}.
 	 * 
 	 * @param source
+	 *            The CIVLSource of the {@link MPIContractExpression}.
 	 * @param scope
+	 *            The scope where the {@link MPIContractExpression} appears
 	 * @param communicator
+	 *            The MPI communicator attached with the
+	 *            {@link MPIContractExpression}
 	 * @param arguments
+	 *            An array of arguments of a {@link MPIContractExpression}
 	 * @param kind
-	 * @return
+	 *            The {@link MPI_CONTRACT_EXPRESSION_KIND} which denotes
+	 *            different {@link MPIContractExpression}s
+	 * @param pattern
+	 *            The {@link MPICommunicationPattern} attached with the
+	 *            {@link MPIContractExpression}
+	 * @return The created {@link MPIContractExpression}
 	 */
 	MPIContractExpression mpiContractExpression(CIVLSource source, Scope scope,
 			Expression communicator, Expression[] arguments,
-			MPI_CONTRACT_EXPRESSION_KIND kind);
+			MPI_CONTRACT_EXPRESSION_KIND kind, MPICommunicationPattern pattern);
+
+	/**
+	 * Creates an {@link ContractedFunctionCallStatement} with the sub-kind
+	 * {@link CONTRACTED_FUNCTION_CALL_KIND} set to ENTER.
+	 * 
+	 * @param civlSource
+	 *            The CIVLSource of such a statement
+	 * @param scope
+	 *            The scope of where the statement appears
+	 * @param source
+	 *            The source location of the statement
+	 * @param functionExpression
+	 *            The {@link FunctionIdentifierExpression} of the contracted
+	 *            function
+	 * @param arguments
+	 *            A list of arguments of the function call.
+	 * @param guard
+	 *            The guard of the function call
+	 * @return The created {@link ContractedFunctionCallStatement}
+	 */
+	ContractedFunctionCallStatement enterContractedFunctionCallStatement(
+			CIVLSource civlSource, Scope scope, Location source,
+			FunctionIdentifierExpression functionExpression,
+			List<Expression> arguments, Expression guard);
+
+	/**
+	 * Creates an {@link ContractedFunctionCallStatement} with the sub-kind
+	 * {@link CONTRACTED_FUNCTION_CALL_KIND} set to EXIT.
+	 * 
+	 * @param civlSource
+	 *            The CIVLSource of the statement
+	 * @param scope
+	 *            The scope of where the statement appears
+	 * @param source
+	 *            The source location of the statement.
+	 * @param functionExpression
+	 *            The {@link FunctionIdentifierExpression} of the contracted
+	 *            function
+	 * @param arguments
+	 *            A list of arguments of the function call.
+	 * @param guard
+	 *            The guard of the function call
+	 * @return The created {@link ContractedFunctionCallStatement}
+	 */
+	ContractedFunctionCallStatement exitContractedFunctionCallStatement(
+			CIVLSource civlSource, Scope scope, Location source,
+			FunctionIdentifierExpression functionExpression,
+			List<Expression> arguments, Expression guard);
 
 	Nothing nothing(CIVLSource source);
 }

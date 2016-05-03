@@ -16,7 +16,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
-import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -45,7 +44,12 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
- * Implementation of system functions declared mpi.h and civl-mpi.cvh
+ * <p>
+ * This class represents a library executor for MPI libraries. This class is
+ * responsible for processing following executions:
+ * <ul>
+ * <li>
+ * <b>System functions defined in MPI libraries:</b>
  * <ul>
  * <li>$mpi_set_status</li>
  * <li>$mpi_get_status</li>
@@ -54,8 +58,17 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * <li>$mpi_getGcomm</li>
  * <li>$mpi_root_scope</li>
  * <li>$mpi_proc_scope</li>
- * <li>$mpi_isRecvBufEmpty</li>
+ * <li>$mpi_p2pSendShot</li>
+ * <li>$mpi_colSendShot</li>
+ * <li>$mpi_p2pRecvShot</li>
+ * <li>$mpi_colRecvShot</li>
  * </ul>
+ * </li>
+ * <li><b>Collective evaluation algorithm:</b>
+ * {@link #executeCoassertWorker(State, int, String, Expression[], SymbolicExpression[], CIVLSource, boolean, ContractKind, Variable[])}
+ * </li>
+ * </ul>
+ * </p>
  * 
  * @author ziqingluo
  * 
@@ -74,9 +87,10 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	}
 
 	/**
-	 * Execute MPI collective contract. MPI collective contract can be checked
-	 * as collective assertions, but error will be reported as MPI Collective
-	 * Contract violation.
+	 * <p>
+	 * <b>Summary: </b> A public interface for using collective evaluation on a
+	 * set of expressions.
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -85,54 +99,31 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @param process
 	 *            The String identifier of the process
 	 * @param args
-	 *            The expression array of arguments
+	 *            An array of arguments:{MPI communicator, expressions ... }
+	 * @param argreedVars
+	 *            An array of agreed variables. The value of them will be
+	 *            delivered by the first process, rest of processes will assign
+	 *            those values to their agreed variables
+	 * @param kind
+	 *            The kind of the snapshot entry
 	 * @param source
-	 *            The source of the contract expression
+	 *            The CIVLSource corresponding to the expressions
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public State executeCollectiveContract(State state, int pid,
-			String process, Expression[] args, ContractKind kind,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		SymbolicExpression[] argumentValues = new SymbolicExpression[1];
-		Evaluation eval;
-
-		eval = evaluator.evaluate(state, pid, args[0]);
-		state = eval.state;
-		argumentValues[0] = eval.value;
-		state = executeCoassertWorker(state, pid, process, args,
-				argumentValues, source, true, kind, null).left;
-		return state;
-	}
-
-	public State executeCollectiveContract(State state, int pid,
-			String process, Expression[] args,
-			MPICollectiveBehavior collectiveBehavior, ContractKind kind,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		SymbolicExpression[] argumentValues = new SymbolicExpression[1];
-		Evaluation eval;
-
-		eval = evaluator.evaluate(state, pid, args[0]);
-		state = eval.state;
-		argumentValues[0] = eval.value;
-		state = executeCoassertWorker(state, pid, process, args,
-				argumentValues, source, true, kind, collectiveBehavior).left;
-		return state;
-	}
-
-	public Pair<State, Boolean> executeCollectiveSynchronization(State state,
-			int pid, String process, Expression[] args,
-			MPICollectiveBehavior collectiveBehavior, CIVLSource source)
+	public State executeCollectiveEvaluation(State state, int pid,
+			String process, Expression[] args, Variable[] argreedVars,
+			ContractKind kind, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression[] argumentValues = new SymbolicExpression[1];
 		Evaluation eval;
-		Expression communicator = args[0];
 
-		eval = evaluator.evaluate(state, pid, communicator);
+		eval = evaluator.evaluate(state, pid, args[0]);
 		state = eval.state;
 		argumentValues[0] = eval.value;
-		return executeCoassertWorker(state, pid, process, args, argumentValues,
-				source, true, ContractKind.SYNC, collectiveBehavior);
+		state = executeCoassertWorker(state, pid, process, args,
+				argumentValues, source, true, kind, argreedVars).left;
+		return state;
 	}
 
 	/* ************************* private methods **************************** */
@@ -472,11 +463,19 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	}
 
 	/**
-	 * Executing $mpi_coassert(MPI_Comm, _Bool) function with a regular snapshot
-	 * semantics. The first process will create a collective entry and takes a
-	 * snapshot on itself; others just save their snapshots; the last one who
-	 * completes the entry will dequeue the entry an evaluates the snapshots all
-	 * together.
+	 * <p>
+	 * <b>Summary: </b> The generic core method for executing collective
+	 * evaluation.
+	 * </p>
+	 * <p>
+	 * <b>Details:</b> The main logic for collective evaluation algorithm is:
+	 * For a set of locations L, each process will reach a location l in L
+	 * exactly once. For all processes P, the first process p0 reaches its'
+	 * corresponding l, creates a snapshot entry and saves it snapshot. Rest of
+	 * processes P', P' = P - {p0}, just save their snapshots on the created
+	 * snapshot entry. The last process pn, pn in P', is responsible for dequeue
+	 * the entry.
+	 * </p>
 	 * 
 	 * @param call
 	 *            the function call statement
@@ -498,14 +497,18 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 *            {@link ContractClauseKind} if the the collective entry is
 	 *            associated to a contract, if it is associated to a collective
 	 *            assert, kind is null.
+	 * @param argreedVars
+	 *            Optional: An array of agreed variables. Values of agreed
+	 *            variables will be delivered by the first process p0. Rest
+	 *            processes assign their agreed variables with those delivered
+	 *            values.
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private Pair<State, Boolean> executeCoassertWorker(State state, int pid,
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source,
-			boolean isContract, ContractKind kind,
-			MPICollectiveBehavior collectiveBehavior)
+			boolean isContract, ContractKind kind, Variable[] argreedVars)
 			throws UnsatisfiablePathConditionException {
 		ImmutableState tmpState = (ImmutableState) state;
 		Expression MPICommExpr = arguments[0];
@@ -600,9 +603,10 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				channels = universe.array(colChannel.type(),
 						Arrays.asList(p2pChannel, colChannel));
 			}
-			if (collectiveBehavior != null && kind == ContractKind.REQUIRES) {
+			// Deliver agreed variables:
+			if (argreedVars != null && kind == ContractKind.REQUIRES) {
 				pickUpStation = new LinkedList<>();
-				for (Variable var : collectiveBehavior.agreedVariables()) {
+				for (Variable var : argreedVars) {
 					SymbolicExpression value = tmpState.valueOf(pid, var);
 
 					pickUpStation.add(new Pair<>(var, value));

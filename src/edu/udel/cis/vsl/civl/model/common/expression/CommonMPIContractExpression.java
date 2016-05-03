@@ -4,6 +4,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -17,13 +18,17 @@ public class CommonMPIContractExpression extends CommonExpression implements
 
 	private Expression communicator;
 
+	private MPICommunicationPattern pattern;
+
 	public CommonMPIContractExpression(CIVLSource source, Scope hscope,
 			Scope lscope, CIVLType type, MPI_CONTRACT_EXPRESSION_KIND kind,
-			Expression communicator, Expression[] arguments) {
+			Expression communicator, Expression[] arguments,
+			MPICommunicationPattern pattern) {
 		super(source, hscope, lscope, type);
 		this.communicator = communicator;
 		this.arguments = arguments;
 		this.mpiContractKind = kind;
+		this.pattern = pattern;
 	}
 
 	@Override
@@ -95,6 +100,11 @@ public class CommonMPIContractExpression extends CommonExpression implements
 		}
 		result.append(")");
 		return result.toString();
+	}
+
+	@Override
+	public MPICommunicationPattern getMpiCommunicationPattern() {
+		return pattern;
 	}
 
 }

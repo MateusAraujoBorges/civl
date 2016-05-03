@@ -173,7 +173,10 @@ public class ImmutableCollectiveSnapshotsEntry implements
 
 	@Override
 	public boolean isRecorded(int place) {
-		return this.isRecorded[place];
+		if (place < isRecorded.length && place >= 0)
+			return isRecorded[place];
+		else
+			return false;
 	}
 
 	@Override

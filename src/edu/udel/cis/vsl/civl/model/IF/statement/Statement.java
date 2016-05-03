@@ -42,6 +42,7 @@ public interface Statement extends Sourceable {
 		DOMAIN_ITERATOR, /** CIVL for loop ($for) enter statement */
 		CIVL_PAR_FOR_ENTER, /** CIVL parallel for ($par) enter statement */
 		CONTRACT_VERIFY, /* $contractVerify statement */
+		CONTRACTED_CALL, /* contracted function call statement (enter or exit) */
 		MALLOC, /** Memory allocation */
 		NOOP, /** No operation */
 		// TODO get rid of this

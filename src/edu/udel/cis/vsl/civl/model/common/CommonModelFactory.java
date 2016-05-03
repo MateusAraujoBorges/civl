@@ -33,6 +33,10 @@ import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
+import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
+import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
@@ -88,6 +92,8 @@ import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement.CONTRACTED_FUNCTION_CALL_KIND;
 import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
@@ -150,6 +156,7 @@ import edu.udel.cis.vsl.civl.model.common.statement.CommonCallStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonCivlForEnterStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonCivlParForSpawnStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonContractVerifyStatement;
+import edu.udel.cis.vsl.civl.model.common.statement.CommonContractedFunctionCallStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonGotoBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonIfElseBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonLoopBranchStatement;
@@ -158,6 +165,7 @@ import edu.udel.cis.vsl.civl.model.common.statement.CommonNoopStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonReturnStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonSwitchBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.variable.CommonVariable;
+import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
@@ -2210,32 +2218,17 @@ public class CommonModelFactory implements ModelFactory {
 			List<Expression> arguments) {
 		Scope lowestScope = functionExpression.lowestScope();
 		Expression guard = this.trueExpression(civlSource);
-		Variable guardVar = null;
 
 		for (Expression arg : arguments)
 			lowestScope = this.getLower(scope, arg.lowestScope());
-		while (scope != null) {
-			guardVar = scope.variable(ModelConfiguration.ContractMpiSyncGuard);
-			if (guardVar == null)
-				scope = scope.parent();
-			else
-				break;
-		}
-		if (guardVar == null)
-			throw new CIVLInternalException(
-					"$contractVerify ... statement requires a boolean variable :"
-							+ ModelConfiguration.ContractMpiSyncGuard
-							+ " used as a guard.", civlSource);
-		guard = variableExpression(guardVar.getSource(), guardVar);
 		return new CommonContractVerifyStatement(civlSource, scope,
-				lowestScope, source, functionExpression, arguments, guard,
-				guardVar);
+				lowestScope, source, functionExpression, arguments, guard);
 	}
 
 	@Override
 	public MPIContractExpression mpiContractExpression(CIVLSource source,
 			Scope scope, Expression communicator, Expression[] arguments,
-			MPI_CONTRACT_EXPRESSION_KIND kind) {
+			MPI_CONTRACT_EXPRESSION_KIND kind, MPICommunicationPattern pattern) {
 		Scope lowestScope = getLower(communicator.lowestScope(), scope);
 		CIVLType type;
 
@@ -2258,6 +2251,96 @@ public class CommonModelFactory implements ModelFactory {
 
 		}
 		return new CommonMPIContractExpression(source, scope, lowestScope,
-				type, kind, communicator, arguments);
+				type, kind, communicator, arguments, pattern);
+	}
+
+	@Override
+	public ContractedFunctionCallStatement enterContractedFunctionCallStatement(
+			CIVLSource civlSource, Scope scope, Location source,
+			FunctionIdentifierExpression functionExpression,
+			List<Expression> arguments, Expression guard) {
+		Scope lowestScope = functionExpression.lowestScope();
+
+		if (guard == null)
+			guard = this.trueExpression(null);
+		for (Expression arg : arguments)
+			lowestScope = this.getLower(scope, arg.lowestScope());
+		return new CommonContractedFunctionCallStatement(civlSource, scope,
+				lowestScope, source, functionExpression, arguments, guard,
+				CONTRACTED_FUNCTION_CALL_KIND.ENTER);
+	}
+
+	@Override
+	public ContractedFunctionCallStatement exitContractedFunctionCallStatement(
+			CIVLSource civlSource, Scope scope, Location source,
+			FunctionIdentifierExpression functionExpression,
+			List<Expression> arguments, Expression guard) {
+		Scope lowestScope = functionExpression.lowestScope();
+
+		guard = recomputeGuardOfContractedFunctionCall(functionExpression,
+				arguments, guard);
+		for (Expression arg : arguments)
+			lowestScope = this.getLower(scope, arg.lowestScope());
+		return new CommonContractedFunctionCallStatement(civlSource, scope,
+				lowestScope, source, functionExpression, arguments, guard,
+				CONTRACTED_FUNCTION_CALL_KIND.EXIT);
+	}
+
+	/**
+	 * <p>
+	 * <b>Summary: </b> If CONTRACTED_FUNCTION_CALL_EXIT contains waisfor
+	 * contract clauses, need an extra guard. This method recomputes the guard
+	 * expression for CONTRACTED_FUNCTION_CALL_EXIT statement. If a contracted
+	 * function call whose function has "waitsfor" specified in its contracts,
+	 * an extra FunctionGuardExpression will be added to the guard. A
+	 * FunctionGuardExpression will be evaluated in {@link ContractEvaluator}.
+	 * Such a guard states synchronization properties.
+	 * </p>
+	 * 
+	 * @param functionExpression
+	 *            The FunctionIdentifierExpression of the contracted function.
+	 * @param arguments
+	 *            A list of arguments of the function call.
+	 * @param guard
+	 *            The previous guard expression before re-computation.
+	 * @return
+	 */
+	private Expression recomputeGuardOfContractedFunctionCall(
+			FunctionIdentifierExpression functionExpression,
+			List<Expression> arguments, Expression guard) {
+		Expression newGuard = guard == null ? trueExpression(null) : guard;
+		boolean hasWaits = false;
+		CIVLFunction function = functionExpression.function();
+
+		if (!function.isContracted())
+			return newGuard;
+		else {
+			FunctionContract contracts = function.functionContract();
+
+			for (MPICollectiveBehavior collective : contracts.getMPIBehaviors()) {
+				for (NamedFunctionBehavior namedBehav : collective
+						.namedBehaviors())
+					if (namedBehav.getWaitsforList().iterator().hasNext()) {
+						hasWaits = true;
+						break;
+					}
+				if (!hasWaits
+						&& collective.getWaitsforList().iterator().hasNext()) {
+					hasWaits = true;
+					break;
+				}
+			}
+		}
+		if (hasWaits) {
+			Expression funcGuard;
+
+			funcGuard = functionGuardExpression(functionExpression.getSource(),
+					functionExpression, arguments);
+			newGuard = guard != null ? binaryExpression(
+					this.sourceOfSpan(funcGuard.getSource(),
+							newGuard.getSource()), BINARY_OPERATOR.AND,
+					funcGuard, newGuard) : funcGuard;
+		}
+		return newGuard;
 	}
 }

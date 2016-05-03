@@ -16,7 +16,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
-import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
@@ -32,9 +31,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
-import edu.udel.cis.vsl.civl.model.IF.type.StructOrUnionField;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.ContractConditionGenerator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -55,7 +52,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
@@ -397,46 +393,6 @@ public class CommonContractConditionGenerator extends ContractEvaluator
 			return new Evaluation(state, val);
 		}
 		throw new CIVLInternalException("unreachable", expression.getSource());
-	}
-
-	// TODO: idea: create a new kind : library behavior , loading library
-	// components to deal with it.
-	@Override
-	public Evaluation deriveMPICollectiveBehavior(State state, int pid,
-			int numProcess, MPICollectiveBehavior collectiveBehavior)
-			throws UnsatisfiablePathConditionException {
-		Expression communicator = collectiveBehavior.communicator();
-		Evaluation eval = this.deriveExpression(state, pid, communicator);
-		CIVLStructOrUnionType mpicommType;
-		Iterator<StructOrUnionField> fieldIter;
-		List<SymbolicType> structComponentTypes = new LinkedList<>();
-		List<SymbolicExpression> structComponents = new LinkedList<>();
-		SymbolicTupleType dynamicMpiCommType;
-		SymbolicExpression dynamicMpiCommValue;
-
-		assert communicator.getExpressionType().isStructType();
-		mpicommType = (CIVLStructOrUnionType) communicator.getExpressionType();
-		fieldIter = mpicommType.fields().iterator();
-		while (fieldIter.hasNext()) {
-			StructOrUnionField field = fieldIter.next();
-			SymbolicExpression initVal;
-			SymbolicType fieldType;
-
-			fieldType = field.type().getDynamicType(universe);
-			eval = havoc(state, fieldType);
-			state = eval.state;
-			initVal = eval.value;
-			structComponentTypes.add(fieldType);
-			structComponents.add(initVal);
-		}
-		dynamicMpiCommType = universe.tupleType(
-				universe.stringObject(mpicommType.name().name()),
-				structComponentTypes);
-		dynamicMpiCommValue = universe.tuple(dynamicMpiCommType,
-				structComponents);
-		eval.state = state;
-		eval.value = dynamicMpiCommValue;
-		return eval;
 	}
 
 	/**

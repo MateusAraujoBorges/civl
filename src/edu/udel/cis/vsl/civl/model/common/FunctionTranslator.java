@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -140,6 +141,7 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location.AtomicKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
@@ -725,8 +727,9 @@ public class FunctionTranslator {
 	 */
 	private Fragment assignStatement(CIVLSource source, LHSExpression lhs,
 			ExpressionNode rhsNode, boolean isInitializer, Scope scope) {
-		Statement assign = null;
+		Statement[] stmts = null;
 		Location location;
+		Statement assign;
 
 		if (isCompleteMallocExpression(rhsNode)) {
 			location = modelFactory.location(lhs.getSource(), scope);
@@ -756,9 +759,11 @@ public class FunctionTranslator {
 						source, tmpVar);
 				Expression castTmp;
 
-				assign = translateFunctionCall(scope, tmpLhs, functionCallNode,
+				stmts = translateFunctionCall(scope, tmpLhs, functionCallNode,
 						isCall, source);
-				result = new CommonFragment(assign);
+				assert stmts.length == 1 || stmts.length == 2;
+				result = stmts.length == 1 ? new CommonFragment(stmts[0])
+						: new CommonFragment(stmts[0], stmts[1]);
 				tmpLhs = this.modelFactory.variableExpression(source, tmpVar);
 				castTmp = this
 						.applyConversions(scope, functionCallNode, tmpLhs);
@@ -768,9 +773,11 @@ public class FunctionTranslator {
 				result.addNewStatement(assign);
 				return result;
 			} else {
-				assign = translateFunctionCall(scope, lhs, functionCallNode,
+				stmts = translateFunctionCall(scope, lhs, functionCallNode,
 						isCall, source);
-				return new CommonFragment(assign);
+				assert stmts.length == 1 || stmts.length == 2;
+				return stmts.length == 1 ? new CommonFragment(stmts[0])
+						: new CommonFragment(stmts[0], stmts[1]);
 			}
 
 		} else {
@@ -866,6 +873,55 @@ public class FunctionTranslator {
 		if (callee != null)
 			modelBuilder.callStatements.put(result, callee);
 		return result;
+	}
+
+	/**
+	 * Translate a contracted non-system function call into two phased
+	 * {@link ContractedFunctionCallStatement}s: enter and exit. Such a call
+	 * shall not be on function pointers.
+	 * 
+	 * @param scope
+	 *            The current scope.
+	 * @param enterLoc
+	 *            The enter location of the
+	 *            {@link ContractedFunctionCallStatement}.
+	 * @param exitLoc
+	 *            The exit location of the
+	 *            {@link ContractedFunctionCallStatement}.
+	 * @param callNode
+	 *            The {@link FunctionCallNode}.
+	 * @param lhs
+	 *            The left-hand side expression if it exists, otherwise, it's
+	 *            null.
+	 * @param arguments
+	 *            The list of arguments
+	 * @param source
+	 *            CIVLSource of this function call.
+	 * @return
+	 */
+	private ContractedFunctionCallStatement[] contractedFunctionCallStatement(
+			Scope scope, Location enterLoc, Location exitLoc,
+			FunctionCallNode callNode, LHSExpression lhs,
+			List<Expression> arguments, CIVLSource source) {
+		ExpressionNode functionExpression = ((FunctionCallNode) callNode)
+				.getFunction();
+		FunctionIdentifierExpression funcIdExpr;
+		ContractedFunctionCallStatement enter, exit;
+		Entity entity = ((IdentifierExpressionNode) functionExpression)
+				.getIdentifier().getEntity();
+		assert entity != null && entity.getEntityKind() == EntityKind.FUNCTION;
+		ContractedFunctionCallStatement results[] = new ContractedFunctionCallStatement[2];
+
+		funcIdExpr = (FunctionIdentifierExpression) translateExpressionNode(
+				functionExpression, scope, true);
+		enter = modelFactory.enterContractedFunctionCallStatement(source,
+				scope, enterLoc, funcIdExpr, arguments, null);
+		exit = modelFactory.exitContractedFunctionCallStatement(source, scope,
+				exitLoc, funcIdExpr, arguments, null);
+		exit.setLhs(lhs);
+		results[0] = enter;
+		results[1] = exit;
+		return results;
 	}
 
 	/**
@@ -2061,9 +2117,11 @@ public class FunctionTranslator {
 	 *            The scope
 	 * @param functionCallNode
 	 *            The function call node
-	 * @return the fragment containing the function call statement
+	 * @return one or two statements. If the returned statement is a
+	 *         {@link ContractedFunctionCallStatement}, it returns two
+	 *         statements. Otherwise, it returns one statement.
 	 */
-	private Statement translateFunctionCall(Scope scope, LHSExpression lhs,
+	private Statement[] translateFunctionCall(Scope scope, LHSExpression lhs,
 			FunctionCallNode functionCallNode, boolean isCall, CIVLSource source) {
 		// CIVLSource source =
 		// modelFactory.sourceOfBeginning(functionCallNode);TODO:Changed
@@ -2072,6 +2130,7 @@ public class FunctionTranslator {
 		CIVLFunction civlFunction = null;
 		ExpressionNode functionExpression = functionCallNode.getFunction();
 		CallOrSpawnStatement callStmt;
+		Statement result[] = new Statement[1];
 
 		if (functionExpression instanceof IdentifierExpressionNode) {
 			civlFunction = getFunction((IdentifierExpressionNode) functionExpression).right;
@@ -2083,6 +2142,44 @@ public class FunctionTranslator {
 			actual = arrayToPointer(actual);
 			arguments.add(actual);
 		}
+		if (isCall && modelBuilder.getCIVLConfiguration().isEnableMpiContract()) {
+			// Function definitions are processed when the declaration had been
+			// seen, so here it is guaranteed that the CIVLFunction is complete
+			// (in another word, the "isContracted()" method may sense here):
+			if (civlFunction != null && civlFunction.isContracted()
+					&& !civlFunction.isSystemFunction()) {
+				Location enterLoc = modelFactory
+						.location(modelFactory
+								.sourceOfBeginning(functionCallNode), scope);
+				Scope functionInnerScope;
+				Location exitLoc;
+
+				if (civlFunction.startLocation() != null)
+					functionInnerScope = civlFunction.startLocation().scope();
+				else {
+					// If it's recursive function call:
+					if (civlFunction.outerScope().children().size() > 0) {
+						assert civlFunction.outerScope().children().size() == 1;
+
+						functionInnerScope = civlFunction.outerScope()
+								.children().iterator().next();
+					} else {
+						// If it's a function prototype with contracts:
+						List<Variable> variables = new LinkedList<>();
+
+						variables.addAll(civlFunction.parameters());
+						functionInnerScope = modelFactory.scope(source,
+								civlFunction.outerScope(), variables,
+								civlFunction);
+					}
+				}
+				exitLoc = modelFactory.location(
+						modelFactory.sourceOfBeginning(functionCallNode),
+						functionInnerScope);
+				return contractedFunctionCallStatement(scope, enterLoc,
+						exitLoc, functionCallNode, lhs, arguments, source);
+			}
+		}
 		location = modelFactory.location(
 				modelFactory.sourceOfBeginning(functionCallNode), scope);
 		if (civlFunction != null) {
@@ -2092,8 +2189,9 @@ public class FunctionTranslator {
 								modelFactory.sourceOf(functionCallNode),
 								(AbstractFunction) civlFunction, arguments);
 
-				return modelFactory.assignStatement(source, location, lhs,
+				result[0] = modelFactory.assignStatement(source, location, lhs,
 						abstractFunctionCall, false);
+				return result;
 			}
 			callStmt = callOrSpawnStatement(scope, location, functionCallNode,
 					lhs, arguments, isCall, source);
@@ -2101,12 +2199,12 @@ public class FunctionTranslator {
 					civlFunction.getSource(), civlFunction));
 			if (callStmt.isSystemCall())
 				callStmt.setGuard(modelFactory.systemGuardExpression(callStmt));
-			return callStmt;
+			result[0] = callStmt;
 		} else
 			// call on a function pointer
-			return callOrSpawnStatement(scope, location, functionCallNode, lhs,
-					arguments, isCall, source);
-
+			result[0] = callOrSpawnStatement(scope, location, functionCallNode,
+					lhs, arguments, isCall, source);
+		return result;
 	}
 
 	/**
@@ -2121,10 +2219,14 @@ public class FunctionTranslator {
 	 */
 	private Fragment translateFunctionCallNode(Scope scope,
 			FunctionCallNode functionCallNode, CIVLSource source) {
-		Statement functionCall = translateFunctionCall(scope, null,
+		Statement functionCalls[] = translateFunctionCall(scope, null,
 				functionCallNode, true, source);
 
-		return new CommonFragment(functionCall);
+		assert functionCalls.length == 2 || functionCalls.length == 1;
+		if (functionCalls.length == 1)
+			return new CommonFragment(functionCalls[0]);
+		else
+			return new CommonFragment(functionCalls[0], functionCalls[1]);
 	}
 
 	/**
@@ -2617,8 +2719,9 @@ public class FunctionTranslator {
 	 * @return The fragment of the spawn statement
 	 */
 	private Fragment translateSpawnNode(Scope scope, SpawnNode spawnNode) {
-		return new CommonFragment(translateFunctionCall(scope, null,
-				spawnNode.getCall(), false, modelFactory.sourceOf(spawnNode)));
+		return new CommonFragment(
+				translateFunctionCall(scope, null, spawnNode.getCall(), false,
+						modelFactory.sourceOf(spawnNode))[0]);
 	}
 
 	/**
@@ -2815,7 +2918,7 @@ public class FunctionTranslator {
 	 *            the AST variable declaration node.
 	 * @return The variable
 	 */
-	private Variable translateVariableDeclarationNode(
+	protected Variable translateVariableDeclarationNode(
 			VariableDeclarationNode node, Scope scope) {
 		edu.udel.cis.vsl.abc.ast.entity.IF.Variable varEntity = node
 				.getEntity();
@@ -3925,7 +4028,7 @@ public class FunctionTranslator {
 	 * @return The CIVL VariableExpression object corresponding to the
 	 *         IdentifierExpressionNode
 	 */
-	private Expression translateIdentifierNode(
+	protected Expression translateIdentifierNode(
 			IdentifierExpressionNode identifierNode, Scope scope) {
 		CIVLSource source = modelFactory.sourceOf(identifierNode);
 		Identifier name = modelFactory.identifier(source, identifierNode
@@ -4341,7 +4444,7 @@ public class FunctionTranslator {
 	 *            The scope
 	 * @return the CIVL QuantifiedExpression
 	 */
-	private Expression translateQuantifiedExpressionNode(
+	protected Expression translateQuantifiedExpressionNode(
 			QuantifiedExpressionNode expressionNode, Scope scope) {
 		QuantifiedExpression result;
 		Quantifier quantifier;

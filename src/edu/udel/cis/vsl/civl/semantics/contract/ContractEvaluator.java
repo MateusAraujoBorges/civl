@@ -5,16 +5,23 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.mpi.LibmpiEvaluator;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
@@ -30,13 +37,18 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.civl.util.IF.Triple;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Interval;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 
 /**
  * This class extends {@link CommonEvaluator} with contracts evaluating
@@ -45,23 +57,32 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
  * This is a summary of the extension or over-written for contracts system:
  * General section:
  * <ol>
- * <li>\valid(pointer set): denotes a set of pointers P are valid, i.e. for all
- * pointer p in P, p is dereferable.</li>
- * <li>\remote(variable, process): expresses a remote expression. A remote
- * expression evaluates to the evaluation of the variable on the process. NOTE
- * there are two restrictions on use of remote expressions:
+ * <li><b>\valid(pointer set):</b> denotes a set of pointers P are valid, i.e.
+ * for all pointer p in P, p is dereferable. Currently there are some
+ * <b>limitations</b> on how to write valid expressions:
  * <ul>
- * <li>Remote expressions currently cannot be used at requirements of function
- * contracts</li>
- * <li>All variables v appear in the process expression of a remote expression
- * must be declared inside the verifying function body. The verifying function
- * is the function owns the contracts. Or v can only be constants.</li>
+ * <li>The pointer set P can only be written in two forms: a single pointer
+ * expression which represents a singleton set; a pointer plus a range which
+ * represents a set of pointers <code>{p + i | i in range}</code>.</li>
+ * <li>For the range (low .. high), low must be zero, high must be bounded, step
+ * can only be one.</li>
+ * </ul>
+ * </li>
+ * <li><b>\remote(variable, process):</b> expresses a remote expression. A
+ * remote expression evaluates to the evaluation of the variable on the process.
+ * NOTE there are two restrictions on use of remote expressions:
+ * <ul>
+ * <li>There is no guarantee for the evaluation of a remote expression if the
+ * control point where the evaluation happens of the remote process is
+ * non-deterministic.</li>
+ * <li>All free variables V appear in the process expression of a remote
+ * expression must be deterministic.</li>
  * </ul>
  * These two restrictions are suppose to avoid the difficulty of building the
  * start state of a verifying function and more importantly non-sense remote
  * expressions.</li>
- * <li>dereference: The dereferencing operation must be able to recognize
- * weather undereferable pointers are concrete and not guaranteed to be valid.</li>
+ * <li><b>Dereference:</b> The dereferencing operation must be able to recognize
+ * whether undereferable pointers are concrete and not guaranteed to be valid.</li>
  * </ol>
  * 
  * MPI section: Evaluation of MPI contract expressions and collective evaluation
@@ -121,12 +142,186 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 	}
 
 	/**
-	 * 
-	 * The evaluating on a remote accessing expression follows the semantics:
 	 * <p>
+	 * <b>Summary</b> Evaluate a {@link QuantifiedExpression}. If the
+	 * restriction on the bounded variable can be translated to an concrete
+	 * integral interval, then evaluation of the predicate happens on a set of
+	 * concrete cases. Otherwise, call the super class method {@link
+	 * super#evaluateQuantifiedExpression(State, int, QuantifiedExpression)}.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the current process
+	 * @param expression
+	 *            The quantified expression
+	 * @return
+	 */
+	@Override
+	protected Evaluation evaluateQuantifiedExpression(State state, int pid,
+			QuantifiedExpression expression)
+			throws UnsatisfiablePathConditionException {
+		Expression restriction = expression.boundRestriction();
+		Reasoner reasoner;
+		NumericSymbolicConstant boundVariable;
+		Interval boundInterval;
+
+		// The restriction must a boolean expression, and the bound variable
+		// must has a integral numeric type
+		if (restriction.getExpressionType().isBoolType())
+			if (expression.boundVariableType().isIntegerType()) {
+				Evaluation restrictionVal;
+
+				boundVariable = (NumericSymbolicConstant) universe
+						.symbolicConstant(expression.boundVariableName()
+								.stringObject(), expression.boundVariableType()
+								.getDynamicType(universe));
+				// push the bound variable for evaluation:
+				boundVariables.push(boundVariable);
+				restrictionVal = evaluate(state, pid, restriction);
+				reasoner = universe
+						.reasoner((BooleanExpression) restrictionVal.value);
+				boundInterval = reasoner
+						.intervalApproximation((NumericExpression) boundVariable);
+				// If the bound interval exists, and the interval contains no
+				// Infinities, the evaluation will happen by elaborating all
+				// possible values:
+				if (boundInterval != null) {
+					Number lower, upper;
+
+					lower = boundInterval.lower();
+					upper = boundInterval.upper();
+					if (lower instanceof IntegerNumber
+							&& upper instanceof IntegerNumber) {
+						int lowerInt = ((IntegerNumber) lower).intValue();
+						int highInt = ((IntegerNumber) upper).intValue();
+
+						if (expression.quantifier() == Quantifier.EXISTS)
+							return evaluateElabortaedQuantifiedExpression(
+									state, pid, boundVariable,
+									expression.expression(), lowerInt, highInt,
+									false);
+						else if (expression.quantifier() == Quantifier.FORALL) {
+							return evaluateElabortaedQuantifiedExpression(
+									state, pid, boundVariable,
+									expression.expression(), lowerInt, highInt,
+									true);
+						} else
+							throw new CIVLUnimplementedFeatureException(
+									"Reasoning quantified expressions with kinds that are not FORALL or EXISTS in function contracts");
+					}
+				}
+				// pop the bound variable after evaluation:
+				boundVariables.pop();
+			}
+		return super.evaluateQuantifiedExpression(state, pid, expression);
+	}
+
+	/**
+	 * <p>
+	 * <b> Pre-condition:</b>
+	 * <ul>
+	 * <li>higherBound >= lowerBound;</li>
+	 * <li>The {@link QuantifiedExpression} only has one "bound variable";</li>
+	 * <li>The "bound variable" has an integral type;</li>
+	 * <li>The {@link QuantifiedExpression} is either a FORALL or EXISTS
+	 * expression.</li>
+	 * </ul>
+	 * </p>
+	 * <p>
+	 * <b>Summary:</b> Evaluates a {@link QuantifiedExpression} by elaborating
+	 * all possible values of the integral bounded variable.
+	 * </p>
+	 * <p>
+	 * <b>Details:</b> The evaluation of the quantified predicate p happens on a
+	 * set of evaluating states S, where all state s in S is not a state in the
+	 * program state space. For each state s in S, it is obtained by updating
+	 * the parameter "state" by adding an assumption a to the path condition of
+	 * "state". Here assumption a is in set A which is a boolean expression set.
+	 * Set A is a set of conditions on the bounded variable b:
+	 * <code>{b == i | lowerBound \lte i && i \lte higherBound}</code>
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the current process
+	 * @param boundedVar
+	 *            A symbolic constant representing the bounded variable.
+	 * @param predExpression
+	 *            The predication expression of the {@link QuantifiedExpression}
+	 * @param lowerBound
+	 *            Lower bound of the bounded variable
+	 * @param higherBound
+	 *            Higher bound of the bounded variable
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation evaluateElabortaedQuantifiedExpression(State state,
+			int pid, NumericSymbolicConstant boundedVar,
+			Expression predExpression, int lowerBound, int higherBound,
+			boolean isForall) throws UnsatisfiablePathConditionException {
+		State evalState;
+		Evaluation eval;
+		BooleanExpression result = null;
+		boolean isFirst = true;
+
+		// Elaborates all values for the bound variable:
+		for (int i = lowerBound; i <= higherBound; i++) {
+			BooleanExpression concretizeBoundVar = universe.equals(boundedVar,
+					universe.integer(i));
+
+			// Get an evaluating state by updating the path condition of the
+			// parameter state:
+			evalState = state.setPathCondition(universe.and(concretizeBoundVar,
+					state.getPathCondition()));
+			eval = evaluate(evalState, pid, predExpression);
+			if (isFirst) {
+				result = (BooleanExpression) eval.value;
+				isFirst = false;
+			} else {
+				if (isForall)
+					result = universe.and(result,
+							(BooleanExpression) eval.value);
+				else
+					result = universe
+							.or(result, (BooleanExpression) eval.value);
+			}
+			// Because the evaluating state s' is not a state in the execution
+			// state space of the program, s' is only active in this method. So
+			// if the validation of the result relies on reasoning on any
+			// execution state s, it will go wrong because s doens't have
+			// information about the bounded variable. Hence, this is the
+			// solution here:
+			//
+			// Solution: If the result relies on reasoning with a state, the
+			// result should be updated by substituting the bounded variable
+			// with the elaborated concrete value:
+			if (!(result.isTrue() || result.isFalse())) {
+				UnaryOperator<SymbolicExpression> concretizeSubstituter = universe
+						.simpleSubstituter(boundedVar, universe.integer(i));
+
+				result = (BooleanExpression) concretizeSubstituter
+						.apply(result);
+			}
+		}
+		return new Evaluation(state, result);
+	}
+
+	/**
+	 * <p>
+	 * <b>Summary:</b> Evaluates a remote expression which has the form:
+	 * <code>\remote(variable_identifier, process_expression) </code>
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>Details:</b> The evaluation on a remote accessing expression follows
+	 * the semantics:
+	 * 
 	 * A {@link BINARY_OPERATOR#REMOTE} operation takes two operands: left hand
-	 * side operand represents a variable v and the right hand side operand
-	 * represents a process p.
+	 * side operand represents a variable identifier v and the right hand side
+	 * operand represents a process p.
 	 *
 	 * The whole expression evaluates to the evaluation of the variable v on
 	 * process p. It requires that at the evaluation time, v must be visible at
@@ -134,6 +329,12 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 	 * remote expression can hardly be used at other lexical locations than
 	 * contract expression. The use of remote expressions in contract see
 	 * {@link ContractEvaluator}
+	 * 
+	 * A practical usage for remote expressions are expressing global properties
+	 * for MPI programs. i.e. A property involves at least two MPI processes. An
+	 * implicit requirements for the remote expression \remote(v, p) is v must
+	 * be visible for both the current process and the process p at their
+	 * current locations.
 	 * </p>
 	 * 
 	 * @param state
@@ -149,31 +350,44 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 			String process, BinaryExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval;
-		SymbolicExpression symProc, value = null;
+		SymbolicExpression procVal, varVal = null;
+		Expression procExpr = expression.right();
+		VariableExpression varExpr = (VariableExpression) expression.left();
+		Variable variable = null;
+		Reasoner reasoner;
+		Number remotePidNum;
 		int remotePid;
 		int dyscopeId;
 		int vid = -1;
-		Expression processExpr = expression.right();
-		VariableExpression variableExpr = (VariableExpression) expression
-				.left();
-		Variable variable = null;
 
-		eval = this.evaluate(state, pid, processExpr);
+		eval = this.evaluate(state, pid, procExpr);
 		state = eval.state;
-		symProc = eval.value;
+		procVal = eval.value;
 		// If the process expression is not a NumericExpression, report the
-		// error.
-		if (!(symProc instanceof NumericExpression)) {
-			errorLogger.logSimpleError(expression.getSource(), state, process,
+		// error:
+		if (!(procVal instanceof NumericExpression)) {
+			errorLogger.logSimpleError(procExpr.getSource(), state, process,
 					symbolicAnalyzer.stateToString(state), ErrorKind.OTHER,
 					"The right-hand side expression of a remote access "
-							+ " must be a numeric expression.");
+							+ procExpr + " is not a numeric expression.");
 			throw new UnsatisfiablePathConditionException();
 		}
-		remotePid = ((IntegerNumber) universe
-				.extractNumber((NumericExpression) symProc)).intValue();
+		reasoner = universe.reasoner(state.getPathCondition());
+		// If no concrete value can be extracted from the symbolic "process"
+		// value, report an error:
+		remotePidNum = reasoner.extractNumber((NumericExpression) procVal);
+		if (remotePidNum == null) {
+			errorLogger.logSimpleError(procExpr.getSource(), state, process,
+					symbolicAnalyzer.stateToString(state), ErrorKind.OTHER,
+					"The right-hand side expression of a remote access "
+							+ procExpr + " doesn not have a concrete value.");
+			throw new UnsatisfiablePathConditionException();
+		}
+		remotePid = ((IntegerNumber) remotePidNum).intValue();
 		dyscopeId = state.getProcessState(remotePid).getDyscopeId();
-		variable = variableExpr.variable();
+		variable = varExpr.variable();
+		// looking for the first visible variable from the current location of
+		// process procVal that has the same name as the remote variable:
 		while (dyscopeId != -1) {
 			Scope scope1 = state.getDyscope(dyscopeId).lexicalScope();
 
@@ -184,20 +398,23 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 			dyscopeId = state.getParentId(dyscopeId);
 		}
 		if (dyscopeId != -1 && vid != -1)
-			value = state.getVariableValue(dyscopeId, vid);
+			varVal = state.getVariableValue(dyscopeId, vid);
 		else {
-			this.errorLogger.logSimpleError(expression.getSource(), state,
-					process, symbolicAnalyzer.stateToString(state),
+			this.errorLogger.logSimpleError(
+					expression.getSource(),
+					state,
+					process,
+					symbolicAnalyzer.stateToString(state),
 					ErrorKind.OTHER,
 					"Remote access failure: The remote variable "
-							+ variableExpr.toString()
+							+ varExpr.toString()
 							+ "doesn't reachable by the remote process:"
 							+ remotePid);
 			throw new UnsatisfiablePathConditionException();
 		}
-		if (value == null)
+		if (varVal == null)
 			throw new UnsatisfiablePathConditionException();
-		eval = new Evaluation(state, value);
+		eval = new Evaluation(state, varVal);
 		return eval;
 	}
 
@@ -223,8 +440,18 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 	}
 
 	/**
-	 * Evaluating a {@link UnaryExpression} whose operator is
-	 * {@link UNARY_OPERATOR#VALID} to true or false
+	 * <p>
+	 * <b>Summary:</b> Evaluating a {@link UnaryExpression} whose operator is
+	 * {@link UNARY_OPERATOR#VALID} to true or false.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>Details:</b> A valid expression \valid( ptr_set ) takes one parameter
+	 * ptr_set which has a pointer set type. Explanation for expressions have
+	 * pointer set types can be found at {@link PointerSetExpression}. The
+	 * evaluation on a valid expression \valid(ptr_set) is true only if all
+	 * pointers p in ptr_set is dereferable.
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -238,6 +465,8 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 	private Evaluation evaluateValidOperatorExpression(State state, int pid,
 			String process, UnaryExpression expression)
 			throws UnsatisfiablePathConditionException {
+		// Currently a pointer set expression is either a singleton set which is
+		// a pointer, or a pointer plus a range:
 		PointerSetExpression mem = (PointerSetExpression) expression.operand();
 		Evaluation eval;
 		SymbolicExpression pointer, range;
@@ -264,14 +493,23 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 		lowInt = (IntegerNumber) reasoner.extractNumber(low);
 		highInt = (IntegerNumber) reasoner.extractNumber(high);
 		if (lowInt == null || highInt == null) {
-			// TODO: here may not be necessary. Pointers should already be
-			// concretized at this point, checking valid with non-concrete range
-			// can only happened in derivation on requirements.
-			return new Evaluation(state, universe.trueExpression());
-			// throw new CIVLUnimplementedFeatureException(
-			// "Attempt to evaluate $range object with non-concrete parameters.");
-		}
-		if (pointer.operator().equals(SymbolicOperator.TUPLE)) {
+			// It's possible that at this time, pointer is allocated but the
+			// length is still non-concrete. The current restrictions on \valid
+			// (PointerSetExpression) expressions guarantees the following check
+			// makes sense. At the time that the range is not concrete, there
+			// are only two cases: 1. The base pointer is not valid, it is not
+			// dereferable; 2. The base pointer is valid, then the base pointer
+			// must point to some memory heap object, thus
+			// "base pointer + high bound of the range" should be valid, i.e.
+			// dereferable.
+			eval = this.evaluatePointerAdd(state, process, pointer, high,
+					false, mem.getSource()).left;
+			if (symbolicAnalyzer.isDerefablePointer(state, pointer).right != ResultType.YES
+					|| symbolicAnalyzer.isDerefablePointer(state, eval.value).right != ResultType.YES)
+				result = false;
+			else
+				result = true;
+		} else if (pointer.operator().equals(SymbolicOperator.TUPLE)) {
 			if (lowInt.intValue() > highInt.intValue())
 				throw new CIVLSyntaxException(
 						"A range in \\valid must has a step with value one.");
@@ -279,18 +517,23 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 				eval = evaluatePointerAdd(state, process, pointer,
 						universe.integer(i), false, expression.getSource()).left;
 				state = eval.state;
-				if (symbolicAnalyzer.isDerefablePointer(state, eval.value).right != ResultType.YES) {
-					errorLogger.logSimpleError(expression.getSource(), state,
-							process, symbolicAnalyzer.stateToString(state),
-							ErrorKind.CONTRACT, mem.getBasePointer() + " + "
-									+ i
-									+ " can not to proved as a valid pointer.");
+				if (symbolicAnalyzer.isDerefablePointer(state, eval.value).right != ResultType.YES)
 					result = false;
-				}
 			}
-			return new Evaluation(state, universe.bool(result));
+		} else
+			result = false;
+		if (!result) {
+			errorLogger.logSimpleError(
+					expression.getSource(),
+					state,
+					process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.CONTRACT,
+					"Cannot prove "
+							+ symbolicAnalyzer.expressionEvaluation(state, pid,
+									expression, true));
 		}
-		return new Evaluation(state, universe.bool(false));
+		return new Evaluation(state, universe.bool(result));
 	}
 
 	/**
@@ -319,8 +562,80 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 	}
 
 	/**
-	 * Loading MPI library evaluator to evaluate MPI Contract expressions. see
+	 * <p>
+	 * <b>Summary:</b> Evaluates a function guard expression. When the function
+	 * is contracted, the guard of the function relates to synchronization
+	 * requirements specified in the function contracts, it they exist. For
+	 * synchronization requirements, see {@link LibmpiEvaluator}.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>Details: </b>The semantics of evaluating a function guard is :
+	 * <ol>
+	 * <li>If the function is contracted, using contracts as the guard of the
+	 * function. e.g. sunchronization requirements.</li>
+	 * <li>If the function is not contracted but is a system function, loads the
+	 * library to evaluate the guard.</li>
+	 * <li>If the function neither contracted nor a system function, the guard
+	 * is simply true.</li>
+	 * </ol>
+	 * </p>
+	 * 
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param expression
+	 *            The {@link FunctionGuardExpression} which represents a guard
+	 *            for a specific function.
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	@Override
+	protected Evaluation evaluateFunctionGuard(State state, int pid,
+			String process, FunctionGuardExpression expression)
+			throws UnsatisfiablePathConditionException {
+		Triple<State, CIVLFunction, Integer> eval = this
+				.evaluateFunctionIdentifier(state, pid,
+						expression.functionExpression(), expression.getSource());
+		CIVLFunction function;
+
+		state = eval.first;
+		function = eval.second;
+		if (function == null) {
+			errorLogger.logSimpleError(expression.getSource(), state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+					"function body cann't be found");
+			throw new UnsatisfiablePathConditionException();
+		}
+		// If function is contracted, using contracts as guard:
+		if (function.isContracted()) {
+			return evaluateMPIWaitsfor(state, pid, process,
+					function.functionContract(), function);
+		}
+		// If function is not contracted but is a system function, loads library
+		// to evaluate the guard:
+		if (function.isSystemFunction()) {
+			SystemFunction systemFunction = (SystemFunction) function;
+
+			return getSystemGuard(expression.getSource(), state, pid,
+					systemFunction.getLibrary(), systemFunction.name().name(),
+					expression.arguments());
+		}
+		// If function is not contracted and not a system function, the guard is
+		// simply true:
+		return new Evaluation(state, universe.trueExpression());
+	}
+
+	/**
+	 * <p>
+	 * <b>Summary</b> Loading MPI library evaluator to evaluate an MPI Contract
+	 * expression ({@link MPIContractExpression}). see
 	 * {@link LibmpiEvaluator#evaluateMPIContractExpression(State, int, String, MPIContractExpression)}
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -354,36 +669,81 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 		}
 	}
 
-	public int[] getAllInvolvedPIDs(State state, int pid, String process,
-			Expression MPIComm) throws UnsatisfiablePathConditionException {
+	/**
+	 * <p>
+	 * <b>Summary: </b>Evaluates expressions in a partial collective way. More
+	 * information of collective evaluation and partial collective evaluation
+	 * can be found at {@link LibmpiEvaluator}
+	 * </p>
+	 * 
+	 * @param state
+	 * @param pid
+	 * @param process
+	 * @param expression
+	 * @param mpiComm
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	Evaluation synchronizedEvaluate(State state, int pid, String process,
+			Expression expression, Expression mpiComm)
+			throws UnsatisfiablePathConditionException {
 		LibmpiEvaluator mpiEvaluator;
-		Pair<SymbolicExpression, Integer> procArray;
-		Evaluation eval;
-		int[] PIDs;
 
 		try {
 			mpiEvaluator = (LibmpiEvaluator) this.libLoader
 					.getLibraryEvaluator("mpi", this, modelFactory,
 							symbolicUtil, this.symbolicAnalyzer);
-			eval = evaluate(state, pid, MPIComm);
-			state = eval.state;
-			procArray = mpiEvaluator.getProcArrayFromMPIComm(state, pid,
-					process, MPIComm, eval.value, MPIComm.getSource());
-			PIDs = new int[procArray.right];
-			for (int i = 0; i < procArray.right; i++) {
-				PIDs[i] = modelFactory
-						.getProcessId(
-								MPIComm.getSource(),
-								universe.arrayRead(procArray.left,
-										universe.integer(i)));
-			}
-			return PIDs;
+			return mpiEvaluator.partialCollectiveEvaluate(state, pid, process,
+					expression, mpiComm);
 		} catch (LibraryLoaderException e) {
-			this.errorLogger.logSimpleError(MPIComm.getSource(), state,
+			this.errorLogger.logSimpleError(expression.getSource(), state,
 					process, symbolicAnalyzer.stateInformation(state),
 					ErrorKind.LIBRARY,
 					"unable to load the library evaluator for the library "
-							+ "mpi" + " for the MPI expression " + MPIComm);
+							+ "mpi" + " for the expression " + expression);
+			throw new UnsatisfiablePathConditionException();
+		}
+	}
+
+	/**
+	 * <p>
+	 * <b>Summary: </b>Loading MPI library evaluator to evaluate MPI waitsfor
+	 * clauses specified in contracts. see
+	 * {@link LibmpiEvaluator#evaluateMPIWaitsfor(State, int, String, FunctionContract, CIVLFunction)}
+	 * </P>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The current PID
+	 * @param process
+	 *            The String identifier of the process
+	 * @param contracts
+	 *            The {@link FunctionContracts} of the given function
+	 * @param function
+	 *            The function who owns the function contracts
+	 * @return A boolean expression which indicates whether the aforementioned
+	 *         conditions are satisfied.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation evaluateMPIWaitsfor(State state, int pid,
+			String process, FunctionContract contracts, CIVLFunction function)
+			throws UnsatisfiablePathConditionException {
+		LibmpiEvaluator mpiEvaluator;
+
+		try {
+			mpiEvaluator = (LibmpiEvaluator) this.libLoader
+					.getLibraryEvaluator("mpi", this, modelFactory,
+							symbolicUtil, this.symbolicAnalyzer);
+			return mpiEvaluator.evaluateMPIWaitsfor(state, pid, process,
+					contracts, function);
+		} catch (LibraryLoaderException e) {
+			this.errorLogger.logSimpleError(contracts.getSource(), state,
+					process, symbolicAnalyzer.stateInformation(state),
+					ErrorKind.LIBRARY,
+					"Unable to load the library evaluator for the library: "
+							+ "mpi to evaluateg the waitsfor clauses of "
+							+ function);
 			throw new UnsatisfiablePathConditionException();
 		}
 	}

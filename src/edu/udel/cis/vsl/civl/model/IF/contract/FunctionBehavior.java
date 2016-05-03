@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.model.IF.contract;
 
 import java.io.PrintStream;
+import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.Sourceable;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -194,4 +195,25 @@ public interface FunctionBehavior extends Sourceable {
 	 */
 	void clearDependsEvents();
 
+	/**
+	 * Set an expression collection as the arguments set as the "waitsfor"
+	 * clause.
+	 * 
+	 * @param waitsforArgs
+	 */
+	void setWaitsforList(Iterable<Expression> waitsforArgs);
+
+	/**
+	 * Get an iterable collection of expressions which contains arguments of a
+	 * "waitsfor" clause. A "waitsfor" clause represents the synchronization
+	 * relations of a function.
+	 * <p>
+	 * waitsfor P, (where P is a set of process IDs) means the function will
+	 * force the current process to wait for all processes p in P come in this
+	 * function before the current process can proceed.
+	 * </p>
+	 * 
+	 * @return
+	 */
+	Set<Expression> getWaitsforList();
 }

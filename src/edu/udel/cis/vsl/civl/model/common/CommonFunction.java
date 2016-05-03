@@ -44,7 +44,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	private Scope containingScope;
 
-	protected boolean isSystem = false;
+	protected boolean isRoot = false;
 
 	private boolean isAtomic = false;
 
@@ -156,7 +156,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	@Override
 	public boolean isRootFunction() {
-		return isSystem;
+		return isRoot;
 	}
 
 	/**
@@ -202,7 +202,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	@Override
 	public void print(String prefix, PrintStream out, boolean isDebug) {
 		out.print(prefix + "function " + name);
-		if (this.isSystem)
+		if (this.isRoot)
 			out.print(" [$system]");
 		else if (this.isAtomic)
 			out.print(" [$atomic_f]");

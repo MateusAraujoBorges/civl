@@ -8,7 +8,7 @@ int add(int x, int y){
 }
 
 /*@ requires n >= 8 && n <= 10;
-  @ ensures ((n + 1) * n) / 2 == \result;
+  @ ensures ((n + 1) * n) == \result * 2;
  */
 int sum1(int n) {
   int ret = 0;
@@ -21,7 +21,7 @@ int sum1(int n) {
 }
 
 /*@ requires n >= 0;
-  @ ensures ((n + 1) * n) / 2 == \result;
+  @ ensures ((n + 1) * n) == \result * 2;
  */
 int sum2(int n) {
   int ret = 0;

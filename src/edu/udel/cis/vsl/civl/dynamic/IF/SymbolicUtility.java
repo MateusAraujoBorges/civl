@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.dynamic.IF;
 
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -8,6 +9,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
@@ -805,4 +807,16 @@ public interface SymbolicUtility {
 	 */
 	SymbolicExpression applyReverseFunction(String originalFunction,
 			SymbolicExpression argument);
+
+	/**
+	 * <p>
+	 * pre-condition : The parameter range is either a range or an integer
+	 * </p>
+	 * Translate a range to a concrete {@link BitSet}. The given range can be a
+	 * regular range or a simple integer which can be seen as a singleton range.
+	 * 
+	 * @param range
+	 * @return
+	 */
+	BitSet range2BitSet(SymbolicExpression range, Reasoner reasoner);
 }

@@ -31,23 +31,16 @@ public interface NamedFunctionBehavior extends FunctionBehavior {
 	void print(String prefix, PrintStream out, boolean isDebug);
 
 	/**
-	 * Returns the assumptions of this behavior.
+	 * Returns the conjunction of all assumptions of this behavior.
 	 * 
 	 * @return
 	 */
-	Iterable<Expression> assumptions();
+	Expression assumptions();
 
 	/**
-	 * Adds an assumption to this behavior.
+	 * Set the conjunction of all assumptions to this behavior.
 	 * 
 	 * @param assumption
 	 */
-	void addAssumption(Expression assumption);
-
-	/**
-	 * Returns the number of assumptions of this behavior.
-	 * 
-	 * @return
-	 */
-	int numAssumptions();
+	void setAssumption(Expression assumption);
 }

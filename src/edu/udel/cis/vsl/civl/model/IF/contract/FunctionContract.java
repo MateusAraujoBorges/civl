@@ -31,15 +31,16 @@ public interface FunctionContract extends Sourceable {
 	 * INFER: denotes that the ensurances of the contracts are used to infer
 	 * some states.</li>
 	 * <li>
-	 * SYNC: denote that this implicit or explicit contract is a synchronization
-	 * knowledge.</li>
+	 * SYNC: delivers an implicit or explicit synchronization knowledge.</li>
+	 * <li>
+	 * WAITSFOR: delivers an explicit synchronization knowledge.</li>
 	 * </ul>
 	 * 
 	 * @author ziqingluo
 	 *
 	 */
 	static public enum ContractKind {
-		REQUIRES, ENSURES, DELIVERED, INFER, SYNC
+		REQUIRES, ENSURES, DELIVERED, INFER, SYNC, WAITSFOR
 	}
 
 	/**
@@ -164,4 +165,20 @@ public interface FunctionContract extends Sourceable {
 	 * @return
 	 */
 	int numMPICollectiveBehaviors();
+
+	/**
+	 * An efficient mark to indicate weather the {@link FunctionContract} has
+	 * MPI waits-for.
+	 * 
+	 * @return
+	 */
+	boolean hasMPIWaitsfor();
+
+	/**
+	 * Set the efficient mark to tell if the function contracts has MPI
+	 * waits-fors.
+	 * 
+	 * @param hasWaitsfor
+	 */
+	void setHasMPIWaitsfor(boolean hasWaitsfor);
 }

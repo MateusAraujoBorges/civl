@@ -159,7 +159,7 @@ public class CommonEvaluator implements Evaluator {
 	 * (possibly nested) quantified expressions. LinkedList is used instead of
 	 * Stack because of its more intuitive iteration order.
 	 */
-	private LinkedList<SymbolicConstant> boundVariables = new LinkedList<>();
+	protected LinkedList<SymbolicConstant> boundVariables = new LinkedList<>();
 
 	/**
 	 * The dynamic heap type. This is the symbolic type of a symbolic expression
@@ -205,7 +205,7 @@ public class CommonEvaluator implements Evaluator {
 	 * The symbolic expression 1 of integer type. (Note that this is distinct
 	 * from the 1 of real type.)
 	 */
-	private NumericExpression one;
+	protected NumericExpression one;
 
 	/**
 	 * The pointer value is a triple <s,v,r> where s identifies the dynamic
@@ -513,7 +513,6 @@ public class CommonEvaluator implements Evaluator {
 					throwPCException = true;
 				}
 				try {
-					// this function should never return a java null
 					deref = universe.dereference(variableValue, symRef);
 				} catch (SARLException e) {
 					errorLogger.logSimpleError(
@@ -1403,7 +1402,7 @@ public class CommonEvaluator implements Evaluator {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation evaluateFunctionGuard(State state, int pid,
+	protected Evaluation evaluateFunctionGuard(State state, int pid,
 			String process, FunctionGuardExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Triple<State, CIVLFunction, Integer> eval = this
@@ -1419,7 +1418,7 @@ public class CommonEvaluator implements Evaluator {
 					"function body cann't be found");
 			throw new UnsatisfiablePathConditionException();
 		}
-		if (function.isRootFunction()) {
+		if (function.isSystemFunction()) {
 			SystemFunction systemFunction = (SystemFunction) function;
 
 			return getSystemGuard(expression.getSource(), state, pid,
@@ -1773,7 +1772,7 @@ public class CommonEvaluator implements Evaluator {
 	}
 
 	// TODO break into small functions
-	private Evaluation evaluateQuantifiedExpression(State state, int pid,
+	protected Evaluation evaluateQuantifiedExpression(State state, int pid,
 			QuantifiedExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Evaluation result;
@@ -2453,8 +2452,8 @@ public class CommonEvaluator implements Evaluator {
 		return result;
 	}
 
-	private Evaluation getSystemGuard(CIVLSource source, State state, int pid,
-			String library, String function, List<Expression> arguments)
+	protected Evaluation getSystemGuard(CIVLSource source, State state,
+			int pid, String library, String function, List<Expression> arguments)
 			throws UnsatisfiablePathConditionException {
 		try {
 			LibraryEvaluator libEvaluator = this.libLoader.getLibraryEvaluator(

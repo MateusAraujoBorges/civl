@@ -1,7 +1,6 @@
 package edu.udel.cis.vsl.civl.model.common.statement;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -12,28 +11,58 @@ import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
-import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
-public class CommonContractVerifyStatement extends CommonStatement implements
-		ContractVerifyStatement {
+/**
+ * <p>
+ * This class is same as a {@link FunctionCallStatement} but with a different
+ * statement kind. This special function call statement can represent two
+ * sub-statements : contracted function call enter statement and contracted
+ * function call exit statement. In contracts system mode, a function call on a
+ * contracted function will be break into two steps: enter and exit. Since in
+ * contracts system, such a call doesn't depends on the function body but on
+ * function contracts, this two-steps structure helps implementing
+ * synchronizations. Why it helps ?
+ * <ol>
+ * <li>Without a special kind of statement, it's hard for enabler to decide
+ * whether a function call is a regular function call or a contracted function
+ * call.</li>
+ * <li>Evaluation on contracts requires that a call stack entry being pushed
+ * into the call stack. So the enter statement can be responsible for pushing
+ * the call stack and the exit is responsible for pop the call stack. The
+ * evaluation intuitively happens in between of them.</li>
+ * <li><b>The most important reason is</b></li>
+ * </ol>
+ * </p>
+ * 
+ * @author ziqingluo
+ *
+ */
+public class CommonContractedFunctionCallStatement extends CommonStatement
+		implements ContractedFunctionCallStatement {
 
-	private FunctionIdentifierExpression functionExpression;
+	private CONTRACTED_FUNCTION_CALL_KIND contractedCallKind;
 
 	private List<Expression> arguments;
 
-	private boolean isWorker = false;
+	private FunctionIdentifierExpression functionExpression;
 
-	public CommonContractVerifyStatement(CIVLSource civlSource, Scope hscope,
-			Scope lscope, Location source,
+	private LHSExpression lhs;
+
+	public CommonContractedFunctionCallStatement(CIVLSource civlSource,
+			Scope hscope, Scope lscope, Location source,
 			FunctionIdentifierExpression functionExpression,
-			List<Expression> arguments, Expression guard) {
+			List<Expression> arguments, Expression guard,
+			CONTRACTED_FUNCTION_CALL_KIND kind) {
 		super(civlSource, hscope, lscope, source, guard);
-		this.functionExpression = functionExpression;
+		this.contractedCallKind = kind;
 		this.arguments = arguments;
+		this.functionExpression = functionExpression;
 	}
 
 	@Override
@@ -47,9 +76,9 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 			}
 			this.arguments = newArguments;
 		}
-		return new CommonContractVerifyStatement(this.getSource(),
+		return new CommonContractedFunctionCallStatement(this.getSource(),
 				this.statementScope, this.lowestScope, this.source(),
-				functionExpression, arguments, guard());
+				functionExpression, arguments, guard(), contractedCallKind);
 	}
 
 	@Override
@@ -80,7 +109,12 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 
 	@Override
 	public StatementKind statementKind() {
-		return StatementKind.CONTRACT_VERIFY;
+		return StatementKind.CONTRACTED_CALL;
+	}
+
+	@Override
+	public LHSExpression lhs() {
+		return lhs;
 	}
 
 	@Override
@@ -94,6 +128,11 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 	}
 
 	@Override
+	public void setLhs(LHSExpression lhs) {
+		this.lhs = lhs;
+	}
+
+	@Override
 	public void setFunction(FunctionIdentifierExpression function) {
 		this.functionExpression = function;
 	}
@@ -104,18 +143,13 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 	}
 
 	@Override
-	public boolean isSystemCall() {
-		CIVLFunction function = this.function();
-
-		if (function != null && function.isSystemFunction()) {
-			return true;
-		}
-		return false;
+	public Expression functionExpression() {
+		return functionExpression;
 	}
 
 	@Override
-	public FunctionIdentifierExpression functionExpression() {
-		return functionExpression;
+	public CONTRACTED_FUNCTION_CALL_KIND getContractedFunctionCallKind() {
+		return contractedCallKind;
 	}
 
 	@Override
@@ -128,30 +162,9 @@ public class CommonContractVerifyStatement extends CommonStatement implements
 
 	@Override
 	public String toString() {
-		StringBuffer buffer = new StringBuffer();
-		Iterator<Expression> argIter = arguments.iterator();
+		String kind = this.contractedCallKind == CONTRACTED_FUNCTION_CALL_KIND.ENTER ? "enter"
+				: "exit";
 
-		if (!isWorker)
-			buffer.append("$contractVerify " + functionExpression.toString()
-					+ "(");
-		else
-			buffer.append("$contractVerifyWorker "
-					+ functionExpression.toString() + "(");
-		if (argIter.hasNext())
-			buffer.append(argIter.next());
-		while (argIter.hasNext()) {
-			buffer.append(" ," + argIter.next());
-		}
-		return buffer.toString();
-	}
-
-	@Override
-	public void setAsWorker() {
-		isWorker = true;
-	}
-
-	@Override
-	public boolean isWorker() {
-		return isWorker;
+		return this.functionExpression.function().name() + "_CONTRACT_" + kind;
 	}
 }

@@ -1,7 +1,6 @@
 package edu.udel.cis.vsl.civl.semantics.contract;
 
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -10,12 +9,12 @@ import java.util.Set;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.library.mpi.LibmpiEvaluator;
 import edu.udel.cis.vsl.civl.library.mpi.LibmpiExecutor;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
@@ -24,16 +23,18 @@ import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
+import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement.CONTRACTED_FUNCTION_CALL_KIND;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
@@ -44,10 +45,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
-import edu.udel.cis.vsl.civl.semantics.IF.NoopTransition;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.Transition.AtomicLockAction;
 import edu.udel.cis.vsl.civl.semantics.common.CommonExecutor;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
@@ -68,76 +66,122 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
- * Contracts System Specification:<br>
  * <p>
- * A contracted function is a function declared with contracts. A contracted
- * function can be called in a contracts system regardless of the existence of
- * the definition.
+ * <b> Contracts system execution semantics:</b> A contracts system verifies
+ * functions independently. The verification of a function f relies on the
+ * function body of f , the function contracts of f and the function contracts
+ * of all other functions that called inside the body of f. To verify f, all
+ * requirements specified in the function contracts of f are assumed to true,
+ * all ensurances specified in function contracts of f will be checked
+ * immediately before the control returns from f. Once a function call on a
+ * function f' is encountered, the function contracts of f' is used.
+ * Requirements specified in function contracts of f' are checked immediately
+ * after the call stack pushed; ensurances specified in function contracts of f'
+ * are assumed to true immediately before the call stack popped. Once a function
+ * call on a function f'' is encountered and f'' has no function contracts,
+ * symbolic execution on the body of f'' will be applied.
  * 
- * A non-contracted function is a function without contracts. A non-contracted
- * function can only be called when it is defined. i.e. there is a definition
- * for the function.
+ * The execution semantics are different from regular CIVL-C language semantics,
+ * thus this class extends and overrides some methods of the
+ * {@link CommonExecutor}.
  * 
- * 
- * For contracted functions, the definition will be ignored whenever it is
- * called. For defined non-contracted functions, the contracts system will do
- * symbolic execution for calls on them.
- * </p>
- * 
- * <p>
- * How contracts are used in execution:
- * <ol>
- * <li>Beginning of the verifying function:
- * <p>
- * Pointers are concretized; Requirements are evaluated and added into the path
- * condition; Remote expressions are derived.
- * </p>
+ * Methods for executing contracts system semantics are organized as follows:
+ * <ul>
+ * <b>Top layer: Methods that are fit in CIVL's design, will be used by CIVL
+ * executor directly.</b>
+ * <li>{@link #executeReturn(State, int, String, ReturnStatement)}</li>
+ * <li>
+ * {@link #executeContractedFunctionCallEnter(State, int, String, ContractedFunctionCallStatement)}
  * </li>
  * <li>
- * <p>
- * Ending of the verifying function: Evaluating ensurances to boolean results;
- * Frees pointers. Remote expressions are evaluated.
- * </p>
+ * {@link #executeContractedFunctionCallExit(State, int, String, ContractedFunctionCallStatement)}
  * </li>
  * <li>
- * <p>
- * Right before the calling of the verifying function: Evaluating requirements
- * to boolean results. Remote expressions are evaluated.
- * </p>
+ * {@link #executeContractVerifyCall(State, int, String, ContractVerifyStatement)}
+ * </li>
+ * </ul>
+ * <ul>
+ * <b>Middle layer: Methods that are used by top layer. Middle layer methods
+ * deal with checking and assuming contract clauses.</b>
+ * <li>{@link #inferByContracts(State, int, String, String, FunctionContract)}</li>
+ * <li>
+ * {@link #generateConditionsForContracts(State, int, String, CIVLFunction, FunctionContract)}
+ * </li>
+ * <li>{@link #conditionGenerationWorker(State, int, String, Iterable)}</li>
+ * <li>{@link #verifyLocalContractClauses(State, int, String, String, Iterable)}
+ * </li>
+ * <li>{@link #assumeLocalContractClauses(State, int, String, String, Iterable)}
  * </li>
  * <li>
- * <p>
- * Right after the calling of the verifying function: Ensurances are evaluated
- * and added into the path conditions. Remote expressions are derived.
- * </p>
+ * {@link #assumeWithPartialCollectiveEvaluation(State, int, String, String, Iterable, Expression)}
  * </li>
- * </ol>
+ * <li>
+ * {@link #verifyContractsAtReturn(State, int, String, CIVLFunction, FunctionContract)}
+ * </li>
+ * </ul>
+ * <ul>
+ * <b>Low layer: Generic methods for executing (partial) collective evaluation
+ * algorithms.</b>
+ * <li>
+ * {@link #executeCollectiveContract(State, int, String, Iterable, ContractKind, MPICollectiveBehavior, CIVLSource)}
+ * </li>
+ * <li>
+ * {@link #executePartialCollectiveContract(State, int, String, Iterable, Expression, ContractKind, CIVLSource)}
+ * </li>
+ * </ul>
  * </p>
  * 
  * @author ziqing
  *
  */
 public class ContractExecutor extends CommonExecutor implements Executor {
+	/**
+	 * A reference to a contract evaluator:
+	 */
 	private ContractEvaluator evaluator;
 
+	/**
+	 * A reference to a StateFactory:
+	 */
 	private StateFactory stateFactory;
 
+	/**
+	 * A reference to a symbolic universe:
+	 */
 	private SymbolicUniverse universe;
 
+	/**
+	 * A reference to a symbolic analyzer:
+	 */
 	private SymbolicAnalyzer symbolicAnalyzer;
 
-	private CIVLErrorLogger errorLogger;
-
-	private CIVLConfiguration civlConfig;
-
-	private ModelFactory modelFactory;
-
-	private LibraryExecutorLoader loader;
-
+	/**
+	 * A reference to a symbolic utility:
+	 */
 	private SymbolicUtility symbolicUtil;
 
 	/**
-	 * {@link ContractContionGenerator}
+	 * A reference to an Error logger:
+	 */
+	private CIVLErrorLogger errorLogger;
+
+	/**
+	 * A reference to a CIVL configuration file:
+	 */
+	private CIVLConfiguration civlConfig;
+
+	/**
+	 * A reference to a model factory:
+	 */
+	private ModelFactory modelFactory;
+
+	/**
+	 * A reference to a library executor loader:
+	 */
+	private LibraryExecutorLoader loader;
+
+	/**
+	 * A reference to a {@link ContractContionGenerator}
 	 */
 	private ContractConditionGenerator conditionGenerator;
 
@@ -160,85 +204,54 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		this.conditionGenerator = conditionGenerator;
 	}
 
-	@Override
-	public State execute(State state, int pid, Transition transition)
-			throws UnsatisfiablePathConditionException {
-		AtomicLockAction atomicLockAction = transition.atomicLockAction();
-
-		switch (atomicLockAction) {
-		case GRAB:
-			state = stateFactory.getAtomicLock(state, pid);
-			break;
-		case RELEASE:
-			state = stateFactory.releaseAtomicLock(state);
-			break;
-		case NONE:
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"Executing a transition with the atomic lock action "
-							+ atomicLockAction.toString(), transition
-							.statement().getSource());
-		}
-		state = state.setPathCondition(transition.pathCondition());
-		switch (transition.transitionKind()) {
-		case NORMAL:
-			state = executeStatement(state, pid, transition.statement());
-			break;
-		case NOOP:
-			state = this.stateFactory.setLocation(state, pid,
-					((NoopTransition) transition).statement().target());
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"Executing a transition of kind "
-							+ transition.transitionKind(), transition
-							.statement().getSource());
-
-		}
-		if (transition.simpifyState())
-			state = this.stateFactory.simplify(state);
-		return state;
-	}
-
 	/**
-	 * Override for using a different method to execute a function call if and
-	 * only if the callee function is a contracted function.
+	 * <p>
+	 * <b>Override:</b>
+	 * <ul>
+	 * <li>Execution of $contractVerify statements.</li>
+	 * <li>Execution of contracted function call statements.</li>
+	 * </ul>
+	 * </p>
 	 */
 	@Override
 	protected State executeStatement(State state, int pid, Statement statement)
 			throws UnsatisfiablePathConditionException {
 		int processIdentifier = state.getProcessState(pid).identifier();
 		String process = "p" + processIdentifier + " (id = " + pid + ")";
-		CIVLFunction calledFunction;
 
 		numSteps++;
 		switch (statement.statementKind()) {
 		case RETURN:
 			return executeReturn(state, pid, process,
 					(ReturnStatement) statement);
-		case CALL_OR_SPAWN:
-			// Call on a contracted function will be executed in a
-			// contract-system specific semantics: using contracts instead of
-			// using the function definition:
-			calledFunction = ((CallOrSpawnStatement) statement).function();
-			if (!calledFunction.isSystemFunction()) {
-				if (calledFunction.isContracted())
-					return executeContractedFunctionCall(state, pid, process,
-							(CallOrSpawnStatement) statement);
-			}
-			return super.executeStatement(state, pid, statement);
 		case CONTRACT_VERIFY:
+			// $contractVerify will be elaborated for bounded symbolic values by
+			// the enabler. The elaborated statement is $contractVerify_worker:
 			assert ((ContractVerifyStatement) statement).isWorker();
 			return executeContractVerifyCall(state, pid, process,
 					(ContractVerifyStatement) statement);
+		case CONTRACTED_CALL:
+			ContractedFunctionCallStatement contractedCall = (ContractedFunctionCallStatement) statement;
+
+			if (contractedCall.getContractedFunctionCallKind().equals(
+					CONTRACTED_FUNCTION_CALL_KIND.ENTER))
+				return executeContractedFunctionCallEnter(state, pid, process,
+						contractedCall);
+			else
+				return executeContractedFunctionCallExit(state, pid, process,
+						contractedCall);
 		default:
 			return super.executeStatement(state, pid, statement);
 		}
 	}
 
 	/**
-	 * Override for let it recognize a pointer that cannot be proved as valid.
+	 * <p>
+	 * <b>Override:</b> In contracts system, pointers that not are required as
+	 * valid pointers will have the symbolic values in LAMBDA form, thus this
+	 * method is override to detect that if the assigned pointer is undefined or
+	 * cannot be proved as valid.
+	 * </p>
 	 */
 	@Override
 	protected State assign(CIVLSource source, State state, String process,
@@ -262,10 +275,24 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		throw new UnsatisfiablePathConditionException();
 	}
 
+	/****** Top layer: Execution statements in contracts system execution ******/
 	/**
-	 * Execute a return statement. If the function returns to the root function,
-	 * execution terminates. This execution only happens when a given function
-	 * has definition but no contracts.
+	 * <p>
+	 * <b>Summary: </b> Execute a return statement in a contract system.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>Details: </b> There are two kinds of return statements:
+	 * <ul>
+	 * <li>A return statement for the function f which is the main verifying
+	 * function. Such a return statement is responsible for checking ensurances
+	 * in function contracts of f.</li>
+	 * <li>A return statement of functions F' which contains all functions f'
+	 * that is called during the verification and f' doen't not be specified
+	 * function contracts. This should be executed as a regular return
+	 * statement.</li>
+	 * </ul>
+	 * </p>
 	 * 
 	 * @param state
 	 *            The state of the program.
@@ -280,6 +307,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			ReturnStatement statement)
 			throws UnsatisfiablePathConditionException {
 		Expression returnedExpr = statement.expression();
+		// Symbolic expression for \result expression, if it exists:
 		SymbolicExpression returnedValue = null;
 		ProcessState processState;
 		CIVLFunction function;
@@ -304,15 +332,12 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		// not get into the following branch:
 		if (function.isContracted()) {
 			// Assigning \result variable:
-			if (returnedValue != null) {
-				Variable resultVar;
+			Variable resultVar;
 
-				resultVar = function.outerScope().variable(
-						ModelConfiguration.ContractResultName);
-				if (resultVar != null)
-					state = stateFactory.setVariable(state, resultVar, pid,
-							returnedValue);
-			}
+			resultVar = returnedValue != null ? function.outerScope().variable(
+					ModelConfiguration.ContractResultName) : null;
+			state = resultVar != null ? stateFactory.setVariable(state,
+					resultVar, pid, returnedValue) : state;
 			// Before pop stack entry frame, verify contracts:
 			state = verifyContractsAtReturn(state, pid, process, function,
 					function.functionContract());
@@ -390,12 +415,25 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	}
 
 	/**
-	 * Execute a contracted function call. The semantics of the execution is
-	 * using the contracts of the function to infer the result state instead of
-	 * executing the function body normally.
+	 * <p>
+	 * <b>Summary: </b> Execute a contracted function call enter statement. This
+	 * method pushes a call stack entry into the call stack.
+	 * </p>
+	 * <p>
+	 * <b>Details: </b>A function call statement on a contracted function will
+	 * be divided into two separate statements:
+	 * <ul>
+	 * <li>contracted_function_call_enter: An enter statement evaluates all
+	 * parameters and pushes the call stack entry into the call stack.</li>
 	 * 
-	 * The execution conforms the core principal: Requirements hold implies
-	 * Ensurances hold.
+	 * <li>contracted_function_call_exit: An exit statement may has guard
+	 * specified by function contracts (e.g. waitsfor clauses). Requirements
+	 * checking and assuming ensurances will happen during the execution of the
+	 * exit statement. It pops the call stack, give the control back to the
+	 * caller.</li>
+	 * </ul>
+	 * 
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -406,23 +444,12 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeContractedFunctionCall(State state, int pid,
-			String process, CallOrSpawnStatement call)
+	private State executeContractedFunctionCallEnter(State state, int pid,
+			String process, ContractedFunctionCallStatement call)
 			throws UnsatisfiablePathConditionException {
-		// A temporary state which is used to evaluates contracts. A temporary
-		// state is the state right after the called function being pushed on to
-		// the call stack. Using such a state, the evaluator can evaluates
-		// expression involving function parameters:
-		State tmpState;
-		// Function identifier evaluation
-		Triple<State, CIVLFunction, Integer> funcEval;
 		SymbolicExpression[] arguments;
-		SymbolicConstant tmpRetExpr;
-		SymbolicExpression tmpRetVal;
-		Variable result;
-		CIVLFunction function = call.function();
-		String functionName = function.name().name();
 		Evaluation eval;
+		CIVLFunction function = call.function();
 
 		// Evaluating arguments:
 		arguments = new SymbolicExpression[call.arguments().size()];
@@ -432,144 +459,149 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			state = eval.state;
 			arguments[i] = eval.value;
 		}
-		funcEval = evaluator.evaluateFunctionIdentifier(state, pid,
-				call.functionExpression(), call.getSource());
-		tmpState = stateFactory.pushCallStack(state, pid, function,
-				funcEval.third, arguments);
+		state = stateFactory.pushCallStack(state, pid, function, arguments);
+		return stateFactory.setLocation(state, pid, call.target());
+	}
+
+	// TODO: function.functionType parameterTypes may have bug!
+
+	/**
+	 * <p>
+	 * <b>Summray: </b> Executes a contracted function call exit statement. This
+	 * method pops the call stack and does reasoning on function contracts.
+	 * </p>
+	 * Details about function call enter and exit, see
+	 * {@link #executeContractedFunctionCallEnter(State, int, String, ContractedFunctionCallStatement)}
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The PID of the current process.
+	 * @param process
+	 *            The String identifier of the process.
+	 * @param call
+	 *            The contracted function call statement.
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private State executeContractedFunctionCallExit(State state, int pid,
+			String process, ContractedFunctionCallStatement call)
+			throws UnsatisfiablePathConditionException {
+		// Since a call on a contracted function does not execute the function
+		// body, there is no accurate returned value. A canonical symbolic value
+		// of a returned result from a function shall be an abstract function
+		// call with parameters of the function.
+		// TODO: Such a canonical value is correct under the assumption that the
+		// called function is pure. A pure function should be replayable by
+		// giving same parameters.
+		SymbolicConstant tmpRetAbstractFunc;
+		SymbolicExpression tmpRetVal;
+		Variable result;
+		CIVLFunction function = call.function();
+		String functionName = function.name().name();
+		List<SymbolicType> inputTypes = new LinkedList<>();
+		SymbolicExpression[] arguments;
+		int paramCounter = 0;
+
+		// Evaluating arguments:
+		arguments = new SymbolicExpression[call.arguments().size()];
+		for (Variable param : function.parameters()) {
+			int dyscopeId = state.getDyscopeID(pid, param);
+			arguments[paramCounter++] = state.getVariableValue(dyscopeId,
+					param.vid());
+
+		}
 		// Make returned value an uninterpreted expression (abstract function
 		// call) :
-		// TODO: function.functionType parameterTypes may have bug!
-		List<SymbolicType> inputTypes = new LinkedList<>();
-
 		for (Variable arg : function.parameters())
 			inputTypes.add(arg.type().getDynamicType(universe));
-		tmpRetExpr = universe.symbolicConstant(universe.stringObject(function
-				.name().name()), universe.functionType(inputTypes, function
-				.returnType().getDynamicType(universe)));
-		tmpRetVal = universe.apply(tmpRetExpr, Arrays.asList(arguments));
-		// Insert the value of \result into the temporary state:
+		tmpRetAbstractFunc = universe.symbolicConstant(universe
+				.stringObject(function.name().name()), universe.functionType(
+				inputTypes, function.returnType().getDynamicType(universe)));
+		tmpRetVal = universe
+				.apply(tmpRetAbstractFunc, Arrays.asList(arguments));
 		result = function.outerScope().variable(
 				ModelConfiguration.ContractResultName);
-		if (result != null)
-			tmpState = stateFactory.setVariable(tmpState, result, pid,
-					tmpRetVal);
-		// Assign returned value:
-		if (call.lhs() != null)
-			state = assign(state, pid, process, call.lhs(), tmpRetVal);
-		// Deduce contracts:
-		// Requirements are checked on the temporary state;
-		// Assurances are inferred from current state.
-		state = inferByContracts(tmpState, state, pid, process, functionName,
+		state = result != null ? stateFactory.setVariable(state, result, pid,
+				tmpRetVal) : state;
+		// Checking requirements and assuming ensurances:
+		state = inferByContracts(state, pid, process, functionName,
 				function.functionContract());
-		state = stateFactory.setLocation(state, pid, call.target());
-		return state;
+		state = stateFactory.popCallStack(state, pid);
+		// Assign returned value:
+		state = call.lhs() != null ? assign(state, pid, process, call.lhs(),
+				tmpRetVal) : state;
+		return stateFactory.setLocation(state, pid, call.target());
 	}
 
 	/**
-	 * A {@link ContractVerifyStatement} triggers verifying a function
-	 * independently. Executes a {@link ContractVerifyStatement} is similar to
-	 * execute a function call but the start state of the execution on the
-	 * function body is constructed based on the contracts. It simulates the
-	 * semantics of verifying a function in isolation.
+	 * <p>
+	 * <b>Summary: </b> Executes a {@link ContractVerifyStatement}.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>Details: </b> A {@link ContractVerifyStatement} stmt starts a
+	 * procedure to do modular verification on the attached function f. All
+	 * processes should be synchronized before stmt. A new state will be
+	 * generated based on contracts of f in which all processes locate at the
+	 * very beginning of the body of f. The verification procedure terminates
+	 * when all processes return from f. Then the control returns to the next
+	 * location of stmt.
+	 * </p>
+	 * 
 	 * 
 	 * @param state
 	 *            The current state
 	 * @param pid
-	 *            The PID of the process
+	 *            The PID of the current process
 	 * @param process
 	 *            The String identifier of the process
 	 * @param conVeri
-	 *            The ContractVerifyStatement
+	 *            The {@link ContractVerifyStatement}
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private State executeContractVerifyCall(State state, int pid,
 			String process, ContractVerifyStatement conVeri)
 			throws UnsatisfiablePathConditionException {
-		State tmpState;
 		SymbolicExpression[] arguments;
 		CIVLFunction function = conVeri.function();
 		// Function identifier evaluation
 		Triple<State, CIVLFunction, Integer> funcEval;
 		Evaluation eval;
-		boolean guard = true;
-		Variable guardVar = conVeri.syncGuardVariable();
-		// Processes what should be released at the same time:
-		BitSet procsBits = null;
+		int argCounter = 0;
 
 		// Evaluating arguments:
 		arguments = new SymbolicExpression[conVeri.arguments().size()];
-		for (int i = 0; i < conVeri.arguments().size(); i++) {
-			eval = evaluator.evaluate(state, pid, conVeri.arguments().get(i));
+		for (Expression argument : conVeri.arguments()) {
+			eval = evaluator.evaluate(state, pid, argument);
 
 			state = eval.state;
-			arguments[i] = eval.value;
+			arguments[argCounter++] = eval.value;
 		}
-		// Using stateFactory create a temporary state only used for evaluating
-		// requirements of contracted functions:
 		funcEval = evaluator.evaluateFunctionIdentifier(state, pid,
 				conVeri.functionExpression(), conVeri.getSource());
-		tmpState = stateFactory.pushCallStack(state, pid, function,
+		state = stateFactory.pushCallStack(state, pid, function,
 				funcEval.third, arguments);
-		/*
-		 * For each MPI collective behavior block in the function contracts, the
-		 * guard will be true if and only if all processes in all involved MPI
-		 * communicators are reached:
-		 */
-		for (MPICollectiveBehavior collectBehav : function.functionContract()
-				.getMPIBehaviors()) {
-			Pair<State, Boolean> result = executeCollectiveSynchronization(
-					tmpState, pid, process, collectBehav, conVeri.getSource());
-
-			tmpState = result.left;
-			guard &= result.right;
-			if (result.right) {
-				// TODO: cannot assign the guard variable until all MPI
-				// collective behaviors are checked, this is true for one MPI
-				// collective beahavior:
-				// assign guardVar for all involved processes
-				int[] procArray = evaluator.getAllInvolvedPIDs(tmpState, pid,
-						process, collectBehav.communicator());
-
-				procsBits = (procsBits == null) ? new BitSet() : procsBits;
-				for (int i = 0; i < procArray.length; i++) {
-					tmpState = stateFactory.setVariable(tmpState, guardVar,
-							procArray[i], universe.bool(true));
-					// TODO: figure out if bit set will expand automatically.
-					procsBits.set(procArray[i]);
-				}
-			} else
-				tmpState = stateFactory.setVariable(tmpState, guardVar, pid,
-						universe.bool(guard));
-		}
-		if (guard) {
-			if (procsBits != null)
-				for (int currPid = procsBits.nextSetBit(0); currPid >= 0; currPid = procsBits
-						.nextSetBit(currPid + 1))
-					tmpState = enterContractVerifyState(tmpState, currPid,
-							process, function, null);
-			else
-				tmpState = enterContractVerifyState(tmpState, pid, process,
-						function, null);
-		}
-		return tmpState;
+		state = enterContractVerifyState(state, pid, process, function);
+		return state;
 	}
 
-	/*********************** Reasoning contracts in execution **************************/
+	/********* Middle layer: semantics of contracts system execution ***********/
 	/**
-	 * Helper method. Inference using contracts happens when calling a
-	 * contracted function. It tests if requirements of the contracts are
-	 * satisfied then delivers ensurances of the contracts for the next state as
-	 * the state after returning from the called function.
+	 * <p>
+	 * <b>Summary: </b> Helper method. This method handles function contracts of
+	 * a function f' when f' be called.
+	 * </p>
+	 * <p>
+	 * <b>Details: Every time a contracted function f' is called, the change of
+	 * states only depends on the contracts of f'. i.e. All requirements of f'
+	 * must be satisfied immediately before the call and all ensurances of f'
+	 * must be assumed immediately after the call.</b>
+	 * </p>
 	 * 
-	 * @param evalState
-	 *            Evaluating state. The caller to this method is responsible for
-	 *            providing such evaluating state. Such a state can be obtained
-	 *            by pushing a stack frame onto the call stack so that
-	 *            evaluators can reach those parameters of the function.
-	 * @param realState
-	 *            The real current state which should be the state right before
-	 *            calling the function.
+	 * @param state
+	 *            The current state
 	 * @param pid
 	 *            The PID of the process
 	 * @param process
@@ -581,59 +613,68 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State inferByContracts(State evalState, State realState, int pid,
-			String process, String functionName, FunctionContract contract)
+	private State inferByContracts(State state, int pid, String process,
+			String functionName, FunctionContract contract)
 			throws UnsatisfiablePathConditionException {
 		FunctionBehavior defaultBehav;
-		BooleanExpression assumptions;
+		// Ensurances must be evaluated and assumed after all requirements are
+		// checked, so it's efficient to cache them first when they are seen
+		// then evaluates them after checking requirements:
+		List<Expression> ensurancesFromValidNamedBehaviors = new LinkedList<>();
 
 		defaultBehav = contract.defaultBehavior();
-		// Verify requirements:
-		for (Expression condition : defaultBehav.requirements()) {
-			SymbolicExpression reqPred;
-			BooleanExpression holdPred;
-			Evaluation eval;
-			Reasoner reasoner;
-			ResultType resultType;
-
-			eval = evaluator.evaluate(evalState, pid, condition);
-			evalState = eval.state;
-			reqPred = eval.value;
-			holdPred = universe.equals(reqPred, universe.trueExpression());
-			reasoner = universe.reasoner(evalState.getPathCondition());
-			resultType = reasoner.valid(holdPred).getResultType();
-			if (!resultType.equals(ResultType.YES)) {
-				String message = "Contract condition : " + condition
-						+ " is not satisfied when calling function "
-						+ functionName;
-
-				realState = errorLogger.logError(condition.getSource(),
-						realState, process,
-						symbolicAnalyzer.stateToString(realState), holdPred,
-						resultType, ErrorKind.CONTRACT, message);
-			}
-		}
-		// Verify mpi requirements collectively:
+		// Verifies local requirements:
+		state = verifyLocalContractClauses(state, pid, process, functionName,
+				defaultBehav.requirements());
 		for (MPICollectiveBehavior mpiCollective : contract.getMPIBehaviors()) {
-			evalState = executeCollectiveChecking(evalState, pid, process,
-					mpiCollective.requirements(), ContractKind.INFER,
-					mpiCollective, mpiCollective.getSource());
-			realState = stateFactory.copySnapshotsQueues(evalState, realState);
+			Reasoner reasoner = universe.reasoner(state.getPathCondition());
+
+			// Verifies mpi requirements collectively:
+			state = executeCollectiveContract(state, pid, process,
+					mpiCollective.requirements(), mpiCollective.communicator(),
+					null, ContractKind.INFER, mpiCollective.getSource());
+			reasoner = universe.reasoner(state.getPathCondition());
+			for (NamedFunctionBehavior namedBehav : mpiCollective
+					.namedBehaviors()) {
+				Evaluation eval;
+				BooleanExpression assumptions;
+
+				eval = evaluator.evaluate(state, pid, namedBehav.assumptions());
+				state = eval.state;
+				assumptions = (BooleanExpression) eval.value;
+				if (reasoner.isValid(assumptions)) {
+					state = executeCollectiveContract(state, pid, process,
+							namedBehav.requirements(),
+							mpiCollective.communicator(), null,
+							ContractKind.INFER, namedBehav.getSource());
+					for (Expression ensurance : namedBehav.ensurances())
+						ensurancesFromValidNamedBehaviors.add(ensurance);
+				}
+			}
+			// Assumes mpi ensurances collectively:
+			for (Expression ensurance : mpiCollective.ensurances())
+				ensurancesFromValidNamedBehaviors.add(ensurance);
+			state = assumeWithPartialCollectiveEvaluation(state, pid, process,
+					functionName, ensurancesFromValidNamedBehaviors,
+					mpiCollective.communicator());
+			state = executeCollectiveContract(state, pid, process,
+					Arrays.asList(modelFactory.trueExpression(null)),
+					mpiCollective.communicator(), null, ContractKind.WAITSFOR,
+					mpiCollective.getSource());
 		}
-		// Assume ensurances:
-		assumptions = conjunctConditions(evalState, pid, process,
+		// Assumes local ensurances:
+		state = assumeLocalContractClauses(state, pid, process, functionName,
 				defaultBehav.ensurances());
-		realState = realState.setPathCondition(universe.and(
-				realState.getPathCondition(), assumptions));
-		return realState;
+		return state;
 	}
 
 	/**
-	 * Helper method. Derive function contracts into canonical boolean
-	 * expressions so that these boolean expressions can be reasoned at some
-	 * time. e.g. During the symbolic execution, it needs to know weather a
-	 * pointer is valid or not, then the query can be encoded into the canonical
-	 * boolean expression then let reasoner to use the conditions to prove it.
+	 * <p>
+	 * <b>Summary :</b> This is a helper method, it uses
+	 * {@link ContractConditionGenerator} to generate a boolean expression based
+	 * on given contract predicates. The result can be used to prove
+	 * consequences of those contract predicates.
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -647,53 +688,56 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	 *            The function contracts
 	 * @param names
 	 *            Output argument: A container for valid behavior names.
-	 * @return The state whose path condition has been updated by the derivation
+	 * @return The boolean expression generated from given contracts
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State deriveContractsAtBegin(State state, int pid, String process,
-			CIVLFunction function, FunctionContract contracts,
-			List<String> names) throws UnsatisfiablePathConditionException {
+	private BooleanExpression generateConditionsForContracts(State state,
+			int pid, String process, CIVLFunction function,
+			FunctionContract contracts)
+			throws UnsatisfiablePathConditionException {
 		FunctionBehavior defaultBehavior = contracts.defaultBehavior();
-		Reasoner reasoner;
+		BooleanExpression result;
 
-		state = deriveConditionsWorker(state, pid, process,
+		result = conditionGenerationWorker(state, pid, process,
 				defaultBehavior.requirements());
-		// TODO: it's better to hide the MPI information
 		for (MPICollectiveBehavior mpiCollective : contracts.getMPIBehaviors()) {
-			Iterable<Expression> emptyIOs = wildcardMPIEmptyIO(state, pid,
-					process, mpiCollective.communicator(),
-					mpiCollective.getSource(), function);
-			state = executeCollectiveChecking(state, pid, process, emptyIOs,
-					ContractKind.REQUIRES, mpiCollective,
-					mpiCollective.getSource());
-			state = deriveConditionsWorker(state, pid, process,
+			BooleanExpression subResult;
+
+			// TODO: currently not checking emptyIObuffer because current design
+			// guarantees such property, but it needs be checked eventually:
+			subResult = conditionGenerationWorker(state, pid, process,
 					mpiCollective.requirements());
-			reasoner = universe.reasoner(state.getPathCondition());
 			for (NamedFunctionBehavior namedBehavior : mpiCollective
 					.namedBehaviors()) {
 				Evaluation evaluation;
-				BooleanExpression assumps = universe.trueExpression();
+				BooleanExpression subsubResult;
+				Reasoner reasoner;
 
-				for (Expression assump : namedBehavior.assumptions()) {
-					evaluation = evaluator.evaluate(state, pid, assump);
-					state = evaluation.state;
-					assumps = universe.and(assumps,
-							(BooleanExpression) evaluation.value);
-				}
-				// If behavior assumption is satisfiable, derive it:
-				if (reasoner.valid(assumps).getResultType() != ResultType.NO) {
-					state = deriveConditionsWorker(state, pid, process,
-							namedBehavior.requirements());
-					names.add(namedBehavior.name());
+				evaluation = evaluator.evaluate(state, pid,
+						namedBehavior.assumptions());
+				state = evaluation.state;
+				reasoner = universe.reasoner(state.getPathCondition());
+				if (reasoner.isValid((BooleanExpression) evaluation.value)) {
+					subsubResult = conditionGenerationWorker(state, pid,
+							process, namedBehavior.requirements());
+					subResult = universe.and(subResult, subsubResult);
 				}
 			}
+			result = universe.and(result, subResult);
 		}
-		return state;
+		return result;
 	}
 
 	/**
-	 * Helper method. Derive a set of conditions to boolean expressions then
-	 * combine them into the path condition of the current state.
+	 * <p>
+	 * <b>Pre-condition:</b> Given expressions must have bool types.
+	 * </p>
+	 * <p>
+	 * <b>Summary: </b> Helper method. Use {@link ContractConditionGenerator} to
+	 * generate a boolean expression from a set of expressions. The generated
+	 * boolean expression is the conjunction of the values of given expression
+	 * set.
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -703,30 +747,32 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	 *            The String identifier of the process
 	 * @param conditions
 	 *            A {@link Iterable} set of processes.
-	 * @return The state whose path condition has been updated.
+	 * @return Return the generated boolean expression.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State deriveConditionsWorker(State state, int pid, String process,
-			Iterable<Expression> conditions)
+	private BooleanExpression conditionGenerationWorker(State state, int pid,
+			String process, Iterable<Expression> conditions)
 			throws UnsatisfiablePathConditionException {
-		BooleanExpression context = state.getPathCondition();
+		BooleanExpression result = universe.trueExpression();
+		boolean isFirst = true;
 
 		for (Expression condition : conditions) {
 			Evaluation eval = conditionGenerator.deriveExpression(state, pid,
 					condition);
 
 			state = eval.state;
-			context = universe.and(context, (BooleanExpression) eval.value);
+			result = isFirst && (isFirst = false) == false ? (BooleanExpression) eval.value
+					: universe.and(result, (BooleanExpression) eval.value);
 		}
-		state = state.setPathCondition(context);
-		return stateFactory.simplify(state);
+		return result;
 	}
 
 	/**
-	 * An helper method which should be called when a function invoked by a
-	 * {link ContractVerifyStatement} is returned. Currently,
-	 * {@link FunctionContract#defaultBehavior()} will be verified. It checks if
-	 * conditions of {@link FunctionBehavior#ensurances()} hold.
+	 * <p>
+	 * <b>Summary: </b>An helper method, this method should be called when a
+	 * function f invoked by a {link ContractVerifyStatement} is returned. It
+	 * checks if all ensurances of the function f holds.
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state.
@@ -745,93 +791,251 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			CIVLFunction function, FunctionContract contracts)
 			throws UnsatisfiablePathConditionException {
 		FunctionBehavior defaultBehavior = contracts.defaultBehavior();
+		String functionName = function.name().name();
 
-		state = verifyConditionsAtReturnWorker(state, pid, process,
-				defaultBehavior.ensurances(), function.name().name());
-		// TODO: it's better to hide the MPI information
+		// Verifies local ensurances:
+		state = verifyLocalContractClauses(state, pid, process, functionName,
+				defaultBehavior.ensurances());
 		for (MPICollectiveBehavior mpiCollective : contracts.getMPIBehaviors()) {
 			List<Expression> ensuredConditions = wildcardMPIEmptyIO(state, pid,
-					process, mpiCollective.communicator(),
-					mpiCollective.getSource(), function);
+					process, mpiCollective, mpiCollective.getSource(), function);
+			Reasoner reasoner = universe.reasoner(state.getPathCondition());
 
 			for (Expression ensuredCondition : mpiCollective.ensurances())
 				ensuredConditions.add(ensuredCondition);
-
-			// TODO:which process deal with which behaviors should be decided at
-			// the pre-state:
-			Reasoner reasoner = universe.reasoner(state.getPathCondition());
-
 			for (NamedFunctionBehavior namedBehav : mpiCollective
 					.namedBehaviors()) {
 				Evaluation evaluation;
-				BooleanExpression assumps = universe.trueExpression();
 
-				for (Expression assump : namedBehav.assumptions()) {
-					evaluation = evaluator.evaluate(state, pid, assump);
-					state = evaluation.state;
-					assumps = universe.and(assumps,
-							(BooleanExpression) evaluation.value);
-				}
-				// If behavior assumption is satisfiable, derive it:
-				if (reasoner.valid(assumps).getResultType() != ResultType.NO) {
+				evaluation = evaluator.evaluate(state, pid,
+						namedBehav.assumptions());
+				state = evaluation.state;
+				if (reasoner.isValid((BooleanExpression) evaluation.value))
 					for (Expression ensuredCondition : namedBehav.ensurances())
 						ensuredConditions.add(ensuredCondition);
-				}
 			}
-			state = executeCollectiveChecking(state, pid, process,
-					ensuredConditions, ContractKind.ENSURES, mpiCollective,
-					mpiCollective.getSource());
-			// state = verifyConditionsAtReturnWorker(state, pid, process,
-			// mpiCollective.ensurances(), function.name().name());
+			state = executeCollectiveContract(state, pid, process,
+					ensuredConditions, mpiCollective.communicator(), null,
+					ContractKind.ENSURES, mpiCollective.getSource());
+		}
+		return state;
+	}
+
+	/**************** Contracted execution helper methods ********************/
+	/*
+	 * There are in total 4 execution situations in execution: 1. Enter the
+	 * verifying function (ENTER VF); 2. Exit the verifying function (EXIT VF);
+	 * 3. Call a contracted function (CALL CF); 4. Leave a contracted function
+	 * (RETURN CF).
+	 * 
+	 * For all 4 cases, methods for assuming and checking local predicates are
+	 * shared. All of them use {verifyLocalContractClauses} and
+	 * {assumeLocalContractClauses}.
+	 * 
+	 * Case 1 only do assuming. Assuming global properties relies on
+	 * synchronizations of all participating processes at the entry of VF (TODO:
+	 * currently not implemented).
+	 * 
+	 * case 2 only do checking. Checking global properties relies on collective
+	 * checking {executeCollectiveContracts}.
+	 * 
+	 * case 3 only do assuming. Assuming global properties is do partial
+	 * collective evaluation on predicates, then add them to the path
+	 * conditions.
+	 * 
+	 * case 4 only do checking. Checking global properties is do partial
+	 * collective evaluation on predicates, then prove their satisfiability.
+	 */
+	/**
+	 * <p>
+	 * <b>Pre-condition: </b> "predicates" must all have bool types.
+	 * </p>
+	 * <p>
+	 * <b>Summary: </b> Applies partial collective evaluation on a set of
+	 * expressions.
+	 * </p>
+	 * 
+	 * Details about partial collective evaluation can be found at
+	 * {@link LibmpiEvaluator}.
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param functionName
+	 *            The String type function name
+	 * @param predicates
+	 *            A set of expressions which must have bool types
+	 * @param mpiComm
+	 *            An expression representing an MPI communicator
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private State assumeWithPartialCollectiveEvaluation(State state, int pid,
+			String process, String functionName,
+			Iterable<Expression> predicates, Expression mpiComm)
+			throws UnsatisfiablePathConditionException {
+		Expression combinedPredicates = combinePredicates(state, pid, process,
+				predicates);
+		BooleanExpression newPathCondition;
+		Evaluation eval;
+
+		eval = evaluator.synchronizedEvaluate(state, pid, process,
+				combinedPredicates, mpiComm);
+		state = eval.state;
+		newPathCondition = universe.and(state.getPathCondition(),
+				(BooleanExpression) eval.value);
+		return state.setPathCondition(newPathCondition);
+	}
+
+	/**
+	 * <p>
+	 * <b>Pre-condition :</b> "predicates" must all have bool types and they
+	 * must only state local properties.
+	 * </p>
+	 * <p>
+	 * <b>Summary :</b> Checks if a set of boolean expressions hold.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the current process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param functionName
+	 *            The String type function name
+	 * @param predicates
+	 *            The set of expressions which must have bool types
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private State verifyLocalContractClauses(State state, int pid,
+			String process, String functionName, Iterable<Expression> predicates)
+			throws UnsatisfiablePathConditionException {
+		Reasoner reasoner;
+
+		// Expressions have bool type
+		for (Expression expression : predicates) {
+			Evaluation eval = evaluator.evaluate(state, pid, expression);
+			ResultType resultType;
+
+			state = eval.state;
+			reasoner = universe.reasoner(state.getPathCondition());
+			resultType = reasoner.valid((BooleanExpression) eval.value)
+					.getResultType();
+			if (!resultType.equals(ResultType.YES)) {
+				String message = "Contract condition : " + expression
+						+ " is not satisfied when calling function "
+						+ functionName;
+
+				state = errorLogger.logError(expression.getSource(), state,
+						process, symbolicAnalyzer.stateInformation(state),
+						(BooleanExpression) eval.value, resultType,
+						ErrorKind.CONTRACT, message);
+			}
 		}
 		return state;
 	}
 
 	/**
-	 * The worker method of
-	 * {@link #verifyContractsAtReturn(State, int, String, CIVLFunction, FunctionContract)}
-	 * . This method tests a set condition expressions if they are hold at the
-	 * current state.
+	 * <p>
+	 * <b>Pre-condition :</b> "predicates" must all have bool types and they
+	 * must only state local properties.
+	 * </p>
+	 * <p>
+	 * <b>Summary: </b> Evaluates a set of boolean expressions, adds their
+	 * values into current path conditions
+	 * </p>
 	 * 
 	 * @param state
-	 *            The current state.
+	 *            The current state
+	 * @param pid
+	 *            The current PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param functionName
+	 *            The String type function name
+	 * @param predicates
+	 *            The set of expression which must have bool types
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private State assumeLocalContractClauses(State state, int pid,
+			String process, String functionName, Iterable<Expression> predicates)
+			throws UnsatisfiablePathConditionException {
+		BooleanExpression context = state.getPathCondition();
+
+		for (Expression condition : predicates) {
+			Evaluation eval = evaluator.evaluate(state, pid, condition);
+
+			state = eval.state;
+			context = (BooleanExpression) universe.canonic(universe.and(
+					context, (BooleanExpression) eval.value));
+		}
+		return state.setPathCondition(context);
+	}
+
+	/*************** Low layer: (Partial) collective evaluation ****************/
+
+	/**
+	 * <p>
+	 * <b>Summary :</b> Executes collective algorithms for given contracts.
+	 * </p>
+	 * <p>
+	 * <b>Details :</b> Details about collective algorithms can be found in
+	 * {@link LibmpiExecutor}. A collective algorithm aims to evaluate some
+	 * properties involving multiple processes in several steps.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
 	 * @param pid
 	 *            The PID of the process
 	 * @param process
 	 *            The String identifier of the process
-	 * @param conditions
-	 *            The {@link Iterable} set of conditions
-	 * @param functionName
-	 *            The name of the function, used to error reporting
-	 * @return The state after testing.
+	 * @param predicates
+	 *            A set of expressions that will be evaluated collectively
+	 * @param kind
+	 *            {@link ContractKind} which denotes different snapsnot entries
+	 * @param mpiComm
+	 *            The MPI collective behavior block corresponding to this
+	 *            execution.
+	 * @param agreedVars
+	 *            Optional: A set of agreed variables. Can be null if no agreed
+	 *            variables.
+	 * @param source
+	 *            CIVLSource of the contracts
+	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State verifyConditionsAtReturnWorker(State state, int pid,
-			String process, Iterable<Expression> conditions, String functionName)
-			throws UnsatisfiablePathConditionException {
+	private State executeCollectiveContract(State state, int pid,
+			String process, Iterable<Expression> predicates,
+			Expression mpiComm, Variable[] agreedVars, ContractKind kind,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		Expression[] args = new Expression[2];
+		LibmpiExecutor mpiExecutor;
 
-		for (Expression condition : conditions) {
-			SymbolicExpression reqPred;
-			BooleanExpression holdPred;
-			Evaluation eval;
-			Reasoner reasoner;
+		try {
+			mpiExecutor = (LibmpiExecutor) loader.getLibraryExecutor("mpi",
+					this, modelFactory, symbolicUtil, symbolicAnalyzer);
+			args[0] = mpiComm;
+			args[1] = combinePredicates(state, pid, process, predicates);
+			return mpiExecutor.executeCollectiveEvaluation(state, pid, process,
+					args, agreedVars, kind, source);
+		} catch (LibraryLoaderException e) {
+			StringBuffer message = new StringBuffer();
 
-			eval = evaluator.evaluate(state, pid, condition);
-			state = eval.state;
-			reqPred = eval.value;
-			holdPred = universe.equals(reqPred, universe.trueExpression());
-			reasoner = universe.reasoner(state.getPathCondition());
-			if (!reasoner.isValid(holdPred)) {
-				String message = "Contract condition : " + condition
-						+ " is not satisfied when calling function "
-						+ functionName;
-
-				state = errorLogger.logError(condition.getSource(), state,
-						process, symbolicAnalyzer.stateToString(state),
-						holdPred, ResultType.NO, ErrorKind.CONTRACT, message);
-			}
+			message.append("unable to load the library evaluator for the library ");
+			message.append("mpi");
+			message.append(" for the \\mpi_collective(...) contracts ");
+			errorLogger.logSimpleError(source, state, process,
+					this.symbolicAnalyzer.stateInformation(state),
+					ErrorKind.LIBRARY, message.toString());
+			throw new UnsatisfiablePathConditionException();
 		}
-		return state;
 	}
 
 	/****************** Constructing Contract Start State ********************/
@@ -853,7 +1057,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private State enterContractVerifyState(State state, int pid,
-			String process, CIVLFunction function, VariableExpression guard)
+			String process, CIVLFunction function)
 			throws UnsatisfiablePathConditionException {
 		// initialize all visible variables
 		Scope outScope = function.outerScope().parent();
@@ -915,14 +1119,20 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		/******* Necessary derivation on contracts *******/
 		// PHASE 1: Derives contracts to reasonable boolean expressions:
 		Iterator<Expression> requiresIter;
-		BooleanExpression context = universe.trueExpression();
+		BooleanExpression context;
 		FunctionContract contracts = function.functionContract();
 		List<Pair<PointerSetExpression, Integer>> validConsequences = new LinkedList<>();
-		List<String> names = new LinkedList<>();
 
-		state = deriveContractsAtBegin(state, pid, process, function,
-				contracts, names);
-		context = deriveAllRequirementExpressions(state, pid, contracts, names);
+		// deliver agreed variables
+		for (MPICollectiveBehavior mpiCollective : contracts.getMPIBehaviors()) {
+			state = executeCollectiveContract(state, pid, process,
+					Arrays.asList(modelFactory.trueExpression(null)),
+					mpiCollective.communicator(),
+					mpiCollective.agreedVariables(), ContractKind.REQUIRES,
+					mpiCollective.getSource());
+		}
+		context = generateConditionsForContracts(state, pid, process, function,
+				contracts);
 		// PHASE 2: Reasoning some clauses that need special handling:
 		// TODO: reasoning is depend on process but current valid consequences
 		// are not stored by PID
@@ -939,7 +1149,8 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 				validConsequences.add(new Pair<>(mem, guess.right));
 			}
 		}
-
+		state = state.setPathCondition(universe.and(context,
+				state.getPathCondition()));
 		// PHASE 2.1 Special handling on some clauses:
 		conditionGenerator.setValidConsequences(validConsequences);
 		state = concretizeAllPointers(state, pid, function, conditionGenerator);
@@ -972,15 +1183,34 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		// return stateFactory.canonic(state, false, false, false, null);
 	}
 
+	/********************* Miscellaneous helper methods ************************/
 	private boolean isRequirementConsequence(BooleanExpression context,
 			BooleanExpression consequence) {
 		Reasoner reasoner;
-		// Inference on consequences of requirements doesn't need path
-		// conditions:
+
 		reasoner = universe.reasoner(context);
 		return reasoner.isValid(consequence);
 	}
 
+	/**
+	 * <p>
+	 * <b>Summary :</b> A helper method, it allocates memory spaces for all
+	 * valid pointers.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param function
+	 *            The {@link CIVLFunction} whose contracts denote those valid
+	 *            pointers
+	 * @param conditionGenerator
+	 *            A reference to the {@link ContractConditionGenerator}, which
+	 *            saves all valid pointers.
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private ImmutableState concretizeAllPointers(State state, int pid,
 			CIVLFunction function, ContractConditionGenerator conditionGenerator)
 			throws UnsatisfiablePathConditionException {
@@ -1022,218 +1252,19 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		return (ImmutableState) state;
 	}
 
-	// Set $mpi_sys_status to FINALIZED it it exists:
-	// Scope outer = functionOuter.parent();
-	//
-	// while (outer != null) {
-	// Variable mpiSysStatus = outer
-	// .variable(ModelConfiguration.MPI_SYS_STATUS);
-	//
-	// if (mpiSysStatus != null) {
-	// state = stateFactory.setVariable(state, mpiSysStatus, pid,
-	// FINALIZED);
-	// break;
-	// } else
-	// outer = outer.parent();
-	// }
-
-	private State setMPISysStatusIfExists(State state, int pid, Scope outer,
-			NumericExpression status) {
-		while (outer != null) {
-			Variable mpiSysStatus = outer
-					.variable(ModelConfiguration.MPI_SYS_STATUS);
-
-			if (mpiSysStatus != null) {
-				state = stateFactory.setVariable(state, mpiSysStatus, pid,
-						status);
-				break;
-			} else
-				outer = outer.parent();
-		}
-		return state;
-	}
-
-	private State executeCollectiveChecking(State state, int pid,
-			String process, Iterable<Expression> conditions, ContractKind kind,
-			MPICollectiveBehavior collectBehav, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
-		Expression[] args = new Expression[2];
-		LibmpiExecutor mpiExecutor;
-		Expression communicator = collectBehav.communicator();
-
-		// Creating an entry
-		try {
-			mpiExecutor = (LibmpiExecutor) loader.getLibraryExecutor("mpi",
-					this, modelFactory, symbolicUtil, symbolicAnalyzer);
-			args[0] = communicator;
-			// TODO: make a helper method:
-			args[1] = modelFactory.trueExpression(communicator.getSource());
-			for (Expression requires : conditions)
-				args[1] = modelFactory.binaryExpression(
-						modelFactory.sourceOfSpan(args[1].getSource(),
-								requires.getSource()), BINARY_OPERATOR.AND,
-						args[1], requires);
-			return mpiExecutor.executeCollectiveContract(state, pid, process,
-					args, collectBehav, kind, source);
-		} catch (LibraryLoaderException e) {
-			StringBuffer message = new StringBuffer();
-
-			message.append("unable to load the library evaluator for the library ");
-			message.append("mpi");
-			message.append(" for the \\mpi_collective(...) contracts ");
-			errorLogger.logSimpleError(source, state, process,
-					this.symbolicAnalyzer.stateInformation(state),
-					ErrorKind.LIBRARY, message.toString());
-			throw new UnsatisfiablePathConditionException();
-		}
-	}
-
 	/**
-	 * Using collective entry to synchronize MPI processes.
-	 * 
-	 * @param state
-	 * @param pid
-	 * @param process
-	 * @param collectBehav
-	 * @param source
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Pair<State, Boolean> executeCollectiveSynchronization(State state,
-			int pid, String process, MPICollectiveBehavior collectBehav,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		Expression[] args = new Expression[2];
-		LibmpiExecutor mpiExecutor;
-		Expression communicator = collectBehav.communicator();
-
-		// Creating an entry
-		try {
-			mpiExecutor = (LibmpiExecutor) loader.getLibraryExecutor("mpi",
-					this, modelFactory, symbolicUtil, symbolicAnalyzer);
-			args[0] = communicator;
-			args[1] = modelFactory.trueExpression(communicator.getSource());
-			return mpiExecutor.executeCollectiveSynchronization(state, pid,
-					process, args, collectBehav, source);
-		} catch (LibraryLoaderException e) {
-			StringBuffer message = new StringBuffer();
-
-			message.append("unable to load the library evaluator for the library ");
-			message.append("mpi");
-			message.append(" for the \\mpi_collective(...) contracts ");
-			errorLogger.logSimpleError(source, state, process,
-					this.symbolicAnalyzer.stateInformation(state),
-					ErrorKind.LIBRARY, message.toString());
-			throw new UnsatisfiablePathConditionException();
-		}
-	}
-
-	/**
-	 * Helper method. Creates and caches wildcard \mpi_empty_in and
-	 * \mpi_empty_out expressions.
-	 * 
-	 * @param state
-	 * @param pid
-	 * @param process
-	 * @param communicator
-	 * @param source
-	 * @param function
-	 * @return
-	 */
-	private List<Expression> wildcardMPIEmptyIO(State state, int pid,
-			String process, Expression communicator, CIVLSource source,
-			CIVLFunction function) {
-		Expression[] argument = new Expression[1];
-		List<Expression> result = new LinkedList<>();
-		MPIContractExpression wildcard_mpiemptyIn = null;
-		MPIContractExpression wildcard_mpiemptyOut = null;
-
-		argument[0] = modelFactory.wildcardExpression(null, modelFactory
-				.typeFactory().integerType());
-		wildcard_mpiemptyIn = modelFactory.mpiContractExpression(source,
-				function.outerScope(), communicator, argument,
-				MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_IN);
-		wildcard_mpiemptyOut = modelFactory.mpiContractExpression(source,
-				function.outerScope(), communicator, argument,
-				MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_OUT);
-		result.add(wildcard_mpiemptyIn);
-		result.add(wildcard_mpiemptyOut);
-		return result;
-	}
-
-	/**
-	 * Helper function. A set of expressions will be evaluated and their results
-	 * will be conjuncted as a whole boolean expression.
-	 * 
 	 * <p>
-	 * Pre-conditions: input conditions must be boolean expressions.
+	 * <b>Summary: </b> A helper method, returns true if and only if a given
+	 * variable is not a defined constant or a system variable which is
+	 * invisible for programmers.
 	 * </p>
 	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The PID of the process
-	 * @param process
-	 *            The String identifier of the process
-	 * @param conditions
-	 *            A set of {@link Iterable} conditions
-	 * @return The conjunction of results.
-	 * @throws UnsatisfiablePathConditionException
+	 * @param scope
+	 *            The scope where the variable is
+	 * @param var
+	 *            The given variable
+	 * @return
 	 */
-	private BooleanExpression conjunctConditions(State state, int pid,
-			String process, Iterable<Expression> conditions)
-			throws UnsatisfiablePathConditionException {
-		SymbolicExpression ensPred;
-		Evaluation eval;
-		BooleanExpression newContext = universe.trueExpression();
-
-		for (Expression condition : conditions) {
-			eval = evaluator.evaluate(state, pid, condition);
-			state = eval.state;
-			ensPred = eval.value;
-			newContext = (BooleanExpression) universe.canonic(universe.and(
-					newContext, (BooleanExpression) ensPred));
-		}
-		return newContext;
-	}
-
-	private BooleanExpression deriveAllRequirementExpressions(State state,
-			int pid, FunctionContract contracts, Iterable<String> behaviorNames)
-			throws UnsatisfiablePathConditionException {
-		FunctionBehavior defaultBehavior = contracts.defaultBehavior();
-		List<Expression> requires = new LinkedList<>();
-		BooleanExpression result = universe.trueExpression();
-		Evaluation eval;
-
-		for (Expression require : defaultBehavior.requirements())
-			requires.add(require);
-		for (String behavName : behaviorNames) {
-			FunctionBehavior behav = contracts.getBehavior(behavName);
-
-			if (behav != null)
-				for (Expression require : behav.requirements())
-					requires.add(require);
-		}
-		for (MPICollectiveBehavior collective : contracts.getMPIBehaviors()) {
-			for (Expression require : collective.requirements())
-				requires.add(require);
-			for (String behavName : behaviorNames) {
-				FunctionBehavior behav = collective.namedBahavior(behavName);
-
-				if (behav != null)
-					for (Expression require : behav.requirements())
-						requires.add(require);
-			}
-		}
-		for (Expression require : requires) {
-			eval = conditionGenerator.deriveExpression(state, pid, require);
-			state = eval.state;
-			result = universe.and(result, (BooleanExpression) eval.value);
-		}
-		return result;
-	}
-
-	// TODO: completes this. Currently it just ignores all variables created by
-	// CIVL that is ones whose name starts with an underscore.
 	private boolean canIInitThisVariable(Scope scope, Variable var) {
 		String varName = var.name().name();
 
@@ -1241,6 +1272,8 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			return false;
 		switch (varName) {
 		case ModelConfiguration.GENERAL_ROOT:
+			// case ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER:
+			// case ModelConfiguration.SYMBOLIC_INPUT_COUNTER:
 		case ModelConfiguration.ATOMIC_LOCK_VARIABLE:
 		case ModelConfiguration.TIME_COUNT_VARIABLE:
 		case ModelConfiguration.GCOMM_WORLD:
@@ -1257,4 +1290,117 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			return true;
 		}
 	}
+
+	/**
+	 * <p>
+	 * <b>Summary: </b>A helper method, Creates a list of wildcard \mpi_empty_in
+	 * and \mpi_empty_out expressions for a {@link MPICollectiveBehavior}.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param mpiCollective
+	 *            The MPI collective behavior block corresponding to these
+	 *            expressions
+	 * @param source
+	 *            CIVLSource for these generated expressions
+	 * @param function
+	 *            The {@link CIVLFunction} corresponding to these expressions.
+	 * @return
+	 */
+	private List<Expression> wildcardMPIEmptyIO(State state, int pid,
+			String process, MPICollectiveBehavior mpiCollective,
+			CIVLSource source, CIVLFunction function) {
+		Expression[] argument = new Expression[1];
+		List<Expression> result = new LinkedList<>();
+		MPIContractExpression wildcard_mpiemptyIn = null;
+		MPIContractExpression wildcard_mpiemptyOut = null;
+
+		argument[0] = modelFactory.wildcardExpression(null, modelFactory
+				.typeFactory().integerType());
+		wildcard_mpiemptyIn = modelFactory.mpiContractExpression(source,
+				function.outerScope(), mpiCollective.communicator(), argument,
+				MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_IN,
+				mpiCollective.mpiCommunicationPattern());
+		wildcard_mpiemptyOut = modelFactory.mpiContractExpression(source,
+				function.outerScope(), mpiCollective.communicator(), argument,
+				MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_OUT,
+				mpiCollective.mpiCommunicationPattern());
+		result.add(wildcard_mpiemptyIn);
+		result.add(wildcard_mpiemptyOut);
+		return result;
+	}
+
+	/**
+	 * <p>
+	 * <b>Summary: </b> Conjuncts a set of {@link Expression}s into a whole
+	 * {@link BinaryExpression} whose operator is {@link BINARY_OPERATOR#AND}.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param predicates
+	 *            The expression set which must have bool type.
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Expression combinePredicates(State state, int pid, String process,
+			Iterable<Expression> predicates)
+			throws UnsatisfiablePathConditionException {
+		boolean isFirst = true;
+		Expression combinedPredicates = null;
+
+		for (Expression predicate : predicates) {
+			CIVLSource combinedSource = isFirst ? predicate.getSource()
+					: modelFactory.sourceOfSpan(combinedPredicates.getSource(),
+							predicate.getSource());
+
+			// The conditional expression has side-effects which changes
+			// "isFirst" to false once it's reached:
+			combinedPredicates = isFirst && (isFirst = false) == false ? predicate
+					: modelFactory.binaryExpression(combinedSource,
+							BINARY_OPERATOR.AND, combinedPredicates, predicate);
+		}
+		return combinedPredicates != null ? combinedPredicates : modelFactory
+				.trueExpression(null);
+	}
+
+	/**
+	 * Set the system variable _mpi_sys_status_ with the given value "status" if
+	 * the variable exists.
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the process
+	 * @param scope
+	 *            The Scope to start looking for such an variable
+	 * @param status
+	 *            The status value will be set to the variable.
+	 * @return
+	 */
+	private State setMPISysStatusIfExists(State state, int pid, Scope scope,
+			NumericExpression status) {
+		while (scope != null) {
+			Variable mpiSysStatus = scope
+					.variable(ModelConfiguration.MPI_SYS_STATUS);
+
+			if (mpiSysStatus != null) {
+				state = stateFactory.setVariable(state, mpiSysStatus, pid,
+						status);
+				break;
+			} else
+				scope = scope.parent();
+		}
+		return state;
+	}
+
 }

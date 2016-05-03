@@ -37,7 +37,7 @@ public class CommonSystemFunction extends CommonFunction implements
 			Location startLocation, String libraryName, ModelFactory factory) {
 		super(source, true, name, parameterScope, parameters, returnType,
 				containingScope, fid, startLocation, factory);
-		this.isSystem = true;
+		this.isRoot = true;
 		this.library = libraryName;
 	}
 

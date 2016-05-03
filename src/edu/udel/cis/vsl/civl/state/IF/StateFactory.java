@@ -672,6 +672,18 @@ public interface StateFactory {
 			ImmutableCollectiveSnapshotsEntry entry);
 
 	/**
+	 * Partially merging monoStates which stored in the
+	 * {@link CollectiveSnapshotsEntry}. Missing monoStates will be compensated
+	 * by the current state.
+	 * 
+	 * @param state
+	 * @param entry
+	 * @return
+	 */
+	ImmutableState partialMergeMonostates(State state,
+			ImmutableCollectiveSnapshotsEntry entry, int place2Pid[]);
+
+	/**
 	 * Take a snapshot on current state then store the snapshot with the
 	 * collective assertion into an collectiveSnapshotsEntry. If the global
 	 * state has a queue, then either create a new entry then enqueue, or modify
@@ -782,8 +794,36 @@ public interface StateFactory {
 	ImmutableCollectiveSnapshotsEntry[] getSnapshotsQueue(State state,
 			int queueID);
 
-	// TODO:doc
+	/**
+	 * <p>
+	 * <b>Summary: </b> Returns a new state s'' by copy the snapshots queues in
+	 * a state s to another state s'
+	 * </p>
+	 * 
+	 * @param fromState
+	 *            The state whose snapshots queues will be copied
+	 * @param toState
+	 *            The state that will be updated with a snapshots queues
+	 * @return The new state obtained by doing the aforementioned copy.
+	 */
 	ImmutableState copySnapshotsQueues(State fromState, State toState);
-	/* ****************** End of Snapshots related method ****************** */
 
+	/**
+	 * <p>
+	 * <b>Pre-condition:</b> The path condition of the given state shall not
+	 * contain values of scope IDs and process IDs.
+	 * </p>
+	 * <p>
+	 * <b>Summary: </b> Returns a new state by renaming processes in a state
+	 * with a given table which maps process IDs from new IDs to old IDs.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The state will be re-numbered.
+	 * @param procsNewToOld
+	 *            The table maps process IDs from new IDs to old IDs.
+	 * @return The new state after renumbering.
+	 */
+	ImmutableState updateProcessesForState(State state, int[] procsNewToOld);
+	/* ****************** End of Snapshots related method ****************** */
 }
