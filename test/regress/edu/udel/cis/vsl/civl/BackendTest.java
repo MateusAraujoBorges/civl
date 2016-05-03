@@ -62,6 +62,17 @@ public class BackendTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("quantified.cvl")));
 	}
 
+	@Test
+	public void mpiSumArray() {
+		assertTrue(ui.run(VERIFY, QUIET, "-input_mpi_nprocs=3",
+				filename("mpiSumarray.cvl")));
+	}
+
+	@Test
+	public void symbols() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("symbols.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
