@@ -39,6 +39,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.GMCConfiguration;
+import edu.udel.cis.vsl.sarl.IF.CanonicalRenamer;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SARLException;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
@@ -46,6 +47,7 @@ import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
@@ -257,6 +259,7 @@ public class ImmutableStateFactory implements StateFactory {
 		if (collectHeaps)
 			theState = collectHeaps(theState, toBeIgnored);
 		// theState = collectSymbolicConstants(theState, collectHeaps);
+		theState = collectHavocVariables(theState);
 		if (simplify) {
 			ImmutableState simplifiedState = theState.simplifiedState;
 
@@ -505,6 +508,10 @@ public class ImmutableStateFactory implements StateFactory {
 		// reachableMUs.put(0, new HashMap<SymbolicExpression, Boolean>());
 		state = new ImmutableState(new ImmutableProcessState[0],
 				new ImmutableDynamicScope[0], universe.trueExpression());
+		state.collectibleCounts = new int[ModelConfiguration.SYMBOL_PREFIXES.length];
+		for (int i = 0; i < ModelConfiguration.SYMBOL_PREFIXES.length; i++) {
+			state.collectibleCounts[i] = 0;
+		}
 		// system function doesn't have any argument, because the General
 		// transformer has translated away all parameters of the main function.
 		state = addProcess(state, function, arguments, -1);
@@ -816,6 +823,7 @@ public class ImmutableStateFactory implements StateFactory {
 		theState = theState.setProcessStates(newProcesses);
 		newState = new ImmutableState(newProcesses, theState.copyScopes(),
 				theState.getPathCondition());
+		newState.collectibleCounts = theState.collectibleCounts;
 		newState = newState.setSnapshotsQueues(theState.getSnapshotsQueues());
 		return newState;
 	}
@@ -1684,6 +1692,18 @@ public class ImmutableStateFactory implements StateFactory {
 		}
 	}
 
+	// /**
+	// * renames all collectible symbolic constants. Note: this method should
+	// only
+	// * be called when necessary.
+	// *
+	// * @param state
+	// * @return
+	// */
+	// private ImmutableState updateAllSymbols(ImmutableState state) {
+	//
+	// }
+
 	@SuppressWarnings("incomplete-switch")
 	private void computeNewHeapPointer(SymbolicExpression value,
 			Map<SymbolicExpression, SymbolicExpression> heapMemUnitsMap,
@@ -1771,20 +1791,20 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @param state
 	 * @return
 	 */
-	@SuppressWarnings("unused")
-	private ImmutableState collectHavocVariables(State state,
-			boolean collectHeaps) {
+	private ImmutableState collectHavocVariables(State state) {
 		ImmutableState theState = (ImmutableState) state;
 		int numDyscopes = theState.numDyscopes();
-		UnaryOperator<SymbolicExpression> nameSubstituter = universe
-				.canonicalRenamer("H", this.isReservedSymbolicConstant);
+		CanonicalRenamer canonicRenamer = universe
+				.canonicalRenamer(
+						ModelConfiguration.SYMBOL_PREFIXES[ModelConfiguration.HAVOC_PREFIX_INDEX],
+						this.isReservedSymbolicConstant);
 		ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[numDyscopes];
 		boolean change = false;
 
 		for (int dyscopeId = 0; dyscopeId < numDyscopes; dyscopeId++) {
 			ImmutableDynamicScope oldScope = theState.getDyscope(dyscopeId);
 			ImmutableDynamicScope newScope = oldScope
-					.updateSymbolicConstants(nameSubstituter);
+					.updateSymbolicConstants(canonicRenamer);
 
 			change = change || newScope != oldScope;
 			newScopes[dyscopeId] = newScope;
@@ -1793,16 +1813,20 @@ public class ImmutableStateFactory implements StateFactory {
 			newScopes = null;
 
 		BooleanExpression oldPathCondition = theState.getPathCondition();
-		BooleanExpression newPathCondition = (BooleanExpression) nameSubstituter
+		BooleanExpression newPathCondition = (BooleanExpression) canonicRenamer
 				.apply(oldPathCondition);
 
 		if (oldPathCondition == newPathCondition)
 			newPathCondition = null;
 		else
 			change = true;
-		if (change)
+		if (change) {
 			theState = ImmutableState.newState(theState, null, newScopes,
 					newPathCondition);
+			theState = theState.updateCollectibleCount(
+					ModelConfiguration.HAVOC_PREFIX_INDEX,
+					canonicRenamer.getNumNewNames());
+		}
 		return theState;
 	}
 
@@ -1814,37 +1838,6 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public MemoryUnitFactory memUnitFactory() {
 		return this.memUnitFactory;
-	}
-
-	@Override
-	public State incrementNumSymbolicConstants(State state) {
-		Variable symbolicConstantVar = state.getDyscope(0).lexicalScope()
-				.variable(ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER);
-		SymbolicExpression countValue = state.getVariableValue(0,
-				symbolicConstantVar.vid()), newCount;
-
-		if (countValue.isNull())
-			newCount = universe.oneInt();
-		else
-			newCount = universe.add((NumericExpression) countValue,
-					universe.oneInt());
-		return this.setVariable(state, symbolicConstantVar.vid(), 0, newCount);
-	}
-
-	@Override
-	public int numSymbolicConstants(State state) {
-		Variable symbolicConstantVar = state.getDyscope(0).lexicalScope()
-				.variable(ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER);
-		SymbolicExpression countValue = state.getVariableValue(0,
-				symbolicConstantVar.vid());
-
-		if (countValue.isNull())
-			return 0;
-
-		IntegerNumber countNum = (IntegerNumber) universe
-				.extractNumber((NumericExpression) countValue);
-
-		return countNum.intValue();
 	}
 
 	@Override
@@ -1926,6 +1919,7 @@ public class ImmutableStateFactory implements StateFactory {
 					.updateDyscopes(dyscopeOldToNews[place]);
 		}
 		newState = new ImmutableState(processes, dyscopes, pathCondition);
+		newState.collectibleCounts = ((ImmutableState) state).collectibleCounts;
 		newState = newState.setSnapshotsQueues(((ImmutableState) state)
 				.getSnapshotsQueues());
 		return newState;
@@ -2123,37 +2117,6 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public int numSymbolicInputs(State state) {
-		Variable symbolicConstantVar = state.getDyscope(0).lexicalScope()
-				.variable(ModelConfiguration.SYMBOLIC_INPUT_COUNTER);
-		SymbolicExpression countValue = state.getVariableValue(0,
-				symbolicConstantVar.vid());
-
-		if (countValue.isNull())
-			return 0;
-
-		IntegerNumber countNum = (IntegerNumber) universe
-				.extractNumber((NumericExpression) countValue);
-
-		return countNum.intValue();
-	}
-
-	@Override
-	public State incrementNumSymbolicInputs(State state) {
-		Variable symbolicConstantVar = state.getDyscope(0).lexicalScope()
-				.variable(ModelConfiguration.SYMBOLIC_INPUT_COUNTER);
-		SymbolicExpression countValue = state.getVariableValue(0,
-				symbolicConstantVar.vid()), newCount;
-
-		if (countValue.isNull())
-			newCount = universe.oneInt();
-		else
-			newCount = universe.add((NumericExpression) countValue,
-					universe.oneInt());
-		return this.setVariable(state, symbolicConstantVar.vid(), 0, newCount);
-	}
-
-	@Override
 	public State enterAtomic(State state, int pid) {
 		ProcessState procState = state.getProcessState(pid);
 		int atomicCount = procState.atomicCount();
@@ -2171,5 +2134,19 @@ public class ImmutableStateFactory implements StateFactory {
 		if (atomicCount == 1)
 			state = releaseAtomicLock(state);
 		return this.setProcessState(state, procState.decrementAtomicCount());
+	}
+
+	@Override
+	public Pair<State, SymbolicConstant> getFreshSymbol(State state, int index,
+			SymbolicType type) {
+		ImmutableState immutableState = (ImmutableState) state;
+		int count = immutableState.collectibleCounts[index];
+		SymbolicConstant newSymbol = universe.symbolicConstant(
+				universe.stringObject(ModelConfiguration.SYMBOL_PREFIXES[index]
+						+ count), type);
+		State newState = immutableState
+				.updateCollectibleCount(index, count + 1);
+
+		return new Pair<>(newState, newSymbol);
 	}
 }

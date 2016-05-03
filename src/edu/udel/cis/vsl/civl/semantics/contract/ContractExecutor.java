@@ -1241,8 +1241,6 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			return false;
 		switch (varName) {
 		case ModelConfiguration.GENERAL_ROOT:
-		case ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER:
-		case ModelConfiguration.SYMBOLIC_INPUT_COUNTER:
 		case ModelConfiguration.ATOMIC_LOCK_VARIABLE:
 		case ModelConfiguration.TIME_COUNT_VARIABLE:
 		case ModelConfiguration.GCOMM_WORLD:

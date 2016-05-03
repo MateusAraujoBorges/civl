@@ -1488,10 +1488,7 @@ public class CommonModelFactory implements ModelFactory {
 		newScope = new CommonScope(source, parent, myVariables, scopeID++);
 		if (newScope.id() == 0) {
 			this.createAtomicLockVariable(newScope);
-			// if (modelBuilder.timeLibIncluded)
 			createTimeVariables(newScope);
-			createSymbolicInputCounter(newScope);
-			createSymbolicConstantCounter(newScope);
 		}
 		if (parent != null) {
 			parent.addChild(newScope);
@@ -1931,24 +1928,6 @@ public class CommonModelFactory implements ModelFactory {
 							.numVariables());
 			scope.addVariable(brokenTimeVariable);
 		}
-	}
-
-	private void createSymbolicConstantCounter(Scope scope) {
-		Variable symbolicConstantCounter = this.variable(this.systemSource,
-				typeFactory.integerType, this.identifier(this.systemSource,
-						ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER), scope
-						.numVariables());
-
-		scope.addVariable(symbolicConstantCounter);
-	}
-
-	private void createSymbolicInputCounter(Scope scope) {
-		Variable symbolicInputCounter = this.variable(this.systemSource,
-				typeFactory.integerType, this.identifier(this.systemSource,
-						ModelConfiguration.SYMBOLIC_INPUT_COUNTER), scope
-						.numVariables());
-
-		scope.addVariable(symbolicInputCounter);
 	}
 
 	/* *************************** Private Methods ************************* */

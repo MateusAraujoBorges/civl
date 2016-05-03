@@ -18,6 +18,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
@@ -1545,9 +1546,7 @@ public class CommonEvaluator implements Evaluator {
 			StringObject nameObj;
 
 			if (variable.scope().id() == 0 && variable.isInput()) {
-				// name = "X" + stateFactory.numSymbolicInputs(state);
 				name = "X_" + variable.name().name();
-				state = stateFactory.incrementNumSymbolicInputs(state);
 			} else
 				name = "X_s" + dyscopeId + "v" + vid + "p" + pid;
 			nameObj = universe.stringObject(name);
@@ -3931,12 +3930,10 @@ public class CommonEvaluator implements Evaluator {
 
 	@Override
 	public Evaluation havoc(State state, SymbolicType type) {
-		String name = "Y" + stateFactory.numSymbolicConstants(state);
-		SymbolicConstant unconstrainedValue;
+		Pair<State, SymbolicConstant> freshSymbol = this.stateFactory
+				.getFreshSymbol(state, ModelConfiguration.HAVOC_PREFIX_INDEX,
+						type);
 
-		state = stateFactory.incrementNumSymbolicConstants(state);
-		unconstrainedValue = universe.symbolicConstant(
-				universe.stringObject(name), type);
-		return new Evaluation(state, unconstrainedValue);
+		return new Evaluation(freshSymbol.left, freshSymbol.right);
 	}
 }

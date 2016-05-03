@@ -9,6 +9,7 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.Map;
 
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.DynamicScope;
@@ -184,6 +185,8 @@ public class ImmutableState implements State {
 	 */
 	ImmutableState simplifiedState = null;
 
+	int[] collectibleCounts;
+
 	/* *************************** Static Methods ************************** */
 
 	/**
@@ -204,6 +207,10 @@ public class ImmutableState implements State {
 	 * @param pathCondition
 	 *            new value for the path condition or null if the old one should
 	 *            be re-used
+	 * @param collectibleCounts
+	 *            the counts of collectible symbolic constants the name of which
+	 *            have the prefix from
+	 *            {@link ModelConfiguration#SYMBOL_PREFIXES}
 	 * @return new ImmutableState with fields as specified
 	 */
 	static ImmutableState newState(ImmutableState state,
@@ -222,6 +229,7 @@ public class ImmutableState implements State {
 			result.scopeHashed = true;
 			result.scopeHashCode = state.scopeHashCode;
 		}
+		result.collectibleCounts = state.collectibleCounts;
 		result.snapshotsQueues = state.snapshotsQueues;
 		return result;
 	}
@@ -423,8 +431,7 @@ public class ImmutableState implements State {
 	 *         null
 	 */
 	ImmutableProcessState[] copyAndExpandProcesses() {
-		ImmutableProcessState[] newProcesses = new ImmutableProcessState[processStates.length
-				+ 1];
+		ImmutableProcessState[] newProcesses = new ImmutableProcessState[processStates.length + 1];
 
 		System.arraycopy(processStates, 0, newProcesses, 0,
 				processStates.length);
@@ -440,8 +447,7 @@ public class ImmutableState implements State {
 	 *         null
 	 */
 	ImmutableDynamicScope[] copyAndExpandScopes() {
-		ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[dyscopes.length
-				+ 1];
+		ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[dyscopes.length + 1];
 
 		System.arraycopy(dyscopes, 0, newScopes, 0, dyscopes.length);
 		return newScopes;
@@ -541,8 +547,7 @@ public class ImmutableState implements State {
 				scopeId = getParentId(scopeId);
 			}
 		}
-		throw new IllegalArgumentException(
-				"Variable not in scope: " + variable);
+		throw new IllegalArgumentException("Variable not in scope: " + variable);
 	}
 
 	/**
@@ -571,6 +576,7 @@ public class ImmutableState implements State {
 			result.procHashCode = procHashCode;
 		}
 		result.snapshotsQueues = this.snapshotsQueues;
+		result.collectibleCounts = this.collectibleCounts;
 		return result;
 	}
 
@@ -586,8 +592,7 @@ public class ImmutableState implements State {
 	 *            PID of process
 	 * @return new state with new process state
 	 */
-	ImmutableState setProcessState(int index,
-			ImmutableProcessState processState) {
+	ImmutableState setProcessState(int index, ImmutableProcessState processState) {
 		int n = processStates.length;
 		ImmutableProcessState[] newProcessStates = new ImmutableProcessState[n];
 		ImmutableState result;
@@ -600,6 +605,7 @@ public class ImmutableState implements State {
 			result.scopeHashCode = scopeHashCode;
 		}
 		result.snapshotsQueues = this.snapshotsQueues;
+		result.collectibleCounts = this.collectibleCounts;
 		return result;
 	}
 
@@ -620,6 +626,7 @@ public class ImmutableState implements State {
 			result.scopeHashCode = scopeHashCode;
 		}
 		result.snapshotsQueues = this.snapshotsQueues;
+		result.collectibleCounts = this.collectibleCounts;
 		return result;
 	}
 
@@ -653,16 +660,14 @@ public class ImmutableState implements State {
 	 *            The updated snapshot queue
 	 * @return
 	 */
-	ImmutableState updateQueue(int id,
-			ImmutableCollectiveSnapshotsEntry[] queue) {
+	ImmutableState updateQueue(int id, ImmutableCollectiveSnapshotsEntry[] queue) {
 		ImmutableState newState;
 		int newLength;
 
 		assert queue != null;
 		newState = newState(this, processStates, dyscopes, pathCondition);
 		if (newState.snapshotsQueues.length <= id)
-			newState.snapshotsQueues = new ImmutableCollectiveSnapshotsEntry[id
-					+ 1][];
+			newState.snapshotsQueues = new ImmutableCollectiveSnapshotsEntry[id + 1][];
 		else
 			newState.snapshotsQueues = this.snapshotsQueues.clone();
 		newLength = snapshotsQueues.length;
@@ -671,6 +676,29 @@ public class ImmutableState implements State {
 			newState.snapshotsQueues[i] = this.snapshotsQueues[i];
 		// The updated queue must be cloned in case it is changed some where.
 		newState.snapshotsQueues[id] = queue.clone();
+		return newState;
+	}
+
+	/**
+	 * Updates the count of the collectible symbolic constant of the given index
+	 * 
+	 * @param index
+	 *            the index of the count to be updated
+	 * @param newCount
+	 *            the new count of the given index
+	 * @return the new state which is identical to this state except that the
+	 *         collectible count of the given index is updated
+	 */
+	ImmutableState updateCollectibleCount(int index, int newCount) {
+		int length = this.collectibleCounts.length;
+		int[] newCollectibleCounts = new int[length];
+		ImmutableState newState = newState(this, processStates, dyscopes,
+				pathCondition);
+
+		System.arraycopy(this.collectibleCounts, 0, newCollectibleCounts, 0,
+				length);
+		newCollectibleCounts[index]=newCount;
+		newState.collectibleCounts = newCollectibleCounts;
 		return newState;
 	}
 
@@ -868,6 +896,7 @@ public class ImmutableState implements State {
 			result.procHashed = true;
 			result.procHashCode = procHashCode;
 		}
+		result.collectibleCounts = this.collectibleCounts;
 		result.snapshotsQueues = snapshotsQueues;
 		return result;
 	}

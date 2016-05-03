@@ -14,8 +14,31 @@ import java.util.Set;
  */
 public final class ModelConfiguration {
 
-	/* Reserved names of symbolic constants */
 	public final static String GENERAL_ROOT = "_gen_root";
+
+	/* Names of Symbolic Constants */
+
+	/**
+	 * The array of prefixes for symbolic constants.
+	 */
+	public static final String[] SYMBOL_PREFIXES = { "X", "Y", "H" };
+
+	/**
+	 * The prefix of symbolic constants representing input variables.
+	 */
+	public static final int INPUT_PREIFX_INDEX = 0;
+
+	/**
+	 * The prefix of symbolic constants created by havoc.
+	 */
+	public static final int HAVOC_PREFIX_INDEX = 1;
+
+	/**
+	 * The prefix of symbolic constants representing heap objects.
+	 */
+	public static final int HEAP_OBJECT_PREFIX_INDEX = 2;
+
+	/* Reserved names of symbolic constants */
 	/**
 	 * Constant for the name of undefined values
 	 */
@@ -81,18 +104,6 @@ public final class ModelConfiguration {
 	 * it.
 	 */
 	public static final String BROKEN_TIME_VARIABLE = "_broken_time_var";
-
-	/**
-	 * The variable to store the number of symbolic constants appearing in the
-	 * state
-	 */
-	public static final String SYMBOLIC_CONSTANT_COUNTER = "_Y_count_var";
-
-	/**
-	 * The variable to store the number of symbolic constants appearing in the
-	 * state
-	 */
-	public static final String SYMBOLIC_INPUT_COUNTER = "_X_count_var";
 
 	/**
 	 * The name of the heap variable of each scope.

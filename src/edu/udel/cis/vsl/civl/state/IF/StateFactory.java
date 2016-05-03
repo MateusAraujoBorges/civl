@@ -9,6 +9,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.Model;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
@@ -20,6 +21,7 @@ import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableState;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -609,45 +611,47 @@ public interface StateFactory {
 			int dyscopeId, int mallocId, int index);
 
 	/**
-	 * Increase the number of symbolic constants by one.
+	 * returns the memory unit factory associated with this state factory, which
+	 * contains utility functions for
 	 * 
-	 * @param state
-	 *            the state whole number of symbolic constants is to be
-	 *            increased.
-	 * @return the new state
+	 * @return the memory unit factory associated with this state factory.
 	 */
-	State incrementNumSymbolicConstants(State state);
-
-	/**
-	 * Returns the number of symbolic constants appearing in the given state.
-	 * 
-	 * @param state
-	 *            the given state
-	 * @return the number of symbolic constants appearing in the given state.
-	 */
-	int numSymbolicConstants(State state);
-
-	int numSymbolicInputs(State state);
-
-	/**
-	 * Increase the number of symbolic constants by one.
-	 * 
-	 * @param state
-	 *            the state whole number of symbolic constants is to be
-	 *            increased.
-	 * @return the new state
-	 */
-	State incrementNumSymbolicInputs(State state);
-
 	MemoryUnitFactory memUnitFactory();
 
 	/**
-	 * Returns the map of variable and value of input variables at the given
-	 * state.
+	 * Returns the map of input variable and their value at the given state;
+	 * empty map if there are no input variables.
 	 * 
 	 * @param state
+	 *            the given state
+	 * @return the map of input variable and their value at the given state
 	 */
 	Map<Variable, SymbolicExpression> inputVariableValueMap(State state);
+
+	/**
+	 * Creates a fresh symbolic constant of the given type at the given state.
+	 * The name of the symbolic constant is formed by a sequence of alphabets
+	 * (i.e., the prefix) followed by an integer (i.e., the unique id), like
+	 * "X4", "Y5", "H10". The prefix is decided by the index and
+	 * {@link ModelConfiguration#SYMBOL_PREFIXES}. This method has side effect
+	 * on the state because it increases the count of the corresponding symbol.
+	 * 
+	 * Precondition: the index is greater than or equal to zero and is less than
+	 * the length of {@link ModelConfiguration#SYMBOL_PREFIXES}.
+	 * 
+	 * @param state
+	 *            the given state
+	 * @param index
+	 *            the index of the prefix to be used in the name of the symbolic
+	 *            constant to be created
+	 * @param type
+	 *            the type of the symbolic constant to be created
+	 * @return the new state and the new symbolic constant of the given type
+	 *         with a unique name and has the prefix corresponding to the given
+	 *         index
+	 */
+	Pair<State, SymbolicConstant> getFreshSymbol(State state, int index,
+			SymbolicType type);
 
 	/* ****************** Snapshots related method ****************** */
 	/* Note: Snapshots are objects with type ImmutableMonoState */
