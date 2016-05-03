@@ -54,18 +54,20 @@ import edu.udel.cis.vsl.sarl.SARL;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 /**
- * A model translator parses, links, transforms a list of source files (C or
+ * A model translator parses, links, transforms a sequence of source files (C or
  * CIVL-C programs) into a ABC program; and then build a CIVL model from that
  * program. Command line options are also taken into account including macros,
  * transformer settings (e.g., -ompNoSimplify), input variables, system/user
  * include path, etc.
  * <p>
- * A model translator takes care of a command line section. E.g., the command
- * line
- * <code>civl compare -spec -DN=5 sum.c -impl -DCUDA -inputNB=8 sum.c sum_cuda.c</code>
- * contains two command line sections "spec" and "impl", each of which will then
- * be translated to an ABC program by a specific model translator (different
- * lists of files, different macros, input variables, etc).
+ * A model translator takes into account a command line section. E.g., the
+ * command line
+ * <code>civl compare -D_CIVL -spec -DN=5 sum.c -impl -DCUDA -inputNB=8 sum.c sum_cuda.c</code>
+ * contains three command line sections the common section, the "spec" section
+ * and the "impl" section. Two model translators will be invoked for translating
+ * the specification and the implementation, respectively, taking into account
+ * the common commandline section and the corresponding specific section
+ * (different lists of files, different macros, input variables, etc).
  * <p>
  * Non-compare command line contains one command line section, and thus only one
  * model translator is created.
@@ -109,19 +111,11 @@ public class ModelTranslator {
 	 */
 	GMCSection cmdSection;
 
-	// Configuration abc_config = Configurations.newMinimalConfiguration();
-
 	/**
 	 * The CIVL configuration for this model translator, which is dependent on
 	 * the command line section.
 	 */
 	CIVLConfiguration config;
-
-	// /**
-	// * The preprocessor to be used for preprocessing source files associated
-	// * with this model translator.
-	// */
-	// Preprocessor preprocessor;
 
 	/**
 	 * The symbolic universe.
@@ -184,10 +178,6 @@ public class ModelTranslator {
 	/**
 	 * Creates a new instance of model translator.
 	 * 
-	 * @param transformerFactory
-	 *            The transformer factory that provides various CIVL transformer
-	 * @param frontEnd
-	 *            The ABC front end
 	 * @param gmcConfig
 	 *            The GMC configuration which corresponds to the command line.
 	 * @param gmcSection
@@ -197,7 +187,10 @@ public class ModelTranslator {
 	 *            The list of file names for parsing, which are specified in the
 	 *            command line.
 	 * @param coreName
-	 *            The core name of the user file.
+	 *            The core name of the user file. It is assumed that the first
+	 *            file in the file list from the command line is the core user
+	 *            file, which usually is the one that contains the main
+	 *            function.
 	 * @throws PreprocessorException
 	 *             if there is a problem processing any macros defined in the
 	 *             command line
@@ -209,11 +202,8 @@ public class ModelTranslator {
 	}
 
 	/**
+	 * Creates a new instance of model translator.
 	 * 
-	 * @param transformerFactory
-	 *            The transformer factory that provides various CIVL transformer
-	 * @param frontEnd
-	 *            The ABC front end
 	 * @param gmcConfig
 	 *            The GMC configuration which corresponds to the command line.
 	 * @param gmcSection
@@ -223,7 +213,10 @@ public class ModelTranslator {
 	 *            The list of file names for parsing, which are specified in the
 	 *            command line.
 	 * @param coreName
-	 *            The core name of the user file.
+	 *            The core name of the user file. It is assumed that the first
+	 *            file in the file list from the command line is the core user
+	 *            file, which usually is the one that contains the main
+	 *            function.
 	 * @param universe
 	 *            The symbolic universe, the unique one used by this run.
 	 * @throws PreprocessorException
@@ -242,13 +235,6 @@ public class ModelTranslator {
 		if (cmdSection.isTrue(showQueriesO))
 			universe.setShowQueries(true);
 		config = new CIVLConfiguration(cmdSection);
-		// if (config.svcomp()) {
-		// this.filenames = new String[filenames.length + 1];
-		// this.filenames[0] = new File(Preprocessor.ABC_INCLUDE_PATH,
-		// "svcomp.h").getPath();
-		// for (int i = 0; i < filenames.length; i++)
-		// this.filenames[i + 1] = filenames[i];
-		// } else
 		this.filenames = filenames;
 		userFileName = filenames[0];
 		if (config.svcomp()) {
@@ -258,18 +244,12 @@ public class ModelTranslator {
 		this.frontEnd = new FrontEnd(abcConfiguration);
 		this.transformerFactory = Transforms.newTransformerFactory(frontEnd
 				.getASTFactory());
-		// this.preprocessor = frontEnd.getPreprocessor();
 		systemIncludes = this.getSysIncludes(cmdSection);
 		userIncludes = this.getUserIncludes(cmdSection);
 		macroMaps = getMacroMaps(this.getLanguageByFileName(userFileName));
 	}
 
-	private Language getLanguageByFileName(String fileName) {
-		if (fileName.endsWith(".f") || fileName.endsWith(".F"))
-			return Language.FORTRAN77;
-		else
-			return Language.CIVL_C;
-	}
+	// package private methods
 
 	/**
 	 * Builds the ABC program, based on the command line associated with this
@@ -300,7 +280,7 @@ public class ModelTranslator {
 		tokenSources = this.preprocess();
 		endTime = System.currentTimeMillis();
 		if (config.showTime()) {
-			totalTime = (endTime - startTime);// / 1000;
+			totalTime = (endTime - startTime);
 			out.println(totalTime
 					+ "ms:\tSUMARRY ANTLR preprocessor parsing to form preproc tree for "
 					+ tokenSources.size() + " translation units");
@@ -309,18 +289,12 @@ public class ModelTranslator {
 		if (this.config.svcomp()) {
 			AST userAST = asts.get(0);
 
-			// ignore non-pthread benchmarks
-			// if (config.pthreadOnly()
-			// && !this.containsPthread(userAST.getRootNode())) {
-			// throw new SvcompException();
-			// }
 			// parsing preprocessed .i file
 			if (userFileName.endsWith(".i") || this.config.unpreproc()) {
 				frontEnd.getStandardAnalyzer(Language.CIVL_C).clear(userAST);
 				frontEnd.getStandardAnalyzer(Language.CIVL_C).analyze(userAST);
 				userAST = Transform.newTransformer("prune",
 						userAST.getASTFactory()).transform(userAST);
-				// userAST.prettyPrint(System.out, true);
 				asts.set(0, transformerFactory.getSvcompUnPPTransformer()
 						.transform(userAST));
 			}
@@ -354,21 +328,101 @@ public class ModelTranslator {
 		return program;
 	}
 
-	// private boolean containsPthread(ASTNode node) {
-	// if (node instanceof IdentifierNode) {
-	// return ((IdentifierNode) node).name().startsWith("pthread_");
-	// } else
-	// for (ASTNode child : node.children()) {
-	// if (child == null)
-	// continue;
-	//
-	// boolean childResult = this.containsPthread(child);
-	//
-	// if (childResult)
-	// return true;
-	// }
-	// return false;
-	// }
+	/**
+	 * Parse, link, apply transformers and build CIVL-C model for a certain
+	 * CIVL-C compiling task.
+	 * 
+	 * @return the CIVL-C model of this compiling task specified by the command
+	 *         line
+	 * @throws PreprocessorException
+	 * @throws CommandLineException
+	 * @throws SyntaxException
+	 * @throws ParseException
+	 * @throws IOException
+	 * @throws SvcompException
+	 */
+	Model translate() throws PreprocessorException, CommandLineException,
+			SyntaxException, ParseException, IOException, SvcompException {
+		long startTime = System.currentTimeMillis();
+		Program program = this.buildProgram();
+		long endTime = System.currentTimeMillis();
+		long totalTime;
+
+		if (config.showTime()) {
+			totalTime = (endTime - startTime);
+			out.println(totalTime
+					+ "ms: total time for building the whole program");
+		}
+		if (program != null) {
+			Model model;
+
+			startTime = System.currentTimeMillis();
+			model = this.buildModel(program);
+			endTime = System.currentTimeMillis();
+			if (config.showTime()) {
+				totalTime = (endTime - startTime);
+				out.println(totalTime
+						+ "ms: CIVL model builder builds model from program");
+			}
+			return model;
+		}
+		return null;
+	}
+
+	/**
+	 * 
+	 * @return the input variables declared in the given program
+	 * @throws PreprocessorException
+	 * @throws SyntaxException
+	 * @throws ParseException
+	 * @throws IOException
+	 * @throws SvcompException
+	 */
+	List<VariableDeclarationNode> getInputVariables()
+			throws PreprocessorException, SyntaxException, ParseException,
+			IOException {
+		Program program;
+		try {
+			program = this.buildProgram();
+			return this.inputVariablesOfProgram(program);
+		} catch (SvcompException e) {
+			throw new SyntaxException(
+					"non-pthread examples are ignored in -svcomp mode", null);
+		}
+
+	}
+
+	/**
+	 * Builds a CIVL model from an ABC program, which is the result of parsing,
+	 * linking and transforming source files.
+	 * 
+	 * @param program
+	 *            the ABC program.
+	 * @return the CIVL model representation of the given ABC program.
+	 * @throws CommandLineException
+	 *             if there is a problem in the format of input variable values
+	 *             in the command line.
+	 */
+	Model buildModel(Program program) throws CommandLineException {
+		Model model;
+		ModelBuilder modelBuilder = Models.newModelBuilder(this.universe);
+		String modelName = coreName(userFileName);
+		boolean hasFscanf = TransformerFactory.hasFunctionCalls(
+				program.getAST(), Arrays.asList("scanf", "fscanf"));
+
+		model = modelBuilder.buildModel(cmdSection, program, modelName,
+				config.debugOrVerbose(), out);
+		model.setHasFscanf(hasFscanf);
+		if (config.debugOrVerbose() || config.showModel()) {
+			out.println(bar + "The CIVL model is:" + bar);
+			model.print(out, config.debugOrVerbose());
+			out.println();
+			out.flush();
+		}
+		return model;
+	}
+
+	// private methods
 
 	/**
 	 * Print the input variables declared in the given program to the standard
@@ -418,69 +472,6 @@ public class ModelTranslator {
 	}
 
 	/**
-	 * 
-	 * @return the input variables declared in the given program
-	 * @throws PreprocessorException
-	 * @throws SyntaxException
-	 * @throws ParseException
-	 * @throws IOException
-	 * @throws SvcompException
-	 */
-	public List<VariableDeclarationNode> getInputVariables()
-			throws PreprocessorException, SyntaxException, ParseException,
-			IOException {
-		Program program;
-		try {
-			program = this.buildProgram();
-			return this.inputVariablesOfProgram(program);
-		} catch (SvcompException e) {
-			throw new SyntaxException(
-					"non-pthread examples are ignored in -svcomp mode", null);
-		}
-
-	}
-
-	/**
-	 * Parse, link, apply transformers and build CIVL-C model for a certain
-	 * CIVL-C compiling task.
-	 * 
-	 * @return
-	 * @throws PreprocessorException
-	 * @throws CommandLineException
-	 * @throws SyntaxException
-	 * @throws ParseException
-	 * @throws IOException
-	 * @throws SvcompException
-	 */
-	Model translate() throws PreprocessorException, CommandLineException,
-			SyntaxException, ParseException, IOException, SvcompException {
-		long startTime = System.currentTimeMillis();
-		Program program = this.buildProgram();
-		long endTime = System.currentTimeMillis();
-		long totalTime;
-
-		if (config.showTime()) {
-			totalTime = (endTime - startTime);// / 1000;
-			out.println(totalTime
-					+ "ms: total time for building the whole program");
-		}
-		if (program != null) {
-			Model model;
-
-			startTime = System.currentTimeMillis();
-			model = this.buildModel(program);
-			endTime = System.currentTimeMillis();
-			if (config.showTime()) {
-				totalTime = (endTime - startTime);// / 1000;
-				out.println(totalTime
-						+ "ms: CIVL model builder builds model from program");
-			}
-			return model;
-		}
-		return null;
-	}
-
-	/**
 	 * Extracts from a string the "core" part of a filename by removing any
 	 * directory prefixes and removing any file suffix. For example, invoking on
 	 * "users/siegel/gcd/gcd1.cvl" will return "gcd1". This is the name used to
@@ -506,36 +497,6 @@ public class ModelTranslator {
 	}
 
 	/**
-	 * Builds a CIVL model from an ABC program, which is the result of parsing,
-	 * linking and transforming source files.
-	 * 
-	 * @param program
-	 *            the ABC program.
-	 * @return the CIVL model representation of the given ABC program.
-	 * @throws CommandLineException
-	 *             if there is a problem in the format of input variable values
-	 *             in the command line.
-	 */
-	Model buildModel(Program program) throws CommandLineException {
-		Model model;
-		ModelBuilder modelBuilder = Models.newModelBuilder(this.universe);
-		String modelName = coreName(userFileName);
-		boolean hasFscanf = TransformerFactory.hasFunctionCalls(
-				program.getAST(), Arrays.asList("scanf", "fscanf"));
-
-		model = modelBuilder.buildModel(cmdSection, program, modelName,
-				config.debugOrVerbose(), out);
-		model.setHasFscanf(hasFscanf);
-		if (config.debugOrVerbose() || config.showModel()) {
-			out.println(bar + "The CIVL model is:" + bar);
-			model.print(out, config.debugOrVerbose());
-			out.println();
-			out.flush();
-		}
-		return model;
-	}
-
-	/**
 	 * Applies default transformers (pruner and side-effect remover) of the
 	 * given program.
 	 * 
@@ -551,6 +512,7 @@ public class ModelTranslator {
 		// always apply pruner and side effect remover
 		if (config.debugOrVerbose())
 			this.out.println("Apply pruner...");
+		// FIXME: don't use "prune" or "sef" explicitly
 		program.applyTransformer("prune");
 		if (config.debugOrVerbose())
 			program.prettyPrint(out);
@@ -805,7 +767,7 @@ public class ModelTranslator {
 	 * @throws ParseException
 	 *             if there is a problem parsing the tokens.
 	 */
-	public List<AST> parseTokens(
+	private List<AST> parseTokens(
 			List<Pair<Language, CivlcTokenSource>> tokenSources)
 			throws SyntaxException, ParseException {
 		List<AST> asts = new ArrayList<>(tokenSources.size());
@@ -825,7 +787,7 @@ public class ModelTranslator {
 	 * @throws PreprocessorException
 	 *             if there is any problem preprocessing the source files.
 	 */
-	public List<Pair<Language, CivlcTokenSource>> preprocess()
+	private List<Pair<Language, CivlcTokenSource>> preprocess()
 			throws PreprocessorException {
 		List<Pair<Language, CivlcTokenSource>> tokenSources = new LinkedList<>();
 
@@ -877,6 +839,22 @@ public class ModelTranslator {
 			}
 		}
 		return preprocessor.getMacros(macroDefs);
+	}
+
+	/**
+	 * decides the language, either CIVL-C or Fortran, of a program by the
+	 * suffix of the file name.
+	 * 
+	 * @param fileName
+	 *            the file name of the program
+	 * @return FORTRAN77 if the file name has suffix .f or .F, otherwise,
+	 *         CIVL-C.
+	 */
+	private Language getLanguageByFileName(String fileName) {
+		if (fileName.endsWith(".f") || fileName.endsWith(".F"))
+			return Language.FORTRAN77;
+		else
+			return Language.CIVL_C;
 	}
 
 	/**
