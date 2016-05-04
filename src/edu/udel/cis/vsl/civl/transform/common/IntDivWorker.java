@@ -24,10 +24,26 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.IntDivisionTransformer;
 
+/**
+ * <p>
+ * IntDivWorker is used by {@link IntDivisionTransformer}.
+ * </p>
+ * 
+ * <p>
+ * IntDivisionTransformer transforms all the  integer division ('/') and 
+ * integer modulo ('%') in the program with $int_div(int, int) and 
+ * $int_mod(int, int) functions respectively.
+ * </p>
+ * 
+ * @author yanyihao
+ *
+ */
 public class IntDivWorker extends BaseWorker {
-
+	
+	/********************static constants*************************/
 	private static final String INT_DIV = "$int_div";
 	private static final String INT_MOD = "$int_mod";
+	private static final String INT_DIV_SOURCE_FILE = "int_div.cvl";
 
 	public IntDivWorker(ASTFactory astFactory) {
 		super(IntDivisionTransformer.LONG_NAME, astFactory);
@@ -61,23 +77,27 @@ public class IntDivWorker extends BaseWorker {
 	}
 
 	/**
-	 * Process DIV and MOD operator node, replace each div and mod operator with
-	 * corresponding function define in civlc lib.
+	 * Go through the AST from the root node, replace {@link OperatorNode}s whose {@link Operator}s
+	 * are {@link Operator#DIV} or {@link Operator#MOD} with functions $int_div or $int_mod defined 
+	 * in {@link #INT_DIV_SOURCE_FILE} respectively.
 	 * 
 	 * @param node
+	 * 		the root node of the AST which is operated on.
 	 */
 	private void processDivisionAndModulo(ASTNode node) {
 		if (node instanceof FunctionDeclarationNode) {
+			// the integer division ('/') and integer modulo ('%')  in $int_div and $int_mod 
+			// functions should not be replaced.
 			FunctionDeclarationNode funcDeclNode = (FunctionDeclarationNode) node;
 			IdentifierNode idNode = (IdentifierNode) funcDeclNode.child(0);
 
-			if (idNode.name().equals("$int_div")
-					|| idNode.name().equals("$int_mod"))
+			if (idNode.name().equals(INT_DIV)
+					|| idNode.name().equals(INT_MOD))
 				return;
 		}
 		if (node instanceof OperatorNode
-				&& (((OperatorNode) node).getOperator() == Operator.DIV || ((OperatorNode) node)
-						.getOperator() == Operator.MOD)) {
+				&& (((OperatorNode) node).getOperator() == Operator.DIV 
+						|| ((OperatorNode) node).getOperator() == Operator.MOD)) {
 			OperatorNode opn = (OperatorNode) node;
 
 			if (opn.getNumberOfArguments() != 2) {
@@ -103,8 +123,8 @@ public class IntDivWorker extends BaseWorker {
 				/**
 				 * construct a new functionCallNode.
 				 */
-				String funcName = (op == Operator.DIV) ? "$int_div"
-						: "$int_mod";
+				String funcName = (op == Operator.DIV) ? "INT_DIV"
+						: INT_MOD;
 				String method = (op == Operator.DIV) ? "$int_div()"
 						: "$int_mod()";
 				Source source = this.newSource(method, CivlcTokenConstant.CALL);
@@ -131,13 +151,19 @@ public class IntDivWorker extends BaseWorker {
 			}
 		}
 	}
-
+	
+	/**
+	 * This method will construct a AST from {@link #INT_DIV_SOURCE_FILE}
+	 * , then retrieve the declaration of function '$assert' and the definitions 
+	 * of functions 'int_div' and 'int_mod', then insert them to the top of the ast 
+	 * 
+	 * @param ast
+	 * 		the root node of the AST into which the declarations are inserted.
+	 */
 	private void linkIntDivLibrary(SequenceNode<BlockItemNode> ast) {
 		try {
-			AST intDivLib = this.parseSystemLibrary("int_div.cvl");
+			AST intDivLib = this.parseSystemLibrary(INT_DIV_SOURCE_FILE);
 			SequenceNode<BlockItemNode> root = intDivLib.getRootNode();
-			// System.out.println("children #:"+ root.numChildren());
-			// System.out.println("root children:"+ root.children());
 			List<BlockItemNode> funcDefinitions = new ArrayList<>();
 
 			for (ASTNode child : root.children()) {
