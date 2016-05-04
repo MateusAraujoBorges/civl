@@ -82,7 +82,6 @@ public class IntDivWorker extends BaseWorker {
 	 * in {@link #INT_DIV_SOURCE_FILE} respectively.
 	 * 
 	 * @param node
-	 * 		the root node of the AST which is operated on.
 	 */
 	private void processDivisionAndModulo(ASTNode node) {
 		if (node instanceof FunctionDeclarationNode) {
@@ -116,10 +115,8 @@ public class IntDivWorker extends BaseWorker {
 			operand2 = opn.getArgument(1);
 			if (operand1.getInitialType().equivalentTo(
 					Types.newTypeFactory().basicType(BasicTypeKind.INT))
-					&& operand2.getInitialType()
-							.equivalentTo(
-									Types.newTypeFactory().basicType(
-											BasicTypeKind.INT))) {
+					&& operand2.getInitialType().equivalentTo(
+					Types.newTypeFactory().basicType(BasicTypeKind.INT))) {
 				/**
 				 * construct a new functionCallNode.
 				 */
