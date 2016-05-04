@@ -7,8 +7,9 @@ import edu.udel.cis.vsl.abc.transform.IF.BaseTransformer;
 import edu.udel.cis.vsl.civl.transform.common.IntDivWorker;;
 
 /**
- * This transformer is used to replace division and mod in the program with
- * $int_div(int, int) and $int_mod(int, int) functions.
+ * This transformer is used to replace integer division ('/') and 
+ * integer modulo ('%') in the program with $int_div(int, int) and 
+ * $int_mod(int, int) functions respectively.
  * 
  * @author yanyihao
  *
