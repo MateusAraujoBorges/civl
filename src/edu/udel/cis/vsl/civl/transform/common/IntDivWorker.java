@@ -123,7 +123,7 @@ public class IntDivWorker extends BaseWorker {
 				/**
 				 * construct a new functionCallNode.
 				 */
-				String funcName = (op == Operator.DIV) ? "INT_DIV"
+				String funcName = (op == Operator.DIV) ? INT_DIV
 						: INT_MOD;
 				String method = (op == Operator.DIV) ? "$int_div()"
 						: "$int_mod()";
