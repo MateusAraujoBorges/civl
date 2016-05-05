@@ -24,7 +24,9 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.PairNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.AssignsOrReadsNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.InvariantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundInitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundLiteralObject;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.LiteralObject;
@@ -123,6 +125,7 @@ import edu.udel.cis.vsl.civl.model.IF.Identifier;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.contract.LoopContract;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
@@ -636,6 +639,11 @@ public class FunctionTranslator {
 		CIVLSource source = modelFactory.sourceOf(civlForNode);
 		int dimension;
 		Statement elaborateCall;
+		SequenceNode<ContractNode> loopContractNode = civlForNode
+				.loopContracts();
+		LoopContract loopContract = loopContractNode == null ? null : this
+				.translateLoopInvariants(scope, null, loopContractNode,
+						modelFactory.sourceOf(loopContractNode));
 
 		scope = initResults.first;
 		// Create a loop counter variable for the for loop.
@@ -671,7 +679,7 @@ public class FunctionTranslator {
 		result = this.composeLoopFragmentWorker(scope,
 				modelFactory.sourceOfBeginning(domainNode),
 				modelFactory.sourceOfEnd(domainNode), domainGuard,
-				nextInDomain, civlForNode.getBody(), null, false);
+				nextInDomain, civlForNode.getBody(), null, false, loopContract);
 		return new CommonFragment(elaborateCall).combineWith(result);
 	}
 
@@ -948,7 +956,8 @@ public class FunctionTranslator {
 	private Fragment composeLoopFragmentWorker(Scope loopScope,
 			CIVLSource condStartSource, CIVLSource condEndSource,
 			Expression condition, Fragment bodyPrefix,
-			StatementNode loopBodyNode, Fragment incrementer, boolean isDoWhile) {
+			StatementNode loopBodyNode, Fragment incrementer,
+			boolean isDoWhile, LoopContract loopContract) {
 		Set<Statement> continues, breaks, switchExits;
 		Fragment beforeCondition, loopEntrance, loopBody, loopExit, result;
 		Location loopEntranceLocation, continueLocation;
@@ -973,12 +982,14 @@ public class FunctionTranslator {
 				loopScope);
 		// incrementer comes after the loop body
 		loopEntrance = new CommonFragment(modelFactory.loopBranchStatement(
-				condition.getSource(), loopEntranceLocation, condition, true));
+				condition.getSource(), loopEntranceLocation, condition, true,
+				loopContract));
 		// the loop entrance location is the same as the loop exit location
 		loopExit = new CommonFragment(modelFactory.loopBranchStatement(
 				condition.getSource(), loopEntranceLocation, modelFactory
 						.unaryExpression(condition.getSource(),
-								UNARY_OPERATOR.NOT, condition), false));
+								UNARY_OPERATOR.NOT, condition), false,
+				loopContract));
 		if (beforeCondition != null) {
 			loopEntrance = beforeCondition.combineWith(loopEntrance);
 		}
@@ -1039,7 +1050,8 @@ public class FunctionTranslator {
 	 */
 	private Fragment composeLoopFragment(Scope loopScope,
 			ExpressionNode conditionNode, StatementNode loopBodyNode,
-			ExpressionNode incrementerNode, boolean isDoWhile) {
+			ExpressionNode incrementerNode, boolean isDoWhile,
+			LoopContract loopContract) {
 		Expression condition;
 		Fragment incrementer = null;
 		CIVLSource conditionStart, conditionEnd;
@@ -1058,7 +1070,7 @@ public class FunctionTranslator {
 					incrementerNode);
 		return this.composeLoopFragmentWorker(loopScope, conditionStart,
 				conditionEnd, condition, null, loopBodyNode, incrementer,
-				isDoWhile);
+				isDoWhile, loopContract);
 	}
 
 	// how to process individual block elements?
@@ -2031,7 +2043,8 @@ public class FunctionTranslator {
 	 *            The for loop node
 	 * @return the fragment representing the for loop
 	 */
-	private Fragment translateForLoopNode(Scope scope, ForLoopNode forLoopNode) {
+	private Fragment translateForLoopNode(Scope scope, ForLoopNode forLoopNode,
+			LoopContract loopContract) {
 		ForLoopInitializerNode initNode = forLoopNode.getInitializer();
 		Fragment initFragment = new CommonFragment();
 		Fragment result;
@@ -2046,7 +2059,8 @@ public class FunctionTranslator {
 			initFragment = initData.second;
 		}
 		result = composeLoopFragment(scope, forLoopNode.getCondition(),
-				forLoopNode.getBody(), forLoopNode.getIncrementer(), false);
+				forLoopNode.getBody(), forLoopNode.getIncrementer(), false,
+				loopContract);
 		result = initFragment.combineWith(result);
 		return result;
 	}
@@ -2576,23 +2590,68 @@ public class FunctionTranslator {
 	 */
 	private Fragment translateLoopNode(Scope scope, LoopNode loopNode) {
 		Fragment result;
+		// Translate loop invariants, loop invariants can be used in both
+		// contracts system mode and regular CIVL mode:
+		SequenceNode<ContractNode> loopContractNode = loopNode.loopContracts();
+		LoopContract loopContract = loopContractNode == null ? null
+				: translateLoopInvariants(scope, null,
+						loopNode.loopContracts(),
+						modelFactory.sourceOf(loopContractNode));
 
 		switch (loopNode.getKind()) {
 		case DO_WHILE:
 			result = composeLoopFragment(scope, loopNode.getCondition(),
-					loopNode.getBody(), null, true);
+					loopNode.getBody(), null, true, loopContract);
 			break;
 		case FOR:
-			result = translateForLoopNode(scope, (ForLoopNode) loopNode);
+			result = translateForLoopNode(scope, (ForLoopNode) loopNode,
+					loopContract);
 			break;
 		default:// case WHILE:
 			result = composeLoopFragment(scope, loopNode.getCondition(),
-					loopNode.getBody(), null, false);
+					loopNode.getBody(), null, false, loopContract);
 		}
 		if (result.startLocation().getNumOutgoing() > 1)
 			result = this.insertNoopAtBeginning(
 					modelFactory.sourceOfBeginning(loopNode), scope, result);
 		return result;
+	}
+
+	private LoopContract translateLoopInvariants(Scope scope,
+			Location loopLocation,
+			SequenceNode<ContractNode> loopContractsNode, CIVLSource civlSource) {
+		List<Expression> loopInvariants = new LinkedList<>();
+		List<LHSExpression> loopAssigns = new LinkedList<>();
+		List<Expression> loopVariants = new LinkedList<>();
+
+		for (ContractNode contract : loopContractsNode) {
+			switch (contract.contractKind()) {
+			case INVARIANT:
+				InvariantNode invariant = (InvariantNode) contract;
+
+				loopInvariants.add(translateExpressionNode(
+						invariant.getExpression(), scope, true));
+				break;
+			case ASSIGNS_READS:
+				AssignsOrReadsNode assigns = (AssignsOrReadsNode) contract;
+
+				assert assigns.isAssigns();
+				for (ExpressionNode memoryLoc : assigns.getMemoryList()) {
+					Expression memLocExpr = translateExpressionNode(memoryLoc,
+							scope, true);
+
+					assert memLocExpr instanceof LHSExpression;
+					loopAssigns.add((LHSExpression) memLocExpr);
+				}
+				break;
+			default:
+				throw new CIVLSyntaxException(
+						"Non support contract clause for loop statements: "
+								+ contract.contractKind());
+			}
+		}
+		return modelFactory.loopContract(civlSource, loopLocation,
+				loopInvariants, loopAssigns, loopVariants);
 	}
 
 	/**

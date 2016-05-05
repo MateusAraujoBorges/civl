@@ -34,6 +34,7 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
+import edu.udel.cis.vsl.civl.model.IF.contract.LoopContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
@@ -105,6 +106,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType.PrimitiveTypeKind;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.civl.model.common.contract.CommonLoopContract;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonAbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonAddressOfExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonArrayLiteralExpression;
@@ -996,9 +998,13 @@ public class CommonModelFactory implements ModelFactory {
 
 	@Override
 	public NoopStatement loopBranchStatement(CIVLSource civlSource,
-			Location source, Expression guard, boolean isTrue) {
+			Location source, Expression guard, boolean isTrue,
+			LoopContract loopContract) {
+		if (loopContract != null)
+			loopContract.setLocation(source);
 		return new CommonLoopBranchStatement(civlSource, source,
-				guard != null ? guard : this.trueExpression(civlSource), isTrue);
+				guard != null ? guard : this.trueExpression(civlSource),
+				isTrue, loopContract);
 	}
 
 	@Override
@@ -2342,5 +2348,13 @@ public class CommonModelFactory implements ModelFactory {
 					funcGuard, newGuard) : funcGuard;
 		}
 		return newGuard;
+	}
+
+	@Override
+	public LoopContract loopContract(CIVLSource civlSource,
+			Location loopLocation, List<Expression> loopInvariants,
+			List<LHSExpression> loopAssigns, List<Expression> loopVariants) {
+		return new CommonLoopContract(civlSource, loopLocation, loopInvariants,
+				loopAssigns, loopVariants);
 	}
 }

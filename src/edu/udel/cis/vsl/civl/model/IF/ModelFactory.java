@@ -13,6 +13,7 @@ import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
+import edu.udel.cis.vsl.civl.model.IF.contract.LoopContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
@@ -867,10 +868,13 @@ public interface ModelFactory {
 	 * @param isTrue
 	 *            True if the statement is for the loop-true branch, otherwise
 	 *            for the loop-false branch.
+	 * @param loopContract
+	 *            The loop contracts attached with this loop. null if no loop
+	 *            contracts attached.
 	 * @return
 	 */
 	NoopStatement loopBranchStatement(CIVLSource civlSource, Location source,
-			Expression guard, boolean isTrue);
+			Expression guard, boolean isTrue, LoopContract loopContract);
 
 	/**
 	 * Create a new malloc statement
@@ -1698,6 +1702,25 @@ public interface ModelFactory {
 			CIVLSource civlSource, Scope scope, Location source,
 			FunctionIdentifierExpression functionExpression,
 			List<Expression> arguments, Expression guard);
+
+	/**
+	 * Creates a {@link LoopContract} instance
+	 * 
+	 * @param civlSource
+	 *            The {@link CIVLSource} of the loop contract.
+	 * @param loopLocation
+	 *            The Location which identifies the corresponding loop.
+	 * @param loopInvariants
+	 *            A set of loop invairant expressions.
+	 * @param loopAssigns
+	 *            A set of loop assign expressions.
+	 * @param loopVariants
+	 *            A set of loop vairant expressions.
+	 * @return
+	 */
+	LoopContract loopContract(CIVLSource civlSource, Location loopLocation,
+			List<Expression> loopInvariants, List<LHSExpression> loopAssigns,
+			List<Expression> loopVariants);
 
 	Nothing nothing(CIVLSource source);
 }
