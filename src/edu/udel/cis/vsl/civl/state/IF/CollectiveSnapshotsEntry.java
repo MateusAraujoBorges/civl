@@ -1,10 +1,9 @@
 package edu.udel.cis.vsl.civl.state.IF;
 
-import java.util.List;
+import java.util.Iterator;
 
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableCollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableMonoState;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -102,8 +101,42 @@ public interface CollectiveSnapshotsEntry {
 	ImmutableCollectiveSnapshotsEntry insertMonoState(int place,
 			ImmutableMonoState monoState, Expression assertion);
 
-	Iterable<Pair<Variable, SymbolicExpression>> pickupJointVariables();
+	/**
+	 * *
+	 * <p>
+	 * <b>Pre-condition:</b> The given variable must be saved in this collective
+	 * entry.
+	 * </p>
+	 * <p>
+	 * Returns saved value for the given variable (which is represented with a
+	 * pair of variable id and lexical scope id).
+	 * </p>
+	 * 
+	 * @param var
+	 *            an variable represented by a pair of variable id and lexical
+	 *            scope id
+	 * @return
+	 */
+	Iterator<Pair<int[], SymbolicExpression>> agreedValueIterator();
 
-	ImmutableCollectiveSnapshotsEntry deliverJointVariables(
-			List<Pair<Variable, SymbolicExpression>> vars);
+	/**
+	 * <p>
+	 * <b>Pre-condition:</b><code>vars.length == values.length</code>
+	 * <code>forall i : [0, vars.length) ==> evaluation(vars[i]) == values[i];</code>
+	 * </p>
+	 * <p>
+	 * <b>Summary: </b> Saves a set of variables and their values into the
+	 * collective entry.
+	 * </p>
+	 * 
+	 * @param vars
+	 *            The type should in face be int[][2]. It represents an array of
+	 *            pairs of ints, each pair is an variable id and a lexical scope
+	 *            id.
+	 * @param values
+	 *            An array of values. One for each variable.
+	 * @return
+	 */
+	ImmutableCollectiveSnapshotsEntry deliverAgreedVariables(int[][] vars,
+			SymbolicExpression[] values);
 }

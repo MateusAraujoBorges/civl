@@ -2,8 +2,6 @@ package edu.udel.cis.vsl.civl.library.mpi;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -571,15 +569,22 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 					tmpState = stateFactory.addToCollectiveSnapshotsEntry(
 							tmpState, pid, place, queueID, entryPos, assertion);
 					// Pick up:
-					if (kind == ContractKind.REQUIRES)
-						for (Pair<Variable, SymbolicExpression> jointVar : entry
-								.pickupJointVariables()) {
+					if (kind == ContractKind.REQUIRES) {
+						Iterator<Pair<int[], SymbolicExpression>> agreedVarsIter = entry
+								.agreedValueIterator();
+
+						while (agreedVarsIter.hasNext()) {
+							Pair<int[], SymbolicExpression> agreedValues = agreedVarsIter
+									.next();
+
 							int dyscopeId = tmpState.getDyscope(pid,
-									jointVar.left.scope().id());
+									agreedValues.left[1]);
 							tmpState = (ImmutableState) stateFactory
-									.setVariable(tmpState, jointVar.left.vid(),
-											dyscopeId, jointVar.right);
+									.setVariable(tmpState,
+											agreedValues.left[0], dyscopeId,
+											agreedValues.right);
 						}
+					}
 					entryComplete = stateFactory.getSnapshotsQueue(tmpState,
 							queueID)[0].isComplete();
 					break;
@@ -589,7 +594,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		// CASE TWO: if it needs a new entry, then create it
 		if (createNewEntry) {
 			SymbolicExpression channels = null;
-			List<Pair<Variable, SymbolicExpression>> pickUpStation = null;
+			int agreedVarArray[][] = null;
+			SymbolicExpression agreedValues[] = null;
 
 			if (civlConfig.isEnableMpiContract()) {
 				SymbolicExpression colChannel = universe
@@ -605,17 +611,19 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			}
 			// Deliver agreed variables:
 			if (argreedVars != null && kind == ContractKind.REQUIRES) {
-				pickUpStation = new LinkedList<>();
-				for (Variable var : argreedVars) {
-					SymbolicExpression value = tmpState.valueOf(pid, var);
+				agreedVarArray = new int[argreedVars.length][2];
+				agreedValues = new SymbolicExpression[argreedVars.length];
 
-					pickUpStation.add(new Pair<>(var, value));
+				for (int i = 0; i < argreedVars.length; i++) {
+					agreedVarArray[i][0] = argreedVars[i].vid();
+					agreedVarArray[i][1] = argreedVars[i].scope().id();
+					agreedValues[i] = tmpState.valueOf(pid, argreedVars[i]);
 				}
 			}
 			// change the corresponding CollectiveSnapshotsEntry
 			tmpState = stateFactory.createCollectiveSnapshotsEnrty(tmpState,
 					pid, nprocs, place, queueID, assertion, channels, kind,
-					pickUpStation);
+					agreedVarArray, agreedValues);
 			entryComplete = (1 == nprocs);
 		}
 		// CASE THREE: if the entry is completed ?

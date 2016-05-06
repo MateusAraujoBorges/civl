@@ -2628,9 +2628,14 @@ public class FunctionTranslator {
 			switch (contract.contractKind()) {
 			case INVARIANT:
 				InvariantNode invariant = (InvariantNode) contract;
+				Expression invariantExpression = translateExpressionNode(
+						invariant.getExpression(), scope, true);
 
-				loopInvariants.add(translateExpressionNode(
-						invariant.getExpression(), scope, true));
+				if (!invariantExpression.getExpressionType().isBoolType())
+					throw new CIVLSyntaxException(
+							"Expressions specified by loop invariant must be boolean expressions",
+							invariantExpression.getSource());
+				loopInvariants.add(invariantExpression);
 				break;
 			case ASSIGNS_READS:
 				AssignsOrReadsNode assigns = (AssignsOrReadsNode) contract;

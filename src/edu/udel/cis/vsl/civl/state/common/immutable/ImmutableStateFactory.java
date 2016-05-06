@@ -1844,10 +1844,14 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public Map<Variable, SymbolicExpression> inputVariableValueMap(State state) {
 		Map<Variable, SymbolicExpression> result = new LinkedHashMap<>();
+		// If the parameter is a merged state, the dynamic scope id of the root
+		// lexical scope may not be 0:
+		int rootDysid = state.getDyscope(0, 0);
 
 		for (Variable variable : this.inputVariables) {
 			assert variable.scope().id() == 0;
-			result.put(variable, state.getVariableValue(0, variable.vid()));
+			result.put(variable,
+					state.getVariableValue(rootDysid, variable.vid()));
 		}
 		return result;
 	}
@@ -1948,8 +1952,8 @@ public class ImmutableStateFactory implements StateFactory {
 	public ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state,
 			int pid, int numProcesses, int place, int queueID,
 			Expression assertion, SymbolicExpression channels,
-			ContractKind kind,
-			List<Pair<Variable, SymbolicExpression>> pickUpStation) {
+			ContractKind kind, int[][] agreedVars,
+			SymbolicExpression[] agreedVals) {
 		ImmutableCollectiveSnapshotsEntry[] queue = state.getSnapshots(queueID);
 		ImmutableCollectiveSnapshotsEntry[] newQueue;
 		ImmutableCollectiveSnapshotsEntry entry = new ImmutableCollectiveSnapshotsEntry(
@@ -1960,7 +1964,11 @@ public class ImmutableStateFactory implements StateFactory {
 		snapshot = this.takeSnapshot((ImmutableState) state, pid);
 		entry = entry.insertMonoState(place, snapshot, assertion);
 		entry = entry.setMsgBuffers(channels);
-		entry = entry.deliverJointVariables(pickUpStation);
+		if (agreedVals == null)
+			agreedVals = new SymbolicExpression[0];
+		if (agreedVars == null)
+			agreedVars = new int[0][];
+		entry = entry.deliverAgreedVariables(agreedVars, agreedVals);
 		assert queue != null;
 		newQueue = new ImmutableCollectiveSnapshotsEntry[queue.length + 1];
 		for (int i = 0; i < queue.length; i++)
@@ -2059,8 +2067,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 * <ol>
 	 * <li>1. The {@link DynamicScope} d0 associates to the top frame of the
 	 * call stack of the process.</li>
-	 * <li>2. All ancestors of d0. (It's based on the assumption that there is
-	 * no shared storage among MPI processes.)</li>
+	 * <li>2. All reachable ancestors of d0. (It's based on the assumption that
+	 * there is no shared storage among MPI processes.)</li>
 	 * 
 	 * @precondition: State and PID must be a valid one.
 	 * @postcondition: true.
@@ -2104,8 +2112,10 @@ public class ImmutableStateFactory implements StateFactory {
 				if (oldToNew[oldSid] >= 0)
 					break; // duplicated
 				currentDyscope = state.getDyscope(oldSid);
-				oldDyscopes[oldSid] = currentDyscope;
-				oldToNew[oldSid] = newDyscopesCounter++;
+				if (currentDyscope.reachableByProcess(pid)) {
+					oldDyscopes[oldSid] = currentDyscope;
+					oldToNew[oldSid] = newDyscopesCounter++;
+				}
 				oldSid = currentDyscope.getParent();
 			}
 		}

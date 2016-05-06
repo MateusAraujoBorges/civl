@@ -1,7 +1,6 @@
 package edu.udel.cis.vsl.civl.state.common.immutable;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
@@ -66,11 +65,21 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	private SymbolicExpression channels;
 
 	/**
-	 * A pick up station is a {@link List} of <vid, value> pairs. For some cases
-	 * that all processes have the same properties, the first process deliveries
-	 * the values of all of these variables.
+	 * A pick up station is a data structure that let processes who have some
+	 * same variables at a set of locations that being assigned with same values
+	 * at those locations.
 	 */
-	private List<Pair<Variable, SymbolicExpression>> pickUpStation;
+	/**
+	 * An array of variables, a component of the pick up station.
+	 */
+	private int[][] pickUpVariableStation;
+
+	/**
+	 * An array of values, a component of the pick up station.
+	 */
+	private SymbolicExpression[] pickUpValueStation;
+
+	private Map<Variable, SymbolicExpression> loopWriteVariableSet;
 
 	private SymbolicUniverse universe;
 
@@ -105,7 +114,8 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		this.universe = universe;
 		this.maxPid = 0;
 		this.kind = null;
-		this.pickUpStation = null;
+		this.pickUpValueStation = null;
+		this.pickUpVariableStation = null;
 	}
 
 	ImmutableCollectiveSnapshotsEntry(int numProcesses,
@@ -122,7 +132,8 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		this.universe = universe;
 		this.maxPid = 0;
 		this.kind = kind;
-		this.pickUpStation = null;
+		this.pickUpValueStation = null;
+		this.pickUpVariableStation = null;
 	}
 
 	public ImmutableCollectiveSnapshotsEntry copy() {
@@ -136,7 +147,8 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		clone.maxPid = this.maxPid;
 		clone.channels = channels;
 		clone.kind = this.kind;
-		clone.pickUpStation = copyJointVariables();
+		clone.pickUpVariableStation = pickUpVariableStation;
+		clone.pickUpValueStation = pickUpValueStation;
 		return clone;
 	}
 
@@ -192,7 +204,6 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		newEntry.numMonoStates++;
 		newEntry.isRecorded[place] = true;
 		newEntry.kind = kind;
-		newEntry.pickUpStation = copyJointVariables();
 		if (pid >= newEntry.maxPid)
 			newEntry.maxPid = pid;
 		// If all snapshots are taken, check if they are coming from the correct
@@ -217,10 +228,10 @@ public class ImmutableCollectiveSnapshotsEntry implements
 			if (state != null)
 				state.makeCanonic(canonicId, universe, scopeMap, processesMap);
 		channels = (channels != null) ? universe.canonic(channels) : null;
-		if (pickUpStation != null) {
-			for (Pair<Variable, SymbolicExpression> jointVal : pickUpStation) {
-				jointVal.right = universe.canonic(jointVal.right);
-			}
+		if (pickUpValueStation != null) {
+			assert pickUpVariableStation != null;
+			for (int i = 0; i < pickUpValueStation.length; i++)
+				pickUpValueStation[i] = universe.canonic(pickUpValueStation[i]);
 		}
 	}
 
@@ -264,10 +275,16 @@ public class ImmutableCollectiveSnapshotsEntry implements
 			}
 		}
 		newCollectiveEntry = copy();
-		// Simplify pick up station:
-		if (newCollectiveEntry.pickUpStation != null)
-			for (Pair<Variable, SymbolicExpression> pickup : newCollectiveEntry.pickUpStation)
-				pickup.right = reasoner.simplify(pickup.right);
+		// Simplify pick up station, simplification may modifies the pick up
+		// station, so it has to do physical copy:
+		Pair<int[][], SymbolicExpression[]> agreedVarsCopy = copyPickUpStations(
+				pickUpVariableStation, pickUpValueStation);
+		newCollectiveEntry.pickUpVariableStation = agreedVarsCopy.left;
+		newCollectiveEntry.pickUpValueStation = agreedVarsCopy.right;
+		for (int i = 0; i < pickUpValueStation.length; i++)
+			newCollectiveEntry.pickUpValueStation[i] = reasoner
+					.simplify(newCollectiveEntry.pickUpValueStation[i]);
+
 		newCollectiveEntry.monoStates = newMonoStates;
 		return newCollectiveEntry;
 	}
@@ -302,34 +319,86 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	}
 
 	@Override
-	public Iterable<Pair<Variable, SymbolicExpression>> pickupJointVariables() {
-		return this.copyJointVariables();
+	public Iterator<Pair<int[], SymbolicExpression>> agreedValueIterator() {
+		Pair<int[][], SymbolicExpression[]> copiedAgreedVars;
+
+		// In case the caller modifies those agreed variables, do a physical
+		// copy on them before return:
+		copiedAgreedVars = copyPickUpStations(pickUpVariableStation,
+				pickUpValueStation);
+		return new Iterator<Pair<int[], SymbolicExpression>>() {
+			/**
+			 * Copy of variables.
+			 */
+			private int[][] variables = copiedAgreedVars.left;
+			/**
+			 * Copy of values of variables.
+			 */
+			private SymbolicExpression[] values = copiedAgreedVars.right;
+
+			/**
+			 * Iterative pointer
+			 */
+			private int pointer = 0;
+
+			@Override
+			public boolean hasNext() {
+				return pointer < variables.length;
+			}
+
+			@Override
+			public Pair<int[], SymbolicExpression> next() {
+				Pair<int[], SymbolicExpression> result = new Pair<>(
+						variables[pointer], values[pointer]);
+
+				pointer++;
+				return result;
+			}
+		};
 	}
 
 	@Override
-	public ImmutableCollectiveSnapshotsEntry deliverJointVariables(
-			List<Pair<Variable, SymbolicExpression>> vars) {
+	public ImmutableCollectiveSnapshotsEntry deliverAgreedVariables(
+			int[][] vars, SymbolicExpression values[]) {
+		assert vars.length == values.length;
 		ImmutableCollectiveSnapshotsEntry clone = copy();
+		Pair<int[][], SymbolicExpression[]> agreedVarsCopy;
 
-		if (vars != null) {
-			clone.pickUpStation = new LinkedList<>();
-			for (Pair<Variable, SymbolicExpression> item : vars) {
-				clone.pickUpStation.add(new Pair<>(item.left, universe
-						.canonic(item.right)));
-			}
-		}
+		// Those agreed variables are changed, do physical copy on them:
+		agreedVarsCopy = copyPickUpStations(vars, values);
+		clone.pickUpVariableStation = agreedVarsCopy.left;
+		clone.pickUpValueStation = agreedVarsCopy.right;
 		return clone;
 	}
 
-	// TODO:optimize this:
-	private List<Pair<Variable, SymbolicExpression>> copyJointVariables() {
-		List<Pair<Variable, SymbolicExpression>> clone = new LinkedList<>();
+	/**
+	 * <p>
+	 * <b>Summary: </b>Do a physical copy on the two arrays,
+	 * {@link #pickUpValueStation} and {@link #pickUpVariableStation}
+	 * </p>
+	 * This copy is not used by {@link #copy()} because as long as these fields
+	 * are not changed, not physical copy requires.
+	 * 
+	 * @return
+	 */
+	private Pair<int[][], SymbolicExpression[]> copyPickUpStations(
+			int[][] originVars, SymbolicExpression[] originValues) {
+		int[][] varsCopy;
+		SymbolicExpression[] valuesCopy;
 
-		if (pickUpStation == null)
-			return new LinkedList<>();
-		for (Pair<Variable, SymbolicExpression> item : pickUpStation) {
-			clone.add(new Pair<>(item.left, universe.canonic(item.right)));
+		if (originVars == null) {
+			assert originValues == null;
+			varsCopy = new int[0][2];
+			valuesCopy = new SymbolicExpression[0];
+		} else {
+			int length = originValues.length;
+			assert originVars.length == length;
+
+			varsCopy = new int[length][2];
+			for (int i = 0; i < length; i++)
+				varsCopy[i] = originVars[i].clone();
+			valuesCopy = originValues.clone();
 		}
-		return clone;
+		return new Pair<>(varsCopy, valuesCopy);
 	}
 }

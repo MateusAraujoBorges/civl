@@ -1567,7 +1567,7 @@ public class CommonExecutor implements Executor {
 				+ violatedCondition + " is evaluated as " + assertValue + "\n"
 				+ mergedStateExplanation;
 		return errorLogger.logError(source, state, process,
-				symbolicAnalyzer.stateToString(state), assertValue, resultType,
-				errorKind, format);
+				symbolicAnalyzer.stateInformation(state), assertValue,
+				resultType, errorKind, format);
 	}
 }
