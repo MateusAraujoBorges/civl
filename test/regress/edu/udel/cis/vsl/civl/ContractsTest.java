@@ -108,6 +108,12 @@ public class ContractsTest {
 				filename("contractsSeq/globalPointersBad.c")));
 	}
 
+	@Test
+	public void loopInvariants() {
+		assertTrue(ui.run(VERIFY, "  -errorBound=10", enableContract, QUIET,
+				filename("contractsSeq/loopInvariants.c")));
+	}
+
 	/************************ concurrent section ***********************/
 	@Test
 	public void dummyMPITest() {
