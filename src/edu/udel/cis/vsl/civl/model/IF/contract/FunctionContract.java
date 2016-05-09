@@ -18,29 +18,20 @@ public interface FunctionContract extends Sourceable {
 	 * ContractKind: This kind is used to denotes all kinds of contracts.
 	 * Currently, there are 5 kinds of contracts:
 	 * <ul>
-	 * <li>
-	 * REQUIRES: denotes that the requirements of the contracts are used to
+	 * <li>REQUIRES: denotes that the requirements of the contracts are used to
 	 * infer some states.</li>
-	 * <li>
-	 * ENSURES:denotes that the ensurances of the contracts are guaranteed by
-	 * some states.</li>
-	 * <li>
-	 * DELIVERED: denotes that the requirements of the contracts are guaranteed
+	 * <li>ENSURES:denotes that the ensurances of the contracts are guaranteed
 	 * by some states.</li>
-	 * <li>
-	 * INFER: denotes that the ensurances of the contracts are used to infer
+	 * <li>INFER: denotes that the ensurances of the contracts are used to infer
 	 * some states.</li>
-	 * <li>
-	 * SYNC: delivers an implicit or explicit synchronization knowledge.</li>
-	 * <li>
-	 * WAITSFOR: delivers an explicit synchronization knowledge.</li>
+	 * <li>WAITSFOR: delivers an explicit synchronization knowledge.</li>
 	 * </ul>
 	 * 
 	 * @author ziqingluo
 	 *
 	 */
 	static public enum ContractKind {
-		REQUIRES, ENSURES, DELIVERED, INFER, SYNC, WAITSFOR
+		REQUIRES, ENSURES, INFER, WAITSFOR, LOOP
 	}
 
 	/**

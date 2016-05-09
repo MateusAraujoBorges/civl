@@ -1,11 +1,11 @@
 package edu.udel.cis.vsl.civl.state.common.immutable;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.CollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -14,8 +14,7 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
-public class ImmutableCollectiveSnapshotsEntry implements
-		CollectiveSnapshotsEntry {
+public class ImmutableCollectiveSnapshotsEntry implements CollectiveSnapshotsEntry {
 	/**
 	 * Static instance identifier
 	 */
@@ -79,7 +78,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	 */
 	private SymbolicExpression[] pickUpValueStation;
 
-	private Map<Variable, SymbolicExpression> loopWriteVariableSet;
+	private Map<int[], SymbolicExpression> loopWriteVariableSet;
 
 	private SymbolicUniverse universe;
 
@@ -100,8 +99,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	 * @param channels
 	 *            The messages channels in communicator
 	 */
-	ImmutableCollectiveSnapshotsEntry(int numProcesses,
-			SymbolicUniverse universe) {
+	ImmutableCollectiveSnapshotsEntry(int numProcesses, SymbolicUniverse universe) {
 		this.numProcesses = numProcesses;
 		this.isComplete = false;
 		this.numMonoStates = 0;
@@ -118,8 +116,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		this.pickUpVariableStation = null;
 	}
 
-	ImmutableCollectiveSnapshotsEntry(int numProcesses,
-			SymbolicUniverse universe, ContractKind kind) {
+	ImmutableCollectiveSnapshotsEntry(int numProcesses, SymbolicUniverse universe, ContractKind kind) {
 		this.numProcesses = numProcesses;
 		this.isComplete = false;
 		this.numMonoStates = 0;
@@ -137,8 +134,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	}
 
 	public ImmutableCollectiveSnapshotsEntry copy() {
-		ImmutableCollectiveSnapshotsEntry clone = new ImmutableCollectiveSnapshotsEntry(
-				this.numProcesses, universe);
+		ImmutableCollectiveSnapshotsEntry clone = new ImmutableCollectiveSnapshotsEntry(this.numProcesses, universe);
 		clone.isComplete = isComplete;
 		clone.numMonoStates = numMonoStates;
 		clone.monoStates = monoStates.clone();
@@ -192,8 +188,8 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	}
 
 	@Override
-	public ImmutableCollectiveSnapshotsEntry insertMonoState(int place,
-			ImmutableMonoState monoState, Expression assertion) {
+	public ImmutableCollectiveSnapshotsEntry insertMonoState(int place, ImmutableMonoState monoState,
+			Expression assertion) {
 		ImmutableCollectiveSnapshotsEntry newEntry;
 		int pid = monoState.getProcessState().getPid();
 
@@ -218,9 +214,10 @@ public class ImmutableCollectiveSnapshotsEntry implements
 		return this.maxPid;
 	}
 
-	/* ************* Simplification and collection interfaces **************** */
-	void makeCanonic(int canonicId,
-			Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap,
+	/*
+	 * ************* Simplification and collection interfaces ****************
+	 */
+	void makeCanonic(int canonicId, Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap,
 			Map<ImmutableProcessState, ImmutableProcessState> processesMap) {
 		if (monoStates == null)
 			return;
@@ -250,16 +247,14 @@ public class ImmutableCollectiveSnapshotsEntry implements
 
 				newScopes = new ImmutableDynamicScope[numDyscopes];
 				for (int sid = 0; sid < numDyscopes; sid++) {
-					ImmutableDynamicScope oldDyscope = monoState
-							.getDyscope(sid);
+					ImmutableDynamicScope oldDyscope = monoState.getDyscope(sid);
 					ImmutableDynamicScope newDyscope;
 					int numVars = oldDyscope.numberOfVariables();
 					SymbolicExpression[] newVarValues = new SymbolicExpression[numVars];
 
 					for (int vid = 0; vid < numVars; vid++) {
 						SymbolicExpression oldValue = oldDyscope.getValue(vid);
-						SymbolicExpression newValue = reasoner
-								.simplify(oldValue);
+						SymbolicExpression newValue = reasoner.simplify(oldValue);
 
 						newVarValues[vid] = newValue;
 					}
@@ -269,22 +264,23 @@ public class ImmutableCollectiveSnapshotsEntry implements
 				newMonoStates[place] = monoState.setDyscopes(newScopes);
 				newPathCondition = reasoner.simplify(state.getPathCondition());
 				if (newPathCondition != monoState.getPathCondition()) {
-					newMonoStates[place] = newMonoStates[place]
-							.setPathCondition(newPathCondition);
+					newMonoStates[place] = newMonoStates[place].setPathCondition(newPathCondition);
 				}
 			}
 		}
 		newCollectiveEntry = copy();
 		// Simplify pick up station, simplification may modifies the pick up
 		// station, so it has to do physical copy:
-		Pair<int[][], SymbolicExpression[]> agreedVarsCopy = copyPickUpStations(
-				pickUpVariableStation, pickUpValueStation);
+		Pair<int[][], SymbolicExpression[]> agreedVarsCopy = copyPickUpStations(pickUpVariableStation,
+				pickUpValueStation);
 		newCollectiveEntry.pickUpVariableStation = agreedVarsCopy.left;
 		newCollectiveEntry.pickUpValueStation = agreedVarsCopy.right;
 		for (int i = 0; i < pickUpValueStation.length; i++)
-			newCollectiveEntry.pickUpValueStation[i] = reasoner
-					.simplify(newCollectiveEntry.pickUpValueStation[i]);
-
+			newCollectiveEntry.pickUpValueStation[i] = reasoner.simplify(newCollectiveEntry.pickUpValueStation[i]);
+		// Map.doc: changes on the values collection will reflect to the Map:
+		if (loopWriteVariableSet != null)
+			for (SymbolicExpression value : loopWriteVariableSet.values())
+				value = reasoner.simplify(value);
 		newCollectiveEntry.monoStates = newMonoStates;
 		return newCollectiveEntry;
 	}
@@ -306,8 +302,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	ImmutableCollectiveSnapshotsEntry setMsgBuffers(SymbolicExpression channels) {
 		ImmutableCollectiveSnapshotsEntry newEntry = this.copy();
 
-		newEntry.channels = (channels != null) ? universe.canonic(channels)
-				: null;
+		newEntry.channels = (channels != null) ? universe.canonic(channels) : null;
 		return newEntry;
 	}
 
@@ -324,8 +319,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 
 		// In case the caller modifies those agreed variables, do a physical
 		// copy on them before return:
-		copiedAgreedVars = copyPickUpStations(pickUpVariableStation,
-				pickUpValueStation);
+		copiedAgreedVars = copyPickUpStations(pickUpVariableStation, pickUpValueStation);
 		return new Iterator<Pair<int[], SymbolicExpression>>() {
 			/**
 			 * Copy of variables.
@@ -348,8 +342,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 
 			@Override
 			public Pair<int[], SymbolicExpression> next() {
-				Pair<int[], SymbolicExpression> result = new Pair<>(
-						variables[pointer], values[pointer]);
+				Pair<int[], SymbolicExpression> result = new Pair<>(variables[pointer], values[pointer]);
 
 				pointer++;
 				return result;
@@ -358,8 +351,7 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	}
 
 	@Override
-	public ImmutableCollectiveSnapshotsEntry deliverAgreedVariables(
-			int[][] vars, SymbolicExpression values[]) {
+	public ImmutableCollectiveSnapshotsEntry deliverAgreedVariables(int[][] vars, SymbolicExpression values[]) {
 		assert vars.length == values.length;
 		ImmutableCollectiveSnapshotsEntry clone = copy();
 		Pair<int[][], SymbolicExpression[]> agreedVarsCopy;
@@ -381,8 +373,8 @@ public class ImmutableCollectiveSnapshotsEntry implements
 	 * 
 	 * @return
 	 */
-	private Pair<int[][], SymbolicExpression[]> copyPickUpStations(
-			int[][] originVars, SymbolicExpression[] originValues) {
+	private Pair<int[][], SymbolicExpression[]> copyPickUpStations(int[][] originVars,
+			SymbolicExpression[] originValues) {
 		int[][] varsCopy;
 		SymbolicExpression[] valuesCopy;
 
@@ -400,5 +392,25 @@ public class ImmutableCollectiveSnapshotsEntry implements
 			valuesCopy = originValues.clone();
 		}
 		return new Pair<>(varsCopy, valuesCopy);
+	}
+
+	@Override
+	public Map<int[], SymbolicExpression> getLoopWriteSet() {
+		assert kind == ContractKind.LOOP;
+		return loopWriteVariableSet == null ? new HashMap<>() : loopWriteVariableSet;
+	}
+
+	@Override
+	public void add2LoopWriteSet(int[] writtenVariable, SymbolicExpression value) {
+		assert kind == ContractKind.LOOP;
+		if (loopWriteVariableSet == null)
+			loopWriteVariableSet = new HashMap<>();
+		loopWriteVariableSet.put(writtenVariable, value);
+	}
+
+	@Override
+	public void setLoopWriteSet(Map<int[], SymbolicExpression> writeSet) {
+		assert kind == ContractKind.LOOP;
+		loopWriteVariableSet = writeSet;
 	}
 }

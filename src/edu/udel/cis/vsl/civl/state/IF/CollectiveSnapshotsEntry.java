@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.state.IF;
 
 import java.util.Iterator;
+import java.util.Map;
 
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -98,8 +99,7 @@ public interface CollectiveSnapshotsEntry {
 	 * @param monoState
 	 * @return
 	 */
-	ImmutableCollectiveSnapshotsEntry insertMonoState(int place,
-			ImmutableMonoState monoState, Expression assertion);
+	ImmutableCollectiveSnapshotsEntry insertMonoState(int place, ImmutableMonoState monoState, Expression assertion);
 
 	/**
 	 * *
@@ -137,6 +137,48 @@ public interface CollectiveSnapshotsEntry {
 	 *            An array of values. One for each variable.
 	 * @return
 	 */
-	ImmutableCollectiveSnapshotsEntry deliverAgreedVariables(int[][] vars,
-			SymbolicExpression[] values);
+	ImmutableCollectiveSnapshotsEntry deliverAgreedVariables(int[][] vars, SymbolicExpression[] values);
+
+	/**
+	 * <p>
+	 * <b>Pre-condition: </b>kind == ContractKind.LOOP;
+	 * </p>
+	 * <p>
+	 * <b>Summary:</b> Returns a map which maps a set of variables V to a set of
+	 * symbolic values Val. Here V represents a set of variables have been
+	 * written in loop.
+	 * </p>
+	 * 
+	 * @return A {@link Map} that from V to Val
+	 */
+	Map<int[], SymbolicExpression> getLoopWriteSet();
+
+	/**
+	 * <p>
+	 * <b>Pre-condition: </b>kind == ContractKind.LOOP;
+	 * </p>
+	 * <p>
+	 * <b>Summary: </b> Add a new written variable and its value to this entry.
+	 * </p>
+	 * 
+	 * @param writtenVariable
+	 *            The variable just be written.
+	 * @param value
+	 *            The value of the variable
+	 */
+	void add2LoopWriteSet(int[] writtenVariable, SymbolicExpression value);
+
+	/**
+	 * <p>
+	 * <b>Pre-condition: </b>kind == ContractKind.LOOP;
+	 * </p>
+	 * <p>
+	 * <b>Summary: </b> Set the written variable set V and it's value set Val
+	 * with the given {@link Map}.
+	 * </p>
+	 * 
+	 * @param writeSet
+	 *            A {@link Map} that from V to Val.
+	 */
+	void setLoopWriteSet(Map<int[], SymbolicExpression> writeSet);
 }
