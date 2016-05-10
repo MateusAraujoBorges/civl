@@ -1,6 +1,5 @@
-//======================= int_div.cvh ======================
-$system"int_div" void $assert(_Bool expr, ...);
 //======================= int_div.cvl ======================
+$system[civlc] void $assert(_Bool expr, ...);
 int $int_div(int numerator, int denominator)
 {
   $assert(denominator != 0, "Possible division by zero");
@@ -27,77 +26,87 @@ typedef struct $scope $scope;
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"civlc" void $assert(_Bool expr, ...);
+$system[civlc] void $assert(_Bool expr, ...);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
+  @*/
+$system[civlc] void $assume(_Bool expr);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"civlc" void $assume(_Bool expr);
+$system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
   @*/
-$system"civlc" void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system"civlc" void $assume(_Bool expr);
+$system[civlc] void $assume(_Bool expr);
 //========================= stdio.h ========================
-$system"stdio" int printf(char* restrict format, ...);
+$system[stdio] int printf(char* restrict format, ...);
 //======================== civlc.cvh =======================
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"civlc" void $assert(_Bool expr, ...);
+$system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
   @*/
-$system"civlc" void $assume(_Bool expr);
+$system[civlc] void $assume(_Bool expr);
 //======================= bundle.cvh =======================
 typedef struct $bundle $bundle;
 /*@ pure;
+  @ depends_on \nothing;
+  @ executes_when $true;
   @*/
-$system"bundle" $bundle $bundle_pack(void* ptr, int size);
-$system"bundle" void $bundle_unpack($bundle bundle, void* ptr);
+$system[bundle] $bundle $bundle_pack(void* ptr, int size);
+/*@ depends_on \write(ptr);
+  @ executes_when $true;
+  @ assigns ptr;
+  @ reads \nothing;
+  @*/
+$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
 //===================== concurrency.cvh ====================
 typedef struct $gbarrier* $gbarrier;
 typedef struct $barrier* $barrier;
-/*@ requires size >= 0;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @*/
-$system"concurrency" $gbarrier $gbarrier_create($scope scope, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" void $gbarrier_destroy($gbarrier barrier);
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ executes_when $true;
-  @*/
-$system"concurrency" $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
+$system[concurrency] $gbarrier $gbarrier_create($scope scope, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" void $barrier_destroy($barrier barrier);
+$system[concurrency] void $gbarrier_destroy($gbarrier barrier);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @*/
+$system[concurrency] $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @*/
+$system[concurrency] void $barrier_destroy($barrier barrier);
 typedef struct $collect_record $collect_record;
 typedef struct $gcollect_checker* $gcollect_checker;
 typedef struct $collect_checker* $collect_checker;
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" $gcollect_checker $gcollect_checker_create($scope scope);
+$system[concurrency] $gcollect_checker $gcollect_checker_create($scope scope);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" int $gcollect_checker_destroy($gcollect_checker checker);
+$system[concurrency] int $gcollect_checker_destroy($gcollect_checker checker);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" $collect_checker $collect_checker_create($scope scope, $gcollect_checker gchecker);
+$system[concurrency] $collect_checker $collect_checker_create($scope scope, $gcollect_checker gchecker);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" void $collect_checker_destroy($collect_checker checker);
+$system[concurrency] void $collect_checker_destroy($collect_checker checker);
 //========================== mpi.h =========================
 typedef enum $anon_enum_0{
   MPI_CHAR,
@@ -212,29 +221,30 @@ $atomic_f int $message_dest($message message);
 $atomic_f int $message_size($message message);
 /*@ depends_on \write(buf);
   @ executes_when $true;
+  @ assigns buf;
   @*/
 $atomic_f void $message_unpack($message message, void* buf, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" $gcomm $gcomm_create($scope scope, int size);
+$system[comm] $gcomm $gcomm_create($scope scope, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" int $gcomm_destroy($gcomm gcomm, void* junkMsgs);
+$system[comm] int $gcomm_destroy($gcomm gcomm, void* junkMsgs);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" $comm $comm_create($scope scope, $gcomm gcomm, int place);
+$system[comm] $comm $comm_create($scope scope, $gcomm gcomm, int place);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" void $comm_destroy($comm comm);
+$system[comm] void $comm_destroy($comm comm);
 /*@ pure;
   @ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" int $comm_size($comm comm);
+$system[comm] int $comm_size($comm comm);
 /*@ pure;
   @ depends_on \nothing;
   @ executes_when $true;
@@ -243,10 +253,10 @@ $atomic_f int $comm_place($comm comm);
 /*@ depends_on \write(comm);
   @ executes_when $true;
   @*/
-$system"comm" void $comm_enqueue($comm comm, $message message);
+$system[comm] void $comm_enqueue($comm comm, $message message);
 /*@ depends_on \write(comm);
   @*/
-$system"comm" $message $comm_dequeue($comm comm, int source, int tag);
+$system[comm] $message $comm_dequeue($comm comm, int source, int tag);
 //====================== civl-mpi.cvh ======================
 typedef enum _mpi_sys_status_{
   __UNINIT,
@@ -256,18 +266,38 @@ typedef enum _mpi_sys_status_{
 typedef struct MPI_Comm MPI_Comm;
 typedef struct MPI_Status MPI_Status;
 typedef struct $mpi_gcomm $mpi_gcomm;
-int sizeofDatatype(MPI_Datatype);
-$system"civl-mpi" void $mpi_set_status($mpi_sys_status newStatus);
-$system"civl-mpi" $mpi_sys_status $mpi_get_status(void);
-$mpi_gcomm $mpi_gcomm_create($scope, int);
-void $mpi_gcomm_destroy($mpi_gcomm);
+/*@ pure;
+  @ depends_on \nothing;
+  @*/
+$atomic_f int sizeofDatatype(MPI_Datatype);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
+  @*/
+$system[civl-mpi] void $mpi_set_status($mpi_sys_status newStatus);
+/*@ pure;
+  @ depends_on \nothing;
+  @ executes_when $true;
+  @*/
+$system[civl-mpi] $mpi_sys_status $mpi_get_status(void);
+/*@ depends_on \nothing;
+  @ assigns \nothing;
+  @ reads \nothing;
+  @*/
+$atomic_f $mpi_gcomm $mpi_gcomm_create($scope, int);
+/*@ depends_on \nothing;
+  @ assigns gc;
+  @ reads \nothing;
+  @*/
+$atomic_f void $mpi_gcomm_destroy($mpi_gcomm gc);
 MPI_Comm $mpi_comm_create($scope, $mpi_gcomm, int);
 void $mpi_comm_destroy(MPI_Comm);
 int $mpi_init(void);
 int $mpi_finalize(void);
 int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system"civl-mpi" void $mpi_assertConsistentType(void* buf, MPI_Datatype datatype);
+$system[civl-mpi] void $mpi_assertConsistentType(void* buf, MPI_Datatype datatype);
 //========================= mpi.cvl ========================
 struct MPI_Comm{
     $comm p2p;
@@ -323,56 +353,62 @@ int MPI_Get_count(MPI_Status* status, MPI_Datatype datatype, int* count)
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"civlc" void $assert(_Bool expr, ...);
+$system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
   @*/
-$system"civlc" void $assume(_Bool expr);
+$system[civlc] void $assume(_Bool expr);
 //======================= bundle.cvh =======================
 /*@ pure;
-  @*/
-$system"bundle" $bundle $bundle_pack(void* ptr, int size);
-$system"bundle" void $bundle_unpack($bundle bundle, void* ptr);
-//===================== concurrency.cvh ====================
-/*@ requires size >= 0;
   @ depends_on \nothing;
   @ executes_when $true;
-  @ assigns \nothing;
   @*/
-$system"concurrency" $gbarrier $gbarrier_create($scope scope, int size);
+$system[bundle] $bundle $bundle_pack(void* ptr, int size);
+/*@ depends_on \write(ptr);
+  @ executes_when $true;
+  @ assigns ptr;
+  @ reads \nothing;
+  @*/
+$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
+//===================== concurrency.cvh ====================
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" void $gbarrier_destroy($gbarrier barrier);
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ executes_when $true;
-  @*/
-$system"concurrency" $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
+$system[concurrency] $gbarrier $gbarrier_create($scope scope, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" void $barrier_destroy($barrier barrier);
+$system[concurrency] void $gbarrier_destroy($gbarrier barrier);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" $gcollect_checker $gcollect_checker_create($scope scope);
+$system[concurrency] $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" int $gcollect_checker_destroy($gcollect_checker checker);
+$system[concurrency] void $barrier_destroy($barrier barrier);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" $collect_checker $collect_checker_create($scope scope, $gcollect_checker gchecker);
+$system[concurrency] $gcollect_checker $gcollect_checker_create($scope scope);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" void $collect_checker_destroy($collect_checker checker);
+$system[concurrency] int $gcollect_checker_destroy($gcollect_checker checker);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @*/
+$system[concurrency] $collect_checker $collect_checker_create($scope scope, $gcollect_checker gchecker);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @*/
+$system[concurrency] void $collect_checker_destroy($collect_checker checker);
 //========================= seq.cvh ========================
 /*@ depends_on \nothing;
   @*/
-$system"seq" void $seq_init(void* array, int count, void* value);
+$system[seq] void $seq_init(void* array, int count, void* value);
 //===================== concurrency.cvl ====================
 struct $gbarrier{
     int nprocs;
@@ -400,52 +436,58 @@ struct $collect_checker{
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"civlc" void $assert(_Bool expr, ...);
+$system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
   @*/
-$system"civlc" void $assume(_Bool expr);
+$system[civlc] void $assume(_Bool expr);
 //======================= bundle.cvh =======================
 /*@ pure;
-  @*/
-$system"bundle" $bundle $bundle_pack(void* ptr, int size);
-$system"bundle" void $bundle_unpack($bundle bundle, void* ptr);
-//===================== concurrency.cvh ====================
-/*@ requires size >= 0;
   @ depends_on \nothing;
   @ executes_when $true;
-  @ assigns \nothing;
   @*/
-$system"concurrency" $gbarrier $gbarrier_create($scope scope, int size);
+$system[bundle] $bundle $bundle_pack(void* ptr, int size);
+/*@ depends_on \write(ptr);
+  @ executes_when $true;
+  @ assigns ptr;
+  @ reads \nothing;
+  @*/
+$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
+//===================== concurrency.cvh ====================
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" void $gbarrier_destroy($gbarrier barrier);
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ executes_when $true;
-  @*/
-$system"concurrency" $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
+$system[concurrency] $gbarrier $gbarrier_create($scope scope, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" void $barrier_destroy($barrier barrier);
+$system[concurrency] void $gbarrier_destroy($gbarrier barrier);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" $gcollect_checker $gcollect_checker_create($scope scope);
+$system[concurrency] $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" int $gcollect_checker_destroy($gcollect_checker checker);
+$system[concurrency] void $barrier_destroy($barrier barrier);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" $collect_checker $collect_checker_create($scope scope, $gcollect_checker gchecker);
+$system[concurrency] $gcollect_checker $gcollect_checker_create($scope scope);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"concurrency" void $collect_checker_destroy($collect_checker checker);
+$system[concurrency] int $gcollect_checker_destroy($gcollect_checker checker);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @*/
+$system[concurrency] $collect_checker $collect_checker_create($scope scope, $gcollect_checker gchecker);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @*/
+$system[concurrency] void $collect_checker_destroy($collect_checker checker);
 //======================== comm.cvh ========================
 /*@ pure;
   @ depends_on \nothing;
@@ -474,29 +516,30 @@ $atomic_f int $message_dest($message message);
 $atomic_f int $message_size($message message);
 /*@ depends_on \write(buf);
   @ executes_when $true;
+  @ assigns buf;
   @*/
 $atomic_f void $message_unpack($message message, void* buf, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" $gcomm $gcomm_create($scope scope, int size);
+$system[comm] $gcomm $gcomm_create($scope scope, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" int $gcomm_destroy($gcomm gcomm, void* junkMsgs);
+$system[comm] int $gcomm_destroy($gcomm gcomm, void* junkMsgs);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" $comm $comm_create($scope scope, $gcomm gcomm, int place);
+$system[comm] $comm $comm_create($scope scope, $gcomm gcomm, int place);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" void $comm_destroy($comm comm);
+$system[comm] void $comm_destroy($comm comm);
 /*@ pure;
   @ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" int $comm_size($comm comm);
+$system[comm] int $comm_size($comm comm);
 /*@ pure;
   @ depends_on \nothing;
   @ executes_when $true;
@@ -505,10 +548,10 @@ $atomic_f int $comm_place($comm comm);
 /*@ depends_on \write(comm);
   @ executes_when $true;
   @*/
-$system"comm" void $comm_enqueue($comm comm, $message message);
+$system[comm] void $comm_enqueue($comm comm, $message message);
 /*@ depends_on \write(comm);
   @*/
-$system"comm" $message $comm_dequeue($comm comm, int source, int tag);
+$system[comm] $message $comm_dequeue($comm comm, int source, int tag);
 //========================== mpi.h =========================
 int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
@@ -516,22 +559,42 @@ int MPI_Get_count(MPI_Status*, MPI_Datatype, int*);
 int MPI_Comm_size(MPI_Comm, int*);
 int MPI_Comm_rank(MPI_Comm, int*);
 //====================== civl-mpi.cvh ======================
-int sizeofDatatype(MPI_Datatype);
-$system"civl-mpi" void $mpi_set_status($mpi_sys_status newStatus);
-$system"civl-mpi" $mpi_sys_status $mpi_get_status(void);
-$mpi_gcomm $mpi_gcomm_create($scope, int);
-void $mpi_gcomm_destroy($mpi_gcomm);
+/*@ pure;
+  @ depends_on \nothing;
+  @*/
+$atomic_f int sizeofDatatype(MPI_Datatype);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
+  @*/
+$system[civl-mpi] void $mpi_set_status($mpi_sys_status newStatus);
+/*@ pure;
+  @ depends_on \nothing;
+  @ executes_when $true;
+  @*/
+$system[civl-mpi] $mpi_sys_status $mpi_get_status(void);
+/*@ depends_on \nothing;
+  @ assigns \nothing;
+  @ reads \nothing;
+  @*/
+$atomic_f $mpi_gcomm $mpi_gcomm_create($scope, int);
+/*@ depends_on \nothing;
+  @ assigns gc;
+  @ reads \nothing;
+  @*/
+$atomic_f void $mpi_gcomm_destroy($mpi_gcomm gc);
 MPI_Comm $mpi_comm_create($scope, $mpi_gcomm, int);
 void $mpi_comm_destroy(MPI_Comm);
 int $mpi_init(void);
 int $mpi_finalize(void);
 int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system"civl-mpi" void $mpi_assertConsistentType(void* buf, MPI_Datatype datatype);
+$system[civl-mpi] void $mpi_assertConsistentType(void* buf, MPI_Datatype datatype);
 //========================= seq.cvh ========================
 /*@ depends_on \nothing;
   @*/
-$system"seq" void $seq_init(void* array, int count, void* value);
+$system[seq] void $seq_init(void* array, int count, void* value);
 //====================== civl-mpi.cvl ======================
 char* getCoroutineName(int tag);
 struct $mpi_gcomm{
@@ -724,16 +787,25 @@ char* getCoroutineName(int tag)
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"civlc" void $assert(_Bool expr, ...);
+$system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
   @*/
-$system"civlc" void $assume(_Bool expr);
+$system[civlc] void $assume(_Bool expr);
 //======================= bundle.cvh =======================
 /*@ pure;
+  @ depends_on \nothing;
+  @ executes_when $true;
   @*/
-$system"bundle" $bundle $bundle_pack(void* ptr, int size);
-$system"bundle" void $bundle_unpack($bundle bundle, void* ptr);
+$system[bundle] $bundle $bundle_pack(void* ptr, int size);
+/*@ depends_on \write(ptr);
+  @ executes_when $true;
+  @ assigns ptr;
+  @ reads \nothing;
+  @*/
+$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
 //======================== comm.cvh ========================
 /*@ pure;
   @ depends_on \nothing;
@@ -762,29 +834,30 @@ $atomic_f int $message_dest($message message);
 $atomic_f int $message_size($message message);
 /*@ depends_on \write(buf);
   @ executes_when $true;
+  @ assigns buf;
   @*/
 $atomic_f void $message_unpack($message message, void* buf, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" $gcomm $gcomm_create($scope scope, int size);
+$system[comm] $gcomm $gcomm_create($scope scope, int size);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" int $gcomm_destroy($gcomm gcomm, void* junkMsgs);
+$system[comm] int $gcomm_destroy($gcomm gcomm, void* junkMsgs);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" $comm $comm_create($scope scope, $gcomm gcomm, int place);
+$system[comm] $comm $comm_create($scope scope, $gcomm gcomm, int place);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" void $comm_destroy($comm comm);
+$system[comm] void $comm_destroy($comm comm);
 /*@ pure;
   @ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"comm" int $comm_size($comm comm);
+$system[comm] int $comm_size($comm comm);
 /*@ pure;
   @ depends_on \nothing;
   @ executes_when $true;
@@ -793,10 +866,10 @@ $atomic_f int $comm_place($comm comm);
 /*@ depends_on \write(comm);
   @ executes_when $true;
   @*/
-$system"comm" void $comm_enqueue($comm comm, $message message);
+$system[comm] void $comm_enqueue($comm comm, $message message);
 /*@ depends_on \write(comm);
   @*/
-$system"comm" $message $comm_dequeue($comm comm, int source, int tag);
+$system[comm] $message $comm_dequeue($comm comm, int source, int tag);
 //======================== comm.cvl ========================
 struct $queue{
     int length;
@@ -843,7 +916,11 @@ void $message_unpack($message message, void* buf, int size)
   $bundle_unpack(message.data, buf);
   $assert(message.size <= size, "Message of size %d exceeds the specified size %d.", message.size, size);
 }
-int $comm_place($comm comm)
+/*@ pure;
+  @ depends_on \nothing;
+  @ executes_when $true;
+  @*/
+$atomic_f int $comm_place($comm comm)
 {
   return (comm)->place;
 }
@@ -851,39 +928,52 @@ int $comm_place($comm comm)
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"civlc" void $assert(_Bool expr, ...);
+$system[civlc] void $assert(_Bool expr, ...);
+/*@ depends_on \nothing;
+  @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
+  @*/
+$system[civlc] void $assume(_Bool expr);
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"civlc" void $assume(_Bool expr);
+$system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
   @*/
-$system"civlc" void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system"civlc" void $assume(_Bool expr);
+$system[civlc] void $assume(_Bool expr);
 //======================= bundle.cvh =======================
 /*@ pure;
+  @ depends_on \nothing;
+  @ executes_when $true;
   @*/
-$system"bundle" $bundle $bundle_pack(void* ptr, int size);
-$system"bundle" void $bundle_unpack($bundle bundle, void* ptr);
+$system[bundle] $bundle $bundle_pack(void* ptr, int size);
+/*@ depends_on \write(ptr);
+  @ executes_when $true;
+  @ assigns ptr;
+  @ reads \nothing;
+  @*/
+$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
 //========================= seq.cvh ========================
 /*@ depends_on \nothing;
   @*/
-$system"seq" void $seq_init(void* array, int count, void* value);
+$system[seq] void $seq_init(void* array, int count, void* value);
 //======================== civlc.cvh =======================
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system"civlc" void $assert(_Bool expr, ...);
+$system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
+  @ reads \nothing;
   @*/
-$system"civlc" void $assume(_Bool expr);
+$system[civlc] void $assume(_Bool expr);
 //========================= stdio.h ========================
-$system"stdio" int printf(char* restrict format, ...);
+$system[stdio] int printf(char* restrict format, ...);
 //========================== mpi.h =========================
 int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
@@ -910,7 +1000,7 @@ void _mpi_process(int _mpi_rank)
   $mpi_sys_status _mpi_status = __UNINIT;
   $assert(_mpi_status == __UNINIT);
   MPI_Comm MPI_COMM_WORLD = $mpi_comm_create($here, _mpi_gcomm, _mpi_rank);
-  $system"sum_array" void $assume(_Bool expression);
+  $system[sum_array] void $assume(_Bool expression);
   $assume((0 < _gen_argc) && (_gen_argc < 10));
   $assume((0 < N) && (N <= NB));
   double oracle;
@@ -944,7 +1034,7 @@ void _mpi_process(int _mpi_rank)
       oracle = oracle + (array[i]);
     MPI_Comm_size(MPI_COMM_WORLD, &(size));
     if (size != 1)
-      step = N / (size - 1);
+      step = $int_div(N, size - 1);
     else
       step = N;
     for (i = 0; i < (size - 1); i = i + 1)
