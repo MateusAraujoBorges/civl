@@ -200,7 +200,7 @@ public class ContractTranslator extends FunctionTranslator {
 									"assigns \\nothing conflicts with previous assigns clause",
 									source);
 					} else {
-						if (targetBehavior.numAssignsMemoryUnits() == 0)
+						if (targetBehavior.numReadsMemoryUnits() == 0)
 							targetBehavior.setReadsNothing();
 						else
 							throw new CIVLSyntaxException(
