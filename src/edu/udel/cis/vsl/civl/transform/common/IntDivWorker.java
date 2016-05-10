@@ -55,7 +55,7 @@ public class IntDivWorker extends BaseWorker {
 		
 		OrdinaryEntity divEntity = unit.getInternalOrExternalEntity(INT_DIV);
 		OrdinaryEntity modEntity = unit.getInternalOrExternalEntity(INT_MOD);
-		if(divEntity != null && modEntity != null){
+		if(divEntity != null || modEntity != null){
 			return unit;
 		}
 		
