@@ -220,11 +220,10 @@ public class UserInterface {
 	 * @throws ABCException
 	 * @throws IOException
 	 * @throws MisguidedExecutionException
-	 * @throws SvcompException
 	 */
 	public boolean runNormalCommand(NormalCommandLine commandLine)
 			throws CommandLineException, ABCException, IOException,
-			MisguidedExecutionException, SvcompException {
+			MisguidedExecutionException {
 		this.startTime = System.currentTimeMillis();
 		if (commandLine.normalCommandKind() == NormalCommandKind.HELP)
 			runHelp((HelpCommandLine) commandLine);
@@ -303,7 +302,7 @@ public class UserInterface {
 	 */
 	public boolean runCompareCommand(CompareCommandLine compareCommand)
 			throws CommandLineException, ABCException, IOException,
-			MisguidedExecutionException, SvcompException {
+			MisguidedExecutionException {
 		GMCConfiguration gmcConfig = compareCommand.gmcConfig();
 		GMCSection anonymousSection = gmcConfig.getAnonymousSection(), specSection = gmcConfig
 				.getSection(CompareCommandLine.SPEC), implSection = gmcConfig
@@ -387,8 +386,7 @@ public class UserInterface {
 			ModelTranslator specWorker, ModelTranslator implWorker,
 			GMCConfiguration gmcConfig, GMCSection anonymousSection,
 			File traceFile) throws CommandLineException, FileNotFoundException,
-			IOException, MisguidedExecutionException, ABCException,
-			SvcompException {
+			IOException, MisguidedExecutionException, ABCException {
 		Combiner combiner = Transform.compareCombiner();
 		AST combinedAST;
 		Program specProgram = specWorker.buildProgram(), implProgram = implWorker
@@ -445,7 +443,6 @@ public class UserInterface {
 	 * @return
 	 * @throws IOException
 	 * @throws CommandLineException
-	 * @throws SvcompException
 	 * @throws ParseException
 	 * @throws SyntaxException
 	 * @throws PreprocessorException
@@ -454,7 +451,7 @@ public class UserInterface {
 			ModelTranslator specWorker, ModelTranslator implWorker,
 			GMCConfiguration gmcConfig, GMCSection anonymousSection,
 			File traceFile) throws ABCException, CommandLineException,
-			IOException, SvcompException {
+			IOException {
 		Model model = specWorker.translate();
 		Verifier verifier = new Verifier(gmcConfig, model, out, err, startTime,
 				true);
@@ -617,8 +614,6 @@ public class UserInterface {
 				throw e;
 			} catch (CIVLException e) {
 				err.println(e);
-			} catch (SvcompException e) {
-				err.println("non-pthread programs are ignored in -svcomp mode");
 			}
 			err.flush();
 			return false;
@@ -654,8 +649,7 @@ public class UserInterface {
 	 */
 	private boolean runReplay(String command, ModelTranslator modelTranslator,
 			File traceFile) throws CommandLineException, FileNotFoundException,
-			IOException, ABCException, MisguidedExecutionException,
-			SvcompException {
+			IOException, ABCException, MisguidedExecutionException {
 		boolean result;
 		Model model;
 		TracePlayer replayer;
@@ -685,7 +679,7 @@ public class UserInterface {
 
 	private boolean runRun(String command, ModelTranslator modelTranslator)
 			throws CommandLineException, ABCException, IOException,
-			MisguidedExecutionException, SvcompException {
+			MisguidedExecutionException {
 		boolean result;
 		Model model;
 		TracePlayer player;
@@ -725,13 +719,7 @@ public class UserInterface {
 			modelTranslator.universe.setShowProverQueries(true);
 		if (modelTranslator.cmdSection.isTrue(showQueriesO))
 			modelTranslator.universe.setShowQueries(true);
-		try {
-			model = modelTranslator.translate();
-		} catch (SvcompException e2) {
-			System.out.println("Skipped non-pthreads programs.");
-			System.out.flush();
-			return false;
-		}
+		model = modelTranslator.translate();
 		if (modelTranslator.config.web())
 			this.createWebLogs(model.program());
 		if (model != null) {
@@ -959,7 +947,7 @@ public class UserInterface {
 
 	private boolean runShow(ModelTranslator modelTranslator)
 			throws PreprocessorException, SyntaxException, ParseException,
-			CommandLineException, IOException, SvcompException {
+			CommandLineException, IOException {
 		return modelTranslator.translate() != null;
 	}
 

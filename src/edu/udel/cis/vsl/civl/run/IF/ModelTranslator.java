@@ -72,6 +72,21 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
  * Non-compare command line contains one command line section, and thus only one
  * model translator is created.
  * 
+ * <p>
+ * Orders of applying transformers:
+ * <ol>
+ * <li>Svcomp Transformer</li>
+ * <li>General Transformer</li>
+ * <li>IO Transformer</li>
+ * <li>OpenMP Transformer, CUDA Transformer, Pthreads Transformer</li>
+ * <li>MPI Transformer</li>
+ * <li>Side-effect remover</li>
+ * <li>Pruner</li>
+ * </ol>
+ * Note that for svcomp "*.i" programs, right before linking, the Pruner and the
+ * Svcomp Unpreprocessing Transformer are applied to the "*.i" AST.
+ * </p>
+ * 
  * @author Manchun Zheng
  *
  */
@@ -266,10 +281,9 @@ public class ModelTranslator {
 	 *             if there is a problem parsing or linking the source files.
 	 * @throws IOException
 	 *             if there is a problem reading source files.
-	 * @throws SvcompException
 	 */
 	Program buildProgram() throws PreprocessorException, SyntaxException,
-			IOException, ParseException, SvcompException {
+			IOException, ParseException {
 		List<Pair<Language, CivlcTokenSource>> tokenSources;
 		List<AST> asts = null;
 		Program program = null;
@@ -334,15 +348,19 @@ public class ModelTranslator {
 	 * 
 	 * @return the CIVL-C model of this compiling task specified by the command
 	 *         line
-	 * @throws PreprocessorException
 	 * @throws CommandLineException
+	 *             if there is a problem interpreting the command line section
+	 * @throws PreprocessorException
+	 *             if there is a problem preprocessing any source files.
 	 * @throws SyntaxException
+	 *             if there is a problem parsing the source files.
 	 * @throws ParseException
+	 *             if there is a problem parsing or linking the source files.
 	 * @throws IOException
-	 * @throws SvcompException
+	 *             if there is a problem reading source files.
 	 */
 	Model translate() throws PreprocessorException, CommandLineException,
-			SyntaxException, ParseException, IOException, SvcompException {
+			SyntaxException, ParseException, IOException {
 		long startTime = System.currentTimeMillis();
 		Program program = this.buildProgram();
 		long endTime = System.currentTimeMillis();
@@ -370,26 +388,25 @@ public class ModelTranslator {
 	}
 
 	/**
+	 * Obtains the input variables declared in the given program
 	 * 
 	 * @return the input variables declared in the given program
 	 * @throws PreprocessorException
+	 *             if there is a problem preprocessing any source files.
 	 * @throws SyntaxException
+	 *             if there is a problem parsing the source files.
 	 * @throws ParseException
+	 *             if there is a problem parsing or linking the source files.
 	 * @throws IOException
-	 * @throws SvcompException
+	 *             if there is a problem reading source files.
 	 */
 	List<VariableDeclarationNode> getInputVariables()
 			throws PreprocessorException, SyntaxException, ParseException,
 			IOException {
 		Program program;
-		try {
-			program = this.buildProgram();
-			return this.inputVariablesOfProgram(program);
-		} catch (SvcompException e) {
-			throw new SyntaxException(
-					"non-pthread examples are ignored in -svcomp mode", null);
-		}
 
+		program = this.buildProgram();
+		return this.inputVariablesOfProgram(program);
 	}
 
 	/**
@@ -425,8 +442,8 @@ public class ModelTranslator {
 	// private methods
 
 	/**
-	 * Print the input variables declared in the given program to the standard
-	 * output stream.
+	 * Prints the input variables declared in the given program to the output
+	 * stream.
 	 * 
 	 * @param program
 	 *            the program, which is the result of parsing, linking and
@@ -506,6 +523,7 @@ public class ModelTranslator {
 	 * @param config
 	 *            The CIVL configuration.
 	 * @throws SyntaxException
+	 *             if there are syntax error when applying the transformers
 	 */
 	private void applyDefaultTransformers(Program program)
 			throws SyntaxException {
@@ -545,10 +563,10 @@ public class ModelTranslator {
 	 * @param config
 	 *            The CIVL configuration.
 	 * @throws SyntaxException
+	 *             if there are syntax error when applying the transformers
 	 */
 	private void applyTranslationTransformers(Program program)
 			throws SyntaxException {
-		// ASTFactory astFactory = program.getAST().getASTFactory();
 		Set<String> headers = new HashSet<>();
 		boolean isC = userFileName.endsWith(".c")
 				|| userFileName.endsWith(".i");
@@ -656,6 +674,7 @@ public class ModelTranslator {
 	 * @param program
 	 *            The result of compiling and linking the input program.
 	 * @throws SyntaxException
+	 *             if there are syntax errors when applying transformers
 	 */
 	private void applyAllTransformers(Program program) throws SyntaxException {
 		this.applyTranslationTransformers(program);
@@ -663,8 +682,13 @@ public class ModelTranslator {
 	}
 
 	/**
-	 * Links an AST with the system implementations of libraries used in the
-	 * AST.
+	 * Links the user specified ASTs with the system implementations of
+	 * libraries used in the AST. <br>
+	 * For example, if the user specified ASTs are "civl verify driver.c cg.c"
+	 * and the libraries used are math.c and stdlib.c, then the userASTs has two
+	 * ASTs parsed from driver.c and cg.c respectively, and two additional
+	 * library implementation ASTs for math.c (math.cvl) and stdlib.c
+	 * (stdlib.cvl) respectively.
 	 * 
 	 * @param preprocessor
 	 *            The preprocessor to be used for preprocessing all system
@@ -674,15 +698,21 @@ public class ModelTranslator {
 	 * @return The program which is the result of linking the given AST and the
 	 *         ASTs of system implementation of libraries used.
 	 * @throws PreprocessorException
+	 *             if there is a problem preprocessing any source files.
 	 * @throws SyntaxException
+	 *             if there is a problem parsing the source files.
 	 * @throws ParseException
+	 *             if there is a problem parsing or linking the source files.
 	 * @throws IOException
+	 *             if there is a problem reading source files.
 	 */
 	private Program link(List<AST> userASTs) throws PreprocessorException,
 			SyntaxException, ParseException, IOException {
 		ArrayList<AST> asts = new ArrayList<>();
 		AST[] TUs;
 		Program program;
+		long startTime, endTime;
+		long totalTime;
 
 		asts.addAll(this.systemImplASTs(userASTs));
 		asts.addAll(userASTs);
@@ -694,10 +724,6 @@ public class ModelTranslator {
 				out.println("  " + ast);
 			out.flush();
 		}
-
-		long startTime, endTime;
-		long totalTime;
-
 		startTime = System.currentTimeMillis();
 		// TUs[0].prettyPrint(System.out, false);
 		program = frontEnd.link(TUs, Language.CIVL_C);
@@ -732,8 +758,6 @@ public class ModelTranslator {
 
 		if (config.debugOrVerbose()) {
 			out.println("Generating AST for " + tokenSource);
-			// out.println();
-			// out.flush();
 		}
 		startTime = System.currentTimeMillis();
 		tree = frontEnd.getParser(language).parse(tokenSource);
