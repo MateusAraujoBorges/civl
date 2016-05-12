@@ -173,9 +173,13 @@ import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
+import edu.udel.cis.vsl.sarl.IF.object.NumberObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -1958,13 +1962,15 @@ public class CommonModelFactory implements ModelFactory {
 	 *             if a concrete integer value cannot be extracted
 	 */
 	private int extractInt(CIVLSource source, NumericExpression expression) {
-		IntegerNumber result = (IntegerNumber) universe
-				.extractNumber(expression);
+		if (expression.operator() == SymbolicOperator.CONCRETE) {
+			SymbolicObject object = expression.argument(0);
 
-		if (result == null)
-			throw new CIVLInternalException(
-					"Unable to extract concrete int from " + expression, source);
-		return result.intValue();
+			if (object.symbolicObjectKind() == SymbolicObjectKind.NUMBER)
+				return ((IntegerNumber) ((NumberObject) object).getNumber())
+						.intValue();
+		}
+		throw new CIVLInternalException("Unable to extract concrete int from "
+				+ expression, source);
 	}
 
 	/**
