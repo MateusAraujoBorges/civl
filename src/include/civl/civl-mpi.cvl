@@ -190,17 +190,24 @@ int $mpi_recv(void *buf, int count, MPI_Datatype datatype, int source,
   if (source >= 0 || source == MPI_ANY_SOURCE) {
     $message in;
     int place = $comm_place(comm.p2p);
+    int deterministicTag;
 
+    /* A deterministic tag is a sugar for CIVL implementaion. The CIVL
+       implementation only needs to care about two cases: tag == -2
+       which is a wild-card tag or any other tags which can either be
+       concrete or not:.*/
+    $assert(tag == -2 || tag >= 0, "Illegal MPI message receive tag %d.\n", tag);
+    deterministicTag = tag < 0 ? -2 : tag;
     $elaborate(source);
 #ifdef _MPI_CONTRACT
     $atomic{
-      in = $comm_dequeue(comm.p2p, source, tag);
+      in = $comm_dequeue(comm.p2p, source, deterministicTag);
       int nonWildsrc = $message_source(in);
 
-      $mpi_p2pRecvShot(comm.gcommIndex, nonWildsrc, place, tag);
+      $mpi_p2pRecvShot(comm.gcommIndex, nonWildsrc, place, deterministicTag);
     }
 #else
-    in = $comm_dequeue(comm.p2p, source, tag);
+    in = $comm_dequeue(comm.p2p, source, deterministicTag);
 #endif
     int size = count*sizeofDatatype(datatype);
 
@@ -219,6 +226,11 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		  int dest, int sendtag, void *recvbuf, int recvcount, 
 		  MPI_Datatype recvtype, int source, int recvtag,
 		  MPI_Comm comm, MPI_Status *status) {
+  int deterministicRecvTag;
+
+  $assert(sendtag >= 0, "MPI sendtag should be greater than or equal to zero");
+  $assert(recvtag == -2 || recvtag >= 0, "Illegal MPI message receive tag %d.\n", recvtag);
+  deterministicRecvTag = recvtag < 0 ? -2 : recvtag;
   //send and receive triggering flags
   if((dest >= 0) && ((source >= 0 || source == MPI_ANY_SOURCE))) {
     $message out, in;
@@ -227,6 +239,7 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
     out = $message_pack(place, dest, sendtag, sendbuf, size);
     $elaborate(source);
+    
     $choose {
       $when($true){
 	$atomic{
@@ -236,11 +249,11 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 #endif
 	}
 	$atomic{
-	  in = $comm_dequeue(comm.p2p, source, recvtag);
+	  in = $comm_dequeue(comm.p2p, source, deterministicRecvTag);
 #ifdef _MPI_CONTRACT
 	  int nonWildSrc = $message_source(in);
 	  
-	  $mpi_p2pRecvShot(comm.gcommIndex, nonWildSrc, place, recvtag);	
+	  $mpi_p2pRecvShot(comm.gcommIndex, nonWildSrc, place, deterministicRecvTag);	
 #endif
 	}
       }
@@ -251,7 +264,7 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	   all processes do send then recv collectively. However,
 	   effectively, this branch is no need and never will be
 	   executed.*/
-	in = $comm_dequeue(comm.p2p, source, recvtag);
+	in = $comm_dequeue(comm.p2p, source, deterministicRecvTag);
 	$comm_enqueue(comm.p2p, out);
       }
     }
@@ -268,7 +281,7 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     $mpi_send(sendbuf, sendcount, sendtype, dest, sendtag, comm);
   }
   else if (source >= 0 || source == MPI_ANY_SOURCE) {
-    $mpi_recv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
+    $mpi_recv(recvbuf, recvcount, recvtype, source, deterministicRecvTag, comm, status);
   }
   return 0;
 }
@@ -309,8 +322,10 @@ int $mpi_collective_recv(void *buf, int count, MPI_Datatype datatype,
     int size = count*sizeofDatatype(datatype);
     int recvTag;
 
+    /* This routine should only be used by collective routines, there
+       is no non-deterministic tags for collective routines.*/
     recvTag = $message_tag(in);
-    $assert (recvTag == tag , "Collective routine %s receives a "
+    $assert (recvTag == tag, "Collective routine %s receives a "
 	     "message with a mismatched tag\n", routName);
     $message_unpack(in, buf, size);
     if (status != MPI_STATUS_IGNORE) {
@@ -358,6 +373,7 @@ int $mpi_reduce(const void* sendbuf, void* recvbuf, int count,
 	int colTag;
 	$message in = $comm_dequeue(comm.col, i, MPI_ANY_TAG);	
 
+	/* Collective routines have no non-deterministic tags.*/
 	colTag = $message_tag(in);
 	$assert (colTag == tag , "Collective routine %s receives a "
 		 "message with a mismatched tag\n", routName);

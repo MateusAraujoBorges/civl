@@ -25,10 +25,14 @@ public interface Scope extends Sourceable {
 	Scope parent();
 
 	/**
+	 * <p>
+	 * <b>Important notice: </b> Never ever modify the variable!
+	 * </p>
+	 * 
 	 * @return The set of variables contained in this scope. The iterator over
 	 *         the returned set will iterate in variable ID order.
 	 */
-	Set<Variable> variables();
+	Variable[] variables();
 
 	/**
 	 * @return The number of variables contained in this scope.

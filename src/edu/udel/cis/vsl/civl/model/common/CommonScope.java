@@ -4,7 +4,6 @@
 package edu.udel.cis.vsl.civl.model.common;
 
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,8 +61,7 @@ public class CommonScope extends CommonSourceable implements Scope {
 	 * @param variables
 	 *            The set of variables in this scope.
 	 */
-	public CommonScope(CIVLSource source, Scope parent,
-			Set<Variable> variables, int id) {
+	public CommonScope(CIVLSource source, Scope parent, Set<Variable> variables, int id) {
 		super(source);
 		this.parent = parent;
 		this.variables = new Variable[variables.size()];
@@ -87,11 +85,9 @@ public class CommonScope extends CommonSourceable implements Scope {
 		return parent;
 	}
 
-	/**
-	 * @return The set of variables contained in this scope.
-	 */
-	public Set<Variable> variables() {
-		return new LinkedHashSet<Variable>(Arrays.asList(variables));
+	@Override
+	public Variable[] variables() {
+		return variables;
 	}
 
 	/**
@@ -339,8 +335,7 @@ public class CommonScope extends CommonSourceable implements Scope {
 	 *            The variable being checked.
 	 */
 	private void needsSymbolicConstant(Variable variable) {
-		boolean needsSymbolicConstant = this
-				.needsSymbolicConstantWorker(variable);
+		boolean needsSymbolicConstant = this.needsSymbolicConstantWorker(variable);
 
 		if (needsSymbolicConstant)
 			this.varsNeedSymbolicConstant.add(variable);
@@ -352,8 +347,7 @@ public class CommonScope extends CommonSourceable implements Scope {
 		else {
 			CIVLType type = variable.type();
 
-			if (type instanceof CIVLPrimitiveType || type.isPointerType()
-					|| type.isDomainType())
+			if (type instanceof CIVLPrimitiveType || type.isPointerType() || type.isDomainType())
 				return false;
 		}
 		return true;
@@ -365,22 +359,19 @@ public class CommonScope extends CommonSourceable implements Scope {
 		if (type instanceof CIVLPointerType) {
 			containsPointerType = true;
 		} else if (type instanceof CIVLArrayType) {
-			containsPointerType = containsPointerType(((CIVLArrayType) type)
-					.elementType());
+			containsPointerType = containsPointerType(((CIVLArrayType) type).elementType());
 		} else if (type instanceof CIVLStructOrUnionType) {
 			for (StructOrUnionField f : ((CIVLStructOrUnionType) type).fields()) {
 				boolean fieldContainsPointer = containsPointerType(f.type());
 
-				containsPointerType = containsPointerType
-						|| fieldContainsPointer;
+				containsPointerType = containsPointerType || fieldContainsPointer;
 			}
 		} else if (type.isHeapType()) {
 			for (int i = 0; i < ((CIVLHeapType) type).getNumMallocs(); i++) {
-				boolean elementContainsPointer = containsPointerType(((CIVLHeapType) type)
-						.getMalloc(i).getStaticElementType());
+				boolean elementContainsPointer = containsPointerType(
+						((CIVLHeapType) type).getMalloc(i).getStaticElementType());
 
-				containsPointerType = containsPointerType
-						|| elementContainsPointer;
+				containsPointerType = containsPointerType || elementContainsPointer;
 			}
 		} else if (type.isBundleType()) {
 			List<CIVLType> types = ((CIVLBundleType) type).types();
@@ -388,8 +379,7 @@ public class CommonScope extends CommonSourceable implements Scope {
 			for (CIVLType elementType : types) {
 				boolean elementContainsPointer = containsPointerType(elementType);
 
-				containsPointerType = containsPointerType
-						|| elementContainsPointer;
+				containsPointerType = containsPointerType || elementContainsPointer;
 			}
 		}
 		return containsPointerType;
@@ -401,8 +391,7 @@ public class CommonScope extends CommonSourceable implements Scope {
 		if (type.isScopeType() || type.isFunction() || type.isPointerType()) {
 			containsScopeType = true;
 		} else if (type.isArrayType()) {
-			containsScopeType = containsScopeType(((CIVLArrayType) type)
-					.elementType());
+			containsScopeType = containsScopeType(((CIVLArrayType) type).elementType());
 		} else if (type.isStructType()) {
 			for (StructOrUnionField f : ((CIVLStructOrUnionType) type).fields()) {
 				boolean fieldContainsScope = containsScopeType(f.type());
@@ -411,8 +400,8 @@ public class CommonScope extends CommonSourceable implements Scope {
 			}
 		} else if (type.isHeapType()) {
 			for (int i = 0; i < ((CIVLHeapType) type).getNumMallocs(); i++) {
-				boolean elementContainsScope = containsScopeType(((CIVLHeapType) type)
-						.getMalloc(i).getStaticElementType());
+				boolean elementContainsScope = containsScopeType(
+						((CIVLHeapType) type).getMalloc(i).getStaticElementType());
 
 				containsScopeType = containsScopeType || elementContainsScope;
 			}
@@ -434,8 +423,7 @@ public class CommonScope extends CommonSourceable implements Scope {
 		if (type.isProcessType()) {
 			containsProcType = true;
 		} else if (type.isArrayType()) {
-			containsProcType = containsProcType(((CIVLArrayType) type)
-					.elementType());
+			containsProcType = containsProcType(((CIVLArrayType) type).elementType());
 		} else if (type.isStructType()) {
 			for (StructOrUnionField f : ((CIVLStructOrUnionType) type).fields()) {
 				boolean fieldContainsProc = containsProcType(f.type());
@@ -444,8 +432,8 @@ public class CommonScope extends CommonSourceable implements Scope {
 			}
 		} else if (type.isHeapType()) {
 			for (int i = 0; i < ((CIVLHeapType) type).getNumMallocs(); i++) {
-				boolean elementContainsProc = containsProcType(((CIVLHeapType) type)
-						.getMalloc(i).getStaticElementType());
+				boolean elementContainsProc = containsProcType(
+						((CIVLHeapType) type).getMalloc(i).getStaticElementType());
 
 				containsProcType = containsProcType || elementContainsProc;
 			}
