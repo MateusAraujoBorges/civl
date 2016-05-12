@@ -20,43 +20,38 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 
-public class LibcivlcEvaluator extends BaseLibraryEvaluator implements
-		LibraryEvaluator {
+public class LibcivlcEvaluator extends BaseLibraryEvaluator implements LibraryEvaluator {
 
-	public LibcivlcEvaluator(String name, Evaluator evaluator,
-			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
+	public LibcivlcEvaluator(String name, Evaluator evaluator, ModelFactory modelFactory, SymbolicUtility symbolicUtil,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
 			LibraryEvaluatorLoader libEvaluatorLoader) {
-		super(name, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer,
-				civlConfig, libEvaluatorLoader);
+		super(name, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer, civlConfig, libEvaluatorLoader);
 	}
 
 	@Override
-	public Evaluation evaluateGuard(CIVLSource source, State state, int pid,
-			String function, Expression[] arguments)
+	public Evaluation evaluateGuard(CIVLSource source, State state, int pid, String function, Expression[] arguments)
 			throws UnsatisfiablePathConditionException {
 		Pair<State, SymbolicExpression[]> argumentsEval;
-		BooleanExpression guard;
 
 		switch (function) {
 		case "$wait":
 			argumentsEval = this.evaluateArguments(state, pid, arguments);
-			guard = guardOfWait(state, pid, arguments, argumentsEval.right);
-			break;
+			return guardOfWait(argumentsEval.left, pid, arguments, argumentsEval.right);
 		case "$waitall":
 			argumentsEval = this.evaluateArguments(state, pid, arguments);
-			guard = guardOfWaitall(state, pid, arguments, argumentsEval.right);
-			break;
+			return guardOfWaitall(argumentsEval.left, pid, arguments, argumentsEval.right);
 		default:
-			guard = universe.trueExpression();
+			return new Evaluation(state, trueValue);
 		}
-		return new Evaluation(state, guard);
 	}
 
 	/**
@@ -69,8 +64,7 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private BooleanExpression guardOfWait(State state, int pid,
-			Expression[] arguments, SymbolicExpression[] argumentValues)
+	private Evaluation guardOfWait(State state, int pid, Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression joinProcess = argumentValues[0];
 		BooleanExpression guard;
@@ -78,84 +72,129 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator implements
 		Expression joinProcessExpr = arguments[0];
 
 		if (joinProcess.operator() != SymbolicOperator.TUPLE) {
-			String process = state.getProcessState(pid).name() + "(id=" + pid
-					+ ")";
+			String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
 
-			this.errorLogger.logSimpleError(joinProcessExpr.getSource(), state,
-					process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.OTHER,
-					"the argument of $wait should be concrete, but the actual value is "
-							+ joinProcess);
+			this.errorLogger.logSimpleError(joinProcessExpr.getSource(), state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+					"the argument of $wait should be concrete, but the actual value is " + joinProcess);
 			throw new UnsatisfiablePathConditionException();
 		}
-		pidValue = modelFactory.getProcessId(joinProcessExpr.getSource(),
-				joinProcess);
-		if (modelFactory.isPocessIdDefined(pidValue)
-				&& !modelFactory.isProcessIdNull(pidValue)
-				&& state.getProcessState(pidValue) != null
-				&& !state.getProcessState(pidValue).hasEmptyStack())
+		pidValue = modelFactory.getProcessId(joinProcessExpr.getSource(), joinProcess);
+		if (modelFactory.isPocessIdDefined(pidValue) && !modelFactory.isProcessIdNull(pidValue)
+				&& state.getProcessState(pidValue) != null && !state.getProcessState(pidValue).hasEmptyStack())
 			guard = universe.falseExpression();
 		else
 			guard = universe.trueExpression();
-		return guard;
+		return new Evaluation(state, guard);
 	}
 
 	/**
 	 * void $waitall($proc *procs, int numProcs);
 	 * 
 	 * @param state
+	 *            the current state
 	 * @param pid
+	 *            the process ID of the process executing the $waitall
 	 * @param arguments
+	 *            two arguments: 0:pointer to $proc, 1:number of processes
 	 * @param argumentValues
-	 * @return
+	 *            the results of evaluating of the two expressions of arguments
+	 * @return a {@link BooleanExpression} which holds iff all processes in the
+	 *         list have terminated
 	 * @throws UnsatisfiablePathConditionException
+	 *             if the second argument (the number of processes) is not
+	 *             concrete, or the first argument does not point to a valid
+	 *             list of processes of the given number.
 	 */
-	private BooleanExpression guardOfWaitall(State state, int pid,
-			Expression[] arguments, SymbolicExpression[] argumentValues)
+	private Evaluation guardOfWaitall(State state, int pid, Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression procsPointer = argumentValues[0];
 		SymbolicExpression numOfProcs = argumentValues[1];
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		IntegerNumber number_nprocs = (IntegerNumber) reasoner
-				.extractNumber((NumericExpression) numOfProcs);
+		IntegerNumber number_nprocs = (IntegerNumber) reasoner.extractNumber((NumericExpression) numOfProcs);
 		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
 
 		if (number_nprocs == null) {
-			this.errorLogger.logSimpleError(arguments[1].getSource(), state,
-					process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.OTHER, "the number of processes for $waitall "
-							+ "needs a concrete value");
+			this.errorLogger.logSimpleError(arguments[1].getSource(), state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+					"the number of processes for $waitall " + "needs a concrete value");
 			throw new UnsatisfiablePathConditionException();
+		}
+
+		int numOfProcs_int = number_nprocs.intValue();
+
+		if (numOfProcs_int == 0)
+			return new Evaluation(state, trueValue);
+		if (symbolicUtil.isNullPointer(procsPointer)) {
+			this.errorLogger.logSimpleError(arguments[0].getSource(), state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
+					"pointer argument to $waitall is NULL");
+			throw new UnsatisfiablePathConditionException();
+		}
+
+		CIVLSource procsSource = arguments[0].getSource();
+		Evaluation eval;
+		ReferenceExpression ptrRef = symbolicUtil.getSymRef(procsPointer);
+
+		if (ptrRef.isArrayElementReference()) {
+			ArrayElementReference elementRef = (ArrayElementReference) ptrRef;
+			NumericExpression startIdxExpr = elementRef.getIndex();
+			int startIndex, stopIndex;
+			SymbolicExpression procArray, parentPtr;
+
+			if (startIdxExpr.isZero()) {
+				startIndex = 0;
+			} else {
+				Number startIdxNum = reasoner.extractNumber(startIdxExpr);
+
+				if (startIdxNum == null) {
+					this.errorLogger.logSimpleError(procsSource, state, process,
+							symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+							"pointer into proc array must have concrete index");
+					throw new UnsatisfiablePathConditionException();
+				}
+				startIndex = ((IntegerNumber) startIdxNum).intValue();
+			}
+			parentPtr = symbolicUtil.parentPointer(procsSource, procsPointer);
+			eval = evaluator.dereference(procsSource, state, process, arguments[0], parentPtr, false);
+			state = eval.state;
+			procArray = eval.value;
+			stopIndex = startIndex + numOfProcs_int;
+			for (int idx = startIndex; idx < stopIndex; idx++) {
+				SymbolicExpression proc = universe.arrayRead(procArray, universe.integer(idx));
+				int pidValue = modelFactory.getProcessId(procsSource, proc);
+
+				if (!modelFactory.isProcessIdNull(pidValue) && modelFactory.isPocessIdDefined(pidValue)
+						&& !state.getProcessState(pidValue).hasEmptyStack()) {
+					eval.value = falseValue;
+					return eval;
+				}
+			}
 		} else {
-			int numOfProcs_int = number_nprocs.intValue();
 			BinaryExpression pointerAdd;
-			CIVLSource procsSource = arguments[0].getSource();
-			Evaluation eval;
 
 			for (int i = 0; i < numOfProcs_int; i++) {
-				Expression offSet = modelFactory.integerLiteralExpression(
-						procsSource, BigInteger.valueOf(i));
+				Expression offSet = modelFactory.integerLiteralExpression(procsSource, BigInteger.valueOf(i));
 				NumericExpression offSetV = universe.integer(i);
 				SymbolicExpression procPointer, proc;
 				int pidValue;
 
-				pointerAdd = modelFactory.binaryExpression(procsSource,
-						BINARY_OPERATOR.POINTER_ADD, arguments[0], offSet);
-				eval = evaluator.pointerAdd(state, pid, process, pointerAdd,
-						procsPointer, offSetV);
+				pointerAdd = modelFactory.binaryExpression(procsSource, BINARY_OPERATOR.POINTER_ADD, arguments[0],
+						offSet);
+				eval = evaluator.pointerAdd(state, pid, process, pointerAdd, procsPointer, offSetV);
 				procPointer = eval.value;
 				state = eval.state;
-				eval = evaluator.dereference(procsSource, state, process,
-						pointerAdd, procPointer, false);
+				eval = evaluator.dereference(procsSource, state, process, pointerAdd, procPointer, false);
 				proc = eval.value;
 				state = eval.state;
 				pidValue = modelFactory.getProcessId(procsSource, proc);
-				if (!modelFactory.isProcessIdNull(pidValue)
-						&& modelFactory.isPocessIdDefined(pidValue))
-					if (!state.getProcessState(pidValue).hasEmptyStack())
-						return this.falseValue;
+				if (!modelFactory.isProcessIdNull(pidValue) && modelFactory.isPocessIdDefined(pidValue)
+						&& !state.getProcessState(pidValue).hasEmptyStack()) {
+					eval.value = falseValue;
+					return eval;
+				}
 			}
 		}
-		return this.trueValue;
+		return new Evaluation(state, trueValue);
 	}
 }
