@@ -191,6 +191,7 @@ int $mpi_recv(void *buf, int count, MPI_Datatype datatype, int source,
     $message in;
     int place = $comm_place(comm.p2p);
 
+    $elaborate(source);
 #ifdef _MPI_CONTRACT
     $atomic{
       in = $comm_dequeue(comm.p2p, source, tag);
@@ -225,6 +226,7 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     int place = $comm_place(comm.p2p);
 
     out = $message_pack(place, dest, sendtag, sendbuf, size);
+    $elaborate(source);
     $choose {
       $when($true){
 	$atomic{
@@ -302,6 +304,7 @@ int $mpi_collective_recv(void *buf, int count, MPI_Datatype datatype,
 			 int source, int tag, MPI_Comm comm, 
 			 MPI_Status * status, char * routName) {
   if(source >= 0 || source == MPI_ANY_SOURCE) {
+    $elaborate(source);
     $message in = $comm_dequeue(comm.col, source, MPI_ANY_TAG);
     int size = count*sizeofDatatype(datatype);
     int recvTag;
@@ -353,8 +356,8 @@ int $mpi_reduce(const void* sendbuf, void* recvbuf, int count,
     for (int i = 0; i<nprocs; i++) {
       if(i != root){
 	int colTag;
-	$message in = $comm_dequeue(comm.col, i, MPI_ANY_TAG);
-	
+	$message in = $comm_dequeue(comm.col, i, MPI_ANY_TAG);	
+
 	colTag = $message_tag(in);
 	$assert (colTag == tag , "Collective routine %s receives a "
 		 "message with a mismatched tag\n", routName);
