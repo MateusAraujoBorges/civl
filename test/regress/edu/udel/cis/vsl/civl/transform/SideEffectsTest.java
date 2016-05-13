@@ -36,6 +36,11 @@ public class SideEffectsTest {
 	public void forLoopIncrSE() throws ABCException {
 		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("forLoopIncretSE.c")));
 	}
+	
+	@Test
+	public void strictInitTest() throws ABCException {
+		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("structInitSideEffect.c")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
