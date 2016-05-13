@@ -1,7 +1,7 @@
 #ifndef _INT_DIV_CIVL_
 #define _INT_DIV_CIVL_
 
-$system void $assert(_Bool expr, ...);
+$system[civlc] void $assert(_Bool expr, ...);
 
 int $int_div(int numerator, int denominator) {
   $assert(denominator != 0, "Possible division by zero");
