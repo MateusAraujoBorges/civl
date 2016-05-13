@@ -302,6 +302,7 @@ public class ModelTranslator {
 		asts = this.parseTokens(tokenSources);
 		if (this.config.svcomp()) {
 			AST userAST = asts.get(0);
+			long svcompPPstart = System.currentTimeMillis();
 
 			// parsing preprocessed .i file
 			if (userFileName.endsWith(".i") || this.config.unpreproc()) {
@@ -309,8 +310,21 @@ public class ModelTranslator {
 				frontEnd.getStandardAnalyzer(Language.CIVL_C).analyze(userAST);
 				userAST = Transform.newTransformer("prune",
 						userAST.getASTFactory()).transform(userAST);
+				if (config.showTime()) {
+					totalTime = System.currentTimeMillis() - svcompPPstart;
+					out.println(totalTime
+							+ "ms:\tapplying pruner for svcomp source "
+							+ userFileName);
+				}
+				svcompPPstart = System.currentTimeMillis();
 				asts.set(0, transformerFactory.getSvcompUnPPTransformer()
 						.transform(userAST));
+				if (config.showTime()) {
+					totalTime = System.currentTimeMillis() - svcompPPstart;
+					out.println(totalTime
+							+ "ms:\tapplying unpreprocessing transformer for svcomp source "
+							+ userFileName);
+				}
 			}
 		}
 		program = this.link(asts);
@@ -819,9 +833,8 @@ public class ModelTranslator {
 			File file = new File(filename);
 			Language language = this.getLanguageByFileName(filename);
 			Preprocessor preprocessor = frontEnd.getPreprocessor(language);
-			CivlcTokenSource tokens = preprocessor
-					.outputTokenSource(systemIncludes, userIncludes, macroMaps,
-							file);
+			CivlcTokenSource tokens = preprocessor.outputTokenSource(
+					systemIncludes, userIncludes, macroMaps, file);
 
 			tokenSources.add(new Pair<>(language, tokens));
 			if (config.showPreproc() || config.debugOrVerbose()) {
