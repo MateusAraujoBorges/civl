@@ -114,14 +114,6 @@ public class PthreadTest {
 	}
 
 	@Test
-	public void stack_true() throws ABCException {
-		assertTrue(ui.run("verify", "-svcomp16", "-inputSIZE=5",
-				"-inputOVERFLOW=-1",
-				"-inputUNDERFLOW=-2 -input_svcomp_unsigned_bound=8", QUIET,
-				filename("stack_true-unreach-call.c")));
-	}
-
-	@Test
 	public void stateful01_false() throws ABCException {
 		assertFalse(ui.run("verify", "-svcomp16", QUIET,
 				filename("stateful01_false-unreach-call.c")));

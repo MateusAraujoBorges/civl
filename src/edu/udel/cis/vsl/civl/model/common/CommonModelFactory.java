@@ -1524,33 +1524,30 @@ public class CommonModelFactory implements ModelFactory {
 	public SystemFunction systemFunction(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
 			CIVLType returnType, Scope containingScope, String libraryName) {
-		if (libraryName.startsWith("civl-")) {
-			libraryName = libraryName.substring(5, libraryName.length());
-		} else if (libraryName.endsWith("-common")) {
-			libraryName = libraryName.substring(0, libraryName.length() - 7);
-		} else if (libraryName.startsWith("civlc-")) {
-			libraryName = "civlc";
-		} else {
-			switch (name.name()) {
-			case "printf":
-				libraryName = "stdio";
-				break;
-			case "strcpy":
-				libraryName = "string";
-				break;
-			case "exit":
-				libraryName = "stdlib";
-				break;
-			case "assert":
-				libraryName = "asserts";
-				break;
-			default:
-			}
+		boolean needsEnabler = false;
+
+		switch (libraryName) {
+		case "bundle":
+		case "civlc":
+		case "comm":
+		case "domain":
+		case "mpi":
+		case "pointer":
+		case "pthread":
+		case "scope":
+		case "seq":
+		case "stdio":
+		case "stdlib":
+		case "string":
+		case "time":
+			needsEnabler = true;
+			break;
+		default:
 		}
 		return new CommonSystemFunction(source, name, parameterScope,
 				parameters, returnType, containingScope,
 				containingScope.numFunctions(), (Location) null, libraryName,
-				this);
+				needsEnabler, this);
 	}
 
 	@Override

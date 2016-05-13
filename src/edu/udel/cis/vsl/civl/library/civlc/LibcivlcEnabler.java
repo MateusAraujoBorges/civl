@@ -227,6 +227,24 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 		return ampleSet;
 	}
 
+	/**
+	 * computes the ample set for $waitall. The ample set is the set of
+	 * processes being waited for.
+	 * 
+	 * @param state
+	 *            the current state
+	 * @param pid
+	 *            the PID of the process which executes the $waitall function
+	 *            call
+	 * @param arguments
+	 *            the arguments of $waitall, where argument 0 is a pointer to
+	 *            the first $proc object, and 1 is the number of processes to
+	 *            wait for.
+	 * @param argumentValues
+	 *            the evaluation results of the arguments of $waitall
+	 * @return the set of processes being waited for as the ample set
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private BitSet ampleSetOfWaitall(State state, int pid,
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {

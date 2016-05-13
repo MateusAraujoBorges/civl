@@ -304,7 +304,7 @@ public abstract class CommonEnabler implements Enabler {
 	}
 
 	/**
-	 * Get the enabled transitions of a certain process at a given state.
+	 * Gets the enabled transitions of a certain process at a given state.
 	 * 
 	 * @param state
 	 *            The state to work with.
@@ -314,10 +314,6 @@ public abstract class CommonEnabler implements Enabler {
 	 *            A map of process IDs and their guards of statements. This is
 	 *            to reuse evaluation result of guards and it could be an empty
 	 *            map if there is nothing to be reused.
-	 * @param assignAtomicLock
-	 *            The assignment statement for the atomic lock variable, should
-	 *            be null except that the process is going to re-obtain the
-	 *            atomic lock variable.
 	 * @return the list of enabled transitions of the given process at the
 	 *         specified state
 	 */
@@ -359,8 +355,9 @@ public abstract class CommonEnabler implements Enabler {
 
 	/**
 	 * Computes transitions from the process owning the atomic lock or triggered
-	 * by resuming an atomic block that is previously blocked. Add an assignment
-	 * to update atomic lock variable (i.e., grabbing the atomic lock) and mean
+	 * by resuming an atomic block that is previously blocked. Adds an
+	 * assignment to update atomic lock variable (i.e., grabbing the atomic
+	 * lock) with the transition obtained by the statements.
 	 * 
 	 * @param state
 	 *            The current state.
@@ -595,20 +592,43 @@ public abstract class CommonEnabler implements Enabler {
 			BooleanExpression pathCondition, int pid, int processIdentifier,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
-		String libraryName = ((SystemFunction) call.function()).getLibrary();
+		SystemFunction sysFunction = (SystemFunction) call.function();
+		String libraryName = sysFunction.getLibrary();
 
-		try {
-			LibraryEnabler libEnabler = libraryEnabler(source, libraryName);
+		if (sysFunction.needsEnabler()) {
+			try {
+				LibraryEnabler libEnabler = libraryEnabler(source, libraryName);
 
-			return libEnabler.enabledTransitions(state, call, pathCondition,
-					pid, processIdentifier, atomicLockAction);
-		} catch (LibraryLoaderException exception) {
-			List<Transition> localTransitions = new LinkedList<>();
-
-			localTransitions.add(Semantics.newTransition(pathCondition, pid,
-					processIdentifier, call, atomicLockAction));
-			return localTransitions;
+				return libEnabler
+						.enabledTransitions(state, call, pathCondition, pid,
+								processIdentifier, atomicLockAction);
+			} catch (LibraryLoaderException exception) {
+				return makeTransitions(pathCondition, pid, processIdentifier,
+						atomicLockAction, call);
+			}
+		} else {
+			return makeTransitions(pathCondition, pid, processIdentifier,
+					atomicLockAction, call);
 		}
+	}
+
+	/**
+	 *
+	 * @param pathCondition
+	 * @param pid
+	 * @param processIdentifier
+	 * @param atomicLockAction
+	 * @param call
+	 * @return
+	 */
+	private List<Transition> makeTransitions(BooleanExpression pathCondition,
+			int pid, int processIdentifier, AtomicLockAction atomicLockAction,
+			CallOrSpawnStatement call) {
+		List<Transition> localTransitions = new LinkedList<>();
+
+		localTransitions.add(Semantics.newTransition(pathCondition, pid,
+				processIdentifier, call, atomicLockAction));
+		return localTransitions;
 	}
 
 	/**
@@ -663,7 +683,7 @@ public abstract class CommonEnabler implements Enabler {
 				new HashMap<Integer, Map<Statement, BooleanExpression>>(0));
 	}
 
-	/********************** Private helper method *************************/
+	/* ********************* Private helper method ************************* */
 	// TODO: some method can be shared with LibcivlcEnabler for $elaborate.
 	/**
 	 * <p>

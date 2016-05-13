@@ -20,7 +20,7 @@ public class DiningPhilosopherBenchmark {
 		if (args.length > 0)
 			civlDir = args[0];
 		System.out.println(">>>>>>>> Dining philosopher <<<<<<<<");
-		ui.run("verify -echo -inputBOUND=9 " + civlDir
+		ui.run("verify -inputBOUND=9 " + civlDir
 				+ "/examples/concurrency/dining.cvl");
 	}
 

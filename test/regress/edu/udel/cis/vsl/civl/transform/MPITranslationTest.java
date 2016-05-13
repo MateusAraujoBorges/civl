@@ -162,7 +162,7 @@ public class MPITranslationTest {
 
 	@Test
 	public void mpiSumArray() {
-		assertTrue(ui.run("verify", "-enablePrintf=false",
+		assertTrue(ui.run("show -showProgram", "-enablePrintf=false",
 				"-input_mpi_nprocs_hi=3", "-inputNB=8", TestConstants.QUIET,
 				filename("sum_array.c")));
 	}

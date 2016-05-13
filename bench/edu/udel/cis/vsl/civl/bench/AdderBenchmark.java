@@ -20,7 +20,7 @@ public class AdderBenchmark {
 		if (args.length > 0)
 			civlDir = args[0];
 		System.out.println(">>>>>>>> Adder <<<<<<<<");
-		ui.run("verify -echo -inputB=8 " + civlDir
+		ui.run("verify -inputB=15 " + civlDir
 				+ "/examples/concurrency/adder.cvl");
 	}
 

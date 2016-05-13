@@ -821,7 +821,7 @@ public class ModelTranslator {
 			Preprocessor preprocessor = frontEnd.getPreprocessor(language);
 			CivlcTokenSource tokens = preprocessor
 					.outputTokenSource(systemIncludes, userIncludes, macroMaps,
-							new File(filename));
+							file);
 
 			tokenSources.add(new Pair<>(language, tokens));
 			if (config.showPreproc() || config.debugOrVerbose()) {

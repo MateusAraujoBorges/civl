@@ -503,15 +503,23 @@ public class AmpleSetWorker {
 					Evaluation eval = null;
 
 					for (int i = 1; i < parameterScope.numVariables(); i++) {
-						try {
-							eval = this.enabler.evaluator.evaluate(state, pid,
-									call.arguments().get(i - 1));
-						} catch (UnsatisfiablePathConditionException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+						Expression argument = call.arguments().get(i - 1);
+
+						if (!argument.getExpressionType().isPointerType())
+							argumentValues[i] = universe.nullExpression();
+						else {
+							try {
+
+								eval = this.enabler.evaluator
+										.evaluate(state, pid, call.arguments()
+												.get(i - 1), false);
+							} catch (UnsatisfiablePathConditionException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							argumentValues[i] = eval.value;
+							state = eval.state;
 						}
-						argumentValues[i] = eval.value;
-						state = eval.state;
 					}
 					ampleSubSet = ampleSetByContract(new Pair<>(parameterScope,
 							argumentValues), ampleProcessIDs, pid,
@@ -777,6 +785,7 @@ public class AmpleSetWorker {
 				for (CallOrSpawnStatement call : systemCalls1) {
 					SystemFunction systemFunction = (SystemFunction) call
 							.function();
+					
 					if ((systemFunction.name().name().equals("$wait") || systemFunction
 							.name().name().equals("$waitall"))
 							&& systemFunction.getLibrary().equals("civlc")) {

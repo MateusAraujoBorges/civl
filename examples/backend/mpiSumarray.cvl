@@ -24,56 +24,51 @@ int $int_div(int numerator, int denominator)
 typedef struct $proc $proc;
 typedef struct $scope $scope;
 /*@ depends_on \nothing;
-  @ executes_when $true;
   @*/
 $system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
   @*/
 $system[civlc] void $assume(_Bool expr);
+/*@ pure;
+  @ depends_on \nothing;
+  @*/
+$system[civlc] void $elaborate(int x);
 /*@ depends_on \nothing;
-  @ executes_when $true;
   @*/
 $system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
   @*/
 $system[civlc] void $assume(_Bool expr);
+/*@ pure;
+  @ depends_on \nothing;
+  @*/
+$system[civlc] void $elaborate(int x);
 //========================= stdio.h ========================
 $system[stdio] int printf(char* restrict format, ...);
 //======================== civlc.cvh =======================
 /*@ depends_on \nothing;
-  @ executes_when $true;
   @*/
 $system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
   @*/
 $system[civlc] void $assume(_Bool expr);
+/*@ pure;
+  @ depends_on \nothing;
+  @*/
+$system[civlc] void $elaborate(int x);
 //======================= bundle.cvh =======================
 typedef struct $bundle $bundle;
 /*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
   @*/
 $system[bundle] $bundle $bundle_pack(void* ptr, int size);
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @ assigns ptr;
-  @ reads \nothing;
-  @*/
 $system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
 //===================== concurrency.cvh ====================
 typedef struct $gbarrier* $gbarrier;
 typedef struct $barrier* $barrier;
-/*@ depends_on \nothing;
+/*@ requires size >= 0;
+  @ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
   @*/
 $system[concurrency] $gbarrier $gbarrier_create($scope scope, int size);
 /*@ depends_on \nothing;
@@ -81,6 +76,7 @@ $system[concurrency] $gbarrier $gbarrier_create($scope scope, int size);
   @*/
 $system[concurrency] void $gbarrier_destroy($gbarrier barrier);
 /*@ depends_on \nothing;
+  @ assigns \nothing;
   @ executes_when $true;
   @*/
 $system[concurrency] $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
@@ -221,7 +217,6 @@ $atomic_f int $message_dest($message message);
 $atomic_f int $message_size($message message);
 /*@ depends_on \write(buf);
   @ executes_when $true;
-  @ assigns buf;
   @*/
 $atomic_f void $message_unpack($message message, void* buf, int size);
 /*@ depends_on \nothing;
@@ -266,38 +261,18 @@ typedef enum _mpi_sys_status_{
 typedef struct MPI_Comm MPI_Comm;
 typedef struct MPI_Status MPI_Status;
 typedef struct $mpi_gcomm $mpi_gcomm;
-/*@ pure;
-  @ depends_on \nothing;
-  @*/
-$atomic_f int sizeofDatatype(MPI_Datatype);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
-$system[civl-mpi] void $mpi_set_status($mpi_sys_status newStatus);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civl-mpi] $mpi_sys_status $mpi_get_status(void);
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
-$atomic_f $mpi_gcomm $mpi_gcomm_create($scope, int);
-/*@ depends_on \nothing;
-  @ assigns gc;
-  @ reads \nothing;
-  @*/
-$atomic_f void $mpi_gcomm_destroy($mpi_gcomm gc);
+int sizeofDatatype(MPI_Datatype);
+$system[mpi] void $mpi_set_status($mpi_sys_status newStatus);
+$system[mpi] $mpi_sys_status $mpi_get_status(void);
+$mpi_gcomm $mpi_gcomm_create($scope, int);
+void $mpi_gcomm_destroy($mpi_gcomm);
 MPI_Comm $mpi_comm_create($scope, $mpi_gcomm, int);
 void $mpi_comm_destroy(MPI_Comm);
 int $mpi_init(void);
 int $mpi_finalize(void);
 int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system[civl-mpi] void $mpi_assertConsistentType(void* buf, MPI_Datatype datatype);
+$system[mpi] void $mpi_assertConsistentType(void* buf, MPI_Datatype datatype);
 //========================= mpi.cvl ========================
 struct MPI_Comm{
     $comm p2p;
@@ -351,30 +326,25 @@ int MPI_Get_count(MPI_Status* status, MPI_Datatype datatype, int* count)
 }
 //======================== civlc.cvh =======================
 /*@ depends_on \nothing;
-  @ executes_when $true;
   @*/
 $system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
   @*/
 $system[civlc] void $assume(_Bool expr);
-//======================= bundle.cvh =======================
 /*@ pure;
   @ depends_on \nothing;
-  @ executes_when $true;
+  @*/
+$system[civlc] void $elaborate(int x);
+//======================= bundle.cvh =======================
+/*@ pure;
   @*/
 $system[bundle] $bundle $bundle_pack(void* ptr, int size);
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @ assigns ptr;
-  @ reads \nothing;
-  @*/
 $system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
 //===================== concurrency.cvh ====================
-/*@ depends_on \nothing;
+/*@ requires size >= 0;
+  @ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
   @*/
 $system[concurrency] $gbarrier $gbarrier_create($scope scope, int size);
 /*@ depends_on \nothing;
@@ -382,6 +352,7 @@ $system[concurrency] $gbarrier $gbarrier_create($scope scope, int size);
   @*/
 $system[concurrency] void $gbarrier_destroy($gbarrier barrier);
 /*@ depends_on \nothing;
+  @ assigns \nothing;
   @ executes_when $true;
   @*/
 $system[concurrency] $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
@@ -406,8 +377,6 @@ $system[concurrency] $collect_checker $collect_checker_create($scope scope, $gco
   @*/
 $system[concurrency] void $collect_checker_destroy($collect_checker checker);
 //========================= seq.cvh ========================
-/*@ depends_on \nothing;
-  @*/
 $system[seq] void $seq_init(void* array, int count, void* value);
 //===================== concurrency.cvl ====================
 struct $gbarrier{
@@ -434,30 +403,25 @@ struct $collect_checker{
 };
 //======================== civlc.cvh =======================
 /*@ depends_on \nothing;
-  @ executes_when $true;
   @*/
 $system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
   @*/
 $system[civlc] void $assume(_Bool expr);
-//======================= bundle.cvh =======================
 /*@ pure;
   @ depends_on \nothing;
-  @ executes_when $true;
+  @*/
+$system[civlc] void $elaborate(int x);
+//======================= bundle.cvh =======================
+/*@ pure;
   @*/
 $system[bundle] $bundle $bundle_pack(void* ptr, int size);
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @ assigns ptr;
-  @ reads \nothing;
-  @*/
 $system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
 //===================== concurrency.cvh ====================
-/*@ depends_on \nothing;
+/*@ requires size >= 0;
+  @ depends_on \nothing;
   @ executes_when $true;
+  @ assigns \nothing;
   @*/
 $system[concurrency] $gbarrier $gbarrier_create($scope scope, int size);
 /*@ depends_on \nothing;
@@ -465,6 +429,7 @@ $system[concurrency] $gbarrier $gbarrier_create($scope scope, int size);
   @*/
 $system[concurrency] void $gbarrier_destroy($gbarrier barrier);
 /*@ depends_on \nothing;
+  @ assigns \nothing;
   @ executes_when $true;
   @*/
 $system[concurrency] $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
@@ -516,7 +481,6 @@ $atomic_f int $message_dest($message message);
 $atomic_f int $message_size($message message);
 /*@ depends_on \write(buf);
   @ executes_when $true;
-  @ assigns buf;
   @*/
 $atomic_f void $message_unpack($message message, void* buf, int size);
 /*@ depends_on \nothing;
@@ -559,41 +523,19 @@ int MPI_Get_count(MPI_Status*, MPI_Datatype, int*);
 int MPI_Comm_size(MPI_Comm, int*);
 int MPI_Comm_rank(MPI_Comm, int*);
 //====================== civl-mpi.cvh ======================
-/*@ pure;
-  @ depends_on \nothing;
-  @*/
-$atomic_f int sizeofDatatype(MPI_Datatype);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
-$system[civl-mpi] void $mpi_set_status($mpi_sys_status newStatus);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civl-mpi] $mpi_sys_status $mpi_get_status(void);
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
-$atomic_f $mpi_gcomm $mpi_gcomm_create($scope, int);
-/*@ depends_on \nothing;
-  @ assigns gc;
-  @ reads \nothing;
-  @*/
-$atomic_f void $mpi_gcomm_destroy($mpi_gcomm gc);
+int sizeofDatatype(MPI_Datatype);
+$system[mpi] void $mpi_set_status($mpi_sys_status newStatus);
+$system[mpi] $mpi_sys_status $mpi_get_status(void);
+$mpi_gcomm $mpi_gcomm_create($scope, int);
+void $mpi_gcomm_destroy($mpi_gcomm);
 MPI_Comm $mpi_comm_create($scope, $mpi_gcomm, int);
 void $mpi_comm_destroy(MPI_Comm);
 int $mpi_init(void);
 int $mpi_finalize(void);
 int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system[civl-mpi] void $mpi_assertConsistentType(void* buf, MPI_Datatype datatype);
+$system[mpi] void $mpi_assertConsistentType(void* buf, MPI_Datatype datatype);
 //========================= seq.cvh ========================
-/*@ depends_on \nothing;
-  @*/
 $system[seq] void $seq_init(void* array, int count, void* value);
 //====================== civl-mpi.cvl ======================
 char* getCoroutineName(int tag);
@@ -731,6 +673,7 @@ int $mpi_recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, 
   {
     $message in;
     int place = $comm_place(comm.p2p);
+    $elaborate(source);
     in = $comm_dequeue(comm.p2p, source, tag);
     int $sef$4 = sizeofDatatype(datatype);
     int size = count * $sef$4;
@@ -785,26 +728,19 @@ char* getCoroutineName(int tag)
 }
 //======================== civlc.cvh =======================
 /*@ depends_on \nothing;
-  @ executes_when $true;
   @*/
 $system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
   @*/
 $system[civlc] void $assume(_Bool expr);
-//======================= bundle.cvh =======================
 /*@ pure;
   @ depends_on \nothing;
-  @ executes_when $true;
+  @*/
+$system[civlc] void $elaborate(int x);
+//======================= bundle.cvh =======================
+/*@ pure;
   @*/
 $system[bundle] $bundle $bundle_pack(void* ptr, int size);
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @ assigns ptr;
-  @ reads \nothing;
-  @*/
 $system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
 //======================== comm.cvh ========================
 /*@ pure;
@@ -834,7 +770,6 @@ $atomic_f int $message_dest($message message);
 $atomic_f int $message_size($message message);
 /*@ depends_on \write(buf);
   @ executes_when $true;
-  @ assigns buf;
   @*/
 $atomic_f void $message_unpack($message message, void* buf, int size);
 /*@ depends_on \nothing;
@@ -916,62 +851,49 @@ void $message_unpack($message message, void* buf, int size)
   $bundle_unpack(message.data, buf);
   $assert(message.size <= size, "Message of size %d exceeds the specified size %d.", message.size, size);
 }
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $comm_place($comm comm)
+int $comm_place($comm comm)
 {
   return (comm)->place;
 }
 //======================== civlc.cvh =======================
 /*@ depends_on \nothing;
-  @ executes_when $true;
   @*/
 $system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
   @*/
 $system[civlc] void $assume(_Bool expr);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
-$system[civlc] void $assume(_Bool expr);
-//======================= bundle.cvh =======================
 /*@ pure;
   @ depends_on \nothing;
-  @ executes_when $true;
   @*/
-$system[bundle] $bundle $bundle_pack(void* ptr, int size);
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @ assigns ptr;
-  @ reads \nothing;
-  @*/
-$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
-//========================= seq.cvh ========================
+$system[civlc] void $elaborate(int x);
 /*@ depends_on \nothing;
   @*/
+$system[civlc] void $assert(_Bool expr, ...);
+/*@ depends_on \nothing;
+  @*/
+$system[civlc] void $assume(_Bool expr);
+/*@ pure;
+  @ depends_on \nothing;
+  @*/
+$system[civlc] void $elaborate(int x);
+//======================= bundle.cvh =======================
+/*@ pure;
+  @*/
+$system[bundle] $bundle $bundle_pack(void* ptr, int size);
+$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
+//========================= seq.cvh ========================
 $system[seq] void $seq_init(void* array, int count, void* value);
 //======================== civlc.cvh =======================
 /*@ depends_on \nothing;
-  @ executes_when $true;
   @*/
 $system[civlc] void $assert(_Bool expr, ...);
 /*@ depends_on \nothing;
-  @ executes_when $true;
-  @ assigns \nothing;
-  @ reads \nothing;
   @*/
 $system[civlc] void $assume(_Bool expr);
+/*@ pure;
+  @ depends_on \nothing;
+  @*/
+$system[civlc] void $elaborate(int x);
 //========================= stdio.h ========================
 $system[stdio] int printf(char* restrict format, ...);
 //========================== mpi.h =========================
@@ -1088,4 +1010,3 @@ int main()
     _mpi_process(i);
   $mpi_gcomm_destroy(_mpi_gcomm);
 }
-

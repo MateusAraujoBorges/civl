@@ -331,7 +331,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void pointerAdd2() throws ABCException {
-		assertTrue(ui.run(VERIFY, QUIET, filename("pointerAdd2.cvl")));
+		assertTrue(ui.run(VERIFY, filename("pointerAdd2.cvl")));
 	}
 
 	@Test
@@ -453,7 +453,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void functionPointer() throws ABCException {
-		assertTrue(ui.run(VERIFY, NO_PRINTF, QUIET,
+		assertTrue(ui.run(VERIFY, NO_PRINTF, "-showModel",
 				filename("functionPointer.cvl")));
 	}
 

@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -35,9 +36,13 @@ public class SvcompBigTest {
 	// reorder_2_false-unreach-call.i
 	@Test
 	public void reorder_2_false() throws ABCException {
-		assertFalse(ui
-				.run("verify", "-svcomp16 -showProgram=false",
-						TestConstants.QUIET,
-						filename("reorder_2_false-unreach-call.i")));
+		assertFalse(ui.run("verify", "-svcomp16", TestConstants.QUIET,
+				filename("reorder_2_false-unreach-call.i")));
+	}
+
+	@Test
+	public void stack_true() throws ABCException {
+		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
+				filename("stack_true-unreach-call.i")));
 	}
 }

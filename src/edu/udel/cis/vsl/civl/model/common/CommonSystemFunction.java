@@ -22,6 +22,7 @@ public class CommonSystemFunction extends CommonFunction implements
 		SystemFunction {
 
 	private String library = null;
+	private boolean needsEnabler = false;
 
 	/**
 	 * @param name
@@ -34,11 +35,13 @@ public class CommonSystemFunction extends CommonFunction implements
 	public CommonSystemFunction(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
 			CIVLType returnType, Scope containingScope, int fid,
-			Location startLocation, String libraryName, ModelFactory factory) {
+			Location startLocation, String libraryName, boolean needsEnabler,
+			ModelFactory factory) {
 		super(source, true, name, parameterScope, parameters, returnType,
 				containingScope, fid, startLocation, factory);
 		this.isRoot = true;
 		this.library = libraryName;
+		this.needsEnabler = needsEnabler;
 	}
 
 	/*
@@ -76,5 +79,10 @@ public class CommonSystemFunction extends CommonFunction implements
 	@Override
 	public boolean isNormalFunction() {
 		return false;
+	}
+
+	@Override
+	public boolean needsEnabler() {
+		return this.needsEnabler;
 	}
 }

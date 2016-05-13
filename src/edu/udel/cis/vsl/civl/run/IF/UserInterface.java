@@ -574,6 +574,7 @@ public class UserInterface {
 	 */
 	private boolean runMain(String[] args) throws CommandLineException {
 		boolean quiet = false;
+		
 		quiet = isQuiet(args);
 		if (!quiet) {
 			out.println("CIVL v" + version + " of " + date

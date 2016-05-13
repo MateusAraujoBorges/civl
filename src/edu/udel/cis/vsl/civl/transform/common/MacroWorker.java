@@ -70,12 +70,7 @@ public class MacroWorker extends BaseWorker {
 		Formation formation;
 
 		if (sourceFile.endsWith(".h") || sourceFile.endsWith(".cvh")
-				|| sourceFile.equals("civl-omp.cvl")
-				|| sourceFile.equals("mpi.cvl")
-				|| sourceFile.equals("pthread-c.cvl")
-				|| sourceFile.equals("pthread.cvl")
-				|| sourceFile.equals("stdio-c.cvl")
-				|| sourceFile.equals("stdio.cvl"))
+				|| sourceFile.endsWith(".cvl"))
 			return;
 		formation = node.getSource().getFirstToken().getFormation();
 		if (formation instanceof MacroExpansion) {

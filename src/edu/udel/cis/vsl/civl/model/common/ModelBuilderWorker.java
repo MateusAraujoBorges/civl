@@ -39,6 +39,7 @@ import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.contract.CallEvent;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -641,6 +642,14 @@ public class ModelBuilderWorker {
 
 	private void calculateConstantValue() {
 		for (CIVLFunction f : model.functions()) {
+			FunctionContract contract = f.functionContract();
+
+			if (contract != null) {
+				Expression guard = contract.guard();
+
+				if (guard != null)
+					guard.calculateConstantValue(universe);
+			}
 			for (Statement statement : f.statements()) {
 				statement.calculateConstantValue(this.universe);
 			}

@@ -46,12 +46,6 @@ public class CommonLibraryEnablerLoader implements LibraryEnablerLoader {
 			SymbolicAnalyzer symbolicAnalyzer) throws LibraryLoaderException {
 		LibraryEnabler result;
 
-		if (name.equals("assert"))
-			name = "asserts";
-		if (name.equals("civl-mpi"))
-			name = "mpi";
-		if (name.equals("civl-pthread"))
-			name = "pthread";
 		result = libraryEnablerCache.get(name);
 		if (result == null) {
 			String aClassName = this.className(name, "Enabler");
@@ -68,6 +62,7 @@ public class CommonLibraryEnablerLoader implements LibraryEnablerLoader {
 								LibraryEnablerLoader.class,
 								LibraryEvaluatorLoader.class);
 
+				// System.out.println("library " + name);
 				result = constructor.newInstance(name, primaryEnabler,
 						evaluator, modelFacotry, symbolicUtil,
 						symbolicAnalyzer, this.civlConfig, this,

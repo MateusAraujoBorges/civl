@@ -13,13 +13,22 @@ public interface SystemFunction extends CIVLFunction {
 	 * 
 	 * @return The name of the library containing this system function.
 	 */
-	public String getLibrary();
+	String getLibrary();
 
 	/**
 	 * 
 	 * @param libraryName
 	 *            The name of the library containing this system function.
 	 */
-	public void setLibrary(String libraryName);
+	void setLibrary(String libraryName);
+
+	/**
+	 * returns true iff this system function needs special handling from the
+	 * library enabler.
+	 * 
+	 * @return true iff this system function needs special handling from the
+	 *         library enabler.
+	 */
+	boolean needsEnabler();
 
 }

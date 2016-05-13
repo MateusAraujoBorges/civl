@@ -32,6 +32,7 @@ import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
@@ -1325,7 +1326,7 @@ public class CommonExecutor implements Executor {
 	 */
 	protected State assign(CIVLSource source, State state, String process,
 			SymbolicExpression pointer, SymbolicExpression value,
-			boolean isInitialization)
+			boolean isInitialization, boolean toCheckPointer)
 			throws UnsatisfiablePathConditionException {
 		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer
 				.isDerefablePointer(state, pointer);
@@ -1414,24 +1415,36 @@ public class CommonExecutor implements Executor {
 			LHSExpression lhs, SymbolicExpression value,
 			boolean isInitialization)
 			throws UnsatisfiablePathConditionException {
-		Evaluation eval = evaluator.reference(state, pid, lhs);
+		LHSExpressionKind kind = lhs.lhsExpressionKind();
 
-		if (lhs instanceof DotExpression) {
-			DotExpression dot = (DotExpression) lhs;
+		if (kind == LHSExpressionKind.VARIABLE)
+			return this.stateFactory.setVariable(state,
+					((VariableExpression) lhs).variable(), pid, value);
+		else {
+			Evaluation eval = evaluator.reference(state, pid, lhs);
+			boolean toCheckPointer = kind == LHSExpressionKind.DEREFERENCE;
 
-			if (dot.isUnion()) {
-				int memberIndex = dot.fieldIndex();
+			if (lhs instanceof DotExpression) {
+				DotExpression dot = (DotExpression) lhs;
 
-				value = evaluator.universe().unionInject(
-						(SymbolicUnionType) (dot.structOrUnion()
-								.getExpressionType().getDynamicType(evaluator
-								.universe())),
-						evaluator.universe().intObject(memberIndex), value);
+				if (dot.isUnion()) {
+					int memberIndex = dot.fieldIndex();
+
+					value = evaluator
+							.universe()
+							.unionInject(
+									(SymbolicUnionType) (dot.structOrUnion()
+											.getExpressionType()
+											.getDynamicType(evaluator
+													.universe())),
+									evaluator.universe().intObject(memberIndex),
+									value);
+				}
 			}
+			// TODO check if lhs is constant or input value
+			return assign(lhs.getSource(), eval.state, process, eval.value,
+					value, isInitialization, toCheckPointer);
 		}
-		// TODO check if lhs is constant or input value
-		return assign(lhs.getSource(), eval.state, process, eval.value, value,
-				isInitialization);
 	}
 
 	/* *********************** Methods from Executor *********************** */
@@ -1440,7 +1453,7 @@ public class CommonExecutor implements Executor {
 	public State assign(CIVLSource source, State state, String process,
 			SymbolicExpression pointer, SymbolicExpression value)
 			throws UnsatisfiablePathConditionException {
-		return this.assign(source, state, process, pointer, value, false);
+		return this.assign(source, state, process, pointer, value, false, true);
 	}
 
 	@Override

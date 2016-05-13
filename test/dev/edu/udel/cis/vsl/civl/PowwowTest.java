@@ -1,7 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -22,8 +22,8 @@ public class PowwowTest {
 	}
 
 	@Test
-	public void assert1() {
-		assertFalse(ui.run(VERIFY, filename("assertFalse.c")));
+	public void loopAssert() {
+		assertTrue(ui.run(VERIFY, filename("loopAssert.c")));
 	}
 
 	@AfterClass

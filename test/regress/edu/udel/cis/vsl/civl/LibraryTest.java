@@ -162,7 +162,7 @@ public class LibraryTest {
 	}
 
 	@Test
-	public void contains() throws ABCException {
+	public void h() throws ABCException {
 		assertTrue(ui.run("verify", QUIET, filename(CIVLC, "contains.cvl")));
 	}
 
@@ -205,7 +205,8 @@ public class LibraryTest {
 
 	@Test
 	public void random() throws ABCException {
-		assertFalse(ui.run("verify", QUIET, filename(STDLIB, "random.cvl")));
+		assertFalse(ui.run("verify -showStates -showTransitions",
+				filename(STDLIB, "random.cvl")));
 	}
 
 	@Test
@@ -305,7 +306,7 @@ public class LibraryTest {
 
 	@Test
 	public void havoc() throws ABCException {
-		assertTrue(ui.run("verify", NO_PRINTF, QUIET,
+		assertTrue(ui.run("verify", NO_PRINTF, "-showSavedStates",
 				filename(CIVLC, "havoc.cvl")));
 	}
 
