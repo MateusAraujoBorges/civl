@@ -39,7 +39,8 @@ public class SideEffectsTest {
 	
 	@Test
 	public void strictInitTest() throws ABCException {
-		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("structInitSideEffect.c")));
+		assertTrue(ui.run("verify ", TestConstants.QUIET, 
+				"-showProgram", filename("structInitSideEffect.c")));
 	}
 
 	@AfterClass
