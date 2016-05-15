@@ -20,11 +20,11 @@
 $input int _mpi_nprocs_hi=3;  
 $input int _mpi_nprocs_lo=1;   
 $input int ROWB = 3;                      // upper bound of numRow
-$input int numRow;                        // number of rows in the matrix
+$input int numRow = 3;                        // number of rows in the matrix
 $assume(0 < numRow && numRow <= ROWB);
 $input int COLB = 4;                      // upper bound of numCol
-$input int numCol;                        // number of columns in the matrix
-$assume(0 < numCol && numCol <= COLB && numCol > numRow);
+$input int numCol = 3;                        // number of columns in the matrix
+$assume(0 < numCol && numCol <= COLB && numCol >= numRow);
 $input long double data[numRow][numCol];  // input matrix
 long double oracle[numRow][numCol];       // results of sequential run
 #else
@@ -42,6 +42,12 @@ int *loc;
 /* a Current Row Location -> Global Row Index table maps current
    locations of current matrix to their original row indices */
 int *idx;
+
+$assume(0==((data[1][1]*data[0][0] - 1*data[1][0]*data[0][1])*(data[2][2]*data[0][0] - 1*data[2][0]*data[0][2])
+	    - 1*(data[1][2]*data[0][0] - 1*data[1][0]*data[0][2])*(data[2][1]*data[0][0] - 1*data[2][0]*data[0][1])));
+$assume(0!=((data[1][1]*data[0][0])+(-1*(data[1][0]*data[0][1]))));
+$assume(data[0][0] != 0);
+
 
 /* Book keeping functions */
 /* Return the owner of the row given by the global index of it in
@@ -108,6 +114,75 @@ void printSystem(long double * a) {
   }
 }
 
+void debugSystem(long double * a) {
+  long double recvbuf[numCol];
+  
+  // Every process follows the order of locations of rows to send their
+  // rows to process with rank 0
+  for(int i=0; i<numRow; i++)
+    if(OWNER(idx[i]) == rank && rank != 0) 
+      MPI_Send(&a[(idx[i]-first)*numCol], numCol, MPI_LONG_DOUBLE, 0, i, MPI_COMM_WORLD);
+  
+  if(rank == 0) {
+    for(int i=0; i<numRow; i++) {
+      if(OWNER(idx[i]) != 0) {
+	MPI_Recv(recvbuf, numCol, MPI_LONG_DOUBLE, MPI_ANY_SOURCE, i, 
+		 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	printRow(recvbuf);
+      }
+      else {
+	printRow(&a[(idx[i]-first)*numCol]);
+      }
+    }
+  }
+}
+
+void specEliminationDebug(long double *a) {
+  long double denom;
+
+  for(int i = 0; i < numRow; i++) {
+    int leadCol = numCol;
+    int rowOfLeadCol = i;
+
+    for (int j=i; j < numCol; j++) {
+      for (int k=i; k < numRow; k++) {
+	if (a[k*numCol + j] != 0.0) {
+	  leadCol = j;
+	  rowOfLeadCol = k;
+	  break;
+	}
+      }
+      if (leadCol < numCol)
+	break;
+    }
+    if (leadCol == numCol) return;
+
+    denom = a[rowOfLeadCol * numCol + leadCol];
+    if (denom != 0.0) {
+      for (int j = leadCol; j < numCol; j++) {
+	long double tmp = a[rowOfLeadCol * numCol + j] / denom;
+
+	a[rowOfLeadCol * numCol + j] = tmp;
+      }
+    }
+    if (rowOfLeadCol != i) {
+      long double tmp[numCol];
+      
+      memcpy(tmp, &a[i * numCol], numCol * sizeof(long double));
+      memcpy(&a[i * numCol], &a[rowOfLeadCol * numCol], 
+	     numCol * sizeof(long double));      
+      memcpy(&a[rowOfLeadCol * numCol], tmp, 
+	     numCol * sizeof(long double));
+    }
+    for (int j = i+1; j < numRow; j++) {
+      long double factor = -a[j * numCol + leadCol];
+      
+      for (int k = leadCol; k < numCol; k++)
+	a[j * numCol + k] += factor * a[i * numCol + k];
+    }
+  }
+}
+
 void specElimination(long double *a, int * rowLoc) {
   long double denom;      // a temporary variable will be used to
                           //divide other variables
@@ -158,7 +233,7 @@ void specElimination(long double *a, int * rowLoc) {
     /* step 3: Add a suitable value to each row below row i so that they have zero at column i */
     for(int j=i+1; j < numRow; j++) {
       long double factor = -a[rowLoc[j]*numCol + leadCol];
-
+      
       for(int k=leadCol; k < numCol; k++)
 	a[rowLoc[j]*numCol + k] += factor * a[rowLoc[i]*numCol + k];
     }
@@ -224,7 +299,7 @@ void initialization(int argc, char * argv[],
       memcpy(&spec[i*numCol], &data[i][0], numCol * sizeof(long double));
     }
     specElimination(spec, rowLoc);
-    specReduce(spec, rowLoc);
+    //specReduce(spec, rowLoc);
     for(int i=0; i<numRow; i++){
       for(int j=0; j<numCol; j++)
 	oracle[i][j] = spec[rowLoc[i]*numCol + j];
@@ -298,7 +373,7 @@ void gaussianElimination(long double *a) {
 
       for(k = first; k < first + localRow; k++) {
         // only look at unprocessed rows
-        if(loc[k] >= i && loc[k] <= minLoc) {
+        if(loc[k] >= i  && loc[k] <= minLoc) {
           if(a[(k-first)*numCol+j] != 0.0) {
             leadCol = j;
             rowOfLeadCol = k; 
@@ -316,9 +391,11 @@ void gaussianElimination(long double *a) {
     MPI_Allreduce(sendbuf, recvbuf, 1, MPI_2INT, MPI_MINLOC, MPI_COMM_WORLD);
     leadCol = recvbuf[0];
     rowOfLeadCol = idx[recvbuf[1]];
+    //printf("rowOfLeadCol=%d, recvbuf[1]=%d\n", rowOfLeadCol, recvbuf[1]);
     /* Now the row containing next leading 1 is decided, findout the
        owner of it. */
     rowOfLeadColOwner = OWNER(rowOfLeadCol);
+    //  printf("rank = %d, rowOfLeadCol = %d\n", rank, rowOfLeadCol);
     /* if leadCol is still initial value, it means there is no avaliable 
        column suitable for next leading 1. */
     if(leadCol == numCol)
@@ -343,7 +420,7 @@ void gaussianElimination(long double *a) {
     for(int j=0; j < localRow; j++) {
       if(loc[j+first] > i){
         long double factor = -a[j*numCol + leadCol];
-
+	
         for(int k=leadCol; k < numCol; k++) {
           a[j*numCol + k] += factor * top[k];
         }
@@ -381,12 +458,12 @@ void backwardReduce(long double *a) {
 	if(loc[j] < i){
 	  long double factor = -a[(j-first)*numCol + leadCol];
 
-	  for(int k=leadCol; k<numCol; k++)
+	  for(int k=leadCol; k<numCol; k++) 
 	    a[(j-first)*numCol + k] += factor*top[k-i];
 	}
       }
     }
-  }
+  } 
 }
 
 int main(int argc, char *argv[]) {
@@ -414,7 +491,7 @@ int main(int argc, char *argv[]) {
   idx = (int*)malloc(numRow*sizeof(int));
   initialization(argc, argv, a, loc, idx);
   gaussianElimination(a);
-  backwardReduce(a);
+  //  backwardReduce(a);
   if(!rank)printf("After backward reduction, the matrix in reduced row echelon form is:\n");
   printSystem(a);
   MPI_Finalize();

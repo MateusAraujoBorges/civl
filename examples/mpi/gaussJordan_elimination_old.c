@@ -283,7 +283,7 @@ void gaussianElimination(long double *a) {
      */
     int leadCol = numCol; 
     /* the global index of the row the next leading 1 will be in */
-    int rowOfLeadCol = numRow - 1;
+    int rowOfLeadCol = -1;
     int rowOfLeadColOwner;    // the owner of rowOfLeadCol
     /* message buffer: [0]:leadCol ;[1]:rowOfLeadCol */
     int sendbuf[2];
@@ -294,15 +294,15 @@ void gaussianElimination(long double *a) {
 
     //step 1: find out the local leftmost nonzero column
     for(int j=i; j < numCol; j++) {
-      int k, minLoc = numRow - 1;
+      int k;
 
       for(k = first; k < first + localRow; k++) {
         // only look at unprocessed rows
-        if(loc[k] >= i && loc[k] <= minLoc) {
+        if(loc[k] >= i) {
           if(a[(k-first)*numCol+j] != 0.0) {
             leadCol = j;
             rowOfLeadCol = k; 
-	    minLoc = loc[k];
+            break;
           }
         }
       }
@@ -310,12 +310,12 @@ void gaussianElimination(long double *a) {
         break;
     }
     sendbuf[0] = leadCol;
-    sendbuf[1] = loc[rowOfLeadCol];
+    sendbuf[1] = rowOfLeadCol;
     /* All reduce the smallest column(left-most) of leading 1 to every
        process */
     MPI_Allreduce(sendbuf, recvbuf, 1, MPI_2INT, MPI_MINLOC, MPI_COMM_WORLD);
     leadCol = recvbuf[0];
-    rowOfLeadCol = idx[recvbuf[1]];
+    rowOfLeadCol = recvbuf[1];
     /* Now the row containing next leading 1 is decided, findout the
        owner of it. */
     rowOfLeadColOwner = OWNER(rowOfLeadCol);
@@ -400,9 +400,9 @@ int main(int argc, char *argv[]) {
 #else
   $elaborate(numRow);
   $elaborate(numCol);
-  //  for(int i = 0; i < numRow; i++)
-  //  for(int j = 0; j < numCol; j++)
-  //    $assume(data[i][j] != 0);
+  for(int i = 0; i < numRow; i++)
+    for(int j = 0; j < numCol; j++)
+      $assume(data[i][j] != 0);
 #endif
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
