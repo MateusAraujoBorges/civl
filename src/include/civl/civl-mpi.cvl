@@ -144,11 +144,18 @@ void $mpi_comm_destroy(MPI_Comm comm) {
 }
 
 int $mpi_init(void) {
+  $mpi_sys_status curr_status = $mpi_get_status();
+
+  $assert(curr_status == __UNINIT, "Process can only call MPI_Init() at most once.");
   $mpi_set_status(__INIT);
   return 0;
 }
 
 int $mpi_finalize(void) {
+  $mpi_sys_status curr_status = $mpi_get_status();
+
+  $assert(curr_status == __INIT, "Process can only call MPI_Finalize() after the "
+	  "MPI enviroment is created and before cleaned.");
   $mpi_set_status(__FINALIZED);
   return 0;
 }
