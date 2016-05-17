@@ -14,6 +14,8 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
+import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonContractNode;
+import edu.udel.cis.vsl.abc.ast.node.common.expression.CommonQuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.IntegerType;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -37,6 +39,12 @@ import edu.udel.cis.vsl.civl.transform.IF.IntDivisionTransformer;
  */
 public class IntDivWorker extends BaseWorker {
 
+	/**
+	 * division (\) and modulo (%) with quantified expression will not be
+	 * influenced by this transformer.
+	 */
+	private boolean quantified = false;
+
 	/* *******************static constants************************ */
 	// TODO add java doc for every constant field
 	private static final String INT_DIV = "$int_div";
@@ -52,25 +60,12 @@ public class IntDivWorker extends BaseWorker {
 	public AST transform(AST unit) throws SyntaxException {
 		SequenceNode<BlockItemNode> root = unit.getRootNode();
 		AST newAst;
-		
+
 		OrdinaryEntity divEntity = unit.getInternalOrExternalEntity(INT_DIV);
 		OrdinaryEntity modEntity = unit.getInternalOrExternalEntity(INT_MOD);
-		if(divEntity != null || modEntity != null){
+		if (divEntity != null || modEntity != null) {
 			return unit;
 		}
-		
-//		for (BlockItemNode child : root) {
-//			if (child instanceof FunctionDefinitionNode) {
-//				String funcName = ((FunctionDefinitionNode) child).getName();
-//
-//				// if the ast already contains $int_div or $int_mod definition,
-//				// then no transformation is needed, because $int_div and
-//				// $int_mod are invisible to users. If they are present, then
-//				// this ast is the result of all CIVL-C transformation.
-//				if (funcName.equals(INT_MOD) || funcName.equals(INT_DIV))
-//					return unit;
-//			}
-//		}
 		unit.release();
 		linkIntDivLibrary(root);
 		processDivisionAndModulo(root);
@@ -97,8 +92,7 @@ public class IntDivWorker extends BaseWorker {
 	private void processDivisionAndModulo(ASTNode node) {
 		if (node instanceof FunctionDeclarationNode) {
 			// the integer division ('/') and integer modulo ('%') in $int_div
-			// and $int_mod
-			// functions should not be replaced.
+			// and $int_mod functions should not be replaced.
 			FunctionDeclarationNode funcDeclNode = (FunctionDeclarationNode) node;
 			String name = funcDeclNode.getName();
 
@@ -106,13 +100,14 @@ public class IntDivWorker extends BaseWorker {
 				return;
 		}
 		if (node instanceof OperatorNode && (((OperatorNode) node).getOperator() == Operator.DIV
-				|| ((OperatorNode) node).getOperator() == Operator.MOD)) {
+				|| ((OperatorNode) node).getOperator() == Operator.MOD)
+				&& quantified == false) {
 			OperatorNode opn = (OperatorNode) node;
 
 			if (opn.getNumberOfArguments() != 2) {
 				throw new CIVLSyntaxException("div or mod operator can only have two operands");
 			}
-			
+
 			ASTNode parent = opn.parent();
 			int childIndex = opn.childIndex();
 			Operator op = opn.getOperator();
@@ -130,21 +125,29 @@ public class IntDivWorker extends BaseWorker {
 				String method = op == Operator.DIV ? INT_DIV + "()" : INT_MOD + "()";
 				Source source = this.newSource(method, CivlcTokenConstant.CALL);
 				List<ExpressionNode> args = new ArrayList<ExpressionNode>();
-				
+
 				operand1.remove();
 				operand2.remove();
 				args.add(operand1);
 				args.add(operand2);
-				
+
 				FunctionCallNode funcCallNode = functionCall(source, funcName, args);
-				
+
 				funcCallNode.setInitialType(opn.getConvertedType());
 				parent.setChild(childIndex, funcCallNode);
 			}
 		} else {
 			for (ASTNode child : node.children()) {
-				if (child != null)
-					processDivisionAndModulo(child);
+				if (child != null){
+					if((child instanceof CommonQuantifiedExpressionNode
+							|| child instanceof CommonContractNode)
+							&& quantified == false){
+						quantified = true;
+						processDivisionAndModulo(child);
+						quantified = false;
+					}else
+						processDivisionAndModulo(child);
+				}
 			}
 		}
 	}
