@@ -100,8 +100,7 @@ public class IntDivWorker extends BaseWorker {
 				return;
 		}
 		if (node instanceof OperatorNode && (((OperatorNode) node).getOperator() == Operator.DIV
-				|| ((OperatorNode) node).getOperator() == Operator.MOD)
-				&& quantified == false) {
+				|| ((OperatorNode) node).getOperator() == Operator.MOD) && quantified == false) {
 			OperatorNode opn = (OperatorNode) node;
 
 			if (opn.getNumberOfArguments() != 2) {
@@ -138,14 +137,13 @@ public class IntDivWorker extends BaseWorker {
 			}
 		} else {
 			for (ASTNode child : node.children()) {
-				if (child != null){
-					if((child instanceof CommonQuantifiedExpressionNode
-							|| child instanceof CommonContractNode)
-							&& quantified == false){
+				if (child != null) {
+					if ((child instanceof CommonQuantifiedExpressionNode || child instanceof CommonContractNode)
+							&& quantified == false) {
 						quantified = true;
 						processDivisionAndModulo(child);
 						quantified = false;
-					}else
+					} else
 						processDivisionAndModulo(child);
 				}
 			}
