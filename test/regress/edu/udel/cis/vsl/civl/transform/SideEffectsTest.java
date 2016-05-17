@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.transform;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 
@@ -41,6 +42,12 @@ public class SideEffectsTest {
 	public void strictInitTest() throws ABCException {
 		assertTrue(ui.run("verify ", TestConstants.QUIET, 
 				"-showProgram", filename("structInitSideEffect.c")));
+	}
+	
+	@Test
+	public void quantifiedExpressionTest() throws ABCException {
+		assertFalse(ui.run("verify ", TestConstants.QUIET, 
+				"-showProgram", filename("quantifiedSideEffects.c")));
 	}
 
 	@AfterClass
