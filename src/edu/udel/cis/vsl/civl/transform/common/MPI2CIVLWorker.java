@@ -7,10 +7,12 @@ import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
@@ -149,28 +151,28 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 */
 	private final static String MPI_INIT_NEW = "$mpi_init";
 
-	/**
-	 * The name of the function MPI_Init in the original MPI program.
-	 */
-	private final static String MPI_FINALIZE = "MPI_Finalize";
-
-	/**
-	 * The name of the function translating MPI_Init in the final CIVL-C
-	 * program.
-	 */
-	private final static String MPI_FINALIZE_NEW = "$mpi_finalize";
+	// /**
+	// * The name of the function MPI_Init in the original MPI program.
+	// */
+	// private final static String MPI_FINALIZE = "MPI_Finalize";
+	//
+	// /**
+	// * The name of the function translating MPI_Init in the final CIVL-C
+	// * program.
+	// */
+	// private final static String MPI_FINALIZE_NEW = "$mpi_finalize";
 
 	/**
 	 * The name of the variable representing the status of an MPI process, which
 	 * is modified by MPI_Init() and MPI_Finalized().
 	 */
-	private final static String MPI_SYS_STATUS = "_mpi_status";
+	private final static String MPI_STATE_VAR = "_mpi_state";
 
-	/**
-	 * The name of the type of variables representing the status of an MPI
-	 * process.
-	 */
-	private final static String MPI_SYS_STATUS_TYPENAME = "$mpi_sys_status";
+	// /**
+	// * The name of the type of variables representing the status of an MPI
+	// * process.
+	// */
+	// private final static String MPI_SYS_STATUS_TYPENAME = "$mpi_sys_status";
 
 	/**
 	 * The name of the MPI procedure in the final CIVL-C program.
@@ -303,11 +305,16 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 */
 	private ExpressionStatementNode commDestroy(String destroy, String commName) {
 		ExpressionNode function = this.identifierExpression(destroy);
+		List<ExpressionNode> arguments;
 
+		if (destroy.equals(COMM_DESTROY)) {
+			arguments = Arrays.asList(this.identifierExpression(commName),
+					this.identifierExpression(MPI_STATE_VAR));
+		} else
+			arguments = Arrays.asList(this.identifierExpression(commName));
 		return nodeFactory.newExpressionStatementNode(nodeFactory
 				.newFunctionCallNode(this.newSource("function call " + destroy,
-						CivlcTokenConstant.CALL), function, Arrays.asList(this
-						.identifierExpression(commName)), null));
+						CivlcTokenConstant.CALL), function, arguments, null));
 	}
 
 	/**
@@ -452,16 +459,16 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 * is a wrapper of the original MPI program with some additional features: <br>
 	 * 
 	 * <pre>
-	 * void MPI_Process(){
+	 * void _mpi_process(int _mpi_rank){
 	 *   $comm MPI_COMM_WORLD = $comm_create(...);
 	 *   //SLIGHTLY-MODIFIED ORIGINAL PROGRAM;
 	 *   int a, b, ...;
 	 *   ... function(){...}
 	 *   ...
-	 *   ... __main(){...} // renamed main() to __main()
+	 *   ... _main(){...} // renamed main() to _main()
 	 *   ....
 	 *   //ORIGINAL PROGRAM ENDS HERE;
-	 *   __main();
+	 *   _main();
 	 *   $comm_destroy(MPI_COMM_WORLD);
 	 * }
 	 * </pre>
@@ -494,8 +501,8 @@ public class MPI2CIVLWorker extends BaseWorker {
 		items = new LinkedList<>();
 		number = root.numChildren();
 		// add MPI_Sys_status variable into each process
-		items.add(mpiSysStatusDeclaration());
-		items.add(mpiStatusDePruneAssertion());
+		// items.add(mpiSysStatusDeclaration());
+		// items.add(mpiStatusDePruneAssertion());
 		items.add(commVar);
 		for (int i = 0; i < number; i++) {
 			BlockItemNode child = root.getSequenceChild(i);
@@ -507,15 +514,25 @@ public class MPI2CIVLWorker extends BaseWorker {
 					.getName();
 			root.removeChild(i);
 			if (sourceFile.equals("mpi.cvl")) {
-				if (child.nodeKind() == NodeKind.VARIABLE_DECLARATION) {
+				NodeKind nodeKind = child.nodeKind();
+
+				if (nodeKind == NodeKind.VARIABLE_DECLARATION) {
 					VariableDeclarationNode variableDeclaration = (VariableDeclarationNode) child;
 
-					if (variableDeclaration.getName().equals(MPI_SYS_STATUS))
-						// keep variable declaration node of __MPI_Status__
-						// __my_status = __UNINIT;
-						items.add(variableDeclaration);
-					else
-						includedNodes.add(child);
+					// if (variableDeclaration.getName().equals(MPI_SYS_STATUS))
+					// keep variable declaration node of __MPI_Status__
+					// __my_status = __UNINIT;
+					items.add(variableDeclaration);
+					// else
+					// includedNodes.add(child);
+				} else if (nodeKind == NodeKind.FUNCTION_DEFINITION) {
+					items.add(child);
+				} else if (nodeKind == NodeKind.FUNCTION_DECLARATION) {
+					FunctionDeclarationNode functionNode = (FunctionDeclarationNode) child;
+					Function function = functionNode.getEntity();
+
+					if (function.isSystemFunction() || function.isAbstract())
+						items.add(child);
 				} else
 					includedNodes.add(child);
 			} else if (sourceFile.equals("pthread.cvl")) {
@@ -568,12 +585,22 @@ public class MPI2CIVLWorker extends BaseWorker {
 				} else
 					includedNodes.add(child);
 			} else if (sourceFile.equals("mpi.h")) {
-				if (child.nodeKind() == NodeKind.VARIABLE_DECLARATION) {
+				NodeKind nodeKind = child.nodeKind();
+
+				if (nodeKind == NodeKind.VARIABLE_DECLARATION) {
 					VariableDeclarationNode variableDeclaration = (VariableDeclarationNode) child;
 
 					// ignore the MPI_COMM_WORLD declaration in mpi.h.
 					if (!variableDeclaration.getName().equals(COMM_WORLD))
 						includedNodes.add(child);
+				} else if (nodeKind == NodeKind.FUNCTION_DEFINITION) {
+					items.add(child);
+				} else if (nodeKind == NodeKind.FUNCTION_DECLARATION) {
+					FunctionDeclarationNode functionNode = (FunctionDeclarationNode) child;
+					Function function = functionNode.getEntity();
+
+					if (function.isSystemFunction() || function.isAbstract())
+						items.add(child);
 				} else
 					includedNodes.add(child);
 			} else if (CIVLConstants.getAllCLibraries().contains(sourceFile)) {// sourceFile.endsWith(".h"))
@@ -705,37 +732,37 @@ public class MPI2CIVLWorker extends BaseWorker {
 	/**
 	 * Scans all children nodes to do preprocessing. Currently, only one kind of
 	 * processing is performed, i.e., translating all <code>MPI_Init(...)</code>
-	 * function call into <code>__MPI_Init()</code>.
+	 * function call into <code>$mpi_init()</code>.
 	 * 
 	 * @param node
 	 *            The AST node to be checked and all its children will be
 	 *            scanned.
 	 * @throws SyntaxException
 	 */
-	private void preprocessASTNode(ASTNode node) throws SyntaxException {
+	private void transformMPI_Init(ASTNode node) throws SyntaxException {
 		int numChildren = node.numChildren();
 
 		for (int i = 0; i < numChildren; i++) {
 			ASTNode child = node.child(i);
 
 			if (child != null)
-				this.preprocessASTNode(node.child(i));
+				this.transformMPI_Init(node.child(i));
 		}
 		if (node instanceof FunctionCallNode) {
-			this.preprocessFunctionCall((FunctionCallNode) node);
+			this.transformMPI_InitCall((FunctionCallNode) node);
 		}
 
 	}
 
 	/**
 	 * 
-	 * Translates an <code>MPI_Init(...)</code> function call into
-	 * <code>__MPI_Init(MPI_COMM_WORLD)</code>.
+	 * Translates an <code>MPI_Init(arg0, arg1)</code> function call into
+	 * <code>$mpi_init()</code>.
 	 * 
 	 * 
 	 * @param functionCall
 	 */
-	private void preprocessFunctionCall(FunctionCallNode functionCall) {
+	private void transformMPI_InitCall(FunctionCallNode functionCall) {
 		if (functionCall.getFunction().expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
 			IdentifierExpressionNode functionExpression = (IdentifierExpressionNode) functionCall
 					.getFunction();
@@ -751,10 +778,11 @@ public class MPI2CIVLWorker extends BaseWorker {
 			if (functionName.equals(MPI_INIT)) {
 				functionExpression.getIdentifier().setName(MPI_INIT_NEW);
 				functionCall.setArguments(emptyArgNode);
-			} else if (functionName.equals(MPI_FINALIZE)) {
-				functionExpression.getIdentifier().setName(MPI_FINALIZE_NEW);
-				functionCall.setArguments(emptyArgNode);
 			}
+			// else if (functionName.equals(MPI_FINALIZE)) {
+			// functionExpression.getIdentifier().setName(MPI_FINALIZE_NEW);
+			// functionCall.setArguments(emptyArgNode);
+			// }
 		}
 	}
 
@@ -923,7 +951,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 			createNewMainFunction(root);
 		}
 		// change MPI_Init(...) to _MPI_Init();
-		preprocessASTNode(root);
+		transformMPI_Init(root);
 		transformExit(root);
 		if (nprocsVar == null) {
 			// declaring $input int NPROCS;
@@ -1001,61 +1029,60 @@ public class MPI2CIVLWorker extends BaseWorker {
 		this.completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-//		 newAst.prettyPrint(System.out, true);
+		// newAst.prettyPrint(System.out, true);
 		return newAst;
 	}
+	// /**
+	// * Create a variable declaration node of "__MPI_Sys_status__" type which
+	// * should be in every process representing the status of the process which
+	// * is controlled by MPI_Init() and MPI_Finalize()
+	// *
+	// * @return
+	// */
+	// private VariableDeclarationNode mpiSysStatusDeclaration() {
+	// TypeNode sysStatusType;
+	// VariableDeclarationNode node;
+	//
+	// sysStatusType = nodeFactory.newTypedefNameNode(nodeFactory
+	// .newIdentifierNode(
+	// newSource("MPI_Sys_status in _MPI_Process",
+	// CivlcTokenConstant.IDENTIFIER),
+	// MPI_SYS_STATUS_TYPENAME), null);
+	// node = variableDeclaration(
+	// MPI_SYS_STATUS,
+	// sysStatusType,
+	// nodeFactory.newEnumerationConstantNode(nodeFactory
+	// .newIdentifierNode(
+	// newSource("__UNINIT",
+	// CivlcTokenConstant.ENUMERATION_CONSTANT),
+	// "__UNINIT")));
+	// return node;
+	// }
 
-	/**
-	 * Create a variable declaration node of "__MPI_Sys_status__" type which
-	 * should be in every process representing the status of the process which
-	 * is controlled by MPI_Init() and MPI_Finalize()
-	 * 
-	 * @return
-	 */
-	private VariableDeclarationNode mpiSysStatusDeclaration() {
-		TypeNode sysStatusType;
-		VariableDeclarationNode node;
-
-		sysStatusType = nodeFactory.newTypedefNameNode(nodeFactory
-				.newIdentifierNode(
-						newSource("MPI_Sys_status in _MPI_Process",
-								CivlcTokenConstant.IDENTIFIER),
-						MPI_SYS_STATUS_TYPENAME), null);
-		node = variableDeclaration(
-				MPI_SYS_STATUS,
-				sysStatusType,
-				nodeFactory.newEnumerationConstantNode(nodeFactory
-						.newIdentifierNode(
-								newSource("__UNINIT",
-										CivlcTokenConstant.ENUMERATION_CONSTANT),
-								"__UNINIT")));
-		return node;
-	}
-
-	/**
-	 * An inserted assertion "assert _my_status == __UNINIT" which is used to
-	 * prevent being pruned by Pruner.
-	 * 
-	 * @return
-	 */
-	private ExpressionStatementNode mpiStatusDePruneAssertion() {
-		List<ExpressionNode> assertionNodesList = new LinkedList<>();
-		Source assertSrc = newSource("_my_status initial value assertion",
-				CivlcTokenConstant.EXPRESSION_STATEMENT);
-		Source myStatusSrc = newSource("_my_status",
-				CivlcTokenConstant.IDENTIFIER);
-
-		assertionNodesList.add(nodeFactory.newIdentifierExpressionNode(
-				myStatusSrc,
-				nodeFactory.newIdentifierNode(myStatusSrc, MPI_SYS_STATUS)));
-		assertionNodesList.add(nodeFactory
-				.newEnumerationConstantNode(nodeFactory.newIdentifierNode(
-						newSource("__UNINIT",
-								CivlcTokenConstant.ENUMERATION_CONSTANT),
-						"__UNINIT")));
-		return nodeFactory.newExpressionStatementNode(this.functionCall(
-				assertSrc, ASSERT, Arrays.asList((ExpressionNode) nodeFactory
-						.newOperatorNode(assertSrc, Operator.EQUALS,
-								assertionNodesList))));
-	}
+	// /**
+	// * An inserted assertion "assert _my_status == __UNINIT" which is used to
+	// * prevent being pruned by Pruner.
+	// *
+	// * @return
+	// */
+	// private ExpressionStatementNode mpiStatusDePruneAssertion() {
+	// List<ExpressionNode> assertionNodesList = new LinkedList<>();
+	// Source assertSrc = newSource("_my_status initial value assertion",
+	// CivlcTokenConstant.EXPRESSION_STATEMENT);
+	// Source myStatusSrc = newSource("_my_status",
+	// CivlcTokenConstant.IDENTIFIER);
+	//
+	// assertionNodesList.add(nodeFactory.newIdentifierExpressionNode(
+	// myStatusSrc,
+	// nodeFactory.newIdentifierNode(myStatusSrc, MPI_STATE_VAR)));
+	// assertionNodesList.add(nodeFactory
+	// .newEnumerationConstantNode(nodeFactory.newIdentifierNode(
+	// newSource("__UNINIT",
+	// CivlcTokenConstant.ENUMERATION_CONSTANT),
+	// "__UNINIT")));
+	// return nodeFactory.newExpressionStatementNode(this.functionCall(
+	// assertSrc, ASSERT, Arrays.asList((ExpressionNode) nodeFactory
+	// .newOperatorNode(assertSrc, Operator.EQUALS,
+	// assertionNodesList))));
+	// }
 }

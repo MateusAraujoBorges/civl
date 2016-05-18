@@ -130,34 +130,16 @@ MPI_Comm $mpi_comm_create($scope scope, $mpi_gcomm gc, int rank) {
   return result;
 }
 
-void $mpi_comm_destroy(MPI_Comm comm) {
-  $mpi_sys_status curr_status;
-
-  curr_status = $mpi_get_status();
+void $mpi_comm_destroy(MPI_Comm comm, $mpi_state mpi_state) {
+#ifndef _MPI_CONTRACT
   if(comm.gcommIndex == 0)
-    $assert(curr_status == __FINALIZED, "Process terminates without "
+    $assert(mpi_state == _MPI_FINALIZED, "Process terminates without "
 	    "calling MPI_Finalize() first.");
+#endif
   $comm_destroy(comm.p2p);
   $comm_destroy(comm.col);
   $collect_checker_destroy(comm.collect_checker);
   $barrier_destroy(comm.barrier);
-}
-
-int $mpi_init(void) {
-  $mpi_sys_status curr_status = $mpi_get_status();
-
-  $assert(curr_status == __UNINIT, "Process can only call MPI_Init() at most once.");
-  $mpi_set_status(__INIT);
-  return 0;
-}
-
-int $mpi_finalize(void) {
-  $mpi_sys_status curr_status = $mpi_get_status();
-
-  $assert(curr_status == __INIT, "Process can only call MPI_Finalize() after the "
-	  "MPI enviroment is created and before cleaned.");
-  $mpi_set_status(__FINALIZED);
-  return 0;
 }
 
 void * $mpi_pointerAdd(const void * ptr, int offset, MPI_Datatype datatype) {
@@ -634,7 +616,7 @@ int $mpi_comm_dup($scope scope, MPI_Comm comm, MPI_Comm * newcomm, char * routNa
   return 0;
 }
 
-int $mpi_comm_free(MPI_Comm * comm) {
+int $mpi_comm_free(MPI_Comm *comm, $mpi_state mpi_state) {
   int place = $comm_place(comm->col);
   int size = $comm_size(comm->col);
   int buf[size];
@@ -644,7 +626,7 @@ int $mpi_comm_free(MPI_Comm * comm) {
   //TODO: $mpi_gather here is just a ugly synchronization
   $mpi_gather(&place, 1, MPI_INT, buf, 1, MPI_INT, 0, 
 	      COMMFREE_TAG, (*comm), "MPI_Comm_free synchronization.");
-  $mpi_comm_destroy(*comm);
+  $mpi_comm_destroy(*comm, mpi_state);
   if(place == 0) {
     $mpi_gcomm temp = $mpi_getGcomm(CMPI_ROOT_SCOPE, gcommIndex);
 
