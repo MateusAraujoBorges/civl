@@ -78,9 +78,10 @@ int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest,
 #ifdef _MPI_CONTRACT
   $elaborate(dest);
   $elaborate(count);
-#endif
+#else
   $assert(_mpi_state == _MPI_INIT, "MPI_Send() cannot be invoked "
     "without MPI_Init() being called before.\n");
+#endif
   $mpi_assertConsistentType(buf, datatype);
   return $mpi_send(buf, count, datatype, dest, tag, comm);
 }
@@ -90,9 +91,10 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source,
 #ifdef _MPI_CONTRACT
   $elaborate(source);
   $elaborate(count);
-#endif
+#else
   $assert(_mpi_state == _MPI_INIT, "MPI_Recv() cannot be invoked "
     "without MPI_Init() being called before.\n");
+#endif
   $mpi_assertConsistentType(buf, datatype);
   return $mpi_recv(buf, count, datatype, source, tag, comm, status);
 }
@@ -164,9 +166,11 @@ int MPI_Reduce(const void* sendbuf, void* recvbuf, int count,
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert (_mpi_state == _MPI_INIT,
 	  "MPI_Reduce() cannot be invoked without "
 	   "MPI_Init() being called before.\n");
+#endif
   checkerEntry = $mpi_createCoroutineEntry(REDUCE_TAG, root, (int)op, 1,
 		 datatypes);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
@@ -191,8 +195,10 @@ int MPI_Allreduce(const void* sendbuf, void* recvbuf, int count,
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Allreduce() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   $mpi_assertConsistentType(sendbuf, datatype);
   $mpi_assertConsistentType(recvbuf, datatype);
   checkerEntry = $mpi_createCoroutineEntry(ALLREDUCE_TAG, root, 
@@ -213,8 +219,10 @@ int MPI_Barrier(MPI_Comm comm){
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Barrier() cannot be invoked "
     "without MPI_Init() being called before.\n");
+#endif
   checkerEntry = $mpi_createCoroutineEntry(BARRIER_TAG, 0, -1, 
 					     0, NULL);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
@@ -237,8 +245,10 @@ int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Gather() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   if(sendbuf != MPI_IN_PLACE)
     $mpi_assertConsistentType(sendbuf, sendtype);
   $mpi_assertConsistentType(recvbuf, recvtype);
@@ -261,8 +271,10 @@ int MPI_Scatter(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Scatter() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   $mpi_assertConsistentType(sendbuf, sendtype);
   if(recvbuf != MPI_IN_PLACE)
     $mpi_assertConsistentType(recvbuf, recvtype);
@@ -287,8 +299,10 @@ int MPI_Gatherv(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Gatherv() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   if(sendbuf != MPI_IN_PLACE)
     $mpi_assertConsistentType(sendbuf, sendtype);
   $mpi_assertConsistentType(recvbuf, recvtype);
@@ -312,8 +326,10 @@ int MPI_Scatterv(const void* sendbuf, const int sendcounts[], const
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Scatterv() cannot be invoked without "
 	  "MPI_Init() being called before.\n");
+#endif
   $mpi_assertConsistentType(sendbuf, sendtype);
   if(recvbuf != MPI_IN_PLACE)
     $mpi_assertConsistentType(recvbuf, recvtype);
@@ -339,8 +355,10 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Allgather() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   if(sendbuf != MPI_IN_PLACE)
     $mpi_assertConsistentType(sendbuf, sendtype);
   $mpi_assertConsistentType(recvbuf, recvtype);
@@ -368,8 +386,10 @@ int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcount[]
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Reduce_scatter() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   $mpi_assertConsistentType(sendbuf, datatype);
   if(recvbuf != MPI_IN_PLACE)
     $mpi_assertConsistentType(recvbuf, datatype);
@@ -411,8 +431,10 @@ int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     sendcounts[i] = sendcount;
     displs[i] = (i == 0)? 0 : (displs[i-1] + sendcount);
   }
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Alltoall() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   $mpi_assertConsistentType(sendbuf, sendtype);
   $mpi_assertConsistentType(recvbuf, recvtype);
   checkerEntry = $mpi_createCoroutineEntry(ALLTOALL_TAG, root, -1, 2, 
@@ -440,8 +462,10 @@ int MPI_Alltoallv(const void* sendbuf, const int sendcounts[],
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Alltoallv() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   $mpi_assertConsistentType(sendbuf, sendtype);
   $mpi_assertConsistentType(recvbuf, recvtype);
   checkerEntry = $mpi_createCoroutineEntry(ALLTOALLV_TAG, 0, -1, 2, 
@@ -465,8 +489,10 @@ int MPI_Alltoallw(const void* sendbuf, const int sendcounts[], const int sdispls
   int nprocs = $comm_size(comm.col);
   int place = $comm_place(comm.col);
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Alltoallw() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   $mpi_assertConsistentType(sendbuf, sendtypes[place]);
   $mpi_assertConsistentType(recvbuf, recvtypes[place]);
   for(int i = 0; i < nprocs; i++) {
@@ -482,15 +508,19 @@ int MPI_Alltoallw(const void* sendbuf, const int sendcounts[], const int sdispls
 int MPI_Comm_dup(MPI_Comm comm, MPI_Comm * newcomm) {
   $scope CMPI_PROC_SCOPE = $mpi_proc_scope(comm.col);
 
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Comm_dup() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   $mpi_comm_dup(CMPI_PROC_SCOPE, comm, newcomm, "MPI_Comm_dup");
   return 0;
 }
 
 int MPI_Comm_free(MPI_Comm * comm) {
+#ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Comm_free() cannot be invoked without "
     "MPI_Init() being called before.\n");
+#endif
   $assert($is_derefable_pointer(comm), "The argument of MPI_Comm_free is NULL.");
   $mpi_comm_free(comm, _mpi_state);
   return 0;
