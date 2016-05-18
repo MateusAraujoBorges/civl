@@ -377,44 +377,48 @@ public interface ModelFactory {
 	 *            The name of the bound variable.
 	 * @param boundVariableType
 	 *            The type of the bound variable.
-	 * @param restriction
+	 * @param isRange
+	 *            true iff the free variable bounded by a range expression;
+	 *            otherwise it is bounded by a boolean expression
+	 * @param restrictionOrRange
 	 *            The boolean-valued expression involving the bound variable
-	 *            which is expected to be true.
+	 *            which is expected to be true otherwise this is the range of
+	 *            the bound variable
 	 * @param expression
 	 *            The quantified expression.
 	 * @return The new quantified expression
 	 */
 	QuantifiedExpression quantifiedExpression(CIVLSource source,
 			Quantifier quantifier, Identifier boundVariableName,
-			CIVLType boundVariableType, Expression restriction,
-			Expression expression);
+			CIVLType boundVariableType, boolean isRange,
+			Expression restrictionOrRange, Expression expression);
 
-	/**
-	 * Returns a new quantified expression.
-	 * 
-	 * @param source
-	 *            The source file information for this expression.
-	 * @param quantifier
-	 *            The quantifier for this quantified expression. One of {FORALL,
-	 *            EXISTS, UNIFORM}.
-	 * @param boundVariableName
-	 *            The name of the bound variable.
-	 * @param boundVariableType
-	 *            The type of the bound variable.
-	 * @param lower
-	 *            The integer-valued expression for the lower end of the bound
-	 *            variable range.
-	 * @param upper
-	 *            The integer-valued expression for the upper end of the bound
-	 *            variable range.
-	 * @param expression
-	 *            The quantified expression.
-	 * @return The new quantified expression
-	 */
-	QuantifiedExpression quantifiedExpression(CIVLSource source,
-			Quantifier quantifier, Identifier boundVariableName,
-			CIVLType boundVariableType, Expression lower, Expression upper,
-			Expression expression);
+	// /**
+	// * Returns a new quantified expression.
+	// *
+	// * @param source
+	// * The source file information for this expression.
+	// * @param quantifier
+	// * The quantifier for this quantified expression. One of {FORALL,
+	// * EXISTS, UNIFORM}.
+	// * @param boundVariableName
+	// * The name of the bound variable.
+	// * @param boundVariableType
+	// * The type of the bound variable.
+	// * @param lower
+	// * The integer-valued expression for the lower end of the bound
+	// * variable range.
+	// * @param upper
+	// * The integer-valued expression for the upper end of the bound
+	// * variable range.
+	// * @param expression
+	// * The quantified expression.
+	// * @return The new quantified expression
+	// */
+	// QuantifiedExpression quantifiedExpression(CIVLSource source,
+	// Quantifier quantifier, Identifier boundVariableName,
+	// CIVLType boundVariableType, Expression lower, Expression upper,
+	// Expression expression);
 
 	/**
 	 * A real literal expression.

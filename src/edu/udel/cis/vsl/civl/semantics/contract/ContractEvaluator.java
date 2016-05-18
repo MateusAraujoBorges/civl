@@ -162,7 +162,7 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 	protected Evaluation evaluateQuantifiedExpression(State state, int pid,
 			QuantifiedExpression expression)
 			throws UnsatisfiablePathConditionException {
-		Expression restriction = expression.boundRestriction();
+		Expression restriction = expression.restrictionOrRange();
 		Reasoner reasoner;
 		NumericSymbolicConstant boundVariable;
 		Interval boundInterval;

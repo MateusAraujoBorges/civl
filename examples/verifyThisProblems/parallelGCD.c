@@ -82,6 +82,6 @@ void main() {
   int result1 = myGCD(A, B);
   int minAB = A < B ? A : B;
 
-  $assert($forall {i = (result1+1) .. (minAB)} (A%i != 0 || B%i != 0));
+  $assert($forall (int i: (result1+1) .. (minAB)) (A%i != 0 || B%i != 0));
   $assert(A%result1 == 0 && B%result1 == 0);
 }

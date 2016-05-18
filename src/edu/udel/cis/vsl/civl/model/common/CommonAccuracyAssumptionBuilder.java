@@ -153,10 +153,10 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
-				
+
 				// TODO: this seems to match a lot more than patter described
 				// above.
-				
+
 				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return true;
 				} else if (right.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
@@ -187,7 +187,7 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
-				
+
 				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return right;
 				} else if (right.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
@@ -218,7 +218,7 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
-				
+
 				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return (BoundVariableExpression) left;
 				} else if (right.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
@@ -256,7 +256,7 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable and dt is an input.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
-				
+
 				if (left.expressionKind() == ExpressionKind.VARIABLE) {
 					if (right.expressionKind() == ExpressionKind.VARIABLE) {
 						VariableExpression leftVariable = (VariableExpression) left;
@@ -333,7 +333,7 @@ public class CommonAccuracyAssumptionBuilder implements
 				// variable and dt is an input.
 				Expression left = ((BinaryExpression) expression).left();
 				Expression right = ((BinaryExpression) expression).right();
-				
+
 				if (left.expressionKind() == ExpressionKind.VARIABLE) {
 					if (right.expressionKind() == ExpressionKind.VARIABLE) {
 						VariableExpression leftVariable = (VariableExpression) left;
@@ -486,17 +486,17 @@ public class CommonAccuracyAssumptionBuilder implements
 			Expression innerExpression = createAssumptionExpression(source,
 					index + 1, expression);
 
-			if (quant.isRange()) {
-				result = factory.quantifiedExpression(source,
-						quant.quantifier(), quant.boundVariableName(),
-						quant.boundVariableType(), quant.lower(),
-						quant.upper(), innerExpression);
-			} else {
-				result = factory.quantifiedExpression(source,
-						quant.quantifier(), quant.boundVariableName(),
-						quant.boundVariableType(), quant.boundRestriction(),
-						innerExpression);
-			}
+			// if (quant.isRange()) {
+			// result = factory.quantifiedExpression(source,
+			// quant.quantifier(), quant.boundVariableName(),
+			// quant.boundVariableType(), quant.lower(),
+			// quant.upper(), innerExpression);
+			// } else {
+			result = factory.quantifiedExpression(source, quant.quantifier(),
+					quant.boundVariableName(), quant.boundVariableType(),
+					quant.isRange(), quant.restrictionOrRange(),
+					innerExpression);
+			// }
 		}
 		return result;
 	}
@@ -569,7 +569,7 @@ public class CommonAccuracyAssumptionBuilder implements
 
 			// TODO: should there be a method in factory to produce an $assume
 			// statement?
-			
+
 			assumeCall.setFunction(factory.functionIdentifierExpression(source,
 					factory.systemFunction(source,
 							factory.identifier(source, "$assume"), paraScope,

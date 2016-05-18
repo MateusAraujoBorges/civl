@@ -702,23 +702,13 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public QuantifiedExpression quantifiedExpression(CIVLSource source,
 			Quantifier quantifier, Identifier boundVariableName,
-			CIVLType boundVariableType, Expression restriction,
-			Expression expression) {
+			CIVLType boundVariableType, boolean isRange,
+			Expression restrictionOrRange, Expression expression) {
 		return new CommonQuantifiedExpression(source, join(
-				expression.expressionScope(), restriction.expressionScope()),
-				typeFactory.booleanType, quantifier, boundVariableName,
-				boundVariableType, restriction, expression);
-	}
-
-	@Override
-	public QuantifiedExpression quantifiedExpression(CIVLSource source,
-			Quantifier quantifier, Identifier boundVariableName,
-			CIVLType boundVariableType, Expression lower, Expression upper,
-			Expression expression) {
-		return new CommonQuantifiedExpression(source, join(
-				join(expression.expressionScope(), lower.expressionScope()),
-				upper.expressionScope()), typeFactory.booleanType, quantifier,
-				boundVariableName, boundVariableType, lower, upper, expression);
+				expression.expressionScope(),
+				restrictionOrRange.expressionScope()), typeFactory.booleanType,
+				quantifier, boundVariableName, boundVariableType, isRange,
+				restrictionOrRange, expression);
 	}
 
 	/**

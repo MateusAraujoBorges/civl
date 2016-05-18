@@ -27,9 +27,9 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 	private Identifier boundVariableName;
 	private CIVLType boundVariableType;
 	private boolean isRange;
-	private Expression lower;
-	private Expression upper;
-	private Expression restriction;
+	// private Expression lower;
+	// private Expression upper;
+	private Expression restrictionOrRange;
 	private Expression expression;
 
 	/**
@@ -48,48 +48,48 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 	 */
 	public CommonQuantifiedExpression(CIVLSource source, Scope scope,
 			CIVLType type, Quantifier quantifier, Identifier boundVariableName,
-			CIVLType boundVariableType, Expression restriction,
-			Expression expression) {
+			CIVLType boundVariableType, boolean isRange,
+			Expression restriction, Expression expression) {
 		super(source, scope, scope, type);
 		this.quantifier = quantifier;
 		this.boundVariableName = boundVariableName;
 		this.boundVariableType = boundVariableType;
-		isRange = false;
-		this.lower = this.upper = null;
-		this.restriction = restriction;
+		this.isRange = isRange;
+		// this.lower = this.upper = null;
+		this.restrictionOrRange = restriction;
 		this.expression = expression;
 	}
 
-	/**
-	 * @param source
-	 *            The source file information for this expression.
-	 * @param quantifier
-	 *            The type of quantifier.
-	 * @param boundVariableName
-	 *            The name of the bound variable.
-	 * @param boundVariableType
-	 *            The type of the bound variable.
-	 * @param lower
-	 *            The lower bound on the range of this bound variable.
-	 * @param upper
-	 *            The upper bound on the range of this bound variable.
-	 * @param expression
-	 *            The quantified expression.
-	 */
-	public CommonQuantifiedExpression(CIVLSource source, Scope scope,
-			CIVLType type, Quantifier quantifier, Identifier boundVariableName,
-			CIVLType boundVariableType, Expression lower, Expression upper,
-			Expression expression) {
-		super(source, scope, scope, type);
-		this.quantifier = quantifier;
-		this.boundVariableName = boundVariableName;
-		this.boundVariableType = boundVariableType;
-		isRange = true;
-		this.lower = lower;
-		this.upper = upper;
-		this.restriction = null;
-		this.expression = expression;
-	}
+	// /**
+	// * @param source
+	// * The source file information for this expression.
+	// * @param quantifier
+	// * The type of quantifier.
+	// * @param boundVariableName
+	// * The name of the bound variable.
+	// * @param boundVariableType
+	// * The type of the bound variable.
+	// * @param lower
+	// * The lower bound on the range of this bound variable.
+	// * @param upper
+	// * The upper bound on the range of this bound variable.
+	// * @param expression
+	// * The quantified expression.
+	// */
+	// public CommonQuantifiedExpression(CIVLSource source, Scope scope,
+	// CIVLType type, Quantifier quantifier, Identifier boundVariableName,
+	// CIVLType boundVariableType, Expression lower, Expression upper,
+	// Expression expression) {
+	// super(source, scope, scope, type);
+	// this.quantifier = quantifier;
+	// this.boundVariableName = boundVariableName;
+	// this.boundVariableType = boundVariableType;
+	// isRange = true;
+	// this.lower = lower;
+	// this.upper = upper;
+	// this.restrictionOrRange = null;
+	// this.expression = expression;
+	// }
 
 	/*
 	 * (non-Javadoc)
@@ -121,8 +121,8 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 	 * boundRestriction()
 	 */
 	@Override
-	public Expression boundRestriction() {
-		return restriction;
+	public Expression restrictionOrRange() {
+		return restrictionOrRange;
 	}
 
 	/*
@@ -156,43 +156,44 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 			break;
 		}
 		result += " {" + boundVariableType + " " + boundVariableName;
-
-		if (isRange) {
-			result += "=" + lower + ".." + upper;
-		} else {
-			result += " | " + restriction;
-		}
-		result += "} " + expression.toString();
+		if (isRange)
+			result += ": ";
+		else
+			result += "; ";
+		result += restrictionOrRange;
+		result += "; ";
+		result += expression.toString();
+		result += "}";
 		return result;
 	}
 
 	@Override
 	public void replaceWith(ConditionalExpression oldExpression,
 			VariableExpression newExpression) {
-		if (restriction == oldExpression) {
-			restriction = newExpression;
+		if (restrictionOrRange == oldExpression) {
+			restrictionOrRange = newExpression;
 			return;
 		}
 		if (expression == oldExpression) {
 			expression = newExpression;
 			return;
 		}
-		restriction.replaceWith(oldExpression, newExpression);
+		restrictionOrRange.replaceWith(oldExpression, newExpression);
 		expression.replaceWith(oldExpression, newExpression);
 	}
 
 	@Override
 	public Expression replaceWith(ConditionalExpression oldExpression,
 			Expression newExpression) {
-		Expression newRestriction = restriction.replaceWith(oldExpression,
-				newExpression);
+		Expression newRestriction = restrictionOrRange.replaceWith(
+				oldExpression, newExpression);
 		CommonQuantifiedExpression result = null;
 
 		if (newRestriction != null) {
 			result = new CommonQuantifiedExpression(this.getSource(),
 					this.expressionScope(), this.expressionType, quantifier,
-					boundVariableName, boundVariableType, newRestriction,
-					expression);
+					boundVariableName, boundVariableType, this.isRange,
+					newRestriction, expression);
 		} else {
 			Expression newExpressionField = expression.replaceWith(
 					oldExpression, newExpression);
@@ -201,7 +202,7 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 				result = new CommonQuantifiedExpression(this.getSource(),
 						this.expressionScope(), this.expressionType,
 						quantifier, boundVariableName, boundVariableType,
-						restriction, newExpressionField);
+						this.isRange, restrictionOrRange, newExpressionField);
 		}
 		return result;
 	}
@@ -222,35 +223,16 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 	}
 
 	@Override
-	public Expression lower() {
-		return lower;
-	}
-
-	@Override
-	public Expression upper() {
-		return upper;
-	}
-
-	@Override
 	public Set<Variable> variableAddressedOf(Scope scope) {
 		Set<Variable> variableSet = new HashSet<>();
 		Set<Variable> operandResult;
 
-		if (expression != null) {
-			operandResult = expression.variableAddressedOf(scope);
-			if (operandResult != null)
-				variableSet.addAll(operandResult);
-		}
-		if (lower != null) {
-			operandResult = lower.variableAddressedOf(scope);
-			if (operandResult != null)
-				variableSet.addAll(operandResult);
-		}
-		if (upper != null) {
-			operandResult = upper.variableAddressedOf(scope);
-			if (operandResult != null)
-				variableSet.addAll(operandResult);
-		}
+		operandResult = this.restrictionOrRange.variableAddressedOf(scope);
+		if (operandResult != null)
+			variableSet.addAll(operandResult);
+		operandResult = expression.variableAddressedOf(scope);
+		if (operandResult != null)
+			variableSet.addAll(operandResult);
 		return variableSet;
 	}
 
@@ -259,21 +241,12 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 		Set<Variable> variableSet = new HashSet<>();
 		Set<Variable> operandResult;
 
-		if (expression != null) {
-			operandResult = expression.variableAddressedOf();
-			if (operandResult != null)
-				variableSet.addAll(operandResult);
-		}
-		if (lower != null) {
-			operandResult = lower.variableAddressedOf();
-			if (operandResult != null)
-				variableSet.addAll(operandResult);
-		}
-		if (upper != null) {
-			operandResult = upper.variableAddressedOf();
-			if (operandResult != null)
-				variableSet.addAll(operandResult);
-		}
+		operandResult = this.restrictionOrRange.variableAddressedOf();
+		if (operandResult != null)
+			variableSet.addAll(operandResult);
+		operandResult = expression.variableAddressedOf();
+		if (operandResult != null)
+			variableSet.addAll(operandResult);
 		return variableSet;
 	}
 
@@ -284,17 +257,11 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 		return this.quantifier.equals(that.quantifier())
 				&& this.isRange == that.isRange()
 				&& this.expression.equals(that.expression())
-				&& (this.isRange ? this.lower.equals(that.lower())
-						&& this.upper.equals(that.upper()) : this.restriction
-						.equals(that.boundRestriction()));
+				&& this.restrictionOrRange.equals(that.restrictionOrRange());
 	}
 
 	@Override
 	public boolean containsHere() {
-		if (isRange) {
-			return upper.containsHere() || lower.containsHere()
-					|| expression.containsHere();
-		} else
-			return restriction.containsHere() || expression.containsHere();
+		return restrictionOrRange.containsHere() || expression.containsHere();
 	}
 }

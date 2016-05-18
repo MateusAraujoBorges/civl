@@ -34,7 +34,7 @@ char *argv[];
       printf("%d ",buffer[i]);
     printf("\n");
 #ifdef _CIVL
-    $assert($forall{k=0 .. count-1} buffer[k]==k);
+    $assert($forall(int k: 0 .. count-1) buffer[k]==k);
 #endif
     MPI_Finalize();
 }

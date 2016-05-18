@@ -50,7 +50,7 @@ int lcp(int *arr, int n, int x, int y){
 void main(){
   int result = lcp(X1, n, x, y);
 
-  $assert($forall {i = 0 .. (result-1)} X1[x+i] == X1[y+i]);
+  $assert($forall (int i: 0 .. result-1) X1[x+i] == X1[y+i]);
 
   int maxXY = x > y ? x : y;
 

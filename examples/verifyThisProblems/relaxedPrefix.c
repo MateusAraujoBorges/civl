@@ -75,19 +75,19 @@ void main() {
     $assert(!result);
   } else if(n1 == n2+1) {
     $assert( result ==
-      ($exists {int k | k >= 0 && k < n1}
+	     ($exists (int k: 0 .. n1-1)
         (
-          ($forall {int i | i >= 0 && i < k} X1[i] == X2[i]) &&
-          ($forall {int i | i > k && i < n1} X1[i] == X2[i-1])
+	 ($forall (int i: 0 .. k-1) X1[i] == X2[i]) &&
+	 ($forall (int i: k+1 .. n1-1) X1[i] == X2[i-1])
         )
       )
     );
   } else {
     $assert(result ==
-      ($exists {int k | k >= 0 && k <=n1}
+	    ($exists (int k: 0 .. n1-1)
         (
-          ($forall {int i | i >= 0 && i < k} X1[i] == X2[i]) &&
-          ($forall {int i | i > k && i < n1} X1[i] == X2[i-1])
+	 ($forall (int i: 0 .. k-1) X1[i] == X2[i]) &&
+	 ($forall (int i: k+1 .. n1-1) X1[i] == X2[i-1])
         )
       )
     );

@@ -121,13 +121,15 @@ int main(){
   int maxLen = result[1];
 
   if(N > 1) {
-   $assert($exists {int k | k >= 0 && k <= N - maxLen && k != index}(
-     $forall {i = 0 .. maxLen-1} X1[k+i] == X1[index+i]
-   ));
-   $assert(!($exists {int k | k >= 0 && k <= N - maxLen - 1}(
-     $exists {int j | j >= 0 && j <= N - maxLen - 1 && j != k}(
-       $forall {i = 0 .. maxLen} X1[k+i] == X1[j+i]
-   ))));
+    $assert($exists (int k; k >= 0 && k <= N - maxLen && k != index)
+	    ($forall (int i: 0 .. maxLen-1) X1[k+i] == X1[index+i])
+	    );
+    $assert(!($exists (int k; k >= 0 && k <= N - maxLen - 1)
+	      ($exists (int j; j >= 0 && j <= N - maxLen - 1 && j != k)
+	       ($forall (int i: 0 .. maxLen) X1[k+i] == X1[j+i])
+	       )
+	      )
+	    );
   }else{
     $assert(index == 0 && maxLen == 0);
   }
