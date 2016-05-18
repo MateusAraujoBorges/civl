@@ -3,8 +3,8 @@ COMPARE = $(CIVL) compare
 
 all: adder
 
-adder: adder_par.cvl adder_spec.cvl
-	$(COMPARE) -inputNB=4 -inputNPROCSB=2 -impl adder_par.cvl -spec adder_spec.cvl
+adder: adder_par.c adder_spec.c
+	$(COMPARE) -inputNB=10 -input_mpi_nprocs_hi=4 -impl adder_par.c -spec adder_spec.c
 
 clean: 
 	rm -f *~

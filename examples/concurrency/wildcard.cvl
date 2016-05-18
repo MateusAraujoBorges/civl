@@ -1,50 +1,44 @@
 #include <civlc.cvh>
 #include <stdio.h>
-#include <mpi.h>
-#include <civl-mpi.cvh>
+#include <comm.cvh>
 #include <assert.h>
+#include <seq.cvh>
 
-$input int NPROCS = 5;
-$mpi_gcomm __MPI_COMM_WORLD;
+#define ANY_SRC -1
+#define NPROCS 5
 $scope root = $here;
+$gcomm gcomm;
 
-void _mpi_process(int place){
-  MPI_Comm MPI_COMM_WORLD = $mpi_comm_create($here, __MPI_COMM_WORLD, place);
-  int nprocs, rank, msg;
-  MPI_Status status;
-  $mpi_sys_status _mpi_status = __UNINIT;
+void process(int place){
+  $comm comm = $comm_create($here, gcomm, place);
+  $message msg;
 
-  $assert(_mpi_status == __UNINIT);
-  $mpi_init();
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  if (place == 0){
+    for (int i = 1; i < NPROCS; i++) {
+      int msg_size;
+      int buf;
 
-  if(rank != 0){
-    msg = rank;
-    MPI_Send(&msg, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
-  }
-  else{
-    int source;
-
-    msg = -1;	
-    for(int i=1; i<NPROCS; i++){
-      MPI_Recv(&msg, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+      msg = $comm_dequeue(comm, ANY_SRC, 0);
+      msg_size = $message_size(msg);
+      $message_unpack(msg, &buf, msg_size);
+      assert(buf >= 1 && buf < NPROCS);
+      printf("root get %d\n", buf);	
     }
+  } else {
+    int size = sizeof(int);
+
+    msg = $message_pack(place, 0, 0, &place, size);
+    $comm_enqueue(comm, msg);
   }
-  $mpi_finalize();
-  $mpi_comm_destroy(MPI_COMM_WORLD);
-  printf("process %d terminates\n", rank);
+  $comm_destroy(comm);
 }
 
 void main(){
+  $message junkMsgs[];
 
-  $proc procs[NPROCS];
-
-  __MPI_COMM_WORLD = $mpi_gcomm_create(root, NPROCS);
-  for(int i=0; i<NPROCS; i++)
-    procs[i] = $spawn _mpi_process(i);
-  for(int i=0; i<NPROCS; i++)
-    $wait(procs[i]);
-
-  $mpi_gcomm_destroy(__MPI_COMM_WORLD);
+  $seq_init(&junkMsgs, 0, NULL);	
+  gcomm = $gcomm_create(root, NPROCS);
+  $parfor(int i : 0 .. (NPROCS-1))
+    process(i);
+  $gcomm_destroy(gcomm, junkMsgs);
 }
