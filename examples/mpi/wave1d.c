@@ -1,8 +1,17 @@
-/* wave1d.c: parallel 1d-wave equation solver with constant boundary.
- * To execute: mpicc wave1d.c ; mpiexec -n 4 ./a.out
- * Or replace "4" with however many procs you want to use.
- * To verify: civl verify wave1d.c
- */
+/*******************************************************************
+ * diffusion1d.c: parallel 1d-wave solver with an initial height
+ * value.
+ * 
+ * This example contains a sequential 1d-wave solver which
+ * computes results for each time step, they will be used as
+ * specifications to compare with the results of the parallel version.
+ *
+ * To execute: mpicc wave1d.c ; mpiexec -n 4 ./a.out Or replace
+ * "4" with however many procs you want to use.  
+ *
+ * To verify: civl verify wave1d.
+ * Author: Ziqing Luo
+ ********************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

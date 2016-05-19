@@ -1,8 +1,17 @@
-/* diffusion2d.c: parallel 2d-diffusion equation solver with constant boundaries 
- * slicing matrix as a checker board.
- * To execute: mpicc diffusion2d.c ; mpiexec -n 4 ./a.out 2 2
- * To verify: civl verify diffusion2d.c
- */
+/*******************************************************************
+ * diffusion2d.c: parallel 2d-diffusion solver with constant
+ * boundaries.
+ * 
+ * This example contains a sequential 2d-diffusion solver which
+ * computes results for each time step, they will be used as
+ * specifications to compare with the results of the parallel version.
+ *
+ * To execute: mpicc diffusion2d.c ; mpiexec -n 4 ./a.out Or replace
+ * "4" with however many procs you want to use.  
+ *
+ * To verify: civl verify diffusion2d.
+ * Author: Ziqing Luo
+ ********************************************************************/
 #include<stdio.h>
 #include<stdlib.h>
 #include<assert.h>
@@ -18,8 +27,8 @@
 #define comm MPI_COMM_WORLD
 
 #ifdef _CIVL
-#include <civlc.cvh>
 
+#include <civlc.cvh>
 $input long NXB = 5;               // nx upper bound
 $input long nx;                    // global number of columns in matrix
 $assume(1 <= nx && nx <= NXB);
@@ -29,26 +38,29 @@ $assume(1 <= ny && ny <= NYB);
 $input double u_init[ny+2][nx+2];  // initial value of temperatures, including boundaries
 $input double k;                   // constant coefficient  
 $assume(k > 0.0 && k < 0.5);
-$input int NSTEPSB;            // upper bound for nsteps
+$input int NSTEPSB = 5;            // upper bound for nsteps
 $input int nsteps;                 // number of steps
 $assume(1<=nsteps && nsteps<=NSTEPSB);
 $input int wstep = 1;              // write frame every this many time steps
 double oracle[nsteps][ny+2][nx+2]; // solution computed sequentially, done by proc 0 only
-$input int NPROCSXB;               // upper bound for NPROCSX
-$input int NPROCSX;            // number of procs in x direction
+$input int NPROCSXB = 2;           // upper bound for NPROCSX
+$input int NPROCSX = 2;            // number of procs in x direction
 $assume(NPROCSX >= 1 && NPROCSX <= NPROCSXB);
-$input int NPROCSYB;               // upper bound for NPROCSY
-$input int NPROCSY;            // number of procs in y direction
+$input int NPROCSYB = 2;           // upper bound for NPROCSY
+$input int NPROCSY = 2;            // number of procs in y direction
 $assume(NPROCSY >= 1 && NPROCSY <= NPROCSYB);
 $input int _mpi_nprocs = NPROCSX * NPROCSY;
 $assume(_mpi_nprocs == NPROCSX * NPROCSY);
+
 #else
+
 long nx, ny;
 int nsteps, wstep;
 int NPROCSX, NPROCSY;
 double constTemp;                  // value of constant boundaries for test
 double initTemp;                   // value of initial temperature for test
 double k;
+
 #endif
 
 /* Global variables */
@@ -344,12 +356,14 @@ int main(int argc, char * argv[]) {
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &nprocs);
   initialization(argc, argv);
+#ifdef _CIVL
   $elaborate(nx);
   $elaborate(ny);
   $elaborate(nxl);
   $elaborate(nyl);
   $elaborate(NPROCSX);
   $elaborate(NPROCSY);
+#endif
   initData();
   for (i=0; i<nsteps; i++) {
     if (i%wstep == 0)

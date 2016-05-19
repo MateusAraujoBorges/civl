@@ -1,19 +1,26 @@
-#ifdef _CIVL
-#include <civlc.cvh>
-#endif
-/* diffusion1d.c: parallel 1d-diffusion solver with constant boundary.
- * To execute: mpicc diffusion1d.c ; mpiexec -n 4 ./a.out
- * Or replace "4" with however many procs you want to use.
- * To verify: civl verify diffusion1d.c
- */
+/*******************************************************************
+ * diffusion1d.c: parallel 1d-diffusion solver with constant
+ * boundaries.
+ * 
+ * This example contains a sequential 1d-diffusion solver which
+ * computes results for each time step, they will be used as
+ * specifications to compare with the results of the parallel version.
+ *
+ * To execute: mpicc diffusion1d.c ; mpiexec -n 4 ./a.out Or replace
+ * "4" with however many procs you want to use.  
+ *
+ * To verify: civl verify diffusion1d.
+ * Author: Ziqing Luo
+ ********************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <mpi.h>
+
 #define OWNER(index) ((nprocs*(index+1)-1)/nx)
 
 #ifdef _CIVL
-
+#include <civlc.cvh>
 $input int NXB = 5;           // upper bound on nx
 $input int nx;               // global number of points excl. boundary
 $assume(1<=nx && nx<=NXB);
@@ -92,8 +99,6 @@ void init_globals() {
 
 void initialize() {
 #ifdef _CIVL
-  //elaborate nx to concrete value...
-  //for (int i=0; i<nx; i++);
   // initialize globals and u...
   init_globals();
   lbound = U_INIT[0];
@@ -127,20 +132,20 @@ void initialize() {
     u[0] = u_new[0] = lbound;
   if (nx>=1 && rank == OWNER(nx-1))
     u[nxl+1] = u_new[nxl+1] = rbound;
-  //if (rank == 0)
-    //printf("nx=%d, k=%lf, nsteps=%d, wstep=%d, nprocs=%d\n",
-    //     nx, k, nsteps, wstep, nprocs);
+  if (rank == 0)
+    printf("nx=%d, k=%lf, nsteps=%d, wstep=%d, nprocs=%d\n",
+	   nx, k, nsteps, wstep, nprocs);
 }
 
 /* Prints header for time step.  Called by proc 0 only */
 void print_time_header() {
-  //printf("======= Time %d =======\n", time);
+  printf("======= Time %d =======\n", time);
   print_pos = 0;
 }
 
 /* Prints one cell.  Called by proc 0 only. */
 void print_cell(double value) {
-  //printf("%7.2f\n", value);
+  printf("%7.2f ", value);
 #pragma CIVL $assert(value == oracle[time][print_pos], \
   "Error: disagreement at time %d position %d: saw %lf, expected %lf",  \
   time, print_pos, value, oracle[time][print_pos]);
@@ -173,7 +178,7 @@ void write_frame() {
         print_cell(buf[i]);
     }
     print_cell(rbound); // right boundary
-    //printf("\n");
+    printf("\n");
   }
 }
 
@@ -200,7 +205,6 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   initialize();
   write_frame();
-  printf("nx = %d", nx);
   for (time=1; time < nsteps; time++) {
     exchange_ghost_cells();
     update();
