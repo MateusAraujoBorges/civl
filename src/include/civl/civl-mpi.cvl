@@ -142,7 +142,7 @@ void $mpi_comm_destroy(MPI_Comm comm, $mpi_state mpi_state) {
   $barrier_destroy(comm.barrier);
 }
 
-void * $mpi_pointerAdd(const void * ptr, int offset, MPI_Datatype datatype) {
+void * $mpi_pointer_add(const void * ptr, int offset, MPI_Datatype datatype) {
   int type_size = sizeofDatatype(datatype);
 
 #ifdef _MPI_CONTRACT
@@ -404,7 +404,7 @@ int $mpi_gather(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
     $assert(sendcount == recvcount, "Root process of routine %d without using"
 	    " MPI_IN_PLACE should give the same value for recvcount and sendcount",
 	    routName);
-    ptr = $mpi_pointerAdd(recvbuf, root * recvcount, recvtype);
+    ptr = $mpi_pointer_add(recvbuf, root * recvcount, recvtype);
     memcpy(ptr, sendbuf, recvcount * sizeofDatatype(recvtype));
   } else
     $mpi_collective_send(sendbuf, sendcount, sendtype, root, tag, comm);
@@ -418,7 +418,7 @@ int $mpi_gather(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
 	void * ptr;
 	
 	offset = i * recvcount; 
-	ptr = $mpi_pointerAdd(recvbuf, offset, recvtype);	
+	ptr = $mpi_pointer_add(recvbuf, offset, recvtype);	
 	$mpi_collective_recv(ptr, recvcount, recvtype, 
 			     i, tag, comm, &status, routName);
 	real_recvcount = status.size/sizeofDatatype(recvtype);
@@ -456,7 +456,7 @@ int $mpi_gatherv(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
     $assert(sendcount == recvcounts[root], "For routine %s, recvcounts[%d] "
 	    "should be same as the sendcount of the process with rank %d.\n", 
 	    routName, root, root);
-    ptr = $mpi_pointerAdd(recvbuf, displs[rank], recvtype);
+    ptr = $mpi_pointer_add(recvbuf, displs[rank], recvtype);
     memcpy(ptr, sendbuf, sendcount * sizeofDatatype(recvtype));
   }else{
     $mpi_collective_send(sendbuf, sendcount, sendtype, root, tag, comm);
@@ -468,7 +468,7 @@ int $mpi_gatherv(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
     
     for(int i=0; i<nprocs; i++){
       if(i != root){
-	void * ptr = $mpi_pointerAdd(recvbuf, displs[i], recvtype);
+	void * ptr = $mpi_pointer_add(recvbuf, displs[i], recvtype);
 	
 	$mpi_collective_recv(ptr, recvcounts[i], 
 			     recvtype, i, tag, comm, &status, routName);
@@ -506,7 +506,7 @@ int $mpi_scatter(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
     $assert(sendcount == recvcount, "Root process of routine %d without using"
 	    " MPI_IN_PLACE should give the same value for recvcount and sendcount",
 	    routName);	   
-    ptr = $mpi_pointerAdd(sendbuf, root*recvcount, sendtype);
+    ptr = $mpi_pointer_add(sendbuf, root*recvcount, sendtype);
     memcpy(recvbuf, ptr, sizeofDatatype(recvtype)*recvcount);
   }
   /* Root process scatters data to other processes */
@@ -518,7 +518,7 @@ int $mpi_scatter(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
 	void * ptr;
 
 	offset = i * sendcount;
-	ptr = $mpi_pointerAdd(sendbuf, offset, sendtype);
+	ptr = $mpi_pointer_add(sendbuf, offset, sendtype);
 	$mpi_collective_send(ptr, sendcount, sendtype, i, tag, comm);
       }
     }
@@ -564,14 +564,14 @@ int $mpi_scatterv(const void* sendbuf, const int sendcounts[], const
     $assert(sendcounts[root] == recvcount, "For routine %s, sendcounts[%d] "
 	    "should be same as the recvcount of the process with rank %d.\n", 
 	    routName, root, root);
-    ptr = $mpi_pointerAdd(sendbuf, displs[root], sendtype);
+    ptr = $mpi_pointer_add(sendbuf, displs[root], sendtype);
     memcpy(recvbuf, ptr, recvcount*sizeofDatatype(recvtype));
   }
   /* Root process scatters data to other processes */
   if(rank == root){
     for(int i=0; i<nprocs; i++){
       if(i != root) {
-	void * ptr = $mpi_pointerAdd(sendbuf, displs[i], sendtype);
+	void * ptr = $mpi_pointer_add(sendbuf, displs[i], sendtype);
 	
 	$mpi_collective_send(ptr, sendcounts[i], sendtype, i, 
 		  tag, comm);
@@ -602,11 +602,11 @@ int $mpi_comm_dup($scope scope, MPI_Comm comm, MPI_Comm * newcomm, char * routNa
     int size = $comm_size(comm.col);
 
     newgcomm = $mpi_gcomm_create(CMPI_ROOT_SCOPE, size);
-    idx = $mpi_newGcomm(CMPI_ROOT_SCOPE, newgcomm);
+    idx = $mpi_new_gcomm(CMPI_ROOT_SCOPE, newgcomm);
   }
   $mpi_bcast(&idx, 1, MPI_INT, 0, COMMDUP_TAG,
 	     comm, routName);
-  newgcomm = $mpi_getGcomm(CMPI_ROOT_SCOPE, idx);
+  newgcomm = $mpi_get_gcomm(CMPI_ROOT_SCOPE, idx);
   (*newcomm) = $mpi_comm_create(scope, newgcomm, place);
   newcomm->gcommIndex = idx;
   $barrier_call(comm.barrier);
@@ -628,14 +628,14 @@ int $mpi_comm_free(MPI_Comm *comm, $mpi_state mpi_state) {
 	      COMMFREE_TAG, (*comm), "MPI_Comm_free synchronization.");
   $mpi_comm_destroy(*comm, mpi_state);
   if(place == 0) {
-    $mpi_gcomm temp = $mpi_getGcomm(CMPI_ROOT_SCOPE, gcommIndex);
+    $mpi_gcomm temp = $mpi_get_gcomm(CMPI_ROOT_SCOPE, gcommIndex);
 
     $mpi_gcomm_destroy(temp);
   }
   return 0;
 }
 
-$bundle $mpi_createCoroutineEntry(int routineTag, int root, 
+$bundle $mpi_create_coroutine_entry(int routineTag, int root, 
 				    int op, int numDatatypes, int * datatypes) {
   int zero = 0;
   $bundle bundledEntry;
@@ -658,7 +658,7 @@ $bundle $mpi_createCoroutineEntry(int routineTag, int root,
   return bundledEntry;
 }
 
-void $mpi_diffCoroutineEntries($bundle specEntry, $bundle mineEntry, int rank) {
+void $mpi_diff_coroutine_entries($bundle specEntry, $bundle mineEntry, int rank) {
   struct Entry {
     int routine_tag;
     int root;

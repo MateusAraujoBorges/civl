@@ -51,7 +51,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * <ul>
  * <li>$mpi_set_status</li>
  * <li>$mpi_get_status</li>
- * <li>$mpi_assertConsistentType</li>
+ * <li>$mpi_assert_consistent_type</li>
  * <li>$mpi_newGcomm</li>
  * <li>$mpi_getGcomm</li>
  * <li>$mpi_root_scope</li>
@@ -131,13 +131,13 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 		case "$mpi_get_status":
 			callEval = executeGetStatus(state, pid);
 			break;
-		case "$mpi_assertConsistentType":
+		case "$mpi_assert_consistent_type":
 			callEval = executeAssertConsistentType(state, pid, process, arguments, argumentValues, source);
 			break;
-		case "$mpi_newGcomm":
+		case "$mpi_new_gcomm":
 			callEval = executeNewGcomm(state, pid, process, arguments, argumentValues, source);
 			break;
-		case "$mpi_getGcomm":
+		case "$mpi_get_gcomm":
 			callEval = executeGetGcomm(state, pid, process, arguments, argumentValues, source);
 			break;
 		case "$mpi_root_scope":
@@ -245,7 +245,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 
 	/**
 	 * Executing the function
-	 * <code>CMPI_AssertConsistentType(void * ptr, int sizeofDatatype)</code>
+	 * <code>$mpi_assert_consistent_type(void * ptr, int sizeofDatatype)</code>
 	 * The function checks if the pointer points to a object whose size of data
 	 * type is consistent with the given size of data type.
 	 * 

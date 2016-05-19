@@ -7,7 +7,7 @@ $input int NB;
 $output double __sum;
 #endif
 
-void main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   double sum = 0;
   int i, n;
   FILE *fp = fopen("data","r");
@@ -26,4 +26,5 @@ void main(int argc, char *argv[]) {
 #endif
   printf("result is %lf\n", sum);
   fclose(fp);
+  return 0;
 }

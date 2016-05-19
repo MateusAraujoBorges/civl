@@ -33,7 +33,7 @@ int gather(int* sendbuf, int sendcount, MPI_Datatype sendtype,
   if(root == rank) {
     void *ptr;
     
-    ptr = $mpi_pointerAdd(recvbuf, root * recvcount, MPI_INT);
+    ptr = $mpi_pointer_add(recvbuf, root * recvcount, MPI_INT);
     $elaborate(recvcount);
     memcpy(ptr, sendbuf, recvcount * sizeofDatatype(MPI_INT));
   }else
@@ -47,7 +47,7 @@ int gather(int* sendbuf, int sendcount, MPI_Datatype sendtype,
 	void * ptr;
 
 	offset = i * recvcount;
-	ptr = $mpi_pointerAdd(recvbuf, offset, MPI_INT);
+	ptr = $mpi_pointer_add(recvbuf, offset, MPI_INT);
 	MPI_Recv(ptr, recvcount, MPI_INT, i, tag, comm,
 		 &status);
       }

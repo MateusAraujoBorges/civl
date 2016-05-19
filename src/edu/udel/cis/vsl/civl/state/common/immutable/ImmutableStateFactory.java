@@ -1709,13 +1709,17 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public Map<Variable, SymbolicExpression> inputVariableValueMap(State state) {
 		Map<Variable, SymbolicExpression> result = new LinkedHashMap<>();
-		// If the parameter is a merged state, the dynamic scope id of the root
-		// lexical scope may not be 0:
-		int rootDysid = state.getDyscope(0, 0);
+		// If the root process has no stack entry, return a empty map:
+		if (state.getProcessState(0).stackSize() > 0) {
+			// If the parameter is a merged state, the dynamic scope id of the
+			// root
+			// lexical scope may not be 0:
+			int rootDysid = state.getDyscope(0, 0);
 
-		for (Variable variable : this.inputVariables) {
-			assert variable.scope().id() == 0;
-			result.put(variable, state.getVariableValue(rootDysid, variable.vid()));
+			for (Variable variable : this.inputVariables) {
+				assert variable.scope().id() == 0;
+				result.put(variable, state.getVariableValue(rootDysid, variable.vid()));
+			}
 		}
 		return result;
 	}
