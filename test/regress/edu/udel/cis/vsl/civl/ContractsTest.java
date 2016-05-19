@@ -139,7 +139,7 @@ public class ContractsTest {
 	@Test
 	public void broadcast() {
 		assertTrue(ui.run(VERIFY, " -input_mpi_nprocs=2 -errorBound=1",
-				enableContract, QUIET, filename("contractsMPI/broadcast.c")));
+				enableContract, QUIET, filename("contractsMPI/broadcast.c"))); 
 	}
 
 	@Test
