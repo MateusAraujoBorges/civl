@@ -155,7 +155,6 @@ void print_cell(double value) {
 /* Prints the current values of u. */
 void write_frame() {
   if (rank != 0) {
-    $elaborate(nxl);
     MPI_Send(u+1, nxl, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
   } else {
     print_time_header();
@@ -204,6 +203,9 @@ void update() {
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   initialize();
+#ifdef _CIVL
+  $elaborate(nxl);
+#endif
   write_frame();
   for (time=1; time < nsteps; time++) {
     exchange_ghost_cells();
