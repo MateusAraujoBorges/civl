@@ -1,5 +1,5 @@
 /*******************************************************************
- * diffusion1d.c: parallel 1d-wave solver with an initial height
+ * wave1d.c: parallel 1d-wave solver with an initial height
  * value.
  * 
  * This example contains a sequential 1d-wave solver which
