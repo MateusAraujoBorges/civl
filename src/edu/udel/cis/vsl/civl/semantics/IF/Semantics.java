@@ -231,36 +231,31 @@ public class Semantics {
 	 *            statement of the transition
 	 * @param pid
 	 *            The process id of the process executing this transition.
-	 * @param processIdentifier
-	 *            The process identifier of the process executing this
-	 *            transition.
 	 * @param statement
 	 *            The statement corresponding to this transition, which should
 	 *            be atomic and deterministic.
 	 * @return A new transition with the given path condition and statement.
 	 */
 	public static Transition newTransition(BooleanExpression pathCondition,
-			int pid, int processIdentifier, Statement statement,
-			AtomicLockAction atomicLockAction) {
-		return new CommonTransition(pathCondition, pid, processIdentifier,
-				statement, atomicLockAction);
+			int pid, Statement statement, AtomicLockAction atomicLockAction) {
+		return new CommonTransition(pathCondition, pid, statement,
+				atomicLockAction);
 	}
 
 	/**
 	 * 
 	 * @param pathCondition
 	 * @param pid
-	 * @param processIdentifier
 	 * @param statement
 	 * @param simplifyState
 	 * @param atomicLockAction
 	 * @return
 	 */
 	public static Transition newTransition(BooleanExpression pathCondition,
-			int pid, int processIdentifier, Statement statement,
-			boolean simplifyState, AtomicLockAction atomicLockAction) {
-		return new CommonTransition(pathCondition, pid, processIdentifier,
-				statement, simplifyState, atomicLockAction);
+			int pid, Statement statement, boolean simplifyState,
+			AtomicLockAction atomicLockAction) {
+		return new CommonTransition(pathCondition, pid, statement,
+				simplifyState, atomicLockAction);
 	}
 
 	/**
@@ -271,20 +266,17 @@ public class Semantics {
 	 *            statement of the transition
 	 * @param pid
 	 *            The process id of the process executing this transition.
-	 * @param processIdentifier
-	 *            The process identifier of the process executing this
-	 *            transition.
 	 * @param target
 	 *            The target location of the process after this transition
 	 * @return A new transition with the given path condition and target
 	 *         location.
 	 */
 	public static NoopTransition newNoopTransition(
-			BooleanExpression pathCondition, int pid, int processIdentifier,
+			BooleanExpression pathCondition, int pid,
 			BooleanExpression assumption, Statement statement,
 			boolean symplifyState, AtomicLockAction atomicLockAction) {
-		return new CommonNoopTransition(pathCondition, pid, processIdentifier,
-				assumption, statement, symplifyState, atomicLockAction);
+		return new CommonNoopTransition(pathCondition, pid, assumption,
+				statement, symplifyState, atomicLockAction);
 	}
 
 	/**

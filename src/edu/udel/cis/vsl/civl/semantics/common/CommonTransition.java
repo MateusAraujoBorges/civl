@@ -34,11 +34,6 @@ public class CommonTransition implements Transition {
 	private int pid;
 
 	/**
-	 * The identifier of the process that this transition belongs to.
-	 */
-	private int processIdentifier;
-
-	/**
 	 * The statement that this transition is to execute, which should be atomic,
 	 * deterministic, and enabled in the context of the path condition.
 	 */
@@ -66,34 +61,29 @@ public class CommonTransition implements Transition {
 	 *            executed.
 	 * @param pid
 	 *            The PID of the process that the transition belongs to.
-	 * @param processIdentifier
-	 *            The identifier of the process that the transition belongs to.
 	 * @param statement
 	 *            The statement of the transition.
 	 */
 	public CommonTransition(BooleanExpression pathCondition, int pid,
-			int processIdentifier, Statement statement, boolean symplifyState,
+			Statement statement, boolean symplifyState,
 			AtomicLockAction atomicLockAction) {
 		this.pathCondition = pathCondition;
 		this.pid = pid;
 		this.statement = statement;
-		this.processIdentifier = processIdentifier;
 		this.atomicLockAction = atomicLockAction;
 		this.simplifyState = symplifyState;
 	}
 
 	public CommonTransition(BooleanExpression pathCondition, int pid,
-			int processIdentifier, Statement statement,
-			AtomicLockAction atomicLockAction) {
-		this(pathCondition, pid, processIdentifier, statement, false,
-				atomicLockAction);
+			Statement statement, AtomicLockAction atomicLockAction) {
+		this(pathCondition, pid, statement, false, atomicLockAction);
 	}
 
 	/* ************************* Methods from Object *********************** */
 
 	@Override
 	public String toString() {
-		String result = "p" + processIdentifier + ": ";
+		String result = "p" + pid + ": ";
 
 		result += statement.toStepString(AtomicKind.NONE, pid, false);
 		return result;
@@ -120,10 +110,6 @@ public class CommonTransition implements Transition {
 
 	public Statement statement() {
 		return statement;
-	}
-
-	public int processIdentifier() {
-		return this.processIdentifier;
 	}
 
 	@Override

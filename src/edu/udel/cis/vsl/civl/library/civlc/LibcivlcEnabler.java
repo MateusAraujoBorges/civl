@@ -94,20 +94,20 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 	@Override
 	public List<Transition> enabledTransitions(State state,
 			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, int processIdentifier, AtomicLockAction atomicLockAction)
+			int pid, AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		String functionName = call.function().name().name();
 		AssignStatement assignmentCall;
 		Expression[] arguments = new Expression[call.arguments().size()];// call.arguments();
 		List<Transition> localTransitions = new LinkedList<>();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = "p" + pid;
 		Pair<State, SymbolicExpression[]> argumentsEval;
 
 		call.arguments().toArray(arguments);
 		switch (functionName) {
 		case "$assume": {
 			localTransitions.add(Semantics.newTransition(pathCondition, pid,
-					processIdentifier, call, true, atomicLockAction));
+					call, true, atomicLockAction));
 			return localTransitions;
 		}
 		case "$choose_int":
@@ -143,23 +143,22 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 				assignmentCall.setTarget(call.target());
 				assignmentCall.source().removeOutgoing(assignmentCall);
 				localTransitions.add(Semantics.newTransition(pathCondition,
-						pid, processIdentifier, assignmentCall,
-						atomicLockAction));
+						pid, assignmentCall, atomicLockAction));
 			}
 			return localTransitions;
 		case "$elaborate":
 			argumentsEval = this.evaluateArguments(state, pid, arguments);
-			return this.elaborateIntWorker(argumentsEval.left, pid,
-					processIdentifier, call, call.getSource(), arguments,
-					argumentsEval.right, atomicLockAction);
+			return this.elaborateIntWorker(argumentsEval.left, pid, call,
+					call.getSource(), arguments, argumentsEval.right,
+					atomicLockAction);
 		case "$elaborate_domain":
 			argumentsEval = this.evaluateArguments(state, pid, arguments);
 			return this.elaborateRectangularDomainWorker(argumentsEval.left,
-					pid, processIdentifier, call, call.getSource(), arguments,
+					pid, call, call.getSource(), arguments,
 					argumentsEval.right, atomicLockAction);
 		default:
 			return super.enabledTransitions(state, call, pathCondition, pid,
-					processIdentifier, atomicLockAction);
+					atomicLockAction);
 		}
 	}
 
@@ -311,30 +310,29 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 	 * @return
 	 */
 	private List<Transition> elaborateIntWorker(State state, int pid,
-			int processIdentifier, Statement call, CIVLSource source,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			AtomicLockAction atomicLockAction) {
-		Set<SymbolicConstant> symbolicConstants = universe
-				.getFreeSymbolicConstants(argumentValues[0]);
-
-		return this.elaborateSymbolicConstants(state, pid, processIdentifier,
-				call, source, symbolicConstants, atomicLockAction);
-	}
-
-	private List<Transition> elaborateRectangularDomainWorker(State state,
-			int pid, int processIdentifier, CallOrSpawnStatement call,
-			CIVLSource source, Expression[] arguments,
+			Statement call, CIVLSource source, Expression[] arguments,
 			SymbolicExpression[] argumentValues,
 			AtomicLockAction atomicLockAction) {
 		Set<SymbolicConstant> symbolicConstants = universe
 				.getFreeSymbolicConstants(argumentValues[0]);
 
-		return this.elaborateSymbolicConstants(state, pid, processIdentifier,
-				call, source, symbolicConstants, atomicLockAction);
+		return this.elaborateSymbolicConstants(state, pid, call, source,
+				symbolicConstants, atomicLockAction);
+	}
+
+	private List<Transition> elaborateRectangularDomainWorker(State state,
+			int pid, CallOrSpawnStatement call, CIVLSource source,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			AtomicLockAction atomicLockAction) {
+		Set<SymbolicConstant> symbolicConstants = universe
+				.getFreeSymbolicConstants(argumentValues[0]);
+
+		return this.elaborateSymbolicConstants(state, pid, call, source,
+				symbolicConstants, atomicLockAction);
 	}
 
 	private List<Transition> elaborateSymbolicConstants(State state, int pid,
-			int processIdentifier, Statement call, CIVLSource source,
+			Statement call, CIVLSource source,
 			Set<SymbolicConstant> symbolicConstants,
 			AtomicLockAction atomicLockAction) {
 		BooleanExpression pathCondition = state.getPathCondition();
@@ -347,8 +345,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 		if (symbolicConstants.size() < 1) {
 			// noop if no symbolic constant is contained
 			return Arrays.asList((Transition) Semantics.newNoopTransition(
-					pathCondition, pid, processIdentifier, null, call, false,
-					atomicLockAction));
+					pathCondition, pid, null, call, false, atomicLockAction));
 		}
 		for (SymbolicConstant var : symbolicConstants) {
 			Interval interval = reasoner
@@ -383,7 +380,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 					.canonic(universe.and(pathCondition, clause));
 
 			transitions.add(Semantics.newNoopTransition(newPathCondition, pid,
-					processIdentifier, clause, call, true, atomicLockAction));
+					clause, call, true, atomicLockAction));
 		}
 		return transitions;
 	}

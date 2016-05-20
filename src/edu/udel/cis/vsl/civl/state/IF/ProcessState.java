@@ -133,22 +133,13 @@ public interface ProcessState {
 	 */
 	int atomicCount();
 
-	/**
-	 * This identifier is not part of the state. It is never renamed, helping to
-	 * identify a specific process when processes get collected.
-	 * 
-	 * @return The identifier of this process.
-	 */
-	int identifier();
-
 	StringBuffer toStringBuffer(String prefix);
 
 	/**
-	 * This name is not part of the state. It is immutable and never renamed,
-	 * helping to identify a specific process when processes get collected.
+	 * This name is not part of the state.
 	 * 
-	 * @return The name of this process, in the form of ,<code>p</code>
-	 *         +identifier, e.g. <code>p2</code>, <code>p3</code>.
+	 * @return The name of this process, in the form of ,<code>p</code> +PID,
+	 *         e.g. <code>p2</code>, <code>p3</code>.
 	 */
 	String name();
 

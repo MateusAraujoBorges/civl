@@ -103,12 +103,12 @@ public abstract class BaseLibraryEnabler extends LibraryComponent implements
 	@Override
 	public List<Transition> enabledTransitions(State state,
 			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, int processIdentifier, AtomicLockAction atomicLockAction)
+			int pid, AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		List<Transition> localTransitions = new LinkedList<>();
 
-		localTransitions.add(Semantics.newTransition(pathCondition, pid,
-				processIdentifier, call, atomicLockAction));
+		localTransitions.add(Semantics.newTransition(pathCondition, pid, call,
+				atomicLockAction));
 		return localTransitions;
 	}
 

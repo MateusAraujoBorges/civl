@@ -319,8 +319,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 		// Add the process states
 		for (ProcessState p : state.getProcessStates()) {
 			if (p != null) {
-				DefaultMutableTreeNode proc = new DefaultMutableTreeNode("p"
-						+ p.identifier() + " (id=" + p.getPid() + ")");
+				DefaultMutableTreeNode proc = new DefaultMutableTreeNode(
+						p.name());
 				for (StackEntry s : p.getStackEntries()) {
 					DefaultMutableTreeNode stackEntryNode = new DefaultMutableTreeNode(
 							s.toString());

@@ -475,15 +475,12 @@ public class CommonExecutor implements Executor {
 					if (proc.getPid() == pid)
 						continue;
 					if (!this.civlConfig.svcomp() && !proc.hasEmptyStack()) {
-						errorLogger
-								.logSimpleError(statement.getSource(), state,
-										process, symbolicAnalyzer
-												.stateInformation(state),
-										ErrorKind.PROCESS_LEAK,
-										"attempt to terminate the main process while process "
-												+ proc.identifier()
-												+ "(process<" + proc.getPid()
-												+ ">) is still running");
+						errorLogger.logSimpleError(statement.getSource(),
+								state, process,
+								symbolicAnalyzer.stateInformation(state),
+								ErrorKind.PROCESS_LEAK,
+								"attempt to terminate the main process while process "
+										+ proc.name() + " is still running");
 						throw new UnsatisfiablePathConditionException();
 					}
 				}
@@ -734,8 +731,7 @@ public class CommonExecutor implements Executor {
 	 */
 	private State executeWork(State state, int pid, Statement statement)
 			throws UnsatisfiablePathConditionException {
-		int processIdentifier = state.getProcessState(pid).identifier();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = "p" + pid;
 		StatementKind kind = statement.statementKind();
 
 		numSteps++;

@@ -316,7 +316,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 		Expression[] arguments;
 		SymbolicExpression[] argumentValues;
 		int numArgs;
-		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
+		String process = state.getProcessState(pid).name();
 
 		numArgs = call.arguments().size();
 		arguments = new Expression[numArgs];

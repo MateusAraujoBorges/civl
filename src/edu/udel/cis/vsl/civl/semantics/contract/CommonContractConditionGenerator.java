@@ -499,8 +499,7 @@ public class CommonContractConditionGenerator extends ContractEvaluator
 		Triple<State, SymbolicExpression, NumericExpression> result;
 		SymbolicExpression symPointer;
 		NumericExpression symOffset;
-		int processIdentifier = state.getProcessState(pid).identifier();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = "p" + pid;
 
 		result = parsePointer(state, pid, pointer);
 		symPointer = result.second;

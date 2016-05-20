@@ -56,17 +56,17 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 	@Override
 	public List<Transition> enabledTransitions(State state,
 			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, int processIdentifier, AtomicLockAction atomicLockAction)
+			int pid, AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		String functionName = call.function().name().name();
 		try {
 			switch (functionName) {
 			case "$domain_partition":
 				return this.enabledDomainPartition(state, call, pathCondition,
-						pid, processIdentifier, atomicLockAction);
+						pid, atomicLockAction);
 			default:
 				return super.enabledTransitions(state, call, pathCondition,
-						pid, processIdentifier, atomicLockAction);
+						pid, atomicLockAction);
 			}
 		} catch (LibraryLoaderException e) {
 			throw new CIVLInternalException("Domain library loader fails",
@@ -78,7 +78,7 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 
 	private List<Transition> enabledDomainPartition(State state,
 			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, int processIdentifier, AtomicLockAction atomicLockAction)
+			int pid, AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException, LibraryLoaderException {
 		List<Statement> statements = new LinkedList<>();
 		List<Transition> transitions = new LinkedList<>();
@@ -90,7 +90,7 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 		Number strategyNum;
 		int strategyInt;
 		Reasoner reasoner = universe.reasoner(pathCondition);
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = "p" + pid;
 
 		call.arguments().toArray(arguments);
 		// arguments: domain, strategy, number of threads
@@ -127,14 +127,14 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 			break;
 		case ModelConfiguration.DECOMP_ROUND_ROBIN:
 			return super.enabledTransitions(state, call, pathCondition, pid,
-					processIdentifier, atomicLockAction);
+					atomicLockAction);
 		case ModelConfiguration.DECOMP_RANDOM:
 		default:
 			throw new CIVLUnimplementedFeatureException("domain strategy");
 		}
 		for (int i = 0; i < statements.size(); i++) {
 			transitions.add(Semantics.newTransition(pathCondition, pid,
-					processIdentifier, statements.get(i), atomicLockAction));
+					statements.get(i), atomicLockAction));
 		}
 		return transitions;
 	}

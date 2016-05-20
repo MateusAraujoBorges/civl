@@ -2875,8 +2875,7 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		ExpressionKind kind = expression.expressionKind();
 		Evaluation result;
-		int processIdentifier = state.getProcessState(pid).identifier();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = state.getProcessState(pid).name();
 
 		if (expression.hasConstantValue())
 			return new Evaluation(state, expression.constantValue());

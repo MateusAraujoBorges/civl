@@ -26,7 +26,8 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
 
-public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEvaluator {
+public class LibcommEvaluator extends BaseLibraryEvaluator implements
+		LibraryEvaluator {
 
 	public static final int messageBufferField = 3;
 	public static final int gcommHandleInCommField = 1;
@@ -35,10 +36,12 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 
 	/* **************************** Constructors *************************** */
 
-	public LibcommEvaluator(String name, Evaluator evaluator, ModelFactory modelFactory, SymbolicUtility symbolicUtil,
+	public LibcommEvaluator(String name, Evaluator evaluator,
+			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
 			LibraryEvaluatorLoader libEvaluatorLoader) {
-		super(name, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer, civlConfig, libEvaluatorLoader);
+		super(name, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer,
+				civlConfig, libEvaluatorLoader);
 	}
 
 	/*
@@ -46,13 +49,13 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 	 */
 
 	@Override
-	public Evaluation evaluateGuard(CIVLSource source, State state, int pid, String function, Expression[] arguments)
+	public Evaluation evaluateGuard(CIVLSource source, State state, int pid,
+			String function, Expression[] arguments)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression[] argumentValues;
 		int numArgs;
 		BooleanExpression guard;
-		int processIdentifier = state.getProcessState(pid).identifier();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = "p" + pid;
 
 		numArgs = arguments.length;
 		argumentValues = new SymbolicExpression[numArgs];
@@ -72,7 +75,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 		switch (function) {
 		case "$comm_dequeue":
 			try {
-				guard = getDequeueGuard(state, pid, process, arguments, argumentValues, source);
+				guard = getDequeueGuard(state, pid, process, arguments,
+						argumentValues, source);
 			} catch (UnsatisfiablePathConditionException e) {
 				// the error that caused the unsatifiable path condition should
 				// already have been reported.
@@ -110,8 +114,10 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 	 * @return A predicate which is the guard of the function $comm_dequeue().
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private BooleanExpression getDequeueGuard(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource dequeueSource) throws UnsatisfiablePathConditionException {
+	private BooleanExpression getDequeueGuard(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource dequeueSource)
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression commHandle = argumentValues[0];
 		NumericExpression source = (NumericExpression) argumentValues[1];
 		NumericExpression tag = (NumericExpression) argumentValues[2];
@@ -124,23 +130,27 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 		Number srcNum, destNum;
 		int srcInt, destInt;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0], commHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+				commHandle, false);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null, gcommHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, null,
+				gcommHandle, false);
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
 		if ((srcNum = reasoner.extractNumber(source)) != null)
 			srcInt = ((IntegerNumber) srcNum).intValue();
 		else
-			throw new CIVLInternalException("Cannot dequeue a message with a non-concrete source",
+			throw new CIVLInternalException(
+					"Cannot dequeue a message with a non-concrete source",
 					arguments[1].getSource());
 		destNum = reasoner.extractNumber(dest);
 		assert destNum != null : "destionation of comm_dequeue cannot be null.";
 		destInt = ((IntegerNumber) destNum).intValue();
-		guard = dequeueGuardGenerator(civlsource, state, gcomm, srcInt, destInt, (NumericExpression) tag);
+		guard = dequeueGuardGenerator(civlsource, state, gcomm, srcInt,
+				destInt, (NumericExpression) tag);
 		return guard;
 	}
 
@@ -168,8 +178,9 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private BooleanExpression dequeueGuardGenerator(CIVLSource civlsource, State state, SymbolicExpression gcomm,
-			int source, int dest, NumericExpression tag) throws UnsatisfiablePathConditionException {
+	private BooleanExpression dequeueGuardGenerator(CIVLSource civlsource,
+			State state, SymbolicExpression gcomm, int source, int dest,
+			NumericExpression tag) throws UnsatisfiablePathConditionException {
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 		boolean hasMsg, isWildTag = false;
 
@@ -180,7 +191,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 		 */
 		if (reasoner.isValid(universe.equals(tag, wildTagValue)))
 			isWildTag = true;
-		hasMsg = !getAllPossibleSources(state, reasoner, gcomm, source, dest, tag, isWildTag, civlsource).isEmpty();
+		hasMsg = !getAllPossibleSources(state, reasoner, gcomm, source, dest,
+				tag, isWildTag, civlsource).isEmpty();
 		return universe.bool(hasMsg);
 
 	}
@@ -210,9 +222,10 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 	 * @return A list of all available sources
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public List<NumericExpression> getAllPossibleSources(State state, Reasoner reasoner, SymbolicExpression gcomm,
-			int source, int destination, NumericExpression tag, boolean isWildTag, CIVLSource civlsource)
-			throws UnsatisfiablePathConditionException {
+	public List<NumericExpression> getAllPossibleSources(State state,
+			Reasoner reasoner, SymbolicExpression gcomm, int source,
+			int destination, NumericExpression tag, boolean isWildTag,
+			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
 		SymbolicExpression buf, bufRow, queue;
 		SymbolicExpression messages = null, message = null;
 		NumericExpression src = universe.integer(source);
@@ -230,14 +243,16 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 			bufRow = universe.arrayRead(buf, src);
 			queue = universe.arrayRead(bufRow, dest);
 			messages = universe.tupleRead(queue, oneObject);
-			queueLength = (NumericExpression) universe.tupleRead(queue, zeroObject);
+			queueLength = (NumericExpression) universe.tupleRead(queue,
+					zeroObject);
 			numQueLength = reasoner.extractNumber(queueLength);
 			assert numQueLength != null : "Length of message queue is expected to be concrete.\n";
 			assert numQueLength instanceof IntegerNumber : "Length of message queue must be able to cast to an IntegerNumber object.\n";
 			intQueLength = ((IntegerNumber) numQueLength).intValue();
 			for (int i = 0; i < intQueLength; i++) {
 				message = universe.arrayRead(messages, universe.integer(i));
-				if (reasoner.isValid(universe.equals(universe.tupleRead(message, twoObject), tag))) {
+				if (reasoner.isValid(universe.equals(
+						universe.tupleRead(message, twoObject), tag))) {
 					results.add(src);
 					return results;
 				}
@@ -247,15 +262,18 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 			bufRow = universe.arrayRead(buf, src);
 			queue = universe.arrayRead(bufRow, dest);
 			messages = universe.tupleRead(queue, oneObject);
-			queueLength = (NumericExpression) universe.tupleRead(queue, zeroObject);
-			if (reasoner.isValid(universe.lessThan(zero, (NumericExpression) queueLength)))
+			queueLength = (NumericExpression) universe.tupleRead(queue,
+					zeroObject);
+			if (reasoner.isValid(universe.lessThan(zero,
+					(NumericExpression) queueLength)))
 				results.add(src);
 			return results;
 		} // any source and non-wild card tag
 		else if (source == -1 && !isWildTag) {
 			Number numNprocs, numQueLength;
 			int intNumNprocs, intNumQueLength;
-			NumericExpression nprocs = (NumericExpression) universe.tupleRead(gcomm, zeroObject);
+			NumericExpression nprocs = (NumericExpression) universe.tupleRead(
+					gcomm, zeroObject);
 
 			numNprocs = reasoner.extractNumber(nprocs);
 			assert numNprocs != null : "The number of processes in communicator is expected to be concrete.\n";
@@ -267,7 +285,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 				bufRow = universe.arrayRead(buf, currProc);
 				queue = universe.arrayRead(bufRow, dest);
 				messages = universe.tupleRead(queue, oneObject);
-				queueLength = (NumericExpression) universe.tupleRead(queue, zeroObject);
+				queueLength = (NumericExpression) universe.tupleRead(queue,
+						zeroObject);
 				numQueLength = reasoner.extractNumber(queueLength);
 				assert numQueLength != null : "Length of message queue is expected to be concrete.\n";
 				assert numQueLength instanceof IntegerNumber : "Length of message queue must be able to cast to an IntegerNumber object.\n";
@@ -276,7 +295,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 					BooleanExpression tagMatchClaim;
 
 					message = universe.arrayRead(messages, universe.integer(j));
-					tagMatchClaim = universe.equals(universe.tupleRead(message, twoObject), tag);
+					tagMatchClaim = universe.equals(
+							universe.tupleRead(message, twoObject), tag);
 					if (reasoner.isValid(tagMatchClaim)) {
 						results.add(currProc);
 						break;
@@ -288,7 +308,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 		else if (source == -1 && isWildTag) {
 			Number numNprocs;
 			int intNumNprocs;
-			NumericExpression nprocs = (NumericExpression) universe.tupleRead(gcomm, zeroObject);
+			NumericExpression nprocs = (NumericExpression) universe.tupleRead(
+					gcomm, zeroObject);
 
 			numNprocs = reasoner.extractNumber(nprocs);
 			assert numNprocs != null : "The number of processes in communicator is expected to be concrete.\n";
@@ -300,8 +321,10 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 				bufRow = universe.arrayRead(buf, currProc);
 				queue = universe.arrayRead(bufRow, dest);
 				messages = universe.tupleRead(queue, oneObject);
-				queueLength = (NumericExpression) universe.tupleRead(queue, zeroObject);
-				if (reasoner.isValid(universe.lessThan(zero, (NumericExpression) queueLength)))
+				queueLength = (NumericExpression) universe.tupleRead(queue,
+						zeroObject);
+				if (reasoner.isValid(universe.lessThan(zero,
+						(NumericExpression) queueLength)))
 					results.add(currProc);
 			}
 			return results;
@@ -326,13 +349,15 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public Evaluation getGcommByComm(State state, int pid, String process, SymbolicExpression comm,
-			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
+	public Evaluation getGcommByComm(State state, int pid, String process,
+			SymbolicExpression comm, CIVLSource civlsource)
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression gcommHandle;
 		Evaluation eval;
 
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null, gcommHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, null,
+				gcommHandle, false);
 		return eval;
 	}
 
@@ -351,15 +376,16 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public Evaluation getCommByCommHandleExpr(State state, int pid, String process, Expression commHandleExpr)
+	public Evaluation getCommByCommHandleExpr(State state, int pid,
+			String process, Expression commHandleExpr)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression commHandle;
 		Evaluation eval;
 
 		eval = evaluator.evaluate(state, pid, commHandleExpr);
 		commHandle = eval.value;
-		eval = evaluator.dereference(commHandleExpr.getSource(), eval.state, process, commHandleExpr, commHandle,
-				false);
+		eval = evaluator.dereference(commHandleExpr.getSource(), eval.state,
+				process, commHandleExpr, commHandle, false);
 		return eval;
 	}
 
@@ -383,8 +409,10 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public SymbolicExpression readProcArray(State state, int pid, String process, SymbolicExpression procArray,
-			NumericExpression index, CIVLSource source) throws UnsatisfiablePathConditionException {
+	public SymbolicExpression readProcArray(State state, int pid,
+			String process, SymbolicExpression procArray,
+			NumericExpression index, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
 		BooleanExpression claim;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 		ResultType resultType;
@@ -392,9 +420,18 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements LibraryEva
 		claim = universe.lessThan(index, universe.length(procArray));
 		resultType = reasoner.valid(claim).getResultType();
 		if (!resultType.equals(ResultType.YES)) {
-			state = this.errorLogger.logError(source, state, process, symbolicAnalyzer.stateInformation(state), claim,
-					resultType, ErrorKind.OUT_OF_BOUNDS, "The place of " + process
-							+ " in a communicator is out of the bound of the total number of processes");
+			state = this.errorLogger
+					.logError(
+							source,
+							state,
+							process,
+							symbolicAnalyzer.stateInformation(state),
+							claim,
+							resultType,
+							ErrorKind.OUT_OF_BOUNDS,
+							"The place of "
+									+ process
+									+ " in a communicator is out of the bound of the total number of processes");
 			throw new UnsatisfiablePathConditionException();
 		}
 		return universe.arrayRead(procArray, index);

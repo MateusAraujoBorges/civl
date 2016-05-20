@@ -35,8 +35,7 @@ public class LibconcurrencyEvaluator extends BaseLibraryEvaluator implements
 		SymbolicExpression[] argumentValues;
 		int numArgs;
 		BooleanExpression guard;
-		int processIdentifier = state.getProcessState(pid).identifier();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = "p" + pid;
 
 		numArgs = arguments.length;
 		argumentValues = new SymbolicExpression[numArgs];

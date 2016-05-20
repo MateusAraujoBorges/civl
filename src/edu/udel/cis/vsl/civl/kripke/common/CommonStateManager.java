@@ -19,7 +19,6 @@ import edu.udel.cis.vsl.civl.kripke.common.StateStatus.EnabledStatus;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
-import edu.udel.cis.vsl.civl.model.IF.location.Location.AtomicKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.NoopTransition;
@@ -176,7 +175,6 @@ public class CommonStateManager implements StateManager {
 		int pid;
 		int numProcs;
 		int oldMaxCanonicId = this.maxCanonicId;
-		int processIdentifier;
 		Transition firstTransition;
 		State oldState = state;
 		StateStatus stateStatus;
@@ -189,24 +187,17 @@ public class CommonStateManager implements StateManager {
 
 		assert transition instanceof Transition;
 		pid = ((Transition) transition).pid();
-		processIdentifier = ((Transition) transition).processIdentifier();
-		process = "p" + processIdentifier + " (id = " + pid + ")";
-		traceStep = new CommonTraceStep(processIdentifier);
+		process = "p" + pid;
+		traceStep = new CommonTraceStep(pid);
 		firstTransition = (Transition) transition;
 		if (state.getProcessState(pid).getLocation().enterAtom())
 			atomCount = 1;
-		// if (config.debug()) {
-		// config.out().println(
-		// "===========memory analysis at " + state + "=============");
-		// stateFactory.printReachableMemoryUnits(config.out(), state);
-		// }
 		state = executor.execute(state, pid, firstTransition);
 		if (printTransitions) {
 			if (this.printSavedStates)
 				config.out().println();
-			printTransitionPrefix(oldState, processIdentifier);
-			printStatement(oldState, state, firstTransition, AtomicKind.NONE,
-					processIdentifier, false);
+			printTransitionPrefix(oldState, pid);
+			printStatement(oldState, state, firstTransition);
 			oldState = state;
 		}
 		traceStep.addAtomicStep(new CommonAtomicStep(state, firstTransition));
@@ -226,8 +217,7 @@ public class CommonStateManager implements StateManager {
 			if (printTransitions) {
 				if (this.printAllStates)
 					config.out().println();
-				printStatement(oldState, state, stateStatus.enabledTransition,
-						AtomicKind.NONE, processIdentifier, false);
+				printStatement(oldState, state, stateStatus.enabledTransition);
 			}
 			traceStep.addAtomicStep(new CommonAtomicStep(state,
 					stateStatus.enabledTransition));
@@ -367,8 +357,7 @@ public class CommonStateManager implements StateManager {
 					"\nample set at state " + updatedState.getCanonicId()
 							+ " fully expanded");
 			if (config.showAmpleSetWtStates())
-				config.out().println(
-						updatedState.callStackToString());
+				config.out().println(updatedState.callStackToString());
 		}
 		if (printSavedStates
 				&& (!config.saveStates() || this.maxCanonicId > oldMaxCanonicId)) {
@@ -530,10 +519,9 @@ public class CommonStateManager implements StateManager {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private void printStatement(State currentState, State newState,
-			Transition transition, AtomicKind atomicKind, int atomCount,
-			boolean atomicLockVarChanged)
-			throws UnsatisfiablePathConditionException {
+			Transition transition) throws UnsatisfiablePathConditionException {
 		Statement stmt = transition.statement();
+
 		config.out().print("  ");
 		config.out().print(stmt.locationStepString());
 		config.out().print(": ");
@@ -556,9 +544,6 @@ public class CommonStateManager implements StateManager {
 		}
 		config.out().print(" at ");
 		config.out().print(stmt.summaryOfSource());
-		// config.out().print(
-		// transition.statement().toStepString(atomicKind, atomCount,
-		// atomicLockVarChanged));
 		config.out().println();
 	}
 

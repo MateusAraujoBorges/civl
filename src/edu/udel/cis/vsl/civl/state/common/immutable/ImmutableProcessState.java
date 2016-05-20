@@ -123,11 +123,12 @@ public class ImmutableProcessState implements ProcessState {
 	 */
 	private StackEntry[] callStack;
 
-	/**
-	 * This identifier is not part of the state. It is never renamed, helping to
-	 * identify a specific process when processes get collected.
-	 */
-	private int identifier;
+	// /**
+	// * This identifier is not part of the state. It is never renamed, helping
+	// to
+	// * identify a specific process when processes get collected.
+	// */
+	// private int identifier;
 
 	private Map<SymbolicExpression, Boolean> reachableMemoryUnitsWoPointer;
 	// private Set<SymbolicExpression> reachableMemoryUnits;
@@ -142,19 +143,15 @@ public class ImmutableProcessState implements ProcessState {
 	 * 
 	 * @param pid
 	 *            the process ID
-	 * @param identifier
-	 *            the identifier of the process
 	 * @param stack
 	 *            the call stack
 	 * @param atomicCount
 	 *            the atomic count
 	 */
-	ImmutableProcessState(int pid, int identifier, StackEntry[] stack,
-			int atomicCount) {
+	ImmutableProcessState(int pid, StackEntry[] stack, int atomicCount) {
 		this.pid = pid;
 		this.callStack = stack;
 		this.atomicCount = atomicCount;
-		this.identifier = identifier;
 	}
 
 	/**
@@ -165,8 +162,8 @@ public class ImmutableProcessState implements ProcessState {
 	 * @param identifier
 	 *            The identifier of the process, which is not part of the state.
 	 */
-	ImmutableProcessState(int pid, int identifier) {
-		this(pid, identifier, new ImmutableStackEntry[0], 0);
+	ImmutableProcessState(int pid) {
+		this(pid, new ImmutableStackEntry[0], 0);
 	}
 
 	/* ********************** Package-private Methods ********************** */
@@ -194,8 +191,7 @@ public class ImmutableProcessState implements ProcessState {
 		ImmutableStackEntry[] newStack = new ImmutableStackEntry[callStack.length - 1];
 
 		System.arraycopy(callStack, 1, newStack, 0, callStack.length - 1);
-		return new ImmutableProcessState(pid, this.identifier, newStack,
-				this.atomicCount);
+		return new ImmutableProcessState(pid, newStack, this.atomicCount);
 	}
 
 	/**
@@ -212,8 +208,7 @@ public class ImmutableProcessState implements ProcessState {
 
 		System.arraycopy(callStack, 0, newStack, 1, callStack.length);
 		newStack[0] = newStackEntry;
-		return new ImmutableProcessState(pid, this.identifier, newStack,
-				this.atomicCount);
+		return new ImmutableProcessState(pid, newStack, this.atomicCount);
 	}
 
 	/**
@@ -234,8 +229,7 @@ public class ImmutableProcessState implements ProcessState {
 
 		System.arraycopy(callStack, 1, newStack, 1, length - 1);
 		newStack[0] = newStackEntry;
-		return new ImmutableProcessState(pid, this.identifier, newStack,
-				this.atomicCount);
+		return new ImmutableProcessState(pid, newStack, this.atomicCount);
 	}
 
 	/**
@@ -267,8 +261,7 @@ public class ImmutableProcessState implements ProcessState {
 	 * @return A new instance of process state with only the PID being changed.
 	 */
 	ImmutableProcessState setPid(int pid) {
-		return new ImmutableProcessState(pid, this.identifier, callStack,
-				this.atomicCount);
+		return new ImmutableProcessState(pid, callStack, this.atomicCount);
 	}
 
 	/**
@@ -280,8 +273,7 @@ public class ImmutableProcessState implements ProcessState {
 	 *         changed.
 	 */
 	ProcessState setStackEntries(StackEntry[] frames) {
-		return new ImmutableProcessState(pid, this.identifier, frames,
-				this.atomicCount);
+		return new ImmutableProcessState(pid, frames, this.atomicCount);
 	}
 
 	/**
@@ -300,8 +292,7 @@ public class ImmutableProcessState implements ProcessState {
 
 		System.arraycopy(callStack, 0, newStack, 0, n);
 		newStack[index] = frame;
-		return new ImmutableProcessState(pid, this.identifier, newStack,
-				this.atomicCount);
+		return new ImmutableProcessState(pid, newStack, this.atomicCount);
 	}
 
 	/**
@@ -333,8 +324,8 @@ public class ImmutableProcessState implements ProcessState {
 						newScope);
 			}
 		}
-		return stackChange ? new ImmutableProcessState(pid, this.identifier,
-				newStack, atomicCount) : this;
+		return stackChange ? new ImmutableProcessState(pid, newStack,
+				atomicCount) : this;
 	}
 
 	/* ********************* Methods from ProcessState ********************* */
@@ -351,8 +342,8 @@ public class ImmutableProcessState implements ProcessState {
 
 	@Override
 	public ProcessState decrementAtomicCount() {
-		return new ImmutableProcessState(this.pid, this.identifier,
-				this.callStack, this.atomicCount - 1);
+		return new ImmutableProcessState(this.pid, this.callStack,
+				this.atomicCount - 1);
 	}
 
 	@Override
@@ -385,19 +376,14 @@ public class ImmutableProcessState implements ProcessState {
 	}
 
 	@Override
-	public int identifier() {
-		return this.identifier;
-	}
-
-	@Override
 	public boolean inAtomic() {
 		return this.atomicCount > 0;
 	}
 
 	@Override
 	public ProcessState incrementAtomicCount() {
-		return new ImmutableProcessState(this.pid, this.identifier,
-				this.callStack, this.atomicCount + 1);
+		return new ImmutableProcessState(this.pid, this.callStack,
+				this.atomicCount + 1);
 	}
 
 	/**
@@ -427,7 +413,7 @@ public class ImmutableProcessState implements ProcessState {
 	public StringBuffer toStringBuffer(String prefix) {
 		StringBuffer result = new StringBuffer();
 
-		result.append(prefix + "process p" + identifier + "(id=" + pid + ")\n");
+		result.append(prefix + "process " + pid + ")\n");
 		if (atomicCount != 0)
 			result.append(prefix + "| atomicCount=" + atomicCount + "\n");
 		result.append(prefix + "| call stack\n");
@@ -444,7 +430,7 @@ public class ImmutableProcessState implements ProcessState {
 	public StringBuffer toSBrieftringBuffer() {
 		StringBuffer result = new StringBuffer();
 
-		result.append("process p" + identifier + " (id=" + pid + "):\n");
+		result.append("process " + pid + "):\n");
 		if (callStack.length < 1)
 			result.append("  terminated");
 		else
@@ -468,7 +454,7 @@ public class ImmutableProcessState implements ProcessState {
 
 	@Override
 	public String name() {
-		return "p" + this.identifier;
+		return "p" + this.pid;
 	}
 
 	public Map<SymbolicExpression, Boolean> getReachableMemUnitsWoPointer() {

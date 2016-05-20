@@ -215,8 +215,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 	@Override
 	protected State executeStatement(State state, int pid, Statement statement)
 			throws UnsatisfiablePathConditionException {
-		int processIdentifier = state.getProcessState(pid).identifier();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = "p" + pid;
 
 		numSteps++;
 		switch (statement.statementKind()) {
@@ -358,15 +357,12 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 					if (proc.getPid() == pid)
 						continue;
 					if (!this.civlConfig.svcomp() && !proc.hasEmptyStack()) {
-						errorLogger
-								.logSimpleError(statement.getSource(), state,
-										process, symbolicAnalyzer
-												.stateInformation(state),
-										ErrorKind.PROCESS_LEAK,
-										"attempt to terminate the main process while process "
-												+ proc.identifier()
-												+ "(process<" + proc.getPid()
-												+ ">) is still running");
+						errorLogger.logSimpleError(statement.getSource(),
+								state, process,
+								symbolicAnalyzer.stateInformation(state),
+								ErrorKind.PROCESS_LEAK,
+								"attempt to terminate the main process while "
+										+ proc.name() + " is still running");
 						throw new UnsatisfiablePathConditionException();
 					}
 				}
@@ -1223,8 +1219,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 			throws UnsatisfiablePathConditionException {
 		Iterator<List<Integer>> mallocsIter = conditionGenerator
 				.validPointersIterator();
-		int processIdentifier = state.getProcessState(pid).identifier();
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = "p" + pid;
 		Evaluation eval;
 
 		while (mallocsIter.hasNext()) {

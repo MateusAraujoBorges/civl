@@ -48,13 +48,6 @@ public interface Transition {
 	int pid();
 
 	/**
-	 * The identifier of the process that this transition belongs to.
-	 * 
-	 * @return The identifier of the process that this transition belongs to.
-	 */
-	int processIdentifier();
-
-	/**
 	 * The atomic lock action associates with this transition. See
 	 * {@link AtomicLockAction} for more details.
 	 * 

@@ -120,8 +120,7 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 		ExpressionKind kind = expression.expressionKind();
 
 		if (kind.equals(ExpressionKind.MPI_CONTRACT_EXPRESSION)) {
-			int processIdentifier = state.getProcessState(pid).identifier();
-			String process = "p" + processIdentifier + " (id = " + pid + ")";
+			String process = state.getProcessState(pid).name();
 
 			return evaluateMPIContractExpression(state, pid, process,
 					(MPIContractExpression) expression);

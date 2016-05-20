@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -405,7 +406,6 @@ public abstract class CommonEnabler implements Enabler {
 			Statement statement, BooleanExpression pathCondition, int pid,
 			AtomicLockAction atomicLockAction) {
 		List<Transition> localTransitions = new LinkedList<>();
-		int processIdentifier = state.getProcessState(pid).identifier();
 
 		try {
 			if (statement instanceof CallOrSpawnStatement) {
@@ -414,7 +414,7 @@ public abstract class CommonEnabler implements Enabler {
 				if (call.isSystemCall()) { // TODO check function pointer
 					return this.getEnabledTransitionsOfSystemCall(
 							call.getSource(), state, call, pathCondition, pid,
-							processIdentifier, atomicLockAction);
+							atomicLockAction);
 				} else if (procBound > 0 && call.isSpawn()
 						&& state.numLiveProcs() >= procBound) {
 					// empty set: spawn is disabled due to procBound
@@ -425,11 +425,10 @@ public abstract class CommonEnabler implements Enabler {
 				if (!((ContractVerifyStatement) statement).isWorker())
 					return this.enabledTransitionsOfContractVerifyStatement(
 							state, (ContractVerifyStatement) statement,
-							pathCondition, pid, processIdentifier,
-							atomicLockAction);
+							pathCondition, pid, atomicLockAction);
 			}
 			localTransitions.add(Semantics.newTransition(pathCondition, pid,
-					processIdentifier, statement, atomicLockAction));
+					statement, atomicLockAction));
 		} catch (UnsatisfiablePathConditionException e) {
 			// nothing to do: don't add this transition
 		}
@@ -456,8 +455,6 @@ public abstract class CommonEnabler implements Enabler {
 	 *            Current path condition
 	 * @param pid
 	 *            The PID of the process
-	 * @param processIdentifier
-	 *            The String identifier of the process
 	 * @param atomicLockAction
 	 *            The {@link AtomicLockAction}
 	 * @return
@@ -465,13 +462,13 @@ public abstract class CommonEnabler implements Enabler {
 	 */
 	public List<Transition> enabledTransitionsOfContractVerifyStatement(
 			State state, ContractVerifyStatement statement,
-			BooleanExpression pathCondition, int pid, int processIdentifier,
+			BooleanExpression pathCondition, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		List<Transition> transitions = new LinkedList<>();
 		List<BooleanExpression> newPCs = this
 				.elaboratesAssumptions4ContractVerify(state, statement,
-						pathCondition, pid, processIdentifier, atomicLockAction);
+						pathCondition, pid, atomicLockAction);
 		// TODO: make each behavior deterministic
 		// TODO: pointer lazy initialization
 		// Creates ContractVerifyStatement workers:
@@ -483,8 +480,8 @@ public abstract class CommonEnabler implements Enabler {
 
 		worker.setAsWorker();
 		for (BooleanExpression newPC : newPCs)
-			transitions.add(Semantics.newTransition(newPC, pid,
-					processIdentifier, worker, atomicLockAction));
+			transitions.add(Semantics.newTransition(newPC, pid, worker,
+					atomicLockAction));
 		return transitions;
 	}
 
@@ -519,7 +516,7 @@ public abstract class CommonEnabler implements Enabler {
 	 */
 	private List<BooleanExpression> elaboratesAssumptions4ContractVerify(
 			State state, ContractVerifyStatement statement,
-			BooleanExpression pathCondition, int pid, int processIdentifier,
+			BooleanExpression pathCondition, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		CIVLFunction verifyingFunction = statement.function();
@@ -578,18 +575,23 @@ public abstract class CommonEnabler implements Enabler {
 	 * Computes the set of enabled transitions of a system function call.
 	 * 
 	 * @param source
+	 *            the source of the call statement
 	 * @param state
+	 *            the current state
 	 * @param call
+	 *            the system call statement
 	 * @param pathCondition
+	 *            the current path condition
 	 * @param pid
-	 * @param processIdentifier
-	 * @param assignAtomicLock
+	 *            the PID
+	 * @param atomicLockAction
+	 *            the atomic lock action
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private List<Transition> getEnabledTransitionsOfSystemCall(
 			CIVLSource source, State state, CallOrSpawnStatement call,
-			BooleanExpression pathCondition, int pid, int processIdentifier,
+			BooleanExpression pathCondition, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		SystemFunction sysFunction = (SystemFunction) call.function();
@@ -599,36 +601,16 @@ public abstract class CommonEnabler implements Enabler {
 			try {
 				LibraryEnabler libEnabler = libraryEnabler(source, libraryName);
 
-				return libEnabler
-						.enabledTransitions(state, call, pathCondition, pid,
-								processIdentifier, atomicLockAction);
+				return libEnabler.enabledTransitions(state, call,
+						pathCondition, pid, atomicLockAction);
 			} catch (LibraryLoaderException exception) {
-				return makeTransitions(pathCondition, pid, processIdentifier,
-						atomicLockAction, call);
+				return Arrays.asList(Semantics.newTransition(pathCondition,
+						pid, call, atomicLockAction));
 			}
 		} else {
-			return makeTransitions(pathCondition, pid, processIdentifier,
-					atomicLockAction, call);
+			return Arrays.asList(Semantics.newTransition(pathCondition, pid,
+					call, atomicLockAction));
 		}
-	}
-
-	/**
-	 *
-	 * @param pathCondition
-	 * @param pid
-	 * @param processIdentifier
-	 * @param atomicLockAction
-	 * @param call
-	 * @return
-	 */
-	private List<Transition> makeTransitions(BooleanExpression pathCondition,
-			int pid, int processIdentifier, AtomicLockAction atomicLockAction,
-			CallOrSpawnStatement call) {
-		List<Transition> localTransitions = new LinkedList<>();
-
-		localTransitions.add(Semantics.newTransition(pathCondition, pid,
-				processIdentifier, call, atomicLockAction));
-		return localTransitions;
 	}
 
 	/**

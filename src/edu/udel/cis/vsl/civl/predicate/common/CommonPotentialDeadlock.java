@@ -209,8 +209,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 					if (call.function() != null)
 						if (call.function().name().name()
 								.equals("$comm_enqueue")) {
-							String process = "p" + p.identifier() + " (id = "
-									+ pid + ")";
+							String process = p.name();
 							BooleanExpression claim;
 
 							claim = libEnabler.hasMatchedDequeue(state, pid,

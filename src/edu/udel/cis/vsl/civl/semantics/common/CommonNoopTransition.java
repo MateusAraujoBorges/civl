@@ -10,11 +10,9 @@ public class CommonNoopTransition extends CommonTransition implements
 	private BooleanExpression assumption;
 
 	public CommonNoopTransition(BooleanExpression pathCondition, int pid,
-			int processIdentifier, BooleanExpression assumption,
-			Statement statement, boolean symplifyState,
-			AtomicLockAction atomicLockAction) {
-		super(pathCondition, pid, processIdentifier, statement, symplifyState,
-				atomicLockAction);
+			BooleanExpression assumption, Statement statement,
+			boolean symplifyState, AtomicLockAction atomicLockAction) {
+		super(pathCondition, pid, statement, symplifyState, atomicLockAction);
 		this.assumption = assumption;
 	}
 

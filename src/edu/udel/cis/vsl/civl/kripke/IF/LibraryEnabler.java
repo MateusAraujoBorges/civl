@@ -80,17 +80,14 @@ public interface LibraryEnabler {
 	 *            The current path condition.
 	 * @param pid
 	 *            The ID of the process that the function call belongs to.
-	 * @param processIdentifier
 	 * @param atomicLockAction
-	 * @param assignAtomicLock
-	 *            The assignment statement for the atomic lock variable, should
-	 *            be null except that the process is going to re-obtain the
-	 *            atomic lock variable.
+	 *            The action for the atomic lock variable, could be NONE, GRAB,
+	 *            or RELEASE. see also {@link AtomicLockAction}.
 	 * @return The set of enabled transitions.
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	List<Transition> enabledTransitions(State state, CallOrSpawnStatement call,
-			BooleanExpression pathCondition, int pid, int processIdentifier,
+			BooleanExpression pathCondition, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException;
 }

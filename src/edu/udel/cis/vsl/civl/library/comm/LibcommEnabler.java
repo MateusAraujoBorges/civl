@@ -50,55 +50,68 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 
-public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler {
+public class LibcommEnabler extends BaseLibraryEnabler implements
+		LibraryEnabler {
 
 	/* **************************** Constructors *************************** */
 
-	public LibcommEnabler(String name, Enabler primaryEnabler, Evaluator evaluator, ModelFactory modelFactory,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
-			LibraryEnablerLoader libEnablerLoader, LibraryEvaluatorLoader libEvaluatorLoader) {
-		super(name, primaryEnabler, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer, civlConfig,
-				libEnablerLoader, libEvaluatorLoader);
+	public LibcommEnabler(String name, Enabler primaryEnabler,
+			Evaluator evaluator, ModelFactory modelFactory,
+			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
+			CIVLConfiguration civlConfig,
+			LibraryEnablerLoader libEnablerLoader,
+			LibraryEvaluatorLoader libEvaluatorLoader) {
+		super(name, primaryEnabler, evaluator, modelFactory, symbolicUtil,
+				symbolicAnalyzer, civlConfig, libEnablerLoader,
+				libEvaluatorLoader);
 	}
 
 	/* ********************* Methods from LibraryEnabler ******************* */
 
 	@Override
-	public BitSet ampleSet(State state, int pid, CallOrSpawnStatement statement,
-			MemoryUnitSet[] reachablePtrWritableMap, MemoryUnitSet[] reachablePtrReadonlyMap,
-			MemoryUnitSet[] reachableNonPtrWritableMap, MemoryUnitSet[] reachableNonPtrReadonlyMap)
+	public BitSet ampleSet(State state, int pid,
+			CallOrSpawnStatement statement,
+			MemoryUnitSet[] reachablePtrWritableMap,
+			MemoryUnitSet[] reachablePtrReadonlyMap,
+			MemoryUnitSet[] reachableNonPtrWritableMap,
+			MemoryUnitSet[] reachableNonPtrReadonlyMap)
 			throws UnsatisfiablePathConditionException {
 		Identifier name;
 		CallOrSpawnStatement call;
 
 		if (!(statement instanceof CallOrSpawnStatement)) {
-			throw new CIVLInternalException("Unsupported statement for civlc", statement);
+			throw new CIVLInternalException("Unsupported statement for civlc",
+					statement);
 		}
 		call = (CallOrSpawnStatement) statement;
 		name = call.function().name();
 		switch (name.name()) {
 		case "$comm_enqueue":
 		case "$comm_dequeue":
-			return ampleSetWork(state, pid, call, reachablePtrWritableMap, reachablePtrReadonlyMap,
-					reachableNonPtrWritableMap, reachableNonPtrReadonlyMap);
+			return ampleSetWork(state, pid, call, reachablePtrWritableMap,
+					reachablePtrReadonlyMap, reachableNonPtrWritableMap,
+					reachableNonPtrReadonlyMap);
 		default:
-			return super.ampleSet(state, pid, statement, reachablePtrWritableMap, reachablePtrReadonlyMap,
+			return super.ampleSet(state, pid, statement,
+					reachablePtrWritableMap, reachablePtrReadonlyMap,
 					reachableNonPtrWritableMap, reachableNonPtrReadonlyMap);
 		}
 	}
 
 	@Override
-	public List<Transition> enabledTransitions(State state, CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, int processIdentifier, AtomicLockAction atomicLockAction)
+	public List<Transition> enabledTransitions(State state,
+			CallOrSpawnStatement call, BooleanExpression pathCondition,
+			int pid, AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		String functionName = call.function().name().name();
 
 		switch (functionName) {
 		case "$comm_dequeue":
-			return this.enabledCommDequeueTransitions(state, call, pathCondition, pid, processIdentifier,
-					atomicLockAction);
+			return this.enabledCommDequeueTransitions(state, call,
+					pathCondition, pid, atomicLockAction);
 		default:
-			return super.enabledTransitions(state, call, pathCondition, pid, processIdentifier, atomicLockAction);
+			return super.enabledTransitions(state, call, pathCondition, pid,
+					atomicLockAction);
 		}
 	}
 
@@ -120,9 +133,11 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 	 * @throws UnsatisfiablePathConditionException
 	 * @throws LibraryLoaderException
 	 */
-	private BitSet ampleSetWork(State state, int pid, CallOrSpawnStatement call,
-			MemoryUnitSet[] reachablePtrWritableMap, MemoryUnitSet[] reachablePtrReadonlyMap,
-			MemoryUnitSet[] reachableNonPtrWritableMap, MemoryUnitSet[] reachableNonPtrReadonlyMap)
+	private BitSet ampleSetWork(State state, int pid,
+			CallOrSpawnStatement call, MemoryUnitSet[] reachablePtrWritableMap,
+			MemoryUnitSet[] reachablePtrReadonlyMap,
+			MemoryUnitSet[] reachableNonPtrWritableMap,
+			MemoryUnitSet[] reachableNonPtrReadonlyMap)
 			throws UnsatisfiablePathConditionException {
 		int numArgs;
 		numArgs = call.arguments().size();
@@ -131,7 +146,7 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 		String function = call.function().name().name();
 		CIVLSource source = call.getSource();
 		BitSet ampleSet = new BitSet();
-		String process = "p" + state.getProcessState(pid).identifier() + " (id = " + pid + ")";
+		String process = state.getProcessState(pid).name();
 
 		arguments = new Expression[numArgs];
 		argumentValues = new SymbolicExpression[numArgs];
@@ -154,27 +169,32 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 			Reasoner reasoner = universe.reasoner(state.getPathCondition());
 
 			if (reasoner.isValid(universe.lessThanEquals(zero, argSrc))) {
-				return this.computeAmpleSetByHandleObject(state, pid, arguments[0], argumentValues[0],
-						reachablePtrWritableMap, reachablePtrReadonlyMap, reachableNonPtrWritableMap,
-						reachableNonPtrReadonlyMap);
+				return this.computeAmpleSetByHandleObject(state, pid,
+						arguments[0], argumentValues[0],
+						reachablePtrWritableMap, reachablePtrReadonlyMap,
+						reachableNonPtrWritableMap, reachableNonPtrReadonlyMap);
 			} else {
-				for (int otherPid : procIdsInComm(state, pid, process, arguments, argumentValues))
+				for (int otherPid : procIdsInComm(state, pid, process,
+						arguments, argumentValues))
 					ampleSet.set(otherPid);
 			}
 			return ampleSet;
 		case "$comm_enqueue":
 			// Because we don't know if other processes will call an wild card
 			// receive(dequeue), we have to put all processes into ample set.
-			ampleSet = this.computeAmpleSetByHandleObject(state, pid, arguments[0], argumentValues[0],
-					reachablePtrWritableMap, reachablePtrReadonlyMap, reachableNonPtrWritableMap,
+			ampleSet = this.computeAmpleSetByHandleObject(state, pid,
+					arguments[0], argumentValues[0], reachablePtrWritableMap,
+					reachablePtrReadonlyMap, reachableNonPtrWritableMap,
 					reachableNonPtrReadonlyMap);
 
 			if (this.civlConfig.deadlock().equals(DeadlockKind.POTENTIAL)) {
 				BooleanExpression hasMatchedDequeue;
 
-				hasMatchedDequeue = this.hasMatchedDequeue(state, pid, process, call, false);
+				hasMatchedDequeue = this.hasMatchedDequeue(state, pid, process,
+						call, false);
 				if (hasMatchedDequeue.isFalse()) {
-					for (int otherPid : this.procIdsInComm(state, pid, process, arguments, argumentValues))
+					for (int otherPid : this.procIdsInComm(state, pid, process,
+							arguments, argumentValues))
 						ampleSet.set(otherPid);
 				}
 			}
@@ -197,8 +217,6 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 	 *            The current path condition.
 	 * @param pid
 	 *            The ID of the process that the function call belongs to.
-	 * @param processIdentifier
-	 *            The identifier of the process
 	 * @param assignAtomicLock
 	 *            The assignment statement for the atomic lock variable, should
 	 *            be null except that the process is going to re-obtain the
@@ -206,13 +224,14 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private List<Transition> enabledCommDequeueTransitions(State state, CallOrSpawnStatement call,
-			BooleanExpression pathCondition, int pid, int processIdentifier, AtomicLockAction atomicLockAction)
+	private List<Transition> enabledCommDequeueTransitions(State state,
+			CallOrSpawnStatement call, BooleanExpression pathCondition,
+			int pid, AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		List<Expression> arguments = call.arguments();
 		List<Transition> localTransitions = new LinkedList<>();
 		Evaluation eval;
-		String process = "p" + processIdentifier + " (id = " + pid + ")";
+		String process = "p" + pid;
 		Reasoner reasoner = universe.reasoner(pathCondition);
 		IntegerNumber argSourceNumber; // numeric object of the value of source
 		int intSource, intDest;
@@ -227,11 +246,14 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 		boolean isWildcardTag = false;
 
 		// evaluate the second argument: source
-		eval = this.evaluator.evaluate(state.setPathCondition(pathCondition), pid, arguments.get(1));
+		eval = this.evaluator.evaluate(state.setPathCondition(pathCondition),
+				pid, arguments.get(1));
 		state = eval.state;
-		argSourceNumber = (IntegerNumber) reasoner.extractNumber((NumericExpression) eval.value);
+		argSourceNumber = (IntegerNumber) reasoner
+				.extractNumber((NumericExpression) eval.value);
 		if (argSourceNumber == null)
-			throw new CIVLUnimplementedFeatureException("CIVL doesn't support using non-concrete source of messages \n",
+			throw new CIVLUnimplementedFeatureException(
+					"CIVL doesn't support using non-concrete source of messages \n",
 					arguments.get(1).getSource());
 		else
 			intSource = argSourceNumber.intValue();
@@ -246,13 +268,15 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 		sourceExpr = arguments.get(1);
 		tagExpr = arguments.get(2);
 		commHandle = evaluator.evaluate(state, pid, commHandleExpr).value;
-		comm = evaluator.dereference(commHandleExpr.getSource(), state, process, commHandleExpr, commHandle,
-				false).value;
+		comm = evaluator.dereference(commHandleExpr.getSource(), state,
+				process, commHandleExpr, commHandle, false).value;
 		dest = this.universe.tupleRead(comm, zeroObject);
 		gcommHandle = this.universe.tupleRead(comm, oneObject);
-		gcomm = evaluator.dereference(commHandleExpr.getSource(), state, process, null, gcommHandle, false).value;
+		gcomm = evaluator.dereference(commHandleExpr.getSource(), state,
+				process, null, gcommHandle, false).value;
 		assert (dest instanceof NumericExpression) : "Argument of destination of $comm_dequeue() should be a numeric type.\n";
-		intDest = ((IntegerNumber) reasoner.extractNumber((NumericExpression) dest)).intValue();
+		intDest = ((IntegerNumber) reasoner
+				.extractNumber((NumericExpression) dest)).intValue();
 		eval = evaluator.evaluate(state, pid, tagExpr);
 		state = eval.state;
 		tag = (NumericExpression) eval.value;
@@ -262,23 +286,29 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 			LibcommEvaluator libevaluator;
 
 			try {
-				libevaluator = (LibcommEvaluator) this.libEvaluatorLoader.getLibraryEvaluator(this.name, evaluator,
-						this.modelFactory, symbolicUtil, symbolicAnalyzer);
-				possibleSources = libevaluator.getAllPossibleSources(eval.state, reasoner, gcomm, intSource, intDest,
-						tag, isWildcardTag, call.getSource());
+				libevaluator = (LibcommEvaluator) this.libEvaluatorLoader
+						.getLibraryEvaluator(this.name, evaluator,
+								this.modelFactory, symbolicUtil,
+								symbolicAnalyzer);
+				possibleSources = libevaluator.getAllPossibleSources(
+						eval.state, reasoner, gcomm, intSource, intDest, tag,
+						isWildcardTag, call.getSource());
 			} catch (LibraryLoaderException e) {
 				throw new CIVLInternalException(
-						"LibraryLoader exception happens when loading library comm evaluator.\n", call.getSource());
+						"LibraryLoader exception happens when loading library comm evaluator.\n",
+						call.getSource());
 			}
-			callWorkers = (List<Statement>) this.dequeueStatementGenerator(sourceExpr, tagExpr, possibleSources,
-					call.getSource(), call.function().parameters(), arguments, call.function().returnType(),
-					call.statementScope(), call.guard(), call.target(), call.lhs());
+			callWorkers = (List<Statement>) this.dequeueStatementGenerator(
+					sourceExpr, tagExpr, possibleSources, call.getSource(),
+					call.function().parameters(), arguments, call.function()
+							.returnType(), call.statementScope(), call.guard(),
+					call.target(), call.lhs());
 			for (int j = 0; j < callWorkers.size(); j++)
-				localTransitions.add(Semantics.newTransition(pathCondition, pid, processIdentifier, callWorkers.get(j),
-						atomicLockAction));
+				localTransitions.add(Semantics.newTransition(pathCondition,
+						pid, callWorkers.get(j), atomicLockAction));
 		} else
-			localTransitions
-					.add(Semantics.newTransition(pathCondition, pid, processIdentifier, call, atomicLockAction));
+			localTransitions.add(Semantics.newTransition(pathCondition, pid,
+					call, atomicLockAction));
 		return localTransitions;
 	}
 
@@ -318,10 +348,13 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Iterable<Statement> dequeueStatementGenerator(Expression sourceExpr, Expression tagExpr,
-			List<NumericExpression> possibleSources, CIVLSource civlsource, List<Variable> parameters,
-			List<Expression> arguments, CIVLType returnType, Scope containingScope, Expression callGuard,
-			Location callTarget, LHSExpression lhs) throws UnsatisfiablePathConditionException {
+	private Iterable<Statement> dequeueStatementGenerator(
+			Expression sourceExpr, Expression tagExpr,
+			List<NumericExpression> possibleSources, CIVLSource civlsource,
+			List<Variable> parameters, List<Expression> arguments,
+			CIVLType returnType, Scope containingScope, Expression callGuard,
+			Location callTarget, LHSExpression lhs)
+			throws UnsatisfiablePathConditionException {
 		CallOrSpawnStatement callWorker;
 		List<Statement> transitionStatements = new LinkedList<>();
 		List<Expression> newArgs;
@@ -330,19 +363,24 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 		Location newLocation = null;
 		String dequeueWork = "$comm_dequeue_work";
 		List<Variable> parametersCopy = new LinkedList<>();
-		Scope parameterScopeCopy = this.modelFactory.scope(civlsource, containingScope, new ArrayList<>(0), null);
+		Scope parameterScopeCopy = this.modelFactory.scope(civlsource,
+				containingScope, new ArrayList<>(0), null);
 
 		// copy new instances of parameters:
 		for (Variable var : parameters) {
-			Variable parameter = modelFactory.variable(var.getSource(), var.type(), var.name(), var.vid());
+			Variable parameter = modelFactory.variable(var.getSource(),
+					var.type(), var.name(), var.vid());
 
 			parametersCopy.add(parameter);
 			parameterScopeCopy.addVariable(parameter);
 		}
-		dequeueWorkFunction = modelFactory.systemFunction(civlsource, modelFactory.identifier(civlsource, dequeueWork),
-				parameterScopeCopy, parametersCopy, returnType, containingScope, this.name);
+		dequeueWorkFunction = modelFactory.systemFunction(civlsource,
+				modelFactory.identifier(civlsource, dequeueWork),
+				parameterScopeCopy, parametersCopy, returnType,
+				containingScope, this.name);
 		parameterScopeCopy.setFunction(dequeueWorkFunction);
-		dequeueWorkPointer = modelFactory.functionIdentifierExpression(civlsource, dequeueWorkFunction);
+		dequeueWorkPointer = modelFactory.functionIdentifierExpression(
+				civlsource, dequeueWorkFunction);
 		newArgs = new LinkedList<Expression>(arguments);
 		// dummy location:
 		newLocation = modelFactory.location(civlsource, containingScope);
@@ -350,17 +388,19 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 			int int_newSource;
 
 			try {
-				int_newSource = ((IntegerNumber) universe.extractNumber(newSource)).intValue();
+				int_newSource = ((IntegerNumber) universe
+						.extractNumber(newSource)).intValue();
 			} catch (ClassCastException e) {
 				throw new CIVLInternalException(
 						"Unexpected exception when casting Number object of a value of a message source to IntegerNumber object.\n",
 						civlsource);
 			}
 			newArgs = new LinkedList<Expression>(arguments);
-			newArgs.set(1, modelFactory.integerLiteralExpression(arguments.get(1).getSource(),
+			newArgs.set(1, modelFactory.integerLiteralExpression(
+					arguments.get(1).getSource(),
 					BigInteger.valueOf(int_newSource)));
-			callWorker = modelFactory.callOrSpawnStatement(civlsource, newLocation, true, dequeueWorkPointer, newArgs,
-					callGuard);
+			callWorker = modelFactory.callOrSpawnStatement(civlsource,
+					newLocation, true, dequeueWorkPointer, newArgs, callGuard);
 			callWorker.setTargetTemp(callTarget);
 			// callWorker.setFunction(dequeueWorkPointer);
 			callWorker.setLhs(lhs);
@@ -389,7 +429,8 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public BooleanExpression hasMatchedDequeue(State state, int pid, String process, CallOrSpawnStatement enqueue_call,
+	public BooleanExpression hasMatchedDequeue(State state, int pid,
+			String process, CallOrSpawnStatement enqueue_call,
 			boolean wildcardCounts) throws UnsatisfiablePathConditionException {
 		LibcommEvaluator libevaluator;
 		Expression commHandleExpr = enqueue_call.arguments().get(0);
@@ -407,14 +448,19 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 		if (eval.value.isFalse())
 			return trueValue;
 		try {
-			libevaluator = (LibcommEvaluator) this.libEvaluatorLoader.getLibraryEvaluator(this.name, evaluator,
-					modelFactory, symbolicUtil, symbolicAnalyzer);
+			libevaluator = (LibcommEvaluator) this.libEvaluatorLoader
+					.getLibraryEvaluator(this.name, evaluator, modelFactory,
+							symbolicUtil, symbolicAnalyzer);
 		} catch (LibraryLoaderException e) {
-			throw new CIVLInternalException("LibcommEnabler loads LibcommEvaluator failed", (CIVLSource) null);
+			throw new CIVLInternalException(
+					"LibcommEnabler loads LibcommEvaluator failed",
+					(CIVLSource) null);
 		}
-		eval = libevaluator.getCommByCommHandleExpr(state, pid, process, commHandleExpr);
+		eval = libevaluator.getCommByCommHandleExpr(state, pid, process,
+				commHandleExpr);
 		comm = eval.value;
-		eval = libevaluator.getGcommByComm(eval.state, pid, process, eval.value, commHandleExpr.getSource());
+		eval = libevaluator.getGcommByComm(eval.state, pid, process,
+				eval.value, commHandleExpr.getSource());
 		gcomm = eval.value;
 		eval = evaluator.evaluate(state, pid, msgExpr);
 		msg = eval.value;
@@ -423,9 +469,10 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 		dest = universe.tupleRead(msg, oneObject);
 		place = universe.tupleRead(msg, zeroObject);
 		tag = universe.tupleRead(msg, twoObject);
-		candidateProc = libevaluator.readProcArray(state, pid, process, procArray, (NumericExpression) dest,
-				enqueue_call.getSource());
-		candidateProcId = modelFactory.getProcessId(enqueue_call.getSource(), candidateProc);
+		candidateProc = libevaluator.readProcArray(state, pid, process,
+				procArray, (NumericExpression) dest, enqueue_call.getSource());
+		candidateProcId = modelFactory.getProcessId(enqueue_call.getSource(),
+				candidateProc);
 		if (candidateProcId == -1 || candidateProcId == pid)
 			return falseValue;
 		else {
@@ -440,10 +487,14 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 				while (iter.hasNext()) {
 					Statement procCall = iter.next();
 
-					if (procCall.statementKind().equals(StatementKind.CALL_OR_SPAWN)) {
-						BooleanExpression hasMatched = this.isMatchedDequeueStatement(state, candidateProcId,
-								procState.identifier(), libevaluator, reasoner, (CallOrSpawnStatement) procCall, place,
-								tag, comm, wildcardCounts);
+					if (procCall.statementKind().equals(
+							StatementKind.CALL_OR_SPAWN)) {
+						BooleanExpression hasMatched = this
+								.isMatchedDequeueStatement(state,
+										candidateProcId, procState.getPid(),
+										libevaluator, reasoner,
+										(CallOrSpawnStatement) procCall, place,
+										tag, comm, wildcardCounts);
 						if (hasMatched.isTrue())
 							return hasMatched;
 						else
@@ -490,9 +541,10 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private BooleanExpression isMatchedDequeueStatement(State state, int pid, int identifier,
-			LibcommEvaluator libevaluator, Reasoner reasoner, CallOrSpawnStatement call,
-			SymbolicExpression expectedSource, SymbolicExpression expectedTag, SymbolicExpression expectedComm,
+	private BooleanExpression isMatchedDequeueStatement(State state, int pid,
+			int identifier, LibcommEvaluator libevaluator, Reasoner reasoner,
+			CallOrSpawnStatement call, SymbolicExpression expectedSource,
+			SymbolicExpression expectedTag, SymbolicExpression expectedComm,
 			boolean wildcardCounts) throws UnsatisfiablePathConditionException {
 		String dequeueName = "$comm_dequeue";
 		String process = "p" + identifier + " (id = " + pid + ")";
@@ -506,7 +558,8 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 			SymbolicExpression enqueueGcommHandle, myGcommHandle, mySource, myTag;
 			// the GcommHandles of enqueue and dequeue should be same
 
-			eval = libevaluator.getCommByCommHandleExpr(state, pid, process, commHandleExpr);
+			eval = libevaluator.getCommByCommHandleExpr(state, pid, process,
+					commHandleExpr);
 			state = eval.state;
 			myGcommHandle = universe.tupleRead(eval.value, oneObject);
 			enqueueGcommHandle = universe.tupleRead(expectedComm, oneObject);
@@ -518,9 +571,11 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 			myTag = eval.value;
 			claim1 = universe.equals(mySource, expectedSource);
 			if (wildcardCounts)
-				claim1 = universe.or(claim1, universe.equals(mySource, universe.integer(-1)));
+				claim1 = universe.or(claim1,
+						universe.equals(mySource, universe.integer(-1)));
 			claim2 = universe.equals(myTag, expectedTag);
-			claim2 = universe.or(claim2, universe.equals(myTag, universe.integer(-2)));
+			claim2 = universe.or(claim2,
+					universe.equals(myTag, universe.integer(-2)));
 			claim3 = universe.equals(myGcommHandle, enqueueGcommHandle);
 			// TODO change to andTo
 			return universe.and(universe.and(claim1, claim2), claim3);
@@ -530,8 +585,9 @@ public class LibcommEnabler extends BaseLibraryEnabler implements LibraryEnabler
 
 	// TODO: what if process x still not add itself into gcomm then the value of
 	// it in procArray in gcomm is -1?
-	private Set<Integer> procIdsInComm(State state, int pid, String process, Expression arguments[],
-			SymbolicExpression argumentValues[]) throws UnsatisfiablePathConditionException {
+	private Set<Integer> procIdsInComm(State state, int pid, String process,
+			Expression arguments[], SymbolicExpression argumentValues[])
+			throws UnsatisfiablePathConditionException {
 		Set<Integer> procs = new HashSet<>();
 
 		for (int procid = 0; procid < state.numProcs(); procid++)
