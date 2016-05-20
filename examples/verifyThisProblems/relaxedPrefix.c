@@ -84,7 +84,7 @@ void main() {
     );
   } else {
     $assert(result ==
-	    ($exists (int k: 0 .. n1-1)
+	    ($exists (int k: 0 .. n1)
         (
 	 ($forall (int i: 0 .. k-1) X1[i] == X2[i]) &&
 	 ($forall (int i: k+1 .. n1-1) X1[i] == X2[i-1])
