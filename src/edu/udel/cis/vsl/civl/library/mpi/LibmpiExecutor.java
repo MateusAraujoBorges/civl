@@ -51,7 +51,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * <ul>
  * <li>$mpi_set_status</li>
  * <li>$mpi_get_status</li>
- * <li>$mpi_assert_consistent_type</li>
+ * <li>$mpi_assert_consistent_base_type</li>
  * <li>$mpi_newGcomm</li>
  * <li>$mpi_getGcomm</li>
  * <li>$mpi_root_scope</li>
@@ -131,8 +131,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 		case "$mpi_get_status":
 			callEval = executeGetStatus(state, pid);
 			break;
-		case "$mpi_assert_consistent_type":
-			callEval = executeAssertConsistentType(state, pid, process, arguments, argumentValues, source);
+		case "$mpi_assert_consistent_basetype":
+			callEval = executeAssertConsistentbaseType(state, pid, process, arguments, argumentValues, source);
 			break;
 		case "$mpi_new_gcomm":
 			callEval = executeNewGcomm(state, pid, process, arguments, argumentValues, source);
@@ -244,10 +244,14 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 	}
 
 	/**
-	 * Executing the function
-	 * <code>$mpi_assert_consistent_type(void * ptr, int sizeofDatatype)</code>
-	 * The function checks if the pointer points to a object whose size of data
-	 * type is consistent with the given size of data type.
+	 * <p>
+	 * <b>Summary: </b> Executing the function
+	 * <code>$mpi_assert_consistent_base_type(void * ptr, MPI_Datatype datatype)</code>
+	 * 
+	 * This system function checks if the base type of an MPI_Datatype is
+	 * consistent with the base type of the object pointed by the given pointer.
+	 * 
+	 * </p>
 	 * 
 	 * @param state
 	 *            The current state
@@ -263,7 +267,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeAssertConsistentType(State state, int pid, String process, Expression[] arguments,
+	private Evaluation executeAssertConsistentbaseType(State state, int pid, String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
 		CIVLSource ptrSource = arguments[0].getSource();
 		SymbolicExpression pointer = argumentValues[0];

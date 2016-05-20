@@ -82,7 +82,7 @@ int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest,
   $assert(_mpi_state == _MPI_INIT, "MPI_Send() cannot be invoked "
     "without MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(buf, datatype);
+  $mpi_assert_consistent_basetype(buf, datatype);
   return $mpi_send(buf, count, datatype, dest, tag, comm);
 }
 
@@ -95,7 +95,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source,
   $assert(_mpi_state == _MPI_INIT, "MPI_Recv() cannot be invoked "
     "without MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(buf, datatype);
+  $mpi_assert_consistent_basetype(buf, datatype);
   return $mpi_recv(buf, count, datatype, source, tag, comm, status);
 }
 
@@ -122,8 +122,8 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
   $assert(_mpi_state == _MPI_INIT, "MPI_Sendrecv() cannot be invoked "
 	  "without MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(sendbuf, sendtype);
-  $mpi_assert_consistent_type(recvbuf, recvtype);
+  $mpi_assert_consistent_basetype(sendbuf, sendtype);
+  $mpi_assert_consistent_basetype(recvbuf, recvtype);
   // not correct for checking potential deadlock...rewrite:
   $mpi_sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount,
 		recvtype, source, recvtag, comm, status);
@@ -147,7 +147,7 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype, int root,
 	  "MPI_Bcast() cannot be invoked without MPI_Init() "
 	   "being called before.\n");
 #endif
-  $mpi_assert_consistent_type(buf, datatype);
+  $mpi_assert_consistent_basetype(buf, datatype);
   checkerEntry = $mpi_create_coroutine_entry(BCAST_TAG, root, -1, 1, datatypes);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
@@ -175,8 +175,8 @@ int MPI_Reduce(const void* sendbuf, void* recvbuf, int count,
 		 datatypes);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
-  $mpi_assert_consistent_type(sendbuf, datatype);
-  $mpi_assert_consistent_type(recvbuf, datatype);
+  $mpi_assert_consistent_basetype(sendbuf, datatype);
+  $mpi_assert_consistent_basetype(recvbuf, datatype);
   $mpi_reduce(sendbuf, recvbuf, count, datatype, op, root, REDUCE_TAG, comm, "MPI_Reduce()");
   return 0;
 }
@@ -199,8 +199,8 @@ int MPI_Allreduce(const void* sendbuf, void* recvbuf, int count,
   $assert(_mpi_state == _MPI_INIT, "MPI_Allreduce() cannot be invoked without "
     "MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(sendbuf, datatype);
-  $mpi_assert_consistent_type(recvbuf, datatype);
+  $mpi_assert_consistent_basetype(sendbuf, datatype);
+  $mpi_assert_consistent_basetype(recvbuf, datatype);
   checkerEntry = $mpi_create_coroutine_entry(ALLREDUCE_TAG, root, 
 		 (int)op, 1, datatypes);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
@@ -250,8 +250,8 @@ int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
     "MPI_Init() being called before.\n");
 #endif
   if(sendbuf != MPI_IN_PLACE)
-    $mpi_assert_consistent_type(sendbuf, sendtype);
-  $mpi_assert_consistent_type(recvbuf, recvtype);
+    $mpi_assert_consistent_basetype(sendbuf, sendtype);
+  $mpi_assert_consistent_basetype(recvbuf, recvtype);
   checkerEntry = $mpi_create_coroutine_entry(GATHER_TAG, root, -1, 2, datatypes);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
@@ -275,9 +275,9 @@ int MPI_Scatter(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
   $assert(_mpi_state == _MPI_INIT, "MPI_Scatter() cannot be invoked without "
     "MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(sendbuf, sendtype);
+  $mpi_assert_consistent_basetype(sendbuf, sendtype);
   if(recvbuf != MPI_IN_PLACE)
-    $mpi_assert_consistent_type(recvbuf, recvtype);
+    $mpi_assert_consistent_basetype(recvbuf, recvtype);
   checkerEntry = $mpi_create_coroutine_entry(SCATTER_TAG, root, -1, 2, 
 					       datatypes);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
@@ -304,8 +304,8 @@ int MPI_Gatherv(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
     "MPI_Init() being called before.\n");
 #endif
   if(sendbuf != MPI_IN_PLACE)
-    $mpi_assert_consistent_type(sendbuf, sendtype);
-  $mpi_assert_consistent_type(recvbuf, recvtype);
+    $mpi_assert_consistent_basetype(sendbuf, sendtype);
+  $mpi_assert_consistent_basetype(recvbuf, recvtype);
   checkerEntry = $mpi_create_coroutine_entry(GATHERV_TAG, root, 
 		 -1, 2, datatypes);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
@@ -330,9 +330,9 @@ int MPI_Scatterv(const void* sendbuf, const int sendcounts[], const
   $assert(_mpi_state == _MPI_INIT, "MPI_Scatterv() cannot be invoked without "
 	  "MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(sendbuf, sendtype);
+  $mpi_assert_consistent_basetype(sendbuf, sendtype);
   if(recvbuf != MPI_IN_PLACE)
-    $mpi_assert_consistent_type(recvbuf, recvtype);
+    $mpi_assert_consistent_basetype(recvbuf, recvtype);
   checkerEntry = $mpi_create_coroutine_entry(SCATTERV_TAG, 
 					       root, -1, 2, 
 					       datatypes);
@@ -360,8 +360,8 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     "MPI_Init() being called before.\n");
 #endif
   if(sendbuf != MPI_IN_PLACE)
-    $mpi_assert_consistent_type(sendbuf, sendtype);
-  $mpi_assert_consistent_type(recvbuf, recvtype);
+    $mpi_assert_consistent_basetype(sendbuf, sendtype);
+  $mpi_assert_consistent_basetype(recvbuf, recvtype);
   checkerEntry = $mpi_create_coroutine_entry(ALLGATHER_TAG, 0, -1, 2, 
 					       datatypes);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
@@ -390,9 +390,9 @@ int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcount[]
   $assert(_mpi_state == _MPI_INIT, "MPI_Reduce_scatter() cannot be invoked without "
     "MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(sendbuf, datatype);
+  $mpi_assert_consistent_basetype(sendbuf, datatype);
   if(recvbuf != MPI_IN_PLACE)
-    $mpi_assert_consistent_type(recvbuf, datatype);
+    $mpi_assert_consistent_basetype(recvbuf, datatype);
   checkerEntry = $mpi_create_coroutine_entry(RED_SCATTER_TAG, root, (int)op, 1, 
 					       datatypes);
   specEntry = $collect_check(comm.collect_checker, rank, nprocs, checkerEntry);
@@ -435,8 +435,8 @@ int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   $assert(_mpi_state == _MPI_INIT, "MPI_Alltoall() cannot be invoked without "
     "MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(sendbuf, sendtype);
-  $mpi_assert_consistent_type(recvbuf, recvtype);
+  $mpi_assert_consistent_basetype(sendbuf, sendtype);
+  $mpi_assert_consistent_basetype(recvbuf, recvtype);
   checkerEntry = $mpi_create_coroutine_entry(ALLTOALL_TAG, root, -1, 2, 
 					       datatypes);
   specEntry = $collect_check(comm.collect_checker, rank, nprocs, checkerEntry);
@@ -466,8 +466,8 @@ int MPI_Alltoallv(const void* sendbuf, const int sendcounts[],
   $assert(_mpi_state == _MPI_INIT, "MPI_Alltoallv() cannot be invoked without "
     "MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(sendbuf, sendtype);
-  $mpi_assert_consistent_type(recvbuf, recvtype);
+  $mpi_assert_consistent_basetype(sendbuf, sendtype);
+  $mpi_assert_consistent_basetype(recvbuf, recvtype);
   checkerEntry = $mpi_create_coroutine_entry(ALLTOALLV_TAG, 0, -1, 2, 
 					       datatypes);
   specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
@@ -493,8 +493,8 @@ int MPI_Alltoallw(const void* sendbuf, const int sendcounts[], const int sdispls
   $assert(_mpi_state == _MPI_INIT, "MPI_Alltoallw() cannot be invoked without "
     "MPI_Init() being called before.\n");
 #endif
-  $mpi_assert_consistent_type(sendbuf, sendtypes[place]);
-  $mpi_assert_consistent_type(recvbuf, recvtypes[place]);
+  $mpi_assert_consistent_basetype(sendbuf, sendtypes[place]);
+  $mpi_assert_consistent_basetype(recvbuf, recvtypes[place]);
   for(int i = 0; i < nprocs; i++) {
     void * ptr = $mpi_pointer_add(recvbuf, rdispls[i], recvtypes[i]);
 

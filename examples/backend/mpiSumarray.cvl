@@ -272,7 +272,7 @@ int $mpi_init(void);
 int $mpi_finalize(void);
 int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system[mpi] void $mpi_assert_consistent_type(void* buf, MPI_Datatype datatype);
+$system[mpi] void $mpi_assert_consistent_basetype(void* buf, MPI_Datatype datatype);
 //========================= mpi.cvl ========================
 struct MPI_Comm{
     $comm p2p;
@@ -302,7 +302,7 @@ int MPI_Send(void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI
   $mpi_sys_status curr_status;
   curr_status = $mpi_get_status();
   $assert(curr_status == __INIT, "MPI_Send() cannot be invoked without MPI_Init() being called before.\n");
-  $mpi_assert_consistent_type(buf, datatype);
+  $mpi_assert_consistent_basetype(buf, datatype);
   int $sef$0 = $mpi_send(buf, count, datatype, dest, tag, comm);
   return $sef$0;
 }
@@ -311,7 +311,7 @@ int MPI_Recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, M
   $mpi_sys_status curr_status;
   curr_status = $mpi_get_status();
   $assert(curr_status == __INIT, "MPI_Recv() cannot be invoked without MPI_Init() being called before.\n");
-  $mpi_assert_consistent_type(buf, datatype);
+  $mpi_assert_consistent_basetype(buf, datatype);
   int $sef$1 = $mpi_recv(buf, count, datatype, source, tag, comm, status);
   return $sef$1;
 }
@@ -534,7 +534,7 @@ int $mpi_init(void);
 int $mpi_finalize(void);
 int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system[mpi] void $mpi_assert_consistent_type(void* buf, MPI_Datatype datatype);
+$system[mpi] void $mpi_assert_consistent_basetype(void* buf, MPI_Datatype datatype);
 //========================= seq.cvh ========================
 $system[seq] void $seq_init(void* array, int count, void* value);
 //====================== civl-mpi.cvl ======================
