@@ -1,5 +1,7 @@
 package edu.udel.cis.vsl.civl.library.common;
 
+import java.util.Arrays;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
@@ -16,13 +18,16 @@ import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
  * The LibraryComponent class provides the common data and operations of library
@@ -35,23 +40,6 @@ public abstract class LibraryComponent {
 
 	// The order of these operations should be consistent with civlc.cvh
 	// file.
-	protected enum CIVLOperator {
-		CIVL_NO_OP, // no operation
-		CIVL_MAX, // maxinum
-		CIVL_MIN, // minimun
-		CIVL_SUM, // sum
-		CIVL_PROD, // product
-		CIVL_LAND, // logical and
-		CIVL_BAND, // bit-wise and
-		CIVL_LOR, // logical or
-		CIVL_BOR, // bit-wise or
-		CIVL_LXOR, // logical exclusive or
-		CIVL_BXOR, // bit-wise exclusive or
-		CIVL_MINLOC, // min value and location
-		CIVL_MAXLOC, // max value and location
-		CIVL_REPLACE // replace ? TODO: Find definition for this operation
-	}
-
 	/**
 	 * Operators:
 	 * 
@@ -71,19 +59,23 @@ public abstract class LibraryComponent {
 	 *   _MAXLOC, // max value and location
 	 *   _REPLACE // replace ? TODO: Find definition for this operation
 	 * </pre>
-	 * */
-	private final int _NO_OP = 0;
-	private final int _MAX = 1;
-	private final int _MIN = 2;
-	private final int _SUM = 3;
-	private final int _PROD = 4;
-	private final int _LAND = 5;
-	private final int _BAND = 6;
-	private final int _LXOR = 7;
-	private final int _BXOR = 8;
-	private final int _MINLOC = 9;
-	private final int _MAXLOC = 10;
-	// private final int _REPLACE = 11;
+	 */
+	protected enum CIVLOperator {
+		CIVL_NO_OP, // no operation
+		CIVL_MAX, // maxinum
+		CIVL_MIN, // minimun
+		CIVL_SUM, // sum
+		CIVL_PROD, // product
+		CIVL_LAND, // logical and
+		CIVL_BAND, // bit-wise and
+		CIVL_LOR, // logical or
+		CIVL_BOR, // bit-wise or
+		CIVL_LXOR, // logical exclusive or
+		CIVL_BXOR, // bit-wise exclusive or
+		CIVL_MINLOC, // min value and location
+		CIVL_MAXLOC, // max value and location
+		CIVL_REPLACE // replace ? TODO: Find definition for this operation
+	}
 
 	/**
 	 * The symbolic expression of one.
@@ -178,10 +170,8 @@ public abstract class LibraryComponent {
 	 * @param symbolicAnalyzer
 	 *            The symbolic analyzer to be used.
 	 */
-	protected LibraryComponent(String name, SymbolicUniverse universe,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
-			CIVLConfiguration civlConfig,
-			LibraryEvaluatorLoader libEvaluatorLoader,
+	protected LibraryComponent(String name, SymbolicUniverse universe, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig, LibraryEvaluatorLoader libEvaluatorLoader,
 			ModelFactory modelFactory, CIVLErrorLogger errLogger) {
 		this.name = name;
 		this.universe = universe;
@@ -216,6 +206,120 @@ public abstract class LibraryComponent {
 	}
 
 	/**
+	 * <p>
+	 * <b>Summary: </b> Apply a CIVL operation on a pair of operands.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The identifier of the current process
+	 * @param process
+	 *            The String identifier of the current process
+	 * @param operands
+	 *            An array of two operands: <code>{operand0, operand1}</code>
+	 * @param CIVLOp
+	 *            A integer code represents a CIVL operation
+	 * @param count
+	 *            The number of pairs of operands.
+	 * @param elementType
+	 *            The {@link SymbolicType} of elements of one operand
+	 * @param countStep
+	 *            The number of elements in one operand
+	 * @param civlsource
+	 *            The {@link CIVLSource} of this operation
+	 * @return A {@link SymbolicExpression} results after the operation.
+	 * @throws UnsatisfiablePathConditionException
+	 *             when types of operands are invalid for operations.
+	 */
+	protected SymbolicExpression applyCIVLOperation(State state, int pid, String process, SymbolicExpression operands[],
+			CIVLOperator CIVLOp, NumericExpression count, SymbolicType elementType, CIVLSource civlsource)
+			throws UnsatisfiablePathConditionException {
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Number concCount = reasoner.extractNumber(count);
+		SymbolicExpression operand0 = operands[0];
+		SymbolicExpression operand1 = operands[1];
+		int countStep = 1;
+
+		if (CIVLOp == CIVLOperator.CIVL_MINLOC || CIVLOp == CIVLOperator.CIVL_MAXLOC)
+			countStep = 2;
+
+		if (concCount == null) {
+			SymbolicExpression[] singleOperand0 = new SymbolicExpression[countStep];
+			SymbolicExpression[] singleOperand1 = new SymbolicExpression[countStep];
+			SymbolicExpression[] result = new SymbolicExpression[countStep];
+			NumericExpression totalUnits = universe.multiply(count, universe.integer(countStep));
+			NumericSymbolicConstant identifier = (NumericSymbolicConstant) universe
+					.symbolicConstant(universe.stringObject("j"), universe.integerType());
+
+			for (int w = 0; w < countStep; w++) {
+				singleOperand0[w] = universe.arrayRead(operand0, universe.add(identifier, universe.integer(w)));
+				singleOperand1[w] = universe.arrayRead(operand1, universe.add(identifier, universe.integer(w)));
+			}
+			result = singleApplyCIVLOperation(state, process, singleOperand0, singleOperand1, CIVLOp, countStep,
+					civlsource);
+			if (countStep == 1) {
+				// optimization
+				return universe.arrayLambda(universe.arrayType(elementType, totalUnits),
+						universe.lambda(identifier, result[0]));
+			} else {
+				// When an operand contains more than one basic elements (e.g.
+				// MINLOC or MAXLOC), the return the value will be constructed
+				// as follows:
+				// For the result of an single operation:
+				// R := {a[j], b[x(j)], c[y(j)]...}, where j is a symbolic
+				// constant and x(j) ,y(j) is a (integer->integer) function on
+				// j.
+				//
+				// For the whole array w which consists of "count" Rs, given a
+				// valid index i, it should return w[i].
+				// w[i] := R[i - i%step]; Where R[k] := is the k-th element of R
+				// with a substitution on j with k.
+
+				// j % countStep:
+				NumericExpression identOffset = universe.modulo(identifier, universe.integer(countStep));
+				// j - j % countStep:
+				NumericExpression identBase = universe.subtract(identifier, identOffset);
+				SymbolicExpression function;
+
+				// For R := {a[j], b[x(j)], c[y(j)]...}, giving a index k, R' is
+				// computed by update all elements in R with a substitution on j
+				// with k. Note here k := i - i % countStep, i is an arbitrary
+				// valid index on the whole array w:
+				for (int i = 0; i < countStep; i++)
+					result[i] = universe.apply(universe.lambda(identifier, result[i]), Arrays.asList(identBase));
+				// make R' an array:
+				function = universe.array(elementType, result);
+				function = universe.lambda(identifier, universe.arrayRead(function, identOffset));
+				return universe.arrayLambda(universe.arrayType(elementType, totalUnits), function);
+			}
+		} else {
+			int countInt = ((IntegerNumber) concCount).intValue();
+
+			if (countInt <= 0)
+				return universe.emptyArray(elementType);
+
+			int totalUnits = countInt * countStep;
+			SymbolicExpression[] singleOperand0 = new SymbolicExpression[countStep];
+			SymbolicExpression[] singleOperand1 = new SymbolicExpression[countStep];
+			SymbolicExpression[] result = new SymbolicExpression[totalUnits];
+			SymbolicExpression[] singleResult;
+
+			for (int i = 0; i < totalUnits; i = i + countStep) {
+				for (int w = 0; w < countStep; w++) {
+					singleOperand0[w] = universe.arrayRead(operand0, universe.integer(i + w));
+					singleOperand1[w] = universe.arrayRead(operand1, universe.integer(i + w));
+				}
+
+				singleResult = singleApplyCIVLOperation(state, process, singleOperand0, singleOperand1, CIVLOp,
+						countStep, civlsource);
+				System.arraycopy(singleResult, 0, result, i, countStep);
+			}
+			return universe.array(elementType, result);
+		}
+	}
+
+	/**
 	 * Completing an operation (which is included in CIVLOperation enumerator).
 	 * 
 	 * @author Ziqing Luo
@@ -228,12 +332,11 @@ public abstract class LibraryComponent {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	protected SymbolicExpression applyCIVLOperator(State state, String process,
-			SymbolicExpression arg0, SymbolicExpression arg1, CIVLOperator op,
-			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
+	private SymbolicExpression[] singleApplyCIVLOperation(State state, String process, SymbolicExpression op0[],
+			SymbolicExpression op1[], CIVLOperator op, int numElementsInOperand, CIVLSource civlsource)
+			throws UnsatisfiablePathConditionException {
 		BooleanExpression claim;
-		SymbolicExpression[] operands = { arg0, arg1 };
-		SymbolicExpression[] tmpOperands = new SymbolicExpression[2];
+		SymbolicExpression[] result = new SymbolicExpression[numElementsInOperand];
 
 		/*
 		 * For MAX and MIN operation, if CIVL cannot figure out a concrete
@@ -244,122 +347,161 @@ public abstract class LibraryComponent {
 			// TODO: consider using heuristic to switch to abstract
 			// functions if these expressions get too big (max,min):
 			case CIVL_MAX:
-				claim = universe.lessThan((NumericExpression) arg1,
-						(NumericExpression) arg0);
-				return universe.cond(claim, arg0, arg1);
+				claim = universe.lessThan((NumericExpression) op1[0], (NumericExpression) op0[0]);
+				result[0] = universe.cond(claim, op0[0], op1[0]);
+				break;
 			case CIVL_MIN:
-				claim = universe.lessThan((NumericExpression) arg0,
-						(NumericExpression) arg1);
-				return universe.cond(claim, arg0, arg1);
+				claim = universe.lessThan((NumericExpression) op0[0], (NumericExpression) op1[0]);
+				result[0] = universe.cond(claim, op0[0], op1[0]);
+				break;
 			case CIVL_SUM:
-				return universe.add((NumericExpression) arg0,
-						(NumericExpression) arg1);
+				result[0] = universe.add((NumericExpression) op0[0], (NumericExpression) op1[0]);
+				break;
 			case CIVL_PROD:
-				return universe.multiply((NumericExpression) arg0,
-						(NumericExpression) arg1);
+				result[0] = universe.multiply((NumericExpression) op0[0], (NumericExpression) op1[0]);
+				break;
 			case CIVL_LAND:
-				return universe.and((BooleanExpression) arg0,
-						(BooleanExpression) arg1);
+				result[0] = universe.and((BooleanExpression) op0[0], (BooleanExpression) op1[0]);
+				break;
 			case CIVL_LOR:
-				return universe.or((BooleanExpression) arg0,
-						(BooleanExpression) arg1);
+				result[0] = universe.or((BooleanExpression) op0[0], (BooleanExpression) op1[0]);
+				break;
 			case CIVL_LXOR:
-				BooleanExpression notNewData = universe
-						.not((BooleanExpression) arg0);
-				BooleanExpression notPrevData = universe
-						.not((BooleanExpression) arg1);
+				BooleanExpression notNewData = universe.not((BooleanExpression) op0[0]);
+				BooleanExpression notPrevData = universe.not((BooleanExpression) op1[0]);
 
-				// TODO change to andTo
-				return universe.or(
-						universe.and(notNewData, (BooleanExpression) arg1),
-						universe.and((BooleanExpression) arg0, notPrevData));
+				result[0] = universe.or(universe.and(notNewData, (BooleanExpression) op0[0]),
+						universe.and((BooleanExpression) op1[0], notPrevData));
+				break;
+			case CIVL_MINLOC:
+				return applyMINOrMAXLOC(state, process, op0, op1, true, civlsource);
+			case CIVL_MAXLOC:
+				return applyMINOrMAXLOC(state, process, op0, op1, false, civlsource);
+			case CIVL_REPLACE:
 			case CIVL_BAND:
 			case CIVL_BOR:
 			case CIVL_BXOR:
-			case CIVL_MINLOC:
-				assert (operands.length == 2);
-				for (int i = 0; i < operands.length; i++)
-					if (operands[i].type() instanceof SymbolicTupleType)
-						tmpOperands[i] = universe.tupleRead(operands[i],
-								universe.intObject(0));
-					else if (operands[i].type() instanceof SymbolicArrayType)
-						tmpOperands[i] = universe.arrayRead(operands[i],
-								universe.zeroInt());
-					else {
-						errorLogger.logSimpleError(civlsource, state, process,
-								symbolicAnalyzer.stateToString(state),
-								ErrorKind.OTHER,
-								"Invalid CIVL operation operand: "
-										+ operands[i]);
-						throw new UnsatisfiablePathConditionException();
-					}
-				claim = universe.lessThan((NumericExpression) tmpOperands[0],
-						(NumericExpression) tmpOperands[1]);
-				return universe.cond(claim, operands[0], operands[1]);
-			case CIVL_MAXLOC:
-				assert (operands.length == 2);
-				for (int i = 0; i < operands.length; i++)
-					if (operands[i].type() instanceof SymbolicTupleType)
-						tmpOperands[i] = universe.tupleRead(operands[i],
-								universe.intObject(0));
-					else if (operands[i].type() instanceof SymbolicArrayType)
-						tmpOperands[i] = universe.arrayRead(operands[i],
-								universe.zeroInt());
-					else {
-						errorLogger.logSimpleError(civlsource, state, process,
-								symbolicAnalyzer.stateToString(state),
-								ErrorKind.OTHER,
-								"Invalid CIVL operation operand: "
-										+ operands[i]);
-						throw new UnsatisfiablePathConditionException();
-					}
-				claim = universe.lessThan((NumericExpression) tmpOperands[0],
-						(NumericExpression) tmpOperands[1]);
-				return universe.cond(claim, operands[1], operands[0]);
-			case CIVL_REPLACE:
 			default:
-				throw new CIVLUnimplementedFeatureException("CIVLOperation: "
-						+ op.name());
+				throw new CIVLUnimplementedFeatureException("CIVLOperation: " + op.name());
 			}
+			return result;
 		} catch (ClassCastException e) {
-			errorLogger.logSimpleError(civlsource, state, process,
-					symbolicAnalyzer.stateToString(state), ErrorKind.OTHER,
-					"Invalid operands type for CIVL Operation: " + op.name());
+			errorLogger.logSimpleError(civlsource, state, process, symbolicAnalyzer.stateToString(state),
+					ErrorKind.OTHER, "Invalid operands type for CIVL Operation: " + op.name());
 			throw new UnsatisfiablePathConditionException();
 		}
 	}
 
 	protected CIVLOperator translateOperator(int op) {
-		switch (op) {
-		case _NO_OP:
-			return CIVLOperator.CIVL_NO_OP;
-		case _MAX:
-			return CIVLOperator.CIVL_MAX;
-		case _MIN:
-			return CIVLOperator.CIVL_MIN;
-		case _SUM:
-			return CIVLOperator.CIVL_SUM;
-		case _PROD:
-			return CIVLOperator.CIVL_PROD;
-		case _LAND:
-			return CIVLOperator.CIVL_LAND;
-		case _BAND:
-			return CIVLOperator.CIVL_BAND;
-		case _LXOR:
-			return CIVLOperator.CIVL_LXOR;
-		case _BXOR:
-			return CIVLOperator.CIVL_BXOR;
-		case _MINLOC:
-			return CIVLOperator.CIVL_MINLOC;
-		case _MAXLOC:
-			return CIVLOperator.CIVL_MAXLOC;
-		default:
-			return CIVLOperator.CIVL_REPLACE;
+		return CIVLOperator.values()[op];
+	}
+
+	/**
+	 * <p>
+	 * <b>Summary: </b> Apply MIN_LOC or MAX_LOC operation on two operands.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param process
+	 *            The String identifier of the process
+	 * @param operands
+	 *            An array of all operands:
+	 *            <code>{loc0, idx0, loc1, idx1}</code>
+	 * @param isMin
+	 *            A flag, true for MIN_LOC operation, false for MAX_LOC
+	 *            operation.
+	 * @param civlsource
+	 *            {@link CIVLSource} of the operation
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private SymbolicExpression[] applyMINOrMAXLOC(State state, String process, SymbolicExpression[] operand0,
+			SymbolicExpression[] operand1, boolean isMin, CIVLSource civlsource)
+			throws UnsatisfiablePathConditionException {
+		NumericExpression locations[] = { (NumericExpression) operand0[0], (NumericExpression) operand1[0] };
+		NumericExpression indices[] = { (NumericExpression) operand0[1], (NumericExpression) operand1[1] };
+
+		assert (operand0.length == 2) && (operand1.length == 2);
+		return isMin ? applyMinLocOperation(locations, indices) : applyMaxLocOperation(locations, indices);
+	}
+
+	/**
+	 * <p>
+	 * <b>Summary: </b> Apply a MINLOC operation on two operands: [loc0, idx0]
+	 * and [loc1, idx1]
+	 * </p>
+	 * 
+	 * @param locations
+	 *            Location array which consists of a "location0" and a
+	 *            "location1"
+	 * @param indices
+	 *            Index array which consists of a "index0" and a "index1"
+	 * @return loc0 \lt loc1 ? [loc0, idx0] : loc0 != loc1 ? [loc1, idx1] : idx0
+	 *         \lt idx1 ? [loc0, idx0]: [loc1, idx1]
+	 */
+	private SymbolicExpression[] applyMinLocOperation(NumericExpression locations[], NumericExpression indices[]) {
+		BooleanExpression loc0LTloc1 = universe.lessThan(locations[0], locations[1]);
+		BooleanExpression loc0NEQloc1 = universe.not(universe.equals(locations[0], locations[1]));
+		BooleanExpression idx0LTidx1 = universe.lessThan(indices[0], indices[1]);
+		SymbolicExpression locResult, idxResult;
+
+		// optimize:
+		if (loc0LTloc1.isTrue() && loc0NEQloc1.isTrue()) {
+			SymbolicExpression[] result = { locations[0], indices[0] };
+
+			return result;
+		} else {
+			locResult = universe.cond(loc0LTloc1, locations[0], locations[1]);
+			idxResult = universe.cond(loc0LTloc1, indices[0],
+					universe.cond(loc0NEQloc1, indices[1], universe.cond(idx0LTidx1, indices[0], indices[1])));
+
+			SymbolicExpression[] result = { locResult, idxResult };
+
+			return result;
 		}
 	}
 
-	protected Pair<State, SymbolicExpression[]> evaluateArguments(State state,
-			int pid, Expression[] arguments)
+	/**
+	 * <p>
+	 * <b>Summary: </b> Apply a MAXLOC operation on two operands: [loc0, idx0]
+	 * and [loc1, idx1]
+	 * </p>
+	 * 
+	 * 
+	 * @param locations
+	 *            Location array which consists of a "location0" and a
+	 *            "location1"
+	 * @param indices
+	 *            Index array which consists of a "index0" and a "index1"
+	 * @return loc0 \gt loc1 ? [loc0, idx0] : loc0 != loc1 ? [loc1, idx1] : idx0
+	 *         \lt idx1 ? [loc0, idx0]: [loc1, idx1]
+	 * @return
+	 */
+	private SymbolicExpression[] applyMaxLocOperation(NumericExpression locations[], NumericExpression indices[]) {
+		BooleanExpression loc0GTloc1 = universe.lessThan(locations[1], locations[0]);
+		BooleanExpression loc0NEQloc1 = universe.not(universe.equals(locations[0], locations[1]));
+		BooleanExpression idx0LTidx1 = universe.lessThan(indices[0], indices[1]);
+		SymbolicExpression locResult, idxResult;
+
+		// optimize:
+		if (loc0GTloc1.isTrue() && loc0NEQloc1.isTrue()) {
+			SymbolicExpression[] result = { locations[0], indices[0] };
+
+			return result;
+		} else {
+			locResult = universe.cond(loc0GTloc1, locations[0], locations[1]);
+			idxResult = universe.cond(loc0GTloc1, indices[0],
+					universe.cond(loc0NEQloc1, indices[1], universe.cond(idx0LTidx1, indices[0], indices[1])));
+
+			SymbolicExpression[] result = { locResult, idxResult };
+
+			return result;
+
+		}
+	}
+
+	protected Pair<State, SymbolicExpression[]> evaluateArguments(State state, int pid, Expression[] arguments)
 			throws UnsatisfiablePathConditionException {
 		int numArgs = arguments.length;
 		SymbolicExpression[] argumentValues = new SymbolicExpression[numArgs];
@@ -367,8 +509,7 @@ public abstract class LibraryComponent {
 		for (int i = 0; i < numArgs; i++) {
 			Evaluation eval = null;
 
-			eval = symbolicAnalyzer.evaluator().evaluate(state, pid,
-					arguments[i]);
+			eval = symbolicAnalyzer.evaluator().evaluate(state, pid, arguments[i]);
 			argumentValues[i] = eval.value;
 			state = eval.state;
 		}

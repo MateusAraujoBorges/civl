@@ -172,6 +172,11 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
+	public void bundleUnpackApply() throws ABCException {
+		assertTrue(ui.run(VERIFY, QUIET, filename("bundleUnpackApply.cvl")));
+	}
+
+	@Test
 	public void cast() throws ABCException {
 		assertTrue(ui.run(VERIFY, QUIET, filename("cast.cvl")));
 	}

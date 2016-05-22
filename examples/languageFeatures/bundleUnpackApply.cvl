@@ -1,0 +1,52 @@
+/* Testing for bundle pack and unpack which invloves a flexible way of 
+   reading and writing arrays. This example may still not cover all possible 
+   cases. Anyone can add more send and receive pairs for different cases.
+ */
+#include <civlc.cvh>
+#include <bundle.cvh>
+#include <stdlib.h>
+
+$input int N;
+$input int inputs1[3][N];
+$input int inputs2[N][3];
+$input int inputs3[2 * N];
+$assume(N > 4);
+
+void main(){
+  int * p;
+  int * p2;
+  double ** pp;
+  
+  p = (int *)malloc(sizeof(int) * 3 * N);
+  p2 = (int *)malloc(sizeof(int) * 2 * N);
+  pp = (double **)malloc(sizeof(double *) * 2);
+  for (int i = 0; i < 2; i++) {
+      pp[i] = (double *)malloc(sizeof(double) * 10);
+      for (int j = 0; j < 10; j++) pp[i][j] = i + 1;
+  }
+  
+  $bundle bun;
+  /*
+  bun = $bundle_pack(&inputs1, sizeof(int) * 3 * N);
+  $bundle_unpack(bun, p);
+  $bundle_unpack_apply(bun, p, 3 * N, _SUM);
+  $assert(p[N-1] == inputs1[0][N-1] * 2);
+  
+  bun = $bundle_pack(&inputs3, sizeof(int) * 2 * N);
+  $bundle_unpack(bun, p2);
+  $bundle_unpack_apply(bun, p2, N, _MINLOC);
+  $assert(p2[0] == inputs3[0] && p2[1] == inputs3[1]);
+  */
+  bun = $bundle_pack(pp[0], sizeof(double) * 10);
+  $bundle_unpack_apply(bun, pp[1], 10, _SUM);
+  for (int j = 0; j < 10; j++) $assert(pp[1][j] == 3);
+
+  $bundle_unpack_apply(bun, pp[1], 5, _MAXLOC);
+  for (int j = 0; j < 10; j++) $assert(pp[1][j] == 3);
+  
+  free(p);
+  free(p2);
+  free(pp[0]);
+  free(pp[1]);
+  free(pp);
+}
