@@ -11,8 +11,7 @@ import org.junit.Test;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class VerifyThisTest {
-	private static File rootDir = new File(new File("examples"),
-			"verifyThisProblems");
+	private static File rootDir = new File(new File("examples"), "verifyThis");
 
 	private static UserInterface ui = new UserInterface();
 
@@ -57,8 +56,7 @@ public class VerifyThisTest {
 
 	@Test
 	public void binaryTreeTraversal() {
-		assertTrue(ui.run(VERIFY, QUIET, "-inputDB=4",
-				filename("binaryTreeTraversal.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputDB=4", filename("binaryTreeTraversal.cvl")));
 	}
 
 	@Test
