@@ -201,28 +201,28 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	@Override
 	public void print(String prefix, PrintStream out, boolean isDebug) {
+		int numParameters = this.parameters.size();
+
 		out.print(prefix + "function " + name);
-		if (this.isRoot)
+		if (this.isSystemFunction())
 			out.print(" [$system]");
 		else if (this.isAtomic)
 			out.print(" [$atomic_f]");
 		out.println();
-		// if (containingScope != null)
-		// out.println(prefix + "| parent: scope " + this.containingScope.id());
-		if (parameters.size() > 0) {
+		outerScope.print(prefix + "| ", out, isDebug);
+		if (numParameters > 0) {
+			boolean first = true;
+
 			out.print(prefix + "| formal parameters");
-			if (containingScope != null) {
-				out.print(" (scope=" + containingScope.id());
-				if (containingScope.parent() != null) {
-					out.print(", parent=" + containingScope.parent().id());
-				}
-				out.print(")");
+			out.print(" (scope=" + this.outerScope.id() + "): ");
+			for (Variable parameter : this.parameters) {
+				if (!first)
+					out.print(", ");
+				if (first)
+					first = false;
+				out.print(parameter.name().name());
 			}
 			out.println();
-			for (Variable parameter : this.parameters) {
-				out.println(prefix + "| | " + parameter.name() + " : "
-						+ parameter.type());
-			}
 		}
 		// print contracts
 		if (contract != null) {
