@@ -1,13 +1,35 @@
-/**
- * 
- */
 package edu.udel.cis.vsl.civl.model.IF.expression;
 
-import edu.udel.cis.vsl.civl.model.IF.Identifier;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import java.util.List;
+
+import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 
 /**
- * @author zirkel
+ * A CIVL-C quantified expression, including three components, bound variable
+ * declaration list, (optional) restriction and expression. It has the following
+ * syntax:<br>
+ * 
+ * <pre>
+ * quantified: 
+ *   quantifier ( variable-decl-list | restrict? ) expression ;
+ * 
+ * variable-decl-list:
+ *   variable-decl-sub-list (; variable-decl-sub-list)* ;
+ *   
+ * variable-decl-sub-list:
+ *   type ID (, ID)* (: domain)?
+ *   
+ * quantifier: $forall | $exists | $uniform
+ * </pre>
+ * 
+ * e.g.,
+ * 
+ * <pre>
+ * $forall (int x, y: dom; double z | x > 0 && z<5.9} x*z > -1
+ * </pre>
+ * 
+ * @author zirkel, Manchun Zheng (zmanchun)
  * 
  */
 public interface QuantifiedExpression extends Expression {
@@ -28,14 +50,14 @@ public interface QuantifiedExpression extends Expression {
 	 */
 	Quantifier quantifier();
 
-	/** The name of the bound variable (e.g. x in forall x | ...). */
-	Identifier boundVariableName();
-
-	/** The type of the bound variable. */
-	CIVLType boundVariableType();
-
-	/** Is the quantifier specified to be a range? */
-	boolean isRange();
+	// /** The name of the bound variable (e.g. x in forall x | ...). */
+	// Identifier boundVariableName();
+	//
+	// /** The type of the bound variable. */
+	// CIVLType boundVariableType();
+	//
+	// /** Is the quantifier specified to be a range? */
+	// boolean isRange();
 
 	// /**
 	// * Integer-valued expression for the lower end of the range. Null iff
@@ -50,10 +72,16 @@ public interface QuantifiedExpression extends Expression {
 	// Expression upper();
 
 	/**
-	 * Boolean-valued expression assumed to hold when evaluating expression. if
-	 * isRange() == false; otherwise, this is the range of the bound variable.
+	 * The list of bound variables.
+	 * 
+	 * @return
 	 */
-	Expression restrictionOrRange();
+	List<Pair<List<Variable>, Expression>> boundVariableList();
+
+	/**
+	 * Boolean-valued expression assumed to hold when evaluating expression.
+	 */
+	Expression restriction();
 
 	/** The expression e(x). */
 	Expression expression();

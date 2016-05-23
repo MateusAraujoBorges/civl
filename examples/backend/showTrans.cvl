@@ -54,8 +54,8 @@ void main(){
   a=-(a+*b*6);
   $for(int i, j: dom)
     c[(i-1)/2][(j-1)/2] = i*10 + j;
-  $assert($forall (int i; i >= 0 && i < 2) c[i][i] >= 0);
-  $assert($exists (int i; i >= 0 && i < 2) c[i][i] >= 0);
+  $assert($forall (int i | i >= 0 && i < 2) c[i][i] >= 0);
+  $assert($exists (int i | i >= 0 && i < 2) c[i][i] >= 0);
   dom=($domain(2)){0 .. 1, 0 .. 1};
   $parfor(int i, j: dom)
     times2(i, j);

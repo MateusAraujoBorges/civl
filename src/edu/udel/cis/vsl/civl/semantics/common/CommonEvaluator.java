@@ -2,9 +2,11 @@ package edu.udel.cis.vsl.civl.semantics.common;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.Stack;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -160,6 +162,7 @@ public class CommonEvaluator implements Evaluator {
 	 * Stack because of its more intuitive iteration order.
 	 */
 	protected LinkedList<SymbolicConstant> boundVariables = new LinkedList<>();
+	protected Stack<Set<SymbolicConstant>> boundVariableStack = new Stack<>();
 
 	/**
 	 * The dynamic heap type. This is the symbolic type of a symbolic expression
@@ -977,24 +980,38 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	private Evaluation evaluateBoundVariable(State state, int pid,
 			BoundVariableExpression expression) {
-		Iterator<SymbolicConstant> boundVariableIterator = boundVariables
-				.iterator();
-		Evaluation result = null;
+		SymbolicConstant value = null;
 
-		while (boundVariableIterator.hasNext()) {
-			SymbolicConstant boundVariable = boundVariableIterator.next();
-
-			if (boundVariable.name().toString()
-					.equals(expression.name().name())) {
-				result = new Evaluation(state, boundVariable);
-				break;
+		for (Set<SymbolicConstant> boundVariableSet : this.boundVariableStack) {
+			for (SymbolicConstant boundVariable : boundVariableSet) {
+				if (boundVariable.name().toString()
+						.equals(expression.name().name()))
+					value = boundVariable;
 			}
 		}
-		if (result != null) {
-			return result;
-		}
-		throw new CIVLException("Unknown bound variable",
-				expression.getSource());
+		if (value == null)
+			throw new CIVLInternalException(
+					"unreachable: unknown bound variable",
+					expression.getSource());
+		return new Evaluation(state, value);
+		// Iterator<SymbolicConstant> boundVariableIterator = boundVariables
+		// .iterator();
+		// Evaluation result = null;
+		//
+		// while (boundVariableIterator.hasNext()) {
+		// SymbolicConstant boundVariable = boundVariableIterator.next();
+		//
+		// if (boundVariable.name().toString()
+		// .equals(expression.name().name())) {
+		// result = new Evaluation(state, boundVariable);
+		// break;
+		// }
+		// }
+		// if (result != null) {
+		// return result;
+		// }
+		// throw new CIVLException("Unknown bound variable",
+		// expression.getSource());
 	}
 
 	/**
@@ -1778,190 +1795,330 @@ public class CommonEvaluator implements Evaluator {
 		}
 	}
 
-	// TODO break into small functions
 	protected Evaluation evaluateQuantifiedExpression(State state, int pid,
 			QuantifiedExpression expression)
 			throws UnsatisfiablePathConditionException {
+		List<Pair<List<Variable>, Expression>> boundVariableList = expression
+				.boundVariableList();
+		BooleanExpression restriction=universe.trueExpression();
+		Evaluation eval;
+		SymbolicConstant boundVariable = null;
+
+		this.boundVariableStack.push(new HashSet<SymbolicConstant>());
+		if (boundVariableList.size() > 1)
+			throw new CIVLUnimplementedFeatureException(
+					"evaluating multiple bound variables in quantified expressions",
+					expression.getSource());
+		for (Pair<List<Variable>, Expression> boundVariableSubList : boundVariableList) {
+			List<Variable> boundVariableDecls = boundVariableSubList.left;
+			Expression domain = boundVariableSubList.right;
+
+			if (boundVariableDecls.size() > 1)
+				throw new CIVLUnimplementedFeatureException(
+						"evaluating multiple bound variables in quantified expressions",
+						expression.getSource());
+			if (domain != null && boundVariableDecls.size() > 1)
+				throw new CIVLUnimplementedFeatureException(
+						"declaring bound variables within a specific domain in quantified expressions",
+						expression.getSource());
+			if (domain != null) {
+				// range
+				Variable boundVar = boundVariableDecls.get(0);
+				SymbolicConstant boundValue = universe.symbolicConstant(
+						boundVar.name().stringObject(), boundVar.type()
+								.getDynamicType(universe));
+				SymbolicExpression range;
+				NumericExpression lower, upper;
+
+				assert boundVariableDecls.size() == 1;
+				eval = this.evaluate(state, pid, domain);
+				// assert domain has dimension one
+				// TODO
+				boundVariable = boundValue;
+				this.boundVariableStack.peek().add(boundValue);
+				state = eval.state;
+				range = eval.value;
+				lower = this.symbolicUtil.getLowOfRegularRange(range);
+				upper = this.symbolicUtil.getHighOfRegularRange(range);
+				restriction = this.universe.and(this.universe.lessThanEquals(
+						lower, (NumericExpression) boundValue), this.universe
+						.lessThanEquals((NumericExpression) boundValue, upper));
+			} else {
+				for (Variable boundVar : boundVariableDecls) {
+					boundVariable = universe.symbolicConstant(boundVar.name()
+							.stringObject(),
+							boundVar.type().getDynamicType(universe));
+					this.boundVariableStack.peek().add(boundVariable);
+				}
+			}
+		}
+		eval = this.evaluate(state, pid, expression.restriction());
+		state = eval.state;
+		restriction = universe.and(restriction,(BooleanExpression) eval.value);
+
+		Interval interval = null;
+		NumericExpression lower = null, upper = null;
+		ResultType isRestrictionInValid;
 		Evaluation result;
+		State stateWithRestriction;
 		Evaluation quantifiedExpression;
 		BooleanExpression context;
-		Reasoner reasoner;
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 		BooleanExpression simplifiedExpression;
-		SymbolicConstant boundVariable = universe.symbolicConstant(expression
-				.boundVariableName().stringObject(), expression
-				.boundVariableType().getDynamicType(universe));
-		State stateWithRestriction;
 
-		boundVariables.push(boundVariable);
-		if (expression.isRange()) {
-			Evaluation range = evaluate(state, pid,
-					expression.restrictionOrRange());
-			// Evaluation lower = evaluate(state, pid, expression.lower());
-			// Evaluation upper = evaluate(state, pid, expression.upper());
-			BooleanExpression rangeRestriction;
-			NumericExpression lower, upper, upperBound;
-			ResultType isRestrictionInValid;
-
-			assert expression.restrictionOrRange().getExpressionType()
-					.equals(this.typeFactory.rangeType());
-			lower = this.symbolicUtil.getLowOfRegularRange(range.value);
-			upper = this.symbolicUtil.getHighOfRegularRange(range.value);
-			if (!this.symbolicUtil.getStepOfRegularRange(range.value).isOne()) {
-				errorLogger
-						.logSimpleError(
-								expression.getSource(),
-								state,
-								state.getProcessState(pid).name(),
-								this.symbolicAnalyzer.stateInformation(state),
-								ErrorKind.OTHER,
-								"the range expression of bound variables in "
-										+ "quantified expression only allows one as the step");
-				throw new UnsatisfiablePathConditionException();
-			}
-			// assert lower.value instanceof NumericExpression;
-			// assert upper.value instanceof NumericExpression;
-			upperBound = universe.add(one, upper);
-			rangeRestriction = universe.and(universe.lessThanEquals(lower,
-					(NumericExpression) boundVariable), universe
-					.lessThanEquals((NumericExpression) boundVariable, upper));
-			reasoner = universe.reasoner(state.getPathCondition());
-			isRestrictionInValid = reasoner.valid(
-					universe.not(rangeRestriction)).getResultType();
-			if (isRestrictionInValid == ResultType.YES) {
-				// invalid range restriction
-				switch (expression.quantifier()) {
-				case EXISTS:
-					result = new Evaluation(state, universe.falseExpression());
-					break;
-				default:// FORALL UNIFORM
-					result = new Evaluation(state, universe.trueExpression());
-				}
-			} else {
-				// TODO change to andTo
-				stateWithRestriction = state.setPathCondition(universe.and(
-						(BooleanExpression) rangeRestriction,
-						state.getPathCondition()));
-				quantifiedExpression = evaluate(stateWithRestriction, pid,
-						expression.expression());
-				switch (expression.quantifier()) {
-				case EXISTS:
-					result = new Evaluation(state, universe.existsInt(
-							(NumericSymbolicConstant) boundVariable, lower,
-							upperBound,
-							(BooleanExpression) quantifiedExpression.value));
-					break;
-				case FORALL:
-					result = new Evaluation(state, universe.forallInt(
-							(NumericSymbolicConstant) boundVariable, lower,
-							upperBound,
-							(BooleanExpression) quantifiedExpression.value));
-					break;
-				case UNIFORM:
-					result = new Evaluation(state, universe.forallInt(
-							(NumericSymbolicConstant) boundVariable, lower,
-							upperBound,
-							(BooleanExpression) quantifiedExpression.value));
-					break;
-				default:
-					throw new CIVLException("Unknown quantifier ",
-							expression.getSource());
-				}
+		isRestrictionInValid = reasoner.valid(universe.not(restriction))
+				.getResultType();
+		if (isRestrictionInValid == ResultType.YES) {
+			// invalid range restriction
+			switch (expression.quantifier()) {
+			case EXISTS:
+				result = new Evaluation(state, universe.falseExpression());
+				break;
+			default:// FORALL UNIFORM
+				result = new Evaluation(state, universe.trueExpression());
 			}
 		} else {
-			Evaluation restriction = evaluate(state, pid,
-					expression.restrictionOrRange());
-			Interval interval = null;
-			NumericExpression lower = null, upper = null;
-			ResultType isRestrictionInValid;
-
-			reasoner = universe.reasoner(state.getPathCondition());
-			isRestrictionInValid = reasoner.valid(
-					universe.not((BooleanExpression) restriction.value))
-					.getResultType();
-			if (isRestrictionInValid == ResultType.YES) {
-				// invalid range restriction
-				switch (expression.quantifier()) {
-				case EXISTS:
-					result = new Evaluation(state, universe.falseExpression());
-					break;
-				default:// FORALL UNIFORM
-					result = new Evaluation(state, universe.trueExpression());
-				}
-			} else {
-				stateWithRestriction = state.setPathCondition(universe.and(
-						(BooleanExpression) restriction.value,
-						state.getPathCondition()));
-				quantifiedExpression = evaluate(stateWithRestriction, pid,
-						expression.expression());
-				// By definition, the restriction should be boolean valued.
-				assert restriction.value instanceof BooleanExpression;
-				context = universe.and(state.getPathCondition(),
-						(BooleanExpression) restriction.value);
-				reasoner = universe.reasoner(context);
-				simplifiedExpression = (BooleanExpression) reasoner
-						.simplify(quantifiedExpression.value);
-				interval = reasoner.assumptionAsInterval(boundVariable);
-				if (interval != null) {
-					lower = universe.number(interval.lower());
-					upper = universe.add(universe.number(interval.upper()),
-							this.one);
-				}
-				switch (expression.quantifier()) {
-				case EXISTS:
-					if (interval != null)
-						result = new Evaluation(
-								state,
-								universe.existsInt(
-										(NumericSymbolicConstant) boundVariable,
-										lower,
-										upper,
-										(BooleanExpression) simplifiedExpression));
-					else
-						result = new Evaluation(state, universe.exists(
-								boundVariable, universe.and(
-										(BooleanExpression) restriction.value,
-										simplifiedExpression)));
-					break;
-				case FORALL:
-					if (interval != null)
-						result = new Evaluation(
-								state,
-								universe.forallInt(
-										(NumericSymbolicConstant) boundVariable,
-										lower,
-										upper,
-										(BooleanExpression) simplifiedExpression));
-					else
-						result = new Evaluation(state, universe.forall(
-								boundVariable, universe.implies(
-										(BooleanExpression) restriction.value,
-										simplifiedExpression)));
-					break;
-				case UNIFORM:
-					if (interval != null)
-						result = new Evaluation(
-								state,
-								universe.forallInt(
-										(NumericSymbolicConstant) boundVariable,
-										lower,
-										upper,
-										(BooleanExpression) simplifiedExpression));
-					else
-						result = new Evaluation(state, universe.forall(
-								boundVariable, universe.implies(
-										(BooleanExpression) restriction.value,
-										simplifiedExpression)));
-					break;
-				default:
-					throw new CIVLException("Unknown quantifier ",
-							expression.getSource());
-				}
+			stateWithRestriction = state.setPathCondition(universe.and(
+					restriction, state.getPathCondition()));
+			quantifiedExpression = evaluate(stateWithRestriction, pid,
+					expression.expression());
+			// By definition, the restriction should be boolean valued.
+			context = universe.and(state.getPathCondition(),
+					(BooleanExpression) restriction);
+			reasoner = universe.reasoner(context);
+			simplifiedExpression = (BooleanExpression) reasoner
+					.simplify(quantifiedExpression.value);
+			interval = reasoner.assumptionAsInterval(boundVariable);
+			if (interval != null) {
+				lower = universe.number(interval.lower());
+				upper = universe.add(universe.number(interval.upper()),
+						this.one);
 			}
-
+			switch (expression.quantifier()) {
+			case EXISTS:
+				if (interval != null)
+					result = new Evaluation(state, universe.existsInt(
+							(NumericSymbolicConstant) boundVariable, lower,
+							upper, (BooleanExpression) simplifiedExpression));
+				else
+					result = new Evaluation(state, universe.exists(
+							boundVariable,
+							universe.and(restriction, simplifiedExpression)));
+				break;
+			case FORALL:
+				if (interval != null)
+					result = new Evaluation(state, universe.forallInt(
+							(NumericSymbolicConstant) boundVariable, lower,
+							upper, (BooleanExpression) simplifiedExpression));
+				else
+					result = new Evaluation(state,
+							universe.forall(boundVariable, universe.implies(
+									restriction, simplifiedExpression)));
+				break;
+			case UNIFORM:
+				if (interval != null)
+					result = new Evaluation(state, universe.forallInt(
+							(NumericSymbolicConstant) boundVariable, lower,
+							upper, (BooleanExpression) simplifiedExpression));
+				else
+					result = new Evaluation(state,
+							universe.forall(boundVariable, universe.implies(
+									restriction, simplifiedExpression)));
+				break;
+			default:
+				throw new CIVLException("Unknown quantifier ",
+						expression.getSource());
+			}
 		}
-		boundVariables.pop();
+
+		boundVariableStack.pop();
 		return result;
 	}
+
+	//
+	// // TODO break into small functions
+	// protected Evaluation evaluateQuantifiedExpression(State state, int pid,
+	// QuantifiedExpression expression)
+	// throws UnsatisfiablePathConditionException {
+	// Evaluation result;
+	// Evaluation quantifiedExpression;
+	// BooleanExpression context;
+	// Reasoner reasoner;
+	// BooleanExpression simplifiedExpression;
+	// SymbolicConstant boundVariable = universe.symbolicConstant(expression
+	// .boundVariableName().stringObject(), expression
+	// .boundVariableType().getDynamicType(universe));
+	// State stateWithRestriction;
+	//
+	// boundVariables.push(boundVariable);
+	// if (expression.isRange()) {
+	// Evaluation range = evaluate(state, pid, expression.restriction());
+	// // Evaluation lower = evaluate(state, pid, expression.lower());
+	// // Evaluation upper = evaluate(state, pid, expression.upper());
+	// BooleanExpression rangeRestriction;
+	// NumericExpression lower, upper, upperBound;
+	// ResultType isRestrictionInValid;
+	//
+	// assert expression.restriction().getExpressionType()
+	// .equals(this.typeFactory.rangeType());
+	// lower = this.symbolicUtil.getLowOfRegularRange(range.value);
+	// upper = this.symbolicUtil.getHighOfRegularRange(range.value);
+	// if (!this.symbolicUtil.getStepOfRegularRange(range.value).isOne()) {
+	// errorLogger
+	// .logSimpleError(
+	// expression.getSource(),
+	// state,
+	// state.getProcessState(pid).name(),
+	// this.symbolicAnalyzer.stateInformation(state),
+	// ErrorKind.OTHER,
+	// "the range expression of bound variables in "
+	// + "quantified expression only allows one as the step");
+	// throw new UnsatisfiablePathConditionException();
+	// }
+	// // assert lower.value instanceof NumericExpression;
+	// // assert upper.value instanceof NumericExpression;
+	// upperBound = universe.add(one, upper);
+	// rangeRestriction = universe.and(universe.lessThanEquals(lower,
+	// (NumericExpression) boundVariable), universe
+	// .lessThanEquals((NumericExpression) boundVariable, upper));
+	// reasoner = universe.reasoner(state.getPathCondition());
+	// isRestrictionInValid = reasoner.valid(
+	// universe.not(rangeRestriction)).getResultType();
+	// if (isRestrictionInValid == ResultType.YES) {
+	// // invalid range restriction
+	// switch (expression.quantifier()) {
+	// case EXISTS:
+	// result = new Evaluation(state, universe.falseExpression());
+	// break;
+	// default:// FORALL UNIFORM
+	// result = new Evaluation(state, universe.trueExpression());
+	// }
+	// } else {
+	// // TODO change to andTo
+	// stateWithRestriction = state.setPathCondition(universe.and(
+	// (BooleanExpression) rangeRestriction,
+	// state.getPathCondition()));
+	// quantifiedExpression = evaluate(stateWithRestriction, pid,
+	// expression.expression());
+	// switch (expression.quantifier()) {
+	// case EXISTS:
+	// result = new Evaluation(state, universe.existsInt(
+	// (NumericSymbolicConstant) boundVariable, lower,
+	// upperBound,
+	// (BooleanExpression) quantifiedExpression.value));
+	// break;
+	// case FORALL:
+	// result = new Evaluation(state, universe.forallInt(
+	// (NumericSymbolicConstant) boundVariable, lower,
+	// upperBound,
+	// (BooleanExpression) quantifiedExpression.value));
+	// break;
+	// case UNIFORM:
+	// result = new Evaluation(state, universe.forallInt(
+	// (NumericSymbolicConstant) boundVariable, lower,
+	// upperBound,
+	// (BooleanExpression) quantifiedExpression.value));
+	// break;
+	// default:
+	// throw new CIVLException("Unknown quantifier ",
+	// expression.getSource());
+	// }
+	// }
+	// } else {
+	// Evaluation restriction = evaluate(state, pid,
+	// expression.restriction());
+	// Interval interval = null;
+	// NumericExpression lower = null, upper = null;
+	// ResultType isRestrictionInValid;
+	//
+	// reasoner = universe.reasoner(state.getPathCondition());
+	// isRestrictionInValid = reasoner.valid(
+	// universe.not((BooleanExpression) restriction.value))
+	// .getResultType();
+	// if (isRestrictionInValid == ResultType.YES) {
+	// // invalid range restriction
+	// switch (expression.quantifier()) {
+	// case EXISTS:
+	// result = new Evaluation(state, universe.falseExpression());
+	// break;
+	// default:// FORALL UNIFORM
+	// result = new Evaluation(state, universe.trueExpression());
+	// }
+	// } else {
+	// stateWithRestriction = state.setPathCondition(universe.and(
+	// (BooleanExpression) restriction.value,
+	// state.getPathCondition()));
+	// quantifiedExpression = evaluate(stateWithRestriction, pid,
+	// expression.expression());
+	// // By definition, the restriction should be boolean valued.
+	// assert restriction.value instanceof BooleanExpression;
+	// context = universe.and(state.getPathCondition(),
+	// (BooleanExpression) restriction.value);
+	// reasoner = universe.reasoner(context);
+	// simplifiedExpression = (BooleanExpression) reasoner
+	// .simplify(quantifiedExpression.value);
+	// interval = reasoner.assumptionAsInterval(boundVariable);
+	// if (interval != null) {
+	// lower = universe.number(interval.lower());
+	// upper = universe.add(universe.number(interval.upper()),
+	// this.one);
+	// }
+	// switch (expression.quantifier()) {
+	// case EXISTS:
+	// if (interval != null)
+	// result = new Evaluation(
+	// state,
+	// universe.existsInt(
+	// (NumericSymbolicConstant) boundVariable,
+	// lower,
+	// upper,
+	// (BooleanExpression) simplifiedExpression));
+	// else
+	// result = new Evaluation(state, universe.exists(
+	// boundVariable, universe.and(
+	// (BooleanExpression) restriction.value,
+	// simplifiedExpression)));
+	// break;
+	// case FORALL:
+	// if (interval != null)
+	// result = new Evaluation(
+	// state,
+	// universe.forallInt(
+	// (NumericSymbolicConstant) boundVariable,
+	// lower,
+	// upper,
+	// (BooleanExpression) simplifiedExpression));
+	// else
+	// result = new Evaluation(state, universe.forall(
+	// boundVariable, universe.implies(
+	// (BooleanExpression) restriction.value,
+	// simplifiedExpression)));
+	// break;
+	// case UNIFORM:
+	// if (interval != null)
+	// result = new Evaluation(
+	// state,
+	// universe.forallInt(
+	// (NumericSymbolicConstant) boundVariable,
+	// lower,
+	// upper,
+	// (BooleanExpression) simplifiedExpression));
+	// else
+	// result = new Evaluation(state, universe.forall(
+	// boundVariable, universe.implies(
+	// (BooleanExpression) restriction.value,
+	// simplifiedExpression)));
+	// break;
+	// default:
+	// throw new CIVLException("Unknown quantifier ",
+	// expression.getSource());
+	// }
+	// }
+	//
+	// }
+	// boundVariables.pop();
+	// return result;
+	// }
 
 	private Evaluation evaluateRegularRange(State state, int pid,
 			RegularRangeExpression range)

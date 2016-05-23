@@ -2992,39 +2992,48 @@ public class FunctionTranslator {
 	 */
 	protected Variable translateVariableDeclarationNode(
 			VariableDeclarationNode node, Scope scope) {
-		edu.udel.cis.vsl.abc.ast.entity.IF.Variable varEntity = node
-				.getEntity();
-		// node.prettyPrint(System.out);
-		// System.out.println();
-		if (varEntity.getDefinition() == null)
-			throw new CIVLSyntaxException(
-					"Can't find the definition for variable " + node.getName(),
-					node.getSource());
-		if (!varEntity.getDefinition().equals(node))
-			return null;
+		return translateVariableDeclarationNodeWork(node, scope, false);
+	}
+
+	private Variable translateVariableDeclarationNodeWork(
+			VariableDeclarationNode node, Scope scope, boolean isBound) {
+		if (!isBound) {
+			edu.udel.cis.vsl.abc.ast.entity.IF.Variable varEntity = node
+					.getEntity();
+			// node.prettyPrint(System.out);
+			// System.out.println();
+			if (varEntity.getDefinition() == null)
+				throw new CIVLSyntaxException(
+						"Can't find the definition for variable "
+								+ node.getName(), node.getSource());
+			if (!varEntity.getDefinition().equals(node))
+				return null;
+		}
 
 		TypeNode typeNode = node.getTypeNode();
 		CIVLType type = translateABCType(modelFactory.sourceOf(typeNode),
 				scope, typeNode.getType());
 		CIVLSource source = modelFactory.sourceOf(node.getIdentifier());
 		Identifier name = modelFactory.identifier(source, node.getName());
-		int vid = scope.numVariables();
+		int vid = isBound ? -1 : scope.numVariables();
 		Variable variable = modelFactory.variable(source, type, name, vid);
 
-		if (typeNode.isConstQualified())
-			variable.setConst(true);
-		scope.addVariable(variable);
-		if (node.getTypeNode().isInputQualified()) {
-			variable.setIsInput(true);
-			modelFactory.addInputVariable(variable);
-			assert variable.scope().id() == 0;
-		}
-		if (node.getTypeNode().isOutputQualified()) {
-			variable.setIsOutput(true);
-		}
-		if (node.hasStaticStorage()
-				|| (node.getInitializer() == null && scope.id() == 0)) {
-			variable.setStatic(true);
+		if (!isBound) {
+			if (typeNode.isConstQualified())
+				variable.setConst(true);
+			scope.addVariable(variable);
+			if (node.getTypeNode().isInputQualified()) {
+				variable.setIsInput(true);
+				modelFactory.addInputVariable(variable);
+				assert variable.scope().id() == 0;
+			}
+			if (node.getTypeNode().isOutputQualified()) {
+				variable.setIsOutput(true);
+			}
+			if (node.hasStaticStorage()
+					|| (node.getInitializer() == null && scope.id() == 0)) {
+				variable.setStatic(true);
+			}
 		}
 		return variable;
 	}
@@ -4107,10 +4116,11 @@ public class FunctionTranslator {
 		Identifier name = modelFactory.identifier(source, identifierNode
 				.getIdentifier().name());
 		Expression result;
+		Variable boundVariable = functionInfo.findBoundVariable(name);
 
-		if (functionInfo.containsBoundVariable(name)) {
+		if (boundVariable != null) {
 			result = modelFactory.boundVariableExpression(source, name,
-					functionInfo.boundVariableType(name));
+					boundVariable.type());
 		} else if (scope.variable(name) != null) {
 			VariableExpression varExpression = modelFactory.variableExpression(
 					source, scope.variable(name));
@@ -4521,21 +4531,40 @@ public class FunctionTranslator {
 			QuantifiedExpressionNode quantifiedNode, Scope scope) {
 		QuantifiedExpression result;
 		Quantifier quantifier;
-		Identifier variableName;
-		TypeNode variableTypeNode;
-		CIVLType variableType;
 		Expression bodyExpression;
 		CIVLSource source = modelFactory.sourceOf(quantifiedNode.getSource());
-		Expression restrictionOrRange;
+		Expression restriction = null;
+		SequenceNode<PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode>> boundVariableSeqNode = quantifiedNode
+				.boundVariableList();
+		List<Pair<List<Variable>, Expression>> boundVariableList = new LinkedList<>();
 
-		variableName = modelFactory.identifier(
-				modelFactory.sourceOf(quantifiedNode.variable().getSource()),
-				quantifiedNode.variable().getName());
-		variableTypeNode = quantifiedNode.variable().getTypeNode();
-		variableType = translateABCType(
-				modelFactory.sourceOf(variableTypeNode.getSource()), scope,
-				variableTypeNode.getType());
-		functionInfo.addBoundVariable(variableName, variableType);
+		functionInfo.addBoundVariableSet();
+		for (PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode> variableDeclSubList : boundVariableSeqNode) {
+			List<Variable> variableSubList = new LinkedList<>();
+			Expression domain = null;
+
+			for (VariableDeclarationNode variableNode : variableDeclSubList
+					.getLeft()) {
+				Variable variable = this.translateVariableDeclarationNodeWork(
+						variableNode, scope, true);
+
+				functionInfo.addBoundVariable(variable);
+				variableSubList.add(variable);
+			}
+			if (variableDeclSubList.getRight() != null)
+				domain = this.translateExpressionNode(
+						variableDeclSubList.getRight(), scope, true);
+			boundVariableList.add(new Pair<List<Variable>, Expression>(
+					variableSubList, domain));
+		}
+		// variableName = modelFactory.identifier(
+		// modelFactory.sourceOf(quantifiedNode.variable().getSource()),
+		// quantifiedNode.variable().getName());
+		// variableTypeNode = quantifiedNode.variable().getTypeNode();
+		// variableType = translateABCType(
+		// modelFactory.sourceOf(variableTypeNode.getSource()), scope,
+		// variableTypeNode.getType());
+		// functionInfo.addBoundVariable(variableName, variableType);
 		switch (quantifiedNode.quantifier()) {
 		case EXISTS:
 			quantifier = Quantifier.EXISTS;
@@ -4550,15 +4579,17 @@ public class FunctionTranslator {
 			throw new CIVLUnimplementedFeatureException("quantifier "
 					+ quantifiedNode.quantifier(), source);
 		}
-		restrictionOrRange = translateExpressionNode(
-				quantifiedNode.restrictionOrRange(), scope, true);
+		if (quantifiedNode.restriction() != null)
+			restriction = translateExpressionNode(quantifiedNode.restriction(),
+					scope, true);
+		else
+			restriction = modelFactory.trueExpression(source);
 		bodyExpression = modelFactory
 				.booleanExpression(translateExpressionNode(
 						quantifiedNode.expression(), scope, true));
 		result = modelFactory.quantifiedExpression(source, quantifier,
-				variableName, variableType, quantifiedNode.isRange(),
-				restrictionOrRange, bodyExpression);
-		functionInfo.popBoundVariableStack();
+				boundVariableList, restriction, bodyExpression);
+		functionInfo.popBoundVariableStackNew();
 		return result;
 	}
 

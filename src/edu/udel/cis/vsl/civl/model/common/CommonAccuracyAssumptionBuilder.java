@@ -401,6 +401,17 @@ public class CommonAccuracyAssumptionBuilder implements
 		}
 	}
 
+	private Variable findsBoundVariable(QuantifiedExpression quantExpr,
+			Identifier name) {
+		for (Pair<List<Variable>, Expression> variableSubList : quantExpr
+				.boundVariableList()) {
+			for (Variable variable : variableSubList.left)
+				if (variable.name().equals(name))
+					return variable;
+		}
+		return null;
+	}
+
 	private Fragment expand(AbstractFunctionCallExpression call, int arg,
 			Scope scope) {
 		AbstractFunction function = call.function();
@@ -412,12 +423,14 @@ public class CommonAccuracyAssumptionBuilder implements
 		CIVLType boundVariableType;
 
 		for (QuantifiedExpression quant : quantifiedExpressions) {
-			if (quant.boundVariableName()
-					.equals(boundVariableExpression.name())) {
+			Variable boundVariable = findsBoundVariable(quant,
+					boundVariableExpression.name());
+
+			if (boundVariable != null) {
 				Expression expansion0;
 				Expression expansion1;
 
-				boundVariableType = quant.boundVariableType();
+				boundVariableType = boundVariable.type();
 				// This should usually (always?) be a forall
 				assert quant.quantifier() == Quantifier.FORALL;
 				// This should usually (always?) be an integer
@@ -458,48 +471,48 @@ public class CommonAccuracyAssumptionBuilder implements
 		// createAssumptionExpression(source, 0, expression));
 	}
 
-	/**
-	 * Takes an index into the list of quantified expressions. Returns the
-	 * assumption obtained by applying all quantifiers in
-	 * {@link quantifiedExpressions} starting at index {code quantifier} to
-	 * {@code expression}.
-	 * 
-	 * @param source
-	 *            Source file information.
-	 * @param index
-	 *            An index into the list of quantifier expressions.
-	 * @param expression
-	 *            The quantified expression.
-	 * @return A fragment containing the (possibly nested) quantified
-	 *         expression.
-	 */
-	@SuppressWarnings("unused")
-	private Expression createAssumptionExpression(CIVLSource source, int index,
-			Expression expression) {
-		Expression result;
-
-		if (index >= quantifiedExpressions.size()) {
-			// No more quantifiers. Just give the expression.
-			return expression;
-		} else {
-			QuantifiedExpression quant = quantifiedExpressions.get(index);
-			Expression innerExpression = createAssumptionExpression(source,
-					index + 1, expression);
-
-			// if (quant.isRange()) {
-			// result = factory.quantifiedExpression(source,
-			// quant.quantifier(), quant.boundVariableName(),
-			// quant.boundVariableType(), quant.lower(),
-			// quant.upper(), innerExpression);
-			// } else {
-			result = factory.quantifiedExpression(source, quant.quantifier(),
-					quant.boundVariableName(), quant.boundVariableType(),
-					quant.isRange(), quant.restrictionOrRange(),
-					innerExpression);
-			// }
-		}
-		return result;
-	}
+	// /**
+	// * Takes an index into the list of quantified expressions. Returns the
+	// * assumption obtained by applying all quantifiers in
+	// * {@link quantifiedExpressions} starting at index {code quantifier} to
+	// * {@code expression}.
+	// *
+	// * @param source
+	// * Source file information.
+	// * @param index
+	// * An index into the list of quantifier expressions.
+	// * @param expression
+	// * The quantified expression.
+	// * @return A fragment containing the (possibly nested) quantified
+	// * expression.
+	// */
+	// @SuppressWarnings("unused")
+	// private Expression createAssumptionExpression(CIVLSource source, int
+	// index,
+	// Expression expression) {
+	// Expression result;
+	//
+	// if (index >= quantifiedExpressions.size()) {
+	// // No more quantifiers. Just give the expression.
+	// return expression;
+	// } else {
+	// QuantifiedExpression quant = quantifiedExpressions.get(index);
+	// Expression innerExpression = createAssumptionExpression(source,
+	// index + 1, expression);
+	//
+	// // if (quant.isRange()) {
+	// // result = factory.quantifiedExpression(source,
+	// // quant.quantifier(), quant.boundVariableName(),
+	// // quant.boundVariableType(), quant.lower(),
+	// // quant.upper(), innerExpression);
+	// // } else {
+	// result = factory.quantifiedExpression(source, quant.quantifier(),
+	// quant.boundVariableName(), quant.boundVariableType(),
+	// quant.isRange(), quant.restriction(), innerExpression);
+	// // }
+	// }
+	// return result;
+	// }
 
 	private Fragment expandIterator(AbstractFunctionCallExpression call,
 			int arg, Scope scope) {

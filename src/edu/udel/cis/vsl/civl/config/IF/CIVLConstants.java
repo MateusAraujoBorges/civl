@@ -396,16 +396,6 @@ public class CIVLConstants {
 	public final static Option strictCompareO = Option.newScalarOption(STRICT,
 			BOOLEAN, "check strict functional equivalence?", true);
 
-	// /**
-	// * skip non-pthread programs?
-	// */
-	// public final static Option pthreadOnlyO = Option
-	// .newScalarOption(
-	// "pthreadOnly",
-	// BOOLEAN,
-	// "skip non-pthread programs? Only valid when -svcomp is true.",
-	// true);
-
 	/**
 	 * Set the system include path.
 	 */
@@ -578,7 +568,7 @@ public class CIVLConstants {
 				simplifyO, solveO, statelessPrintfO, svcomp16O, quietO,
 				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
 				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
-				checkDivisionByZeroO, checkMemoryLeakO, timeoutO,unpreprocO };
+				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO };
 	}
 
 	// headers...

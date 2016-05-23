@@ -366,32 +366,27 @@ public interface ModelFactory {
 	ProcnullExpression procnullExpression(CIVLSource source);
 
 	/**
-	 * Returns a new quantified expression.
+	 * Creates a new quantified expression.
 	 * 
 	 * @param source
 	 *            The source file information for this expression.
 	 * @param quantifier
 	 *            The quantifier for this quantified expression. One of {FORALL,
 	 *            EXISTS, UNIFORM}.
-	 * @param boundVariableName
-	 *            The name of the bound variable.
-	 * @param boundVariableType
-	 *            The type of the bound variable.
-	 * @param isRange
-	 *            true iff the free variable bounded by a range expression;
-	 *            otherwise it is bounded by a boolean expression
-	 * @param restrictionOrRange
+	 * @param boundVariableList
+	 *            the list of bound variables as long as their domains
+	 *            (optional)
+	 * @param restriction
 	 *            The boolean-valued expression involving the bound variable
-	 *            which is expected to be true otherwise this is the range of
-	 *            the bound variable
+	 *            which is expected to be true
 	 * @param expression
-	 *            The quantified expression.
+	 *            The body expression.
 	 * @return The new quantified expression
 	 */
 	QuantifiedExpression quantifiedExpression(CIVLSource source,
-			Quantifier quantifier, Identifier boundVariableName,
-			CIVLType boundVariableType, boolean isRange,
-			Expression restrictionOrRange, Expression expression);
+			Quantifier quantifier,
+			List<Pair<List<Variable>, Expression>> boundVariableList,
+			Expression restriction, Expression expression);
 
 	// /**
 	// * Returns a new quantified expression.

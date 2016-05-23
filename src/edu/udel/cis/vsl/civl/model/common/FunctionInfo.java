@@ -14,6 +14,7 @@ import edu.udel.cis.vsl.civl.model.IF.Identifier;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 
 /**
@@ -50,6 +51,7 @@ public class FunctionInfo {
 	 * 
 	 */
 	private Stack<Pair<Identifier, CIVLType>> boundVariables;
+	private Stack<Set<Variable>> boundVariableStack;
 
 	/**
 	 * The current function that is being processed
@@ -81,6 +83,7 @@ public class FunctionInfo {
 		continueStatements = new Stack<Set<Statement>>();
 		breakStatements = new Stack<Set<Statement>>();
 		boundVariables = new Stack<Pair<Identifier, CIVLType>>();
+		boundVariableStack = new Stack<>();
 	}
 
 	/* *************************** Public Methods ************************** */
@@ -109,6 +112,20 @@ public class FunctionInfo {
 	 */
 	public void addContinueSet(Set<Statement> statementSet) {
 		this.continueStatements.add(statementSet);
+	}
+
+	/**
+	 * Add an empty set to the stack of bound variables.
+	 */
+	public void addBoundVariableSet() {
+		this.boundVariableStack.push(new HashSet<Variable>());
+	}
+
+	/**
+	 * Add a bound variable to the stack of bound variables.
+	 */
+	public void addBoundVariable(Variable variable) {
+		this.boundVariableStack.peek().add(variable);
 	}
 
 	/**
@@ -189,13 +206,18 @@ public class FunctionInfo {
 	 *            The name of a variable.
 	 * @return Whether or not this variable is on the stack of bound variables.
 	 */
-	public boolean containsBoundVariable(Identifier name) {
-		for (Pair<Identifier, CIVLType> p : boundVariables) {
-			if (p.left.equals(name)) {
-				return true;
-			}
+	public Variable findBoundVariable(Identifier name) {
+		for (Set<Variable> variables : boundVariableStack) {
+			for (Variable variable : variables)
+				if (variable.name().equals(name))
+					return variable;
 		}
-		return false;
+		// for (Pair<Identifier, CIVLType> p : boundVariables) {
+		// if (p.left.equals(name)) {
+		// return true;
+		// }
+		// }
+		return null;
 	}
 
 	/**
@@ -270,6 +292,15 @@ public class FunctionInfo {
 	 */
 	public Identifier popBoundVariableStack() {
 		return boundVariables.pop().left;
+	}
+
+	/**
+	 * Pop the top set from the bound variable stack.
+	 * 
+	 * @return The set of variables from the top of the bound variable stack.
+	 */
+	public Set<Variable> popBoundVariableStackNew() {
+		return boundVariableStack.pop();
 	}
 
 	/**

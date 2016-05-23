@@ -1,5 +1,7 @@
 package edu.udel.cis.vsl.civl.semantics.contract;
 
+import java.util.HashSet;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.mpi.LibmpiEvaluator;
@@ -44,6 +46,7 @@ import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
@@ -161,59 +164,62 @@ public class ContractEvaluator extends CommonEvaluator implements Evaluator {
 	protected Evaluation evaluateQuantifiedExpression(State state, int pid,
 			QuantifiedExpression expression)
 			throws UnsatisfiablePathConditionException {
-		Expression restriction = expression.restrictionOrRange();
+		Expression restriction = expression.restriction();
 		Reasoner reasoner;
 		NumericSymbolicConstant boundVariable;
 		Interval boundInterval;
+		Variable singleBoundVariable = expression.boundVariableList().get(0).left
+				.get(0);
 
+		this.boundVariableStack.push(new HashSet<SymbolicConstant>());
 		// The restriction must a boolean expression, and the bound variable
 		// must has a integral numeric type
-		if (restriction.getExpressionType().isBoolType())
-			if (expression.boundVariableType().isIntegerType()) {
-				Evaluation restrictionVal;
+		// if (restriction.getExpressionType().isBoolType())
+		if (singleBoundVariable.type().isIntegerType()) {
+			Evaluation restrictionVal;
 
-				boundVariable = (NumericSymbolicConstant) universe
-						.symbolicConstant(expression.boundVariableName()
-								.stringObject(), expression.boundVariableType()
-								.getDynamicType(universe));
-				// push the bound variable for evaluation:
-				boundVariables.push(boundVariable);
-				restrictionVal = evaluate(state, pid, restriction);
-				reasoner = universe
-						.reasoner((BooleanExpression) restrictionVal.value);
-				boundInterval = reasoner
-						.intervalApproximation((NumericExpression) boundVariable);
-				// If the bound interval exists, and the interval contains no
-				// Infinities, the evaluation will happen by elaborating all
-				// possible values:
-				if (boundInterval != null) {
-					Number lower, upper;
+			boundVariable = (NumericSymbolicConstant) universe
+					.symbolicConstant(
+							singleBoundVariable.name().stringObject(),
+							singleBoundVariable.type().getDynamicType(universe));
+			// push the bound variable for evaluation:
+			// boundVariables.push(boundVariable);
+			boundVariableStack.peek().add(boundVariable);
+			restrictionVal = evaluate(state, pid, restriction);
+			reasoner = universe
+					.reasoner((BooleanExpression) restrictionVal.value);
+			boundInterval = reasoner
+					.intervalApproximation((NumericExpression) boundVariable);
+			// If the bound interval exists, and the interval contains no
+			// Infinities, the evaluation will happen by elaborating all
+			// possible values:
+			if (boundInterval != null) {
+				Number lower, upper;
 
-					lower = boundInterval.lower();
-					upper = boundInterval.upper();
-					if (lower instanceof IntegerNumber
-							&& upper instanceof IntegerNumber) {
-						int lowerInt = ((IntegerNumber) lower).intValue();
-						int highInt = ((IntegerNumber) upper).intValue();
+				lower = boundInterval.lower();
+				upper = boundInterval.upper();
+				if (lower instanceof IntegerNumber
+						&& upper instanceof IntegerNumber) {
+					int lowerInt = ((IntegerNumber) lower).intValue();
+					int highInt = ((IntegerNumber) upper).intValue();
 
-						if (expression.quantifier() == Quantifier.EXISTS)
-							return evaluateElabortaedQuantifiedExpression(
-									state, pid, boundVariable,
-									expression.expression(), lowerInt, highInt,
-									false);
-						else if (expression.quantifier() == Quantifier.FORALL) {
-							return evaluateElabortaedQuantifiedExpression(
-									state, pid, boundVariable,
-									expression.expression(), lowerInt, highInt,
-									true);
-						} else
-							throw new CIVLUnimplementedFeatureException(
-									"Reasoning quantified expressions with kinds that are not FORALL or EXISTS in function contracts");
-					}
+					if (expression.quantifier() == Quantifier.EXISTS)
+						return evaluateElabortaedQuantifiedExpression(state,
+								pid, boundVariable, expression.expression(),
+								lowerInt, highInt, false);
+					else if (expression.quantifier() == Quantifier.FORALL) {
+						return evaluateElabortaedQuantifiedExpression(state,
+								pid, boundVariable, expression.expression(),
+								lowerInt, highInt, true);
+					} else
+						throw new CIVLUnimplementedFeatureException(
+								"Reasoning quantified expressions with kinds that are not FORALL or EXISTS in function contracts");
 				}
-				// pop the bound variable after evaluation:
-				boundVariables.pop();
 			}
+			// pop the bound variable after evaluation:
+			// boundVariables.pop();
+			boundVariableStack.pop();
+		}
 		return super.evaluateQuantifiedExpression(state, pid, expression);
 	}
 
