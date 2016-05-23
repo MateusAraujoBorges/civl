@@ -46,7 +46,9 @@ public class VerifyThisTest {
 
 	@Test
 	public void relaxedPrefix_2015_1() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("relaxedPrefix.c")));
+		assertTrue(ui.run(VERIFY, 
+				QUIET, 
+				filename("relaxedPrefix.c")));
 	}
 
 	@Test
