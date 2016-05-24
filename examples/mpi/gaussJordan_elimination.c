@@ -1,5 +1,4 @@
 #ifdef _CIVL
-#include <civlc.cvh>
 #endif
 /* FILE: gaussJordan_elimination.c A gaussian-jordan elimination
  * solver that converts a given matrix to a reduce row echelon form
@@ -17,6 +16,8 @@
 #define PRINT 0
 /* Global parameters */
 #ifdef _CIVL
+
+#include <civlc.cvh>
 $input int _mpi_nprocs_hi=3;  
 $input int _mpi_nprocs_lo=1;   
 $input int ROWB = 3;                      // upper bound of numRow
@@ -27,7 +28,9 @@ $input int numCol;                        // number of columns in the matrix
 $assume(0 < numCol && numCol <= COLB && numCol > numRow);
 $input long double data[numRow][numCol];  // input matrix
 long double oracle[numRow][numCol];       // results of sequential run
+
 #else
+
 int numRow;     // number of rows in the matrix
 int numCol;     // number of columns in the matrix, the right-most
 		// column is vector B
@@ -400,9 +403,6 @@ int main(int argc, char *argv[]) {
 #else
   $elaborate(numRow);
   $elaborate(numCol);
-  //  for(int i = 0; i < numRow; i++)
-  //  for(int j = 0; j < numCol; j++)
-  //    $assume(data[i][j] != 0);
 #endif
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
