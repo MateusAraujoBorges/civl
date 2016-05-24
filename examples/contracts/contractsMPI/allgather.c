@@ -8,7 +8,7 @@
   @ \mpi_collective(comm, P2P):
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \mpi_agree(root) && \mpi_agree(count);
-  @   requires 0 < count && count < 5;
+  @   requires 0 < count && count <= 3;
   @   ensures \mpi_equals(buf, count, MPI_INT, \remote(buf, root));
   @   waitsfor root;
   @*/
@@ -33,8 +33,8 @@ int broadcast(int * buf, int count,
 /*@ 
   @ \mpi_collective(comm, P2P) :
   @   requires \mpi_agree(root) && \mpi_agree(sendcount);
-  @   requires sendcount > 0 && sendcount < 5;
-  @   requires recvcount > 0 && recvcount < 5;
+  @   requires sendcount > 0 && sendcount < 3;
+  @   requires recvcount > 0 && recvcount < 3;
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \valid(sendbuf + (0 .. sendcount));
   @   behavior imroot:
@@ -85,8 +85,8 @@ int gather(int* sendbuf, int sendcount, MPI_Datatype sendtype,
 
 /*@ \mpi_collective(comm, P2P):
   @   requires \mpi_agree(sendcount);
-  @   requires sendcount > 0 && sendcount < 3;
-  @   requires recvcount > 0 && recvcount < 3;
+  @   requires sendcount > 0 && sendcount < 2;
+  @   requires recvcount > 0 && recvcount < 2;
   @   requires \valid(sendbuf + (0 .. sendcount));
   @   requires \valid(recvbuf + (0 .. (recvcount * \mpi_comm_size)));
   @   requires recvcount == sendcount;
