@@ -22,6 +22,7 @@ import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.IntDivisionTransformer;
+import edu.udel.cis.vsl.civl.util.IF.CommonConstants;
 
 /**
  * <p>
@@ -50,6 +51,8 @@ public class IntDivWorker extends BaseWorker {
 	private static final String INT_DIV = "$int_div";
 	private static final String INT_MOD = "$int_mod";
 	private static final String INT_DIV_SOURCE_FILE = "int_div.cvl";
+	private static final String INT_DIV_NO_CHECKING = "int_div_no_checking.cvl";
+	private static final String NO_CHECKING_DIVISION_BY_ZERO = "-checkDivisionByZero=false";
 
 	public IntDivWorker(ASTFactory astFactory) {
 		super(IntDivisionTransformer.LONG_NAME, astFactory);
@@ -163,7 +166,14 @@ public class IntDivWorker extends BaseWorker {
 	 *             when there are syntax error in {@link #INT_DIV_SOURCE_FILE}
 	 */
 	private void linkIntDivLibrary(SequenceNode<BlockItemNode> ast) throws SyntaxException {
-		AST intDivLib = this.parseSystemLibrary(INT_DIV_SOURCE_FILE);
+		AST intDivLib;
+
+		if (checkDivisionByZero()) {
+			intDivLib = this.parseSystemLibrary(INT_DIV_SOURCE_FILE);
+		} else {
+			intDivLib = this.parseSystemLibrary(INT_DIV_NO_CHECKING);
+		}
+
 		SequenceNode<BlockItemNode> root = intDivLib.getRootNode();
 		List<BlockItemNode> funcDefinitions = new ArrayList<>();
 
@@ -173,5 +183,17 @@ public class IntDivWorker extends BaseWorker {
 			funcDefinitions.add(child);
 		}
 		ast.insertChildren(0, funcDefinitions);
+	}
+
+	private boolean checkDivisionByZero() {
+		String currentCmd = CommonConstants.current_command_line;
+
+		if (currentCmd != null) {
+			if (currentCmd.trim().contains(NO_CHECKING_DIVISION_BY_ZERO))
+				return false;
+			else
+				return true;
+		} else
+			return true;
 	}
 }
