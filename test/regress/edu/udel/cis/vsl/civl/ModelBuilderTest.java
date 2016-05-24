@@ -30,6 +30,11 @@ public class ModelBuilderTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("arrayext.c")));
 	}
 
+	@Test
+	public void arrayLambda() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("arrayLambda.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

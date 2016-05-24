@@ -3657,6 +3657,9 @@ public class FunctionTranslator {
 		Expression result;
 
 		switch (expressionNode.expressionKind()) {
+		// case ARRAY_LAMBDA:
+		// // dd
+		// break;
 		case ARROW:
 			result = translateArrowNode((ArrowNode) expressionNode, scope);
 			break;
@@ -3712,8 +3715,8 @@ public class FunctionTranslator {
 			result = translateResultNode((ResultNode) expressionNode, scope);
 			break;
 		default:
-			throw new CIVLUnimplementedFeatureException("expressions of type "
-					+ expressionNode.getClass().getSimpleName(),
+			throw new CIVLUnimplementedFeatureException("expressions of kind "
+					+ expressionNode.expressionKind(),
 					modelFactory.sourceOf(expressionNode));
 		}
 		if (translateConversions) {
@@ -4557,14 +4560,6 @@ public class FunctionTranslator {
 			boundVariableList.add(new Pair<List<Variable>, Expression>(
 					variableSubList, domain));
 		}
-		// variableName = modelFactory.identifier(
-		// modelFactory.sourceOf(quantifiedNode.variable().getSource()),
-		// quantifiedNode.variable().getName());
-		// variableTypeNode = quantifiedNode.variable().getTypeNode();
-		// variableType = translateABCType(
-		// modelFactory.sourceOf(variableTypeNode.getSource()), scope,
-		// variableTypeNode.getType());
-		// functionInfo.addBoundVariable(variableName, variableType);
 		switch (quantifiedNode.quantifier()) {
 		case EXISTS:
 			quantifier = Quantifier.EXISTS;

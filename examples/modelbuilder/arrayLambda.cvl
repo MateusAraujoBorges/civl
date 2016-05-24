@@ -1,0 +1,7 @@
+$input int n;
+
+int main(){
+  int a[n];
+
+  a=(int[n]) $lambda(int i) i*2;
+}
