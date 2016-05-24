@@ -100,16 +100,6 @@ public class ExperimentalTest {
 		assertTrue(ui.run(VERIFY, filename("loopInvariants.c")));
 	}
 
-	@Test
-	public void gaussElim_bug() {
-		assertTrue(ui.run(VERIFY, filename("gaussElim_bug.c")));
-	}
-
-	@Test
-	public void gaussElim_bug_ref() {
-		assertTrue(ui.run(VERIFY, filename("gaussElim_bug_ref.c")));
-	}
-
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

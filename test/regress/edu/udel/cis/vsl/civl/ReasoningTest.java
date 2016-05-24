@@ -1,8 +1,9 @@
 package edu.udel.cis.vsl.civl;
 
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 
 import java.io.File;
 
@@ -36,6 +37,16 @@ public class ReasoningTest {
 	@Test
 	public void evaluatePc() throws ABCException {
 		assertFalse(ui.run("verify", QUIET, filename("evaluatePc.cvl")));
+	}
+
+	@Test
+	public void unsatClause() {
+		assertTrue(ui.run(VERIFY, filename("unsatClause.c")));
+	}
+
+	@Test
+	public void unsatClause2() {
+		assertTrue(ui.run(VERIFY, filename("unsatClause2.c")));
 	}
 
 	@AfterClass
