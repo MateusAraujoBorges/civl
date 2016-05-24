@@ -76,7 +76,6 @@ import edu.udel.cis.vsl.civl.run.common.VerificationStatus;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.civl.util.IF.CommonConstants;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.CommandLineParser;
@@ -589,7 +588,6 @@ public class UserInterface {
 		} else {
 			CommandLine commandLine = CIVLCommandFactory.parseCommand(
 					definedOptions.values(), args);
-			CommonConstants.setCurrentCommandLine(commandLine.getCommandString());
 			
 			try {
 				switch (commandLine.commandLineKind()) {
