@@ -1,0 +1,7 @@
+#include <civlc.cvh>
+
+ int main(){
+   int upper = 1;
+   int lower = 2;
+   $assert($forall (int i: lower .. upper) 1 == 1);
+ }

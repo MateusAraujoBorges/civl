@@ -17,6 +17,7 @@ import edu.udel.cis.vsl.civl.model.IF.contract.LoopContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
@@ -388,32 +389,27 @@ public interface ModelFactory {
 			List<Pair<List<Variable>, Expression>> boundVariableList,
 			Expression restriction, Expression expression);
 
-	// /**
-	// * Returns a new quantified expression.
-	// *
-	// * @param source
-	// * The source file information for this expression.
-	// * @param quantifier
-	// * The quantifier for this quantified expression. One of {FORALL,
-	// * EXISTS, UNIFORM}.
-	// * @param boundVariableName
-	// * The name of the bound variable.
-	// * @param boundVariableType
-	// * The type of the bound variable.
-	// * @param lower
-	// * The integer-valued expression for the lower end of the bound
-	// * variable range.
-	// * @param upper
-	// * The integer-valued expression for the upper end of the bound
-	// * variable range.
-	// * @param expression
-	// * The quantified expression.
-	// * @return The new quantified expression
-	// */
-	// QuantifiedExpression quantifiedExpression(CIVLSource source,
-	// Quantifier quantifier, Identifier boundVariableName,
-	// CIVLType boundVariableType, Expression lower, Expression upper,
-	// Expression expression);
+	/**
+	 * Creates a new array lambda expression.
+	 * 
+	 * @param source
+	 *            the source file information for this expression.
+	 * @param arrayType
+	 *            the type of this array lambda, which should be some array type
+	 * @param boundVariableList
+	 *            the list of bound variables as long as their domains
+	 *            (optional)
+	 * @param restriction
+	 *            the boolean-valued expression involving the bound variable
+	 *            which is expected to be true
+	 * @param expression
+	 *            the body expression.
+	 * @return the new array lambda expression
+	 */
+	ArrayLambdaExpression arrayLambdaExpression(CIVLSource source,
+			CIVLArrayType arrayType,
+			List<Pair<List<Variable>, Expression>> boundVariableList,
+			Expression restriction, Expression expression);
 
 	/**
 	 * A real literal expression.

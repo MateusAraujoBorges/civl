@@ -26,7 +26,7 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
  * e.g.,
  * 
  * <pre>
- * $forall (int x, y: dom; double z | x > 0 && z<5.9} x*z > -1
+ * $forall (int x, y: dom; double z | x > 0 && z<5.9) x*z > -1
  * </pre>
  * 
  * @author zirkel, Manchun Zheng (zmanchun)
@@ -50,27 +50,6 @@ public interface QuantifiedExpression extends Expression {
 	 */
 	Quantifier quantifier();
 
-	// /** The name of the bound variable (e.g. x in forall x | ...). */
-	// Identifier boundVariableName();
-	//
-	// /** The type of the bound variable. */
-	// CIVLType boundVariableType();
-	//
-	// /** Is the quantifier specified to be a range? */
-	// boolean isRange();
-
-	// /**
-	// * Integer-valued expression for the lower end of the range. Null iff
-	// * isRange() == false.
-	// */
-	// Expression lower();
-	//
-	// /**
-	// * Integer-valued expression for the upper end of the range. Null iff
-	// * isRange() == false.
-	// */
-	// Expression upper();
-
 	/**
 	 * The list of bound variables.
 	 * 
@@ -85,5 +64,7 @@ public interface QuantifiedExpression extends Expression {
 
 	/** The expression e(x). */
 	Expression expression();
+
+	int numBoundVariables();
 
 }

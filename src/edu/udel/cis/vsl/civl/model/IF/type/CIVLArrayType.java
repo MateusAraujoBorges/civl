@@ -19,4 +19,11 @@ public interface CIVLArrayType extends CIVLType {
 	 */
 	boolean isComplete();
 
+	/**
+	 * computes the dimension of this array type.
+	 * 
+	 * @return the dimension of this array type.
+	 */
+	int dimension();
+
 }

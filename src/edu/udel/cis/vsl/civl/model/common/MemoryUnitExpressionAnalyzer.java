@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.model.common;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
@@ -13,6 +14,7 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
@@ -23,6 +25,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RecDomainLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RegularRangeExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ScopeofExpression;
@@ -43,6 +46,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 
 /**
  * This implements the static analysis of impact and reachable memory units and
@@ -369,6 +373,21 @@ public class MemoryUnitExpressionAnalyzer {
 					((AddressOfExpression) expression).operand(), result,
 					derefCount);
 			break;
+		case ARRAY_LAMBDA: {
+			ArrayLambdaExpression arrayLambda = (ArrayLambdaExpression) expression;
+
+			for (Pair<List<Variable>, Expression> variables : arrayLambda
+					.boundVariableList()) {
+				if (variables.right != null)
+					computeImpactMemoryUnitsOfExpression(writableVars,
+							variables.right, result, derefCount);
+			}
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					arrayLambda.restriction(), result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					arrayLambda.expression(), result, derefCount);
+			break;
+		}
 		case ARRAY_LITERAL: {
 			Expression[] elements = ((ArrayLiteralExpression) expression)
 					.elements();
@@ -438,8 +457,20 @@ public class MemoryUnitExpressionAnalyzer {
 			break;
 		case NULL_LITERAL:
 			break;
-		case QUANTIFIER:// TODO implement it
+		case QUANTIFIER: {
+			QuantifiedExpression quantified = (QuantifiedExpression) expression;
+
+			for (Pair<List<Variable>, Expression> variables : quantified
+					.boundVariableList()) {
+				computeImpactMemoryUnitsOfExpression(writableVars,
+						variables.right, result, derefCount);
+			}
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					quantified.restriction(), result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					quantified.expression(), result, derefCount);
 			break;
+		}
 		case REAL_LITERAL:
 			break;
 		case REC_DOMAIN_LITERAL: {

@@ -1088,10 +1088,18 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					break;
 				}
 				case ARRAY_LAMBDA:
-					result.append("(" + symbolicExpression.argument(0) + ")");
+					if (type != null) {
+						result.append("(");
+						result.append(type);
+						result.append(") ");
+					}
+					result.append(symbolicExpressionToString(
+							source,
+							state,
+							civlType,
+							(SymbolicExpression) symbolicExpression.argument(0),
+							true, prefix, separator));
 					break;
-				// return
-				// symbolicExpression.toStringBufferLong().toString();
 				case ARRAY_READ: {
 					result.append(symbolicExpression.argument(0)
 							.toStringBuffer(true));
@@ -1317,9 +1325,12 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append(" : ");
 					result.append(((SymbolicExpression) symbolicExpression
 							.argument(0)).type().toStringBuffer(false));
-					result.append(" . ");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(true));
+					result.append(". ");
+					result.append(this
+							.symbolicExpressionToString(source, state, null,
+									(SymbolicExpression) symbolicExpression
+											.argument(1), true, prefix,
+									separator));
 					if (atomize)
 						atomize(result);
 					break;

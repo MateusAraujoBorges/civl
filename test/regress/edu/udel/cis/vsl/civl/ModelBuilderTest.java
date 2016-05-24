@@ -35,6 +35,11 @@ public class ModelBuilderTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("arrayLambda.cvl")));
 	}
 
+	@Test
+	public void forall() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("foralltest.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

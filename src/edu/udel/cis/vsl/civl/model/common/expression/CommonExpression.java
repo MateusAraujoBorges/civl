@@ -73,6 +73,14 @@ public abstract class CommonExpression extends CommonSourceable implements
 		this.expressionType = type;
 	}
 
+	/**
+	 * checks if the given expression is equivalent with this expression
+	 * 
+	 * @param expression
+	 *            the given expression, which should have the same expression
+	 *            kind as this expression
+	 * @return true iff the given expression is equivalent with this expression
+	 */
 	protected abstract boolean expressionEquals(Expression expression);
 
 	@Override

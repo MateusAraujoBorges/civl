@@ -1,7 +1,20 @@
+#include<assert.h>
+
 $input int n;
+$input int m;
+$input int A[n];
+$input int B[n][m];
 
 int main(){
-  int a[n];
+  int a[n],b[n][m];
+  $domain(2) dom=($domain(2)){0 .. n-1, 0 .. m-1};
 
   a=(int[n]) $lambda(int i) i*2;
+  assert($forall(int k: 0 .. n-1) a[k]==k*2);
+  a=(int[n]) $lambda(int i) A[i]*2;
+  assert($forall(int i: 0 .. n-1) a[i]==A[i]*2);
+  b=(int[n][m]) $lambda(int i, j) i+j;
+  assert($forall(int i: 0 .. n-1; int j: 0 .. m-1) b[i][j]==i+j);
+  b=(int[n][m]) $lambda(int i,j) B[i][j] * 5;
+  assert($forall(int i: 0 .. n-1; int j: 0 .. m-1) b[i][j]==B[i][j]*5);
 }

@@ -11,8 +11,8 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
  * syntax:<br>
  * 
  * <pre>
- * quantified: 
- *   quantifier ( variable-decl-list | restrict? ) expression ;
+ * array-lambda: 
+ *   $lambda ( variable-decl-list | restrict? ) expression ;
  * 
  * variable-decl-list:
  *   variable-decl-sub-list (; variable-decl-sub-list)* ;
@@ -20,16 +20,15 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
  * variable-decl-sub-list:
  *   type ID (, ID)* (: domain)?
  *   
- * quantifier: $forall | $exists | $uniform
  * </pre>
  * 
  * e.g.,
  * 
  * <pre>
- * $forall (int x, y: dom; double z | x > 0 && z<5.9} x*z > -1
+ * (int[n]) $lambda (int i) i*4
  * </pre>
  * 
- * @author zirkel, Manchun Zheng (zmanchun)
+ * @author Manchun Zheng (zmanchun)
  * 
  */
 public interface ArrayLambdaExpression extends Expression {

@@ -37,6 +37,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ArrayLambdaNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ArrowNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CompoundLiteralNode;
@@ -126,6 +127,7 @@ import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.contract.LoopContract;
+import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
@@ -3657,9 +3659,10 @@ public class FunctionTranslator {
 		Expression result;
 
 		switch (expressionNode.expressionKind()) {
-		// case ARRAY_LAMBDA:
-		// // dd
-		// break;
+		case ARRAY_LAMBDA:
+			result = translateArrayLambdaNode((ArrayLambdaNode) expressionNode,
+					scope);
+			break;
 		case ARROW:
 			result = translateArrowNode((ArrowNode) expressionNode, scope);
 			break;
@@ -3722,6 +3725,87 @@ public class FunctionTranslator {
 		if (translateConversions) {
 			result = this.applyConversions(scope, expressionNode, result);
 		}
+		return result;
+	}
+
+	/**
+	 * translates the bound variable declaration with (optional) domains in to
+	 * CIVL representation.
+	 * 
+	 * @param boundVariableSeqNode
+	 *            the sequence node of bound variable declarations and domains
+	 *            (optional)
+	 * @param scope
+	 *            the scope of this node
+	 * @return the list of variables and their (optional) domains
+	 */
+	private List<Pair<List<Variable>, Expression>> translateBoundVaraibleSequence(
+			SequenceNode<PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode>> boundVariableSeqNode,
+			Scope scope) {
+		List<Pair<List<Variable>, Expression>> boundVariableList = new LinkedList<>();
+
+		for (PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode> variableDeclSubList : boundVariableSeqNode) {
+			List<Variable> variableSubList = new LinkedList<>();
+			Expression domain = null;
+
+			for (VariableDeclarationNode variableNode : variableDeclSubList
+					.getLeft()) {
+				Variable variable = this.translateVariableDeclarationNodeWork(
+						variableNode, scope, true);
+
+				functionInfo.addBoundVariable(variable);
+				variableSubList.add(variable);
+			}
+			if (variableDeclSubList.getRight() != null)
+				domain = this.translateExpressionNode(
+						variableDeclSubList.getRight(), scope, true);
+			boundVariableList.add(new Pair<List<Variable>, Expression>(
+					variableSubList, domain));
+		}
+		return boundVariableList;
+	}
+
+	/**
+	 * translates an array lambda node into an array lambda expression
+	 * 
+	 * @param arrayLambdaNode
+	 *            the array lambda node to be translated
+	 * @param scope
+	 *            the current scope of the array lambda node
+	 * @return the array lambda expression resulting from the translation of the
+	 *         given array lambda node
+	 */
+	private ArrayLambdaExpression translateArrayLambdaNode(
+			ArrayLambdaNode arrayLambdaNode, Scope scope) {
+		ArrayLambdaExpression result;
+		TypeNode arrayTypeNode = arrayLambdaNode.type();
+		CIVLArrayType arrayType;
+		Expression bodyExpression;
+		CIVLSource source = modelFactory.sourceOf(arrayLambdaNode.getSource());
+		Expression restriction = null;
+		List<Pair<List<Variable>, Expression>> boundVariableList;
+		CIVLType type = this.translateABCType(
+				modelFactory.sourceOf(arrayTypeNode), scope,
+				arrayTypeNode.getType());
+
+		if (!type.isArrayType()) {
+			throw new CIVLInternalException(
+					"unreachable: non-array-type array lambdas", source);
+		}
+		arrayType = (CIVLArrayType) type;
+		functionInfo.addBoundVariableSet();
+		boundVariableList = translateBoundVaraibleSequence(
+				arrayLambdaNode.boundVariableList(), scope);
+		if (arrayLambdaNode.restriction() != null)
+			restriction = translateExpressionNode(
+					arrayLambdaNode.restriction(), scope, true);
+		else
+			restriction = modelFactory.trueExpression(source);
+		bodyExpression = translateExpressionNode(arrayLambdaNode.expression(),
+				scope, true);
+		result = modelFactory.arrayLambdaExpression(source, arrayType,
+				boundVariableList, restriction, bodyExpression);
+		functionInfo.popBoundVariableStackNew();
 		return result;
 	}
 
@@ -4537,29 +4621,11 @@ public class FunctionTranslator {
 		Expression bodyExpression;
 		CIVLSource source = modelFactory.sourceOf(quantifiedNode.getSource());
 		Expression restriction = null;
-		SequenceNode<PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode>> boundVariableSeqNode = quantifiedNode
-				.boundVariableList();
-		List<Pair<List<Variable>, Expression>> boundVariableList = new LinkedList<>();
+		List<Pair<List<Variable>, Expression>> boundVariableList;
 
 		functionInfo.addBoundVariableSet();
-		for (PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode> variableDeclSubList : boundVariableSeqNode) {
-			List<Variable> variableSubList = new LinkedList<>();
-			Expression domain = null;
-
-			for (VariableDeclarationNode variableNode : variableDeclSubList
-					.getLeft()) {
-				Variable variable = this.translateVariableDeclarationNodeWork(
-						variableNode, scope, true);
-
-				functionInfo.addBoundVariable(variable);
-				variableSubList.add(variable);
-			}
-			if (variableDeclSubList.getRight() != null)
-				domain = this.translateExpressionNode(
-						variableDeclSubList.getRight(), scope, true);
-			boundVariableList.add(new Pair<List<Variable>, Expression>(
-					variableSubList, domain));
-		}
+		boundVariableList = translateBoundVaraibleSequence(
+				quantifiedNode.boundVariableList(), scope);
 		switch (quantifiedNode.quantifier()) {
 		case EXISTS:
 			quantifier = Quantifier.EXISTS;

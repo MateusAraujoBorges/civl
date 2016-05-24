@@ -40,6 +40,7 @@ import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunic
 import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
@@ -110,6 +111,7 @@ import edu.udel.cis.vsl.civl.model.common.contract.CommonLoopContract;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonAbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonAddressOfExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonArrayLiteralExpression;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonArrrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonBinaryExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonBooleanLiteralExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonBoundVariableExpression;
@@ -2348,5 +2350,15 @@ public class CommonModelFactory implements ModelFactory {
 			List<LHSExpression> loopAssigns, List<Expression> loopVariants) {
 		return new CommonLoopContract(civlSource, loopLocation, loopInvariants,
 				loopAssigns, loopVariants);
+	}
+
+	@Override
+	public ArrayLambdaExpression arrayLambdaExpression(CIVLSource source,
+			CIVLArrayType arrayType,
+			List<Pair<List<Variable>, Expression>> boundVariableList,
+			Expression restriction, Expression expression) {
+		return new CommonArrrayLambdaExpression(source, join(
+				expression.expressionScope(), restriction.expressionScope()),
+				arrayType, boundVariableList, restriction, expression);
 	}
 }

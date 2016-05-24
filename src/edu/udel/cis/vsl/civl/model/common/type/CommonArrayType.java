@@ -16,6 +16,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 public class CommonArrayType extends CommonType implements CIVLArrayType {
 
 	private CIVLType elementType;
+	private int dimension = 0;
 
 	/**
 	 * The type for an array of T.
@@ -113,4 +114,18 @@ public class CommonArrayType extends CommonType implements CIVLArrayType {
 		return this.elementType.isScalar();
 	}
 
+	@Override
+	public int dimension() {
+		if (dimension == 0) {
+			CIVLType type = this;
+			int dim = 0;
+
+			while (type.isArrayType()) {
+				dim++;
+				type = ((CIVLArrayType) type).elementType();
+			}
+			dimension = dim;
+		}
+		return dimension;
+	}
 }
