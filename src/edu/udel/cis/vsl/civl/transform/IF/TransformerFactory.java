@@ -158,7 +158,7 @@ public class TransformerFactory {
 			svcompUnPPTransformer = new SvcompUnPPTransformer(astFactory);
 		return svcompUnPPTransformer;
 	}
-
+	
 	public Transformer getSvcompTransformer() {
 		if (svcompTransformer == null)
 			svcompTransformer = new SvcompTransformer(astFactory);

@@ -32,6 +32,7 @@ import edu.udel.cis.vsl.abc.front.IF.ParseException;
 import edu.udel.cis.vsl.abc.front.IF.ParseTree;
 import edu.udel.cis.vsl.abc.front.IF.Preprocessor;
 import edu.udel.cis.vsl.abc.front.IF.PreprocessorException;
+import edu.udel.cis.vsl.abc.front.c.preproc.PreprocessorTokenSource;
 import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
@@ -291,6 +292,7 @@ public class ModelTranslator {
 		long totalTime;
 
 		startTime = System.currentTimeMillis();
+		//TODO
 		tokenSources = this.preprocess();
 		endTime = System.currentTimeMillis();
 		if (config.showTime()) {
@@ -299,6 +301,7 @@ public class ModelTranslator {
 					+ "ms:\tSUMARRY ANTLR preprocessor parsing to form preproc tree for "
 					+ tokenSources.size() + " translation units");
 		}
+		//TODO
 		asts = this.parseTokens(tokenSources);
 		if (this.config.svcomp()) {
 			AST userAST = asts.get(0);
@@ -353,6 +356,7 @@ public class ModelTranslator {
 		}
 		if (config.debugOrVerbose() || config.showInputVars())
 			this.printInputVariableNames(program);
+		
 		return program;
 	}
 
@@ -581,6 +585,7 @@ public class ModelTranslator {
 	 */
 	private void applyTranslationTransformers(Program program)
 			throws SyntaxException {
+		Map<String, Macro> macroMap = program.getAST().getMacroMap();
 		Set<String> headers = new HashSet<>();
 		boolean isC = userFileName.endsWith(".c")
 				|| userFileName.endsWith(".i");
@@ -677,6 +682,7 @@ public class ModelTranslator {
 			if (config.debugOrVerbose())
 				program.prettyPrint(out);
 		}
+		program.getAST().addMacroMap(macroMap);
 		program.apply(transformerFactory.getIntDivTransformer());
 	}
 
@@ -732,6 +738,9 @@ public class ModelTranslator {
 		asts.addAll(userASTs);
 		TUs = new AST[asts.size()];
 		asts.toArray(TUs);
+//		for (AST ast : TUs){
+//			System.out.println("hhh:"+ast.getMacroMap().keySet());
+//		}
 		if (config.debugOrVerbose()) {
 			out.println("Linking: ");
 			for (AST ast : TUs)
@@ -741,6 +750,7 @@ public class ModelTranslator {
 		startTime = System.currentTimeMillis();
 		// TUs[0].prettyPrint(System.out, false);
 		program = frontEnd.link(TUs, Language.CIVL_C);
+//		System.out.println("haha2:"+program.getAST().getMacroMap().keySet());
 		// program.prettyPrint(System.out);
 		endTime = System.currentTimeMillis();
 		if (config.showTime()) {
@@ -748,7 +758,6 @@ public class ModelTranslator {
 			out.println(totalTime + "ms:\tSUMARRY linking " + TUs.length
 					+ " ASTs");
 		}
-
 		return program;
 	}
 
@@ -790,6 +799,9 @@ public class ModelTranslator {
 			out.println(totalTime
 					+ "ms:\t\tconverting ANTLR tree to AST for TU "
 					+ tokenSource);
+		}
+		if(tokenSource instanceof PreprocessorTokenSource){
+			ast.addMacroMap(((PreprocessorTokenSource)tokenSource).getMacroMap());
 		}
 		return ast;
 	}
@@ -835,6 +847,16 @@ public class ModelTranslator {
 			Preprocessor preprocessor = frontEnd.getPreprocessor(language);
 			CivlcTokenSource tokens = preprocessor.outputTokenSource(
 					systemIncludes, userIncludes, macroMaps, file);
+			
+//			if(tokens instanceof PreprocessorTokenSource){
+//				PreprocessorTokenSource pts = (PreprocessorTokenSource)tokens;
+//				Map<String, Macro> macroMap = pts.getMacroMap();
+//				System.out.println("+++++++++++++++++++++++");
+//				Set<String> keys = macroMap.keySet();
+//				for(String str : keys){
+//					System.out.println("key:"+str);
+//				}
+//			}
 
 			tokenSources.add(new Pair<>(language, tokens));
 			if (config.showPreproc() || config.debugOrVerbose()) {
