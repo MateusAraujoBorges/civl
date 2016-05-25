@@ -20,6 +20,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.DeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ArrayLambdaNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
@@ -186,57 +187,95 @@ public class GeneralWorker extends BaseWorker {
 		}
 	}
 
-	private VariableDeclarationNode create_argv_tmp() throws SyntaxException {
+	private ExpressionNode argv_value_node() throws SyntaxException {
 		TypeNode arrayOfCharPointer = nodeFactory.newArrayTypeNode(this
 				.newSource("new main function", CivlcTokenConstant.TYPE),
 				nodeFactory.newPointerTypeNode(this.newSource(
 						"new main function", CivlcTokenConstant.POINTER), this
 						.basicType(BasicTypeKind.CHAR)), this
 						.identifierExpression(CIVL_argc_name));
+		ExpressionNode body = this.nodeFactory.newOperatorNode(this.newSource(
+				"address of", CivlcTokenConstant.SUB), Operator.ADDRESSOF,
+				this.nodeFactory.newOperatorNode(this.newSource("subscript",
+						CivlcTokenConstant.SUB), Operator.SUBSCRIPT,
+						this.nodeFactory.newOperatorNode(this.newSource(
+								"subscript", CivlcTokenConstant.SUB),
+								Operator.SUBSCRIPT, this
+										.identifierExpression(CIVL_argv_name),
+								this.identifierExpression("i")), this
+								.integerConstant(0)));
 
-		return this
-				.variableDeclaration(
-						_argv_tmp_name,
-						arrayOfCharPointer,
-						this.nodeFactory.newArrayLambdaNode(
-								this.newSource("array lambda",
-										CivlcTokenConstant.LAMBDA),
-								arrayOfCharPointer.copy(),
-								this.nodeFactory.newSequenceNode(
-										this.newSource(
-												"bound variable of array lambda",
-												CivlcTokenConstant.DECLARATION_LIST),
-										"bound variable list",
-										Arrays.asList(this.nodeFactory.newPairNode(
-												this.newSource("pair", 0),
-												this.nodeFactory.newSequenceNode(
-														this.newSource(
-																"variable declaration",
-																0),
-														"variables",
-														Arrays.asList(this
-																.variableDeclaration(
-																		"i",
-																		this.basicType(BasicTypeKind.INT)))),
-												null))),
-								null,
-								this.nodeFactory.newOperatorNode(
-										this.newSource("address of",
-												CivlcTokenConstant.SUB),
-										Operator.ADDRESSOF,
-										this.nodeFactory.newOperatorNode(
-												this.newSource("subscript",
-														CivlcTokenConstant.SUB),
-												Operator.SUBSCRIPT,
-												this.nodeFactory.newOperatorNode(
-														this.newSource(
-																"subscript",
-																CivlcTokenConstant.SUB),
-														Operator.SUBSCRIPT,
-														this.identifierExpression(CIVL_argv_name),
-														this.identifierExpression("i")),
-												this.integerConstant(0)))));
+		ArrayLambdaNode arrayLambda = this.nodeFactory.newArrayLambdaNode(
+				this.newSource("array lambda", CivlcTokenConstant.LAMBDA),
+				arrayOfCharPointer,
+				Arrays.asList(this.variableDeclaration("i",
+						this.basicType(BasicTypeKind.INT))), null, body);
+
+		ExpressionNode addressOf_argv0 = nodeFactory.newOperatorNode(this
+				.newSource("new main function", CivlcTokenConstant.OPERATOR),
+				Operator.SUBSCRIPT, Arrays.asList(arrayLambda, nodeFactory
+						.newIntegerConstantNode(this.newSource(
+								"new main function",
+								CivlcTokenConstant.INTEGER_CONSTANT), "0")));
+		addressOf_argv0 = nodeFactory.newOperatorNode(this.newSource(
+				"new main function", CivlcTokenConstant.OPERATOR),
+				Operator.ADDRESSOF, Arrays.asList(addressOf_argv0));
+
+		return addressOf_argv0;
 	}
+
+	// private VariableDeclarationNode create_argv_tmp() throws SyntaxException
+	// {
+	// TypeNode arrayOfCharPointer = nodeFactory.newArrayTypeNode(this
+	// .newSource("new main function", CivlcTokenConstant.TYPE),
+	// nodeFactory.newPointerTypeNode(this.newSource(
+	// "new main function", CivlcTokenConstant.POINTER), this
+	// .basicType(BasicTypeKind.CHAR)), this
+	// .identifierExpression(CIVL_argc_name));
+	//
+	// return this
+	// .variableDeclaration(
+	// _argv_tmp_name,
+	// arrayOfCharPointer,
+	// this.nodeFactory.newArrayLambdaNode(
+	// this.newSource("array lambda",
+	// CivlcTokenConstant.LAMBDA),
+	// arrayOfCharPointer.copy(),
+	// this.nodeFactory.newSequenceNode(
+	// this.newSource(
+	// "bound variable of array lambda",
+	// CivlcTokenConstant.DECLARATION_LIST),
+	// "bound variable list",
+	// Arrays.asList(this.nodeFactory.newPairNode(
+	// this.newSource("pair", 0),
+	// this.nodeFactory.newSequenceNode(
+	// this.newSource(
+	// "variable declaration",
+	// 0),
+	// "variables",
+	// Arrays.asList(this
+	// .variableDeclaration(
+	// "i",
+	// this.basicType(BasicTypeKind.INT)))),
+	// null))),
+	// null,
+	// this.nodeFactory.newOperatorNode(
+	// this.newSource("address of",
+	// CivlcTokenConstant.SUB),
+	// Operator.ADDRESSOF,
+	// this.nodeFactory.newOperatorNode(
+	// this.newSource("subscript",
+	// CivlcTokenConstant.SUB),
+	// Operator.SUBSCRIPT,
+	// this.nodeFactory.newOperatorNode(
+	// this.newSource(
+	// "subscript",
+	// CivlcTokenConstant.SUB),
+	// Operator.SUBSCRIPT,
+	// this.identifierExpression(CIVL_argv_name),
+	// this.identifierExpression("i")),
+	// this.integerConstant(0)))));
+	// }
 
 	/**
 	 * creates a new main function:
@@ -254,28 +293,15 @@ public class GeneralWorker extends BaseWorker {
 	 */
 	private FunctionDefinitionNode createNewMainFunction()
 			throws SyntaxException {
-		ExpressionNode addressOf_argv0;
 		FunctionCallNode callMain;
 		List<BlockItemNode> blockItems = new LinkedList<>();
 		FunctionTypeNode mainFuncType;
-		VariableDeclarationNode _argv = this.create_argv_tmp();
 
-		addressOf_argv0 = nodeFactory.newOperatorNode(this.newSource(
-				"new main function", CivlcTokenConstant.OPERATOR),
-				Operator.SUBSCRIPT, Arrays.asList(this
-						.identifierExpression(_argv_tmp_name), nodeFactory
-						.newIntegerConstantNode(this.newSource(
-								"new main function",
-								CivlcTokenConstant.INTEGER_CONSTANT), "0")));
-		addressOf_argv0 = nodeFactory.newOperatorNode(this.newSource(
-				"new main function", CivlcTokenConstant.OPERATOR),
-				Operator.ADDRESSOF, Arrays.asList(addressOf_argv0));
 		callMain = nodeFactory.newFunctionCallNode(this.newSource(
 				"new main function", CivlcTokenConstant.CALL), this
 				.identifierExpression(GEN_MAIN), Arrays.asList(
-				this.identifierExpression(CIVL_argc_name), addressOf_argv0),
+				this.identifierExpression(CIVL_argc_name), argv_value_node()),
 				null);
-		blockItems.add(_argv);
 		blockItems.add(nodeFactory.newExpressionStatementNode(callMain));
 		mainFuncType = nodeFactory.newFunctionTypeNode(mainSource, nodeFactory
 				.newBasicTypeNode(mainSource, BasicTypeKind.INT), nodeFactory

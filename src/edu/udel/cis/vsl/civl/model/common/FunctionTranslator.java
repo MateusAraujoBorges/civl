@@ -4706,10 +4706,18 @@ public class FunctionTranslator {
 		Expression result;
 
 		if (lhsType.isArrayType()) {
-			if (!(lhs instanceof LHSExpression))
-				throw new CIVLInternalException(
-						"Expected expression with array type to be LHS",
-						lhs.getSource());
+			if (!(lhs instanceof LHSExpression)) {
+				Expression.ExpressionKind lhsKind = lhs.expressionKind();
+
+				if (lhsKind == Expression.ExpressionKind.ARRAY_LITERAL
+						|| lhsKind == Expression.ExpressionKind.ARRAY_LAMBDA)
+					lhs = this.createAnonymousVariableForArrayConstant(scope,
+							lhs);
+				else
+					throw new CIVLInternalException(
+							"Expected expression with array type to be LHS or array literal or array lambda",
+							lhs.getSource());
+			}
 			result = modelFactory.subscriptExpression(source,
 					(LHSExpression) lhs, rhs);
 		} else {
