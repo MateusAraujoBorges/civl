@@ -5,8 +5,12 @@ $input int m;
 $input int A[n];
 $input int B[n][m];
 
+int f(int *x){
+  return x[0]*2;
+}
+
 int main(){
-  int a[n],b[n][m];
+  int a[n],b[n][m],c;
   $domain(2) dom=($domain(2)){0 .. n-1, 0 .. m-1};
 
   a=(int[n]) $lambda(int i) i*2;
@@ -17,4 +21,6 @@ int main(){
   assert($forall(int i: 0 .. n-1; int j: 0 .. m-1) b[i][j]==i+j);
   b=(int[n][m]) $lambda(int i,j) B[i][j] * 5;
   assert($forall(int i: 0 .. n-1; int j: 0 .. m-1) b[i][j]==B[i][j]*5);
+  c=f((int[n]) $lambda(int k) a[k]);
+  assert(c==a[0]*2);
 }

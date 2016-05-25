@@ -816,13 +816,20 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						.name()
 						.startsWith(
 								ModelConfiguration.ANONYMOUS_VARIABLE_PREFIX)) {
-					SymbolicExpression stringExpression = state
-							.getVariableValue(dyscopeId, vid);
+					// this is an array literal
+					SymbolicExpression objectValue = state.getVariableValue(
+							dyscopeId, vid);
+					CIVLArrayType arrayType = (CIVLArrayType) variable.type();
 
-					result.append("\"");
-					result.append(this.symbolicUtil.charArrayToString(source,
-							stringExpression, 0, true));
-					result.append("\"");
+					if (arrayType.elementType().isCharType()) {
+						result.append("\"");
+						result.append(this.symbolicUtil.charArrayToString(
+								source, objectValue, 0, true));
+						result.append("\"");
+					} else {
+						result.append(symbolicExpressionToString(source, state,
+								arrayType, objectValue, false, "", ""));
+					}
 				} else {
 					if (!isMu)
 						result.append('&');

@@ -48,7 +48,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.DerivativeExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DotNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.EnumerationConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.HereOrRootNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
@@ -3077,30 +3076,9 @@ public class FunctionTranslator {
 				location = modelFactory.location(
 						modelFactory.sourceOfBeginning(node), scope);
 			if (init instanceof ExpressionNode) {
-				if (init instanceof CompoundLiteralNode
-						&& variable.type().isPointerType()) {
-					rhs = translateExpressionNode((ExpressionNode) init, scope,
-							true);
-
-					Variable anonVariable = modelFactory
-							.newAnonymousVariableForArrayLiteral(initSource,
-									(CIVLArrayType) rhs.getExpressionType());
-
-					anonStatement = modelFactory.assignStatement(initSource,
-							modelFactory.location(initSource, scope),
-							modelFactory.variableExpression(initSource,
-									anonVariable), rhs, true);
-					rhs = arrayToPointer(modelFactory.variableExpression(
-							initSource, anonVariable));
-					assignStatement = modelFactory.assignStatement(
-							modelFactory.sourceOf(node), location, lhs, rhs,
-							true);
-					initFragment = new CommonFragment(assignStatement);
-				} else {
-					initFragment = this.assignStatement(
-							modelFactory.sourceOf(node), lhs,
-							(ExpressionNode) init, true, scope);
-				}
+				initFragment = this.assignStatement(
+						modelFactory.sourceOf(node), lhs,
+						(ExpressionNode) init, true, scope);
 			} else {
 				CIVLType variableType = variable.type();
 
@@ -3513,29 +3491,6 @@ public class FunctionTranslator {
 					if (((StandardBasicType) elementType).getBasicTypeKind() == BasicTypeKind.CHAR)
 						isSupportedChar = true;
 				}
-				// }
-				//
-				// if(convertedType.kind() == TypeKind.POINTER && ((PointerType)
-				// convertedType).referencedType().kind() == TypeKind.BASIC
-				// && ((StandardBasicType) ((PointerType) convertedType)
-				// .referencedType()).getBasicTypeKind() == BasicTypeKind.CHAR)
-				// {
-				// isSupportedChar = true;
-				// }else if(((ArrayType)convertedType).getElementType().kind()
-				// == ){
-				//
-				// } else if (((PointerType) convertedType).referencedType()
-				// .kind() == TypeKind.QUALIFIED
-				// && ((QualifiedObjectType) ((PointerType) convertedType)
-				// .referencedType()).getBaseType() instanceof
-				// StandardBasicType) {
-				// StandardBasicType basicType = (StandardBasicType)
-				// (((QualifiedObjectType) ((PointerType) convertedType)
-				// .referencedType()).getBaseType());
-				//
-				// if (basicType.getBasicTypeKind() == BasicTypeKind.CHAR)
-				// isSupportedChar = true;
-				// }
 				if (isSupportedChar) {
 					StringLiteralNode stringLiteralNode = (StringLiteralNode) constantNode;
 					StringLiteral stringValue = stringLiteralNode
@@ -3546,12 +3501,12 @@ public class FunctionTranslator {
 											BigInteger.valueOf(stringValue
 													.getNumCharacters())));
 					ArrayList<Expression> chars = new ArrayList<>();
-					ArrayLiteralExpression stringLiteral;
-					VariableExpression anonVariable = modelFactory
-							.variableExpression(source, modelFactory
-									.newAnonymousVariableForArrayLiteral(
-											source, arrayType));
-					Statement anonAssign;
+					// ArrayLiteralExpression stringLiteral;
+					// VariableExpression anonVariable = modelFactory
+					// .variableExpression(source, modelFactory
+					// .newAnonymousVariableForArrayLiteral(
+					// source, arrayType));
+					// Statement anonAssign;
 
 					for (int i = 0; i < stringValue.getNumCharacters(); i++) {
 						for (char c : stringValue.getCharacter(i)
@@ -3560,14 +3515,14 @@ public class FunctionTranslator {
 									source, c));
 						}
 					}
-					stringLiteral = modelFactory.arrayLiteralExpression(source,
+					result = modelFactory.arrayLiteralExpression(source,
 							arrayType, chars);
-					anonAssign = modelFactory.assignStatement(source,
-							modelFactory.location(source, scope), anonVariable,
-							stringLiteral, true);
-					modelFactory.addAnonStatement(anonAssign);
+					// anonAssign = modelFactory.assignStatement(source,
+					// modelFactory.location(source, scope), anonVariable,
+					// stringLiteral, true);
+					// modelFactory.addAnonStatement(anonAssign);
 					// result = arrayToPointer(anonVariable);
-					result = anonVariable;
+					// result = anonVariable;
 					break;
 				}
 			}
@@ -3856,20 +3811,33 @@ public class FunctionTranslator {
 				break;
 			}
 			case ARRAY: {
-				if (expressionNode.expressionKind() == ExpressionKind.OPERATOR
-						&& ((OperatorNode) expressionNode).getOperator() == Operator.SUBSCRIPT) {
-					// we will ignore this one here because we want
-					// to keep it as array in subscript expressions
-				} else if (expression.expressionKind() == Expression.ExpressionKind.ADDRESS_OF
-						|| expression.expressionKind() == Expression.ExpressionKind.ARRAY_LITERAL) {
-					// FIXME: Not sure why this needs to be checked...
-				} else {
-					assert expression instanceof LHSExpression;
+				Expression.ExpressionKind expressionKind = expression
+						.expressionKind();
+
+				if (expression instanceof LHSExpression) {
 					expression = modelFactory.addressOfExpression(source,
 							modelFactory.subscriptExpression(source,
 									(LHSExpression) expression, modelFactory
 											.integerLiteralExpression(source,
 													BigInteger.ZERO)));
+				} else if (expressionKind == Expression.ExpressionKind.ARRAY_LITERAL
+						|| expressionKind == Expression.ExpressionKind.ARRAY_LAMBDA) {
+					// creates anonymous variable in the root scope for this
+					// literal
+					// and return the address to this varaible
+					CIVLArrayType arrayType = (CIVLArrayType) expression
+							.getExpressionType();
+					VariableExpression anonVariable = modelFactory
+							.variableExpression(source, modelFactory
+									.newAnonymousVariableForArrayLiteral(
+											source, arrayType));
+					Statement anonAssign;
+
+					anonAssign = modelFactory.assignStatement(source,
+							modelFactory.location(source, scope), anonVariable,
+							expression, true);
+					modelFactory.addAnonStatement(anonAssign);
+					expression = arrayToPointer(anonVariable);
 				}
 				break;
 			}
