@@ -19,6 +19,7 @@
 #ifdef _CIVL
 
 #include <civlc.cvh>
+
 /* Dimensions of 2 matrices: a[N][L] * b[L][M] */
 $input int NB = 3;      // upper bound of N
 $input int N;
@@ -95,7 +96,7 @@ int main(int argc, char *argv[]) {
   $elaborate(N*L*M);
   // copy to out put
   for(int i=0; i < N; i++)
-    memcpy(output[i], c[i], M * sizeof(double));
+    memcpy(&output[i][0], &c[i][0], M * sizeof(double));
 #endif
   printMatrix(N, M, &c[0][0]);
   return 0;

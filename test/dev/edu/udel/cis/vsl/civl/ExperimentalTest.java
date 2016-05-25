@@ -100,6 +100,11 @@ public class ExperimentalTest {
 		assertTrue(ui.run(VERIFY, filename("loopInvariants.c")));
 	}
 
+	@Test
+	public void memcpyError() {
+		assertTrue(ui.run(VERIFY, filename("matmat_spec.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
