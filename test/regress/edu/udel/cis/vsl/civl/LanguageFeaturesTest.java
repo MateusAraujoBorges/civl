@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl;
 
-import static edu.udel.cis.vsl.civl.TestConstants.NO_CHECK_DIVISION_BY_ZERO;
 import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
@@ -229,7 +228,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void divisionByZero_Ignore() throws ABCException {
-		assertTrue(ui.run(VERIFY, NO_CHECK_DIVISION_BY_ZERO, "-showProgram", 
+		assertTrue(ui.run(VERIFY, "-D_NO_CHECK_DIVISION_BY_ZERO", 
+				//"-showProgram", 
 				QUIET, 
 				filename("divisionByZero.cvl")));
 	}
