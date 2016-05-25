@@ -462,8 +462,9 @@ public class MemoryUnitExpressionAnalyzer {
 
 			for (Pair<List<Variable>, Expression> variables : quantified
 					.boundVariableList()) {
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						variables.right, result, derefCount);
+				if (variables.right != null)
+					computeImpactMemoryUnitsOfExpression(writableVars,
+							variables.right, result, derefCount);
 			}
 			computeImpactMemoryUnitsOfExpression(writableVars,
 					quantified.restriction(), result, derefCount);
