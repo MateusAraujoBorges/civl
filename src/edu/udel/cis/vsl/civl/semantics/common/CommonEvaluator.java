@@ -1972,9 +1972,7 @@ public class CommonEvaluator implements Evaluator {
 			stateWithRestriction = state.setPathCondition(context);
 			quantifiedExpression = evaluate(stateWithRestriction, pid,
 					expression.expression());
-			// By definition, the restriction should be boolean valued.
-			state = quantifiedExpression.state;
-			context = state.getPathCondition();
+			context = quantifiedExpression.state.getPathCondition();
 			reasoner = universe.reasoner(context);
 			simplifiedExpression = (BooleanExpression) reasoner
 					.simplify(quantifiedExpression.value);
