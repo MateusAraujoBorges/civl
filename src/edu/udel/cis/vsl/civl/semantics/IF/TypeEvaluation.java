@@ -1,4 +1,4 @@
-package edu.udel.cis.vsl.civl.semantics.common;
+package edu.udel.cis.vsl.civl.semantics.IF;
 
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;

@@ -50,16 +50,16 @@ public class TransformerFactory {
 	private Transformer svcompTransformer;
 
 	private Transformer contractTransformer;
-	
+
 	private Transformer intDivTransformer;
 
 	public TransformerFactory(ASTFactory astFactory) {
 		this.astFactory = astFactory;
 	}
 
-	public Transformer getGeneralTransformer(CIVLConfiguration config) {
+	public Transformer getGeneralTransformer() {
 		if (generalTransformer == null)
-			generalTransformer = new GeneralTransformer(astFactory, config);
+			generalTransformer = new GeneralTransformer(astFactory);
 		return generalTransformer;
 	}
 
@@ -166,7 +166,7 @@ public class TransformerFactory {
 	}
 
 	public Transformer getIntDivTransformer() {
-		if(intDivTransformer == null)
+		if (intDivTransformer == null)
 			intDivTransformer = new IntDivisionTransformer(astFactory);
 		return intDivTransformer;
 	}

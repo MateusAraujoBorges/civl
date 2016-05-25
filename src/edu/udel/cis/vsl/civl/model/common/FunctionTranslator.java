@@ -3765,6 +3765,31 @@ public class FunctionTranslator {
 	}
 
 	/**
+	 * creates an anonymous and const variable in the root scope for an array
+	 * literal or array lambda.
+	 * 
+	 * @param arrayConst
+	 *            the array literal or labmda expression
+	 * @return a variable expression wrapping the new anonymous variable
+	 */
+	private VariableExpression createAnonymousVariableForArrayConstant(
+			Scope scope, Expression arrayConst) {
+		CIVLSource source = arrayConst.getSource();
+		CIVLArrayType arrayType = (CIVLArrayType) arrayConst
+				.getExpressionType();
+		VariableExpression anonVariable = modelFactory.variableExpression(
+				source, modelFactory.newAnonymousVariableForArrayLiteral(
+						source, arrayType));
+		Statement anonAssign;
+
+		anonAssign = modelFactory.assignStatement(source,
+				modelFactory.location(source, scope), anonVariable, arrayConst,
+				true);
+		modelFactory.addAnonStatement(anonAssign);
+		return anonVariable;
+	}
+
+	/**
 	 * Applies conversions associated with the given expression node to the
 	 * given expression.
 	 * 
@@ -3824,19 +3849,10 @@ public class FunctionTranslator {
 						|| expressionKind == Expression.ExpressionKind.ARRAY_LAMBDA) {
 					// creates anonymous variable in the root scope for this
 					// literal
-					// and return the address to this varaible
-					CIVLArrayType arrayType = (CIVLArrayType) expression
-							.getExpressionType();
-					VariableExpression anonVariable = modelFactory
-							.variableExpression(source, modelFactory
-									.newAnonymousVariableForArrayLiteral(
-											source, arrayType));
-					Statement anonAssign;
+					// and return the address to this variable
+					VariableExpression anonVariable = createAnonymousVariableForArrayConstant(
+							scope, expression);
 
-					anonAssign = modelFactory.assignStatement(source,
-							modelFactory.location(source, scope), anonVariable,
-							expression, true);
-					modelFactory.addAnonStatement(anonAssign);
 					expression = arrayToPointer(anonVariable);
 				}
 				break;
@@ -4221,13 +4237,24 @@ public class FunctionTranslator {
 					+ numArgs + " in expression " + operatorNode);
 		}
 		switch (operatorNode.getOperator()) {
-		case ADDRESSOF:
-			if (arguments.get(0) instanceof FunctionIdentifierExpression)
-				result = arguments.get(0);
-			else
+		case ADDRESSOF: {
+			Expression operand = arguments.get(0);
+			Expression.ExpressionKind operandKind = operand.expressionKind();
+
+			if (operand instanceof FunctionIdentifierExpression)
+				result = operand;
+			else if (operand instanceof LHSExpression)
 				result = modelFactory.addressOfExpression(source,
-						(LHSExpression) arguments.get(0));
+						(LHSExpression) operand);
+			else if (operandKind == Expression.ExpressionKind.ARRAY_LITERAL
+					|| operandKind == Expression.ExpressionKind.ARRAY_LAMBDA) {
+				VariableExpression anonVariable = createAnonymousVariableForArrayConstant(
+						scope, operand);
+
+				result = modelFactory.addressOfExpression(source, anonVariable);
+			}
 			break;
+		}
 		case HASH:
 			return modelFactory.binaryExpression(source,
 					BINARY_OPERATOR.REMOTE, arguments.get(0), arguments.get(1));

@@ -19,6 +19,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
+import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -31,69 +32,90 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
-public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryExecutor {
+public class LibpointerExecutor extends BaseLibraryExecutor implements
+		LibraryExecutor {
 
 	private LibpointerEvaluator libevaluator;
 
-	public LibpointerExecutor(String name, Executor primaryExecutor, ModelFactory modelFactory,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
-			LibraryExecutorLoader libExecutorLoader, LibraryEvaluatorLoader libEvaluatorLoader) {
-		super(name, primaryExecutor, modelFactory, symbolicUtil, symbolicAnalyzer, civlConfig, libExecutorLoader,
+	public LibpointerExecutor(String name, Executor primaryExecutor,
+			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
+			LibraryExecutorLoader libExecutorLoader,
+			LibraryEvaluatorLoader libEvaluatorLoader) {
+		super(name, primaryExecutor, modelFactory, symbolicUtil,
+				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
-		libevaluator = new LibpointerEvaluator(name, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer,
-				civlConfig, libEvaluatorLoader);
+		libevaluator = new LibpointerEvaluator(name, evaluator, modelFactory,
+				symbolicUtil, symbolicAnalyzer, civlConfig, libEvaluatorLoader);
 	}
 
 	@Override
-	protected Evaluation executeValue(State state, int pid, String process, CIVLSource source, String functionName,
-			Expression[] arguments, SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
 		Evaluation callEval = null;
 
 		switch (functionName) {
 		case "$apply":
-			callEval = executeApply(state, pid, process, arguments, argumentValues, source);
+			callEval = executeApply(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$contains":
-			callEval = executeContains(state, pid, process, arguments, argumentValues, source);
+			callEval = executeContains(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$copy":
-			callEval = executeCopy(state, pid, process, arguments, argumentValues, source);
+			callEval = executeCopy(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$equals":
-			callEval = executeEquals(state, pid, process, arguments, argumentValues, source);
+			callEval = executeEquals(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$assert_equals":
-			callEval = executeAssertEquals(state, pid, process, arguments, argumentValues, source);
+			callEval = executeAssertEquals(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$translate_ptr":
-			callEval = executeTranslatePointer(state, pid, process, arguments, argumentValues, source);
+			callEval = executeTranslatePointer(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$leaf_node_ptrs":
-			callEval = executeLeafNodePointers(state, pid, process, arguments, argumentValues, source);
+			callEval = executeLeafNodePointers(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$is_identity_ref":
-			callEval = executeIsIdentityRef(state, pid, process, arguments, argumentValues, source);
+			callEval = executeIsIdentityRef(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$leaf_nodes_equal_to":
-			callEval = execute_leaf_nodes_equal_to(state, pid, process, arguments, argumentValues, source);
+			callEval = execute_leaf_nodes_equal_to(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$has_leaf_node_equal_to":
-			callEval = execute_has_leaf_node_equal_to(state, pid, process, arguments, argumentValues, source);
+			callEval = execute_has_leaf_node_equal_to(state, pid, process,
+					arguments, argumentValues, source);
 			break;
 		case "$set_default":
-			callEval = executeSetDefault(state, pid, process, arguments, argumentValues, source);
+			callEval = executeSetDefault(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$set_leaf_nodes":
-			callEval = execute_set_leaf_nodes(state, pid, process, arguments, argumentValues, source);
+			callEval = execute_set_leaf_nodes(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$is_derefable_pointer":
-			callEval = execute_is_valid_pointer(state, pid, process, arguments, argumentValues, source);
+			callEval = execute_is_valid_pointer(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$pointer_add":
-			callEval = executePointer_add(state, pid, process, arguments, argumentValues, source);
+			callEval = executePointer_add(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		default:
-			throw new CIVLUnimplementedFeatureException("the function " + name + " of library pointer.cvh", source);
+			throw new CIVLUnimplementedFeatureException("the function " + name
+					+ " of library pointer.cvh", source);
 		}
 		return callEval;
 	}
@@ -114,11 +136,12 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeSetDefault(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeSetDefault(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		// TODO Auto-generated method stub
-		CIVLType objectTypeByPointer = symbolicAnalyzer.typeOfObjByPointer(arguments[0].getSource(), state,
-				argumentValues[0]);
+		CIVLType objectTypeByPointer = symbolicAnalyzer.typeOfObjByPointer(
+				arguments[0].getSource(), state, argumentValues[0]);
 		SymbolicExpression value;
 
 		// TODO assert objectTypeByPointer.isScalarType()
@@ -133,9 +156,10 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 		else if (objectTypeByPointer.isPointerType())
 			value = symbolicUtil.nullPointer();
 		else
-			throw new CIVLUnimplementedFeatureException(
-					"Argument of " + objectTypeByPointer + " type for $set_default()", source);
-		state = this.primaryExecutor.assign(source, state, process, argumentValues[0], value);
+			throw new CIVLUnimplementedFeatureException("Argument of "
+					+ objectTypeByPointer + " type for $set_default()", source);
+		state = this.primaryExecutor.assign(source, state, process,
+				argumentValues[0], value);
 		return new Evaluation(state, null);
 	}
 
@@ -158,39 +182,48 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeApply(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeApply(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression objs[], result;
 		Evaluation eval;
 		int operator;
 
 		objs = new SymbolicExpression[2];
-		eval = libevaluator.getDataFrom(state, process, arguments[0], argumentValues[0], one, false, source);
+		eval = libevaluator.getDataFrom(state, process, arguments[0],
+				argumentValues[0], one, false, source);
 		state = eval.state;
 		objs[0] = eval.value;
-		eval = libevaluator.getDataFrom(state, process, arguments[2], argumentValues[2], one, false, source);
+		eval = libevaluator.getDataFrom(state, process, arguments[2],
+				argumentValues[2], one, false, source);
 		state = eval.state;
 		objs[1] = eval.value;
 		if (!objs[0].type().equals(objs[1].type())) {
-			errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.POINTER,
-					"Arguments of the $apply system function have different types: \n" + arguments[0] + " points to a "
-							+ objs[0].type() + " object\n" + arguments[2] + " points to a " + objs[1].type()
-							+ " object\n");
+					"Arguments of the $apply system function have different types: \n"
+							+ arguments[0] + " points to a " + objs[0].type()
+							+ " object\n" + arguments[2] + " points to a "
+							+ objs[1].type() + " object\n");
 			throw new UnsatisfiablePathConditionException();
 		}
 
-		operator = this.symbolicUtil.extractInt(arguments[1].getSource(), (NumericExpression) argumentValues[1]);
-		result = applyCIVLOperation(state, pid, process, objs, translateOperator(operator), one, objs[0].type(),
-				source);
-		state = this.primaryExecutor.assign(source, state, process, argumentValues[3],
-				universe.arrayRead(result, zero));
+		operator = this.symbolicUtil.extractInt(arguments[1].getSource(),
+				(NumericExpression) argumentValues[1]);
+		result = applyCIVLOperation(state, pid, process, objs,
+				translateOperator(operator), one, objs[0].type(), source);
+		state = this.primaryExecutor.assign(source, state, process,
+				argumentValues[3], universe.arrayRead(result, zero));
 		return new Evaluation(state, null);
 	}
 
-	private Evaluation execute_is_valid_pointer(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
-		SymbolicExpression result = this.symbolicAnalyzer.isDerefablePointer(state, argumentValues[0]).left;
+	private Evaluation execute_is_valid_pointer(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		SymbolicExpression result = this.symbolicAnalyzer.isDerefablePointer(
+				state, argumentValues[0]).left;
 
 		return new Evaluation(state, result);
 	}
@@ -205,11 +238,15 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @throws UnsatisfiablePathConditionException
 	 */
 
-	private Evaluation execute_has_leaf_node_equal_to(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
-		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(arguments[1].getSource(), state, argumentValues[0]);
-		List<ReferenceExpression> leafs = this.evaluator.leafNodeReferencesOfType(arguments[0].getSource(), state, pid,
-				objectType);
+	private Evaluation execute_has_leaf_node_equal_to(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(
+				arguments[1].getSource(), state, argumentValues[0]);
+		List<ReferenceExpression> leafs = this.evaluator
+				.leafNodeReferencesOfType(arguments[0].getSource(), state, pid,
+						objectType);
 		List<SymbolicExpression> leafPointers = new ArrayList<>();
 		SymbolicExpression objectPointer = argumentValues[0];
 		Evaluation eval;
@@ -218,7 +255,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 		for (ReferenceExpression ref : leafs)
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers) {
-			eval = this.evaluator.dereference(source, state, process, null, leafPtr, false);
+			eval = this.evaluator.dereference(source, state, process, null,
+					leafPtr, false);
 			state = eval.state;
 			if (universe.equals(eval.value, argumentValues[1]).isTrue()) {
 				result = trueValue;
@@ -234,11 +272,15 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @throws UnsatisfiablePathConditionException
 	 */
 
-	private Evaluation execute_leaf_nodes_equal_to(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
-		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(arguments[1].getSource(), state, argumentValues[0]);
-		List<ReferenceExpression> leafs = this.evaluator.leafNodeReferencesOfType(arguments[0].getSource(), state, pid,
-				objectType);
+	private Evaluation execute_leaf_nodes_equal_to(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(
+				arguments[1].getSource(), state, argumentValues[0]);
+		List<ReferenceExpression> leafs = this.evaluator
+				.leafNodeReferencesOfType(arguments[0].getSource(), state, pid,
+						objectType);
 		List<SymbolicExpression> leafPointers = new ArrayList<>();
 		SymbolicExpression objectPointer = argumentValues[0];
 		Evaluation eval;
@@ -247,7 +289,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 		for (ReferenceExpression ref : leafs)
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers) {
-			eval = this.evaluator.dereference(source, state, process, null, leafPtr, false);
+			eval = this.evaluator.dereference(source, state, process, null,
+					leafPtr, false);
 			state = eval.state;
 			if (universe.equals(eval.value, argumentValues[1]).isFalse()) {
 				result = falseValue;
@@ -275,18 +318,23 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation execute_set_leaf_nodes(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
-		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(arguments[1].getSource(), state, argumentValues[0]);
-		List<ReferenceExpression> leafs = this.evaluator.leafNodeReferencesOfType(arguments[0].getSource(), state, pid,
-				objectType);
+	private Evaluation execute_set_leaf_nodes(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(
+				arguments[1].getSource(), state, argumentValues[0]);
+		List<ReferenceExpression> leafs = this.evaluator
+				.leafNodeReferencesOfType(arguments[0].getSource(), state, pid,
+						objectType);
 		List<SymbolicExpression> leafPointers = new ArrayList<>();
 		SymbolicExpression objectPointer = argumentValues[0];
 
 		for (ReferenceExpression ref : leafs)
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers)
-			state = this.primaryExecutor.assign(source, state, process, leafPtr, argumentValues[1]);
+			state = this.primaryExecutor.assign(source, state, process,
+					leafPtr, argumentValues[1]);
 		return new Evaluation(state, null);
 	}
 
@@ -303,8 +351,10 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeIsIdentityRef(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeIsIdentityRef(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression result = falseValue, objetPointer = argumentValues[0];
 
 		if (!symbolicUtil.isHeapPointer(objetPointer)) {
@@ -333,12 +383,16 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeLeafNodePointers(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeLeafNodePointers(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
 		// TODO check null or invalid pointers.
-		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(arguments[1].getSource(), state, argumentValues[1]);
-		List<ReferenceExpression> leafs = this.evaluator.leafNodeReferencesOfType(arguments[1].getSource(), state, pid,
-				objectType);
+		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(
+				arguments[1].getSource(), state, argumentValues[1]);
+		List<ReferenceExpression> leafs = this.evaluator
+				.leafNodeReferencesOfType(arguments[1].getSource(), state, pid,
+						objectType);
 		List<SymbolicExpression> leafPointers = new ArrayList<>();
 		SymbolicExpression objectPointer = argumentValues[1];
 		SymbolicExpression result;
@@ -346,33 +400,40 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 		for (ReferenceExpression ref : leafs) {
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		}
-		result = universe.array(typeFactory.pointerSymbolicType(), leafPointers);
-		state = this.primaryExecutor.assign(source, state, process, argumentValues[0], result);
+		result = universe
+				.array(typeFactory.pointerSymbolicType(), leafPointers);
+		state = this.primaryExecutor.assign(source, state, process,
+				argumentValues[0], result);
 		return new Evaluation(state, null);
 	}
 
-	private Evaluation executeContains(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeContains(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression first = argumentValues[0], second = argumentValues[1], result;
-		Pair<BooleanExpression, ResultType> checkFirst = symbolicAnalyzer.isDerefablePointer(state, first),
-				checkRight = symbolicAnalyzer.isDerefablePointer(state, second);
+		Pair<BooleanExpression, ResultType> checkFirst = symbolicAnalyzer
+				.isDerefablePointer(state, first), checkRight = symbolicAnalyzer
+				.isDerefablePointer(state, second);
 
-		if (checkFirst.right != ResultType.YES || checkRight.right != ResultType.YES)
+		if (checkFirst.right != ResultType.YES
+				|| checkRight.right != ResultType.YES)
 			result = falseValue;
 		else
 			result = symbolicUtil.contains(first, second);
 		return new Evaluation(state, result);
 	}
 
-	private Evaluation executeCopy(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeCopy(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression left = argumentValues[0];
 		SymbolicExpression right = argumentValues[1];
 		Evaluation eval;
 		CIVLSource sourceLeft = arguments[0].getSource();
 		CIVLSource sourceRight = arguments[1].getSource();
 
-		if (symbolicUtil.isNullPointer(left) || symbolicUtil.isNullPointer(right)) {
+		if (symbolicUtil.isNullPointer(left)
+				|| symbolicUtil.isNullPointer(right)) {
 			StringBuffer msg = new StringBuffer();
 
 			msg.append("the arguments of $copy() must both be non-null pointers.\n");
@@ -380,53 +441,69 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 			msg.append("    ");
 			msg.append(arguments[0]);
 			msg.append("    ");
-			msg.append(symbolicAnalyzer.expressionEvaluation(state, pid, arguments[0], false).right);
+			msg.append(symbolicAnalyzer.expressionEvaluation(state, pid,
+					arguments[0], false).right);
 			msg.append("\n    ");
-			msg.append(symbolicAnalyzer.symbolicExpressionToString(sourceLeft, state, arguments[0].getExpressionType(),
-					left));
+			msg.append(symbolicAnalyzer.symbolicExpressionToString(sourceLeft,
+					state, arguments[0].getExpressionType(), left));
 			msg.append("\nsecond argument:\n");
 			msg.append("    ");
 			msg.append(arguments[1]);
 			msg.append("    ");
-			msg.append(symbolicAnalyzer.expressionEvaluation(state, pid, arguments[1], false).right);
+			msg.append(symbolicAnalyzer.expressionEvaluation(state, pid,
+					arguments[1], false).right);
 			msg.append("\n    ");
-			msg.append(symbolicAnalyzer.symbolicExpressionToString(sourceRight, state, arguments[1].getExpressionType(),
-					right));
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+			msg.append(symbolicAnalyzer.symbolicExpressionToString(sourceRight,
+					state, arguments[1].getExpressionType(), right));
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.DEREFERENCE, msg.toString());
 			throw new UnsatisfiablePathConditionException();
 		} else {
 			SymbolicExpression rightValue;
-			CIVLType objTypeLeft = symbolicAnalyzer.typeOfObjByPointer(sourceLeft, state, left);
-			CIVLType objTypeRight = symbolicAnalyzer.typeOfObjByPointer(sourceRight, state, right);
+			CIVLType objTypeLeft = symbolicAnalyzer.typeOfObjByPointer(
+					sourceLeft, state, left);
+			CIVLType objTypeRight = symbolicAnalyzer.typeOfObjByPointer(
+					sourceRight, state, right);
+			TypeEvaluation leftTypeEval = evaluator.getDynamicType(state, pid,
+					objTypeLeft, sourceLeft, false);
+			TypeEvaluation rightTypeEval = evaluator.getDynamicType(
+					leftTypeEval.state, pid, objTypeRight, sourceRight, false);
+			SymbolicType dynObjTypeLeft = leftTypeEval.type, dynObjTypeRight = rightTypeEval.type;
 
-			if (!objTypeLeft.equals(objTypeRight)) {
+			state = rightTypeEval.state;
+			if (!dynObjTypeLeft.equals(dynObjTypeRight)) {
 				StringBuffer msg = new StringBuffer();
 
-				msg.append(
-						"the objects pointed to by the two given pointers of $copy() " + "must have the same type.\n");
+				msg.append("the objects pointed to by the two given pointers of $copy() "
+						+ "must have the same type.\n");
 				msg.append("first argument:\n");
 				msg.append("    ");
 				msg.append(arguments[0]);
 				msg.append("\n    ");
-				msg.append(symbolicAnalyzer.expressionEvaluation(state, pid, arguments[0], false).right);
+				msg.append(symbolicAnalyzer.expressionEvaluation(state, pid,
+						arguments[0], false).right);
 				msg.append("\n    type of the object: ");
 				msg.append(objTypeLeft);
 				msg.append("\nsecond argument:\n");
 				msg.append("    ");
 				msg.append(arguments[1]);
 				msg.append("\n    ");
-				msg.append(symbolicAnalyzer.expressionEvaluation(state, pid, arguments[1], false).right);
+				msg.append(symbolicAnalyzer.expressionEvaluation(state, pid,
+						arguments[1], false).right);
 				msg.append("\n    type of the object: ");
 				msg.append(objTypeRight);
-				this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+				this.errorLogger.logSimpleError(source, state, process,
+						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.DEREFERENCE, msg.toString());
 				throw new UnsatisfiablePathConditionException();
 			}
-			eval = evaluator.dereference(sourceRight, state, process, arguments[1], right, false);
+			eval = evaluator.dereference(sourceRight, state, process,
+					arguments[1], right, false);
 			state = eval.state;
 			rightValue = eval.value;
-			state = primaryExecutor.assign(source, state, process, left, rightValue);
+			state = primaryExecutor.assign(source, state, process, left,
+					rightValue);
 		}
 		return new Evaluation(state, null);
 	}
@@ -446,16 +523,18 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeEquals(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeEquals(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression first, second, rhs;
-		Evaluation eval = evaluator.dereference(arguments[0].getSource(), state, process, arguments[0],
-				argumentValues[0], false);
+		Evaluation eval = evaluator.dereference(arguments[0].getSource(),
+				state, process, arguments[0], argumentValues[0], false);
 		int invalidArg = -1;
 
 		state = eval.state;
 		first = eval.value;
-		eval = evaluator.dereference(arguments[1].getSource(), state, process, arguments[1], argumentValues[1], false);
+		eval = evaluator.dereference(arguments[1].getSource(), state, process,
+				arguments[1], argumentValues[1], false);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))
@@ -465,10 +544,17 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 		if (invalidArg != -1) {
 			SymbolicExpression invalidValue = invalidArg == 0 ? first : second;
 
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+			this.errorLogger.logSimpleError(
+					source,
+					state,
+					process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.UNDEFINED_VALUE,
-					"the object that " + arguments[invalidArg] + " points to is undefined, which has the value "
-							+ symbolicAnalyzer.symbolicExpressionToString(arguments[invalidArg].getSource(), state,
+					"the object that "
+							+ arguments[invalidArg]
+							+ " points to is undefined, which has the value "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									arguments[invalidArg].getSource(), state,
 									null, invalidValue));
 			// recovery:
 			rhs = this.falseValue;
@@ -497,8 +583,10 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @return the new state after executing the statement
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeAssertEquals(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeAssertEquals(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression firstPtr, secondPtr;
 		SymbolicExpression first, second;
 		BooleanExpression claim;
@@ -519,21 +607,27 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 			String msg = new String();
 
 			if (!firstPtrDefined)
-				msg += symbolicAnalyzer.symbolicExpressionToString(arguments[0].getSource(), state,
+				msg += symbolicAnalyzer.symbolicExpressionToString(
+						arguments[0].getSource(), state,
 						arguments[0].getExpressionType(), firstPtr);
 			if (!secPtrDefined) {
 				msg += (!firstPtrDefined) ? ", " : "";
-				msg += symbolicAnalyzer.symbolicExpressionToString(arguments[1].getSource(), state,
+				msg += symbolicAnalyzer.symbolicExpressionToString(
+						arguments[1].getSource(), state,
 						arguments[1].getExpressionType(), secondPtr);
 			}
-			errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.DEREFERENCE, "Attempt to dereference a invalid pointer:" + msg);
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.DEREFERENCE,
+					"Attempt to dereference a invalid pointer:" + msg);
 			return new Evaluation(state, null);
 		}
-		eval = evaluator.dereference(arguments[0].getSource(), state, process, arguments[0], argumentValues[0], false);
+		eval = evaluator.dereference(arguments[0].getSource(), state, process,
+				arguments[0], argumentValues[0], false);
 		state = eval.state;
 		first = eval.value;
-		eval = evaluator.dereference(arguments[1].getSource(), state, process, arguments[1], argumentValues[1], false);
+		eval = evaluator.dereference(arguments[1].getSource(), state, process,
+				arguments[1], argumentValues[1], false);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))
@@ -545,20 +639,26 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 			String objMsg = new String();
 
 			if (!firstInit) {
-				ptrMsg += symbolicAnalyzer.symbolicExpressionToString(arguments[0].getSource(), state, null, firstPtr);
-				objMsg += symbolicAnalyzer.symbolicExpressionToString(arguments[0].getSource(), state, null, first);
+				ptrMsg += symbolicAnalyzer.symbolicExpressionToString(
+						arguments[0].getSource(), state, null, firstPtr);
+				objMsg += symbolicAnalyzer.symbolicExpressionToString(
+						arguments[0].getSource(), state, null, first);
 			}
 			if (!secondInit) {
 				String comma = (!firstInit) ? ", " : "";
 
 				ptrMsg += comma;
 				objMsg += comma;
-				ptrMsg += symbolicAnalyzer.symbolicExpressionToString(arguments[1].getSource(), state, null, secondPtr);
-				objMsg += symbolicAnalyzer.symbolicExpressionToString(arguments[1].getSource(), state, null, second);
+				ptrMsg += symbolicAnalyzer.symbolicExpressionToString(
+						arguments[1].getSource(), state, null, secondPtr);
+				objMsg += symbolicAnalyzer.symbolicExpressionToString(
+						arguments[1].getSource(), state, null, second);
 			}
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.UNDEFINED_VALUE,
-					"the object that " + ptrMsg + " points to is undefined, which has the value " + objMsg);
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.UNDEFINED_VALUE, "the object that " + ptrMsg
+							+ " points to is undefined, which has the value "
+							+ objMsg);
 			return new Evaluation(state, null);
 		}
 		claim = universe.equals(first, second);
@@ -570,25 +670,37 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 			message.append("Context: ");
 			message.append(reasoner.getReducedContext());
 			message.append("\nAssertion voilated: ");
-			message.append("$equals(" + arguments[0] + ", " + arguments[1] + ")");
+			message.append("$equals(" + arguments[0] + ", " + arguments[1]
+					+ ")");
 			message.append("\nEvaluation: \n          ");
-			firstArg = this.symbolicAnalyzer.symbolicExpressionToString(arguments[0].getSource(), state,
+			firstArg = this.symbolicAnalyzer.symbolicExpressionToString(
+					arguments[0].getSource(), state,
 					arguments[0].getExpressionType(), argumentValues[0]);
 			message.append(arguments[0].toString() + "=" + firstArg);
 			message.append("\n          ");
-			secondArg = this.symbolicAnalyzer.symbolicExpressionToString(arguments[1].getSource(), state,
+			secondArg = this.symbolicAnalyzer.symbolicExpressionToString(
+					arguments[1].getSource(), state,
 					arguments[1].getExpressionType(), argumentValues[1]);
 			message.append(arguments[1].toString() + "=" + secondArg);
 			message.append("\nResult: \n          ");
-			message.append(firstArg.substring(1) + "="
-					+ this.symbolicAnalyzer.symbolicExpressionToString(arguments[0].getSource(), state,
-							((CIVLPointerType) arguments[0].getExpressionType()).baseType(), first));
+			message.append(firstArg.substring(1)
+					+ "="
+					+ this.symbolicAnalyzer.symbolicExpressionToString(
+							arguments[0].getSource(),
+							state,
+							((CIVLPointerType) arguments[0].getExpressionType())
+									.baseType(), first));
 			message.append("\n          ");
-			message.append(secondArg.substring(1) + "="
-					+ this.symbolicAnalyzer.symbolicExpressionToString(arguments[1].getSource(), state,
-							((CIVLPointerType) arguments[1].getExpressionType()).baseType(), second));
-			state = this.reportAssertionFailure(state, pid, process, resultType, message.toString(), arguments,
-					argumentValues, source, claim, 2);
+			message.append(secondArg.substring(1)
+					+ "="
+					+ this.symbolicAnalyzer.symbolicExpressionToString(
+							arguments[1].getSource(),
+							state,
+							((CIVLPointerType) arguments[1].getExpressionType())
+									.baseType(), second));
+			state = this.reportAssertionFailure(state, pid, process,
+					resultType, message.toString(), arguments, argumentValues,
+					source, claim, 2);
 		}
 		return new Evaluation(state, null);
 	}
@@ -607,30 +719,49 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeTranslatePointer(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeTranslatePointer(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression pointer = argumentValues[0];
 		SymbolicExpression objPtr = argumentValues[1];
 		SymbolicExpression result;
 
-		if (symbolicUtil.isNullPointer(pointer) || symbolicUtil.isNullPointer(objPtr)) {
+		if (symbolicUtil.isNullPointer(pointer)
+				|| symbolicUtil.isNullPointer(objPtr)) {
 			result = symbolicUtil.nullPointer();
 		} else {
-			ReferenceExpression reference = this.symbolicUtil.referenceOfPointer(pointer);
-			SymbolicExpression newPointer = symbolicUtil.extendPointer(objPtr, reference);
+			ReferenceExpression reference = this.symbolicUtil
+					.referenceOfPointer(pointer);
+			SymbolicExpression newPointer = symbolicUtil.extendPointer(objPtr,
+					reference);
 			CIVLSource objSource = arguments[1].getSource();
 			int dyscopeId = symbolicUtil.getDyscopeId(objSource, newPointer);
 			int vid = symbolicUtil.getVariableId(objSource, newPointer);
-			SymbolicExpression objValue = state.getVariableValue(dyscopeId, vid);
+			SymbolicExpression objValue = state
+					.getVariableValue(dyscopeId, vid);
 
-			reference = (ReferenceExpression) symbolicUtil.getSymRef(newPointer);
+			reference = (ReferenceExpression) symbolicUtil
+					.getSymRef(newPointer);
 			if (!symbolicUtil.isValidRefOf(reference, objValue)) {
-				this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
-						ErrorKind.OTHER,
-						"the second argument of $translate_ptr() "
-								+ symbolicAnalyzer.symbolicExpressionToString(objSource, state, null, objPtr)
-								+ " doesn't have a compatible type hierarchy as the first argument " + symbolicAnalyzer
-										.symbolicExpressionToString(arguments[0].getSource(), state, null, pointer));
+				this.errorLogger
+						.logSimpleError(
+								source,
+								state,
+								process,
+								symbolicAnalyzer.stateInformation(state),
+								ErrorKind.OTHER,
+								"the second argument of $translate_ptr() "
+										+ symbolicAnalyzer
+												.symbolicExpressionToString(
+														objSource, state, null,
+														objPtr)
+										+ " doesn't have a compatible type hierarchy as the first argument "
+										+ symbolicAnalyzer
+												.symbolicExpressionToString(
+														arguments[0]
+																.getSource(),
+														state, null, pointer));
 				throw new UnsatisfiablePathConditionException();
 			}
 			result = newPointer;
@@ -658,8 +789,9 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executePointer_add(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executePointer_add(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression ptr = argumentValues[0];
 		SymbolicExpression output_ptr;
 		NumericExpression offset = (NumericExpression) argumentValues[1];
@@ -677,28 +809,47 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements LibraryEx
 		ResultType resultType;
 
 		if (!ptr.operator().equals(SymbolicOperator.TUPLE)) {
-			errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.DEREFERENCE, "$pointer_add() doesn't accept an invalid pointer:"
-							+ symbolicAnalyzer.symbolicExpressionToString(source, state, null, ptr));
+			errorLogger.logSimpleError(
+					source,
+					state,
+					process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.DEREFERENCE,
+					"$pointer_add() doesn't accept an invalid pointer:"
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									source, state, null, ptr));
 			throw new UnsatisfiablePathConditionException();
 		}
-		primitiveTypePointedStatic = symbolicAnalyzer.getArrayBaseType(state, arguments[0].getSource(), ptr);
-		primitiveTypePointed = primitiveTypePointedStatic.getDynamicType(universe);
-		ptr_primType_size = symbolicUtil.sizeof(arguments[0].getSource(), primitiveTypePointedStatic,
-				primitiveTypePointed);
+		primitiveTypePointedStatic = symbolicAnalyzer.getArrayBaseType(state,
+				arguments[0].getSource(), ptr);
+		primitiveTypePointed = primitiveTypePointedStatic
+				.getDynamicType(universe);
+		ptr_primType_size = symbolicUtil.sizeof(arguments[0].getSource(),
+				primitiveTypePointedStatic, primitiveTypePointed);
 		if (!this.civlConfig.svcomp()) {
 			claim = universe.equals(ptr_primType_size, type_size);
 			reasoner = universe.reasoner(state.getPathCondition());
 			resultType = reasoner.valid(claim).getResultType();
 			if (!resultType.equals(ResultType.YES)) {
-				state = this.errorLogger.logError(source, state, process, this.symbolicAnalyzer.stateInformation(state),
-						claim, resultType, ErrorKind.POINTER,
-						"the primitive type of the object pointed by input pointer:" + primitiveTypePointed + " must be"
-								+ " consistent with the size of the"
-								+ " primitive type specified at the forth argument: " + type_size);
+				state = this.errorLogger
+						.logError(
+								source,
+								state,
+								process,
+								this.symbolicAnalyzer.stateInformation(state),
+								claim,
+								resultType,
+								ErrorKind.POINTER,
+								"the primitive type of the object pointed by input pointer:"
+										+ primitiveTypePointed
+										+ " must be"
+										+ " consistent with the size of the"
+										+ " primitive type specified at the forth argument: "
+										+ type_size);
 			}
 		}
-		eval = evaluator.evaluatePointerAdd(state, process, ptr, offset, true, source).left;
+		eval = evaluator.evaluatePointerAdd(state, process, ptr, offset, true,
+				source).left;
 		state = eval.state;
 		output_ptr = eval.value;
 		return new Evaluation(state, output_ptr);

@@ -633,7 +633,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 					if (variable.getTypeNode().isInputQualified()
 							|| variable.getTypeNode().isOutputQualified()
 							|| (sourceFile.equals(GeneralTransformer.LONG_NAME) && variable
-									.getName().equals(GeneralWorker._argvName))) {
+									.getName().equals(GeneralWorker._argv_tmp_name))) {
 						vars.add(variable);
 						continue;
 					}

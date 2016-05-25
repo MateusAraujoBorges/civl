@@ -57,8 +57,9 @@ public interface Evaluator {
 	 * @return the value pointed to
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Evaluation dereference(CIVLSource source, State state, String process, Expression pointerExpression,
-			SymbolicExpression pointer, boolean checkedOutput) throws UnsatisfiablePathConditionException;
+	Evaluation dereference(CIVLSource source, State state, String process,
+			Expression pointerExpression, SymbolicExpression pointer,
+			boolean checkedOutput) throws UnsatisfiablePathConditionException;
 
 	/**
 	 * Returns the error logger object of this evaluator.
@@ -89,10 +90,12 @@ public interface Evaluator {
 	 *             if a side effect that results from evaluating the expression
 	 *             causes the path condition to become unsatisfiable
 	 */
-	Evaluation evaluate(State state, int pid, Expression expression, boolean checkUndefinedValue)
+	Evaluation evaluate(State state, int pid, Expression expression,
+			boolean checkUndefinedValue)
 			throws UnsatisfiablePathConditionException;
 
-	Evaluation evaluate(State state, int pid, Expression expression) throws UnsatisfiablePathConditionException;
+	Evaluation evaluate(State state, int pid, Expression expression)
+			throws UnsatisfiablePathConditionException;
 
 	/**
 	 * Evaluates a function pointer expression. TODO: add ID for functions in
@@ -113,8 +116,9 @@ public interface Evaluator {
 	 *         of the function that the given function pointer refers to.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Triple<State, CIVLFunction, Integer> evaluateFunctionIdentifier(State state, int pid, Expression functionPointer,
-			CIVLSource source) throws UnsatisfiablePathConditionException;
+	Triple<State, CIVLFunction, Integer> evaluateFunctionIdentifier(
+			State state, int pid, Expression functionPointer, CIVLSource source)
+			throws UnsatisfiablePathConditionException;
 
 	/**
 	 * Evaluate the size of a CIVL type.
@@ -133,8 +137,8 @@ public interface Evaluator {
 	 *         of the size of the type and a state
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Evaluation evaluateSizeofType(CIVLSource source, State state, int pid, CIVLType type)
-			throws UnsatisfiablePathConditionException;
+	Evaluation evaluateSizeofType(CIVLSource source, State state, int pid,
+			CIVLType type) throws UnsatisfiablePathConditionException;
 
 	/**
 	 * Given a pointer to char, returns the symbolic expression of type array of
@@ -164,7 +168,8 @@ public interface Evaluator {
 	 * @throws CIVLUnimplementedFeatureException
 	 *             if it is not possible to extract the string expression.
 	 */
-	Evaluation getStringExpression(State state, String process, CIVLSource source, SymbolicExpression charPointer)
+	Evaluation getStringExpression(State state, String process,
+			CIVLSource source, SymbolicExpression charPointer)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -228,8 +233,10 @@ public interface Evaluator {
 	 * @return the result of evaluating the sum of the pointer and the integer
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Evaluation pointerAdd(State state, int pid, String process, BinaryExpression expression, SymbolicExpression pointer,
-			NumericExpression offset) throws UnsatisfiablePathConditionException;
+	Evaluation pointerAdd(State state, int pid, String process,
+			BinaryExpression expression, SymbolicExpression pointer,
+			NumericExpression offset)
+			throws UnsatisfiablePathConditionException;
 
 	/**
 	 * Evaluation pointer subtraction. Pointer subtraction operation, a binary
@@ -254,8 +261,10 @@ public interface Evaluator {
 	 * @return the difference of the subscripts of the two array elements
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Evaluation pointerSubtraction(State state, int pid, String process, BinaryExpression expression,
-			SymbolicExpression leftPtr, SymbolicExpression rightPtr) throws UnsatisfiablePathConditionException;
+	Evaluation pointerSubtraction(State state, int pid, String process,
+			BinaryExpression expression, SymbolicExpression leftPtr,
+			SymbolicExpression rightPtr)
+			throws UnsatisfiablePathConditionException;
 
 	/**
 	 * Creates a pointer value by evaluating a left-hand-side expression in the
@@ -271,7 +280,8 @@ public interface Evaluator {
 	 * @return the pointer value
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Evaluation reference(State state, int pid, LHSExpression operand) throws UnsatisfiablePathConditionException;
+	Evaluation reference(State state, int pid, LHSExpression operand)
+			throws UnsatisfiablePathConditionException;
 
 	/**
 	 * The state factory should be the unique one used in the system.
@@ -301,8 +311,10 @@ public interface Evaluator {
 	 */
 	SymbolicUniverse universe();
 
-	Triple<State, StringBuffer, Boolean> getString(CIVLSource source, State state, String process,
-			Expression charPointerExpr, SymbolicExpression charPointer) throws UnsatisfiablePathConditionException;
+	Triple<State, StringBuffer, Boolean> getString(CIVLSource source,
+			State state, String process, Expression charPointerExpr,
+			SymbolicExpression charPointer)
+			throws UnsatisfiablePathConditionException;
 
 	/**
 	 * Do a pointer addition operation on the given pointer with the given
@@ -325,11 +337,13 @@ public interface Evaluator {
 	 *         pointed by the given pointer which helps saving computing time
 	 *         for caller functions.
 	 */
-	public Pair<Evaluation, NumericExpression[]> evaluatePointerAdd(State state, String process, SymbolicExpression ptr,
+	public Pair<Evaluation, NumericExpression[]> evaluatePointerAdd(
+			State state, String process, SymbolicExpression ptr,
 			NumericExpression offset, boolean ifCheckOutput, CIVLSource source)
 			throws UnsatisfiablePathConditionException;
 
-	List<ReferenceExpression> leafNodeReferencesOfType(CIVLSource source, State state, int pid, CIVLType type)
+	List<ReferenceExpression> leafNodeReferencesOfType(CIVLSource source,
+			State state, int pid, CIVLType type)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -347,12 +361,13 @@ public interface Evaluator {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Pair<State, SymbolicArrayType> evaluateCIVLArrayType(State state, int pid, CIVLArrayType type)
-			throws UnsatisfiablePathConditionException;
+	Pair<State, SymbolicArrayType> evaluateCIVLArrayType(State state, int pid,
+			CIVLArrayType type) throws UnsatisfiablePathConditionException;
 
 	MemoryUnitExpressionEvaluator memoryUnitEvaluator();
 
-	Evaluation evaluateCastWorker(State state, int pid, String process, CIVLType castType, Expression arg)
+	Evaluation evaluateCastWorker(State state, int pid, String process,
+			CIVLType castType, Expression arg)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -362,4 +377,26 @@ public interface Evaluator {
 	 * @return
 	 */
 	Evaluation havoc(State state, SymbolicType type);
+
+	/**
+	 * Evaluates the dynamic type of a given CIVL type at a certain state. When
+	 * the CIVL type has some state, e.g., an array type with a variable as the
+	 * extent, the type needs to be evaluated.
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process where the computation happens.
+	 * @param type
+	 *            The CIVL type to be evaluated for the dynamic type.
+	 * @param source
+	 *            The source code element for error report.
+	 * @param isDefinition
+	 *            The flag denoting if the type is a definition.
+	 * @return The dynamic type of the given type.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	TypeEvaluation getDynamicType(State state, int pid, CIVLType type,
+			CIVLSource source, boolean isDefinition)
+			throws UnsatisfiablePathConditionException;
 }

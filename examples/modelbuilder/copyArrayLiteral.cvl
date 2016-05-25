@@ -1,0 +1,8 @@
+#include<pointer.cvh>
+
+int main(){
+  int n=5;
+  int a[n];
+
+  $copy(&a, &((int[n]){1, 2, 3, 4, 5}));
+}

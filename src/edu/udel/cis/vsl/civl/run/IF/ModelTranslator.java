@@ -611,7 +611,7 @@ public class ModelTranslator {
 		// always apply general transformation.
 		if (config.debugOrVerbose())
 			this.out.println("Apply general transformer...");
-		program.apply(transformerFactory.getGeneralTransformer(config));
+		program.apply(transformerFactory.getGeneralTransformer());
 		if (config.debugOrVerbose()) {
 			program.prettyPrint(out);
 		}

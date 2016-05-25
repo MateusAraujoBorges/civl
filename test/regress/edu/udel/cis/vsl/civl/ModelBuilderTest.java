@@ -44,6 +44,11 @@ public class ModelBuilderTest {
 	public void arrayLiteral() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("arrayLiteral.cvl")));
 	}
+	
+	@Test
+	public void copyArrayLiteral() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("copyArrayLiteral.cvl")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {

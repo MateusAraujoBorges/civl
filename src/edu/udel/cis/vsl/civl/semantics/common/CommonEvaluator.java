@@ -86,6 +86,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.MemoryUnitExpressionEvaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
+import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -2642,25 +2643,8 @@ public class CommonEvaluator implements Evaluator {
 				expression.arguments());
 	}
 
-	/**
-	 * Evaluates the dynamic type of a given CIVL type at a certain state. When
-	 * the CIVL type has some state, e.g., an array type with a variable as the
-	 * extent, the type needs to be evaluated.
-	 * 
-	 * @param state
-	 *            The current state.
-	 * @param pid
-	 *            The ID of the process where the computation happens.
-	 * @param type
-	 *            The CIVL type to be evaluated for the dynamic type.
-	 * @param source
-	 *            The source code element for error report.
-	 * @param isDefinition
-	 *            The flag denoting if the type is a definition.
-	 * @return The dynamic type of the given type.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private TypeEvaluation getDynamicType(State state, int pid, CIVLType type,
+	@Override
+	public TypeEvaluation getDynamicType(State state, int pid, CIVLType type,
 			CIVLSource source, boolean isDefinition)
 			throws UnsatisfiablePathConditionException {
 		TypeEvaluation result;
