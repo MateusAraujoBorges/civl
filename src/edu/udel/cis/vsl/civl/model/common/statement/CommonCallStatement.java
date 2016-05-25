@@ -9,6 +9,7 @@ import java.util.Set;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
@@ -182,6 +183,10 @@ public class CommonCallStatement extends CommonStatement implements
 		// return;
 		// }
 		this.guard().purelyLocalAnalysis();
+		if (!this.guard().isPurelyLocal()) {
+			this.purelyLocal = false;
+			return;
+		}
 		if (this.lhs != null) {
 			this.lhs.purelyLocalAnalysis();
 			if (!this.lhs.isPurelyLocal()) {
@@ -190,13 +195,31 @@ public class CommonCallStatement extends CommonStatement implements
 			}
 		}
 		for (Expression arg : this.arguments) {
+			// if (arg.getExpressionType().isHandleType()) {
+			// this.purelyLocal = false;
+			// return;
+			// }
 			arg.purelyLocalAnalysis();
 			if (!arg.isPurelyLocal()) {
 				this.purelyLocal = false;
 				return;
 			}
 		}
-		this.purelyLocal = this.guard().isPurelyLocal();
+
+		CIVLFunction function = this.function();
+
+		if (function != null && function.isSystemFunction()) {
+			if (function.isPureFunction())
+				return;
+			if (function.functionContract() != null) {
+				FunctionBehavior behavior = function.functionContract()
+						.defaultBehavior();
+
+				if (!(behavior.dependsNoact() || (behavior.assignsNothing() && behavior
+						.readsNothing())))
+					this.purelyLocal = false;
+			}
+		}
 	}
 
 	@Override

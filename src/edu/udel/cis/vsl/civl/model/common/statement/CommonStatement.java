@@ -37,7 +37,7 @@ public abstract class CommonStatement extends CommonSourceable implements
 	 */
 	protected Scope statementScope = null;
 	protected boolean hasDerefs = false;
-	protected boolean purelyLocal = false;
+	protected boolean purelyLocal = true;
 	/**
 	 * The lowest scope that this statement accesses. Null if no variable is
 	 * accessed.

@@ -714,9 +714,6 @@ public class ModelBuilderWorker {
 			// identified after ALL statements have been
 			// checked for being purely local or not
 			for (Location loc : f.locations()) {
-				if (debugging) {
-					debugOut.println("analyzing location " + loc.id() + " ...");
-				}
 				this.loopAnalysis(loc, addressedOfVariables);
 				loc.purelyLocalAnalysis();
 				loc.loopAnalysis();

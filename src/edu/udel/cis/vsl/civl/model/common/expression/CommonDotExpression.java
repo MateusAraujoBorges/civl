@@ -100,11 +100,11 @@ public class CommonDotExpression extends CommonExpression implements
 			this.purelyLocal = false;
 			return;
 		}
-		if (this.expressionType.isPointerType()
-				|| this.expressionType.isHandleType()) {
-			this.setPurelyLocal(false);
-			return;
-		}
+		// if (this.expressionType.isPointerType()
+		// || this.expressionType.isHandleType()) {
+		// this.setPurelyLocal(false);
+		// return;
+		// }
 		this.structOrUnion.purelyLocalAnalysis();
 		this.purelyLocal = this.structOrUnion.isPurelyLocal();
 	}

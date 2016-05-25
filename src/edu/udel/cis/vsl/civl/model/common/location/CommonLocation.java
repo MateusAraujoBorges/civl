@@ -407,7 +407,7 @@ public class CommonLocation extends CommonSourceable implements Location {
 		// Usually, a location is purely local if it has exactly one outgoing
 		// statement that is purely local
 		if ((this.isStart && incoming.size() > 0)
-				|| (incoming.size() != 1 && !this.isSafeLoop)) {
+				|| (incoming.size() > 1 && !this.isSafeLoop)) {
 			this.purelyLocal = false;
 			return;
 		}

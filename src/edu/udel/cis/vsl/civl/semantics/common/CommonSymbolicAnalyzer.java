@@ -2261,6 +2261,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			case STRUCT_OR_UNION_LITERAL:
 			case SUBSCRIPT:
 			case VARIABLE:
+			case ARRAY_LAMBDA:
 			case REC_DOMAIN_LITERAL: {
 				Evaluation eval = this.evaluator.evaluate(state, pid,
 						expression);
