@@ -9,7 +9,6 @@ import java.util.Set;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
-import edu.udel.cis.vsl.civl.model.IF.contract.FunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
@@ -208,15 +207,9 @@ public class CommonCallStatement extends CommonStatement implements
 
 		CIVLFunction function = this.function();
 
-		if (function != null && function.isSystemFunction()) {
-			if (function.isPureFunction())
-				return;
-			if (function.functionContract() != null) {
-				FunctionBehavior behavior = function.functionContract()
-						.defaultBehavior();
-
-				if (!(behavior.dependsNoact() || (behavior.assignsNothing() && behavior
-						.readsNothing())))
+		if (function != null) {
+			if (function.isSystemFunction() || function.isAtomicFunction()) {
+				if (!function.isPurelyLocal())
 					this.purelyLocal = false;
 			}
 		}

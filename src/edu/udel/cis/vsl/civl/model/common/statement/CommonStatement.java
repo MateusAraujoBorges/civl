@@ -38,6 +38,7 @@ public abstract class CommonStatement extends CommonSourceable implements
 	protected Scope statementScope = null;
 	protected boolean hasDerefs = false;
 	protected boolean purelyLocal = true;
+	private boolean isPurelyLocalAnalysisDone = false;
 	/**
 	 * The lowest scope that this statement accesses. Null if no variable is
 	 * accessed.
@@ -219,11 +220,14 @@ public abstract class CommonStatement extends CommonSourceable implements
 
 	@Override
 	public boolean isPurelyLocal() {
-		return this.purelyLocal;
+		if (!isPurelyLocalAnalysisDone) {
+			purelyLocalAnalysis();
+			isPurelyLocalAnalysisDone = true;
+		}
+		return purelyLocal;
 	}
 
-	@Override
-	public void purelyLocalAnalysis() {
+	protected void purelyLocalAnalysis() {
 		this.guard.purelyLocalAnalysis();
 		this.purelyLocal = this.guard.isPurelyLocal();
 	}

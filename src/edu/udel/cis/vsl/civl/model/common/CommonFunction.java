@@ -18,6 +18,7 @@ import edu.udel.cis.vsl.civl.model.IF.Identifier;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.contract.FunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.BooleanLiteralExpression;
@@ -73,6 +74,10 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	private FunctionContract contract = null;
 
 	private boolean isPure;
+
+	private boolean isPurelyLocal = true;
+
+	private boolean isPurelyLocalAnalysisDone = false;
 
 	/* **************************** Constructors *************************** */
 
@@ -208,6 +213,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 			out.print(" [$system]");
 		else if (this.isAtomic)
 			out.print(" [$atomic_f]");
+		if (isDebug)
+			out.print(" [purely local]");
 		out.println();
 		outerScope.print(prefix + "| ", out, isDebug);
 		if (numParameters > 0) {
@@ -242,7 +249,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	}
 
 	@Override
-	public void purelyLocalAnalysis() {
+	public void purelyLocalAnalysisForVariables() {
 		Scope funcScope = this.outerScope;
 
 		for (Location loc : this.locations) {
@@ -635,5 +642,38 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	@Override
 	public boolean isPureFunction() {
 		return this.isPure;
+	}
+
+	@Override
+	public void purelyLocalAnalysis() {
+		if (this.isPurelyLocalAnalysisDone)
+			return;
+		if (this.isSystemFunction() || this.isAtomicFunction()) {
+			if (this.contract != null) {
+				FunctionBehavior behavior = contract.defaultBehavior();
+
+				if (!behavior.dependsNoact()
+						&& !(behavior.assignsNothing() && behavior
+								.readsNothing()))
+					this.isPurelyLocal = false;
+				isPurelyLocalAnalysisDone = true;
+				return;
+			} else if (this.isSystemFunction() && !this.isPure) {
+				this.isPurelyLocal = false;
+			}
+		}
+		for (Location loc : this.locations) {
+			loc.purelyLocalAnalysis();
+			if (!loc.isPurelyLocal())
+				this.isPurelyLocal = false;
+		}
+		isPurelyLocalAnalysisDone = true;
+	}
+
+	@Override
+	public boolean isPurelyLocal() {
+		if (!this.isPurelyLocalAnalysisDone)
+			purelyLocalAnalysis();
+		return isPurelyLocal;
 	}
 }

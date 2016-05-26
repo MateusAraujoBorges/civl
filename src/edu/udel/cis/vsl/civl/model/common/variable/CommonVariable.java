@@ -33,6 +33,7 @@ public class CommonVariable extends CommonSourceable implements Variable {
 	private boolean isStatic = false;
 	private boolean hasPointerRef = false;
 	private SymbolicExpression constantValue = null;
+	private boolean isParameter = false;
 
 	/**
 	 * A variable.
@@ -45,11 +46,12 @@ public class CommonVariable extends CommonSourceable implements Variable {
 	 *            The index of this variable in its scope.
 	 */
 	public CommonVariable(CIVLSource source, CIVLType type, Identifier name,
-			int vid) {
+			int vid, boolean isParameter) {
 		super(source);
 		this.type = type;
 		this.name = name;
 		this.vid = vid;
+		this.isParameter = isParameter;
 		computeHashCode();
 	}
 
@@ -262,15 +264,8 @@ public class CommonVariable extends CommonSourceable implements Variable {
 		return this.constantValue;
 	}
 
-	// @Override
-	// public boolean equals(Object obj) {
-	// if (obj instanceof Variable) {
-	// Variable that = (Variable) obj;
-	//
-	// if (this.scope.id() == that.scope().id() && this.vid == that.vid())
-	// return true;
-	// }
-	// return false;
-	// }
-
+	@Override
+	public boolean isParameter() {
+		return this.isParameter;
+	}
 }

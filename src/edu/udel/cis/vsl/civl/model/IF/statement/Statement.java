@@ -136,10 +136,10 @@ public interface Statement extends Sourceable {
 	 */
 	boolean isPurelyLocal();
 
-	/**
-	 * Analyze if this statement accesses any non-purely-local variables
-	 */
-	void purelyLocalAnalysis();
+	// /**
+	// * Analyze if this statement accesses any non-purely-local variables
+	// */
+	// void purelyLocalAnalysis();
 
 	/**
 	 * Modify this statement including its guard by replacing a certain

@@ -166,4 +166,12 @@ public interface Variable extends Sourceable {
 	 * @return
 	 */
 	SymbolicExpression constantValue();
+
+	/**
+	 * Is this variable declared as a parameter of some function?
+	 * 
+	 * @return true iff this variable is declared as a parameter of some
+	 *         function
+	 */
+	boolean isParameter();
 }

@@ -188,8 +188,14 @@ public interface CIVLFunction extends Sourceable {
 	void simplify();
 
 	/**
-	 * performs purely local analysis for each statement/location of this
-	 * function. No-op for system functions.
+	 * performs purely local analysis on variables for each statement/location
+	 * of this function. No-op for system functions.
+	 */
+	void purelyLocalAnalysisForVariables();
+
+	/**
+	 * performs purely local analysis one each statement/location of this
+	 * function, and concludes if the whole function is purely local or not.
 	 */
 	void purelyLocalAnalysis();
 
@@ -330,4 +336,11 @@ public interface CIVLFunction extends Sourceable {
 	void computePathconditionOfLocations(ModelFactory modelFactory);
 
 	boolean dependsNoact();
+
+	/**
+	 * is this function a purely local function?
+	 * 
+	 * @return
+	 */
+	boolean isPurelyLocal();
 }

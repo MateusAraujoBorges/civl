@@ -668,7 +668,7 @@ public class ModelBuilderWorker {
 
 		for (CIVLFunction f : model.functions()) {
 			// identify all purely local variables
-			f.purelyLocalAnalysis();
+			f.purelyLocalAnalysisForVariables();
 			f.setModel(model);
 			for (Statement s : f.statements()) {
 				Set<Variable> statementResult = s.variableAddressedOf();
@@ -700,10 +700,8 @@ public class ModelBuilderWorker {
 			for (Location loc : f.locations()) {
 				loc.staticAnalysis();
 				loc.computeWritableVariables(addressedOfVariables);
-				for (Statement s : loc.outgoing()) {
-					s.purelyLocalAnalysis();
-				}
 			}
+			f.purelyLocalAnalysis();
 		}
 		if (debugging) {
 			debugOut.println("loop analysis of locations...");
@@ -715,7 +713,7 @@ public class ModelBuilderWorker {
 			// checked for being purely local or not
 			for (Location loc : f.locations()) {
 				this.loopAnalysis(loc, addressedOfVariables);
-				loc.purelyLocalAnalysis();
+				// loc.purelyLocalAnalysis();
 				loc.loopAnalysis();
 				factory.computeImpactScopeOfLocation(loc);
 			}

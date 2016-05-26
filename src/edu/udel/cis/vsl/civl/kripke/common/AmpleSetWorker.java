@@ -1,10 +1,12 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -228,7 +230,7 @@ public class AmpleSetWorker {
 	/**
 	 * map of process ID's and the set of enabled system call statements.
 	 */
-	private Map<Integer, Set<CallOrSpawnStatement>> enabledSystemCallMap = new HashMap<>();
+	private List<Set<CallOrSpawnStatement>> enabledSystemCallMap = new ArrayList<>();
 
 	/**
 	 * The current state at which the ample set is to be computed.
@@ -408,7 +410,7 @@ public class AmpleSetWorker {
 		return result;
 	}
 
-	public void difference(BitSet lhs, BitSet rhs) {
+	private void difference(BitSet lhs, BitSet rhs) {
 		for (int i = 0; i < lhs.length(); i++) {
 			i = lhs.nextSetBit(i);
 			if (rhs.get(i))
@@ -1011,7 +1013,7 @@ public class AmpleSetWorker {
 				}
 			}
 		}
-		this.enabledSystemCallMap.put(pid, systemCalls);
+		this.enabledSystemCallMap.set(pid, systemCalls);
 		return muSet;
 	}
 
@@ -1025,7 +1027,7 @@ public class AmpleSetWorker {
 			return this.impactMemoryUnitsOfAtomicFragment(location, pid);
 		if (impactMemUnitExprs == null)
 			return null;
-		this.enabledSystemCallMap.put(pid, location.systemCalls());
+		this.enabledSystemCallMap.set(pid, location.systemCalls());
 		for (MemoryUnitExpression memUnitExpr : impactMemUnitExprs) {
 			// Set<SymbolicExpression> subResult = new HashSet<>();
 
@@ -1075,6 +1077,9 @@ public class AmpleSetWorker {
 		if (debugging) {
 			debugOut.println("===============memory analysis at state "
 					+ state.getCanonicId() + "================");
+		}
+		for (int i = 0; i < state.numProcs(); i++) {
+			this.enabledSystemCallMap.add(null);
 		}
 		reachableMemoryAnalysis();
 		for (int pid = 0; pid < nonEmptyProcesses.length(); pid++) {

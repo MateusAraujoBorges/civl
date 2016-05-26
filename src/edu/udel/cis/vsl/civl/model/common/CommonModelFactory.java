@@ -1549,7 +1549,19 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public Variable variable(CIVLSource source, CIVLType type, Identifier name,
 			int vid) {
-		Variable variable = new CommonVariable(source, type, name, vid);
+		return variableWork(source, type, name, vid, false);
+	}
+
+	@Override
+	public Variable variableAsParameter(CIVLSource source, CIVLType type,
+			Identifier name, int vid) {
+		return variableWork(source, type, name, vid, true);
+	}
+
+	private Variable variableWork(CIVLSource source, CIVLType type,
+			Identifier name, int vid, boolean isParameter) {
+		Variable variable = new CommonVariable(source, type, name, vid,
+				isParameter);
 
 		if (name.name().equals(CIVL_FILESYSTEM_NAME)) {
 			this.civlFilesystemVariableExpression = this.variableExpression(
@@ -2094,7 +2106,6 @@ public class CommonModelFactory implements ModelFactory {
 			CIVLSource source, CIVLType type) {
 		String name = "";
 		int vid = scope.numVariables();
-		StringObject stringObject;
 		Variable variable;
 		VariableExpression result;
 
@@ -2105,11 +2116,9 @@ public class CommonModelFactory implements ModelFactory {
 			break;
 		default:
 		}
-		stringObject = (StringObject) universe.canonic(universe
-				.stringObject(name));
-		variable = new CommonVariable(source, type, new CommonIdentifier(
-				source, stringObject), vid);
-		result = new CommonVariableExpression(source, variable);
+		variable = this.variable(source, type, this.identifier(source, name),
+				vid);
+		result = this.variableExpression(source, variable);
 		scope.addVariable(variable);
 		return result;
 	}

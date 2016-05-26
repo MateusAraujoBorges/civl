@@ -101,7 +101,7 @@ public class CommonLocation extends CommonSourceable implements Location {
 	 * statements reachable within that $atomic/$atom block are purely local.</li>
 	 * </ol>
 	 */
-	private boolean purelyLocal = false;
+	private boolean purelyLocal = true;
 
 	private Set<Variable> writableVariables;
 
@@ -402,6 +402,40 @@ public class CommonLocation extends CommonSourceable implements Location {
 		}
 	}
 
+	private void purelyLocalAnalysisForAtomic() {
+		int atomicCount = 0, atomCount = 0;
+		Set<Integer> visited = new HashSet<Integer>();
+		Stack<Location> working = new Stack<>();
+
+		working.add(this);
+		while (!working.isEmpty()) {
+			Location current = working.pop();
+
+			visited.add(current.id());
+			if (current.enterAtom())
+				atomCount++;
+			else if (current.leaveAtom())
+				atomCount--;
+			else if (current.enterAtomic())
+				atomicCount++;
+			else if (current.leaveAtomic())
+				atomicCount--;
+			for (Statement stmt : current.outgoing()) {
+				Location target;
+
+				if (!stmt.isPurelyLocal()) {
+					this.purelyLocal = false;
+					return;
+				}
+				target = stmt.target();
+				if (!(atomicCount == 0 && atomCount == 0)
+						&& !visited.contains(target.id()))
+					working.push(target);
+			}
+		}
+
+	}
+
 	@Override
 	public void purelyLocalAnalysis() {
 		// Usually, a location is purely local if it has exactly one outgoing
@@ -415,104 +449,52 @@ public class CommonLocation extends CommonSourceable implements Location {
 		// local only
 		// if all the statements that are to be executed in the atomic block are
 		// purely local
-		if (this.atomicKind == AtomicKind.ATOM_ENTER) {
-			Stack<Integer> atomicFlags = new Stack<Integer>();
-			Location newLocation = this;
-			Set<Integer> checkedLocations = new HashSet<Integer>();
-
-			do {
-				Statement s = newLocation.getOutgoing(0);
-
-				if (s instanceof CallOrSpawnStatement) {
-					if (((CallOrSpawnStatement) s).isCall())
-						this.purelyLocal = false;
-					return;
-				}
-				checkedLocations.add(newLocation.id());
-				if (!s.isPurelyLocal()) {
-					this.purelyLocal = false;
-					return;
-				}
-				if (newLocation.enterAtom())
-					atomicFlags.push(1);
-				if (newLocation.leaveAtom())
-					atomicFlags.pop();
-				newLocation = s.target();
-				if (checkedLocations.contains(newLocation.id()))
-					newLocation = null;
-			} while (newLocation != null && !atomicFlags.isEmpty());
-			this.purelyLocal = true;
-		} else if (this.atomicKind == AtomicKind.ATOMIC_ENTER) {
-			Stack<Integer> atomicFlags = new Stack<Integer>();
-			Location newLocation = this;
-			Set<Integer> checkedLocations = new HashSet<Integer>();
-
-			do {
-				Statement s = newLocation.getOutgoing(0);
-
-				if (s instanceof CallOrSpawnStatement) {
-					if (((CallOrSpawnStatement) s).isCall())
-						this.purelyLocal = false;
-					return;
-				}
-				checkedLocations.add(newLocation.id());
-				if (!s.isPurelyLocal()) {
-					this.purelyLocal = false;
-					return;
-				}
-				if (newLocation.enterAtomic())
-					atomicFlags.push(1);
-				if (newLocation.leaveAtomic())
-					atomicFlags.pop();
-				newLocation = s.target();
-				if (checkedLocations.contains(newLocation.id()))
-					newLocation = null;
-			} while (newLocation != null && !atomicFlags.isEmpty());
-			this.purelyLocal = true;
-		} else {
-			this.purelyLocal = true;
+		if (this.atomicKind == AtomicKind.ATOM_ENTER
+				|| this.atomicKind == AtomicKind.ATOMIC_ENTER)
+			purelyLocalAnalysisForAtomic();
+		else {
 			for (Statement s : this.outgoing) {
 				this.purelyLocal = this.purelyLocal && s.isPurelyLocal();
 			}
 		}
 	}
 
-	@Override
-	public void purelyLocalAnalysisForOutgoing() {
-		// a location that enters an atomic block is considered as atomic only
-		// if all the statements that are to be executed in the atomic block are
-		// purely local
-		if (this.atomicKind == AtomicKind.ATOM_ENTER) {
-			Stack<Integer> atomicFlags = new Stack<Integer>();
-			Location newLocation = this;
-			Set<Integer> checkedLocations = new HashSet<Integer>();
-
-			do {
-				Statement s = newLocation.getOutgoing(0);
-
-				checkedLocations.add(newLocation.id());
-				if (!s.isPurelyLocal()) {
-					this.allOutgoingPurelyLocal = false;
-					return;
-				}
-				if (newLocation.enterAtom())
-					atomicFlags.push(1);
-				if (newLocation.leaveAtom())
-					atomicFlags.pop();
-				newLocation = s.target();
-				if (checkedLocations.contains(newLocation.id()))
-					newLocation = null;
-			} while (newLocation != null && !atomicFlags.isEmpty());
-			this.allOutgoingPurelyLocal = true;
-			return;
-		}
-
-		for (Statement s : outgoing) {
-			if (!s.isPurelyLocal())
-				this.allOutgoingPurelyLocal = false;
-		}
-		this.allOutgoingPurelyLocal = true;
-	}
+	// @Override
+	// public void purelyLocalAnalysisForOutgoing() {
+	// // a location that enters an atomic block is considered as atomic only
+	// // if all the statements that are to be executed in the atomic block are
+	// // purely local
+	// if (this.atomicKind == AtomicKind.ATOM_ENTER) {
+	// Stack<Integer> atomicFlags = new Stack<Integer>();
+	// Location newLocation = this;
+	// Set<Integer> checkedLocations = new HashSet<Integer>();
+	//
+	// do {
+	// Statement s = newLocation.getOutgoing(0);
+	//
+	// checkedLocations.add(newLocation.id());
+	// if (!s.isPurelyLocal()) {
+	// this.allOutgoingPurelyLocal = false;
+	// return;
+	// }
+	// if (newLocation.enterAtom())
+	// atomicFlags.push(1);
+	// if (newLocation.leaveAtom())
+	// atomicFlags.pop();
+	// newLocation = s.target();
+	// if (checkedLocations.contains(newLocation.id()))
+	// newLocation = null;
+	// } while (newLocation != null && !atomicFlags.isEmpty());
+	// this.allOutgoingPurelyLocal = true;
+	// return;
+	// }
+	//
+	// for (Statement s : outgoing) {
+	// if (!s.isPurelyLocal())
+	// this.allOutgoingPurelyLocal = false;
+	// }
+	// this.allOutgoingPurelyLocal = true;
+	// }
 
 	@Override
 	public void removeIncoming(Statement statement) {

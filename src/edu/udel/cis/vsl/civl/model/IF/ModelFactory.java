@@ -1343,6 +1343,22 @@ public interface ModelFactory {
 	 */
 	Variable variable(CIVLSource source, CIVLType type, Identifier name, int vid);
 
+	/**
+	 * Create a new variable which is also a parameter of some function.
+	 *
+	 * @param source
+	 *            The CIVL source of the variable
+	 * @param type
+	 *            The type of this variable.
+	 * @param name
+	 *            The name of this variable.
+	 * @param vid
+	 *            The index of this variable in its scope.
+	 * @return The variable
+	 */
+	Variable variableAsParameter(CIVLSource source, CIVLType type,
+			Identifier name, int vid);
+
 	/* *********************************************************************
 	 * Setters and Getters
 	 * *********************************************************************

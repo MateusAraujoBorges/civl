@@ -234,10 +234,10 @@ public interface Location extends Sourceable {
 	 */
 	boolean allOutgoingPurelyLocal();
 
-	/**
-	 * Analyze each outgoing statement to see if they are purely local
-	 */
-	void purelyLocalAnalysisForOutgoing();
+//	/**
+//	 * Analyze each outgoing statement to see if they are purely local
+//	 */
+//	void purelyLocalAnalysisForOutgoing();
 
 	/**
 	 * During the translation of AST node into CIVL model, it is possible to

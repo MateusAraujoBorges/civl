@@ -41,6 +41,19 @@ struct $comm {
 };
 
 /* *********************** Functions *********************** */
+/*@ depends_on \nothing;
+  @ reads gcomm;
+  @ assigns gcomm;
+  @*/
+$atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place){
+  $comm comm=($comm)$malloc(scope, sizeof(struct $comm));
+
+  gcomm->procs[place]=$self;
+  gcomm->isInit[place]=$true;
+  comm->gcomm=gcomm;
+  comm->place=place;
+  return comm;
+}
 
 /* creates a new message, copying data from the specified buffer */ 
 $message $message_pack(int source, int dest, int tag,
