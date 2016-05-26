@@ -18,8 +18,8 @@ public class MessagePassingBenchmark {
 
 		if (args.length > 0)
 			civlDir = args[0];
-		System.out.println(">>>>>>>> Adder <<<<<<<<");
-		ui.run("verify  -input_mpi_nprocs=4 -inputnsteps=2 -inputnx=2 -inputny=2 "
+		System.out.println(">>>>>>>> Diffusion 2d <<<<<<<<");
+		ui.run("verify  -inputnsteps=3 -inputnx=3 -inputny=3 "
 				+ "-inputNPROCSX=2 -inputNPROCSY=2 -enablePrintf=false "
 				+ civlDir + "/examples/mpi/diffusion2d.c");
 	}
