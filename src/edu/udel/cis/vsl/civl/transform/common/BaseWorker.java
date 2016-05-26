@@ -55,6 +55,7 @@ import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.abc.token.IF.TransformFormation;
 import edu.udel.cis.vsl.abc.transform.IF.Transformer;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
+import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 
 /**
  * Object used to perform one transformation task. It is instantiated to carry
@@ -64,7 +65,7 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
  */
 public abstract class BaseWorker {
 
-	protected final static String GEN_MAIN = "_gen_main";
+	protected final static String GEN_MAIN = GeneralTransformer.PREFIX + "main";
 	protected final static String MAIN = "main";
 	protected final static String ASSUME = "$assume";
 	protected final static String ASSERT = "$assert";
@@ -408,7 +409,7 @@ public abstract class BaseWorker {
 	}
 
 	protected FunctionDeclarationNode assumeFunctionDeclaration(Source source) {
-		IdentifierNode name = nodeFactory.newIdentifierNode(source, "$assume"); 
+		IdentifierNode name = nodeFactory.newIdentifierNode(source, "$assume");
 		FunctionTypeNode funcType = nodeFactory.newFunctionTypeNode(source,
 				nodeFactory.newVoidTypeNode(source), nodeFactory
 						.newSequenceNode(source, "Formals", Arrays

@@ -45,6 +45,7 @@ import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.sarl.IF.SARLException;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -785,7 +786,7 @@ public class AmpleSetWorker {
 				for (CallOrSpawnStatement call : systemCalls1) {
 					SystemFunction systemFunction = (SystemFunction) call
 							.function();
-					
+
 					if ((systemFunction.name().name().equals("$wait") || systemFunction
 							.name().name().equals("$waitall"))
 							&& systemFunction.getLibrary().equals("civlc")) {
@@ -1373,16 +1374,18 @@ public class AmpleSetWorker {
 				SymbolicExpression eval;
 				Variable variable;
 
-				if (expr.operator() != SymbolicOperator.TUPLE
-						|| symbolicAnalyzer.isDerefablePointer(state, expr).right != ResultType.YES)
+				if (expr.operator() != SymbolicOperator.TUPLE)
 					return;
-				variable = state
-						.getDyscope(symbolicUtil.getDyscopeId(null, expr))
-						.lexicalScope()
+
+				int dyscopeid = symbolicUtil.getDyscopeId(null, expr);
+
+				if (dyscopeid < 0)
+					return;
+
+				variable = state.getDyscope(dyscopeid).lexicalScope()
 						.variable(symbolicUtil.getVariableId(null, expr));
 				if (variable.isConst() || variable.isInput())
 					return;
-				// result =
 				this.memUnitFactory.add(result, expr);
 				if (expr.operator() == SymbolicOperator.TUPLE) {
 					/*
@@ -1395,7 +1398,11 @@ public class AmpleSetWorker {
 						SymbolicExpression arrayPointer = symbolicUtil
 								.parentPointer(null, expr);
 
-						eval = this.dereference(state, arrayPointer);
+						try {
+							eval = this.dereference(state, arrayPointer);
+						} catch (SARLException ex) {
+							return;
+						}
 						/* Check if it's length == 0 */
 						if (eval == null || universe.length(eval).isZero())
 							return;

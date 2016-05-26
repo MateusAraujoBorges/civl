@@ -632,8 +632,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 
 					if (variable.getTypeNode().isInputQualified()
 							|| variable.getTypeNode().isOutputQualified()
-							|| (sourceFile.equals(GeneralTransformer.LONG_NAME) && variable
-									.getName().equals(GeneralWorker._argv_tmp_name))) {
+							|| (sourceFile.equals(GeneralTransformer.LONG_NAME))) {
 						vars.add(variable);
 						continue;
 					}
@@ -644,11 +643,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 							.child(0);
 
 					if (functionName.name().equals(MAIN)) {
-						// CompoundStatementNode body=functionNode.getBody();
-						//
-						// body.remove();
 						items.add(functionNode.getBody().copy());
-						// callMain = this.callMain(functionNode);
 
 					} else
 						items.add((BlockItemNode) child);
@@ -656,8 +651,6 @@ public class MPI2CIVLWorker extends BaseWorker {
 					items.add((BlockItemNode) child);
 			}
 		}
-		// assert callMain != null;
-		// items.add(callMain);
 		items.add(commDestroy);
 		mpiProcessBody = nodeFactory.newCompoundStatementNode(this.newSource(
 				"function body of " + MPI_PROCESS,

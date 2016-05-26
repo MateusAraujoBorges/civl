@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
+
 /**
  * This file contains the constants used by the model builder/translator, which
  * reflects the translation strategy of CIVL. For example, for every scope, the
@@ -14,7 +16,8 @@ import java.util.Set;
  */
 public final class ModelConfiguration {
 
-	public final static String GENERAL_ROOT = "_gen_root";
+	public final static String GENERAL_ROOT = GeneralTransformer.PREFIX
+			+ "root";
 
 	/* Names of Symbolic Constants */
 

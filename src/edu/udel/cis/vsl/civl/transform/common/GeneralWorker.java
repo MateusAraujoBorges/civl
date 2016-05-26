@@ -71,7 +71,6 @@ public class GeneralWorker extends BaseWorker {
 	private int static_var_count = 0;
 	private String CIVL_argc_name;
 	private String CIVL_argv_name;
-	final static String _argv_tmp_name = "_gen_argv_tmp";
 	private Source mainSource;
 	/**
 	 * static variable declaration nodes of this AST
@@ -82,7 +81,7 @@ public class GeneralWorker extends BaseWorker {
 
 	public GeneralWorker(ASTFactory astFactory) {
 		super(GeneralTransformer.LONG_NAME, astFactory);
-		this.identifierPrefix = "_gen_";
+		this.identifierPrefix = GeneralTransformer.PREFIX;
 	}
 
 	@Override
@@ -143,6 +142,7 @@ public class GeneralWorker extends BaseWorker {
 		this.completeSources(root);
 		newAst = astFactory.newAST(root, unit.getSourceFiles(),
 				unit.isWholeProgram());
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -194,16 +194,22 @@ public class GeneralWorker extends BaseWorker {
 						"new main function", CivlcTokenConstant.POINTER), this
 						.basicType(BasicTypeKind.CHAR)), this
 						.identifierExpression(CIVL_argc_name));
-		ExpressionNode body = this.nodeFactory.newOperatorNode(this.newSource(
-				"address of", CivlcTokenConstant.SUB), Operator.ADDRESSOF,
-				this.nodeFactory.newOperatorNode(this.newSource("subscript",
-						CivlcTokenConstant.SUB), Operator.SUBSCRIPT,
-						this.nodeFactory.newOperatorNode(this.newSource(
-								"subscript", CivlcTokenConstant.SUB),
-								Operator.SUBSCRIPT, this
-										.identifierExpression(CIVL_argv_name),
-								this.identifierExpression("i")), this
-								.integerConstant(0)));
+		// ExpressionNode body =
+		// this.nodeFactory.newOperatorNode(this.newSource(
+		// "address of", CivlcTokenConstant.SUB), Operator.ADDRESSOF,
+		// this.nodeFactory.newOperatorNode(this.newSource("subscript",
+		// CivlcTokenConstant.SUB), Operator.SUBSCRIPT,
+		// this.nodeFactory.newOperatorNode(this.newSource(
+		// "subscript", CivlcTokenConstant.SUB),
+		// Operator.SUBSCRIPT, this
+		// .identifierExpression(CIVL_argv_name),
+		// this.identifierExpression("i")), this
+		// .integerConstant(0)));
+
+		ExpressionNode body = this.nodeFactory.newOperatorNode(
+				this.newSource("subscript", CivlcTokenConstant.SUB),
+				Operator.SUBSCRIPT, this.identifierExpression(CIVL_argv_name),
+				this.identifierExpression("i"));
 
 		ArrayLambdaNode arrayLambda = this.nodeFactory.newArrayLambdaNode(
 				this.newSource("array lambda", CivlcTokenConstant.LAMBDA),
@@ -211,17 +217,17 @@ public class GeneralWorker extends BaseWorker {
 				Arrays.asList(this.variableDeclaration("i",
 						this.basicType(BasicTypeKind.INT))), null, body);
 
-		ExpressionNode addressOf_argv0 = nodeFactory.newOperatorNode(this
-				.newSource("new main function", CivlcTokenConstant.OPERATOR),
-				Operator.SUBSCRIPT, Arrays.asList(arrayLambda, nodeFactory
-						.newIntegerConstantNode(this.newSource(
-								"new main function",
-								CivlcTokenConstant.INTEGER_CONSTANT), "0")));
-		addressOf_argv0 = nodeFactory.newOperatorNode(this.newSource(
-				"new main function", CivlcTokenConstant.OPERATOR),
-				Operator.ADDRESSOF, Arrays.asList(addressOf_argv0));
+		// ExpressionNode addressOf_argv0 = nodeFactory.newOperatorNode(this
+		// .newSource("new main function", CivlcTokenConstant.OPERATOR),
+		// Operator.SUBSCRIPT, Arrays.asList(arrayLambda, nodeFactory
+		// .newIntegerConstantNode(this.newSource(
+		// "new main function",
+		// CivlcTokenConstant.INTEGER_CONSTANT), "0")));
+		// addressOf_argv0 = nodeFactory.newOperatorNode(this.newSource(
+		// "new main function", CivlcTokenConstant.OPERATOR),
+		// Operator.ADDRESSOF, Arrays.asList(addressOf_argv0));
 
-		return addressOf_argv0;
+		return arrayLambda;
 	}
 
 	// private VariableDeclarationNode create_argv_tmp() throws SyntaxException
