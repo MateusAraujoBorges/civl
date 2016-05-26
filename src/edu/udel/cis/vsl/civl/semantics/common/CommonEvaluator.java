@@ -1797,7 +1797,7 @@ public class CommonEvaluator implements Evaluator {
 		}
 	}
 
-	private Evaluation arrayLambda(State state, int pid,
+	private SymbolicExpression arrayLambda(State state, int pid,
 			NumericSymbolicConstant[] boundVariables, int boundIndex,
 			SymbolicCompleteArrayType arrayType, Expression body)
 			throws UnsatisfiablePathConditionException {
@@ -1815,14 +1815,11 @@ public class CommonEvaluator implements Evaluator {
 			eleValue = eval.value;
 			state = eval.state;
 		} else {
-			eval = arrayLambda(state, pid, boundVariables, boundIndex + 1,
+			eleValue = arrayLambda(state, pid, boundVariables, boundIndex + 1,
 					(SymbolicCompleteArrayType) arrayType.elementType(), body);
-			eleValue = eval.value;
-			state = eval.state;
 		}
 		arrayEleFunction = universe.lambda(index, eleValue);
-		return new Evaluation(state, universe.arrayLambda(arrayType,
-				arrayEleFunction));
+		return universe.arrayLambda(arrayType, arrayEleFunction);
 	}
 
 	/**
@@ -1881,8 +1878,8 @@ public class CommonEvaluator implements Evaluator {
 			throw new CIVLUnimplementedFeatureException(
 					"non-trivial restriction expression in array lambdas",
 					arrayLambda.getSource());
-		eval = this.arrayLambda(state, pid, boundVariables, 0, arrayType,
-				arrayLambda.expression());
+		eval = new Evaluation(state, this.arrayLambda(state, pid,
+				boundVariables, 0, arrayType, arrayLambda.expression()));
 		this.boundVariableStack.pop();
 		return eval;
 	}

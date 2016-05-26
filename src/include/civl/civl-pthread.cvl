@@ -2,7 +2,23 @@
 #define __CIVL_CIVLPTHREAD__
 
 #include <civl-pthread.cvh>
-#include <pthread.h>
+#include <civlc.cvh>
+#include <seq.cvh>
+
+/* pthread_t struct definition
+  Description: The pthread_t is a struct containing a $proc variable as well as a thread attribute which defines
+  its interactions with other threads. It encapsulates the $proc and allows attributes to apply to it.
+  Fields: thr: the $proc variable that is the heart of the thread
+  attr: see above
+*/
+
+struct pthread_t{
+  $proc thr;
+  const pthread_attr_t attr;
+  _Bool terminated;
+  void** exitValue;
+};
+
 
 struct _pthread_gpool_t{
   pthread_t * threads[];
@@ -13,5 +29,55 @@ struct _pthread_pool_t{
   $proc tid;
   pthread_t * thread;
 };
+
+/*@ depends_on \nothing;
+  @ assigns \nothing;
+  @ reads \nothing;
+  @*/
+$atomic_f $pthread_gpool_t $pthread_gpool_create($scope scope){
+  $pthread_gpool_t gpool=($pthread_gpool_t)$malloc(scope, sizeof(struct _pthread_gpool_t));
+
+  $seq_init(&gpool->threads, 0, NULL);
+  return gpool;
+}
+
+/*@ depends_on \access(gpool);
+  @ assigns gpool;
+  @ reads \nothing;
+  @*/
+$atomic_f void $pthread_gpool_destroy($pthread_gpool_t gpool){
+  $free(gpool);
+}
+
+/*@ depends_on \nothing;
+  @ assigns \nothing;
+  @ reads gpool;
+  @*/
+$atomic_f $pthread_pool_t $pthread_pool_create($scope scope, $pthread_gpool_t gpool){
+  $pthread_pool_t pool=($pthread_pool_t)$malloc(scope, sizeof(struct _pthread_pool_t));
+
+  pool->gpool=gpool;
+  pool->tid=$self;
+
+  int nthreads=$seq_length(&gpool->threads);
+
+  for(int i=0; i<nthreads; i++){
+    pthread_t* thread=gpool->threads[i];
+
+    if(thread && thread->thr==$self){
+      pool->thread=thread;
+      break;
+    }
+  }
+  return pool;
+}
+
+/*@ depends_on \access(pool);
+  @ assigns pool;
+  @ reads \nothing;
+  @*/
+$atomic_f void $pthread_pool_destroy($pthread_pool_t pool){
+  $free(pool);
+}
 
 #endif

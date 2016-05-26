@@ -64,6 +64,8 @@ import edu.udel.cis.vsl.civl.model.common.type.CommonType;
 import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.GMCSection;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
@@ -456,6 +458,7 @@ public class ModelBuilderWorker {
 
 	private void completeHeapType() {
 		completeHandleObjectTypes();
+		this.completeMallocStatements();
 		typeFactory.completeHeapType(heapType, mallocStatements);
 	}
 
@@ -963,6 +966,21 @@ public class ModelBuilderWorker {
 		this.factory.setCodeAnalyzers(Analysis.getAnalyzers(civlConfig,
 				universe));
 		this.staticAnalysis();
+	}
+
+	private void completeMallocStatements() {
+		for (MallocStatement malloc : this.mallocStatements) {
+			CIVLType staticElementType = malloc.getStaticElementType();
+			SymbolicType dynamicElementType = staticElementType
+					.getDynamicType(universe);
+			SymbolicArrayType dynamicObjectType = (SymbolicArrayType) universe
+					.canonic(universe.arrayType(dynamicElementType));
+			SymbolicExpression undefinedObject = factory
+					.undefinedValue(dynamicObjectType);
+
+			malloc.complete(dynamicElementType, dynamicObjectType,
+					undefinedObject);
+		}
 	}
 
 	private void completeCallEvents() {

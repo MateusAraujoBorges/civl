@@ -29,6 +29,8 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
@@ -78,6 +80,7 @@ public class GeneralWorker extends BaseWorker {
 	private List<VariableDeclarationNode> static_variables = new LinkedList<>();
 	private boolean argcUsed = false;
 	private boolean argvUsed = false;
+	private StatementNode argcAssumption = null;
 
 	public GeneralWorker(ASTFactory astFactory) {
 		super(GeneralTransformer.LONG_NAME, astFactory);
@@ -127,6 +130,11 @@ public class GeneralWorker extends BaseWorker {
 		// no need to modify the body of main
 		for (BlockItemNode inputVar : inputVars)
 			newExternalList.add(inputVar);
+		if (this.argcAssumption != null) {
+			newExternalList.add(this.assumeFunctionDeclaration(argcAssumption
+					.getSource()));
+			newExternalList.add(argcAssumption);
+		}
 		// add my root
 		newExternalList.add(this.generalRootScopeNode());
 		for (BlockItemNode child : root) {
@@ -144,6 +152,25 @@ public class GeneralWorker extends BaseWorker {
 				unit.isWholeProgram());
 		// newAst.prettyPrint(System.out, false);
 		return newAst;
+	}
+
+	/**
+	 * $assume 0 < argc && argc < MAX_ARGC;
+	 * 
+	 * @param source
+	 * @param argcName
+	 * @return
+	 * @throws SyntaxException
+	 */
+	private ExpressionStatementNode argcAssumption(Source source,
+			String argcName) throws SyntaxException {
+		ExpressionNode lowerBound = nodeFactory.newOperatorNode(source,
+				Operator.LT, Arrays.asList(
+						nodeFactory.newIntegerConstantNode(source, "0"),
+						this.identifierExpression(source, argcName)));
+
+		return nodeFactory.newExpressionStatementNode(this.functionCall(source,
+				ASSUME, Arrays.asList(lowerBound)));
 	}
 
 	private void checkAgumentsOfMainFunction(FunctionDefinitionNode main,
@@ -438,6 +465,8 @@ public class GeneralWorker extends BaseWorker {
 			inputVars.add(CIVL_argc);
 			CIVL_argv = inputArgvDeclaration(argv, CIVL_argv_name);
 			inputVars.add(CIVL_argv);
+			this.argcAssumption = this.argcAssumption(argc.getSource(),
+					this.CIVL_argc_name);
 		} else if (count == 2) {
 			functionType.setParameters(this.nodeFactory.newSequenceNode(
 					parameters.getSource(), "Formal Parameter List",

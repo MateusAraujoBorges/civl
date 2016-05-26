@@ -241,4 +241,13 @@ public class CommonMallocStatement extends CommonStatement implements
 		return this.scopeExpression.containsHere();
 	}
 
+	@Override
+	public void complete(SymbolicType dynamicElementType,
+			SymbolicArrayType dynamicObjectType,
+			SymbolicExpression undefinedObject) {
+		this.dynamicElementType = dynamicElementType;
+		this.dynamicObjectType = dynamicObjectType;
+		this.undefinedObject = undefinedObject;
+	}
+
 }

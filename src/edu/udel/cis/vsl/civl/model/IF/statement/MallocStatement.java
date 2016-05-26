@@ -114,4 +114,19 @@ public interface MallocStatement extends Statement {
 	 * @return the left hand side of the assignment
 	 */
 	LHSExpression getLHS();
+
+	/**
+	 * complete the type information of the malloc statement. This has to be
+	 * done separatedly because it might involve the bundle type.
+	 * 
+	 * @param dynamicElementType
+	 *            the dynamic element type
+	 * @param dynamicObjectType
+	 *            the dynamic object type
+	 * @param undefinedObject
+	 *            the initial undefined value for the object
+	 */
+	void complete(SymbolicType dynamicElementType,
+			SymbolicArrayType dynamicObjectType,
+			SymbolicExpression undefinedObject);
 }

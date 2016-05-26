@@ -7,8 +7,9 @@
  #ifndef __STDIO_CVL__
  #define __STDIO_CVL__
  
- #include <civlc.cvh>
- #include <stdio.h>
+#include <civlc.cvh>
+#include <stdio.h>
+#include <seq.cvh>
 
 /* ******************************* Types ******************************* */
 
@@ -100,7 +101,17 @@ struct FILE {
 $system CIVL_File_mode CIVL_File_stringToMode(char * modeString);//mode not string-literal
 
 /* Creates a new empty file system, returning a handle to it. */
-$system $filesystem $filesystem_create($scope scope);
+/*@ depends_on \nothing;
+  @ assigns \nothing;
+  @ reads \nothing;
+  @*/
+$system[stdio] $filesystem $filesystem_create($scope scope){
+  $filesystem fileSys=($filesystem)$malloc(scope, sizeof(struct CIVL_filesystem));
+
+  fileSys->scope=scope;
+  $seq_init(&fileSys->files, 0, NULL);
+  return fileSys;
+}
 
 /* Deallocates any data associated to the file system, and makes
  * the handle undefined */
@@ -132,7 +143,7 @@ $system void $filesystem_destroy($filesystem fs);
  *
  */
 $system FILE * $fopen($filesystem fs, const char * restrict filename,
-              CIVL_File_mode mode);
+			CIVL_File_mode mode);
 
 // same as C. make system function
 // int fclose(FILE *stream);

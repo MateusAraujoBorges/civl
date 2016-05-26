@@ -1,9 +1,11 @@
 #include<assert.h>
+#include<civlc.cvh>
 
 $input int n;
 $input int m;
 $input int A[n];
 $input int B[n][m];
+$assume(n>=1 && m>=1);
 
 int f(int *x){
   return x[0]*2;

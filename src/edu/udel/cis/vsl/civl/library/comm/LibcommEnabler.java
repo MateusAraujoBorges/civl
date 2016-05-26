@@ -473,7 +473,7 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 				procArray, (NumericExpression) dest, enqueue_call.getSource());
 		candidateProcId = modelFactory.getProcessId(enqueue_call.getSource(),
 				candidateProc);
-		if (candidateProcId == -1 || candidateProcId == pid)
+		if (candidateProcId < 0 || candidateProcId == pid)
 			return falseValue;
 		else {
 			ProcessState procState = state.getProcessState(candidateProcId);

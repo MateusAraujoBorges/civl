@@ -6,6 +6,7 @@
 #define __CIVLC_COMM__
 #include <civlc.cvh>
 #include<comm.cvh>
+#include<seq.cvh>
 
 /* *********************** Types *********************** */
 
@@ -22,7 +23,7 @@ struct $queue {
 /* A global communicator datatype which must be operated by local communicators.
  * This communicator type has the same meaning as the communicator type
  * in MPI.  Completes the declaration of this type in civlc-common.h */
-struct $gcomm {
+struct _gcomm_ {
   int nprocs; // number of processes
   $proc procs[];
   _Bool isInit[]; // if the local comm has been initiated
@@ -35,25 +36,12 @@ struct $gcomm {
  * a set of processes which have ranks in common.
  * Completes the declaration of this type in civlc-common.h.
  */
-struct $comm {
+struct _comm_ {
   int place;
   $gcomm gcomm;
 };
 
 /* *********************** Functions *********************** */
-/*@ depends_on \nothing;
-  @ reads gcomm;
-  @ assigns gcomm;
-  @*/
-$atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place){
-  $comm comm=($comm)$malloc(scope, sizeof(struct $comm));
-
-  gcomm->procs[place]=$self;
-  gcomm->isInit[place]=$true;
-  comm->gcomm=gcomm;
-  comm->place=place;
-  return comm;
-}
 
 /* creates a new message, copying data from the specified buffer */ 
 $message $message_pack(int source, int dest, int tag,
@@ -93,6 +81,57 @@ int $message_size($message message) {
 void $message_unpack($message message, void *buf, int size) {
   $bundle_unpack(message.data, buf);
   $assert(message.size <= size, "Message of size %d exceeds the specified size %d.", message.size, size);
+}
+
+/*@ depends_on \nothing;
+  @ assigns \nothing;
+  @ reads \nothing;
+  @*/
+$atomic_f $gcomm $gcomm_create($scope scope, int size){
+  $gcomm gcomm=($gcomm)$malloc(scope, sizeof(struct _gcomm_));
+  $queue empty;
+  
+  empty.length=0;
+  $seq_init(&empty.messages, 0, NULL);
+  gcomm->nprocs=size;
+  gcomm->procs=(($proc[size])$lambda(int i)$proc_null);
+  gcomm->isInit=((_Bool[size])$lambda(int i)$false);
+  gcomm->buf=(($queue[size][size])$lambda(int i,j) empty);
+  return gcomm;
+}
+
+/*@ depends_on \access(junkMsgs), \access(gcomm);
+  @ assigns junkMsgs, gcomm;
+  @ reads \nothing;
+  @*/
+$atomic_f int $gcomm_destroy($gcomm gcomm, void * junkMsgs){
+  //TODO update junkMsgs
+  $free(gcomm);
+  return 0;
+}
+
+/*@ depends_on \nothing;
+  @ reads gcomm;
+  @ assigns gcomm;
+  @*/
+$atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place){
+  $assert(!gcomm->isInit[place], "the place %d is already occupied in the global communicator!", place);
+
+  $comm comm=($comm)$malloc(scope, sizeof(struct _comm_));
+
+  gcomm->procs[place]=$self;
+  gcomm->isInit[place]=$true;
+  comm->gcomm=gcomm;
+  comm->place=place;
+  return comm;
+}
+
+/*@ depends_on \access(comm);
+  @ assigns comm;
+  @ reads \nothing;
+  @*/
+$atomic_f void $comm_destroy($comm comm){
+  $free(comm);
 }
 
 /* Returns the place of the local communicator.  This is the same as the

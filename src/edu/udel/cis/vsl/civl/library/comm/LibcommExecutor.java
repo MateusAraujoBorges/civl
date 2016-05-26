@@ -10,7 +10,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Model;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
@@ -97,18 +96,18 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 			callEval = this.executeGcommDup(state, pid, process, arguments,
 					argumentValues, source);
 			break;
-		case "$comm_destroy":
-			callEval = executeFree(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$gcomm_destroy":
-			callEval = this.executeGcommDestroy(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$gcomm_create":
-			callEval = executeGcommCreate(state, pid, process, arguments,
-					argumentValues, source);
-			break;
+		// case "$comm_destroy":
+		// callEval = executeFree(state, pid, process, arguments,
+		// argumentValues, source);
+		// break;
+		// case "$gcomm_destroy":
+		// callEval = this.executeGcommDestroy(state, pid, process, arguments,
+		// argumentValues, source);
+		// break;
+		// case "$gcomm_create":
+		// callEval = executeGcommCreate(state, pid, process, arguments,
+		// argumentValues, source);
+		// break;
 		case "$gcomm_defined":
 			callEval = this.executeGcommOrCommDefined(state, pid, process,
 					arguments, argumentValues);
@@ -524,63 +523,65 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		return new Evaluation(state, nprocs);
 	}
 
-	/**
-	 * Creates a new global communicator object and returns a handle to it. The
-	 * global communicator will have size communication places. The global
-	 * communicator defines a communication "universe" and encompasses message
-	 * buffers and all other components of the state associated to
-	 * message-passing. The new object will be allocated in the given scope.
-	 * 
-	 * @param state
-	 *            The current state.
-	 * @param pid
-	 *            The ID of the process that the function call belongs to.
-	 * @param lhs
-	 *            The left hand side expression of the call, which is to be
-	 *            assigned with the returned value of the function call. If NULL
-	 *            then no assignment happens.
-	 * @param arguments
-	 *            The static representation of the arguments of the function
-	 *            call.
-	 * @param argumentValues
-	 *            The dynamic representation of the arguments of the function
-	 *            call.
-	 * @param source
-	 *            The source code element to be used for error report.
-	 * @return The new state after executing the function call.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation executeGcommCreate(State state, int pid, String process,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		SymbolicExpression gcomm;
-		NumericExpression nprocs = (NumericExpression) argumentValues[1];
-		SymbolicExpression scope = argumentValues[0];
-		Expression scopeExpression = arguments[0];
-		SymbolicExpression procNegOne;
-		SymbolicExpression procArray;
-		SymbolicExpression initArray;
-		SymbolicExpression buf;
-		CIVLType queueType = model.queueType();
-		CIVLType gcommType = typeFactory
-				.systemType(ModelConfiguration.GCOMM_TYPE);
-		SymbolicType dynamicQueueType = queueType.getDynamicType(universe);
-		SymbolicType procType = typeFactory.processSymbolicType();
-		BooleanExpression context = state.getPathCondition();
-
-		procNegOne = modelFactory.processValue(-1);
-		assert dynamicQueueType instanceof SymbolicTupleType;
-		procArray = symbolicUtil
-				.newArray(context, procType, nprocs, procNegOne);
-		initArray = symbolicUtil.newArray(context, universe.booleanType(),
-				nprocs, falseValue);
-		buf = newGcommBuffer(universe, model, symbolicUtil, context, nprocs);
-		gcomm = universe.tuple(
-				(SymbolicTupleType) gcommType.getDynamicType(universe),
-				Arrays.asList(nprocs, procArray, initArray, buf));
-		return primaryExecutor.malloc(source, state, pid, process,
-				scopeExpression, scope, gcommType, gcomm);
-	}
+	// /**
+	// * Creates a new global communicator object and returns a handle to it.
+	// The
+	// * global communicator will have size communication places. The global
+	// * communicator defines a communication "universe" and encompasses message
+	// * buffers and all other components of the state associated to
+	// * message-passing. The new object will be allocated in the given scope.
+	// *
+	// * @param state
+	// * The current state.
+	// * @param pid
+	// * The ID of the process that the function call belongs to.
+	// * @param lhs
+	// * The left hand side expression of the call, which is to be
+	// * assigned with the returned value of the function call. If NULL
+	// * then no assignment happens.
+	// * @param arguments
+	// * The static representation of the arguments of the function
+	// * call.
+	// * @param argumentValues
+	// * The dynamic representation of the arguments of the function
+	// * call.
+	// * @param source
+	// * The source code element to be used for error report.
+	// * @return The new state after executing the function call.
+	// * @throws UnsatisfiablePathConditionException
+	// */
+	// private Evaluation executeGcommCreate(State state, int pid, String
+	// process,
+	//			Expression[] arguments, SymbolicExpression[] argumentValues,
+//			CIVLSource source) throws UnsatisfiablePathConditionException {
+//		SymbolicExpression gcomm;
+//		NumericExpression nprocs = (NumericExpression) argumentValues[1];
+//		SymbolicExpression scope = argumentValues[0];
+//		Expression scopeExpression = arguments[0];
+//		SymbolicExpression procNegOne;
+//		SymbolicExpression procArray;
+//		SymbolicExpression initArray;
+//		SymbolicExpression buf;
+//		CIVLType queueType = model.queueType();
+//		CIVLType gcommType = typeFactory
+//				.systemType(ModelConfiguration.GCOMM_TYPE);
+//		SymbolicType dynamicQueueType = queueType.getDynamicType(universe);
+//		SymbolicType procType = typeFactory.processSymbolicType();
+//		BooleanExpression context = state.getPathCondition();
+//
+//		procNegOne = modelFactory.processValue(-1);
+//		assert dynamicQueueType instanceof SymbolicTupleType;
+//		procArray = symbolicUtil
+//				.newArray(context, procType, nprocs, procNegOne);
+//		initArray = symbolicUtil.newArray(context, universe.booleanType(),
+//				nprocs, falseValue);
+//		buf = newGcommBuffer(universe, model, symbolicUtil, context, nprocs);
+//		gcomm = universe.tuple(
+//				(SymbolicTupleType) gcommType.getDynamicType(universe),
+//				Arrays.asList(nprocs, procArray, initArray, buf));
+//		return primaryExecutor.malloc(source, state, pid, process,
+//				scopeExpression, scope, gcommType, gcomm);
+//	}
 
 	/**
 	 * Helper function for creating an empty buffer
@@ -638,6 +639,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
+	@SuppressWarnings("unused")
 	private Evaluation executeGcommDestroy(State state, int pid,
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)

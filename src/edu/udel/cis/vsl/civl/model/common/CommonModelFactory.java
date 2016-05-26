@@ -182,7 +182,6 @@ import edu.udel.cis.vsl.sarl.IF.object.NumberObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
@@ -1007,18 +1006,19 @@ public class CommonModelFactory implements ModelFactory {
 			Location source, LHSExpression lhs, CIVLType staticElementType,
 			Expression scopeExpression, Expression sizeExpression,
 			int mallocId, Expression guard) {
-		SymbolicType dynamicElementType = staticElementType
-				.getDynamicType(universe);
-		SymbolicArrayType dynamicObjectType = (SymbolicArrayType) universe
-				.canonic(universe.arrayType(dynamicElementType));
-		SymbolicExpression undefinedObject = undefinedValue(dynamicObjectType);
+		// SymbolicType dynamicElementType = staticElementType
+		// .getDynamicType(universe);
+		// SymbolicArrayType dynamicObjectType = (SymbolicArrayType) universe
+		// .canonic(universe.arrayType(dynamicElementType));
+		// SymbolicExpression undefinedObject =
+		// undefinedValue(dynamicObjectType);
 
 		return new CommonMallocStatement(civlSource, null,
 				getLowerScope(Arrays.asList(lhs, scopeExpression,
 						sizeExpression)), source, guard != null ? guard
 						: this.trueExpression(civlSource), mallocId,
-				scopeExpression, staticElementType, dynamicElementType,
-				dynamicObjectType, sizeExpression, undefinedObject, lhs);
+				scopeExpression, staticElementType, null, null, sizeExpression,
+				null, lhs);
 	}
 
 	@Override

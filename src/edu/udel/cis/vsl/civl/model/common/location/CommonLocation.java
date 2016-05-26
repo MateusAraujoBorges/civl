@@ -428,7 +428,7 @@ public class CommonLocation extends CommonSourceable implements Location {
 					return;
 				}
 				target = stmt.target();
-				if (!(atomicCount == 0 && atomCount == 0)
+				if (target != null && !(atomicCount == 0 && atomCount == 0)
 						&& !visited.contains(target.id()))
 					working.push(target);
 			}
