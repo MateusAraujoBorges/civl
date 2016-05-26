@@ -64,7 +64,7 @@ $atomic_f $pthread_pool_t $pthread_pool_create($scope scope, $pthread_gpool_t gp
   for(int i=0; i<nthreads; i++){
     pthread_t* thread=gpool->threads[i];
 
-    if(thread && thread->thr==$self){
+    if(thread && !thread->terminated && thread->thr==$self){
       pool->thread=thread;
       break;
     }
