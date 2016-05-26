@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl;
 
-import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -29,19 +28,24 @@ public class ExperimentalTest {
 
 	@Test
 	public void collective_assert() {
-		assertFalse(ui.run("verify -enablePrintf=false -input_mpi_nprocs=3 -mpiContract",
+		assertFalse(ui.run(
+				"verify -enablePrintf=false -input_mpi_nprocs=3 -mpiContract",
 				filename("contracts/wildcard_coassert_bad.c")));
-		assertFalse(ui.run("verify -enablePrintf=false -input_mpi_nprocs=4 -deadlock=potential -mpiContract",
-				filename("contracts/wildcard_coassert_bad.c")));
-		assertTrue(ui.run("verify -enablePrintf=false -input_mpi_nprocs=4 -deadlock=potential -mpiContract",
-				filename("contracts/wildcard_coassert_barrier.c")));
-		assertTrue(ui.run("verify -enablePrintf=false -input_mpi_nprocs=4 -deadlock=potential -mpiContract",
-				filename("contracts/reduce_coassert.c")));
+		assertFalse(ui
+				.run("verify -enablePrintf=false -input_mpi_nprocs=4 -deadlock=potential -mpiContract",
+						filename("contracts/wildcard_coassert_bad.c")));
+		assertTrue(ui
+				.run("verify -enablePrintf=false -input_mpi_nprocs=4 -deadlock=potential -mpiContract",
+						filename("contracts/wildcard_coassert_barrier.c")));
+		assertTrue(ui
+				.run("verify -enablePrintf=false -input_mpi_nprocs=4 -deadlock=potential -mpiContract",
+						filename("contracts/reduce_coassert.c")));
 	}
 
 	@Test
 	public void seq_contract() {
-		assertTrue(ui.run("verify -enablePrintf=false -showTransitions", filename("sequential/test.c")));
+		assertTrue(ui.run("verify -enablePrintf=false -showTransitions",
+				filename("sequential/test.c")));
 	}
 
 	@Test
@@ -61,7 +65,8 @@ public class ExperimentalTest {
 
 	@Test
 	public void diff1dCompare() {
-		assertTrue(ui.run("compare", "-spec", filename("diff1d_spec.c"), "-impl", filename("diff1d_par.c")));
+		assertTrue(ui.run("compare", "-spec", filename("diff1d_spec.c"),
+				"-impl", filename("diff1d_par.c")));
 	}
 
 	@Test
@@ -71,13 +76,15 @@ public class ExperimentalTest {
 
 	@Test
 	public void mergeSort() {
-		assertTrue(ui.run("verify -showProgram", filename("merge_sort_false-unreach-call.c")));
+		assertTrue(ui.run("verify -showProgram",
+				filename("merge_sort_false-unreach-call.c")));
 	}
 
 	@Test
 	public void moPie() {
-		assertTrue(ui.run("show -showProgram -input_NPROCS=2 -ompNoSimplify -inputTHREAD_MAX=2 ",
-				filename("mpi-omp-pie-calculation.c")));
+		assertTrue(ui
+				.run("show -showProgram -input_NPROCS=2 -ompNoSimplify -inputTHREAD_MAX=2 ",
+						filename("mpi-omp-pie-calculation.c")));
 	}
 
 	@Test
@@ -97,12 +104,12 @@ public class ExperimentalTest {
 
 	@Test
 	public void loopInvariants() {
-		assertTrue(ui.run(VERIFY, filename("loopInvariants.c")));
+		assertTrue(ui.run("verify", filename("loopInvariants.c")));
 	}
 
 	@Test
-	public void memcpyError() {
-		assertTrue(ui.run(VERIFY, filename("matmat_spec.c")));
+	public void simpleCondBuggy() {
+		assertTrue(ui.run("verify", filename("simpleCondBuggy.c")));
 	}
 
 	@AfterClass
