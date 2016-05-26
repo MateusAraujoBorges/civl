@@ -7,7 +7,6 @@
 #include <civlc.cvh>
 #include<comm.cvh>
 #include<seq.cvh>
-
 /* *********************** Types *********************** */
 
 /* A datatype representing a queue of messages.  All message
@@ -105,9 +104,19 @@ $atomic_f $gcomm $gcomm_create($scope scope, int size){
   @ reads \nothing;
   @*/
 $atomic_f int $gcomm_destroy($gcomm gcomm, void * junkMsgs){
-  //TODO update junkMsgs
-  $free(gcomm);
-  return 0;
+  int nprocs = gcomm->nprocs;
+  int numJunks;
+
+  for (int i = 0; i < nprocs; i++) 
+    for (int j = 0; j < nprocs; j++) {
+      $queue queue = gcomm->buf[i][j];
+      
+      if (queue.length > 0)	
+	$seq_append(junkMsgs, queue.messages, queue.length);
+    }
+  $free(gcomm); 
+  numJunks = $seq_length(junkMsgs);
+  return numJunks;
 }
 
 /*@ depends_on \nothing;
