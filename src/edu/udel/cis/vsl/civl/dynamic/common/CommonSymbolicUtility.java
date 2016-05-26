@@ -40,8 +40,8 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.NumberObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
-import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
@@ -529,7 +529,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 			if (object.symbolicObjectKind() == SymbolicObjectKind.NUMBER)
 				return ((IntegerNumber) ((NumberObject) object).getNumber())
-						.intValue(); 
+						.intValue();
 		}
 		throw new CIVLInternalException("Unable to extract concrete int from "
 				+ expression, source);

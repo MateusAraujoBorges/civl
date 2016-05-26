@@ -2793,6 +2793,7 @@ public class CommonEvaluator implements Evaluator {
 			CIVLType elementType = arrayType.elementType();
 			SymbolicExpression elementValue;
 			NumericExpression extent;
+			TypeEvaluation teval;
 
 			eval = initialValueOfType(state, pid, elementType);
 			state = eval.state;
@@ -2800,8 +2801,12 @@ public class CommonEvaluator implements Evaluator {
 			eval = this.evaluate(state, pid, arrayType.extent());
 			state = eval.state;
 			extent = (NumericExpression) eval.value;
+			// using "evaluator.getDynamicType" so that extent info won't be
+			// lost:
+			teval = getDynamicType(state, pid, elementType, null, false);
+			state = teval.state;
 			eval.value = symbolicUtil.newArray(state.getPathCondition(),
-					elementType.getDynamicType(universe), extent, elementValue);
+					teval.type, extent, elementValue);
 			break;
 		}
 		case BUNDLE:

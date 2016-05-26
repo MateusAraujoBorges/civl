@@ -528,7 +528,8 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 		// 1. start position is zero.
 		// 2. Interval between pointers equals to data size.
 		// 3. The least common array capacity equals to data size.
-		if (reasoner.isValid(universe.equals(startPos, zero))) {
+		if (reasoner.isValid(universe.equals(startPos, zero))
+				&& arraySlicesSizes.length == 1) {
 			NumericExpression arraySize = universe.length(array);
 
 			claim = universe.and(universe.equals(dataSize, count),
