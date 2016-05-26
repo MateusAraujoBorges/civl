@@ -348,6 +348,9 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 					pathCondition, pid, null, call, false, atomicLockAction));
 		}
 		for (SymbolicConstant var : symbolicConstants) {
+			// no need to elaborate non-numeric symbolic constants:
+			if (!var.isNumeric())
+				continue;
 			Interval interval = reasoner
 					.intervalApproximation((NumericExpression) var);
 
@@ -373,6 +376,13 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 		}
 		constantBounds = new ConstantBound[bounds.size()];
 		bounds.toArray(constantBounds);
+		// If there is no elaborated constants, return a default unchanged
+		// transition:
+		if (constantBounds.length == 0) {
+			transitions.add(Semantics.newNoopTransition(pathCondition, pid,
+					trueValue, call, true, atomicLockAction));
+			return transitions;
+		}
 		concreteValueClauses = this.generateConcreteValueClauses(reasoner,
 				constantBounds, 0);
 		for (BooleanExpression clause : concreteValueClauses) {
