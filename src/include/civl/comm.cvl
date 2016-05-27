@@ -105,17 +105,19 @@ $atomic_f $gcomm $gcomm_create($scope scope, int size){
   @*/
 $atomic_f int $gcomm_destroy($gcomm gcomm, void * junkMsgs){
   int nprocs = gcomm->nprocs;
-  int numJunks;
+  int numJunks = 0;
 
-  for (int i = 0; i < nprocs; i++) 
-    for (int j = 0; j < nprocs; j++) {
-      $queue queue = gcomm->buf[i][j];
-      
-      if (queue.length > 0)	
-	$seq_append(junkMsgs, queue.messages, queue.length);
-    }
+  if(junkMsgs != NULL) {
+    for (int i = 0; i < nprocs; i++) 
+      for (int j = 0; j < nprocs; j++) {
+	$queue queue = gcomm->buf[i][j];
+	
+	if (queue.length > 0)	
+	  $seq_append(junkMsgs, queue.messages, queue.length);
+      }
+    numJunks = $seq_length(junkMsgs);
+  }
   $free(gcomm); 
-  numJunks = $seq_length(junkMsgs);
   return numJunks;
 }
 

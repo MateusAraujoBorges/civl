@@ -71,8 +71,8 @@ $atomic_f void $barrier_call($barrier barrier) {
   $barrier_exit(barrier);
 }
 
-/*@ requires size >= 0;
-  @ depends_on \nothing;
+
+/*@ depends_on \nothing;
   @ assigns \nothing;
   @ reads \nothing;
   @ */
