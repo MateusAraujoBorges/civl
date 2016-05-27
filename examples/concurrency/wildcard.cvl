@@ -40,5 +40,5 @@ void main(){
   gcomm = $gcomm_create(root, NPROCS);
   $parfor(int i : 0 .. (NPROCS-1))
     process(i);
-  $gcomm_destroy(gcomm, junkMsgs);
+  $gcomm_destroy(gcomm, &junkMsgs);
 }
