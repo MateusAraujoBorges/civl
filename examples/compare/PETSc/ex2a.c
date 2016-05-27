@@ -14,8 +14,7 @@
     system of equations.
   ------------------------------------------------------------------------- */
 
-#include <petscdmda.h>
-#include <petscsnes.h>
+#include "petsc.h"
 
 typedef struct {
    PassiveReal param;          /* test problem parameter */
