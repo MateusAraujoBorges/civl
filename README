@@ -84,14 +84,14 @@ each binary executable is in your PATH when you run
    
    - Z3, http://z3.codeplex.com/SourceControl/latest
 
-2. Install a Java 7 SDK if you have not already.  Go to
+2. Install a Java 8 SDK if you have not already.  Go to
 
   http://www.oracle.com/technetwork/java/javase/downloads/
 
 for the latest from Oracle.  On linux, you can instead use
 the package manager:
 
-  sudo apt-get install openjdk-7-jdk
+  sudo apt-get install openjdk-8-jdk
 
 3. Download the CIVL distribution from http://vsl.cis.udel.edu/civl.
 
