@@ -1365,7 +1365,9 @@ public class ImmutableStateFactory implements StateFactory {
 		state = ImmutableState.newState(state, newProcesses, newScopes, null);
 		// state = this.addReachableMemUnitsFromDyscope(new int[] { sid },
 		// newScopes, state, pid, function.startLocation());
-		state = setLocation(state, pid, function.startLocation());
+		if (!function.isSystemFunction()) {
+			state = setLocation(state, pid, function.startLocation());
+		}
 		return state;
 	}
 

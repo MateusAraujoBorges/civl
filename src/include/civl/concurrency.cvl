@@ -13,7 +13,7 @@
 /* A data type representing a global barrier which must be operated by local
  * barriers.  Completes the declaration of this type in civlc-common.h.
  */
-struct $gbarrier {
+struct _gbarrier {
   int nprocs;
   $proc proc_map[]; // initialized as all $proc_null.
   _Bool in_barrier[]; // initialized as all false.
@@ -25,27 +25,27 @@ struct $gbarrier {
  * a handle of a global barrier.
  * Completes the declaration of this type in civlc-common.h.
  */
-struct $barrier {
+struct _barrier {
   int place;
   $gbarrier gbarrier; // initialized as 0.
 };
 
 /******************* Collective Arrive Checking Records *******************/
 /* Record entry */
-struct $collect_record {
+struct _collect_record {
   $bundle entries;
   _Bool marks[];  //an array stores marks for processes
   int numMarked;  //number of processes already marked this record
 };
 
 /* Global records queue */
-struct $gcollect_checker {
+struct _gcollect_checker {
   int length;
   $collect_record records[];
 };
 
 /* Local handle of the global records queue */
-struct $collect_checker {
+struct _collect_checker {
   $gcollect_checker checker;
 };
 
@@ -77,7 +77,7 @@ $atomic_f void $barrier_call($barrier barrier) {
   @ reads \nothing;
   @ */
 $atomic_f $gbarrier $gbarrier_create($scope scope, int size){
-  $gbarrier gbarrier = ($gbarrier)$malloc(scope, sizeof(struct $gbarrier));
+  $gbarrier gbarrier = ($gbarrier)$malloc(scope, sizeof(struct _gbarrier));
 
   gbarrier->nprocs=size;
   gbarrier->proc_map=($proc[size])$lambda(int i) $proc_null;
@@ -101,7 +101,7 @@ $atomic_f void $gbarrier_destroy($gbarrier gbarrier){
 $atomic_f $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place){
   $assert(gbarrier->proc_map[place]==$proc_null, "the place %d in the global barrier has already been taken.", place);
 
-  $barrier barrier=($barrier)$malloc(scope, sizeof(struct $barrier));
+  $barrier barrier=($barrier)$malloc(scope, sizeof(struct _barrier));
 
   barrier->place=place;
   barrier->gbarrier=gbarrier;
@@ -122,7 +122,7 @@ $atomic_f void $barrier_destroy($barrier barrier){
   @ assigns \nothing;
   @ */
 $atomic_f $gcollect_checker $gcollect_checker_create($scope scope){
-  $gcollect_checker gchecker=($gcollect_checker)$malloc(scope, sizeof(struct $gcollect_checker));
+  $gcollect_checker gchecker=($gcollect_checker)$malloc(scope, sizeof(struct _gcollect_checker));
 
   gchecker->length=0;
   $seq_init(&gchecker->records, 0, NULL);
@@ -145,7 +145,7 @@ $atomic_f int $gcollect_checker_destroy($gcollect_checker checker){
   @ */
 $atomic_f $collect_checker $collect_checker_create($scope scope, 
 						   $gcollect_checker gchecker){
-  $collect_checker checker=($collect_checker)$malloc(scope, sizeof(struct $collect_checker));
+  $collect_checker checker=($collect_checker)$malloc(scope, sizeof(struct _collect_checker));
   
   checker->checker=gchecker;
   return checker;

@@ -2632,8 +2632,25 @@ public class CommonEvaluator implements Evaluator {
 		if (function.functionContract() != null) {
 			Expression guard = function.functionContract().guard();
 
-			if (guard != null)
+			if (guard != null) {
+				if (guard.constantValue() != null)
+					return new Evaluation(state, guard.constantValue());
+
+				int numArgs = expression.arguments().size();
+				SymbolicExpression[] arguments = new SymbolicExpression[numArgs];
+				Evaluation eval;
+
+				for (int i = 0; i < numArgs; i++) {
+					Expression arg = expression.arguments().get(i);
+
+					eval = this.evaluate(state, pid, arg);
+					state = eval.state;
+					arguments[i] = eval.value;
+				}
+				state = stateFactory.pushCallStack(state, pid, function,
+						arguments);
 				return this.evaluate(state, pid, guard);
+			}
 		}
 		return getSystemGuard(expression.getSource(), state, pid,
 				expression.library(), expression.function().name().name(),

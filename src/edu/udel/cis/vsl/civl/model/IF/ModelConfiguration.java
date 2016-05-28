@@ -147,12 +147,12 @@ public final class ModelConfiguration {
 	 * The name of __barrier__ type, which is the object type of the handle
 	 * $barrier.
 	 */
-	public static final String BARRIER_TYPE = "$barrier";
+	public static final String BARRIER_TYPE = "_barrier";
 
 	/**
 	 * the name of $bundle type
 	 */
-	public static final String BUNDLE_TYPE = "$bundle";
+	public static final String BUNDLE_TYPE = "_bundle";
 
 	/**
 	 * the name of $dynamic type
@@ -167,7 +167,7 @@ public final class ModelConfiguration {
 	/**
 	 * the name of message type
 	 */
-	public static final String MESSAGE_TYPE = "$message";
+	public static final String MESSAGE_TYPE = "_message";
 
 	/**
 	 * the name of process reference type
@@ -177,18 +177,18 @@ public final class ModelConfiguration {
 	/**
 	 * the name of queue type
 	 */
-	public static final String QUEUE_TYPE = "$queue";
+	public static final String QUEUE_TYPE = "_queue";
 
 	/**
 	 * The name of $comm type, which is the object type of the handle $comm.
 	 */
-	public static final String COMM_TYPE = "$comm";
+	public static final String COMM_TYPE = "_comm";
 
 	/**
 	 * The name of __gbarrier__ type, which is the object type of the handle
 	 * $gbarrier.
 	 */
-	public static final String GBARRIER_TYPE = "$gbarrier";
+	public static final String GBARRIER_TYPE = "_gbarrier";
 
 	/**
 	 * The name of __gcomm__ type, which is the object type of the handle
@@ -220,17 +220,17 @@ public final class ModelConfiguration {
 	/**
 	 * The <code>__collect_record__</code> type
 	 */
-	public static final String COLLECT_RECORD_TYPE = "$collect_record";
+	public static final String COLLECT_RECORD_TYPE = "_collect_record";
 
 	/**
 	 * The <code>__gcollect_checker__</code> type
 	 */
-	public static final String GCOLLECT_CHECKER_TYPE = "$gcollect_checker";
+	public static final String GCOLLECT_CHECKER_TYPE = "_gcollect_checker";
 
 	/**
 	 * The <code>__collect_checker__</code> type
 	 */
-	public static final String COLLECT_CHECKER_TYPE = "$collect_checker";
+	public static final String COLLECT_CHECKER_TYPE = "_collect_checker";
 
 	/* libraries */
 

@@ -55,7 +55,6 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 		SymbolicExpression[] argumentValues;
 		int numArgs;
 		BooleanExpression guard;
-		String process = "p" + pid;
 
 		numArgs = arguments.length;
 		argumentValues = new SymbolicExpression[numArgs];
@@ -73,16 +72,16 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 			state = eval.state;
 		}
 		switch (function) {
-		case "$comm_dequeue":
-			try {
-				guard = getDequeueGuard(state, pid, process, arguments,
-						argumentValues, source);
-			} catch (UnsatisfiablePathConditionException e) {
-				// the error that caused the unsatifiable path condition should
-				// already have been reported.
-				return new Evaluation(state, universe.falseExpression());
-			}
-			break;
+		// case "$comm_dequeue":
+		// try {
+		// guard = getDequeueGuard(state, pid, process, arguments,
+		// argumentValues, source);
+		// } catch (UnsatisfiablePathConditionException e) {
+		// // the error that caused the unsatifiable path condition should
+		// // already have been reported.
+		// return new Evaluation(state, universe.falseExpression());
+		// }
+		// break;
 		default:
 			guard = universe.trueExpression();
 		}
@@ -114,6 +113,7 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 	 * @return A predicate which is the guard of the function $comm_dequeue().
 	 * @throws UnsatisfiablePathConditionException
 	 */
+	@SuppressWarnings("unused")
 	private BooleanExpression getDequeueGuard(State state, int pid,
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource dequeueSource)

@@ -85,8 +85,8 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 					argumentValues);
 			break;
 		case "$comm_probe":
-			callEval = this.executeCommProbe(state, pid, process, arguments,
-					argumentValues);
+			callEval = this.executeCommProbe(state, pid, process, source,
+					arguments, argumentValues);
 			break;
 		case "$comm_size":
 			callEval = this.executeCommSize(state, pid, process, arguments,
@@ -118,85 +118,91 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 
 	/* ************************** Private Methods ************************** */
 
-//	/**
-//	 * Creates a new local communicator object and returns a handle to it. The
-//	 * new communicator will be affiliated with the specified global
-//	 * communicator. This local communicator handle will be used as an argument
-//	 * in most message-passing functions. The place must be in [0,size-1] and
-//	 * specifies the place in the global communication universe that will be
-//	 * occupied by the local communicator. The local communicator handle may be
-//	 * used by more than one process, but all of those processes will be viewed
-//	 * as occupying the same place. Only one call to $comm_create may occur for
-//	 * each gcomm-place pair. The new object will be allocated in the given
-//	 * scope.
-//	 * 
-//	 * @param state
-//	 *            The current state.
-//	 * @param pid
-//	 *            The ID of the process that the function call belongs to.
-//	 * @param lhs
-//	 *            The left hand side expression of the call, which is to be
-//	 *            assigned with the returned value of the function call. If NULL
-//	 *            then no assignment happens.
-//	 * @param arguments
-//	 *            The static representation of the arguments of the function
-//	 *            call.
-//	 * @param argumentValues
-//	 *            The dynamic representation of the arguments of the function
-//	 *            call.
-//	 * @param source
-//	 *            The source code element to be used for error report.
-//	 * @return The new state after executing the function call.
-//	 * @throws UnsatisfiablePathConditionException
-//	 */
-//	private Evaluation executeCommCreate(State state, int pid, String process,
-//			Expression[] arguments, SymbolicExpression[] argumentValues)
-//			throws UnsatisfiablePathConditionException {
-//		SymbolicExpression scope = argumentValues[0];
-//		Expression scopeExpression = arguments[0];
-//		SymbolicExpression gcommHandle = argumentValues[1];
-//		SymbolicExpression place = argumentValues[2];
-//		SymbolicExpression gcomm;
-//		SymbolicExpression comm;
-//		SymbolicExpression procArray, initArray;
-//		SymbolicExpression myProc;
-//		LinkedList<SymbolicExpression> commComponents = new LinkedList<SymbolicExpression>();
-//		CIVLSource civlsource = arguments[0].getSource();
-//		CIVLType commType = typeFactory
-//				.systemType(ModelConfiguration.COMM_TYPE);
-//		Evaluation eval;
-//
-//		eval = this.evaluator.dereference(civlsource, state, process,
-//				arguments[1], gcommHandle, false);
-//		state = eval.state;
-//		gcomm = eval.value;
-//		procArray = universe.tupleRead(gcomm, oneObject);
-//		initArray = universe.tupleRead(gcomm, twoObject);
-//		myProc = modelFactory.processValue(pid);
-//		// TODO report an error if the place has already been taken by other
-//		// processes.
-//		// assert universe.arrayRead(initArray, (NumericExpression)
-//		// place).equals(
-//		// falseValue);
-//		// TODO report an error if the place exceeds the size of the
-//		// communicator
-//		procArray = universe.arrayWrite(procArray, (NumericExpression) place,
-//				myProc);
-//		initArray = universe.arrayWrite(initArray, (NumericExpression) place,
-//				trueValue);
-//		gcomm = universe.tupleWrite(gcomm, oneObject, procArray);
-//		gcomm = universe.tupleWrite(gcomm, twoObject, initArray);
-//		state = this.primaryExecutor.assign(civlsource, state, process,
-//				gcommHandle, gcomm);
-//		// builds comm
-//		commComponents.add(place);
-//		commComponents.add(gcommHandle);
-//		comm = universe.tuple(
-//				(SymbolicTupleType) commType.getDynamicType(universe),
-//				commComponents);
-//		return this.primaryExecutor.malloc(civlsource, state, pid, process,
-//				scopeExpression, scope, commType, comm);
-//	}
+	// /**
+	// * Creates a new local communicator object and returns a handle to it. The
+	// * new communicator will be affiliated with the specified global
+	// * communicator. This local communicator handle will be used as an
+	// argument
+	// * in most message-passing functions. The place must be in [0,size-1] and
+	// * specifies the place in the global communication universe that will be
+	// * occupied by the local communicator. The local communicator handle may
+	// be
+	// * used by more than one process, but all of those processes will be
+	// viewed
+	// * as occupying the same place. Only one call to $comm_create may occur
+	// for
+	// * each gcomm-place pair. The new object will be allocated in the given
+	// * scope.
+	// *
+	// * @param state
+	// * The current state.
+	// * @param pid
+	// * The ID of the process that the function call belongs to.
+	// * @param lhs
+	// * The left hand side expression of the call, which is to be
+	// * assigned with the returned value of the function call. If NULL
+	// * then no assignment happens.
+	// * @param arguments
+	// * The static representation of the arguments of the function
+	// * call.
+	// * @param argumentValues
+	// * The dynamic representation of the arguments of the function
+	// * call.
+	// * @param source
+	// * The source code element to be used for error report.
+	// * @return The new state after executing the function call.
+	// * @throws UnsatisfiablePathConditionException
+	// */
+	// private Evaluation executeCommCreate(State state, int pid, String
+	// process,
+	// Expression[] arguments, SymbolicExpression[] argumentValues)
+	// throws UnsatisfiablePathConditionException {
+	// SymbolicExpression scope = argumentValues[0];
+	// Expression scopeExpression = arguments[0];
+	// SymbolicExpression gcommHandle = argumentValues[1];
+	// SymbolicExpression place = argumentValues[2];
+	// SymbolicExpression gcomm;
+	// SymbolicExpression comm;
+	// SymbolicExpression procArray, initArray;
+	// SymbolicExpression myProc;
+	// LinkedList<SymbolicExpression> commComponents = new
+	// LinkedList<SymbolicExpression>();
+	// CIVLSource civlsource = arguments[0].getSource();
+	// CIVLType commType = typeFactory
+	// .systemType(ModelConfiguration.COMM_TYPE);
+	// Evaluation eval;
+	//
+	// eval = this.evaluator.dereference(civlsource, state, process,
+	// arguments[1], gcommHandle, false);
+	// state = eval.state;
+	// gcomm = eval.value;
+	// procArray = universe.tupleRead(gcomm, oneObject);
+	// initArray = universe.tupleRead(gcomm, twoObject);
+	// myProc = modelFactory.processValue(pid);
+	// // TODO report an error if the place has already been taken by other
+	// // processes.
+	// // assert universe.arrayRead(initArray, (NumericExpression)
+	// // place).equals(
+	// // falseValue);
+	// // TODO report an error if the place exceeds the size of the
+	// // communicator
+	// procArray = universe.arrayWrite(procArray, (NumericExpression) place,
+	// myProc);
+	// initArray = universe.arrayWrite(initArray, (NumericExpression) place,
+	// trueValue);
+	// gcomm = universe.tupleWrite(gcomm, oneObject, procArray);
+	// gcomm = universe.tupleWrite(gcomm, twoObject, initArray);
+	// state = this.primaryExecutor.assign(civlsource, state, process,
+	// gcommHandle, gcomm);
+	// // builds comm
+	// commComponents.add(place);
+	// commComponents.add(gcommHandle);
+	// comm = universe.tuple(
+	// (SymbolicTupleType) commType.getDynamicType(universe),
+	// commComponents);
+	// return this.primaryExecutor.malloc(civlsource, state, pid, process,
+	// scopeExpression, scope, commType, comm);
+	// }
 
 	/**
 	 * Checks if a $gcomm or $comm object is defined, i.e., it doesn't point to
@@ -376,7 +382,8 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private Evaluation executeCommProbe(State state, int pid, String process,
-			Expression[] arguments, SymbolicExpression[] argumentValues)
+			CIVLSource civlsource, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression commHandle = argumentValues[0];
 		SymbolicExpression comm;
@@ -388,8 +395,6 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression queue, queueLength, messages;
 		int msgIdx = -1;
 		boolean isFind = false;
-		CIVLSource civlsource = state.getProcessState(pid).getLocation()
-				.getSource();
 		Evaluation eval;
 
 		eval = evaluator.dereference(civlsource, state, process, arguments[0],
@@ -552,36 +557,36 @@ public class LibcommExecutor extends BaseLibraryExecutor implements
 	// */
 	// private Evaluation executeGcommCreate(State state, int pid, String
 	// process,
-	//			Expression[] arguments, SymbolicExpression[] argumentValues,
-//			CIVLSource source) throws UnsatisfiablePathConditionException {
-//		SymbolicExpression gcomm;
-//		NumericExpression nprocs = (NumericExpression) argumentValues[1];
-//		SymbolicExpression scope = argumentValues[0];
-//		Expression scopeExpression = arguments[0];
-//		SymbolicExpression procNegOne;
-//		SymbolicExpression procArray;
-//		SymbolicExpression initArray;
-//		SymbolicExpression buf;
-//		CIVLType queueType = model.queueType();
-//		CIVLType gcommType = typeFactory
-//				.systemType(ModelConfiguration.GCOMM_TYPE);
-//		SymbolicType dynamicQueueType = queueType.getDynamicType(universe);
-//		SymbolicType procType = typeFactory.processSymbolicType();
-//		BooleanExpression context = state.getPathCondition();
-//
-//		procNegOne = modelFactory.processValue(-1);
-//		assert dynamicQueueType instanceof SymbolicTupleType;
-//		procArray = symbolicUtil
-//				.newArray(context, procType, nprocs, procNegOne);
-//		initArray = symbolicUtil.newArray(context, universe.booleanType(),
-//				nprocs, falseValue);
-//		buf = newGcommBuffer(universe, model, symbolicUtil, context, nprocs);
-//		gcomm = universe.tuple(
-//				(SymbolicTupleType) gcommType.getDynamicType(universe),
-//				Arrays.asList(nprocs, procArray, initArray, buf));
-//		return primaryExecutor.malloc(source, state, pid, process,
-//				scopeExpression, scope, gcommType, gcomm);
-//	}
+	// Expression[] arguments, SymbolicExpression[] argumentValues,
+	// CIVLSource source) throws UnsatisfiablePathConditionException {
+	// SymbolicExpression gcomm;
+	// NumericExpression nprocs = (NumericExpression) argumentValues[1];
+	// SymbolicExpression scope = argumentValues[0];
+	// Expression scopeExpression = arguments[0];
+	// SymbolicExpression procNegOne;
+	// SymbolicExpression procArray;
+	// SymbolicExpression initArray;
+	// SymbolicExpression buf;
+	// CIVLType queueType = model.queueType();
+	// CIVLType gcommType = typeFactory
+	// .systemType(ModelConfiguration.GCOMM_TYPE);
+	// SymbolicType dynamicQueueType = queueType.getDynamicType(universe);
+	// SymbolicType procType = typeFactory.processSymbolicType();
+	// BooleanExpression context = state.getPathCondition();
+	//
+	// procNegOne = modelFactory.processValue(-1);
+	// assert dynamicQueueType instanceof SymbolicTupleType;
+	// procArray = symbolicUtil
+	// .newArray(context, procType, nprocs, procNegOne);
+	// initArray = symbolicUtil.newArray(context, universe.booleanType(),
+	// nprocs, falseValue);
+	// buf = newGcommBuffer(universe, model, symbolicUtil, context, nprocs);
+	// gcomm = universe.tuple(
+	// (SymbolicTupleType) gcommType.getDynamicType(universe),
+	// Arrays.asList(nprocs, procArray, initArray, buf));
+	// return primaryExecutor.malloc(source, state, pid, process,
+	// scopeExpression, scope, gcommType, gcomm);
+	// }
 
 	/**
 	 * Helper function for creating an empty buffer

@@ -13,7 +13,7 @@
  * data is encapsulated inside this value; no external allocation
  * is used.  Completes the declaration of this structure type in 
  * civlc-common.h */ 
-struct $queue {
+struct _queue {
   int length;
   $message messages[];
 };
@@ -22,7 +22,7 @@ struct $queue {
 /* A global communicator datatype which must be operated by local communicators.
  * This communicator type has the same meaning as the communicator type
  * in MPI.  Completes the declaration of this type in civlc-common.h */
-struct _gcomm_ {
+struct _gcomm {
   int nprocs; // number of processes
   $proc procs[];
   _Bool isInit[]; // if the local comm has been initiated
@@ -35,7 +35,7 @@ struct _gcomm_ {
  * a set of processes which have ranks in common.
  * Completes the declaration of this type in civlc-common.h.
  */
-struct _comm_ {
+struct _comm {
   int place;
   $gcomm gcomm;
 };
@@ -87,7 +87,7 @@ void $message_unpack($message message, void *buf, int size) {
   @ reads \nothing;
   @*/
 $atomic_f $gcomm $gcomm_create($scope scope, int size){
-  $gcomm gcomm=($gcomm)$malloc(scope, sizeof(struct _gcomm_));
+  $gcomm gcomm=($gcomm)$malloc(scope, sizeof(struct _gcomm));
   $queue empty;
   
   empty.length=0;
@@ -128,7 +128,7 @@ $atomic_f int $gcomm_destroy($gcomm gcomm, void * junkMsgs){
 $atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place){
   $assert(!gcomm->isInit[place], "the place %d is already occupied in the global communicator!", place);
 
-  $comm comm=($comm)$malloc(scope, sizeof(struct _comm_));
+  $comm comm=($comm)$malloc(scope, sizeof(struct _comm));
 
   gcomm->procs[place]=$self;
   gcomm->isInit[place]=$true;
@@ -147,8 +147,15 @@ $atomic_f void $comm_destroy($comm comm){
 
 /* Returns the place of the local communicator.  This is the same as the
  * place argument used to create the local communicator. */
-int $comm_place($comm comm){
+$atomic_f int $comm_place($comm comm){
  return comm->place;
+}
+
+/*@ pure;
+  @ depends_on \nothing;
+  @*/
+$atomic_f int $comm_size($comm comm){
+ return comm->gcomm->nprocs;
 }
 
 #endif
