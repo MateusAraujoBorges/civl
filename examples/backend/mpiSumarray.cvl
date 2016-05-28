@@ -77,7 +77,7 @@ $system[civlc] void* $malloc($scope s, int size);
   @*/
 $system[civlc] void $free(void* p);
 //======================= bundle.cvh =======================
-typedef struct $bundle $bundle;
+typedef struct _bundle $bundle;
 /*@ pure;
   @*/
 $system[bundle] $bundle $bundle_pack(void* ptr, int size);
