@@ -2,7 +2,6 @@ package edu.udel.cis.vsl.civl.transform.common;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
@@ -19,7 +18,6 @@ import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonContractNode;
 import edu.udel.cis.vsl.abc.ast.node.common.expression.CommonQuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.IntegerType;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
-import edu.udel.cis.vsl.abc.token.IF.Macro;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
@@ -46,15 +44,14 @@ public class IntDivWorker extends BaseWorker {
 	 * influenced by this transformer.
 	 */
 	private boolean quantified = false;
-	private Map<String, Macro> macroMap = null;
 
 	/* *******************static constants************************ */
 	// TODO add java doc for every constant field
 	private static final String INT_DIV = "$int_div";
 	private static final String INT_MOD = "$int_mod";
 	private static final String INT_DIV_SOURCE_FILE = "int_div.cvl";
-	private static final String INT_DIV_NO_CHECKING_SOURCE_FILE = "int_div_no_checking.cvl";
-	private static final String INT_DIV_NO_CHECKING = "_NO_CHECK_DIVISION_BY_ZERO";
+//	private static final String INT_DIV_NO_CHECKING_SOURCE_FILE = "int_div_no_checking.cvl";
+//	private static final String INT_DIV_NO_CHECKING = "_NO_CHECK_DIVISION_BY_ZERO";
 
 	public IntDivWorker(ASTFactory astFactory) {
 		super(IntDivisionTransformer.LONG_NAME, astFactory);
@@ -65,11 +62,9 @@ public class IntDivWorker extends BaseWorker {
 	public AST transform(AST unit) throws SyntaxException {
 		SequenceNode<BlockItemNode> root = unit.getRootNode();
 		AST newAst;
-
 		OrdinaryEntity divEntity = unit.getInternalOrExternalEntity(INT_DIV);
 		OrdinaryEntity modEntity = unit.getInternalOrExternalEntity(INT_MOD);
 		
-		macroMap = unit.getMacroMap();
 		if (divEntity != null || modEntity != null) {
 			return unit;
 		}
@@ -172,11 +167,7 @@ public class IntDivWorker extends BaseWorker {
 	private void linkIntDivLibrary(SequenceNode<BlockItemNode> ast) throws SyntaxException {
 		AST intDivLib;
 		
-		if(macroMap != null && macroMap.containsKey(INT_DIV_NO_CHECKING)){
-			intDivLib = this.parseSystemLibrary(INT_DIV_NO_CHECKING_SOURCE_FILE);
-		}else{
-			intDivLib = this.parseSystemLibrary(INT_DIV_SOURCE_FILE);
-		}
+		intDivLib = this.parseSystemLibrary(INT_DIV_SOURCE_FILE);
 		
 		SequenceNode<BlockItemNode> root = intDivLib.getRootNode();
 		List<BlockItemNode> funcDefinitions = new ArrayList<>();

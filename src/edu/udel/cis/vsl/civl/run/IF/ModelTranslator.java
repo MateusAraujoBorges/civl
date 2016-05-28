@@ -32,7 +32,6 @@ import edu.udel.cis.vsl.abc.front.IF.ParseException;
 import edu.udel.cis.vsl.abc.front.IF.ParseTree;
 import edu.udel.cis.vsl.abc.front.IF.Preprocessor;
 import edu.udel.cis.vsl.abc.front.IF.PreprocessorException;
-import edu.udel.cis.vsl.abc.front.c.preproc.PreprocessorTokenSource;
 import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
@@ -585,7 +584,7 @@ public class ModelTranslator {
 	 */
 	private void applyTranslationTransformers(Program program)
 			throws SyntaxException {
-		Map<String, Macro> macroMap = program.getAST().getMacroMap();
+		//Map<String, Macro> macroMap = program.getAST().getMacroMap();
 		Set<String> headers = new HashSet<>();
 		boolean isC = userFileName.endsWith(".c")
 				|| userFileName.endsWith(".i");
@@ -682,7 +681,7 @@ public class ModelTranslator {
 			if (config.debugOrVerbose())
 				program.prettyPrint(out);
 		}
-		program.getAST().addMacroMap(macroMap);
+		//program.getAST().addMacroMap(macroMap);
 		program.apply(transformerFactory.getIntDivTransformer());
 	}
 
@@ -799,9 +798,6 @@ public class ModelTranslator {
 			out.println(totalTime
 					+ "ms:\t\tconverting ANTLR tree to AST for TU "
 					+ tokenSource);
-		}
-		if(tokenSource instanceof PreprocessorTokenSource){
-			ast.addMacroMap(((PreprocessorTokenSource)tokenSource).getMacroMap());
 		}
 		return ast;
 	}
