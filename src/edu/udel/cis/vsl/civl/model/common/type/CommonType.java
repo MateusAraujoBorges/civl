@@ -111,15 +111,15 @@ public abstract class CommonType implements CIVLType {
 		return dynamicTypeIndex;
 	}
 
-	@Override
-	public boolean isHandleType() {
-		return false;
-	}
+	// @Override
+	// public boolean isHandleType() {
+	// return false;
+	// }
 
-	@Override
-	public boolean isHandleObjectType() {
-		return false;
-	}
+	// @Override
+	// public boolean isHandleObjectType() {
+	// return false;
+	// }
 
 	/**
 	 * 

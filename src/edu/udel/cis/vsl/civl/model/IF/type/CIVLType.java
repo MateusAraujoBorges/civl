@@ -153,17 +153,17 @@ public interface CIVLType {
 	 */
 	boolean isCharType();
 
-	/**
-	 * 
-	 * @return true iff this type is a handle type (e.g., $gcomm, $heap, etc)
-	 */
-	boolean isHandleType();
+	// /**
+	// *
+	// * @return true iff this type is a handle type (e.g., $gcomm, $heap, etc)
+	// */
+	// boolean isHandleType();
 
-	/**
-	 * 
-	 * @return true iff this type is the object type of some handle type.
-	 */
-	boolean isHandleObjectType();
+	// /**
+	// *
+	// * @return true iff this type is the object type of some handle type.
+	// */
+	// boolean isHandleObjectType();
 
 	/**
 	 * 

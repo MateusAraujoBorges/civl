@@ -67,8 +67,8 @@ public class CommonVariableExpression extends CommonExpression implements
 
 	@Override
 	public void purelyLocalAnalysisOfVariables(Scope funcScope) {
-		if (this.variable.type().isPointerType()
-				|| this.variable.type().isHandleType())
+		if (this.variable.type().isPointerType())
+			// || this.variable.type().isHandleType())
 			this.setPurelyLocal(false);
 		else if (funcScope.isDescendantOf(this.variable.scope()))
 			this.setPurelyLocal(false);

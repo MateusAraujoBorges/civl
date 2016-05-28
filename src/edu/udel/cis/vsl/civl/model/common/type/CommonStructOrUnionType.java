@@ -175,10 +175,10 @@ public class CommonStructOrUnionType extends CommonType implements
 		return !isStruct;
 	}
 
-	@Override
-	public boolean isHandleObjectType() {
-		return this.isHandleObject;
-	}
+	// @Override
+	// public boolean isHandleObjectType() {
+	// return this.isHandleObject;
+	// }
 
 	@Override
 	public void setHandleObjectType(boolean value) {

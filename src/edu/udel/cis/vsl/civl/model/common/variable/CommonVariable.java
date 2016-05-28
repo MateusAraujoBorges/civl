@@ -201,7 +201,7 @@ public class CommonVariable extends CommonSourceable implements Variable {
 		if (this.isConst() || this.isInput())
 			this.purelyLocal = true;
 		else {
-			if (this.type.isPointerType() || this.type.isHandleType())
+			if (this.type.isPointerType())// || this.type.isHandleType())
 				this.purelyLocal = false;
 			else
 				this.purelyLocal = pl;
@@ -251,7 +251,8 @@ public class CommonVariable extends CommonSourceable implements Variable {
 
 	@Override
 	public boolean hasPointerRef() {
-		return !this.type.isHandleType() && this.hasPointerRef;
+		return // !this.type.isHandleType() &&
+		this.hasPointerRef;
 	}
 
 	@Override

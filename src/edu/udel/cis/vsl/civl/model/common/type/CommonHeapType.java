@@ -87,10 +87,10 @@ public class CommonHeapType extends CommonType implements CIVLHeapType {
 		return name;
 	}
 
-	@Override
-	public boolean isHandleObjectType() {
-		return true;
-	}
+	// @Override
+	// public boolean isHandleObjectType() {
+	// return true;
+	// }
 
 	@Override
 	public TypeKind typeKind() {
