@@ -72,12 +72,15 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * 
  */
 public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecutor {
+	private LibmpiEvaluator libEvaluator;
 
 	public LibmpiExecutor(String name, Executor primaryExecutor, ModelFactory modelFactory,
 			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
 			LibraryExecutorLoader libExecutorLoader, LibraryEvaluatorLoader libEvaluatorLoader) {
 		super(name, primaryExecutor, modelFactory, symbolicUtil, symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
+		this.libEvaluator = new LibmpiEvaluator(name, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer,
+				civlConfig, libEvaluatorLoader);
 	}
 
 	/**
@@ -131,8 +134,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 		case "$mpi_get_status":
 			callEval = executeGetStatus(state, pid);
 			break;
-		case "$mpi_assert_consistent_basetype":
-			callEval = executeAssertConsistentbaseType(state, pid, process, arguments, argumentValues, source);
+		case "$mpi_check_buffer":
+			callEval = executeMpiCheckBuffer(state, pid, process, arguments, argumentValues, source);
 			break;
 		case "$mpi_new_gcomm":
 			callEval = executeNewGcomm(state, pid, process, arguments, argumentValues, source);
@@ -267,17 +270,24 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeAssertConsistentbaseType(State state, int pid, String process, Expression[] arguments,
+	private Evaluation executeMpiCheckBuffer(State state, int pid, String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
 		CIVLSource ptrSource = arguments[0].getSource();
 		SymbolicExpression pointer = argumentValues[0];
-		NumericExpression assertedType = (NumericExpression) argumentValues[1];
+		NumericExpression assertedType = (NumericExpression) argumentValues[2], primitiveTypeCount, count;
 		CIVLType realType;
 		SymbolicType realSymType, assertedSymType;
 		Reasoner reasoner;
 		IntegerNumber assertedTypeEnum;
 		Pair<BooleanExpression, ResultType> checkPointer;
+		Pair<CIVLPrimitiveType, NumericExpression> mpiType2Civl;
+		Evaluation eval;
 
+		count = (NumericExpression) argumentValues[1];
+		reasoner = universe.reasoner(state.getPathCondition());
+		if (reasoner.isValid(universe.equals(count, zero)) || pointer.isNull()) {
+			return new Evaluation(state, null);
+		}
 		if (symbolicUtil.isNullPointer(pointer))
 			return new Evaluation(state, null);
 		// this assertion doesn't need recovery:
@@ -294,11 +304,12 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 					ErrorKind.POINTER, "attempt to read/write a invalid pointer type variable");
 			// return state;
 		}
-		reasoner = universe.reasoner(state.getPathCondition());
 		realType = symbolicAnalyzer.getArrayBaseType(state, ptrSource, pointer);
 		realSymType = realType.getDynamicType(universe);
 		assertedTypeEnum = (IntegerNumber) reasoner.extractNumber(assertedType);
-		assertedSymType = this.mpiTypeToCIVLType(assertedTypeEnum.intValue(), source).getDynamicType(universe);
+		mpiType2Civl = mpiTypeToCIVLType(assertedTypeEnum.intValue(), source);
+		assertedSymType = mpiType2Civl.left.getDynamicType(universe);
+		primitiveTypeCount = mpiType2Civl.right;
 		// assertion doesn't need recovery:
 		if (!assertedSymType.equals(realSymType)) {
 			errorLogger.logSimpleError(source, state, process, this.symbolicAnalyzer.stateInformation(state),
@@ -307,6 +318,20 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 							+ " of the object pointed by the input pointer argument [" + ptrSource.getLocation() + ":"
 							+ arguments[0] + "] of"
 							+ " MPI routines is not consistent with the specified MPI_Datatype.");
+		}
+		eval = evaluator.dereference(source, state, process, arguments[0], pointer, false);
+		state = eval.state;
+		count = universe.multiply(primitiveTypeCount, count);
+		// TODO: here needs be improved:
+		if (reasoner.isValid(universe.equals(count, one)))
+			return new Evaluation(state, null);
+		try {
+			libEvaluator.getDataFrom(state, process, arguments[0], pointer,
+					universe.multiply(primitiveTypeCount, count), false, ptrSource);
+		} catch (UnsatisfiablePathConditionException e) {
+			errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+					ErrorKind.MPI_ERROR, "The type of the object pointed by " + arguments[0]
+							+ " is inconsistent with the specified MPI datatype signiture.");
 		}
 		return new Evaluation(state, null);
 	}
@@ -555,29 +580,43 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements LibraryExecut
 		return new Pair<>(tmpState, false);
 	}
 
-	private CIVLPrimitiveType mpiTypeToCIVLType(int MPI_TYPE, CIVLSource source) {
+	private Pair<CIVLPrimitiveType, NumericExpression> mpiTypeToCIVLType(int MPI_TYPE, CIVLSource source) {
+		CIVLPrimitiveType primitiveType;
+		NumericExpression count = one;
+
 		switch (MPI_TYPE) {
 		case 0: // char
-			return typeFactory.charType();
+			primitiveType = typeFactory.charType();
+			break;
 		case 1: // character
-			return typeFactory.charType();
+			primitiveType = typeFactory.charType();
+			break;
 		case 8: // int
-			return typeFactory.integerType();
+			primitiveType = typeFactory.integerType();
+			break;
 		case 20: // long
-			return typeFactory.integerType();
+			primitiveType = typeFactory.integerType();
+			break;
 		case 22: // float
-			return typeFactory.realType();
+			primitiveType = typeFactory.realType();
+			break;
 		case 23: // double
-			return typeFactory.realType();
+			primitiveType = typeFactory.realType();
+			break;
 		case 24: // long double
-			return typeFactory.realType();
+			primitiveType = typeFactory.realType();
+			break;
 		case 27: // long long
-			return typeFactory.integerType();
+			primitiveType = typeFactory.integerType();
+			break;
 		case 39: // 2int
-			return typeFactory.integerType();
+			primitiveType = typeFactory.integerType();
+			count = two;
+			break;
 		default:
 			throw new CIVLUnimplementedFeatureException("CIVL doesn't have such a CIVLPrimitiveType", source);
 		}
+		return new Pair<>(primitiveType, count);
 		/*
 		 * MPI_CHAR, MPI_CHARACTER, MPI_SIGNED_CHAR, MPI_UNSIGNED_CHAR,
 		 * MPI_BYTE, MPI_WCHAR, MPI_SHORT, MPI_UNSIGNED_SHORT, MPI_INT,

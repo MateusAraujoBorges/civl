@@ -286,7 +286,7 @@ MPI_Comm $mpi_comm_create($scope, $mpi_gcomm, int);
 void $mpi_comm_destroy(MPI_Comm, $mpi_state);
 int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system[mpi] void $mpi_assert_consistent_basetype(void* buf, MPI_Datatype datatype);
+$system[mpi] void $mpi_check_buffer(void* buf, int count, MPI_Datatype datatype);
 //========================= mpi.cvl ========================
 struct MPI_Comm{
     $comm p2p;
@@ -594,7 +594,6 @@ MPI_Comm $mpi_comm_create($scope, $mpi_gcomm, int);
 void $mpi_comm_destroy(MPI_Comm, $mpi_state);
 int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system[mpi] void $mpi_assert_consistent_basetype(void* buf, MPI_Datatype datatype);
 //========================= seq.cvh ========================
 $system[seq] void $seq_init(void* array, int count, void* value);
 //====================== civl-mpi.cvl ======================
@@ -1068,14 +1067,13 @@ void _mpi_process(int _mpi_rank)
   int MPI_Send(void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
   {
     $assert(_mpi_state == _MPI_INIT, "MPI_Send() cannot be invoked without MPI_Init() being called before.\n");
-    $mpi_assert_consistent_basetype(buf, datatype);
+    $mpi_check_buffer(buf, count, datatype);
     int $sef$2 = $mpi_send(buf, count, datatype, dest, tag, comm);
     return $sef$2;
   }
   int MPI_Recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status* status)
   {
     $assert(_mpi_state == _MPI_INIT, "MPI_Recv() cannot be invoked without MPI_Init() being called before.\n");
-    $mpi_assert_consistent_basetype(buf, datatype);
     int $sef$3 = $mpi_recv(buf, count, datatype, source, tag, comm, status);
     return $sef$3;
   }
