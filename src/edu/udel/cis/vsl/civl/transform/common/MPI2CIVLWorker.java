@@ -87,13 +87,13 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 * The name of the identifier of the CMPI_Gcomm variable in the final CIVL
 	 * program.
 	 */
-	private final static String GCOMM_WORLD = "_mpi_gcomm";
+	private final static String GCOMM_WORLD = MPI_PREFIX + "gcomm";
 
 	/**
 	 * The name of the identifier of the CMPI_Gcomm sequence variable in the
 	 * final CIVL-MPI program
 	 */
-	private final static String GCOMMS = "_mpi_gcomms";
+	private final static String GCOMMS = MPI_PREFIX + "gcomms";
 
 	/**
 	 * The name of the function call for initializing a sequence.
@@ -166,7 +166,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 * The name of the variable representing the status of an MPI process, which
 	 * is modified by MPI_Init() and MPI_Finalized().
 	 */
-	private final static String MPI_STATE_VAR = "_mpi_state";
+	private final static String MPI_STATE_VAR = MPI_PREFIX + "state";
 
 	// /**
 	// * The name of the type of variables representing the status of an MPI
@@ -177,25 +177,27 @@ public class MPI2CIVLWorker extends BaseWorker {
 	/**
 	 * The name of the MPI procedure in the final CIVL-C program.
 	 */
-	private final static String MPI_PROCESS = "_mpi_process";
+	private final static String MPI_PROCESS = MPI_PREFIX + "process";
 
 	/**
 	 * The name of the input variable denoting the number of MPI processes in
 	 * the final CIVL-C program.
 	 */
-	private final static String NPROCS = "_mpi_nprocs";
+	private final static String NPROCS = MPI_PREFIX + "nprocs";
 
 	/**
 	 * The name of the input variable denoting the upper bound of the number of
 	 * MPI processes in the final CIVL-C program.
 	 */
-	private final static String NPROCS_UPPER_BOUND = "_mpi_nprocs_hi";
+	private final static String NPROCS_UPPER_BOUND = MPI_PREFIX + "nprocs_hi";
 
 	/**
 	 * The name of the input variable denoting the lower bound of the number of
 	 * MPI processes in the final CIVL-C program.
 	 */
-	private final static String NPROCS_LOWER_BOUND = "_mpi_nprocs_lo";
+	private final static String NPROCS_LOWER_BOUND = MPI_PREFIX + "nprocs_lo";
+
+	private final static String ROOT = MPI_PREFIX + "root";
 
 	/* ****************************** Constructor ************************** */
 	/**
@@ -327,15 +329,15 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 */
 	private VariableDeclarationNode gcommDeclaration() {
 		TypeNode gcommType;
-		ExpressionNode gcommCreate;
+		// ExpressionNode gcommCreate;
 
 		gcommType = nodeFactory.newTypedefNameNode(this.identifier(GCOMM_TYPE),
 				null);
-		gcommCreate = nodeFactory.newFunctionCallNode(this.newSource(
-				"function call " + GCOMM_CREATE, CivlcTokenConstant.CALL), this
-				.identifierExpression(GCOMM_CREATE), Arrays.asList(
-				this.hereNode(), this.identifierExpression(NPROCS)), null);
-		return this.variableDeclaration(GCOMM_WORLD, gcommType, gcommCreate);
+		// gcommCreate = nodeFactory.newFunctionCallNode(this.newSource(
+		// "function call " + GCOMM_CREATE, CivlcTokenConstant.CALL), this
+		// .identifierExpression(GCOMM_CREATE), Arrays.asList(
+		// this.hereNode(), this.identifierExpression(NPROCS)), null);
+		return this.variableDeclaration(GCOMM_WORLD, gcommType);
 	}
 
 	// TODO: doc
@@ -347,7 +349,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 				null);
 		gcommArrayType = nodeFactory.newArrayTypeNode((Source) null, gcommType,
 				null);
-		node = this.variableDeclaration(GCOMMS, gcommArrayType, null);
+		node = this.variableDeclaration(GCOMMS, gcommArrayType);
 		return node;
 	}
 
@@ -431,7 +433,19 @@ public class MPI2CIVLWorker extends BaseWorker {
 				"$parfor MPI_Process", CivlcTokenConstant.PARFOR), true,
 				iterator, domain, nodeFactory
 						.newExpressionStatementNode(callMPIprocess), null);
-		// items.add(this.elaborateNPROCS());
+
+		ExpressionNode gcommCreate = nodeFactory.newFunctionCallNode(this
+				.newSource("function call " + GCOMM_CREATE,
+						CivlcTokenConstant.CALL), this
+				.identifierExpression(GCOMM_CREATE), Arrays.asList(
+				this.identifierExpression(ROOT),
+				this.identifierExpression(NPROCS)), null),
+
+		assignGcomm = nodeFactory.newOperatorNode(gcommCreate.getSource(),
+				Operator.ASSIGN, Arrays.asList(
+						this.identifierExpression(GCOMM_WORLD), gcommCreate));
+		items.add(nodeFactory.newExpressionStatementNode(assignGcomm));
+		items.add(this.gcommsSeqInitCalling());
 		items.add(parforMPIproc);
 		// destroying GCOMM_WROLD;
 		items.add(gcommDestroy);
@@ -935,6 +949,9 @@ public class MPI2CIVLWorker extends BaseWorker {
 				.getVariabledeclaration(root, NPROCS_UPPER_BOUND);
 		VariableDeclarationNode nprocsLowerBoundVar = this
 				.getVariabledeclaration(root, NPROCS_LOWER_BOUND);
+		VariableDeclarationNode rootVar = this.variableDeclaration(ROOT,
+				this.typeNode(this.astFactory.getTypeFactory().scopeType()),
+				this.nodeFactory.newHereNode(this.newSource("root", 0)));
 
 		assert this.astFactory == ast.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();
@@ -982,6 +999,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 			nprocsVar.parent().removeChild(nprocsVar.childIndex());
 		}
 		// declaring $gcomm GCOMM_WORLD = $gcomm_create($here, NPROCS);
+
 		gcommWorld = this.gcommDeclaration();
 		result = this.mpiProcess(root);
 		mpiProcess = result.first;
@@ -1012,9 +1030,9 @@ public class MPI2CIVLWorker extends BaseWorker {
 			externalList.add(nprocsUpperBoundVar);
 		if (nprocsAssumption != null)
 			externalList.add(nprocsAssumption);
+		externalList.add(rootVar);
 		externalList.add(gcommWorld);
 		externalList.add(this.gcommsSeqDeclaration());
-		externalList.add(this.gcommsSeqInitCalling());
 		externalList.add(mpiProcess);
 		externalList.add(mainFunction);
 		newRootNode = nodeFactory.newSequenceNode(null, "TranslationUnit",

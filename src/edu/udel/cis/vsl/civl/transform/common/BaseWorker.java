@@ -803,6 +803,9 @@ public abstract class BaseWorker {
 			return nodeFactory.newTypedefNameNode(
 					identifier(enumType.getTag()), null);
 		}
+		case SCOPE: {
+			return nodeFactory.newScopeTypeNode(source);
+		}
 		default:
 		}
 		return null;
