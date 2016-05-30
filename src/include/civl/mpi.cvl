@@ -18,7 +18,7 @@ struct MPI_Request{
 struct MPI_Comm {
   $comm p2p; // point-to-point communication
   $comm col; // collective communication
-  $collect_checker collect_checker;
+  $collator collator;
   $barrier barrier;
   int gcommIndex; //the index of the corresponding global communicator.
 };
@@ -148,7 +148,7 @@ int MPI_Bcast(void *buf, int count, MPI_Datatype datatype, int root,
   if(place == root)
     $mpi_check_buffer(buf, count, datatype);
   checkerEntry = $mpi_create_coroutine_entry(BCAST_TAG, root, -1, 1, datatypes);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   $mpi_bcast(buf, count, datatype, root, BCAST_TAG, comm, "MPI_Bcast()");
   return 0;
@@ -172,7 +172,7 @@ int MPI_Reduce(const void* sendbuf, void* recvbuf, int count,
 #endif
   checkerEntry = $mpi_create_coroutine_entry(REDUCE_TAG, root, (int)op, 1,
 		 datatypes);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   $mpi_check_buffer(sendbuf, count, datatype);
   $mpi_reduce(sendbuf, recvbuf, count, datatype, op, root, REDUCE_TAG, comm, "MPI_Reduce()");
@@ -200,7 +200,7 @@ int MPI_Allreduce(const void* sendbuf, void* recvbuf, int count,
   $mpi_check_buffer(sendbuf, count, datatype);
   checkerEntry = $mpi_create_coroutine_entry(ALLREDUCE_TAG, root, 
 		 (int)op, 1, datatypes);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   $mpi_reduce(sendbuf, recvbuf, count, datatype, op, root, ALLREDUCE_TAG, comm,
 	      "MPI_Allreduce()");
@@ -222,7 +222,7 @@ int MPI_Barrier(MPI_Comm comm){
 #endif
   checkerEntry = $mpi_create_coroutine_entry(BARRIER_TAG, 0, -1, 
 					     0, NULL);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   $barrier_call(comm.barrier);
   return 0;
@@ -249,7 +249,7 @@ int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
   if(sendbuf != MPI_IN_PLACE)
     $mpi_check_buffer(sendbuf, sendcount, sendtype);
   checkerEntry = $mpi_create_coroutine_entry(GATHER_TAG, root, -1, 2, datatypes);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   $mpi_gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
 	      root, GATHER_TAG, comm, "MPI_Gather()");
@@ -275,7 +275,7 @@ int MPI_Scatter(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
     $mpi_check_buffer(sendbuf, sendcount, sendtype);
   checkerEntry = $mpi_create_coroutine_entry(SCATTER_TAG, root, -1, 2, 
 					       datatypes);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   $mpi_scatter(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
 	       root, SCATTER_TAG, comm, "MPI_Scatter()");
@@ -303,7 +303,7 @@ int MPI_Gatherv(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
     $mpi_check_buffer(sendbuf, sendcount, sendtype);
   checkerEntry = $mpi_create_coroutine_entry(GATHERV_TAG, root, 
 		 -1, 2, datatypes);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   $mpi_gatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs,
 	       recvtype, root, GATHERV_TAG, comm, "MPI_Gatherv()");
@@ -333,7 +333,7 @@ int MPI_Scatterv(const void* sendbuf, const int sendcounts[], const
   checkerEntry = $mpi_create_coroutine_entry(SCATTERV_TAG, 
 					       root, -1, 2, 
 					       datatypes);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs,
+  specEntry = $collator_check(comm.collator, place, nprocs,
 		 checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   $mpi_scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf,
@@ -360,7 +360,7 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     $mpi_check_buffer(sendbuf, sendcount, sendtype);
   checkerEntry = $mpi_create_coroutine_entry(ALLGATHER_TAG, 0, -1, 2, 
 					       datatypes);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   $mpi_gather(sendbuf, sendcount, sendtype,
 	     recvbuf, recvcount, recvtype,
@@ -393,7 +393,7 @@ int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcount[]
   }
   checkerEntry = $mpi_create_coroutine_entry(RED_SCATTER_TAG, root, (int)op, 1, 
 					       datatypes);
-  specEntry = $collect_check(comm.collect_checker, rank, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, rank, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, rank);
   /* Note: In MPI standard, the sendbuf and recvbuf shall not be the
    * same, the implementation here is a lower layer helper function
@@ -432,7 +432,7 @@ int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   $mpi_check_buffer(sendbuf, sendcount * nprocs, sendtype);
   checkerEntry = $mpi_create_coroutine_entry(ALLTOALL_TAG, root, -1, 2, 
 					       datatypes);
-  specEntry = $collect_check(comm.collect_checker, rank, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, rank, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, rank);
   for(int i = 0; i < nprocs; i++) {
     void * ptr = $mpi_pointer_add(recvbuf, i*sendcount, recvtype);
@@ -468,7 +468,7 @@ int MPI_Alltoallv(const void* sendbuf, const int sendcounts[],
   $mpi_check_buffer(sendbuf, sendcount, sendtype);
   checkerEntry = $mpi_create_coroutine_entry(ALLTOALLV_TAG, 0, -1, 2, 
 					       datatypes);
-  specEntry = $collect_check(comm.collect_checker, place, nprocs, checkerEntry);
+  specEntry = $collator_check(comm.collator, place, nprocs, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
   for(int i = 0; i < nprocs; i++) {
     void * ptr = $mpi_pointer_add(recvbuf, rdispls[i], recvtype);

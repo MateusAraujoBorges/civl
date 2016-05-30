@@ -32,21 +32,21 @@ struct _barrier {
 
 /******************* Collective Arrive Checking Records *******************/
 /* Record entry */
-struct _collect_record {
+struct _collator_entry {
   $bundle entries;
   _Bool marks[];  //an array stores marks for processes
   int numMarked;  //number of processes already marked this record
 };
 
 /* Global records queue */
-struct _gcollect_checker {
+struct _gcollator {
   int length;
-  $collect_record records[];
+  $collator_entry entries[];
 };
 
 /* Local handle of the global records queue */
-struct _collect_checker {
-  $gcollect_checker checker;
+struct _collator {
+  $gcollator gcollator;
 };
 
 /* *********************** Functions *********************** */
@@ -121,40 +121,39 @@ $atomic_f void $barrier_destroy($barrier barrier){
   @ reads \nothing;
   @ assigns \nothing;
   @ */
-$atomic_f $gcollect_checker $gcollect_checker_create($scope scope){
-  $gcollect_checker gchecker=($gcollect_checker)$malloc(scope, sizeof(struct _gcollect_checker));
+$atomic_f $gcollator $gcollator_create($scope scope){
+  $gcollator gcollator=($gcollator)$malloc(scope, sizeof(struct _gcollator));
 
-  gchecker->length=0;
-  $seq_init(&gchecker->records, 0, NULL);
-  return gchecker;
+  gcollator->length=0;
+  $seq_init(&gcollator->entries, 0, NULL);
+  return gcollator;
 }
 
-/*@ depends_on \access(checker);
-  @ assigns checker;
+/*@ depends_on \access(gcollator);
+  @ assigns gcollator;
   @ reads \nothing;
   @ */
-$atomic_f int $gcollect_checker_destroy($gcollect_checker checker){
-  int numRemaining=checker->length;
+$atomic_f int $gcollator_destroy($gcollator gcollator){
+  int numRemaining=gcollator->length;
 
-  $free(checker);
+  $free(gcollator);
   return numRemaining;
 }
 
 /*@ depends_on \nothing;
   @ executes_when \true;
   @ */
-$atomic_f $collect_checker $collect_checker_create($scope scope, 
-						   $gcollect_checker gchecker){
-  $collect_checker checker=($collect_checker)$malloc(scope, sizeof(struct _collect_checker));
+$atomic_f $collator $collator_create($scope scope, $gcollator gcollator){
+  $collator collator=($collator)$malloc(scope, sizeof(struct _collator));
   
-  checker->checker=gchecker;
-  return checker;
+  collator->gcollator=gcollator;
+  return collator;
 }
 
-/*@ depends_on \nothing;
+/*@ depends_on \access(collator);
   @ executes_when \true;
   @ */
-$atomic_f void $collect_checker_destroy($collect_checker checker){
-  $free(checker);
+$atomic_f void $collator_destroy($collator collator){
+  $free(collator);
 }
 #endif

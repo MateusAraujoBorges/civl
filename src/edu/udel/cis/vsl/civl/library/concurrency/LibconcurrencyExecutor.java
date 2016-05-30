@@ -102,23 +102,23 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 			callEval = executeFree(state, pid, process, arguments,
 					argumentValues, source);
 			break;
-		case "$gcollect_checker_create":
+		case "$gcollator_create":
 			callEval = executeGcollectCheckerCreate(state, pid, process,
 					arguments, argumentValues, source);
 			break;
-		case "$gcollect_checker_destroy":
+		case "$gcollator_destroy":
 			callEval = executeGcollectCheckerDestroy(state, pid, process,
 					arguments, argumentValues, source);
 			break;
-		case "$collect_checker_create":
+		case "$collator_create":
 			callEval = executeCollectCheckerCreate(state, pid, process,
 					arguments, argumentValues, source);
 			break;
-		case "$collect_checker_destroy":
+		case "$collator_destroy":
 			callEval = this.executeFree(state, pid, process, arguments,
 					argumentValues, source);
 			break;
-		case "$collect_check":
+		case "$collator_check":
 			callEval = executeCollectCheck(state, pid, process, arguments,
 					argumentValues, source);
 			break;

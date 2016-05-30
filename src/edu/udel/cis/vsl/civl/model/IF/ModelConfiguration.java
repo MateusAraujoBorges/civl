@@ -220,17 +220,17 @@ public final class ModelConfiguration {
 	/**
 	 * The <code>__collect_record__</code> type
 	 */
-	public static final String COLLECT_RECORD_TYPE = "_collect_record";
+	public static final String COLLECT_RECORD_TYPE = "_collator_entry";
 
 	/**
 	 * The <code>__gcollect_checker__</code> type
 	 */
-	public static final String GCOLLECT_CHECKER_TYPE = "_gcollect_checker";
+	public static final String GCOLLECT_CHECKER_TYPE = "_gcollator";
 
 	/**
 	 * The <code>__collect_checker__</code> type
 	 */
-	public static final String COLLECT_CHECKER_TYPE = "_collect_checker";
+	public static final String COLLECT_CHECKER_TYPE = "_collator";
 
 	/* libraries */
 

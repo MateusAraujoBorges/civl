@@ -21,7 +21,7 @@ char * getCoroutineName(int tag);
 typedef struct MPI_Comm {
   $comm p2p; // point-to-point communication
   $comm col; // collective communication
-  $collect_checker collect_checker;
+  $collator collator;
   $barrier barrier;
   int gcommIndex; //the index of the corresponding global communicator.
 }MPI_Comm;
@@ -31,7 +31,7 @@ typedef struct MPI_Comm {
 struct $mpi_gcomm {
   $gcomm p2p; // point-to-point communication
   $gcomm col; // collective communication
-  $gcollect_checker collect_checker;
+  $gcollator gcollator;
   $gbarrier gbarrier;
 };
 
@@ -73,7 +73,7 @@ $mpi_gcomm $mpi_gcomm_create($scope scope, int size) {
 
   result.p2p = $gcomm_create(scope, size);
   result.col = $gcomm_create(scope, size);
-  result.collect_checker = $gcollect_checker_create(scope);
+  result.gcollator = $gcollator_create(scope);
   result.gbarrier = $gbarrier_create(scope, size);
   return result;
 }
@@ -111,7 +111,7 @@ void $mpi_gcomm_destroy($mpi_gcomm gc) {
 	    " that is never received.", 
 	    src, routine);
   }  
-  numJunkRecord = $gcollect_checker_destroy(gc.collect_checker);
+  numJunkRecord = $gcollator_destroy(gc.gcollator);
   $gbarrier_destroy(gc.gbarrier);
   $assert(numJunkRecord == 0, "MPI collective routines are called "
 	  "inappropriately because there are %d collective records"
@@ -124,7 +124,7 @@ MPI_Comm $mpi_comm_create($scope scope, $mpi_gcomm gc, int rank) {
   
   result.p2p = $comm_create(scope, gc.p2p, rank);
   result.col = $comm_create(scope, gc.col, rank);
-  result.collect_checker = $collect_checker_create(scope, gc.collect_checker);
+  result.collator = $collator_create(scope, gc.gcollator);
   result.barrier = $barrier_create(scope, gc.gbarrier, rank);
   result.gcommIndex = 0;
   return result;
@@ -138,7 +138,7 @@ void $mpi_comm_destroy(MPI_Comm comm, $mpi_state mpi_state) {
 #endif
   $comm_destroy(comm.p2p);
   $comm_destroy(comm.col);
-  $collect_checker_destroy(comm.collect_checker);
+  $collator_destroy(comm.collator);
   $barrier_destroy(comm.barrier);
 }
 
