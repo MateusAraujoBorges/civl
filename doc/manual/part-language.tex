@@ -1030,6 +1030,21 @@ object in the specified scope and return a handle to that object. The
 object can only be accessed through the specified system functions
 that take this handle as an argument. The barrier interface is presented in Section \ref{subsec:concurrencyLibrary}.
 
+\subsection{Collators: \cgcollator{} and \ccollator}
+\label{sec:collators}
+Another useful structure is the \emph{collator}: an object that is
+used to collect information from each process participating in some
+collective action.  A process creates an \emph{entry} each time it
+passes through the collator, and that entry is enqueued in a FIFO
+queue for that process.  As soon as there is at least one entry in
+each queue, one entry is dequeued from each queue and a checking
+function is applied to those dequeued entries.  This abstraction has
+many uses in OpenMP as well as MPI.  For example, it is used to check
+that all MPI processes belonging to a communicator make the same
+sequence of collective calls, that those calls agree on the ``root''
+argument, the type and size of data, and so on.
+
+
 \chapter{Specification}
 
 \section{Overview}
@@ -1181,23 +1196,21 @@ The expression \verb!p=>q! is equivalent to \verb~(!p)||q~.
 
 The universally quantified formula has the form
 \begin{verbatim}
-  $forall { type identifier | restriction} expr
+  $forall ( variable-declarations (; variable-declarations)* | restriction) expr
+\end{verbatim}
+where \verb!variable-declarations! declares a list of variables of a
+given type with an optional domain, and has the form
+\begin{verbatim}
+type identifier (, identifier)* (: domain)?
 \end{verbatim}
 where \verb!type! is a type name (e.g., \texttt{int} or
-\texttt{double}), \verb!identifier! is the name of the bound variable,
-\verb!restriction! is a boolean expression which expresses some
-restriction on the values that the bound variable can take, and
-\verb!expr! is a formula.  The universally quantified formula
-holds iff for all values assignable to the bound variable
-for which the restriction holds, the formula \ct{expr} holds.
+\texttt{double}), \verb!identifier! is the name of the bound variable.
+Moreover, \verb!restriction! is a boolean expression which expresses
+some restriction on the values that the bound variable can take, and
+\verb!expr! is a formula.  The universally quantified formula holds
+iff for all values assignable to the bound variable for which the
+restriction holds, the formula \ct{expr} holds.
 
-A variation on the construct above can be used in the special case
-where the bound variable is to range over a finite interval
-of integers.  In this case the quantified formula may be written:
-\begin{verbatim}
-  $forall { type identifier=lower .. upper } expr
-\end{verbatim}
-where \ct{lower} and \ct{upper} are integer expressions.
 
 \subsection{Existential quantifier: \cexists}
 

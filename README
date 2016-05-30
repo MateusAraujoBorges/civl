@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.7
+                               v1.7.1
 
 ------------------------------ Overview -------------------------------
 
@@ -46,17 +46,18 @@ General Public License.  However, the libraries used by CIVL
 (and incorporated into the complete distribution) use various
 licenses.  See directory licenses for the license of each component.
 
--------------------------- Updates from v1.6 -------------------------
-- ABC: 
-  	fixing bugs in side-effect remover regarding the translation of 
-  	logical and/or operators;
-  	fixing a bug in grammar related to variable declarations.
-- SARL: 
-	simplifying the representation of symbolic expressions in SARL
-- New Features:
-  	system function $pow (in civlc.cvh) for power operations
-  	examples from VerifyThis competition are added
-	
+-------------------------- Updates from v1.7 -------------------------
+- new features: lambda expressions for arrays; 
+  general labmda is in progress.
+  e.g., int a[5]=(int[5])$lambda(int i)i*2; which declares an array 
+  {0, 2, 4, 6, 8}.
+- new syntax for quantified expression, with extension to arbitrary 
+  number of bound variable declarations of different types.
+  e.g., $forall(int i: 0 .. 8; double k | k<9.5) a[i] >= k where 
+  a is an array of double.
+- contracts for dependence specification applied to CIVL utility 
+  libraries.
+- various bugs fixed.
    
 ------------------------- Binary Installation -------------------------
 
