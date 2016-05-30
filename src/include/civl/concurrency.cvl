@@ -62,10 +62,6 @@ $system void $barrier_enter($barrier barrier);
   @ */
 $system void $barrier_exit($barrier barrier);
 
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when \true;
-  @ */
 void $barrier_call($barrier barrier) {
   $barrier_enter(barrier);
   $barrier_exit(barrier);
