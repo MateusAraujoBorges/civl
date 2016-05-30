@@ -241,7 +241,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void forLoop() throws ABCException {
-		assertTrue(ui.run(VERIFY, QUIET, filename("for.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("for.cvl"))); 
 	}
 
 	@Test
