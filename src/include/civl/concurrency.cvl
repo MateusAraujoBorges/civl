@@ -51,13 +51,13 @@ struct _collator {
 
 /* *********************** Functions *********************** */
 
-/*@ depends_on \nothing;
+/*@ depends_on \access(barrier);
   @ assigns \nothing;
   @ executes_when \true;
   @ */ 
 $system void $barrier_enter($barrier barrier);
 
-/*@ depends_on \nothing;
+/*@ depends_on \access(barrier);
   @ assigns \nothing;
   @ */
 $system void $barrier_exit($barrier barrier);
