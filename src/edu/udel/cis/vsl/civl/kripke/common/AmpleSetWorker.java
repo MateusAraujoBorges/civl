@@ -842,26 +842,33 @@ public class AmpleSetWorker {
 			boolean active = false;
 			int pid;
 			Map<Statement, BooleanExpression> myGuards = new HashMap<>();
+			Location location;
 
 			if (p == null || p.hasEmptyStack())
 				continue;
 			pid = p.getPid();
 			this.nonEmptyProcesses.set(pid);
-			for (Statement s : p.getLocation().outgoing()) {
-				BooleanExpression myGuard;
+			location = p.getLocation();
+			if (location.isBinaryBranching()) {
+				active = true;
+			} else {
+				for (Statement s : location.outgoing()) {
+					BooleanExpression myGuard;
 
-				if (config.getProcBound() > 0
-						&& s instanceof CallOrSpawnStatement
-						&& ((CallOrSpawnStatement) s).isSpawn()
-						&& state.numLiveProcs() >= config.getProcBound())
-					continue;
-				// side-effect of evaluating the guard is ignored here
-				myGuard = (BooleanExpression) enabler.getGuard(s, pid, state).value;
-				if (!myGuard.isFalse())
-					active = true;
-				myGuards.put(s, myGuard);
-				if (active)
-					break;
+					if (config.getProcBound() > 0
+							&& s instanceof CallOrSpawnStatement
+							&& ((CallOrSpawnStatement) s).isSpawn()
+							&& state.numLiveProcs() >= config.getProcBound())
+						continue;
+					// side-effect of evaluating the guard is ignored here
+					myGuard = (BooleanExpression) enabler.getGuard(s, pid,
+							state).value;
+					if (!myGuard.isFalse())
+						active = true;
+					myGuards.put(s, myGuard);
+					if (active)
+						break;
+				}
 			}
 			if (active) {
 				activeProcesses.set(pid);
@@ -1300,7 +1307,7 @@ public class AmpleSetWorker {
 				int varID = memUnitExpr.variableId();
 				MemoryUnit mu = memUnitFactory.newMemoryUnit(dyscopeID, varID,
 						identity);
-				//				Variable variable = memUnitExpr.variable();
+				// Variable variable = memUnitExpr.variable();
 
 				// if (variable.type().isHandleType()) {
 				// SymbolicExpression value = state.getVariableValue(

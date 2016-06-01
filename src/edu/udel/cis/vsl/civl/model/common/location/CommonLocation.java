@@ -134,6 +134,12 @@ public class CommonLocation extends CommonSourceable implements Location {
 	 */
 	private boolean isInNoopLoop = false;
 
+	/**
+	 * true iff this location has two outgoing statements with guards being expr
+	 * and !expr.
+	 */
+	private boolean isBinaryBranch = false;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -831,6 +837,17 @@ public class CommonLocation extends CommonSourceable implements Location {
 	public void setPathcondition(Expression expression) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public boolean isBinaryBranching() {
+		assert !isBinaryBranch || this.outgoing.size() == 2;
+		return this.isBinaryBranch;
+	}
+
+	@Override
+	public void setBinaryBranching(boolean value) {
+		this.isBinaryBranch = value;
 	}
 
 }

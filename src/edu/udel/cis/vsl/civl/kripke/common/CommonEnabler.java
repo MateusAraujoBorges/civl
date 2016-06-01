@@ -145,6 +145,11 @@ public abstract class CommonEnabler implements Enabler {
 	 */
 	protected CIVLConfiguration civlConfig;
 
+	@SuppressWarnings("unused")
+	private int numGuard = 0;
+	@SuppressWarnings("unused")
+	private int numValid = 0;
+
 	/* ***************************** Constructor *************************** */
 
 	/**
@@ -332,16 +337,37 @@ public abstract class CommonEnabler implements Enabler {
 			atomicLockAction = AtomicLockAction.GRAB;
 		}
 		numOutgoing = pLocation.getNumOutgoing();
-		for (int i = 0; i < numOutgoing; i++) {
-			Statement statement = pLocation.getOutgoing(i);
-			BooleanExpression newPathCondition = newPathCondition(state, pid,
-					statement, newGuardMap);
+		if (pLocation.isBinaryBranching()) {
+			Statement first = pLocation.getOutgoing(0), second = pLocation
+					.getOutgoing(1);
+			BooleanExpression firstGuard = (BooleanExpression) this.getGuard(
+					first, pid, state).value, secondGuard;
+			BooleanExpression firstPc = this.newPathConditionWork(state, pid,
+					firstGuard), secondPc;
 
-			if (!newPathCondition.isFalse()) {
-				transitions.addAll(enabledTransitionsOfStatement(state,
-						statement, newPathCondition, pid, atomicLockAction));
+			if (!firstGuard.isFalse()) {
+				transitions.addAll(enabledTransitionsOfStatement(state, first,
+						firstPc, pid, atomicLockAction));
 			}
-		}
+			if (!firstGuard.isTrue()) {
+				secondGuard = universe.not(firstGuard);
+				secondPc = newPathConditionWork(state, pid, secondGuard);
+				transitions.addAll(enabledTransitionsOfStatement(state, second,
+						secondPc, pid, atomicLockAction));
+			}
+		} else
+			for (int i = 0; i < numOutgoing; i++) {
+				Statement statement = pLocation.getOutgoing(i);
+				BooleanExpression newPathCondition = newPathCondition(state,
+						pid, statement, newGuardMap);
+
+				if (!newPathCondition.isFalse()) {
+					transitions
+							.addAll(enabledTransitionsOfStatement(state,
+									statement, newPathCondition, pid,
+									atomicLockAction));
+				}
+			}
 		return transitions;
 	}
 
@@ -629,19 +655,8 @@ public abstract class CommonEnabler implements Enabler {
 	 * @return The new path condition. False if the guard is not satisfiable
 	 *         under the path condition.
 	 */
-	private BooleanExpression newPathCondition(State state, int pid,
-			Statement statement,
-			Map<Integer, Map<Statement, BooleanExpression>> newGuardMap) {
-		BooleanExpression guard = null;
-		Map<Statement, BooleanExpression> myMap = newGuardMap.get(pid);
-
-		if (myMap != null)
-			guard = myMap.get(statement);
-		if (guard == null) {
-			Evaluation eval = getGuard(statement, pid, state);
-
-			guard = (BooleanExpression) eval.value;
-		}
+	private BooleanExpression newPathConditionWork(State state, int pid,
+			BooleanExpression guard) {
 		if (guard.isFalse())
 			return this.falseExpression;
 
@@ -658,6 +673,22 @@ public abstract class CommonEnabler implements Enabler {
 			return pathCondition;
 		return (BooleanExpression) universe.canonic(universe.and(pathCondition,
 				guard));
+	}
+
+	private BooleanExpression newPathCondition(State state, int pid,
+			Statement statement,
+			Map<Integer, Map<Statement, BooleanExpression>> newGuardMap) {
+		BooleanExpression guard = null;
+		Map<Statement, BooleanExpression> myMap = newGuardMap.get(pid);
+
+		if (myMap != null)
+			guard = myMap.get(statement);
+		if (guard == null) {
+			Evaluation eval = getGuard(statement, pid, state);
+
+			guard = (BooleanExpression) eval.value;
+		}
+		return this.newPathConditionWork(state, pid, guard);
 	}
 
 	public List<Transition> enabledTransitionsOfProcess(State state, int pid) {

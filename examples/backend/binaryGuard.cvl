@@ -1,0 +1,22 @@
+$input int x, y, z, d;
+
+int main(){
+  int a=0;
+
+  $choose{
+    $when(d>100)
+      if(x<y)
+	a=0;
+      else
+	a=1;
+    if(y>z)
+      a=2;
+    else
+      a=3;
+    $when(d<4)
+      for(int i=0; i<3; i++)
+	a+=i;
+  default:
+    a=4;
+  }
+}

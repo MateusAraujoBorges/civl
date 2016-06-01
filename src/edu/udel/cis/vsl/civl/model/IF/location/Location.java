@@ -234,10 +234,10 @@ public interface Location extends Sourceable {
 	 */
 	boolean allOutgoingPurelyLocal();
 
-//	/**
-//	 * Analyze each outgoing statement to see if they are purely local
-//	 */
-//	void purelyLocalAnalysisForOutgoing();
+	// /**
+	// * Analyze each outgoing statement to see if they are purely local
+	// */
+	// void purelyLocalAnalysisForOutgoing();
 
 	/**
 	 * During the translation of AST node into CIVL model, it is possible to
@@ -353,4 +353,20 @@ public interface Location extends Sourceable {
 	Expression pathCondition();
 
 	void setPathcondition(Expression expression);
+
+	/**
+	 * update this location to denote if it is a binary branching location
+	 * 
+	 * @param value
+	 *            the value to be used
+	 */
+	void setBinaryBranching(boolean value);
+
+	/**
+	 * if this is a location that contains two outgoing statement and the guards
+	 * are expr and !expr, repectively.
+	 * 
+	 * @return
+	 */
+	boolean isBinaryBranching();
 }

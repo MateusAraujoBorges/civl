@@ -36,6 +36,7 @@ public class CommonLoopBranchStatement extends CommonNoopStatement implements
 			Expression guard, boolean isTrue, LoopContract loopContract) {
 		super(civlSource, source, guard, null);
 		this.noopKind = NoopKind.LOOP;
+		source.setBinaryBranching(true);
 		this.isTrueBranch = isTrue;
 		this.statementScope = guard.expressionScope();
 		this.loopContract = loopContract;

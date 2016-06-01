@@ -74,6 +74,11 @@ public class BackendTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("symbols.cvl")));
 	}
 
+	@Test
+	public void binaryGuard() {
+		assertTrue(ui.run("show -showModel", filename("binaryGuard.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
