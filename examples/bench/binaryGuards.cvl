@@ -4,7 +4,7 @@ int main(){
   int a=0;
   
   for(int i=0; i<N; i++){
-    if(a<N)
+    if((a*9-N+4/6)<N)
       a+=i;
     else
       a-=i;
