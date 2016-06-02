@@ -18,7 +18,7 @@ public class BinaryGuardsBenchmark {
 		if (args.length > 0)
 			civlDir = args[0];
 		System.out.println(">>>>>>>> binary guards <<<<<<<<");
-		ui.run("verify -inputB=1000 "
+		ui.run("verify -inputB=300 "
 				+ civlDir + "/examples/bench/binaryGuards.cvl");
 	}
 
