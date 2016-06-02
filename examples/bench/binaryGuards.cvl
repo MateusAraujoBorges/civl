@@ -1,12 +1,15 @@
-$input int N=10;
+#include<civlc.cvh>
+$input int N, B=10;
+$input int x,y;
+$assume(0<N && N<=B);
 
 int main(){
   int a=0;
   
   for(int i=0; i<N; i++){
-    if((a*9-N+4/6)<N)
-      a+=i;
+    if(x+i>y+i)
+      a=a+i;
     else
-      a-=i;
+      a=a-i;
   }
 }
