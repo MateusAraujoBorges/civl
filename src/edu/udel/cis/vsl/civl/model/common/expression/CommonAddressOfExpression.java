@@ -139,4 +139,10 @@ public class CommonAddressOfExpression extends CommonExpression implements
 	public boolean containsHere() {
 		return this.operand.containsHere();
 	}
+
+	@Override
+	public void setErrorFree(boolean value) {
+		super.setErrorFree(value);
+		this.operand.setErrorFree(value);
+	}
 }

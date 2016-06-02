@@ -3095,6 +3095,7 @@ public class FunctionTranslator {
 									anonVariable), rhs, true);
 					rhs = arrayToPointer(modelFactory.variableExpression(
 							initSource, anonVariable));
+					rhs.setErrorFree(true);
 				}
 				assignStatement = modelFactory.assignStatement(
 						modelFactory.sourceOf(node), location, lhs, rhs, true);
@@ -3854,6 +3855,7 @@ public class FunctionTranslator {
 							scope, expression);
 
 					expression = arrayToPointer(anonVariable);
+					expression.setErrorFree(true);
 				}
 				break;
 			}
@@ -4252,6 +4254,7 @@ public class FunctionTranslator {
 						scope, operand);
 
 				result = modelFactory.addressOfExpression(source, anonVariable);
+				result.setErrorFree(true);
 			}
 			break;
 		}

@@ -178,4 +178,15 @@ public interface Expression extends Sourceable {
 	 * @return
 	 */
 	boolean containsHere();
+
+	void setErrorFree(boolean value);
+
+	/**
+	 * if this expression is guaranteed to be error-free and thus doesn't need
+	 * any error checking. e.g., &anon[0] which is used to translate array
+	 * literals.
+	 * 
+	 * @return
+	 */
+	boolean isErrorFree();
 }

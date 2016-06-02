@@ -29,6 +29,8 @@ public abstract class CommonExpression extends CommonSourceable implements
 	// used by expressions which have a constant value.
 	// it is an optimization.
 
+	private boolean isErrorFree = false;
+
 	/**
 	 * The highest scope accessed by this expression. NULL if no variable is
 	 * accessed.
@@ -168,5 +170,15 @@ public abstract class CommonExpression extends CommonSourceable implements
 	@Override
 	public boolean containsHere() {
 		return false;
+	}
+
+	@Override
+	public void setErrorFree(boolean value) {
+		this.isErrorFree = value;
+	}
+
+	@Override
+	public boolean isErrorFree() {
+		return this.isErrorFree;
 	}
 }

@@ -1625,7 +1625,8 @@ public class CommonEvaluator implements Evaluator {
 			SymbolicExpression zero = zeroOf(expression.getSource(),
 					expression.getExpressionType());
 
-			if (this.civlConfig.checkDivisionByZero()) {
+			if (this.civlConfig.checkDivisionByZero()
+					&& !expression.getExpressionType().isIntegerType()) {
 				BooleanExpression claim = universe.neq(zero, denominator);
 				ResultType resultType = universe.reasoner(assumption)
 						.valid(claim).getResultType();
@@ -3830,9 +3831,10 @@ public class CommonEvaluator implements Evaluator {
 			if (array.type() == null)
 				arrayType = (SymbolicArrayType) arrayExpr.getExpressionType()
 						.getDynamicType(universe);
-			result.state = this.checkArrayIndexInBound(state,
-					operand.getSource(), state.getProcessState(pid).name(),
-					arrayType, array, index, true);
+			if (!operand.isErrorFree())
+				result.state = this.checkArrayIndexInBound(state,
+						operand.getSource(), state.getProcessState(pid).name(),
+						arrayType, array, index, true);
 			newSymRef = universe.arrayElementReference(oldSymRef, index);
 			result.value = symbolicUtil.setSymRef(arrayPointer, newSymRef);
 		} else if (operand instanceof DereferenceExpression) {
