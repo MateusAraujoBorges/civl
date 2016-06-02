@@ -125,7 +125,12 @@ public class IntDivWorker extends BaseWorker {
 			Operator op = opn.getOperator();
 			ExpressionNode operand1 = opn.getArgument(0);
 			ExpressionNode operand2 = opn.getArgument(1);
-
+			
+			// Constant division will not be transformed.
+			if(operand1.isConstantExpression()
+					&& operand2.isConstantExpression())
+				return;
+			
 			processDivisionAndModulo(operand1);
 			processDivisionAndModulo(operand2);
 			operand1 = opn.getArgument(0);
