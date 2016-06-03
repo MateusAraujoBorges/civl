@@ -50,7 +50,7 @@ typedef struct DMDALocalInfo {
 /* First executable line of each PETSc function, used for error handling. Final line of PETSc 
  * functions should be PetscFunctionReturn(0);
  */
-void PetscFunctionBegin;
+#define PetscFunctionBegin
 
 /* Last executable line of each PETSc function used for error handling. Replaces return() */
 //void PetscFunctionReturn(0);
