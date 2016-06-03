@@ -24,7 +24,7 @@ struct _queue {
  * in MPI.  Completes the declaration of this type in civlc-common.h */
 struct _gcomm {
   int nprocs; // number of processes
-  $proc procs[];
+  $proc procs[]; // process references
   _Bool isInit[]; // if the local comm has been initiated
   $queue buf[][]; // message buffers
 };
@@ -42,8 +42,9 @@ struct _comm {
 
 /* *********************** Functions *********************** */
 
-/* creates a new message, copying data from the specified buffer */ 
-$message $message_pack(int source, int dest, int tag,
+/* creates a new message, copying data from the specified buffer */
+/*@ depends_on \access(data); */
+$atomic_f $message $message_pack(int source, int dest, int tag,
     void *data, int size) {
   $message result;
   
@@ -76,8 +77,9 @@ int $message_size($message message) {
 }
 
 /* transfers message data to buf, throwing exception if message
- * size exceeds specified size */ 
-void $message_unpack($message message, void *buf, int size) {
+ * size exceeds specified size */
+/*@ depends_on \access(buf); */
+$atomic_f void $message_unpack($message message, void *buf, int size) {
   $bundle_unpack(message.data, buf);
   $assert(message.size <= size, "Message of size %d exceeds the specified size %d.", message.size, size);
 }
@@ -147,6 +149,9 @@ $atomic_f void $comm_destroy($comm comm){
 
 /* Returns the place of the local communicator.  This is the same as the
  * place argument used to create the local communicator. */
+/*@ pure;
+  @ depends_on \nothing;
+  @*/
 $atomic_f int $comm_place($comm comm){
  return comm->place;
 }
