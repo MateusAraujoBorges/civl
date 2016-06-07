@@ -19,10 +19,8 @@ import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonContractNode;
 import edu.udel.cis.vsl.abc.ast.node.common.expression.CommonQuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.IntegerType;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
-import edu.udel.cis.vsl.abc.token.IF.Macro;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
-import edu.udel.cis.vsl.abc.util.IF.MacroConstants;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.IntDivisionTransformer;
 
@@ -55,6 +53,7 @@ public class IntDivWorker extends BaseWorker {
 	private static final String INT_DIV_SOURCE_FILE = "int_div.cvl";
 	private static final String INT_DIV_NO_CHECKING_SOURCE_FILE = "int_div_no_checking.cvl";
 	private Boolean check_division_by_zero = false;
+	private AttributeKey intDivMacroKey;
 
 	public IntDivWorker(ASTFactory astFactory) {
 		super(IntDivisionTransformer.LONG_NAME, astFactory);
@@ -63,14 +62,14 @@ public class IntDivWorker extends BaseWorker {
 
 	@Override
 	public AST transform(AST unit) throws SyntaxException {
-		AttributeKey key = astFactory.getNodeFactory().newAttribute(MacroConstants.NO_CHECK_DIVISION_BY_ZERO,
-				Macro.class);
-
 		SequenceNode<BlockItemNode> root = unit.getRootNode();
-		Object obj = root.getAttribute(key);
-
-		if (obj != null)
-			check_division_by_zero = true;
+		
+		if(intDivMacroKey != null){
+			Object obj = root.getAttribute(intDivMacroKey);
+			
+			if (obj != null)
+				check_division_by_zero = true;
+		}
 
 		AST newAst;
 		OrdinaryEntity divEntity = unit.getInternalOrExternalEntity(INT_DIV);
@@ -128,8 +127,10 @@ public class IntDivWorker extends BaseWorker {
 			
 			// Constant division will not be transformed.
 			if(operand1.isConstantExpression()
-					&& operand2.isConstantExpression())
+					&& operand2.isConstantExpression()){
+				
 				return;
+			}
 			
 			processDivisionAndModulo(operand1);
 			processDivisionAndModulo(operand2);
@@ -197,5 +198,9 @@ public class IntDivWorker extends BaseWorker {
 			funcDefinitions.add(child);
 		}
 		ast.insertChildren(0, funcDefinitions);
+	}
+
+	public void setIntDivMacroKey(AttributeKey intDivMacroKey) {
+		this.intDivMacroKey = intDivMacroKey;
 	}
 }

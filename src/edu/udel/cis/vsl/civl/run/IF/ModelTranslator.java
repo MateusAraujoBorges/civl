@@ -47,6 +47,7 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelBuilder;
 import edu.udel.cis.vsl.civl.model.IF.Models;
+import edu.udel.cis.vsl.civl.transform.IF.IntDivisionTransformer;
 import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
 import edu.udel.cis.vsl.civl.transform.IF.Transforms;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -190,6 +191,8 @@ public class ModelTranslator {
 	private String userFileCoreName;
 
 	private Configuration abcConfiguration = Configurations.newMinimalConfiguration();
+	
+	private AttributeKey intDivMacroKey;
 
 	// constructor
 	/**
@@ -555,8 +558,6 @@ public class ModelTranslator {
 	 */
 	private void applyTranslationTransformers(Program program) throws SyntaxException {
 		ASTNode root = program.getAST().getRootNode();
-		AttributeKey key = frontEnd.getNodeFactory().newAttribute(MacroConstants.NO_CHECK_DIVISION_BY_ZERO,
-				Macro.class);
 		Set<String> headers = new HashSet<>();
 		boolean isC = userFileName.endsWith(".c") || userFileName.endsWith(".i");
 		boolean hasStdio = false, hasOmp = false, hasMpi = false, hasPthread = false, hasCuda = false;
@@ -652,9 +653,14 @@ public class ModelTranslator {
 			if (config.debugOrVerbose())
 				program.prettyPrint(out);
 		}
-		if (root.getAttribute(key) != null)
-			program.getAST().getRootNode().setAttribute(key, root.getAttribute(key));
-		program.apply(transformerFactory.getIntDivTransformer());
+		IntDivisionTransformer intDivTransformer= (IntDivisionTransformer)transformerFactory.getIntDivTransformer();
+		
+		if(intDivMacroKey != null){
+			intDivTransformer.setIntDivAttributeKey(intDivMacroKey);
+			if (root.getAttribute(intDivMacroKey) != null)
+				program.getAST().getRootNode().setAttribute(intDivMacroKey, root.getAttribute(intDivMacroKey));
+		}
+		program.apply(intDivTransformer);
 	}
 
 	/**
@@ -770,10 +776,13 @@ public class ModelTranslator {
 			ASTNode root = ast.getRootNode();
 
 			if (macroMap.containsKey(MacroConstants.NO_CHECK_DIVISION_BY_ZERO)) {
-				AttributeKey key = frontEnd.getNodeFactory().newAttribute(MacroConstants.NO_CHECK_DIVISION_BY_ZERO,
-						Macro.class);
+				// TODO
+				if(intDivMacroKey == null)
+					intDivMacroKey = frontEnd.getNodeFactory().newAttribute(MacroConstants.NO_CHECK_DIVISION_BY_ZERO,
+							Macro.class);
 
-				root.setAttribute(key, macroMap.get(MacroConstants.NO_CHECK_DIVISION_BY_ZERO));
+				root.setAttribute(intDivMacroKey, macroMap.get(MacroConstants.NO_CHECK_DIVISION_BY_ZERO));
+				frontEnd.setIntDivAttributeKey(intDivMacroKey);
 			}
 		}
 		return ast;
