@@ -225,9 +225,9 @@ public class CommonBinaryExpression extends CommonExpression implements
 		if (leftValue == null || rightValue == null)
 			return;
 		switch (operator) {
-		case BITAND:
-		case BITOR:
-		case BITXOR:
+		case BIT_AND:
+		case BIT_OR:
+		case BIT_XOR:
 			break;
 		case PLUS:
 			constantValue = universe.add((NumericExpression) leftValue,
@@ -307,13 +307,13 @@ public class CommonBinaryExpression extends CommonExpression implements
 		String op = "";
 
 		switch (operator) {
-		case BITAND:
+		case BIT_AND:
 			op = "&";
 			break;
-		case BITOR:
+		case BIT_OR:
 			op = "|";
 			break;
-		case BITXOR:
+		case BIT_XOR:
 			op = "^";
 			break;
 		case PLUS:
@@ -407,9 +407,9 @@ public class CommonBinaryExpression extends CommonExpression implements
 	private static boolean isSymmetric(BINARY_OPERATOR op) {
 		switch (op) {
 		case AND:
-		case BITAND:
-		case BITOR:
-		case BITXOR:
+		case BIT_AND:
+		case BIT_OR:
+		case BIT_XOR:
 		case EQUAL:
 		case NOT_EQUAL:
 		case OR:

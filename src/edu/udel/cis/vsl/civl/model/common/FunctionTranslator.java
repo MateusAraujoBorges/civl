@@ -4267,19 +4267,19 @@ public class FunctionTranslator {
 			break;
 		case BITAND:
 			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.BITAND, arguments.get(0), arguments.get(1));
+					BINARY_OPERATOR.BIT_AND, arguments.get(0), arguments.get(1));
 			break;
 		case BITCOMPLEMENT:
 			result = modelFactory.unaryExpression(source,
-					UNARY_OPERATOR.BITCOMPLEMENT, arguments.get(0));
+					UNARY_OPERATOR.BIT_NOT, arguments.get(0));
 			break;
 		case BITOR:
 			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.BITOR, arguments.get(0), arguments.get(1));
+					BINARY_OPERATOR.BIT_OR, arguments.get(0), arguments.get(1));
 			break;
 		case BITXOR:
 			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.BITXOR, arguments.get(0), arguments.get(1));
+					BINARY_OPERATOR.BIT_XOR, arguments.get(0), arguments.get(1));
 			break;
 		case SHIFTLEFT:
 			result = modelFactory.binaryExpression(source,
