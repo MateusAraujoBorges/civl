@@ -430,7 +430,7 @@ public class ImmutableProcessState implements ProcessState {
 	public StringBuffer toSBrieftringBuffer() {
 		StringBuffer result = new StringBuffer();
 
-		result.append("process " + pid + "):\n");
+		result.append("process " + pid + ":\n");
 		if (callStack.length < 1)
 			result.append("  terminated");
 		else
