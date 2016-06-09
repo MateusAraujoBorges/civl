@@ -1,15 +1,15 @@
 #include<civlc.cvh>
-$input int N, B=10;
+$input int N;
 $input int x,y;
-$assume(0<N && N<=B);
+$input int A[N];
 
 int main(){
   int a=0;
   
   for(int i=0; i<N; i++){
-    if(x+i>y+i)
-      a=a+i;
+    if(x+A[i]<y)
+      a+=x;
     else
-      a=a-i;
+      a+=y;
   }
 }
