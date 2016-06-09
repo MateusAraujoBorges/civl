@@ -130,8 +130,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 				for (Statement statement : location.outgoing()) {
 					BooleanExpression guard;
 
-					guard = (BooleanExpression) enabler.getGuard(statement,
-							pid, state).value;
+					guard = enabler.getGuard(statement, pid, state);
 
 					// if (statement instanceof WaitStatement) {
 					// // TODO: Check that the guard is actually true, but it
@@ -197,8 +196,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 			if (source == null)
 				source = location.getSource();
 			for (Statement s : location.outgoing()) {
-				BooleanExpression guard = (BooleanExpression) enabler.getGuard(
-						s, pid, state).value;
+				BooleanExpression guard = enabler.getGuard(s, pid, state);
 
 				if (guard.isFalse())
 					continue;

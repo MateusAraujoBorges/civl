@@ -1,11 +1,11 @@
 package edu.udel.cis.vsl.civl.kripke.IF;
 
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
-import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.EnablerIF;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 
 /**
  * Enabler extends {@link EnablerIF} for CIVL models.
@@ -28,7 +28,7 @@ public interface Enabler extends
 	 *            The ID of the process that the statement belongs to.
 	 * @param state
 	 *            The current state that the computation happens.
-	 * @return The symbolic expression of the guard of the given statement.
+	 * @return The value of the guard of the given statement.
 	 */
-	Evaluation getGuard(Statement statement, int pid, State state);
+	BooleanExpression getGuard(Statement statement, int pid, State state);
 }

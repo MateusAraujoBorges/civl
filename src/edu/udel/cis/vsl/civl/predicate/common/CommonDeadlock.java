@@ -122,9 +122,7 @@ public class CommonDeadlock extends CommonCIVLStatePredicate implements
 				for (Statement statement : location.outgoing()) {
 					BooleanExpression guard;
 
-					guard = (BooleanExpression) enabler.getGuard(statement,
-							pid, state).value;
-
+					guard = enabler.getGuard(statement, pid, state);
 					// if (statement instanceof WaitStatement) {
 					// // TODO: Check that the guard is actually true, but it
 					// // should be.
@@ -189,8 +187,7 @@ public class CommonDeadlock extends CommonCIVLStatePredicate implements
 			if (source == null)
 				source = location.getSource();
 			for (Statement s : location.outgoing()) {
-				BooleanExpression guard = (BooleanExpression) enabler.getGuard(
-						s, pid, state).value;
+				BooleanExpression guard = enabler.getGuard(s, pid, state);
 
 				if (guard.isFalse())
 					continue;
@@ -219,8 +216,7 @@ public class CommonDeadlock extends CommonCIVLStatePredicate implements
 					+ "\n  Enabling predicate: " + predicate + "\n";
 			message += explanationWork(state);
 			violation = new CIVLExecutionException(ErrorKind.DEADLOCK,
-					certainty, null, message,
-					state, source);
+					certainty, null, message, state, source);
 			return true;
 		}
 	}

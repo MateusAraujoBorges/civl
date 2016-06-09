@@ -328,6 +328,7 @@ public class CommonEvaluator implements Evaluator {
 	 * length corresponding to the bit-length of an integer define by the
 	 * environment. (The default length is 32);
 	 */
+	@SuppressWarnings("unused")
 	private SymbolicCompleteArrayType bitVectorType;
 
 	private FunctionCallExecutor functionCallExecutor;
@@ -703,7 +704,9 @@ public class CommonEvaluator implements Evaluator {
 	}
 
 	/**
-	 * Evaluates a binary expression.
+	 * Evaluates a binary expression. Either this throws an unsatisfiable path
+	 * condition exception or it returns a non-null state and a non-null value
+	 * if there is no error during the evaluation.
 	 * 
 	 * @param state
 	 *            The state of the program.
@@ -1591,7 +1594,6 @@ public class CommonEvaluator implements Evaluator {
 
 		// TODO: handle special common case as in evaluateAnd.
 		// Look at evaluation of ternary operator too?
-
 		if (reasoner.isValid(p)) {
 			eval.value = universe.trueExpression();
 			return eval;
@@ -1604,7 +1606,6 @@ public class CommonEvaluator implements Evaluator {
 			BooleanExpression pc = universe.or(eval1.state.getPathCondition(), universe.and(assumption, p));
 
 			eval.state = eval.state.setPathCondition(pc);
-			// TODO change to orTo
 			eval.value = universe.or(p, (BooleanExpression) eval1.value);
 			return eval;
 		}

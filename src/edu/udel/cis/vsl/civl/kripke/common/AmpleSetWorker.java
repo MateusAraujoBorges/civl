@@ -162,6 +162,12 @@ public class AmpleSetWorker {
 	Map<Integer, Map<Statement, BooleanExpression>> newGuardMap;
 
 	/**
+	 * The value of the guards of the statements of all processes. Index of
+	 * first dimension is PID, and index of second dimension is statement id.
+	 */
+	BooleanExpression newGuards[][];
+
+	/**
 	 * The processes being waited for of each process. Index is PID, bit set for
 	 * the PID of the processes being waited for.
 	 */
@@ -415,19 +421,6 @@ public class AmpleSetWorker {
 				lhs.clear(i);
 		}
 	}
-
-	// /**
-	// * updates the left by setting all bits that are set in the right
-	// *
-	// * @param left
-	// * @param right
-	// */
-	// private void setAll(BitSet left, BitSet right) {
-	// for (int i = 0; i < right.length(); i++) {
-	// if (right.get(i))
-	// left.set(i);
-	// }
-	// }
 
 	/**
 	 * Computes the ample set by fixing a certain process and looking at system
@@ -838,11 +831,13 @@ public class AmpleSetWorker {
 	 */
 	private void computeActiveProcesses() {
 		this.newGuardMap = new HashMap<>();
+		this.newGuards = new BooleanExpression[state.numProcs()][];
 		for (ProcessState p : state.getProcessStates()) {
 			boolean active = false;
 			int pid;
 			Map<Statement, BooleanExpression> myGuards = new HashMap<>();
 			Location location;
+			int numOutgoing;
 
 			if (p == null || p.hasEmptyStack())
 				continue;
@@ -852,7 +847,11 @@ public class AmpleSetWorker {
 			if (location.isBinaryBranching()) {
 				active = true;
 			} else {
-				for (Statement s : location.outgoing()) {
+				numOutgoing = location.getNumOutgoing();
+				newGuards[pid] = new BooleanExpression[location
+						.getNumOutgoing()];
+				for (int i = 0; i < numOutgoing; i++) {
+					Statement s = location.getOutgoing(i);
 					BooleanExpression myGuard;
 
 					if (config.getProcBound() > 0
@@ -860,9 +859,8 @@ public class AmpleSetWorker {
 							&& ((CallOrSpawnStatement) s).isSpawn()
 							&& state.numLiveProcs() >= config.getProcBound())
 						continue;
-					// side-effect of evaluating the guard is ignored here
-					myGuard = (BooleanExpression) enabler.getGuard(s, pid,
-							state).value;
+					myGuard = enabler.getGuard(s, pid, state);
+					newGuards[pid][i] = myGuard;
 					if (!myGuard.isFalse())
 						active = true;
 					myGuards.put(s, myGuard);
@@ -873,11 +871,8 @@ public class AmpleSetWorker {
 			if (active) {
 				activeProcesses.set(pid);
 				this.newGuardMap.put(pid, myGuards);
-				// if (this.isInfiniteLoopLocation(p.getLocation()))
 				if (p.getLocation().isInNoopLoop())
 					this.infiniteLoopProcesses.set(pid);
-				// else
-				// this.noLoopProcesses.set(pid);
 			}
 		}
 	}
