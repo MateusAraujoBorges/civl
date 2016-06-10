@@ -413,7 +413,7 @@ public class ImmutableProcessState implements ProcessState {
 	public StringBuffer toStringBuffer(String prefix) {
 		StringBuffer result = new StringBuffer();
 
-		result.append(prefix + "process " + pid + ")\n");
+		result.append(prefix + "process " + pid + "\n");
 		if (atomicCount != 0)
 			result.append(prefix + "| atomicCount=" + atomicCount + "\n");
 		result.append(prefix + "| call stack\n");
