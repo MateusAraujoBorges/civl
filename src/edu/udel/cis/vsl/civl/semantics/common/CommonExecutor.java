@@ -290,7 +290,7 @@ public class CommonExecutor implements Executor {
 
 				function = eval.second;
 				state = eval.first;
-				if (function.isRootFunction()) {
+				if (function.isSystemFunction()) {
 					state = this.executeSystemFunctionCall(state, pid,
 							statement, (SystemFunction) function).state;
 				} else
@@ -299,7 +299,7 @@ public class CommonExecutor implements Executor {
 			} else
 				state = stateFactory.pushCallStack(state, pid, function,
 						arguments);
-			if (function.isAtomicFunction())
+			if (!function.isSystemFunction() && function.isAtomicFunction())
 				state = stateFactory.enterAtomic(state, pid);
 		}
 		// Right after the call stack entry is pushed into call stack, check

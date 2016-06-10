@@ -1,28 +1,32 @@
+#include<stdbool.h>
+#include<assert.h>
+#include<civlc.cvh>
 $input int x;
-int s=0;
+_Bool b=true;
+int a=0;
 
 void foo(){
-  $when(s>0);
   $atomic{
-    s--;
+    b=false;
+    $when(x>0);
+    b=true;
   }
 }
 
 void goo(){
-  $atomic{
-    s=1;
-    $when(x>0)
-      s*=2;
-  }
+  if(!b)
+    a=1;
 }
 
-int main(){
-  $proc fp, gp;
-  
+void main(){
+  $proc pf, pg;
+
   $atomic{
-    fp = $spawn foo();
-    gp = $spawn goo();
+    pf=$spawn foo();
+    pg=$spawn goo();
   }
-  $wait(fp);
-  $wait(gp);
+  $wait(pg);
+  assert(a==0);
+  assert(b);
+  $wait(pf);
 }

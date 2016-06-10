@@ -1719,6 +1719,14 @@ public class CommonModelFactory implements ModelFactory {
 
 	@Override
 	public Expression systemGuardExpression(CallOrSpawnStatement call) {
+		if (call.function() != null
+				&& call.function().functionContract() != null) {
+			Expression guard = call.function().functionContract().guard();
+
+			if (guard != null && guard instanceof BooleanLiteralExpression)
+				return guard;
+		}
+
 		SystemGuardExpression systemGuard = new CommonSystemGuardExpression(
 				call.getSource(), call.statementScope(),
 				((SystemFunction) call.function()).getLibrary(),

@@ -444,6 +444,9 @@ public class CommonStateManager implements StateManager {
 		else
 			pLocation = procState.getLocation();
 		assert pLocation != null;
+		if(pLocation.isGuardedLocation())
+			return new StateStatus(false, null, atomCount,
+					EnabledStatus.BLOCKED);
 		enabled = enabler.enabledTransitionsOfProcess(state, pid);
 		if (pLocation.enterAtom()) {
 			if (atomCount == 0 && !pLocation.isPurelyLocal())

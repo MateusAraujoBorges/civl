@@ -44,10 +44,15 @@ public class ModelBuilderTest {
 	public void arrayLiteral() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("arrayLiteral.cvl")));
 	}
-	
+
 	@Test
 	public void copyArrayLiteral() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("copyArrayLiteral.cvl")));
+	}
+
+	@Test
+	public void sysfunction() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("sysfunction.cvl")));
 	}
 
 	@AfterClass

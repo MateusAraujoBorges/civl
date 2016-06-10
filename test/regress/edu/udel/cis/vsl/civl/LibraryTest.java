@@ -97,7 +97,7 @@ public class LibraryTest {
 
 	@Test
 	public void commBad() throws ABCException {
-		assertFalse(ui.run("verify", QUIET, filename(CIVLC, "commBad.cvl"))); 
+		assertFalse(ui.run("verify", QUIET, filename(CIVLC, "commBad.cvl")));
 	}
 
 	@Test
@@ -272,7 +272,7 @@ public class LibraryTest {
 
 	@Test
 	public void systemFunctionPointer() throws ABCException {
-		assertTrue(ui.run("verify", QUIET, filename("funcPointer.cvl")));
+		assertTrue(ui.run("verify", filename("funcPointer.cvl")));
 	}
 
 	@Test

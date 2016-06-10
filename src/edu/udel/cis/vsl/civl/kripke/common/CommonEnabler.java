@@ -37,6 +37,7 @@ import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.EnablerIF;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
@@ -187,16 +188,29 @@ public abstract class CommonEnabler implements Enabler {
 
 	@Override
 	public TransitionSequence enabledTransitions(State state) {
-		TransitionSequence transitions;
+		Pair<BooleanExpression, TransitionSequence> transitionsAssumption;
+		TransitionSequence transitions = Semantics.newTransitionSequence(state,
+				false);
 
 		if (state.getPathCondition().isFalse())
 			// return empty set of transitions.
 			return Semantics.newTransitionSequence(state, true);
 		// return resumable atomic transitions.
-		transitions = enabledAtomicTransitions(state);
-		if (transitions == null)
+		transitionsAssumption = enabledAtomicTransitions(state);
+		if (transitionsAssumption != null && transitionsAssumption.left != null)
+			state = state.setPathCondition((BooleanExpression) universe
+					.canonic(universe.and(state.getPathCondition(),
+							transitionsAssumption.left)));
+		if (transitionsAssumption != null
+				&& transitionsAssumption.right != null)
+			transitions.addAll(transitionsAssumption.right.transitions());
+		if (transitionsAssumption == null
+				|| transitionsAssumption.right == null
+				|| transitionsAssumption.left != null) {
 			// return ample transitions.
-			transitions = enabledTransitionsPOR(state);
+			transitions.addAll(enabledTransitionsPOR(state).transitions());
+
+		}
 		return transitions;
 	}
 
@@ -469,13 +483,20 @@ public abstract class CommonEnabler implements Enabler {
 	 * Computes transitions from the process owning the atomic lock or triggered
 	 * by resuming an atomic block that is previously blocked. Adds an
 	 * assignment to update atomic lock variable (i.e., grabbing the atomic
-	 * lock) with the transition obtained by the statements.
+	 * lock) with the transition obtained by the statements. When the the
+	 * process in atomic session is at a guarded location (where exact one
+	 * statement is enabled with a non-trivial guard), then other processes
+	 * needs to be considered with the assumption that the process in atomic
+	 * session is blocked.
 	 * 
 	 * @param state
 	 *            The current state.
-	 * @return The enabled transitions that resume an atomic block.
+	 * @return The enabled transitions that resume an atomic block by a certain
+	 *         process, and an optional boolean expression representing the
+	 *         condition when the process in atomic is blocked.
 	 */
-	private TransitionSequence enabledAtomicTransitions(State state) {
+	private Pair<BooleanExpression, TransitionSequence> enabledAtomicTransitions(
+			State state) {
 		int pidInAtomic;
 
 		pidInAtomic = stateFactory.processInAtomic(state);
@@ -484,11 +505,45 @@ public abstract class CommonEnabler implements Enabler {
 			// without interleaving with other processes
 			TransitionSequence localTransitions = Semantics
 					.newTransitionSequence(state, false);
+			Location location = state.getProcessState(pidInAtomic)
+					.getLocation();
 
-			localTransitions.addAll(enabledTransitionsOfProcess(state,
-					pidInAtomic, null));
+			if (location.isGuardedLocation()) {
+				Statement statement = location.getOutgoing(0);
+				BooleanExpression guardValue = this.getGuard(statement,
+						pidInAtomic, state);
+				BooleanExpression otherAssumption = null;
+				BooleanExpression newPathCondition = state.getPathCondition();
+
+				if (!guardValue.isFalse()) {
+					if (!guardValue.isTrue()) {
+						Reasoner reasoner = universe.reasoner(state
+								.getPathCondition());
+
+						BooleanExpression notGuard = (BooleanExpression) universe
+								.canonic(universe.not(guardValue));
+
+						if (reasoner.isValid(notGuard)) {
+							return null;
+						}
+						if (!reasoner.isValid(guardValue)) {
+							otherAssumption = notGuard;
+							newPathCondition = (BooleanExpression) universe
+									.canonic(universe.and(newPathCondition,
+											guardValue));
+						}
+					}
+					localTransitions.addAll(enabledTransitionsOfStatement(
+							state, statement, newPathCondition, pidInAtomic,
+							AtomicLockAction.NONE));
+				}
+				return new Pair<>(otherAssumption, localTransitions);
+			} else {
+				localTransitions.addAll(enabledTransitionsOfProcess(state,
+						pidInAtomic, null));
+			}
 			if (!localTransitions.isEmpty())
-				return localTransitions;
+				return new Pair<>(null, localTransitions);
 		}
 		return null;
 	}

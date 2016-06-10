@@ -14,6 +14,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.expression.BooleanLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
@@ -139,6 +140,8 @@ public class CommonLocation extends CommonSourceable implements Location {
 	 * and !expr.
 	 */
 	private boolean isBinaryBranch = false;
+
+	private boolean isGuarded = false;
 
 	/* **************************** Constructors *************************** */
 
@@ -684,8 +687,18 @@ public class CommonLocation extends CommonSourceable implements Location {
 
 	@Override
 	public void staticAnalysis() {
+		isGuardedAnalysis();
 		this.computeReachableLocations();
 		this.computeSpawnBound();
+	}
+
+	private void isGuardedAnalysis() {
+		if (this.outgoing.size() == 1) {
+			Expression guard = outgoing.get(0).guard();
+
+			if (!(guard instanceof BooleanLiteralExpression))
+				this.isGuarded = true;
+		}
 	}
 
 	/**
@@ -848,6 +861,11 @@ public class CommonLocation extends CommonSourceable implements Location {
 	@Override
 	public void setBinaryBranching(boolean value) {
 		this.isBinaryBranch = value;
+	}
+
+	@Override
+	public boolean isGuardedLocation() {
+		return isGuarded;
 	}
 
 }

@@ -1,8 +1,8 @@
 package edu.udel.cis.vsl.civl.transform;
 
+import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 
 import java.io.File;
 
@@ -36,13 +36,13 @@ public class MPICollectivePart2Test {
 
 	@Test
 	public void scatterGather() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ",
-				TestConstants.QUIET, NO_PRINTF, filename("scatterGather.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET,
+				NO_PRINTF, filename("scatterGather.c")));
 	}
 
 	@Test
-	public void bcast_ex04() { 
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET, 
+	public void bcast_ex04() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=6", TestConstants.QUIET,
 				NO_PRINTF, filename("c_ex04.c")));
 	}
 
@@ -66,25 +66,25 @@ public class MPICollectivePart2Test {
 
 	@Test
 	public void gatherv_ex08() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET, 
+		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET,
 				NO_PRINTF, filename("c_ex08.c")));
 	}
 
 	@Test
 	public void gatherv_ex13() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET, 
+		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET,
 				NO_PRINTF, filename("c_ex13.c")));
 	}
 
 	@Test
 	public void alltoallv() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6 ",
-				TestConstants.QUIET, NO_PRINTF, filename("alltoallv.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET,
+				NO_PRINTF, filename("alltoallv.c")));
 	}
 
 	@Test
 	public void reduce() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=6", TestConstants.QUIET, 
+		assertTrue(ui.run("verify -input_mpi_nprocs=6", TestConstants.QUIET,
 				NO_PRINTF, filename("reduce.c")));
 	}
 
@@ -108,9 +108,8 @@ public class MPICollectivePart2Test {
 
 	@Test
 	public void allreduce() {
-		assertTrue(ui
-				.run("verify -input_mpi_nprocs=6", TestConstants.QUIET, 
-						NO_PRINTF, filename("allreduce.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=6", TestConstants.QUIET,
+				NO_PRINTF, filename("allreduce.c")));
 	}
 
 	@Test
@@ -127,8 +126,8 @@ public class MPICollectivePart2Test {
 
 	@Test
 	public void barrierReduce() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=5",
-				TestConstants.QUIET, NO_PRINTF, filename("barrierReduce.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=5", TestConstants.QUIET,
+				NO_PRINTF, filename("barrierReduce.c")));
 	}
 
 	@Test
@@ -139,14 +138,14 @@ public class MPICollectivePart2Test {
 
 	@Test
 	public void barrierScatter() {
-		assertFalse(ui.run("verify -input_mpi_nprocs=5",
-				TestConstants.QUIET, filename("barrierScatter.c")));
+		assertFalse(ui.run("verify -input_mpi_nprocs=5", TestConstants.QUIET,
+				filename("barrierScatter.c")));
 	}
 
 	@Test
 	public void reduceScatter() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=4",
-				TestConstants.QUIET, NO_PRINTF, filename("reduceScatter.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=4", TestConstants.QUIET,
+				NO_PRINTF, filename("reduceScatter.c")));
 	}
 
 	@AfterClass

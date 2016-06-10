@@ -73,8 +73,8 @@ public class ArithmeticTest {
 
 	@Test
 	public void matmat() {
-		assertTrue(
-				ui.run(VERIFY, QUIET, "-inputBOUND=3", filename("matmat.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputBOUND=3",
+				filename("matmat.cvl")));
 	}
 
 	@Test
@@ -102,8 +102,8 @@ public class ArithmeticTest {
 
 	@Test
 	public void math() {
-		assertTrue(
-				ui.run(VERIFY, QUIET, NO_PRINTF, filename("mathematical.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF,
+				filename("mathematical.cvl")));
 	}
 
 	@Test

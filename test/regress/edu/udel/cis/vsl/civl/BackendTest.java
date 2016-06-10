@@ -64,9 +64,8 @@ public class BackendTest {
 
 	@Test
 	public void mpiSumArray() {
-		assertTrue(ui.run(VERIFY,
-				"-showAmpleSetWtStates -showTransitions=false",
-				"-input_mpi_nprocs=3", filename("mpiSumarray.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-input_mpi_nprocs=3",
+				filename("mpiSumarray.cvl")));
 	}
 
 	@Test
@@ -76,7 +75,17 @@ public class BackendTest {
 
 	@Test
 	public void binaryGuard() {
-		assertTrue(ui.run("show -showModel", filename("binaryGuard.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("binaryGuard.cvl")));
+	}
+
+	@Test
+	public void atomicBlocking() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("atomicExample.c")));
+	}
+
+	@Test
+	public void atomicBlocking2() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("atomic2.c")));
 	}
 
 	@AfterClass

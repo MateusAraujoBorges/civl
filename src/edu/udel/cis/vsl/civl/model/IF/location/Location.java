@@ -339,6 +339,14 @@ public interface Location extends Sourceable {
 	boolean isSafeLoop();
 
 	/**
+	 * are the disjunction of the guards of all outgoing statements of this
+	 * location guarded not TRUE?
+	 * 
+	 * @return
+	 */
+	boolean isGuardedLocation();
+
+	/**
 	 * returns true iff this location is in a side-effect-free loop.
 	 * 
 	 * @return

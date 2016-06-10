@@ -136,8 +136,9 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 				SymbolicExpression pointer = state.getVariableValue(dyscopeID,
 						memUnit.variableId());
 
-				if (pointer.type().equals(
-						this.typeFactory.pointerSymbolicType()))
+				if (!pointer.isNull()
+						&& pointer.type().equals(
+								this.typeFactory.pointerSymbolicType()))
 					muFactory.add(result, this.muFactory.newMemoryUnit(
 							this.symbolicUtil.getDyscopeId(null, pointer),
 							this.symbolicUtil.getVariableId(null, pointer),
