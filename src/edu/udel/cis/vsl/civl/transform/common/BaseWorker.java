@@ -499,9 +499,6 @@ public abstract class BaseWorker {
 	 *            typically, the name of the method that created the new
 	 *            context. This will appear in error message to help isolate the
 	 *            source of the new content.
-	 * @param text
-	 *            the text to be shown for the source which should be some
-	 *            informative message about the source
 	 * @param tokenType
 	 *            the integer code for the type of the token used to represent
 	 *            the source; use one of the constants in {@link CParser} or
@@ -512,6 +509,8 @@ public abstract class BaseWorker {
 	protected Source newSource(String method, int tokenType) {
 		Formation formation = tokenFactory.newTransformFormation(
 				transformerName, method);
+		// "inserted text" is just something temporary for now, and it will be
+		// fixed when complete source is done in the transformer
 		CivlcToken token = tokenFactory.newCivlcToken(tokenType,
 				"inserted text", formation);
 		Source source = tokenFactory.newSource(token);
