@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     }
     
 #endif
-    MPI_Bcast(b, L*M, MPI_DOUBLE, 0, comm);
+    MPI_Bcast(&b[0][0], L*M, MPI_DOUBLE, 0, comm);
     for (count = 0; count < nprocs-1 && count < N; count++)
       MPI_Send(&a[count][0], L, MPI_DOUBLE, count+1, count+1, comm);
     for (i = 0; i < N; i++) {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   } else {
     double b[L][M], in[L], out[M];
 
-    MPI_Bcast(b, L*M, MPI_DOUBLE, 0, comm);
+    MPI_Bcast(&b[0][0], L*M, MPI_DOUBLE, 0, comm);
     while (1) {
       MPI_Recv(in, L, MPI_DOUBLE, 0, MPI_ANY_TAG, comm, &status);
       if (status.MPI_TAG == 0) break;
