@@ -50,11 +50,6 @@ public class ModelBuilderTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("copyArrayLiteral.cvl")));
 	}
 
-	@Test
-	public void sysfunction() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("sysfunction.cvl")));
-	}
-
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

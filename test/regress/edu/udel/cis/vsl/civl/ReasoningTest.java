@@ -41,12 +41,12 @@ public class ReasoningTest {
 
 	@Test
 	public void unsatClause() {
-		assertTrue(ui.run(VERIFY, filename("unsatClause.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("unsatClause.c")));
 	}
 
 	@Test
 	public void unsatClause2() {
-		assertTrue(ui.run(VERIFY, filename("unsatClause2.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("unsatClause2.c")));
 	}
 
 	@AfterClass

@@ -142,7 +142,7 @@ public class LibraryTest {
 
 	@Test
 	public void barrier() throws ABCException {
-		assertTrue(ui.run("verify", "-inputN=2", "-showAmpleSet",
+		assertTrue(ui.run("verify", "-inputN=2", QUIET,
 				filename(CIVLC, "barrier.cvl")));
 	}
 
@@ -205,8 +205,7 @@ public class LibraryTest {
 
 	@Test
 	public void random() throws ABCException {
-		assertFalse(ui.run("verify -showStates -showTransitions",
-				filename(STDLIB, "random.cvl")));
+		assertFalse(ui.run("verify", QUIET, filename(STDLIB, "random.cvl")));
 	}
 
 	@Test
@@ -261,7 +260,7 @@ public class LibraryTest {
 
 	@Test
 	public void fprintfExit() throws ABCException {
-		assertTrue(ui.run("verify", // QUIET, NO_PRINTF,
+		assertTrue(ui.run("verify", QUIET, NO_PRINTF,
 				filename(STDIO, "fprintfExit.cvl")));
 	}
 
@@ -272,7 +271,7 @@ public class LibraryTest {
 
 	@Test
 	public void systemFunctionPointer() throws ABCException {
-		assertTrue(ui.run("verify", filename("funcPointer.cvl")));
+		assertTrue(ui.run("verify", QUIET, filename("funcPointer.cvl")));
 	}
 
 	@Test

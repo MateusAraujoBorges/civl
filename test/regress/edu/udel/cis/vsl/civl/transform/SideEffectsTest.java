@@ -1,7 +1,7 @@
 package edu.udel.cis.vsl.civl.transform;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -30,24 +30,26 @@ public class SideEffectsTest {
 
 	@Test
 	public void postIncr() throws ABCException {
-		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("postIncr.cvl")));
+		assertTrue(ui.run("verify ", TestConstants.QUIET,
+				filename("postIncr.cvl")));
 	}
 
 	@Test
 	public void forLoopIncrSE() throws ABCException {
-		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("forLoopIncretSE.c")));
+		assertTrue(ui.run("verify ", TestConstants.QUIET,
+				filename("forLoopIncretSE.c")));
 	}
-	
+
 	@Test
 	public void strictInitTest() throws ABCException {
-		assertTrue(ui.run("verify ", TestConstants.QUIET, 
-				"-showProgram", filename("structInitSideEffect.c")));
+		assertTrue(ui.run("verify ", TestConstants.QUIET,
+				filename("structInitSideEffect.c")));
 	}
-	
+
 	@Test
 	public void quantifiedExpressionTest() throws ABCException {
-		assertFalse(ui.run("verify ", TestConstants.QUIET, 
-				"-showProgram", filename("quantifiedSideEffects.c")));
+		assertFalse(ui.run("verify ", TestConstants.QUIET,
+				filename("quantifiedSideEffects.c")));
 	}
 
 	@AfterClass
