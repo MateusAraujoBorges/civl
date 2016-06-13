@@ -306,7 +306,7 @@ public class LibraryTest {
 
 	@Test
 	public void havoc() throws ABCException {
-		assertTrue(ui.run("verify", NO_PRINTF, "-showSavedStates",
+		assertTrue(ui.run("verify", QUIET, NO_PRINTF,
 				filename(CIVLC, "havoc.cvl")));
 	}
 
@@ -318,12 +318,12 @@ public class LibraryTest {
 
 	@Test
 	public void heap() {
-		assertFalse(ui.run("verify", filename(CIVLC, "heap.cvl")));
+		assertFalse(ui.run("verify", QUIET, filename(CIVLC, "heap.cvl")));
 	}
 
 	@Test
 	public void power() {
-		assertTrue(ui.run("verify", filename(CIVLC, "pow.cvl")));
+		assertTrue(ui.run("verify", QUIET, filename(CIVLC, "pow.cvl")));
 	}
 
 	@AfterClass
