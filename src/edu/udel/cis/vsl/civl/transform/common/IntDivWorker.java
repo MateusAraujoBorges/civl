@@ -10,7 +10,9 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.AttributeKey;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
@@ -18,6 +20,8 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonContractNode;
 import edu.udel.cis.vsl.abc.ast.node.common.expression.CommonQuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.IntegerType;
+import edu.udel.cis.vsl.abc.ast.value.IF.Value;
+import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -116,7 +120,7 @@ public class IntDivWorker extends BaseWorker {
 			OperatorNode opn = (OperatorNode) node;
 
 			if (opn.getNumberOfArguments() != 2) {
-				throw new CIVLSyntaxException("div or mod operator can only have two operands");
+				throw new CIVLSyntaxException("div or mod operator can only have two operands.");
 			}
 
 			ASTNode parent = opn.parent();
@@ -126,9 +130,12 @@ public class IntDivWorker extends BaseWorker {
 			ExpressionNode operand2 = opn.getArgument(1);
 			
 			// Constant division will not be transformed.
-			if(operand1.isConstantExpression()
-					&& operand2.isConstantExpression()){
+			if(operand1.expressionKind() == ExpressionKind.CONSTANT
+					&& operand2.expressionKind() == ExpressionKind.CONSTANT){
+				Value v = ((ConstantNode)operand2).getConstantValue();
 				
+				if(v.isZero() == Answer.YES)
+					throw new CIVLSyntaxException("denominator can not be zero.");
 				return;
 			}
 			
