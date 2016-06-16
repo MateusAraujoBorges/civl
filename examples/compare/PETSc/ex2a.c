@@ -14,6 +14,10 @@
     system of equations.
   ------------------------------------------------------------------------- */
 
+#ifdef _CIVL
+#include <civlc.cvh>
+#endif
+
 #include "petsc.h"
 
 typedef struct {
@@ -36,6 +40,10 @@ PetscErrorCode FormFunctionLocal(DMDALocalInfo *info,PetscScalar **x,PetscScalar
   PetscFunctionBegin;
 
   lambda = user->param;
+#ifdef _CIVL
+  $assume(info->mx != 1);
+  $assume(info->my != 1);
+#endif
   hx     = 1.0/(PetscReal)(info->mx-1);
   hy     = 1.0/(PetscReal)(info->my-1);
   sc     = hx*hy*lambda;
