@@ -1,0 +1,25 @@
+To validate a witness using the online server, go to:
+
+  http://vcloud.sosy-lab.org/webclient/runs/witness_validation
+ 
+Select the witness GraphML file and the .c (or .cil or .i) file
+to be validated, and click "Submit run"
+
+If there are no formatting issues, the page will refresh when
+the run has completed.  A successful validation will include the
+string towards the bottom of the results: 
+
+  Verification result: FALSE.
+  
+As explained at https://sv-comp.sosy-lab.org/2016/witnesses/ :
+"The verification result "FALSE" means that the error-witness was 
+successfully validated, i.e., one of the paths that is described 
+by the witness automaton leads to a violation of the specification. 
+The result "TRUE" would mean that none of the paths described by 
+the witness automaton lead to a violation of the specification, or 
+in other words, that the witness was rejected. A witness is also 
+rejected if the witness validation does not terminate normally.
+
+There is a way to run the validation locally with the latest
+version of CPAchecker, but I have not yet been able to get this
+working on the MacOSX build of CPAchecker.
