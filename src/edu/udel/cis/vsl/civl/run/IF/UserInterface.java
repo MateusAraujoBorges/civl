@@ -58,6 +58,7 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.gui.IF.CIVL_GUI;
 import edu.udel.cis.vsl.civl.kripke.IF.StateManager;
+import edu.udel.cis.vsl.civl.kripke.common.WitnessGenerator;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -655,6 +656,7 @@ public class UserInterface {
 		Model model;
 		TracePlayer replayer;
 		boolean guiMode = modelTranslator.cmdSection.isTrue(guiO);
+		boolean svcompMode = modelTranslator.config.svcomp();
 		Trace<Transition, State> trace;
 
 		model = modelTranslator.translate();
@@ -672,6 +674,10 @@ public class UserInterface {
 				replayer.printStats();
 				printUniverseStats(out, modelTranslator.universe);
 				out.println();
+			}
+			if (svcompMode) {
+				out.println("*** Printing Witness ***\n");
+				new WitnessGenerator(model, trace);
 			}
 			return result;
 		}

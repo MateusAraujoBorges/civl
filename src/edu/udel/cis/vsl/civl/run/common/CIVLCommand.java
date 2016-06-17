@@ -110,7 +110,7 @@ public class CIVLCommand {
 				showAmpleSetWtStatesO, statelessPrintfO, guiO, showProgramO,
 				showPathConditionO, preprocO, astO, showMemoryUnitsO,
 				collectOutputO, checkDivisionByZeroO, checkMemoryLeakO, quietO,
-				unpreprocO);
+				unpreprocO, svcomp16O);
 		CIVLCommand.addRunOption(errorBoundO, verboseO, randomO, guidedO,
 				seedO, debugO, userIncludePathO, sysIncludePathO,
 				showTransitionsO, showStatesO, showSavedStatesO, showQueriesO,
