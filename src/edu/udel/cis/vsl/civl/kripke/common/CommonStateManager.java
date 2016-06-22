@@ -684,10 +684,23 @@ public class CommonStateManager implements StateManager {
 	public void setOnStack(State state, boolean value) {
 		state.setOnStack(value);
 	}
-
+	
 	@Override
 	public void setSeen(State state, boolean value) {
 		state.setSeen(value);
+	}
+	
+	@Override
+	//TODO change
+	public boolean setseen(State state){
+		synchronized (this) {
+			if(state.seen())
+				return false;
+			else{
+				state.setSeen(true);
+				return true;
+			}
+		}
 	}
 
 	/* ****************** Public Methods from StateManager ***************** */
