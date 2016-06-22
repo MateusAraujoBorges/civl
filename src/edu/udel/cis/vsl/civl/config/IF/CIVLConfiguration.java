@@ -188,6 +188,11 @@ public class CIVLConfiguration {
 	 * Should CIVL perform a slice analysis on the error trace.
 	 */
 	private boolean sliceAnalysis = false;
+	
+	/**
+	 * Should CIVL generate a witness from the error trace.
+	 */
+	private boolean witness = false;
 
 	/**
 	 * The maximal number of processes allowed in a state. -1 means infinitely
@@ -335,6 +340,7 @@ public class CIVLConfiguration {
 		this.setTimeout((int) config.getValueOrDefault(CIVLConstants.timeoutO));
 		this.quiet = config.isTrue(CIVLConstants.quietO);
 		this.sliceAnalysis = config.isTrue(CIVLConstants.sliceAnalysisO);
+		this.witness = config.isTrue(CIVLConstants.witnessO);
 		if (this.svcomp) {
 			if (config.getValue(CIVLConstants.checkMemoryLeakO) == null)
 				this.checkMemoryLeak = false;
@@ -479,6 +485,14 @@ public class CIVLConfiguration {
 
 	public void setSliceAnalysis(boolean sliceAnalysis) {
 		this.sliceAnalysis = sliceAnalysis;
+	}
+	
+	public boolean witness() {
+		return witness;
+	}
+	
+	public void setWitness(boolean witness) {
+		this.witness = witness;
 	}
 	
 	public boolean svcomp() {

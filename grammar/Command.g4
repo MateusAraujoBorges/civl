@@ -165,6 +165,7 @@ OPTION_NAME
     | '-userIncludePath'
     | '-verbose'
     | '-web'
+    | '-witness'
     ;
 
 VAR

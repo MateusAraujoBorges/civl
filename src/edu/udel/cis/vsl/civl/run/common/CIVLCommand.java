@@ -55,6 +55,7 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.traceO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.unpreprocO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.userIncludePathO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.verboseO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.witnessO;
 
 import java.io.PrintStream;
 import java.util.Collection;
@@ -111,7 +112,7 @@ public class CIVLCommand {
 				showAmpleSetWtStatesO, statelessPrintfO, guiO, showProgramO,
 				showPathConditionO, preprocO, astO, showMemoryUnitsO,
 				collectOutputO, checkDivisionByZeroO, checkMemoryLeakO, quietO,
-				unpreprocO, svcomp16O, sliceAnalysisO);
+				unpreprocO, svcomp16O, sliceAnalysisO, witnessO);
 		CIVLCommand.addRunOption(errorBoundO, verboseO, randomO, guidedO,
 				seedO, debugO, userIncludePathO, sysIncludePathO,
 				showTransitionsO, showStatesO, showSavedStatesO, showQueriesO,

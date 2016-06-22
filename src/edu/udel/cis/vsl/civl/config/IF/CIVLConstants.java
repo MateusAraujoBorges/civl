@@ -165,6 +165,7 @@ public class CIVLConstants {
 	public static String CIVL_MACRO = "_CIVL";
 	public static String QUIET = "quiet";
 	public static String SLICE_ANALYSIS = "sliceAnalysis";
+	public static String WITNESS = "witness";
 
 	// Option objects
 
@@ -550,6 +551,12 @@ public class CIVLConstants {
 	 */
 	public final static Option sliceAnalysisO = Option.newScalarOption(SLICE_ANALYSIS, BOOLEAN,
 			"Perform slice analysis on trace?", false);
+	
+	/**
+	 * Generate witness from trace? false by default.
+	 */
+	public final static Option witnessO = Option.newScalarOption(WITNESS, BOOLEAN,
+			"Generate witness from trace?", false);
 
 	/**
 	 * The name of the CIVL system function, which is the starting point of a
@@ -576,7 +583,7 @@ public class CIVLConstants {
 				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
 				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
-				sliceAnalysisO };
+				sliceAnalysisO, witnessO };
 	}
 
 	// headers...
