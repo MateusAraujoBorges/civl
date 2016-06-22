@@ -44,6 +44,7 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.showTimeO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.showTransitionsO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.showUnreachedCodeO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.simplifyO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.sliceAnalysisO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.solveO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.statelessPrintfO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.strictCompareO;
@@ -110,7 +111,7 @@ public class CIVLCommand {
 				showAmpleSetWtStatesO, statelessPrintfO, guiO, showProgramO,
 				showPathConditionO, preprocO, astO, showMemoryUnitsO,
 				collectOutputO, checkDivisionByZeroO, checkMemoryLeakO, quietO,
-				unpreprocO, svcomp16O);
+				unpreprocO, svcomp16O, sliceAnalysisO);
 		CIVLCommand.addRunOption(errorBoundO, verboseO, randomO, guidedO,
 				seedO, debugO, userIncludePathO, sysIncludePathO,
 				showTransitionsO, showStatesO, showSavedStatesO, showQueriesO,

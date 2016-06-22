@@ -657,6 +657,7 @@ public class UserInterface {
 		TracePlayer replayer;
 		boolean guiMode = modelTranslator.cmdSection.isTrue(guiO);
 		boolean svcompMode = modelTranslator.config.svcomp();
+		boolean sliceMode = modelTranslator.config.sliceAnalysis();
 		Trace<Transition, State> trace;
 
 		model = modelTranslator.translate();
@@ -676,9 +677,13 @@ public class UserInterface {
 				out.println();
 			}
 			if (svcompMode) {
+				if (sliceMode) {
+					out.println("*** Printing Slice Analysis ***");
+				}
 				out.println("*** Printing Witness ***\n");
 				new WitnessGenerator(model, trace);
 			}
+
 			return result;
 		}
 		return false;

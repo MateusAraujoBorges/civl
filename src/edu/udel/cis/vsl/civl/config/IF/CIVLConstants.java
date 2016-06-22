@@ -164,6 +164,7 @@ public class CIVLConstants {
 	public static String OMP_LOOP_DECOMP = "ompLoopDecomp";
 	public static String CIVL_MACRO = "_CIVL";
 	public static String QUIET = "quiet";
+	public static String SLICE_ANALYSIS = "sliceAnalysis";
 
 	// Option objects
 
@@ -543,6 +544,12 @@ public class CIVLConstants {
 	 */
 	public final static Option quietO = Option.newScalarOption(QUIET, BOOLEAN,
 			"ignore output?", false);
+	
+	/**
+	 * Perform slice analysis on trace? false by default.
+	 */
+	public final static Option sliceAnalysisO = Option.newScalarOption(SLICE_ANALYSIS, BOOLEAN,
+			"Perform slice analysis on trace?", false);
 
 	/**
 	 * The name of the CIVL system function, which is the starting point of a
@@ -568,7 +575,8 @@ public class CIVLConstants {
 				simplifyO, solveO, statelessPrintfO, svcomp16O, quietO,
 				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
 				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
-				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO };
+				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
+				sliceAnalysisO };
 	}
 
 	// headers...

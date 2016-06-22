@@ -153,6 +153,7 @@ OPTION_NAME
     | '-showTransitions'
     | '-showUnreached'
     | '-simplify'
+    | '-sliceAnalysis'
     | '-solve'
     | '-statelessPrintf'
     | '-strict'
