@@ -12,6 +12,9 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode.ContractKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
@@ -86,10 +89,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			// TODO: get rid of null source !!!!
 			if (child == null || child.getSource() == null)
 				continue;
-			sourceFileName = child.getSource().getFirstToken().getSourceFile()
-					.getName();
-			if (!sourceFileName.endsWith(".cvl")
-					&& !sourceFileName.endsWith(".cvh"))
+			sourceFileName = child.getSource().getFirstToken().getSourceFile().getName();
+			if (!sourceFileName.endsWith(".cvl") && !sourceFileName.endsWith(".cvh"))
 				sourceFiles.add(child);
 			// short circuit to avoid string comparison:
 			if (!hasMPI && sourceFileName.equals("mpi.h"))
@@ -106,16 +107,13 @@ public class ContractTransformerWorker extends BaseWorker {
 		if (hasMPI)
 			externalList.addAll(assignsMPICommConstants());
 		externalList.add(mainFunction(funcDefInSrc));
-		newRootNode = nodeFactory.newSequenceNode(null, "TranslationUnit",
-				externalList);
+		newRootNode = nodeFactory.newSequenceNode(null, "TranslationUnit", externalList);
 		completeSources(newRootNode);
-		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
-				ast.isWholeProgram());
+		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(), ast.isWholeProgram());
 		return newAst;
 	}
 
-	private AST transformWorker(ASTNode node,
-			List<FunctionDefinitionNode> funcDefInSrc) throws SyntaxException {
+	private AST transformWorker(ASTNode node, List<FunctionDefinitionNode> funcDefInSrc) throws SyntaxException {
 
 		if (node != null) {
 			if (node.nodeKind().equals(NodeKind.FUNCTION_DEFINITION)) {
@@ -127,8 +125,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		return null;
 	}
 
-	private FunctionDefinitionNode mainFunction(
-			List<FunctionDefinitionNode> funcDefsInSrc) throws SyntaxException {
+	private FunctionDefinitionNode mainFunction(List<FunctionDefinitionNode> funcDefsInSrc) throws SyntaxException {
 		List<BlockItemNode> items = new LinkedList<BlockItemNode>();
 		List<VariableDeclarationNode> declsComponents = new LinkedList<>();
 		List<StatementNode> callOrConVerifys = new LinkedList<>();
@@ -144,23 +141,18 @@ public class ContractTransformerWorker extends BaseWorker {
 			List<ExpressionNode> parameterIDs = new LinkedList<>();
 
 			// creating variables for parameters:
-			for (VariableDeclarationNode formalVar : funcDef.getTypeNode()
-					.getParameters()) {
+			for (VariableDeclarationNode formalVar : funcDef.getTypeNode().getParameters()) {
 				TypeNode varTypeNode = formalVar.getTypeNode().copy();
-				String varName = CONTRACT_PREFIX + CONTRACT_VAR_NAME
-						+ varaibleNameCounter++;
+				String varName = CONTRACT_PREFIX + CONTRACT_VAR_NAME + varaibleNameCounter++;
 				IdentifierNode varNameNode = nodeFactory.newIdentifierNode(
-						newSource(
-								"variable " + varName + " for "
-										+ funcDecl.getName(),
-								CivlcTokenConstant.DECLARATION), varName);
+						newSource("variable " + varName + " for " + funcDecl.getName(), CivlcTokenConstant.DECLARATION),
+						varName);
 				VariableDeclarationNode varDecl;
 				OperatorNode addressOfVar;
 				ExpressionNode havocCall;
 
 				if (formalVar.getTypeNode().getType() instanceof StructureOrUnionType) {
-					StructureOrUnionType structType = (StructureOrUnionType) formalVar
-							.getTypeNode().getType();
+					StructureOrUnionType structType = (StructureOrUnionType) formalVar.getTypeNode().getType();
 
 					if (structType.getName().equals(MPI_COMM_TYPE)) {
 						parameterIDs.add(identifierExpression(MPI_COMM_WORLD));
@@ -168,107 +160,95 @@ public class ContractTransformerWorker extends BaseWorker {
 					}
 				}
 				parameterIDs.add(identifierExpression(varName));
-				varDecl = nodeFactory.newVariableDeclarationNode(
-						varNameNode.getSource(), varNameNode, varTypeNode);
+				varDecl = nodeFactory.newVariableDeclarationNode(varNameNode.getSource(), varNameNode, varTypeNode);
 				declsComponents.add(varDecl);
 				// TODO: notice pointers:
-				addressOfVar = nodeFactory.newOperatorNode(
-						newSource("&" + varName, CivlcTokenConstant.OPERATOR),
+				addressOfVar = nodeFactory.newOperatorNode(newSource("&" + varName, CivlcTokenConstant.OPERATOR),
 						Operator.ADDRESSOF, identifierExpression(varName));
 				// create $havoc call for it:
 
 				havocCall = nodeFactory.newFunctionCallNode(
-						newSource(HAVOC_ID + "(" + varName + ")",
-								CivlcTokenConstant.CALL),
-						identifierExpression(HAVOC_ID), Arrays
-								.asList(addressOfVar), null);
-				callOrConVerifys.add(nodeFactory
-						.newExpressionStatementNode(havocCall));
+						newSource(HAVOC_ID + "(" + varName + ")", CivlcTokenConstant.CALL),
+						identifierExpression(HAVOC_ID), Arrays.asList(addressOfVar), null);
+				callOrConVerifys.add(nodeFactory.newExpressionStatementNode(havocCall));
 			}
 			// TODO: improve source here:
 			// TODO: solve main function problem:
 			if (!funcDecl.getName().equals("main")) {
 				ExpressionNode contractVerifyNode;
+				List<ExpressionNode> commNodes = new LinkedList<>();
 
 				// funcCall = nodeFactory.newFunctionCallNode(
 				// newSource(funcDecl.getName() + "(...)",
 				// CivlcTokenConstant.CALL),
 				// identifierExpression(funcDecl.getName()), parameterIDs,
 				// null);
+				for (ContractNode contract : funcDecl.getContracts()) {
+					if (contract.contractKind() == ContractKind.MPI_COLLECTIVE) {
+						MPICollectiveBlockNode collectiveNode = (MPICollectiveBlockNode) contract;
+						ExpressionNode id = identifierExpression(MPI_COMM_WORLD);
+
+						commNodes.add(id);
+					}
+				}
 				contractVerifyNode = nodeFactory.newContractVerifyNode(
-						newSource(funcDecl.getName() + "(...)",
-								CivlcTokenConstant.SPAWN),
-						identifierExpression(funcDecl.getName()), parameterIDs,
-						null, null);
-				callOrConVerifys.add(nodeFactory
-						.newExpressionStatementNode(contractVerifyNode));
+						newSource(funcDecl.getName() + "(...)", CivlcTokenConstant.SPAWN),
+						identifierExpression(funcDecl.getName()), commNodes, parameterIDs, null);
+				callOrConVerifys.add(nodeFactory.newExpressionStatementNode(contractVerifyNode));
 				// callOrConVerifys.add(contractVerifyNode);
 			}
 		}
 		items.addAll(declsComponents);
 		items.addAll(callOrConVerifys);
-		mainBody = nodeFactory.newCompoundStatementNode(this.newSource(
-				"main body", CivlcTokenConstant.COMPOUND_STATEMENT), items);
-		formals = nodeFactory.newSequenceNode(this.newSource(
-				"formal parameter of the declaration of the main function",
-				CivlcTokenConstant.DECLARATION_LIST),
-				"FormalParameterDeclarations",
-				new ArrayList<VariableDeclarationNode>());
-		mainType = nodeFactory.newFunctionTypeNode(this.newSource(
-				"type of the main function", CivlcTokenConstant.TYPE), this
-				.basicType(BasicTypeKind.INT), formals, true);
-		mainFunction = nodeFactory.newFunctionDefinitionNode(this.newSource(
-				"definition of the main function",
-				CivlcTokenConstant.FUNCTION_DEFINITION), this
-				.identifier("main"), mainType, null, mainBody);
+		mainBody = nodeFactory
+				.newCompoundStatementNode(this.newSource("main body", CivlcTokenConstant.COMPOUND_STATEMENT), items);
+		formals = nodeFactory.newSequenceNode(
+				this.newSource("formal parameter of the declaration of the main function",
+						CivlcTokenConstant.DECLARATION_LIST),
+				"FormalParameterDeclarations", new ArrayList<VariableDeclarationNode>());
+		mainType = nodeFactory.newFunctionTypeNode(this.newSource("type of the main function", CivlcTokenConstant.TYPE),
+				this.basicType(BasicTypeKind.INT), formals, true);
+		mainFunction = nodeFactory.newFunctionDefinitionNode(
+				this.newSource("definition of the main function", CivlcTokenConstant.FUNCTION_DEFINITION),
+				this.identifier("main"), mainType, null, mainBody);
 		return mainFunction;
 	}
 
 	private FunctionDeclarationNode createHavocFunctionDeclaration() {
-		IdentifierNode havocNode = nodeFactory.newIdentifierNode(
-				newSource("$havoc", CivlcTokenConstant.IDENTIFIER), HAVOC_ID);
-		IdentifierNode havocFormalIdNode = nodeFactory.newIdentifierNode(
-				newSource("ptr", CivlcTokenConstant.IDENTIFIER), "ptr");
-		VariableDeclarationNode havocFormal = nodeFactory
-				.newVariableDeclarationNode(
-						newSource("void *ptr", CivlcTokenConstant.DECLARATION),
-						havocFormalIdNode, nodeFactory.newPointerTypeNode(
-								newSource("void *", CivlcTokenConstant.TYPE),
-								nodeFactory.newVoidTypeNode(newSource("void",
-										CivlcTokenConstant.TYPE))));
+		IdentifierNode havocNode = nodeFactory.newIdentifierNode(newSource("$havoc", CivlcTokenConstant.IDENTIFIER),
+				HAVOC_ID);
+		IdentifierNode havocFormalIdNode = nodeFactory
+				.newIdentifierNode(newSource("ptr", CivlcTokenConstant.IDENTIFIER), "ptr");
+		VariableDeclarationNode havocFormal = nodeFactory.newVariableDeclarationNode(
+				newSource("void *ptr", CivlcTokenConstant.DECLARATION), havocFormalIdNode,
+				nodeFactory.newPointerTypeNode(newSource("void *", CivlcTokenConstant.TYPE),
+						nodeFactory.newVoidTypeNode(newSource("void", CivlcTokenConstant.TYPE))));
 		FunctionTypeNode funcTypeNode;
 
-		funcTypeNode = nodeFactory.newFunctionTypeNode(
-				newSource("void $havoc(void *)", CivlcTokenConstant.TYPE),
-				nodeFactory.newVoidTypeNode(newSource("void",
-						CivlcTokenConstant.TYPE)), nodeFactory.newSequenceNode(
-						newSource("void *ptr",
-								CivlcTokenConstant.PARAMETER_LIST),
-						"void *ptr", Arrays.asList(havocFormal)), false);
+		funcTypeNode = nodeFactory.newFunctionTypeNode(newSource("void $havoc(void *)", CivlcTokenConstant.TYPE),
+				nodeFactory.newVoidTypeNode(newSource("void", CivlcTokenConstant.TYPE)),
+				nodeFactory.newSequenceNode(newSource("void *ptr", CivlcTokenConstant.PARAMETER_LIST), "void *ptr",
+						Arrays.asList(havocFormal)),
+				false);
 		return nodeFactory.newFunctionDeclarationNode(
-				newSource("$system void $havoc(void *ptr)",
-						CivlcTokenConstant.DECLARATION), havocNode,
-				funcTypeNode, null);
+				newSource("$system void $havoc(void *ptr)", CivlcTokenConstant.DECLARATION), havocNode, funcTypeNode,
+				null);
 	}
 
 	private List<BlockItemNode> declareMPICommConstants() {
 		List<BlockItemNode> result = new LinkedList<>();
 
-		TypeNode intTypeNode = nodeFactory.newBasicTypeNode(
-				newSource("int", CivlcTokenConstant.TYPE), BasicTypeKind.INT);
-		VariableDeclarationNode mpiCommSizeDecl = nodeFactory
-				.newVariableDeclarationNode(
-						newSource("int \\mpi_comm_size",
-								CivlcTokenConstant.DECLARATION),
-						identifier(MPI_COMM_SIZE_CONST), intTypeNode);
+		TypeNode intTypeNode = nodeFactory.newBasicTypeNode(newSource("int", CivlcTokenConstant.TYPE),
+				BasicTypeKind.INT);
+		VariableDeclarationNode mpiCommSizeDecl = nodeFactory.newVariableDeclarationNode(
+				newSource("int \\mpi_comm_size", CivlcTokenConstant.DECLARATION), identifier(MPI_COMM_SIZE_CONST),
+				intTypeNode);
 
 		result.add(mpiCommSizeDecl);
 
-		VariableDeclarationNode mpiCommRankDecl = nodeFactory
-				.newVariableDeclarationNode(
-						newSource("int \\mpi_comm_rank",
-								CivlcTokenConstant.DECLARATION),
-						identifier(MPI_COMM_RANK_CONST), intTypeNode.copy());
+		VariableDeclarationNode mpiCommRankDecl = nodeFactory.newVariableDeclarationNode(
+				newSource("int \\mpi_comm_rank", CivlcTokenConstant.DECLARATION), identifier(MPI_COMM_RANK_CONST),
+				intTypeNode.copy());
 		result.add(mpiCommRankDecl);
 		return result;
 	}
@@ -278,22 +258,18 @@ public class ContractTransformerWorker extends BaseWorker {
 
 		ExpressionNode mpiCommSizeFuncExpr = identifierExpression(MPI_COMM_SIZE);
 		ExpressionNode addressOfSize = nodeFactory.newOperatorNode(
-				newSource("&\\mpi_comm_size", CivlcTokenConstant.OPERATOR),
-				Operator.ADDRESSOF, identifierExpression(MPI_COMM_SIZE_CONST));
-		FunctionCallNode mpiCommSizeCall = nodeFactory.newFunctionCallNode(
-				mpiCommSizeFuncExpr.getSource(), mpiCommSizeFuncExpr, Arrays
-						.asList(identifierExpression(MPI_COMM_WORLD),
-								addressOfSize), null);
+				newSource("&\\mpi_comm_size", CivlcTokenConstant.OPERATOR), Operator.ADDRESSOF,
+				identifierExpression(MPI_COMM_SIZE_CONST));
+		FunctionCallNode mpiCommSizeCall = nodeFactory.newFunctionCallNode(mpiCommSizeFuncExpr.getSource(),
+				mpiCommSizeFuncExpr, Arrays.asList(identifierExpression(MPI_COMM_WORLD), addressOfSize), null);
 		result.add(nodeFactory.newExpressionStatementNode(mpiCommSizeCall));
 
 		ExpressionNode mpiCommRankFuncExpr = identifierExpression(MPI_COMM_RANK);
 		ExpressionNode addressOfRank = nodeFactory.newOperatorNode(
-				newSource("&\\mpi_comm_rank", CivlcTokenConstant.OPERATOR),
-				Operator.ADDRESSOF, identifierExpression(MPI_COMM_RANK_CONST));
-		FunctionCallNode mpiCommRankCall = nodeFactory.newFunctionCallNode(
-				mpiCommRankFuncExpr.getSource(), mpiCommRankFuncExpr, Arrays
-						.asList(identifierExpression(MPI_COMM_WORLD),
-								addressOfRank), null);
+				newSource("&\\mpi_comm_rank", CivlcTokenConstant.OPERATOR), Operator.ADDRESSOF,
+				identifierExpression(MPI_COMM_RANK_CONST));
+		FunctionCallNode mpiCommRankCall = nodeFactory.newFunctionCallNode(mpiCommRankFuncExpr.getSource(),
+				mpiCommRankFuncExpr, Arrays.asList(identifierExpression(MPI_COMM_WORLD), addressOfRank), null);
 		result.add(nodeFactory.newExpressionStatementNode(mpiCommRankCall));
 		return result;
 	}
