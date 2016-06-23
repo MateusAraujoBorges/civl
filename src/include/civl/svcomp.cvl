@@ -55,6 +55,27 @@ int __VERIFIER_nondet_int(){
   return temp;
 }
 
+char __VERIFIER_nondet_char(){
+  char temp;
+  
+  $havoc(&temp);
+  return temp;
+}
+
+double __VERIFIER_nondet_double(){
+  double temp;
+  
+  $havoc(&temp);
+  return temp;
+}
+
+float __VERIFIER_nondet_float(){
+  float temp;
+  
+  $havoc(&temp);
+  return temp;
+}
+
 unsigned int __VERIFIER_nondet_uint(){
   int temp;
 
