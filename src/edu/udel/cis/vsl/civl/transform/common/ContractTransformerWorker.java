@@ -176,24 +176,15 @@ public class ContractTransformerWorker extends BaseWorker {
 			// TODO: solve main function problem:
 			if (!funcDecl.getName().equals("main")) {
 				ExpressionNode contractVerifyNode;
-				List<ExpressionNode> commNodes = new LinkedList<>();
 
 				// funcCall = nodeFactory.newFunctionCallNode(
 				// newSource(funcDecl.getName() + "(...)",
 				// CivlcTokenConstant.CALL),
 				// identifierExpression(funcDecl.getName()), parameterIDs,
 				// null);
-				for (ContractNode contract : funcDecl.getContracts()) {
-					if (contract.contractKind() == ContractKind.MPI_COLLECTIVE) {
-						MPICollectiveBlockNode collectiveNode = (MPICollectiveBlockNode) contract;
-						ExpressionNode id = identifierExpression(MPI_COMM_WORLD);
-
-						commNodes.add(id);
-					}
-				}
 				contractVerifyNode = nodeFactory.newContractVerifyNode(
 						newSource(funcDecl.getName() + "(...)", CivlcTokenConstant.SPAWN),
-						identifierExpression(funcDecl.getName()), commNodes, parameterIDs, null);
+						identifierExpression(funcDecl.getName()), parameterIDs, null);
 				callOrConVerifys.add(nodeFactory.newExpressionStatementNode(contractVerifyNode));
 				// callOrConVerifys.add(contractVerifyNode);
 			}
