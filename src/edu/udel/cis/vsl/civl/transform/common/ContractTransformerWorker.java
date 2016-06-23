@@ -199,7 +199,7 @@ public class ContractTransformerWorker extends BaseWorker {
 						newSource(funcDecl.getName() + "(...)",
 								CivlcTokenConstant.SPAWN),
 						identifierExpression(funcDecl.getName()), parameterIDs,
-						null);
+						null, null);
 				callOrConVerifys.add(nodeFactory
 						.newExpressionStatementNode(contractVerifyNode));
 				// callOrConVerifys.add(contractVerifyNode);

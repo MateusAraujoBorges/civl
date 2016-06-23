@@ -107,6 +107,12 @@ int MPI_Get_count(MPI_Status *status, MPI_Datatype datatype, int *count) {
   return 0;
 }
 
+int MPI_Get_processor_name(char * name, int * resultlen) {
+  $abstract int MPI_GET_PROCESSOR_NAME(char *, int *);
+
+  return MPI_GET_PROCESSOR_NAME(name, resultlen);
+}
+
 int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		 int dest, int sendtag,
 		 void *recvbuf, int recvcount, MPI_Datatype recvtype,
