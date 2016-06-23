@@ -76,6 +76,8 @@ import edu.udel.cis.vsl.civl.run.common.NormalCommandLine.NormalCommandKind;
 import edu.udel.cis.vsl.civl.run.common.VerificationStatus;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
+import edu.udel.cis.vsl.civl.slice.IF.SliceAnalysis;
+import edu.udel.cis.vsl.civl.slice.common.CommonSliceAnalysis;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.CommandLineException;
@@ -678,6 +680,8 @@ public class UserInterface {
 			}
 			if (sliceMode) {
 				out.println("*** Printing Slice Analysis ***");
+				@SuppressWarnings("unused")
+				SliceAnalysis sa = new CommonSliceAnalysis(model, trace);
 			}
 			if (witnessMode) {
 				out.println("*** Printing Witness ***\n");
