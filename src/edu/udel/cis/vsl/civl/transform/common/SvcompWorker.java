@@ -220,6 +220,10 @@ public class SvcompWorker extends BaseWorker {
 
 	private ExpressionNode moduloExpression(Source source, ExpressionNode left,
 			ExpressionNode right) {
+		if (!this.isUnsignedIntegerType(left.getInitialType())) {
+			left = this.nodeFactory.newCastNode(source,
+					this.basicType(BasicTypeKind.UNSIGNED), left);
+		}
 		return this.nodeFactory.newOperatorNode(source, Operator.MOD, left,
 				right);
 	};
