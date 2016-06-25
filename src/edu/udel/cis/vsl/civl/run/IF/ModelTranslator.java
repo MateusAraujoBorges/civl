@@ -776,7 +776,6 @@ public class ModelTranslator {
 			ASTNode root = ast.getRootNode();
 
 			if (macroMap.containsKey(MacroConstants.NO_CHECK_DIVISION_BY_ZERO)) {
-				// TODO
 				if(intDivMacroKey == null)
 					intDivMacroKey = frontEnd.getNodeFactory().newAttribute(MacroConstants.NO_CHECK_DIVISION_BY_ZERO,
 							Macro.class);
