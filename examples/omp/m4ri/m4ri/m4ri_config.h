@@ -23,7 +23,7 @@
 #define __M4RI_USE_POSIX_MEMALIGN	(__M4RI_HAVE_POSIX_MEMALIGN && __M4RI_HAVE_SSE2)
 #define __M4RI_DD_QUIET			(0 && !0)
 
-#define __M4RI_ENABLE_MZD_CACHE         1
-#define __M4RI_ENABLE_MMC               1
+#define __M4RI_ENABLE_MZD_CACHE         0
+#define __M4RI_ENABLE_MMC               0
 
 #endif // M4RI_M4RI_CONFIG_H
