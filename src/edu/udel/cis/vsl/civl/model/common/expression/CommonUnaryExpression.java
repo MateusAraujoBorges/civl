@@ -186,6 +186,8 @@ public class CommonUnaryExpression extends CommonExpression implements
 				&& this.operand.equals(that.operand());
 	}
 
+	// NEGATIVE, NOT, BIG_O, VALID, BIT_NOT
+
 	@Override
 	public String operatorToString() {
 		String op = "";
@@ -202,6 +204,9 @@ public class CommonUnaryExpression extends CommonExpression implements
 			break;
 		case VALID:
 			op = "\\valid";
+			break;
+		case BIT_NOT:
+			op = "~";
 			break;
 		default:
 			throw new CIVLInternalException("Unknown unary operator: "
