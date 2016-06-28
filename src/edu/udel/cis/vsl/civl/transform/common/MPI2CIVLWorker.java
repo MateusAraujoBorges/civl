@@ -497,10 +497,11 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 *         (i.e., the file scope of the final AST) and become $input
 	 *         variables of the final AST.
 	 */
-	private Triple<FunctionDefinitionNode, List<BlockItemNode>, List<VariableDeclarationNode>> mpiProcess(
+	private Triple<FunctionDefinitionNode, List<BlockItemNode>, List<BlockItemNode>> mpiProcess(
 			SequenceNode<BlockItemNode> root) {
 		List<BlockItemNode> includedNodes = new ArrayList<>();
-		List<VariableDeclarationNode> vars = new ArrayList<>();
+		List<String> vars = new LinkedList<>();
+		List<BlockItemNode> varDeclsAndAssumps = new LinkedList<>();
 		List<BlockItemNode> items;
 		int number;
 		CompoundStatementNode mpiProcessBody;
@@ -641,13 +642,18 @@ public class MPI2CIVLWorker extends BaseWorker {
 					|| sourceFile.equals("string.cvl")) {
 				includedNodes.add(child);
 			} else {
+				if (isRelatedAssumptionNode(child, vars)) {
+					varDeclsAndAssumps.add(child);
+					continue;
+				}
 				if (child.nodeKind() == NodeKind.VARIABLE_DECLARATION) {
 					VariableDeclarationNode variable = (VariableDeclarationNode) child;
 
 					if (variable.getTypeNode().isInputQualified()
 							|| variable.getTypeNode().isOutputQualified()
 							|| (sourceFile.equals(GeneralTransformer.LONG_NAME))) {
-						vars.add(variable);
+						vars.add(variable.getName());
+						varDeclsAndAssumps.add(variable);
 						continue;
 					}
 				}
@@ -682,7 +688,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 				"definition of function",
 				CivlcTokenConstant.FUNCTION_DEFINITION), this
 				.identifier(MPI_PROCESS), mpiProcessType, null, mpiProcessBody);
-		return new Triple<>(mpiProcess, includedNodes, vars);
+		return new Triple<>(mpiProcess, includedNodes, varDeclsAndAssumps);
 	}
 
 	StatementNode callMain(FunctionDefinitionNode function) {
@@ -939,10 +945,10 @@ public class MPI2CIVLWorker extends BaseWorker {
 		List<BlockItemNode> externalList;
 		SequenceNode<BlockItemNode> newRootNode;
 		List<BlockItemNode> includedNodes = new ArrayList<>();
-		List<VariableDeclarationNode> mainParameters = new ArrayList<>();
+		List<BlockItemNode> mainParametersAndAssumps = new ArrayList<>();
 		int count;
 		StatementNode nprocsAssumption = null;
-		Triple<FunctionDefinitionNode, List<BlockItemNode>, List<VariableDeclarationNode>> result;
+		Triple<FunctionDefinitionNode, List<BlockItemNode>, List<BlockItemNode>> result;
 		VariableDeclarationNode nprocsVar = this.getVariabledeclaration(root,
 				NPROCS);
 		VariableDeclarationNode nprocsUpperBoundVar = this
@@ -1004,7 +1010,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 		result = this.mpiProcess(root);
 		mpiProcess = result.first;
 		includedNodes = result.second;
-		mainParameters = result.third;
+		mainParametersAndAssumps = result.third;
 		// defining the main function;
 		mainFunction = mainFunction();
 		// the translated program is:
@@ -1018,12 +1024,29 @@ public class MPI2CIVLWorker extends BaseWorker {
 		for (int i = 0; i < count; i++) {
 			externalList.add(includedNodes.get(i));
 		}
-		count = mainParameters.size();
+		count = mainParametersAndAssumps.size();
+
+		// A flag indicating if the _mpi_nprocs declaration is inserted already
+		// for the following code:
+		boolean nprocsTouched = false;
+
 		// adding nodes from the arguments of the original main function.
 		for (int i = 0; i < count; i++) {
-			externalList.add(mainParameters.get(i));
+			BlockItemNode node = mainParametersAndAssumps.get(i);
+
+			// The _mpi_nprocs declaration must be inserted before it is
+			// referenced
+			if (!nprocsTouched
+					&& isRelatedAssumptionNode(node, Arrays.asList(NPROCS))) {
+				externalList.add(nprocsVar);
+				nprocsTouched = true;
+			}
+			externalList.add(node);
 		}
-		externalList.add(nprocsVar);
+		// If _mpi_nprocs declaration is not touched previously, then add it
+		// here:
+		if (!nprocsTouched)
+			externalList.add(nprocsVar);
 		if (nprocsLowerBoundVar != null)
 			externalList.add(nprocsLowerBoundVar);
 		if (nprocsUpperBoundVar != null)
@@ -1043,6 +1066,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 		// newAst.prettyPrint(System.out, true);
 		return newAst;
 	}
+
 	// /**
 	// * Create a variable declaration node of "__MPI_Sys_status__" type which
 	// * should be in every process representing the status of the process which

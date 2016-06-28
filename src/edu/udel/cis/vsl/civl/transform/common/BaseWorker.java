@@ -11,6 +11,7 @@ import java.util.List;
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodePredicate;
@@ -19,12 +20,15 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode.StatementKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.ArrayType;
@@ -977,5 +981,57 @@ public abstract class BaseWorker {
 			}
 		}
 		return node;
+	}
+	
+	/**
+	 * <p>
+	 * <b>Summary: </b> Returns true if and only if the given
+	 * {@link BlockItemNode} node is an assumption statement and the assumed
+	 * expression involves at least one of the identifiers.
+	 * </p>
+	 * 
+	 * @param node
+	 *            The {@link BlockItemNode} node
+	 * @param identifiers
+	 *            A set of {@link String} identifiers.
+	 * @return
+	 */
+	protected boolean isRelatedAssumptionNode(BlockItemNode node,
+			List<String> identifiers) {
+		StatementNode stmt;
+		ExpressionNode expr, function;
+
+		if (node.nodeKind() != NodeKind.STATEMENT)
+			return false;
+		stmt = (StatementNode) node;
+		if (stmt.statementKind() != StatementKind.EXPRESSION)
+			return false;
+		expr = ((ExpressionStatementNode) stmt).getExpression();
+		if (expr.expressionKind() != ExpressionKind.FUNCTION_CALL)
+			return false;
+		function = ((FunctionCallNode) expr).getFunction();
+		// TODO: not deal with calling $assume with function pointers
+		if (function.expressionKind() != ExpressionKind.IDENTIFIER_EXPRESSION)
+			return false;
+
+		String funcName = ((IdentifierExpressionNode) function).getIdentifier()
+				.name();
+		if (funcName.equals(ASSUME)) {
+			ExpressionNode arg = ((FunctionCallNode) expr).getArgument(0);
+			ASTNode next = arg;
+
+			while (next != null) {
+				if (next instanceof IdentifierExpressionNode) {
+					String nameInArg = ((IdentifierExpressionNode) next)
+							.getIdentifier().name();
+
+					for (String identifier : identifiers)
+						if (identifier.equals(nameInArg))
+							return true;
+				}
+				next = next.nextDFS();
+			}
+		}
+		return false;
 	}
 }

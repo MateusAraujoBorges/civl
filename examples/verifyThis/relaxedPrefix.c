@@ -43,10 +43,10 @@ $input int N1_BOUND = 4;
 $input int N2_BOUND = 3;
 $input int n1;
 $input int n2;
+$assume (n2>0 && n2 < N2_BOUND);
+$assume (n1>0 && n1 < N1_BOUND);
 $input int X2[n2];
 $input int X1[n1];
-$assume (n2>=0 && n2 < N2_BOUND);
-$assume (n1>=0 && n1 < N1_BOUND);
 
 bool isRelaxedPrefix(int* pat, int patLen, int* a, int aLen) {
   int shift = 0;

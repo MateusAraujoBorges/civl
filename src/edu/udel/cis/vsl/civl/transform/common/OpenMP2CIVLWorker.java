@@ -689,9 +689,11 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		VariableDeclarationNode threadMax;
 		SequenceNode<BlockItemNode> newRootNode;
 		List<BlockItemNode> includedNodes = new ArrayList<>();
-		List<VariableDeclarationNode> mainParameters = new ArrayList<>();
+		// Now related assumes must go tightly with input variable declarations
+		// because of the checking of array extent at where they declared:
+		List<BlockItemNode> mainParametersAndAssumes = new ArrayList<>();
 		int count;
-		Triple<List<BlockItemNode>, List<BlockItemNode>, List<VariableDeclarationNode>> result;
+		Triple<List<BlockItemNode>, List<BlockItemNode>, List<BlockItemNode>> result;
 		String criticalDeclaration = "criticalDeclarations";
 		AST civlcAST = this.parseSystemLibrary("civlc.cvh");
 		AST civlcOmpAST = this.parseSystemLibrary("civl-omp.cvh");
@@ -722,7 +724,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 		result = this.program(root);
 		includedNodes = result.second;
-		mainParameters = result.third;
+		mainParametersAndAssumes = result.third;
 
 		externalList = new LinkedList<>();
 		count = includedNodes.size();
@@ -730,10 +732,10 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		for (int i = 0; i < count; i++) {
 			externalList.add(includedNodes.get(i));
 		}
-		count = mainParameters.size();
+		count = mainParametersAndAssumes.size();
 		// adding nodes from the arguments of the original main function.
 		for (int i = 0; i < count; i++) {
-			externalList.add(mainParameters.get(i));
+			externalList.add(mainParametersAndAssumes.get(i));
 		}
 		// Add threadMax declaration
 		externalList.add(threadMax);
@@ -3871,10 +3873,11 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	 *         list of variable declaration nodes.
 	 * @throws SyntaxException
 	 */
-	private Triple<List<BlockItemNode>, List<BlockItemNode>, List<VariableDeclarationNode>> program(
+	private Triple<List<BlockItemNode>, List<BlockItemNode>, List<BlockItemNode>> program(
 			SequenceNode<BlockItemNode> root) throws SyntaxException {
 		List<BlockItemNode> includedNodes = new ArrayList<>();
-		List<VariableDeclarationNode> vars = new ArrayList<>();
+		List<BlockItemNode> varDeclsAndAssumps = new ArrayList<>();
+		List<String> declIndentifiers = new LinkedList<>();
 		List<BlockItemNode> items;
 		int number;
 		items = new LinkedList<>();
@@ -3933,11 +3936,16 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 				} else
 					includedNodes.add(child);
 			} else {
+				if (isRelatedAssumptionNode(child, declIndentifiers)) {
+					varDeclsAndAssumps.add(child);
+					continue;
+				}
 				if (child.nodeKind() == NodeKind.VARIABLE_DECLARATION) {
 					VariableDeclarationNode variable = (VariableDeclarationNode) child;
 					if (variable.getTypeNode().isInputQualified()
 							|| variable.getTypeNode().isOutputQualified()) {
-						vars.add(variable);
+						declIndentifiers.add(variable.getName());
+						varDeclsAndAssumps.add(variable);
 						continue;
 					}
 				}
@@ -3945,7 +3953,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 			}
 		}
 
-		return new Triple<>(items, includedNodes, vars);
+		return new Triple<>(items, includedNodes, varDeclsAndAssumps);
 	}
 
 	/**

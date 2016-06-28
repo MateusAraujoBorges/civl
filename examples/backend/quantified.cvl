@@ -1,11 +1,11 @@
-/** This example is to check the translation of quantified expression
+  /** This example is to check the translation of quantified expression
  *  into CVC theorem provers.
  */
 #include <stdio.h>
 #include <civlc.cvh>
 
 $input int n;
-$assume (n>=0);
+$assume (n>0);
 $input int a[n];
 $input int b[n];
 

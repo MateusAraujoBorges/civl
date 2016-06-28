@@ -1209,6 +1209,7 @@ $system[civlc] void $free(void* p);
 $system[stdio] int printf(char* restrict format, ...);
 //======================= sum_array.c ======================
 $input int _civl_argc;
+$assume(0 < _civl_argc); 
 $input char  _civl_argv[_civl_argc][];
 $input long NB = 20;
 $input long N;
@@ -1226,7 +1227,6 @@ void _mpi_process(int _mpi_rank)
 {
   MPI_Comm MPI_COMM_WORLD = $mpi_comm_create($here, _mpi_gcomm, _mpi_rank);
   $system[sum_array] void $assume(_Bool expression);
-  $assume(0 < _civl_argc);
   $mpi_state _mpi_state = _MPI_UNINIT;
   int $mpi_init(void)
   {

@@ -127,13 +127,20 @@ public class GeneralWorker extends BaseWorker {
 			transformMainFunction(root);
 			newMainFunction = createNewMainFunction();
 		}
-		// no need to modify the body of main
-		for (BlockItemNode inputVar : inputVars)
+		// no need to modify the body of main:
+		// argcAssumption must go tightly with the input variable declaration
+		// because of the checking of array extent:
+		// $input int _argc;
+		// $assume (0 < _argc);
+		// $input char _argv[_argc][];
+		for (VariableDeclarationNode inputVar : inputVars) {
 			newExternalList.add(inputVar);
-		if (this.argcAssumption != null) {
-			newExternalList.add(this.assumeFunctionDeclaration(argcAssumption
-					.getSource()));
-			newExternalList.add(argcAssumption);
+			if (inputVar.getName().equals(CIVL_argc_name)
+					&& argcAssumption != null) {
+				newExternalList.add(assumeFunctionDeclaration(argcAssumption
+						.getSource()));
+				newExternalList.add(argcAssumption);
+			}
 		}
 		// add my root
 		newExternalList.add(this.generalRootScopeNode());

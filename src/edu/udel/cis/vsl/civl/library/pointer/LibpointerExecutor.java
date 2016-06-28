@@ -190,12 +190,12 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 		int operator;
 
 		objs = new SymbolicExpression[2];
-		eval = libevaluator.getDataFrom(state, process, arguments[0],
-				argumentValues[0], one, false, source);
+		eval = libevaluator.getDataFrom(state, pid, process, arguments[0],
+				argumentValues[0], one, false, false, source);
 		state = eval.state;
 		objs[0] = eval.value;
-		eval = libevaluator.getDataFrom(state, process, arguments[2],
-				argumentValues[2], one, false, source);
+		eval = libevaluator.getDataFrom(state, pid, process, arguments[2],
+				argumentValues[2], one, false, false, source);
 		state = eval.state;
 		objs[1] = eval.value;
 		if (!objs[0].type().equals(objs[1].type())) {

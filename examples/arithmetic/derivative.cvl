@@ -5,6 +5,7 @@
 
 $input double h;
 $input int num_elements;
+$assume( num_elements > 0);
 $input double initial[num_elements];
 $output double final[num_elements];
 double working[num_elements];

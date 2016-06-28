@@ -34,9 +34,8 @@ $input int N_BOUND=4;
 $input int n;
 $input int x;
 $input int y;
-$input int X1[n];
-
 $assume (x < n && y < n && x >=0 && y>=0 && n > 0 && n <= N_BOUND);
+$input int X1[n];
 
 int lcp(int *arr, int n, int x, int y){
   int l=0;

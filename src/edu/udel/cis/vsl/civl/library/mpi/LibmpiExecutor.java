@@ -368,8 +368,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		if (reasoner.isValid(universe.equals(count, one)))
 			return new Evaluation(state, null);
 		try {
-			libEvaluator.getDataFrom(state, process, arguments[0], pointer,
-					count, false, ptrSource);
+			libEvaluator.getDataFrom(state, pid, process, arguments[0],
+					pointer, count, true, false, ptrSource);
 		} catch (UnsatisfiablePathConditionException e) {
 			errorLogger
 					.logSimpleError(

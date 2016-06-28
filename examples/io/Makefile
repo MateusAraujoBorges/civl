@@ -14,4 +14,4 @@ fopen: fileOpen.cvl
 
 clean:
 	rm -rf CIVLREP
-	rm -rf ~
+	rm -rf *~

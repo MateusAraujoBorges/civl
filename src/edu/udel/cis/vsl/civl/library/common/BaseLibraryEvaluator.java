@@ -13,11 +13,14 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
+import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
@@ -235,10 +238,10 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 	 *         one dimensional array.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public Evaluation getDataFrom(State state, String process,
+	public Evaluation getDataFrom(State state, int pid, String process,
 			Expression pointerExpr, SymbolicExpression pointer,
-			NumericExpression count, boolean checkOutput, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+			NumericExpression count, boolean toBase, boolean checkOutput,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		NumericExpression[] arraySlicesSizes;
 		NumericExpression startPos;
 		SymbolicExpression startPtr, endPtr;
@@ -248,14 +251,26 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 		int dim;
 		Pair<Evaluation, NumericExpression[]> pointer_and_slices;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		CIVLPointerType ptrType = (CIVLPointerType) pointerExpr
+				.getExpressionType();
+		CIVLType referencedType = ptrType.baseType();
+		TypeEvaluation teval = evaluator.getDynamicType(state, pid,
+				referencedType, source, true);
 
+		state = teval.state;
+		// If "count" == 0:
+		if (reasoner.isValid(universe.equals(count, zero))) {
+			SymbolicExpression result = universe.emptyArray(teval.type);
+
+			return new Evaluation(state, result);
+		}
 		// If "count" == 1:
 		if (reasoner.isValid(universe.equals(count, one))) {
 			eval = evaluator.dereference(source, state, process, pointerExpr,
 					pointer, true);
 			eval.value = universe.array(eval.value.type(),
 					Arrays.asList(eval.value));
-			eval.value = this.arrayFlatten(state, process, eval.value, source);
+			eval.value = arrayFlatten(state, process, eval.value, source);
 			return eval;
 		}
 		// Else "count" > 1 :
@@ -272,8 +287,12 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 			arraySlicesSizes[0] = one;
 		}
 		// startPtr may not be the memory base type reference form yet
-		symref = symbolicAnalyzer.getMemBaseReference(state, startPtr, source);
-		startPtr = symbolicUtil.makePointer(startPtr, symref);
+		if (toBase) {
+			symref = symbolicAnalyzer.getMemBaseReference(state, startPtr,
+					source);
+			startPtr = symbolicUtil.makePointer(startPtr, symref);
+		} else
+			symref = symbolicUtil.getSymRef(startPtr);
 		startPos = zero;
 		if (symref.isArrayElementReference()) {
 			NumericExpression[] startPtrIndices = symbolicUtil
@@ -293,7 +312,7 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 				startPtr, true);
 		state = eval.state;
 		commonArray = eval.value;
-		if (commonArray.type().typeKind().equals(SymbolicTypeKind.ARRAY))
+		if (commonArray.type().typeKind() == SymbolicTypeKind.ARRAY)
 			eval.value = getDataBetween(state, process, startPos, count,
 					commonArray, arraySlicesSizes, source);
 		else
@@ -762,9 +781,14 @@ public abstract class BaseLibraryEvaluator extends LibraryComponent implements
 				+ symbolicAnalyzer.symbolicExpressionToString(source, state,
 						null, arrayLength);
 
-		errorLogger.logError(source, state, process,
-				symbolicAnalyzer.stateInformation(state), claim, resultType,
-				ErrorKind.OUT_OF_BOUNDS, message);
+		if (claim != null && resultType != null)
+			state = errorLogger.logError(source, state, process,
+					symbolicAnalyzer.stateInformation(state), claim,
+					resultType, ErrorKind.OUT_OF_BOUNDS, message);
+		else
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.OUT_OF_BOUNDS, message);
 		throw new UnsatisfiablePathConditionException();
 	}
 }

@@ -46,8 +46,8 @@ command: minor changes
 
 $input int N_BOUND = 5;
 $input int N;
+$assume (N < N_BOUND && N > 0);
 $input int X1[N];
-$assume (N < N_BOUND && N >= 0);
 
 int lcp1(int *arr, int n, int x, int y) {
   int l=0;
