@@ -34,20 +34,22 @@ public interface Statement extends Sourceable {
 	 * 
 	 */
 	public enum StatementKind {
-		// ASSERT, /** Assertion */
-		ASSIGN, /** Assignment */
-		// ASSUME, /** Assumption */
-		CALL_OR_SPAWN, /** Function call or process spawn */
-		// CHOOSE, /** Non-deterministic choice */
-		DOMAIN_ITERATOR, /** CIVL for loop ($for) enter statement */
-		CIVL_PAR_FOR_ENTER, /** CIVL parallel for ($par) enter statement */
-		CONTRACT_VERIFY, /* $contractVerify statement */
-		CONTRACTED_CALL, /* contracted function call statement (enter or exit) */
-		MALLOC, /** Memory allocation */
-		NOOP, /** No operation */
-		// TODO get rid of this
-		RETURN
+		/** Assignment */
+		ASSIGN,
+		/** Function call or process spawn */
+		CALL_OR_SPAWN,
+		/** CIVL for loop ($for) enter statement */
+		DOMAIN_ITERATOR,
+		/** $contractVerify statement */
+		CIVL_PAR_FOR_ENTER, CONTRACT_VERIFY,
+		/** contracted function call statement (enter or exit) */
+		CONTRACTED_CALL,
+		/** Memory allocation */
+		MALLOC,
+		/** No operation */
+		NOOP,
 		/** Return statement */
+		RETURN
 	}
 
 	/* **************************** Public Methods ************************* */
