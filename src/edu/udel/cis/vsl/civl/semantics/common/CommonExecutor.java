@@ -1310,15 +1310,30 @@ public class CommonExecutor implements Executor {
 	}
 
 	/**
-	 * TODO
+	 * assigns a given value to a memory pointed to by a pointer at a given
+	 * state by a certain process.
 	 * 
 	 * @param source
+	 *            the source for error report
 	 * @param state
-	 * @param pointer
+	 *            the pre-state
+	 * @param process
+	 *            the process name for error report
+	 * @param lhs
+	 *            the left hand side expression that represents the memory to be
+	 *            written
 	 * @param value
+	 *            the value to be used for the assignment
 	 * @param isInitialization
-	 * @return
+	 *            true iff this is an initialization assignment in the model. if
+	 *            this is true, then the checking of write-to-input-variable
+	 *            error is disable.
+	 * @param tocheckPointer
+	 *            true iff checking of the validness of the pointer is enabled
+	 * @return the post state resulting performing the assignment using the
+	 *         given parameters
 	 * @throws UnsatisfiablePathConditionException
+	 *             if the memory represented by the lhs expression is invalid
 	 */
 	protected State assign(CIVLSource source, State state, String process,
 			SymbolicExpression pointer, SymbolicExpression value,
@@ -1407,6 +1422,30 @@ public class CommonExecutor implements Executor {
 		// }
 	}
 
+	/**
+	 * assigns a given value to a memory represented by a certain lhs expression
+	 * at a given state by a certain process.
+	 * 
+	 * @param state
+	 *            the pre-state
+	 * @param pid
+	 *            the PID of the process that executes the assignment
+	 * @param process
+	 *            the process name for error report
+	 * @param lhs
+	 *            the left hand side expression that represents the memory to be
+	 *            written
+	 * @param value
+	 *            the value to be used for the assignment
+	 * @param isInitialization
+	 *            true iff this is an initialization assignment in the model. if
+	 *            this is true, then the checking of write-to-input-variable
+	 *            error is disable.
+	 * @return the post state resulting performing the assignment using the
+	 *         given parameters
+	 * @throws UnsatisfiablePathConditionException
+	 *             if the memory represented by the lhs expression is invalid
+	 */
 	protected State assign(State state, int pid, String process,
 			LHSExpression lhs, SymbolicExpression value,
 			boolean isInitialization)
