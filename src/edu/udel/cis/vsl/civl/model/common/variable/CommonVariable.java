@@ -167,7 +167,11 @@ public class CommonVariable extends CommonSourceable implements Variable {
 		if (isOutput) {
 			result += "$output ";
 		}
-		result += name + " : " + type;
+		result += name;
+		if (this.constantValue != null) {
+			result += " (=" + this.constantValue + ")";
+		}
+		result += " : " + type;
 		return result;
 	}
 
@@ -268,5 +272,10 @@ public class CommonVariable extends CommonSourceable implements Variable {
 	@Override
 	public boolean isParameter() {
 		return this.isParameter;
+	}
+
+	@Override
+	public void setConstantValue(SymbolicExpression value) {
+		this.constantValue = value;
 	}
 }

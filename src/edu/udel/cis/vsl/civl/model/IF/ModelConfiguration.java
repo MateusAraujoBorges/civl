@@ -16,6 +16,15 @@ import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
  */
 public final class ModelConfiguration {
 
+	/* scope id and pointer id */
+
+	public final static int STATIC_CONSTANT_SCOPE = 0;
+	public final static int STATIC_ROOT_SCOPE = 1;
+	public final static int DYNAMIC_CONSTANT_SCOPE = -1;
+	public final static int DYNAMIC_REMOVED_SCOPE = -2;
+
+	/* Transformer names */
+
 	public final static String GENERAL_ROOT = GeneralTransformer.PREFIX
 			+ "root";
 
@@ -93,7 +102,7 @@ public final class ModelConfiguration {
 	/**
 	 * The name of the atomic lock variable of the system scope.
 	 */
-	public static final String ATOMIC_LOCK_VARIABLE = "_atomic_lock_var";
+	public static final String ATOMIC_LOCK_VARIABLE_INDEX = "_atomic_lock_var";
 
 	/**
 	 * The name of the time count variable, which is incremented by the system
@@ -116,7 +125,7 @@ public final class ModelConfiguration {
 	/**
 	 * The index of the heap variable in the scope.
 	 */
-	public static final int heapVariableIndex = 0;
+	public static final int HEAP_VARIABLE_INDEX = 0;
 
 	/**
 	 * The name of the file system variable, created when stdio transformation

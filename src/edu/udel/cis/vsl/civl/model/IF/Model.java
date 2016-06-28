@@ -23,6 +23,13 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 public interface Model extends Sourceable {
 
 	/**
+	 * returns the scope for constants
+	 * 
+	 * @return
+	 */
+	Scope staticConstantScope();
+
+	/**
 	 * @return The model factory that created this model.
 	 */
 	public ModelFactory factory();
@@ -44,9 +51,9 @@ public interface Model extends Sourceable {
 	public Set<CIVLFunction> functions();
 
 	/**
-	 * @return The designated outermost function "System."
+	 * @return The root function which usually wraps the main function
 	 */
-	public CIVLFunction system();
+	public CIVLFunction rootFunction();
 
 	/**
 	 * @param functions
@@ -55,10 +62,10 @@ public interface Model extends Sourceable {
 	public void setFunctions(Set<CIVLFunction> functions);
 
 	/**
-	 * @param system
-	 *            The designated outermost function "System."
+	 * @param root
+	 *            The root function which usually wraps the main function
 	 */
-	public void setSystem(CIVLFunction system);
+	public void setRootFunction(CIVLFunction root);
 
 	/**
 	 * @param function

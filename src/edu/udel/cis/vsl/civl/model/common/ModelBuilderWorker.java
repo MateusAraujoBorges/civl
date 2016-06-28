@@ -306,7 +306,7 @@ public class ModelBuilderWorker {
 	 * The outermost scope of the model, root of the static scope tree, known as
 	 * the "system scope".
 	 */
-	Scope systemScope;
+	Scope rootScope;
 
 	CIVLTypeFactory typeFactory;
 
@@ -314,6 +314,8 @@ public class ModelBuilderWorker {
 	 * Mapping from ABC types to corresponding CIVL types.
 	 */
 	Map<Type, CIVLType> typeMap = new HashMap<Type, CIVLType>();
+
+	CIVLFunction rootFunction;
 
 	/* **************************** Constructors *************************** */
 
@@ -360,13 +362,30 @@ public class ModelBuilderWorker {
 
 	/* ************************** Protected Methods ************************ */
 
-	protected void initialization(CIVLFunction system) {
-		systemScope = system.outerScope();
+	protected void initialization() {
+		Identifier rootID = factory.identifier(factory.systemSource(),
+				CIVLConstants.civlSystemFunction);
+		CIVLSource rootFunctionSource = factory.sourceOf(program.getAST()
+				.getMain().getDefinition());
+		// the order of creating the static scope and the root scope does
+		// matters
+		// always create the static scope first and then the root scope
+		// because the static scope has id 0 while the root scope has id 1
+		Scope staticScope = this.factory.scope(rootFunctionSource, null,
+				new ArrayList<Variable>(0), null);
+
+		rootScope = this.factory.scope(rootFunctionSource, staticScope,
+				new ArrayList<Variable>(0), null);
+		factory.setScopes(rootScope);
+		rootFunction = factory.function(
+				factory.sourceOf(program.getAST().getMain().getDefinition()),
+				false, rootID, rootScope, new ArrayList<Variable>(), null,
+				null, null);
+		rootScope.setFunction(rootFunction);
 		callStatements = new LinkedHashMap<>();
 		callEvents = new LinkedHashMap<>();
 		functionMap = new LinkedHashMap<>();
 		unprocessedFunctions = new ArrayList<>();
-		factory.setSystemScope(systemScope);
 	}
 
 	/**
@@ -904,27 +923,15 @@ public class ModelBuilderWorker {
 	 * 
 	 * @throws CommandLineException
 	 */
-	public void buildModel() throws CommandLineException {
-		Identifier systemID = factory.identifier(factory.systemSource(),
-				CIVLConstants.civlSystemFunction);
-		CIVLFunction system;
+	void buildModel() throws CommandLineException {
 		ASTNode rootNode = program.getAST().getRootNode();
-		FunctionTranslator systemFunctionTranslator;
-		CIVLSource rootFunctionSource = factory.sourceOf(program.getAST()
-				.getMain().getDefinition());
-		Scope rootFunctionScope;
+		FunctionTranslator rootFunctionTranslator;
 
 		preprocess();
-		rootFunctionScope = this.factory.scope(rootFunctionSource, null,
-				new ArrayList<Variable>(0), null);
-		system = factory.function(
-				factory.sourceOf(program.getAST().getMain().getDefinition()),
-				false, systemID, rootFunctionScope, new ArrayList<Variable>(),
-				null, null, null);
-		rootFunctionScope.setFunction(system);
-		systemFunctionTranslator = new FunctionTranslator(this, factory, system);
-		initialization(system);
-		systemFunctionTranslator.translateRootFunction(systemScope, rootNode);
+		initialization();
+		rootFunctionTranslator = new FunctionTranslator(this, factory,
+				rootFunction);
+		rootFunctionTranslator.translateRootFunction(rootScope, rootNode);
 		if (inputInitMap != null) {
 			// if commandline specified input variables that do not
 			// exist, throw exception...
@@ -932,8 +939,6 @@ public class ModelBuilderWorker {
 
 			commandLineVars.removeAll(initializedInputs);
 			// ignore extra input variables for svcomp
-			// if (this.civlConfig.svcomp())
-			// commandLineVars.remove("_svcomp_unpp_scale");
 			if (!this.civlConfig.svcomp() && !commandLineVars.isEmpty()) {
 				String msg = "Program contains no input variables named ";
 				boolean first = true;
@@ -961,7 +966,7 @@ public class ModelBuilderWorker {
 		completeHeapType();
 		completeTimeVar();
 		completeCallEvents();
-		completeModel(system);
+		completeModel(rootFunction);
 		this.calculateConstantValue();
 		this.factory.setCodeAnalyzers(Analysis.getAnalyzers(civlConfig,
 				universe));
@@ -1030,29 +1035,4 @@ public class ModelBuilderWorker {
 	public Model getModel() {
 		return model;
 	}
-
-	// void pushChooseGuard(Location startLocation, Expression guard) {
-	// if (this.chooseGuards == null)
-	// this.chooseGuards = new Stack<>();
-	// this.chooseGuards.add(new Pair<>(startLocation, guard));
-	// }
-	//
-	// void clearChooseGuard() {
-	// if (this.chooseGuards != null)
-	// this.chooseGuards.clear();
-	// }
-	//
-	// Expression popChooseGuard() {
-	// if (this.chooseGuards != null)
-	// if (!this.chooseGuards.isEmpty())
-	// return this.chooseGuards.pop().right;
-	// return null;
-	// }
-	//
-	// Location peekChooseGuardLocaton() {
-	// if (this.chooseGuards != null)
-	// if (!this.chooseGuards.isEmpty())
-	// return this.chooseGuards.peek().left;
-	// return null;
-	// }
 }

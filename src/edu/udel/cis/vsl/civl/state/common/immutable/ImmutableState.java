@@ -697,7 +697,7 @@ public class ImmutableState implements State {
 
 		System.arraycopy(this.collectibleCounts, 0, newCollectibleCounts, 0,
 				length);
-		newCollectibleCounts[index]=newCount;
+		newCollectibleCounts[index] = newCount;
 		newState.collectibleCounts = newCollectibleCounts;
 		return newState;
 	}
@@ -744,8 +744,13 @@ public class ImmutableState implements State {
 
 	@Override
 	public int getDyscopeID(int pid, Variable variable) {
-		int scopeId = getProcessState(pid).getDyscopeId();
 		Scope variableScope = variable.scope();
+
+		if (variableScope.id() == ModelConfiguration.STATIC_CONSTANT_SCOPE) {
+			return ModelConfiguration.DYNAMIC_CONSTANT_SCOPE;
+		}
+
+		int scopeId = getProcessState(pid).getDyscopeId();
 		DynamicScope scope;
 
 		while (scopeId >= 0) {
@@ -754,7 +759,7 @@ public class ImmutableState implements State {
 				return scopeId;
 			scopeId = getParentId(scopeId);
 		}
-		return -1;
+		return ModelConfiguration.DYNAMIC_REMOVED_SCOPE;
 	}
 
 	@Override
@@ -771,6 +776,9 @@ public class ImmutableState implements State {
 
 	@Override
 	public int getDyscope(int pid, int scopeID) {
+		if (scopeID == ModelConfiguration.STATIC_CONSTANT_SCOPE)
+			return ModelConfiguration.DYNAMIC_CONSTANT_SCOPE;
+
 		ImmutableProcessState proc = getProcessState(pid);
 		int stackSize = proc.stackSize();
 		int stackIndex = 0;
@@ -782,7 +790,7 @@ public class ImmutableState implements State {
 			if (dyScopeId < 0) {
 				stackIndex++;
 				if (stackIndex >= stackSize)
-					return -1;
+					return ModelConfiguration.DYNAMIC_REMOVED_SCOPE;
 				dyScopeId = proc.getStackEntry(stackIndex).scope();
 			}
 			dyScope = this.getDyscope(dyScopeId);

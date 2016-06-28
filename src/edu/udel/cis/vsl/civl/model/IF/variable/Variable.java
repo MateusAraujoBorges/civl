@@ -168,6 +168,13 @@ public interface Variable extends Sourceable {
 	SymbolicExpression constantValue();
 
 	/**
+	 * sets the constant value of this variable
+	 * 
+	 * @param value
+	 */
+	void setConstantValue(SymbolicExpression value);
+
+	/**
 	 * Is this variable declared as a parameter of some function?
 	 * 
 	 * @return true iff this variable is declared as a parameter of some

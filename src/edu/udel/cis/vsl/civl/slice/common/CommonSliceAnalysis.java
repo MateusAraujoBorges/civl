@@ -151,7 +151,7 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 		Pair<Location,Vertex> positionInTraceAndGraph = new Pair<Location,Vertex>(null,null);
 		
 		/* Construct initial ICFG starting with the outermost function */
-		FlowGraph ICFG = new FlowGraph(model.system(),null);
+		FlowGraph ICFG = new FlowGraph(model.rootFunction(),null);
 		System.out.println("The initial ICFG:"); printGraph(ICFG);
 		/* Sync positions of first location in the trace and initial ICFG entry */
 		positionInTraceAndGraph.left = traceStepLocStmt.get(0).location;

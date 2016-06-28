@@ -489,7 +489,7 @@ public class ImmutableStateFactory implements StateFactory {
 		// HashMap<Integer, Map<SymbolicExpression, Boolean>> reachableMUwtPtr =
 		// new HashMap<Integer, Map<SymbolicExpression, Boolean>>();
 		ImmutableState state;
-		CIVLFunction function = model.system();
+		CIVLFunction function = model.rootFunction();
 		int numArgs = function.parameters().size();
 		SymbolicExpression[] arguments = new SymbolicExpression[numArgs];
 		Variable atomicVar = modelFactory.atomicLockVariableExpression()
@@ -1839,15 +1839,17 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public Map<Variable, SymbolicExpression> inputVariableValueMap(State state) {
 		Map<Variable, SymbolicExpression> result = new LinkedHashMap<>();
+		
 		// If the root process has no stack entry, return a empty map:
 		if (state.getProcessState(0).stackSize() > 0) {
 			// If the parameter is a merged state, the dynamic scope id of the
 			// root
 			// lexical scope may not be 0:
-			int rootDysid = state.getDyscope(0, 0);
+			int rootDysid = state.getDyscope(0,
+					ModelConfiguration.STATIC_ROOT_SCOPE);
 
 			for (Variable variable : this.inputVariables) {
-				assert variable.scope().id() == 0;
+				assert variable.scope().id() == ModelConfiguration.STATIC_ROOT_SCOPE;
 				result.put(variable,
 						state.getVariableValue(rootDysid, variable.vid()));
 			}

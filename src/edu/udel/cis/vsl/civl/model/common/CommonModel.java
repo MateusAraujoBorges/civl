@@ -31,7 +31,7 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 public class CommonModel extends CommonSourceable implements Model {
 
 	private LinkedList<CIVLFunction> functions;
-	private CIVLFunction system;
+	private CIVLFunction rootFunction;
 	private ModelFactory modelFactory;
 	private String name = "";
 	private Map<String, Variable> externVariables;
@@ -40,7 +40,7 @@ public class CommonModel extends CommonSourceable implements Model {
 	private CIVLBundleType bundleType;
 	private Program program;
 	private List<MallocStatement> mallocStatements;
-
+	private Scope staticConstantScope;
 	private boolean hasFscanf;
 
 	/**
@@ -50,17 +50,18 @@ public class CommonModel extends CommonSourceable implements Model {
 	 *            The CIVL source of the model
 	 * @param factory
 	 *            The ModelFactory responsible for creating this model.
-	 * @param system
+	 * @param root
 	 *            The designated outermost function, called "System."
 	 */
 	public CommonModel(CIVLSource source, ModelFactory factory,
-			CIVLFunction system, Program program) {
+			CIVLFunction root, Program program) {
 		super(source);
 		this.modelFactory = factory;
-		this.system = system;
+		this.rootFunction = root;
 		functions = new LinkedList<>();
-		functions.add(system);
+		functions.add(root);
 		this.program = program;
+		this.staticConstantScope = factory.staticConstantScope();
 	}
 
 	/**
@@ -95,8 +96,8 @@ public class CommonModel extends CommonSourceable implements Model {
 	/**
 	 * @return The designated outermost function "System."
 	 */
-	public CIVLFunction system() {
-		return system;
+	public CIVLFunction rootFunction() {
+		return rootFunction;
 	}
 
 	/**
@@ -111,8 +112,8 @@ public class CommonModel extends CommonSourceable implements Model {
 	 * @param system
 	 *            The designated outermost function "System."
 	 */
-	public void setSystem(CIVLFunction system) {
-		this.system = system;
+	public void setRootFunction(CIVLFunction system) {
+		this.rootFunction = system;
 	}
 
 	/**
@@ -167,6 +168,7 @@ public class CommonModel extends CommonSourceable implements Model {
 		if (name != null)
 			out.print(" " + name);
 		out.println();
+		staticConstantScope.print(" | ", out, isDebug);
 		for (CIVLFunction function : functions) {
 			function.print(" | ", out, isDebug);
 		}
@@ -232,7 +234,7 @@ public class CommonModel extends CommonSourceable implements Model {
 
 	@Override
 	public void complete() {
-		this.system.outerScope().complete();
+		this.rootFunction.outerScope().complete();
 		this.renumberLocations();
 	}
 
@@ -281,7 +283,7 @@ public class CommonModel extends CommonSourceable implements Model {
 
 	@Override
 	public List<Variable> outputVariables() {
-		Scope root = this.system.outerScope();
+		Scope root = this.rootFunction.outerScope();
 		List<Variable> result = new LinkedList<>();
 
 		assert root.id() == 0;
@@ -289,5 +291,10 @@ public class CommonModel extends CommonSourceable implements Model {
 			if (variable.isOutput())
 				result.add(variable);
 		return result;
+	}
+
+	@Override
+	public Scope staticConstantScope() {
+		return this.staticConstantScope;
 	}
 }

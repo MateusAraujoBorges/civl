@@ -1067,7 +1067,8 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 
 		// If the control got here, all involved processes are synchronized
 		// here:
-		while (outScope != null) {
+		while (outScope != null
+				&& outScope.id() != ModelConfiguration.STATIC_CONSTANT_SCOPE) {
 			Variable[] variables = outScope.variables().clone();
 			int dyscope = state.getDyscope(pid, outScope);
 
@@ -1276,7 +1277,7 @@ public class ContractExecutor extends CommonExecutor implements Executor {
 		case ModelConfiguration.GENERAL_ROOT:
 			// case ModelConfiguration.SYMBOLIC_CONSTANT_COUNTER:
 			// case ModelConfiguration.SYMBOLIC_INPUT_COUNTER:
-		case ModelConfiguration.ATOMIC_LOCK_VARIABLE:
+		case ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX:
 		case ModelConfiguration.TIME_COUNT_VARIABLE:
 		case ModelConfiguration.GCOMM_WORLD:
 		case ModelConfiguration.GCOMMS:

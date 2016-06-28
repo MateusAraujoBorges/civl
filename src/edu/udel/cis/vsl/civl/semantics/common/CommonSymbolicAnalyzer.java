@@ -334,9 +334,14 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		ReferenceExpression reference = this.symbolicUtil.getSymRef(pointer);
 		int dyscopeId = symbolicUtil.getDyscopeId(soruce, pointer);
 		int vid = symbolicUtil.getVariableId(soruce, pointer);
-		CIVLType varType = state.getDyscope(dyscopeId).lexicalScope()
-				.variable(vid).type();
+		Scope lexicalScope;
+		CIVLType varType;
 
+		if (dyscopeId == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE)
+			lexicalScope = this.modelFactory.model().staticConstantScope();
+		else
+			lexicalScope = state.getDyscope(dyscopeId).lexicalScope();
+		varType = lexicalScope.variable(vid).type();
 		return typeOfObjByRef(varType, reference);
 	}
 
@@ -429,7 +434,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				continue;
 			} else if (varName.equals(ModelConfiguration.TIME_COUNT_VARIABLE)) {
 				continue;
-			} else if (varName.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE)
+			} else if (varName
+					.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX)
 					&& (value.isNull() || !modelFactory
 							.isPocessIdDefined(modelFactory.getProcessId(
 									variable.getSource(), value)))) {
@@ -1849,7 +1855,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				if (atomicLockStmt.enterAtomic()) {
 					result.append("ENTER_ATOMIC [");
 					if (previousAtomicCount < 1)
-						result.append(ModelConfiguration.ATOMIC_LOCK_VARIABLE
+						result.append(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX
 								+ ":=" + process + ", ");
 					result.append(process + ".atomicCount:="
 							+ (previousAtomicCount + 1));
@@ -1858,7 +1864,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append("LEAVE_ATOMIC [");
 
 					if (previousAtomicCount == 1)
-						result.append(ModelConfiguration.ATOMIC_LOCK_VARIABLE
+						result.append(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX
 								+ ":=$proc_null, ");
 					result.append(process + ".atomicCount:=0");
 					result.append("]");
@@ -2557,6 +2563,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 		int dyscope = symbolicUtil.getDyscopeId(null, pointer);
 
+		if (dyscope == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE)
+			return new Pair<>(universe.trueExpression(), ResultType.YES);
 		if (dyscope < 0)
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
 

@@ -1389,7 +1389,7 @@ public interface ModelFactory {
 	 * @param scope
 	 *            The system scope of the model
 	 */
-	void setSystemScope(Scope scope);
+	void setScopes(Scope scope);
 
 	/**
 	 * Gets the CIVL type factory associates with this model factory.
@@ -1524,6 +1524,22 @@ public interface ModelFactory {
 	 */
 	Variable newAnonymousVariableForArrayLiteral(CIVLSource sourceOf,
 			CIVLArrayType type);
+
+	/**
+	 * Creates an anonymous variable of array type in the static constant scope.
+	 * An anonymous variable has the name "_anon_i", like "_anon_0", "_anon_1",
+	 * etc.
+	 * 
+	 * @param sourceOf
+	 *            The source of the variable
+	 * @param type
+	 *            The type of the new anonymous variable
+	 * @param value
+	 *            the value of the array literal
+	 * @return the new anonymous variable
+	 */
+	Variable newAnonymousVariableForConstantArrayLiteral(CIVLSource sourceOf,
+			CIVLArrayType type, SymbolicExpression value);
 
 	/**
 	 * Returns the current fragment of an assignment statement for an anonymous
@@ -1734,4 +1750,11 @@ public interface ModelFactory {
 			List<Expression> loopVariants);
 
 	Nothing nothing(CIVLSource source);
+
+	/**
+	 * returns the static scope for constants
+	 * 
+	 * @return
+	 */
+	Scope staticConstantScope();
 }

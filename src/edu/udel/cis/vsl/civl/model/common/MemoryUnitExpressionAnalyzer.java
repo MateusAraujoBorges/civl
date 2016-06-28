@@ -105,14 +105,14 @@ public class MemoryUnitExpressionAnalyzer {
 
 			for (int i = 0; i < size; i++) {
 				// ignore heap variable
-				if (i == ModelConfiguration.heapVariableIndex)
+				if (i == ModelConfiguration.HEAP_VARIABLE_INDEX)
 					continue;
 				else {
 					Variable variable = myScope.variable(i);
 					MemoryUnitExpression memUnit;
 
 					if ((scopeID == 0 && variable.name().name()
-							.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE)))
+							.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX)))
 						continue;
 					memUnit = modelFactory.memoryUnitExpression(
 							variable.getSource(), variable, variable.type(),
@@ -544,7 +544,7 @@ public class MemoryUnitExpressionAnalyzer {
 			Variable variable = ((VariableExpression) expression).variable();
 
 			if (!((variable.scope().id() == 0 && variable.name().name()
-					.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE)))) {// ||
+					.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX)))) {// ||
 																			// variable
 				// .type().isHandleType())) {
 				boolean deref = false;

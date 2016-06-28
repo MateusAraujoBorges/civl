@@ -474,7 +474,7 @@ public class CommonEvaluator implements Evaluator {
 		} else {
 			int sid = symbolicUtil.getDyscopeId(source, pointer);
 
-			if (sid < 0) {
+			if (sid == ModelConfiguration.DYNAMIC_REMOVED_SCOPE) {
 				errorLogger
 						.logSimpleError(
 								source,
@@ -492,24 +492,30 @@ public class CommonEvaluator implements Evaluator {
 														pointer));
 				throwPCException = true;
 			} else {
-				int vid = symbolicUtil.getVariableId(source, pointer);
 				ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
 				SymbolicExpression variableValue;
+				int vid = symbolicUtil.getVariableId(source, pointer);
 
-				if (!analysisOnly && checkOutput) {
-					Variable variable = state.getDyscope(sid).lexicalScope()
-							.variable(vid);
+				if (sid == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE) {
+					variableValue = this.modelFactory.model()
+							.staticConstantScope().variable(vid)
+							.constantValue();
+				} else {
+					if (!analysisOnly && checkOutput) {
+						Variable variable = state.getDyscope(sid)
+								.lexicalScope().variable(vid);
 
-					if (variable.isOutput()) {
-						errorLogger.logSimpleError(source, state, process,
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.OUTPUT_READ,
-								"Attempt to read output variable "
-										+ variable.name().name());
-						throwPCException = true;
+						if (variable.isOutput()) {
+							errorLogger.logSimpleError(source, state, process,
+									symbolicAnalyzer.stateInformation(state),
+									ErrorKind.OUTPUT_READ,
+									"Attempt to read output variable "
+											+ variable.name().name());
+							throwPCException = true;
+						}
 					}
+					variableValue = state.getDyscope(sid).getValue(vid);
 				}
-				variableValue = state.getDyscope(sid).getValue(vid);
 				if (!symRef.isIdentityReference() && variableValue.isNull()) {
 					errorLogger.logSimpleError(source, state, process,
 							symbolicAnalyzer.stateInformation(state),
@@ -1619,7 +1625,14 @@ public class CommonEvaluator implements Evaluator {
 			String name;
 			StringObject nameObj;
 
-			if (variable.scope().id() == 0 && variable.isInput()) {
+			// TODO temporarily doing this for contract verification, ultimately
+			// this should be fixed and the scope id checking should be an
+			// assertion instead
+			if (variable.isInput()
+					&& variable.scope().id() == ModelConfiguration.STATIC_ROOT_SCOPE) {
+				// if (variable.isInput()){
+				// assert (variable.scope().id() ==
+				// ModelConfiguration.STATIC_ROOT_SCOPE);
 				name = "X_" + variable.name().name();
 				nameObj = universe.stringObject(name);
 

@@ -365,6 +365,12 @@ public class CommonModelFactory implements ModelFactory {
 	 */
 	private Scope systemScope;
 
+	/**
+	 * The static constant scope of the model, which is used for array literal
+	 * constants
+	 */
+	private Scope staticScope;
+
 	private FunctionIdentifierExpression waitallFuncPointer = null;
 
 	private FunctionIdentifierExpression elaborateDomainFuncPointer = null;
@@ -1487,15 +1493,18 @@ public class CommonModelFactory implements ModelFactory {
 	public Scope scope(CIVLSource source, Scope parent,
 			List<Variable> variables, CIVLFunction function) {
 		Scope newScope;
-		Variable heapVariable;
 		Set<Variable> myVariables = new HashSet<Variable>();
 
-		heapVariable = this.variable(source, modelBuilder.heapType,
-				this.identifier(source, ModelConfiguration.HEAP_VAR), 0);
-		myVariables.add(heapVariable);
+		if (scopeID != ModelConfiguration.STATIC_CONSTANT_SCOPE) {
+			Variable heapVariable;
+
+			heapVariable = this.variable(source, modelBuilder.heapType,
+					this.identifier(source, ModelConfiguration.HEAP_VAR), 0);
+			myVariables.add(heapVariable);
+		}
 		myVariables.addAll(variables);
 		newScope = new CommonScope(source, parent, myVariables, scopeID++);
-		if (newScope.id() == 0) {
+		if (newScope.id() == ModelConfiguration.STATIC_ROOT_SCOPE) {
 			this.createAtomicLockVariable(newScope);
 			createTimeVariables(newScope);
 		}
@@ -1616,8 +1625,9 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public void setSystemScope(Scope scope) {
+	public void setScopes(Scope scope) {
 		this.systemScope = scope;
+		this.staticScope = scope.parent();
 	}
 
 	@Override
@@ -1682,6 +1692,21 @@ public class CommonModelFactory implements ModelFactory {
 
 		variable.setConst(true);
 		this.systemScope.addVariable(variable);
+		return variable;
+	}
+
+	@Override
+	public Variable newAnonymousVariableForConstantArrayLiteral(
+			CIVLSource sourceOf, CIVLArrayType type, SymbolicExpression value) {
+		String name = ModelConfiguration.ANONYMOUS_VARIABLE_PREFIX
+				+ this.anonymousVariableId++;
+		Variable variable = this.variable(sourceOf, type,
+				this.identifier(sourceOf, name),
+				this.staticScope.numVariables());
+
+		variable.setConst(true);
+		variable.setConstantValue(value);
+		this.staticScope.addVariable(variable);
 		return variable;
 	}
 
@@ -1916,7 +1941,7 @@ public class CommonModelFactory implements ModelFactory {
 	 * An atomic lock variable is used to keep track of the process that
 	 * executes an $atomic block which prevents interleaving with other
 	 * processes. This variable is maintained as a global variable
-	 * {@link ComonModelFactory#ATOMIC_LOCK_VARIABLE} of <code>$proc</code> type
+	 * {@link ComonModelFactory#ATOMIC_LOCK_VARIABLE_INDEX} of <code>$proc</code> type
 	 * in the root scope in the CIVL model (always with index 0).
 	 * 
 	 * @param scope
@@ -1928,7 +1953,7 @@ public class CommonModelFactory implements ModelFactory {
 		// model specification, the system source will be used here.
 		Variable variable = this.variable(this.systemSource,
 				typeFactory.processType, this.identifier(this.systemSource,
-						ModelConfiguration.ATOMIC_LOCK_VARIABLE), scope
+						ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX), scope
 						.numVariables());
 
 		this.atomicLockVariableExpression = this.variableExpression(
@@ -2377,5 +2402,10 @@ public class CommonModelFactory implements ModelFactory {
 		return new CommonArrrayLambdaExpression(source, join(
 				expression.expressionScope(), restriction.expressionScope()),
 				arrayType, boundVariableList, restriction, expression);
+	}
+
+	@Override
+	public Scope staticConstantScope() {
+		return this.staticScope;
 	}
 }
