@@ -443,7 +443,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 				String theCharToString;
 				switch (theChar) {
 				case '\0':
-					theCharToString = "\\0";
+					theCharToString = "\0";
 					break;
 				case '\u000C':
 					theCharToString = "\\f";

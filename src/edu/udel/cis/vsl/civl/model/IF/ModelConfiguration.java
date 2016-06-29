@@ -22,6 +22,8 @@ public final class ModelConfiguration {
 	public final static int STATIC_ROOT_SCOPE = 1;
 	public final static int DYNAMIC_CONSTANT_SCOPE = -1;
 	public final static int DYNAMIC_REMOVED_SCOPE = -2;
+	public final static int NULL_POINTER_DYSCOPE = -1;
+	public final static int NULL_POINTER_VID = -1;
 
 	/* Transformer names */
 
