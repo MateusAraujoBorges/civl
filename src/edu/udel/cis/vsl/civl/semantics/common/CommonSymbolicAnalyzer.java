@@ -805,9 +805,14 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			ReferenceExpression reference) {
 		StringBuffer result = new StringBuffer();
 
-		if (dyscopeId == -1 && vid == -1)
+		if (dyscopeId == ModelConfiguration.NULL_POINTER_DYSCOPE
+				&& vid == ModelConfiguration.NULL_POINTER_VID) {
 			result.append("(void*)0");
-		else if (dyscopeId < 0)
+		} else if (dyscopeId == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE) {
+			result.append(this.stringLiteralToString(source, this.modelFactory
+					.model().staticConstantScope().variable(vid)
+					.constantValue()));
+		} else if (dyscopeId < 0)
 			result.append("UNDEFINED");
 		else {
 			DynamicScope dyscope = state.getDyscope(dyscopeId);
@@ -828,10 +833,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					CIVLArrayType arrayType = (CIVLArrayType) variable.type();
 
 					if (arrayType.elementType().isCharType()) {
-						result.append("\"");
-						result.append(this.symbolicUtil.charArrayToString(
-								source, objectValue, 0, true));
-						result.append("\"");
+						result.append(stringLiteralToString(source, objectValue));
 					} else {
 						result.append(symbolicExpressionToString(source, state,
 								arrayType, objectValue, false, "", ""));
@@ -848,6 +850,17 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				}
 			}
 		}
+		return result;
+	}
+
+	private StringBuffer stringLiteralToString(CIVLSource source,
+			SymbolicExpression array) {
+		StringBuffer result = new StringBuffer();
+
+		result.append("\"");
+		result.append(this.symbolicUtil.charArrayToString(source, array, 0,
+				true));
+		result.append("\"");
 		return result;
 	}
 
