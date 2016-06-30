@@ -177,3 +177,38 @@ Add to grammar: "$typeof(sizeable)" just like sizeof, but
 don't care about completeness.
 no sizeof required.  Type of typeof is $dynamic.  Why not "type".
 ---
+
+
+Add C++ parameterized type: at least in some cases.
+
+$seq<T>
+$set<T>
+$map<K,V>
+
+This will also require parameterized functions.  Yuck.  Notation?
+
+<T> $set<T> $union($set<T> s1, $set<T> s2);
+
+These are all scalar types, i.e., just values.
+You can add functions to unpack them into arrays.
+
+
+Do a value dataflow analysis.  Loop: widening operator
+
+Get recurrency analysis for loop.
+That means solving for variables in terms of the number of loop
+iterations.
+Esp. if linear.
+
+
+To check an error condition can't happen.
+
+For every expression e, generate the error expression ef
+(error free) of e, which is a boolean error-free expression
+which holds iff e is error-free.
+
+ef(a[i]) : i>=0 AND i<length(a)
+ef(p&&q) : ef(p) AND ((NOT p) IMPLIES ef(q))
+ef(p||q) : ef(p) AND (p IMPLIES ef(q))
+eq(!p) : ef(p)
+ef(*p) : ef(p) AND derefable(p)
