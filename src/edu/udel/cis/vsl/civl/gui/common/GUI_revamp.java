@@ -1200,8 +1200,16 @@ public class GUI_revamp extends JFrame {
 							filePaths[i] = ((File) files[i]).getPath();
 						}
 						UserInterface ui = new UserInterface();
-						List<VariableDeclarationNode> inputs = ui
-								.getInputVariables(filePaths);
+
+						List<VariableDeclarationNode> inputs = new ArrayList<>(
+								0);
+
+						try {
+							inputs = ui.getInputVariables(filePaths);
+						} catch (ABCException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
 
 						ArrayList<CIVL_Input> inputList = currConfig
 								.getInputs();

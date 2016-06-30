@@ -8,13 +8,12 @@ import org.junit.AfterClass;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.ast.IF.DifferenceObject;
-import edu.udel.cis.vsl.abc.config.IF.Configurations;
-import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
+import edu.udel.cis.vsl.abc.main.ABCExecutor;
+import edu.udel.cis.vsl.abc.main.TranslationTask;
 import edu.udel.cis.vsl.abc.program.IF.Program;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
-import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
 import edu.udel.cis.vsl.civl.transform.IF.Transforms;
 
 public class OmpSimplifierTest {
@@ -40,10 +39,7 @@ public class OmpSimplifierTest {
 	 * @throws IOException
 	 */
 	private void check(String fileNameRoot) throws ABCException, IOException {
-		FrontEnd frontEnd = new FrontEnd(
-				Configurations.newMinimalConfiguration());
-		TransformerFactory transformerFactory = Transforms
-				.newTransformerFactory(frontEnd.getASTFactory());
+		ABCExecutor executor;
 		File file = new File(rootDir, fileNameRoot + ".c");
 		File simplifiedFile = new File(new File(rootDir, "simple"),
 				fileNameRoot + ".c.s");
@@ -53,16 +49,20 @@ public class OmpSimplifierTest {
 		DifferenceObject diff;
 
 		{ // Parse the program and apply the CIVL transformations
-			program = frontEnd.compileAndLink(new File[] { file },
-					Language.CIVL_C);
-			program.apply(transformerFactory.getOpenMPSimplifier());
+			executor = new ABCExecutor(new TranslationTask(file));
+			executor.execute();
+			program = executor.getProgram();
+			program.apply(Transforms.newTransformerFactory(
+					executor.getFrontEnd().getASTFactory())
+					.getOpenMPSimplifier(new CIVLConfiguration()));
 			out.println("DEBUG: simplified program is ...");
 			program.getAST().prettyPrint(out, true);
 		}
 
 		{ // Parse the simplified program
-			simplifiedProgram = frontEnd.compileAndLink(
-					new File[] { simplifiedFile }, Language.CIVL_C);
+			executor = new ABCExecutor(new TranslationTask(simplifiedFile));
+			executor.execute();
+			simplifiedProgram = executor.getProgram();
 		}
 		/*
 		 * diff = program.getAST().getRootNode()

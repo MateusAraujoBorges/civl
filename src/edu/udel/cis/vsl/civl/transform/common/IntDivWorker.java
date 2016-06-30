@@ -7,7 +7,6 @@ import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.entity.IF.OrdinaryEntity;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.AttributeKey;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode;
@@ -23,6 +22,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.IntegerType;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
+import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
@@ -57,23 +57,26 @@ public class IntDivWorker extends BaseWorker {
 	private static final String INT_DIV_SOURCE_FILE = "int_div.cvl";
 	private static final String INT_DIV_NO_CHECKING_SOURCE_FILE = "int_div_no_checking.cvl";
 	private Boolean check_division_by_zero = false;
-	private AttributeKey intDivMacroKey;
+	private FrontEnd frontEnd;
 
-	public IntDivWorker(ASTFactory astFactory) {
+	// private AttributeKey intDivMacroKey;
+
+	public IntDivWorker(ASTFactory astFactory, FrontEnd frontEnd) {
 		super(IntDivisionTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "_int_div_";
+		this.frontEnd = frontEnd;
 	}
 
 	@Override
 	public AST transform(AST unit) throws SyntaxException {
 		SequenceNode<BlockItemNode> root = unit.getRootNode();
-		
-		if(intDivMacroKey != null){
-			Object obj = root.getAttribute(intDivMacroKey);
-			
-			if (obj != null)
-				check_division_by_zero = true;
-		}
+
+		// if (intDivMacroKey != null) {
+		// Object obj = root.getAttribute(intDivMacroKey);
+		//
+		// if (obj != null)
+		// check_division_by_zero = true;
+		// }
 
 		AST newAst;
 		OrdinaryEntity divEntity = unit.getInternalOrExternalEntity(INT_DIV);
@@ -86,7 +89,8 @@ public class IntDivWorker extends BaseWorker {
 		linkIntDivLibrary(root);
 		processDivisionAndModulo(root);
 		this.completeSources(root);
-		newAst = astFactory.newAST(root, unit.getSourceFiles(), unit.isWholeProgram());
+		newAst = astFactory.newAST(root, unit.getSourceFiles(),
+				unit.isWholeProgram());
 		return newAst;
 	}
 
@@ -115,12 +119,14 @@ public class IntDivWorker extends BaseWorker {
 			if (name.equals(INT_DIV) || name.equals(INT_MOD))
 				return;
 		}
-		if (node instanceof OperatorNode && (((OperatorNode) node).getOperator() == Operator.DIV
-				|| ((OperatorNode) node).getOperator() == Operator.MOD) && quantified == false) {
+		if (node instanceof OperatorNode
+				&& (((OperatorNode) node).getOperator() == Operator.DIV || ((OperatorNode) node)
+						.getOperator() == Operator.MOD) && quantified == false) {
 			OperatorNode opn = (OperatorNode) node;
 
 			if (opn.getNumberOfArguments() != 2) {
-				throw new CIVLSyntaxException("div or mod operator can only have two operands.");
+				throw new CIVLSyntaxException(
+						"div or mod operator can only have two operands.");
 			}
 
 			ASTNode parent = opn.parent();
@@ -128,17 +134,18 @@ public class IntDivWorker extends BaseWorker {
 			Operator op = opn.getOperator();
 			ExpressionNode operand1 = opn.getArgument(0);
 			ExpressionNode operand2 = opn.getArgument(1);
-			
+
 			// Constant division will not be transformed.
-			if(operand1.expressionKind() == ExpressionKind.CONSTANT
-					&& operand2.expressionKind() == ExpressionKind.CONSTANT){
-				Value v = ((ConstantNode)operand2).getConstantValue();
-				
-				if(v.isZero() == Answer.YES)
-					throw new CIVLSyntaxException("denominator can not be zero.");
+			if (operand1.expressionKind() == ExpressionKind.CONSTANT
+					&& operand2.expressionKind() == ExpressionKind.CONSTANT) {
+				Value v = ((ConstantNode) operand2).getConstantValue();
+
+				if (v.isZero() == Answer.YES)
+					throw new CIVLSyntaxException(
+							"denominator can not be zero.");
 				return;
 			}
-			
+
 			processDivisionAndModulo(operand1);
 			processDivisionAndModulo(operand2);
 			operand1 = opn.getArgument(0);
@@ -147,7 +154,8 @@ public class IntDivWorker extends BaseWorker {
 					&& operand2.getConvertedType() instanceof IntegerType) {
 				// construct a new functionCallNode.
 				String funcName = op == Operator.DIV ? INT_DIV : INT_MOD;
-				String method = op == Operator.DIV ? INT_DIV + "()" : INT_MOD + "()";
+				String method = op == Operator.DIV ? INT_DIV + "()" : INT_MOD
+						+ "()";
 				Source source = this.newSource(method, CivlcTokenConstant.CALL);
 				List<ExpressionNode> args = new ArrayList<ExpressionNode>();
 
@@ -156,7 +164,8 @@ public class IntDivWorker extends BaseWorker {
 				args.add(operand1);
 				args.add(operand2);
 
-				FunctionCallNode funcCallNode = functionCall(source, funcName, args);
+				FunctionCallNode funcCallNode = functionCall(source, funcName,
+						args);
 
 				funcCallNode.setInitialType(opn.getConvertedType());
 				parent.setChild(childIndex, funcCallNode);
@@ -188,13 +197,15 @@ public class IntDivWorker extends BaseWorker {
 	 * @throws SyntaxException
 	 *             when there are syntax error in {@link #INT_DIV_SOURCE_FILE}
 	 */
-	private void linkIntDivLibrary(SequenceNode<BlockItemNode> ast) throws SyntaxException {
+	private void linkIntDivLibrary(SequenceNode<BlockItemNode> ast)
+			throws SyntaxException {
 		AST intDivLib;
 
 		if (check_division_by_zero)
-			intDivLib = this.parseSystemLibrary(INT_DIV_NO_CHECKING_SOURCE_FILE);
+			intDivLib = this.parseSystemLibrary(frontEnd,
+					INT_DIV_NO_CHECKING_SOURCE_FILE);
 		else
-			intDivLib = this.parseSystemLibrary(INT_DIV_SOURCE_FILE);
+			intDivLib = this.parseSystemLibrary(frontEnd, INT_DIV_SOURCE_FILE);
 
 		SequenceNode<BlockItemNode> root = intDivLib.getRootNode();
 		List<BlockItemNode> funcDefinitions = new ArrayList<>();
@@ -207,7 +218,4 @@ public class IntDivWorker extends BaseWorker {
 		ast.insertChildren(0, funcDefinitions);
 	}
 
-	public void setIntDivMacroKey(AttributeKey intDivMacroKey) {
-		this.intDivMacroKey = intDivMacroKey;
-	}
 }

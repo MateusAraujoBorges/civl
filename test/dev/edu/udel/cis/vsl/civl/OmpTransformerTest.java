@@ -10,11 +10,12 @@ import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import edu.udel.cis.vsl.abc.config.IF.Configurations;
-import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
+import edu.udel.cis.vsl.abc.main.ABCExecutor;
 import edu.udel.cis.vsl.abc.main.FrontEnd;
+import edu.udel.cis.vsl.abc.main.TranslationTask;
 import edu.udel.cis.vsl.abc.program.IF.Program;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
 import edu.udel.cis.vsl.civl.transform.IF.Transforms;
@@ -58,26 +59,29 @@ public class OmpTransformerTest {
 	 */
 	private void check(String filenameRoot, boolean debug) throws ABCException,
 			IOException {
-		FrontEnd frontEnd = new FrontEnd(
-				Configurations.newMinimalConfiguration());
+		ABCExecutor executor = new ABCExecutor(new TranslationTask(new File(
+				root, filenameRoot + ".c")));
+		FrontEnd frontEnd = executor.getFrontEnd();
 		TransformerFactory transformerFactory = Transforms
 				.newTransformerFactory(frontEnd.getASTFactory());
 		Program program;
-		File file = new File(root, filenameRoot + ".c");
+		CIVLConfiguration config = new CIVLConfiguration();
 
-		program = frontEnd.compileAndLink(new File[] { file }, Language.CIVL_C);
+		executor.execute();
+		program = executor.getProgram();
 		if (debug) {
 			PrintStream before = new PrintStream("/tmp/before_simplify");
 			program.getAST().prettyPrint(before, true);
 			PrintStream beforeAST = new PrintStream("/tmp/before_AST");
 			frontEnd.printProgram(beforeAST, program, false, false);
 		}
-		program.apply(transformerFactory.getOpenMPSimplifier());
+		program.apply(transformerFactory.getOpenMPSimplifier(config));
 		if (debug) {
 			PrintStream after = new PrintStream("/tmp/after_simplify");
 			program.getAST().prettyPrint(after, true);
 		}
-		program.apply(transformerFactory.getOpenMP2CIVLTransformer(null));
+		program.apply(transformerFactory.getOpenMP2CIVLTransformer(config,
+				frontEnd));
 		if (debug) {
 			out.println("======== After applying OpenMP Simplifier ========");
 			frontEnd.printProgram(out, program, true, false);

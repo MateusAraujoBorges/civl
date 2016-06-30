@@ -23,20 +23,27 @@ import edu.udel.cis.vsl.abc.token.IF.Macro;
 import edu.udel.cis.vsl.abc.token.IF.MacroExpansion;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.MacroTransformer;
 
 /**
  * Recovers macros.
  */
 public class MacroWorker extends BaseWorker {
+	private CIVLConfiguration config;
 
-	public MacroWorker(ASTFactory astFactory) {
+	public MacroWorker(ASTFactory astFactory, CIVLConfiguration config) {
 		super(MacroTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "$macro_";
+		this.config = config;
 	}
 
 	@Override
 	public AST transform(AST unit) throws SyntaxException {
+		if (!this.hasHeader(unit, Pthread2CIVLWorker.PTHREAD_HEADER)
+				|| !config.svcomp())
+			return unit;
+
 		SequenceNode<BlockItemNode> root = unit.getRootNode();
 		AST newAst;
 		List<BlockItemNode> newExternalList = new ArrayList<>();

@@ -89,6 +89,8 @@ public class Pthread2CIVLWorker extends BaseWorker {
 	// needs to go to MPI process scope
 	final static String PTHREAD_EXIT_MAIN_NEW = "$pthread_exit_main";
 
+	static final String PTHREAD_HEADER = "pthread.h";
+
 	private boolean exitMainDone = false;
 
 	private String originalMain = MAIN;
@@ -974,6 +976,9 @@ public class Pthread2CIVLWorker extends BaseWorker {
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
+		if (!this.hasHeader(ast, PTHREAD_HEADER))
+			return ast;
+
 		SequenceNode<BlockItemNode> root = ast.getRootNode();
 
 		assert this.astFactory == ast.getASTFactory();

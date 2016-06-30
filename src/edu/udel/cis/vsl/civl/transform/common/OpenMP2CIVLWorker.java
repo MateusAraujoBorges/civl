@@ -68,6 +68,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.front.c.parse.COmpParser;
+import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -81,45 +82,47 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 	/* ************************** Private Static Fields ********************** */
 
-	private static String OMP_SET_LOCK = "omp_set_lock";
+	final static String OMP_HEADER = "omp.h";
 
-	private static String OMP_UNSET_LOCK = "omp_unset_lock";
+	private final static String OMP_SET_LOCK = "omp_set_lock";
 
-	private static String OMPPRE = "_omp_";
+	private final static String OMP_UNSET_LOCK = "omp_unset_lock";
+
+	private final static String OMPPRE = "_omp_";
 
 	/**
 	 * The name of the identifier of the $omp_gteam variable in the final CIVL
 	 * program.
 	 */
-	private static String GTEAM = "_omp_gteam";
+	private final static String GTEAM = "_omp_gteam";
 
 	/**
 	 * The name of the identifier of the $omp_team variable in the final CIVL
 	 * program.
 	 */
-	private static String TEAM = "_omp_team";
+	private final static String TEAM = "_omp_team";
 
 	/**
 	 * The name of $omp_gteam type in the final CIVL-C program.
 	 */
-	private static String GTEAM_TYPE = "$omp_gteam";
+	private final static String GTEAM_TYPE = "$omp_gteam";
 
 	/**
 	 * The name of $omp_team type in the final CIVL-C program.
 	 */
-	private static String TEAM_TYPE = "$omp_team";
+	private final static String TEAM_TYPE = "$omp_team";
 
 	/**
 	 * The name of the function to create a new $omp_gws object in the final
 	 * CIVL-C program.
 	 */
-	private static String GTEAM_CREATE = "$omp_gteam_create";
+	private final static String GTEAM_CREATE = "$omp_gteam_create";
 
 	/**
 	 * The name of the function to create a new $omp_ws object in the final
 	 * CIVL-C program.
 	 */
-	private static String TEAM_CREATE = "$omp_team_create";
+	private final static String TEAM_CREATE = "$omp_team_create";
 
 	/**
 	 * The name of $omp_gshared type in the final CIVL-C program.
@@ -147,28 +150,22 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	 * The name of the input variable denoting the number of OpenMP threads in
 	 * the final CIVL-C program.
 	 */
-	private static String NTHREADS = "_omp_nthreads";
+	private final static String NTHREADS = "_omp_nthreads";
 
 	/**
 	 * The name of the input variable denoting the number of OpenMP threads in
 	 * the final CIVL-C program.
 	 */
-	private static String THREADMAX = "_omp_thread_max";
+	private final static String THREADMAX = "_omp_thread_max";
 
 	/**
 	 * The name of the variable denoting the thread number in the CIVL_C
 	 * program.
 	 */
-	private static String TID = "_omp_tid";
+	private final static String TID = "_omp_tid";
 
 	/* **************************** Instance Fields ************************* */
-
-	/**
-	 * * There are new nodes created by the transformer, other than parsing from
-	 * some source file. All new nodes share the same source.
-	 */
-	@SuppressWarnings("unused")
-	private Source source;
+	private FrontEnd frontEnd;
 
 	/**
 	 * Variable that is increment for naming of temp variables that are created
@@ -224,10 +221,12 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	 * @param astFactory
 	 *            The ASTFactory that will be used to create new nodes.
 	 */
-	public OpenMP2CIVLWorker(ASTFactory astFactory, CIVLConfiguration config) {
+	public OpenMP2CIVLWorker(ASTFactory astFactory, CIVLConfiguration config,
+			FrontEnd frontEnd) {
 		super(OpenMP2CIVLTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "$omp_";
 		this.config = config;
+		this.frontEnd = frontEnd;
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -669,6 +668,18 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 												"3"), addressOfVar), null));
 	}
 
+	private boolean hasOmpPragma(ASTNode node) {
+		if (node.nodeKind() == NodeKind.OMP_NODE)
+			return true;
+		for (ASTNode child : node.children()) {
+			if (child != null) {
+				if (hasOmpPragma(child))
+					return true;
+			}
+		}
+		return false;
+	}
+
 	/* ********************* Methods From TransformerWorker ****************** */
 
 	/**
@@ -683,6 +694,10 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	 */
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
+		if (!this.hasHeader(ast, OMP_HEADER)
+				&& !hasOmpPragma(ast.getRootNode()))
+			return ast;
+
 		root = ast.getRootNode();
 		AST newAst;
 		List<BlockItemNode> externalList;
@@ -695,8 +710,8 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		int count;
 		Triple<List<BlockItemNode>, List<BlockItemNode>, List<BlockItemNode>> result;
 		String criticalDeclaration = "criticalDeclarations";
-		AST civlcAST = this.parseSystemLibrary("civlc.cvh");
-		AST civlcOmpAST = this.parseSystemLibrary("civl-omp.cvh");
+		AST civlcAST = this.parseSystemLibrary(frontEnd, "civlc.cvh");
+		AST civlcOmpAST = this.parseSystemLibrary(frontEnd, "civl-omp.cvh");
 
 		assert this.astFactory == ast.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();

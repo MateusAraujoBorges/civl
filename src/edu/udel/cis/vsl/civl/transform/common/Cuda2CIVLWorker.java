@@ -42,6 +42,7 @@ import edu.udel.cis.vsl.civl.transform.IF.Cuda2CIVLTransformer;
 
 public class Cuda2CIVLWorker extends BaseWorker {
 
+	private static String CUDA_HEADER = "cuda.h";
 	private int tempVarNum;
 
 	public Cuda2CIVLWorker(ASTFactory astFactory) {
@@ -51,6 +52,9 @@ public class Cuda2CIVLWorker extends BaseWorker {
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
+		if (!this.hasHeader(ast, CUDA_HEADER))
+			return ast;
+
 		SequenceNode<BlockItemNode> root = ast.getRootNode();
 		AST newAST;
 

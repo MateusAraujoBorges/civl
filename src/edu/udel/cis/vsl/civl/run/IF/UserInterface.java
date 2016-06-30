@@ -407,8 +407,7 @@ public class UserInterface {
 				implProgram.getAST());
 		// combinedAST.prettyPrint(System.out, true);
 		compositeProgram = specWorker.frontEnd.getProgramFactory(
-				specWorker.frontEnd.getStandardAnalyzer(Language.CIVL_C))
-				.newProgram(combinedAST);
+				Language.CIVL_C).newProgram(combinedAST);
 		if (civlConfig.debugOrVerbose() || civlConfig.showProgram()) {
 			compositeProgram.prettyPrint(out);
 		}
@@ -509,9 +508,11 @@ public class UserInterface {
 	 * @return the list of input variable declaration nodes, which contains
 	 *         plenty of information about the input variable, e.g., the source,
 	 *         type and name, etc.
+	 * @throws ABCException
 	 * @throws PreprocessorException
 	 */
-	public List<VariableDeclarationNode> getInputVariables(String[] files) {
+	public List<VariableDeclarationNode> getInputVariables(String[] files)
+			throws ABCException {
 		try {
 			GMCConfiguration gmcConfig = new GMCConfiguration(
 					definedOptions.values());
@@ -577,7 +578,7 @@ public class UserInterface {
 	 */
 	private boolean runMain(String[] args) throws CommandLineException {
 		boolean quiet = false;
-		
+
 		quiet = isQuiet(args);
 		if (!quiet) {
 			out.println("CIVL v" + version + " of " + date
@@ -591,7 +592,7 @@ public class UserInterface {
 		} else {
 			CommandLine commandLine = CIVLCommandFactory.parseCommand(
 					definedOptions.values(), args);
-			
+
 			try {
 				switch (commandLine.commandLineKind()) {
 				case NORMAL:
@@ -962,8 +963,7 @@ public class UserInterface {
 	}
 
 	private boolean runShow(ModelTranslator modelTranslator)
-			throws PreprocessorException, SyntaxException, ParseException,
-			CommandLineException, IOException {
+			throws CommandLineException, IOException, ABCException {
 		return modelTranslator.translate() != null;
 	}
 

@@ -4,12 +4,9 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import edu.udel.cis.vsl.abc.config.IF.Configurations;
-import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
-import edu.udel.cis.vsl.abc.front.IF.ParseException;
-import edu.udel.cis.vsl.abc.front.IF.PreprocessorException;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
-import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.abc.err.IF.ABCException;
+import edu.udel.cis.vsl.abc.main.ABCExecutor;
+import edu.udel.cis.vsl.abc.main.TranslationTask;
 
 /**
  * java -classpath ${WORKING_DIR}/civl.jar:${WORKING_DIR}/bin
@@ -24,22 +21,24 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 public class ParserMemoryTest {
 	private static Runtime runtime = Runtime.getRuntime();
 	private static long mb = 1024 * 1024;
-	private static FrontEnd frontEnd = new FrontEnd(
-			Configurations.newMinimalConfiguration());
 	private static List<String> codes = Arrays.asList("prune", "sef");
 
-	public static void main(String[] args) throws SyntaxException,
-			PreprocessorException, ParseException {
+	public static void main(String[] args) throws ABCException {
 		File testFile = new File(args[0]);
 		int n = Integer.parseInt(args[1]);
+		TranslationTask task;
+		ABCExecutor executor;
 
 		for (int i = 0; i < n; i++) {
 			System.out.println("i is " + i);
-			frontEnd.compileAndLink(new File[] { testFile }, Language.CIVL_C)
-					.applyTransformers(codes);
+			task = new TranslationTask(testFile);
+			task.addAllTransformCodes(codes);
+			executor = new ABCExecutor(task);
+			executor.execute();
 			System.gc();
 			System.out.println("Number of types = "
-					+ frontEnd.getASTFactory().getTypeFactory().getNumTypes());
+					+ executor.getFrontEnd().getASTFactory().getTypeFactory()
+							.getNumTypes());
 			System.out.println("##### Heap utilization statistics [MB] #####");
 			System.out.println("Used Memory:"
 					+ (runtime.totalMemory() - runtime.freeMemory()) / mb);

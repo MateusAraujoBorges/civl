@@ -79,6 +79,8 @@ public class IOWorker extends BaseWorker {
 	 */
 	private static String FOPEN_NEW = "$fopen";
 
+	private static String IO_HEADER = "stdio.h";
+
 	/**
 	 * The representation of the 16 modes of opening a file in CIVL.
 	 */
@@ -804,9 +806,9 @@ public class IOWorker extends BaseWorker {
 
 	@Override
 	public AST transform(AST unit) throws SyntaxException {
-		// boolean hasFflush = TransformerFactory.hasFunctionCalls(unit,
-		// Arrays.asList(FFLUSH));
-		// unit.prettyPrint(System.out, true);
+		if (!this.hasHeader(unit, IO_HEADER))
+			return unit;
+
 		boolean transformationNeeded = this.isTransformationNeeded(unit);
 		SequenceNode<BlockItemNode> rootNode = unit.getRootNode();
 

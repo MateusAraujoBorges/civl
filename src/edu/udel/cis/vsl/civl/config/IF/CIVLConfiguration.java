@@ -183,12 +183,12 @@ public class CIVLConfiguration {
 	 * Should CIVL ignore the output after executing the command line.
 	 */
 	private boolean quiet = false;
-	
+
 	/**
 	 * Should CIVL perform a slice analysis on the error trace.
 	 */
 	private boolean sliceAnalysis = false;
-	
+
 	/**
 	 * Should CIVL generate a witness from the error trace.
 	 */
@@ -355,6 +355,10 @@ public class CIVLConfiguration {
 		}
 	}
 
+	public CIVLConfiguration() {
+		// TODO Auto-generated constructor stub
+	}
+
 	public void setOut(PrintStream out) {
 		this.out = out;
 	}
@@ -478,7 +482,7 @@ public class CIVLConfiguration {
 	public void setErrorStateEquiv(ErrorStateEquivalence errorStateEquiv) {
 		this.errorStateEquiv = errorStateEquiv;
 	}
-	
+
 	public boolean sliceAnalysis() {
 		return sliceAnalysis;
 	}
@@ -486,15 +490,15 @@ public class CIVLConfiguration {
 	public void setSliceAnalysis(boolean sliceAnalysis) {
 		this.sliceAnalysis = sliceAnalysis;
 	}
-	
+
 	public boolean witness() {
 		return witness;
 	}
-	
+
 	public void setWitness(boolean witness) {
 		this.witness = witness;
 	}
-	
+
 	public boolean svcomp() {
 		return svcomp;
 	}

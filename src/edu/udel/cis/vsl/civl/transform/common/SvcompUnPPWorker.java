@@ -30,6 +30,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.value.IF.IntegerValue;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
+import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.SvcompUnPPTransformer;
@@ -77,9 +78,12 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private Map<Integer, VariableDeclarationNode> scalerVariableMap = new HashMap<>();
 
-	public SvcompUnPPWorker(ASTFactory astFactory) {
+	private FrontEnd frontEnd;
+
+	public SvcompUnPPWorker(ASTFactory astFactory, FrontEnd frontEnd) {
 		super(SvcompUnPPTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "_" + SvcompUnPPTransformer.CODE;
+		this.frontEnd = frontEnd;
 	}
 
 	@Override
@@ -254,12 +258,13 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private AST addHeaders(AST ast) throws SyntaxException {
 		if (needsStdlibHeader) {
-			AST stdlibHeaderAST = this.parseSystemLibrary(STDLIB_HEADER);
+			AST stdlibHeaderAST = this.parseSystemLibrary(frontEnd,
+					STDLIB_HEADER);
 
 			ast = this.combineASTs(stdlibHeaderAST, ast);
 		}
 		if (needsIoHeader) {
-			AST ioHeaderAST = this.parseSystemLibrary(IO_HEADER);
+			AST ioHeaderAST = this.parseSystemLibrary(frontEnd, IO_HEADER);
 
 			ast = this.combineASTs(ioHeaderAST, ast);
 		}
@@ -267,7 +272,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 		// ast.getASTFactory()).transform(
 		// ast);
 		if (needsPthreadHeader) {
-			AST pthreadHeaderAST = this.parseSystemLibrary(PTHREAD_HEADER);
+			AST pthreadHeaderAST = this.parseSystemLibrary(frontEnd,
+					PTHREAD_HEADER);
 
 			ast = this.combineASTs(pthreadHeaderAST, ast);
 		}

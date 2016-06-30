@@ -26,6 +26,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.SvcompTransformer;
 
 public class SvcompWorker extends BaseWorker {
@@ -42,16 +43,22 @@ public class SvcompWorker extends BaseWorker {
 
 	private String UNSIGINED_BOUND;
 
+	private CIVLConfiguration config;
+
 	private List<VariableDeclarationNode> nondet_int_variable_declarations = new LinkedList<>();
 
-	public SvcompWorker(ASTFactory astFactory) {
+	public SvcompWorker(ASTFactory astFactory, CIVLConfiguration config) {
 		super(SvcompTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "_" + SvcompTransformer.CODE;
 		this.UNSIGINED_BOUND = this.identifierPrefix + "_unsigned_bound";
+		this.config = config;
 	}
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
+		if (!config.svcomp())
+			return ast;
+
 		SequenceNode<BlockItemNode> rootNode = ast.getRootNode();
 
 		ast.release();

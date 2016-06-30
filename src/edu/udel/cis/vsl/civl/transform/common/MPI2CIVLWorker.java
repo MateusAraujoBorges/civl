@@ -74,6 +74,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 
 	/* ************************** Private Static Fields ********************** */
 
+	private final static String MPI_HEADER = "mpi.h";
 	private final static String EXIT = "exit";
 	private final static String MPI_PREFIX = "_mpi_";
 
@@ -938,6 +939,9 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 */
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
+		if (!this.hasHeader(ast, MPI_HEADER))
+			return ast;
+
 		SequenceNode<BlockItemNode> root = ast.getRootNode();
 		AST newAst;
 		FunctionDefinitionNode mpiProcess, mainFunction;

@@ -2,20 +2,20 @@ package edu.udel.cis.vsl.civl.transform.IF;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
-import edu.udel.cis.vsl.abc.ast.node.IF.AttributeKey;
+import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.BaseTransformer;
-import edu.udel.cis.vsl.civl.transform.common.IntDivWorker;;
+import edu.udel.cis.vsl.civl.transform.common.IntDivWorker;
 
 /**
- * This transformer is used to replace integer division ('/') and 
- * integer modulo ('%') in the program with $int_div(int, int) and 
- * $int_mod(int, int) functions respectively.
+ * This transformer is used to replace integer division ('/') and integer modulo
+ * ('%') in the program with $int_div(int, int) and $int_mod(int, int) functions
+ * respectively.
  * 
  * @author yanyihao
  *
  */
-public class IntDivisionTransformer extends BaseTransformer{
+public class IntDivisionTransformer extends BaseTransformer {
 	/**
 	 * The code (short name) of this transformer.
 	 */
@@ -29,23 +29,19 @@ public class IntDivisionTransformer extends BaseTransformer{
 	 */
 	public final static String SHORT_DESCRIPTION = "transforms division and mod operator in program "
 			+ "to $int_div and $int_mod functions";
-	private AttributeKey intDivAttributeKey;
-	
-	public IntDivisionTransformer(ASTFactory astFactory) {
+
+	private FrontEnd frontEnd;
+
+	public IntDivisionTransformer(ASTFactory astFactory, FrontEnd frontEnd) {
 		super(CODE, LONG_NAME, SHORT_DESCRIPTION, astFactory);
+		this.frontEnd = frontEnd;
 	}
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		IntDivWorker worker = new IntDivWorker(astFactory);
-		
-		if(intDivAttributeKey != null){
-			worker.setIntDivMacroKey(intDivAttributeKey);
-		}
+		IntDivWorker worker = new IntDivWorker(astFactory, frontEnd);
+
 		return worker.transform(ast);
 	}
 
-	public void setIntDivAttributeKey(AttributeKey intDivAttributeKey) {
-		this.intDivAttributeKey = intDivAttributeKey;
-	}
 }

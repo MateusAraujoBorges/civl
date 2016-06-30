@@ -44,6 +44,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.SwitchNode;
 import edu.udel.cis.vsl.abc.ast.util.ExpressionEvaluator;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.OpenMPSimplifier;
 
 /**
@@ -100,14 +101,20 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 	private List<Entity> loopPrivateIDs;
 
 	private boolean debug = false;
+	private CIVLConfiguration config;
 
-	public OpenMPSimplifierWorker(ASTFactory astFactory) {
+	public OpenMPSimplifierWorker(ASTFactory astFactory,
+			CIVLConfiguration config) {
 		super(OpenMPSimplifier.LONG_NAME, astFactory);
 		this.identifierPrefix = "$omp_sim_";
+		this.config = config;
 	}
 
 	@Override
 	public AST transform(AST unit) throws SyntaxException {
+		if (config.ompNoSimplify())
+			return unit;
+
 		SequenceNode<BlockItemNode> rootNode = unit.getRootNode();
 
 		assert this.astFactory == unit.getASTFactory();

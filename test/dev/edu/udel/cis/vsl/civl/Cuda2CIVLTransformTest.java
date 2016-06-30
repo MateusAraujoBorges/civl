@@ -81,19 +81,11 @@ package edu.udel.cis.vsl.civl;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 
 import org.junit.Test;
 
-import edu.udel.cis.vsl.abc.config.IF.Configurations;
-import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
-import edu.udel.cis.vsl.abc.err.IF.ABCException;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
-import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
-import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
-import edu.udel.cis.vsl.civl.transform.IF.Transforms;
 
 public class Cuda2CIVLTransformTest {
 
@@ -117,60 +109,6 @@ public class Cuda2CIVLTransformTest {
 
 	private static String filename(String name) {
 		return new File(rootDir, name).getPath();
-	}
-
-	/**
-	 * tests a Cuda program by applying the following transformers in sequence:
-	 * <ol>
-	 * // *
-	 * <li>Cuda to CIVL transformer</li>
-	 * </ol>
-	 * 
-	 * @param filenameRoot
-	 *            The file name of the Cuda program (without extension).
-	 * @param debug
-	 *            The flag to be set for printing.
-	 * @throws ABCException
-	 * @throws IOException
-	 */
-	@SuppressWarnings("unused")
-	private void check(String filenameRoot, boolean debug) throws ABCException,
-			IOException {
-		FrontEnd frontEnd = new FrontEnd(
-				Configurations.newMinimalConfiguration());
-		TransformerFactory transformerFactory = Transforms
-				.newTransformerFactory(frontEnd.getASTFactory());
-		Program program;
-		File file = new File(root, filenameRoot + ".cu");
-
-		program = frontEnd.compileAndLink(new File[] { file }, Language.CIVL_C);
-		// if (debug) {
-		// PrintStream before = new PrintStream("/tmp/before_simplify");
-		// program.getAST().prettyPrint(before, true);
-		// PrintStream beforeAST = new PrintStream("/tmp/before_AST");
-		// frontEnd.printProgram(beforeAST, program, false, false);
-		// }
-		program.apply(transformerFactory.getCuda2CIVLTransformer());
-		program.prettyPrint(System.out);
-		// if (debug) {
-		// PrintStream after = new PrintStream("/tmp/after_simplify");
-		// program.getAST().prettyPrint(after, true);
-		// }
-		// program.apply(transformerFactory.getOpenMP2CIVLTransformer());
-		// if (debug) {
-		// out.println("======== After applying OpenMP Simplifier ========");
-		// frontEnd.printProgram(out, program, true, false);
-		// }
-		// program.applyTransformer("prune");
-		// if (debug) {
-		// out.println("======== After applying Pruner ========");
-		// frontEnd.printProgram(out, program, true, false);
-		// }
-		// program.applyTransformer("sef");
-		// if (debug) {
-		// out.println("======== After applying Side Effect Remover ========");
-		// frontEnd.printProgram(out, program, true, false);
-		// }
 	}
 
 	/* **************************** Test Methods *************************** */

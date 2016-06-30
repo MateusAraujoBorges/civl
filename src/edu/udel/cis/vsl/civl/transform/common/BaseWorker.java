@@ -1,7 +1,6 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,7 +37,6 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
-import edu.udel.cis.vsl.abc.config.IF.Configurations;
 import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.front.IF.ParseException;
@@ -51,7 +49,6 @@ import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
 import edu.udel.cis.vsl.abc.token.IF.Formation;
-import edu.udel.cis.vsl.abc.token.IF.Macro;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -474,19 +471,20 @@ public abstract class BaseWorker {
 	 * @return the AST of the given library.
 	 * @throws SyntaxException
 	 */
-	protected AST parseSystemLibrary(String filename) throws SyntaxException {
-		FrontEnd frontEnd = new FrontEnd(
-				Configurations.newMinimalConfiguration());
-		Preprocessor preprocessor = frontEnd.getPreprocessor(Language.CIVL_C);
+	protected AST parseSystemLibrary(FrontEnd frontEnd, String filename)
+			throws SyntaxException {
+		// FrontEnd frontEnd = new FrontEnd(
+		// Configurations.newMinimalConfiguration());
+		Preprocessor preprocessor = frontEnd.getPreprocessor(Language.C);
 		CivlcTokenSource tokenSource;
 		ParseTree tree;
 
 		try {
-			tokenSource = preprocessor.outputTokenSource(
-					new File[] { CIVLConstants.CIVL_INCLUDE_PATH },
-					new File[0], new HashMap<String, Macro>(), filename, true);
+			tokenSource = preprocessor.preprocess(new File[0], new File[0],
+					new HashMap<String, String>(), new File[] { new File(
+							CIVLConstants.CIVL_INCLUDE_PATH, filename) });
 			tree = frontEnd.getParser(Language.CIVL_C).parse(tokenSource);
-		} catch (PreprocessorException | IOException | ParseException e) {
+		} catch (PreprocessorException | ParseException e) {
 			e.printStackTrace();
 			return null;
 		}
@@ -982,7 +980,7 @@ public abstract class BaseWorker {
 		}
 		return node;
 	}
-	
+
 	/**
 	 * <p>
 	 * <b>Summary: </b> Returns true if and only if the given
@@ -1031,6 +1029,16 @@ public abstract class BaseWorker {
 				}
 				next = next.nextDFS();
 			}
+		}
+		return false;
+	}
+
+	protected boolean hasHeader(AST ast, String header) {
+		for (SourceFile file : ast.getSourceFiles()) {
+			String name = file.getName();
+
+			if (name.equals(header))
+				return true;
 		}
 		return false;
 	}
