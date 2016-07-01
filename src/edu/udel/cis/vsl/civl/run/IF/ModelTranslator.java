@@ -266,8 +266,10 @@ public class ModelTranslator {
 			unitTasks[i].setUserIncludes(userIncludes);
 		}
 		task.setStage(TranslationStage.TRANSFORM_PROGRAM);
-		if (config.svcomp())
+		if (config.svcomp()) {
 			task.setSVCOMP(true);
+			task.setArchitecture(Architecture._32_BIT);
+		}
 
 		ABCExecutor executor = new ABCExecutor(task);
 
@@ -297,7 +299,16 @@ public class ModelTranslator {
 		// hasMpi = true;
 		// if (cHeaders.contains("cuda.h"))
 		// hasCuda = true;
-		// if (config.svcomp())
+		if (config.svcomp())
+			for (UnitTask unitTask : task.getUnitTasks()) {
+				for (File sourceFile : unitTask.getSourceFiles()) {
+					if (sourceFile.getName().endsWith(".i")) {
+						unitTask.addTransformCode(Pruner.CODE);
+						unitTask.addTransformRecord(transformerFactory
+								.getSvcompUnPPTransformerRecord(frontEnd));
+					}
+				}
+			}
 		task.addTransformRecord(transformerFactory
 				.getSvcompTransformerRecord(config));
 		task.addTransformRecord(transformerFactory
