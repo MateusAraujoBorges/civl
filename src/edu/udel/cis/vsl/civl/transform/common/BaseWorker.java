@@ -55,7 +55,6 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.abc.token.IF.TransformFormation;
 import edu.udel.cis.vsl.abc.transform.IF.Transformer;
-import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 
 /**
@@ -471,7 +470,7 @@ public abstract class BaseWorker {
 	 * @return the AST of the given library.
 	 * @throws SyntaxException
 	 */
-	protected AST parseSystemLibrary(FrontEnd frontEnd, String filename)
+	protected AST parseSystemLibrary(FrontEnd frontEnd, File file)
 			throws SyntaxException {
 		// FrontEnd frontEnd = new FrontEnd(
 		// Configurations.newMinimalConfiguration());
@@ -481,8 +480,7 @@ public abstract class BaseWorker {
 
 		try {
 			tokenSource = preprocessor.preprocess(new File[0], new File[0],
-					new HashMap<String, String>(), new File[] { new File(
-							CIVLConstants.CIVL_INCLUDE_PATH, filename) });
+					new HashMap<String, String>(), new File[] { file });
 			tree = frontEnd.getParser(Language.CIVL_C).parse(tokenSource);
 		} catch (PreprocessorException | ParseException e) {
 			e.printStackTrace();

@@ -942,6 +942,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 		if (!this.hasHeader(ast, MPI_HEADER))
 			return ast;
 
+		ast.prettyPrint(System.out, false);
 		SequenceNode<BlockItemNode> root = ast.getRootNode();
 		AST newAst;
 		FunctionDefinitionNode mpiProcess, mainFunction;

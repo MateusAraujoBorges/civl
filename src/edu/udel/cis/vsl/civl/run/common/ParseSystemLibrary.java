@@ -7,10 +7,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.main.ABCExecutor;
 import edu.udel.cis.vsl.abc.main.DynamicTask;
 import edu.udel.cis.vsl.abc.main.UnitTask;
-import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 
@@ -27,8 +27,8 @@ public class ParseSystemLibrary implements DynamicTask {
 		Set<String> fileNames = new HashSet<>();
 
 		for (int i = 0; i < num; i++) {
-			CivlcTokenSource source = executor.getTokenSource(i);
-			Collection<SourceFile> files = source.getSourceFiles();
+			AST ast = executor.getAST(i);
+			Collection<SourceFile> files = ast.getSourceFiles();
 
 			for (SourceFile file : files) {
 				String filename = file.getName();
@@ -47,8 +47,8 @@ public class ParseSystemLibrary implements DynamicTask {
 		Set<String> processedFiles = new HashSet<>();
 
 		for (int i = 0; i < num; i++) {
-			CivlcTokenSource tokens = executor.getTokenSource(i);
-			Collection<SourceFile> files = tokens.getSourceFiles();
+			AST ast = executor.getAST(i);
+			Collection<SourceFile> files = ast.getSourceFiles();
 
 			for (SourceFile file : files) {
 				String filename = file.getName();

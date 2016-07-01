@@ -26,6 +26,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.config.IF.Configuration;
 import edu.udel.cis.vsl.abc.config.IF.Configuration.Architecture;
 import edu.udel.cis.vsl.abc.config.IF.Configurations;
+import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.front.IF.PreprocessorException;
 import edu.udel.cis.vsl.abc.main.ABCExecutor;
@@ -255,7 +256,7 @@ public class ModelTranslator {
 
 	Program buildProgram() throws ABCException {
 		// addSystemImplementations();
-		TranslationTask task = new TranslationTask(fileListToArray(files));
+		TranslationTask task;
 		UnitTask[] unitTasks = new UnitTask[files.size()];
 		Map<String, String> macros = this.getMacros();
 
@@ -265,11 +266,14 @@ public class ModelTranslator {
 			unitTasks[i].setSystemIncludes(systemIncludes);
 			unitTasks[i].setUserIncludes(userIncludes);
 		}
+		task = new TranslationTask(unitTasks);
+		task.setLinkLanguage(Language.CIVL_C);
 		task.setStage(TranslationStage.TRANSFORM_PROGRAM);
 		if (config.svcomp()) {
 			task.setSVCOMP(true);
 			task.setArchitecture(Architecture._32_BIT);
 		}
+		task.setVerbose(config.debugOrVerbose());
 
 		ABCExecutor executor = new ABCExecutor(task);
 

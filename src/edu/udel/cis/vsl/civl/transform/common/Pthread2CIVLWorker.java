@@ -91,11 +91,13 @@ public class Pthread2CIVLWorker extends BaseWorker {
 
 	static final String PTHREAD_HEADER = "pthread.h";
 
+	/* **************************** Instance Fields ************************* */
+
 	private boolean exitMainDone = false;
 
 	private String originalMain = MAIN;
 
-	/* **************************** Instance Fields ************************* */
+	private BlockItemNode firstThreadFunctionNode = null;
 
 	private Set<String> threadFunctionNames = new LinkedHashSet<>();
 
@@ -805,11 +807,46 @@ public class Pthread2CIVLWorker extends BaseWorker {
 		for (BlockItemNode item : root) {
 			if (item != null && item instanceof FunctionDeclarationNode) {
 				FunctionDeclarationNode function = (FunctionDeclarationNode) item;
+				String name = function.getName();
 
-				if (function.getName().equals(GENERATED_MAIN)) {
+				if (name.equals(GENERATED_MAIN)) {
 					this.originalMain = GENERATED_MAIN;
 					return;
 				}
+			}
+		}
+	}
+
+	private void movePthreadGpoolDeclaration(SequenceNode<BlockItemNode> root) {
+		for (BlockItemNode item : root) {
+			if (item != null && item instanceof FunctionDeclarationNode) {
+				FunctionDeclarationNode function = (FunctionDeclarationNode) item;
+				String name = function.getName();
+
+				if (this.threadFunctionNames.contains(name)) {
+					this.firstThreadFunctionNode = item;
+					break;
+				}
+			}
+		}
+		if (firstThreadFunctionNode != null) {
+			VariableDeclarationNode gpool = null;
+
+			for (BlockItemNode item : root) {
+				if (item != null && item instanceof VariableDeclarationNode) {
+					VariableDeclarationNode variable = (VariableDeclarationNode) item;
+					String name = variable.getName();
+
+					if (name.equals(PTHREAD_GPOOL)) {
+						gpool = variable;
+						break;
+					}
+				}
+			}
+			if (gpool != null) {
+				gpool.remove();
+				root.insertChildren(this.firstThreadFunctionNode.childIndex(),
+						Arrays.asList(gpool));
 			}
 		}
 	}
@@ -988,6 +1025,7 @@ public class Pthread2CIVLWorker extends BaseWorker {
 		check_thread_local_accesses(root);
 		this.getThreadFunctions(root);
 		ast.release();
+		movePthreadGpoolDeclaration(root);
 		transformWorker(root);
 		this.completeSources(root);
 		AST result = astFactory.newAST(root, ast.getSourceFiles(),

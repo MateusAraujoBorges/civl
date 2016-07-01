@@ -3,7 +3,6 @@
 
 #include <civlc.cvh>
 #include <stdbool.h>
-#include <civl-pthread.cvh>
 #include <concurrency.cvh>
 #include <pthread.h>
 #include <seq.cvh>
@@ -52,6 +51,20 @@ struct pthread_spinlock_t{
 
 /* Implemented struct definitions */
 
+/* pthread_t struct definition
+  Description: The pthread_t is a struct containing a $proc variable as well as a thread attribute which defines
+  its interactions with other threads. It encapsulates the $proc and allows attributes to apply to it.
+  Fields: thr: the $proc variable that is the heart of the thread
+  attr: see above
+*/
+
+struct _pthread_t{
+  $proc thr;
+  const pthread_attr_t attr;
+  _Bool terminated;
+  void** exitValue;
+};
+
 /* pthread_attr_t struct definition
   Description: This struct corresponds to the pthread_attr_t which is the attribute of a pthread_t. It's fields
   define the way the pthread_t is able to interact (join/detach), (memory capacity), (scope) etc.
@@ -63,8 +76,7 @@ struct pthread_spinlock_t{
   int schedpolicy: Determines the scheduling policy of the thread
   
 */
-
-struct pthread_attr_t{
+struct _pthread_attr_t{
   int detachstate;
   int inheritsched;
   int contentionscope;

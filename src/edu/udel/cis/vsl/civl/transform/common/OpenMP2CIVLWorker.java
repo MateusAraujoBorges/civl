@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -68,6 +69,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.front.c.parse.COmpParser;
+import edu.udel.cis.vsl.abc.front.c.preproc.CPreprocessor;
 import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
@@ -710,8 +712,10 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		int count;
 		Triple<List<BlockItemNode>, List<BlockItemNode>, List<BlockItemNode>> result;
 		String criticalDeclaration = "criticalDeclarations";
-		AST civlcAST = this.parseSystemLibrary(frontEnd, "civlc.cvh");
-		AST civlcOmpAST = this.parseSystemLibrary(frontEnd, "civl-omp.cvh");
+		AST civlcAST = this.parseSystemLibrary(frontEnd, new File(
+				CPreprocessor.ABC_INCLUDE_PATH, "civlc.cvh"));
+		AST civlcOmpAST = this.parseSystemLibrary(frontEnd, new File(
+				CPreprocessor.ABC_INCLUDE_PATH, "civl-omp.cvh"));
 
 		assert this.astFactory == ast.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();

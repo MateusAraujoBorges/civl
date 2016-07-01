@@ -1,11 +1,12 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
-import edu.udel.cis.vsl.abc.ast.entity.IF.OrdinaryEntity;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Entity;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
@@ -25,6 +26,7 @@ import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.IntDivisionTransformer;
 
@@ -54,10 +56,12 @@ public class IntDivWorker extends BaseWorker {
 	// TODO add java doc for every constant field
 	private static final String INT_DIV = "$int_div";
 	private static final String INT_MOD = "$int_mod";
+	private static final String ASSERT = "$assert";
 	private static final String INT_DIV_SOURCE_FILE = "int_div.cvl";
 	private static final String INT_DIV_NO_CHECKING_SOURCE_FILE = "int_div_no_checking.cvl";
 	private Boolean check_division_by_zero = false;
 	private FrontEnd frontEnd;
+	private Entity divEntity = null, modEntity = null;
 
 	// private AttributeKey intDivMacroKey;
 
@@ -79,9 +83,9 @@ public class IntDivWorker extends BaseWorker {
 		// }
 
 		AST newAst;
-		OrdinaryEntity divEntity = unit.getInternalOrExternalEntity(INT_DIV);
-		OrdinaryEntity modEntity = unit.getInternalOrExternalEntity(INT_MOD);
 
+		divEntity = unit.getInternalOrExternalEntity(INT_DIV);
+		modEntity = unit.getInternalOrExternalEntity(INT_MOD);
 		if (divEntity != null || modEntity != null) {
 			return unit;
 		}
@@ -91,6 +95,7 @@ public class IntDivWorker extends BaseWorker {
 		this.completeSources(root);
 		newAst = astFactory.newAST(root, unit.getSourceFiles(),
 				unit.isWholeProgram());
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -202,18 +207,29 @@ public class IntDivWorker extends BaseWorker {
 		AST intDivLib;
 
 		if (check_division_by_zero)
-			intDivLib = this.parseSystemLibrary(frontEnd,
-					INT_DIV_NO_CHECKING_SOURCE_FILE);
+			intDivLib = this.parseSystemLibrary(frontEnd, new File(
+					CIVLConstants.CIVL_INCLUDE_PATH,
+					INT_DIV_NO_CHECKING_SOURCE_FILE));
 		else
-			intDivLib = this.parseSystemLibrary(frontEnd, INT_DIV_SOURCE_FILE);
+			intDivLib = this.parseSystemLibrary(frontEnd, new File(
+					CIVLConstants.CIVL_INCLUDE_PATH, INT_DIV_SOURCE_FILE));
 
 		SequenceNode<BlockItemNode> root = intDivLib.getRootNode();
 		List<BlockItemNode> funcDefinitions = new ArrayList<>();
 
 		intDivLib.release();
 		for (BlockItemNode child : root) {
-			child.remove();
-			funcDefinitions.add(child);
+			if (child instanceof FunctionDeclarationNode) {
+				FunctionDeclarationNode function = (FunctionDeclarationNode) child;
+				String name = function.getName();
+
+				if (name.equals(INT_DIV) && this.divEntity == null
+						|| name.equals(INT_MOD) && this.modEntity == null
+						|| name.equals(ASSERT)) {
+					child.remove();
+					funcDefinitions.add(child);
+				}
+			}
 		}
 		ast.insertChildren(0, funcDefinitions);
 	}

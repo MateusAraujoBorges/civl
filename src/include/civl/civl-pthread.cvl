@@ -12,13 +12,12 @@
   attr: see above
 */
 
-struct pthread_t{
+struct _pthread_t{
   $proc thr;
   const pthread_attr_t attr;
   _Bool terminated;
   void** exitValue;
 };
-
 
 struct _pthread_gpool_t{
   pthread_t * threads[];
