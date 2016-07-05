@@ -1,5 +1,8 @@
 package edu.udel.cis.vsl.civl.slice.common;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -73,6 +76,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.Trace;
 import edu.udel.cis.vsl.gmc.TraceStepIF;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
@@ -115,183 +119,94 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 	private boolean someReachableNodeIsSuspicious;
 	private Map<Vertex, Set<Variable>> mergePointVariables;
 	private Set<Vertex> IPDset;
-	/* This will hold the input variable and the line number in which it
-	 * was declared.
-	 */
+	//input variable and declaration line number 
 	public Set<Pair<SymbolicExpression,String>> inputSymbolicExprs;
 	public Map<String,String> symbolicToSyntactic;
-	/*
-	 * 1st elem : input variables
-	 * 2nd elem : branches involved in error
-	 * 3rd elem : branches-in-question
-	 */
+	// [input variables, branches involved, branches-in-question]
 	public List<Set<String>> expectedOutput = Arrays.asList(new HashSet<String>(),new HashSet<String>(),new HashSet<String>());
 	
-	@SuppressWarnings({ "unchecked", "unused" })
-	public CommonSliceAnalysis (Model model, Trace<Transition, State> trace) throws IOException {
-		
+	/* SETUP */
+	List<String> inputInstances = new ArrayList<String>();
+	/* We will populate this list with the corresponding vertices in the trace */
+	List<Vertex> forwardTrace = new ArrayList<Vertex>();
+	/* Mark source locations of statements with a function call */
+	Set<Location> visited = new HashSet<Location>(); 
+	/* Keep track of respective positions in both the trace and the ICFG */
+	Pair<Location,Vertex> positionInTraceAndGraph = new Pair<Location,Vertex>(null,null);
+	
+	List<SliceTrace> traceStepLocStmt;
+	FlowGraph ICFG;
+	Vertex virtualExit;
+	Map<Vertex,Vertex> IPDmap = new HashMap<Vertex,Vertex>();
+	
+	public CommonSliceAnalysis (Model model, Trace<Transition, State> trace, File traceFile) throws IOException {		
 		model.print(System.out, false);
+		createICFG(model,trace);
+		discoverPostdominators();
+		runControlDependenceAnalysis();
+		outputAnalysisResults(traceFile);
+		printAssumptions(model, trace);
+	}
 
-		List<TraceStepIF<Transition, State>> steps = trace.traceSteps();
-		Iterator<TraceStepIF<Transition, State>> it = steps.iterator();
-		/* Manchun's suggested trace data structure */
-		List<SliceTrace> traceStepLocStmt = traceLocStmtPairs(it);
-		System.out.println("Loc Stmt list size: "+traceStepLocStmt.size());
-		/* Print out forward trace for debugging */
-		System.out.println("\nForward Trace:");
-		for (SliceTrace e : traceStepLocStmt) {
-			System.out.println("  Location: "+e.location+" and successive Statement: "+e.statement);
-		}
-		
-		/* We will populate this list with the corresponding vertices in the trace */
-		List<Vertex> forwardTrace = new ArrayList<Vertex>();
-		/* Mark source locations of statements with a function call */
-		Set<Location> visited = new HashSet<Location>(); 
-		/* Keep track of respective positions in both the trace and the ICFG */
-		Pair<Location,Vertex> positionInTraceAndGraph = new Pair<Location,Vertex>(null,null);
-		
-		/* Construct initial ICFG starting with the outermost function */
-		FlowGraph ICFG = new FlowGraph(model.rootFunction(),null);
-		System.out.println("The initial ICFG:"); printGraph(ICFG);
-		/* Sync positions of first location in the trace and initial ICFG entry */
-		positionInTraceAndGraph.left = traceStepLocStmt.get(0).location;
-		positionInTraceAndGraph.right = ICFG.entryVertex;
-		forwardTrace.add(ICFG.entryVertex);
-		/* Keep track of which vertices are in the trace for coloring the output graph */
-		ICFG.entryVertex.onTracePath = true;
-		
-		int i = 0;
-		/* Step through the trace, inlining CFGs of encountered statements into the ICFG */
-		for (SliceTrace step : traceStepLocStmt) {
-			assert (positionInTraceAndGraph.left.equals(positionInTraceAndGraph.right.location)) : "Positions not synced: "+
-					positionInTraceAndGraph.left+" does not equal "+positionInTraceAndGraph.right.location;
-			Location loc = step.location; Statement stmt = step.statement;
-			//State state = step.state; int pid = step.pid;
-			
-			//System.out.println("*STEP LOCATION*: "+loc+" *OUTGOING STATEMENT*: "+stmt);
-			if (isFunctionCall(stmt,visited) && isNotCIVLprimitive(stmt)) {
-				System.out.println("  --A new function call: "+stmt);
-				CallOrSpawnStatement callStmt = (CallOrSpawnStatement) stmt;
-				CIVLFunction f = callStmt.function();
-				/* Print out actual and formal args */
-				System.out.println("  ---The actual args: "+callStmt.arguments());
-				System.out.println("  ---The formal args: "+f.parameters());
-				Map<Variable,Set<Variable>> formalToActualMap = associateFormalToActual(f,callStmt);
-				System.out.println("   ---THE MAP: "+formalToActualMap);
-				/* Create function CFG */
-				FlowGraph g = new FlowGraph(f,formalToActualMap);
-				assert g.entryVertex != null : "The local graph's entry vertex is null";
-				//printGraph(g);
-				
-				/* Splice fresh intraprodecural CFG just after current ICFG vertex */
-				ICFG = spliceLocalGraphIntoICFG(positionInTraceAndGraph.right.out, ICFG, g);
-				/* Mark this call location so we don't remake a CFG if it is revisited */
-				visited.add(loc); 
-			}
-
-			/* Sync trace location with ICFG vertex */
-			if (traceStepLocStmt.size() > (i+1)) {
-				Location nextLocation = traceStepLocStmt.get(i+1).location;
-				positionInTraceAndGraph.left = nextLocation;
-				Vertex currentVertex = positionInTraceAndGraph.right;
-				Vertex nextVertex = findTargetVertex(stmt, currentVertex);
-				nextVertex.onTracePath = true;
-				forwardTrace.add(nextVertex);
-				positionInTraceAndGraph.right = nextVertex;
-				System.out.println("______ The position pair after syncing: "+positionInTraceAndGraph);
-				/* Put some State into the Vertex */
-				currentVertex.state = traceStepLocStmt.get(i).state;
-				currentVertex.pid = traceStepLocStmt.get(i).pid;
-			}
-			i++;
-		}
-		
-		/* There is no location for the program exit, so let's create a virtual exit node */
-		Vertex virtualExit = new Vertex(null);
-		ICFG.vertices.add(virtualExit);
-		forwardTrace.add(virtualExit);
-		for (Arc a : ICFG.arcs) {
-			if (a.target == null) {
-				System.out.println("Pointing "+a+", which has a source of "+a.source+" to virtual exit");
-				a.target = virtualExit;
-			}
-		}
-		System.out.println("The forward trace is: "+forwardTrace);
-		
-		System.out.println("\n_-_-__ FINAL ICFG __-_-_\n");
+	private void createICFG(Model model, Trace<Transition, State> trace) throws IOException {
+		createTraceStructure(trace);
+		initializeFlowGraph(model);
+		syncTraceWithICFG();
+		inlineFunctionsIntoICFG();
+		addVirtualExit();
 		printGraph(ICFG);
 		this.controlFlowGraph = ICFG;
-		
-		String dotStr = toDotFileString(ICFG);
-		try(  PrintWriter outGraph = new PrintWriter( "/Users/mgerrard/Desktop/graph.dot" )  ){
-		    outGraph.println( dotStr );
-		}
-		
-		Runtime rt = Runtime.getRuntime();
-		rt.exec("/opt/local/bin/dot -Tpng -o /Users/mgerrard/Desktop/graph.png /Users/mgerrard/Desktop/graph.dot");
-		
-		/* Discover the postdominators using the ICFG */
-		Map<Vertex,Set<Vertex>> ICFGmap = new HashMap<Vertex,Set<Vertex>>();
-		for (Vertex v : ICFG.vertices) {
-			Set<Vertex> targets = new HashSet<Vertex>();
-			for (Arc a : v.out) {
-				targets.add(a.target);
-			}
-			//System.out.println("Successors of "+v+": "+targets);
-			ICFGmap.put(v, targets);
-		}
-		//System.out.println("The ICFG map I am sending in:");
-		//for (Vertex v : ICFGmap.keySet()) {
-		//	System.out.println("  "+v+": "+ICFGmap.get(v));
-		//}
-		/* We pass in the successor (not pred) map and the exit (not entry) node to compute the dual (postdominator) analysis */
-		DominatorAnalysis<Vertex> postDom = new CommonDominatorAnalysis<Vertex>(ICFG.vertices, ICFGmap, virtualExit);
-		Map<Vertex,Set<Vertex>> postDominatorMap = postDom.computeDominators();	
-		//for (Vertex v : postDominatorMap.keySet()) {
-		//	System.out.println("Vertex "+v+" is postdominated by:\n  ->"+postDominatorMap.get(v));
-		//}
-		/* Discover the IPD by walking forward through the dynamic trace with postdominator map in hand */
-		Map<Vertex,Vertex> IPDmap = new HashMap<Vertex,Vertex>();
-		for (int j = 0; j < forwardTrace.size()-1; j++) {
-			if (!IPDmap.containsKey(forwardTrace.get(j))) {
-				IPDmap = findIPD(forwardTrace, j, postDominatorMap, IPDmap);
-			}
-		}
-		
-		//System.out.println("\n***** The immediate postdominators are:");
-		//for (Vertex n : IPDmap.keySet()) {
-		//	System.out.println(n+" is IPDed by "+IPDmap.get(n));
-		//}
-		//System.out.println("******************************************");
-		
-		Collection<Vertex> IPDcollection = IPDmap.values();
-		this.IPDset = new HashSet<Vertex>(IPDcollection);
-		Stack<Pair<Vertex,Vertex>> CDS = new Stack<Pair<Vertex,Vertex>>();
-		
+		writeDotFile();
+	}
+
+	private void outputAnalysisResults(File traceFile) throws IOException {
+		Set<String> inputVars = this.expectedOutput.get(0);
+		System.out.println("INPUT VARIABLES: \n  "+inputVars);
+		Set<String> errorBranches = this.expectedOutput.get(1);
+		System.out.println("ERROR BRANCHES: \n  "+errorBranches);
+		Set<String> questions = this.expectedOutput.get(2);
+		System.out.println("QUESTIONABLE BRANCHES: \n  "+questions);
+		BufferedWriter output = null;
+		String sliceFileName = traceFile.getAbsolutePath() + ".slice";
+		try {
+            File file = new File(sliceFileName);
+            output = new BufferedWriter(new FileWriter(file));
+            output.write("INPUT VARIABLES:\n");
+            for (String s : inputVars) output.write("  "+s+"\n");
+            output.write("ERROR BRANCHES:\n");
+            for (String s : errorBranches) output.write("  "+s+"\n"); 
+            output.write("QUESTIONABLE BRANCHES:\n");
+            for (String s : questions) output.write("  "+s+"\n");
+        } catch ( IOException e ) {
+            e.printStackTrace();
+        } finally {
+          if ( output != null ) {
+            output.close();
+          }
+        }
+	}
+
+	private void runControlDependenceAnalysis() {
 		System.out.println("\n************ CONTROL DEPENDENCE ANALYSIS ******************\n");
+		Stack<Pair<Vertex,Vertex>> CDS = new Stack<Pair<Vertex,Vertex>>();
+		List<Stack<Pair<Vertex,Vertex>>> traceOfCDS = collectCDSTrace(CDS);
+		List<Pair<Vertex,Arc>> tracePairs = createTracePairs();
 		
-		List<Stack<Pair<Vertex,Vertex>>> traceOfCDS = new ArrayList<Stack<Pair<Vertex,Vertex>>>();
-		for (Vertex v : forwardTrace) {
-			if (isImmediatePostdominator(v)) {
-				System.out.println("\nFound an IPD: "+v);
-				System.out.println("  ...calling merging()");
-				if (!CDS.empty()) {
-					CDS = merging(v,CDS);
-				}
-			}
-			if (isBranchPoint(v)) {
-				System.out.println("\nFound a branch point: "+v);
-				System.out.println("  ...calling branching()");
-				CDS = branching(v,IPDmap.get(v),CDS);
-			}
-			System.out.println("The Control Dependence Stack after looking at "+v+" is: \n  "+CDS);
-			traceOfCDS.add((Stack<Pair<Vertex,Vertex>>) CDS.clone());
-		}
-		System.out.println("CDS trace:");
-		for (Stack<Pair<Vertex,Vertex>> cds : traceOfCDS) {
-			System.out.println(cds);
-		}
-		
+		/* Reverse lists before feeding them into analyzer */
+		List<Vertex> backwardTrace = forwardTrace; Collections.reverse(backwardTrace);
+		List<Stack<Pair<Vertex,Vertex>>> backwardTraceOfCDS = traceOfCDS; Collections.reverse(backwardTraceOfCDS);
+		List<Pair<Vertex,Arc>> backwardTracePairs = tracePairs; Collections.reverse(backwardTracePairs);
+		/* Make sure lists start with the branch preceding the error (assuming branch is next to error) */
+		int indexOfBranchPrecedingError = findIndexOfErrorVertex(backwardTrace) + 1;
+		backwardTrace = backwardTrace.subList(indexOfBranchPrecedingError,backwardTrace.size());
+		backwardTraceOfCDS = backwardTraceOfCDS.subList(indexOfBranchPrecedingError,backwardTraceOfCDS.size());
+		/* Minus 2 because we didn't include the last two nodes in this trace */
+		backwardTracePairs = backwardTracePairs.subList(indexOfBranchPrecedingError-2, backwardTracePairs.size());
+		@SuppressWarnings("unused")
+		Pair<Set<Vertex>,Set<Vertex>> errorBranchesAndQuestionables = findErrorBranchesAndQuestionables(backwardTracePairs, backwardTraceOfCDS);
+	}
+
+	private List<Pair<Vertex, Arc>> createTracePairs() {
 		/* This will be our <Vertex,Arc> trace data structure */
 		List<Pair<Vertex,Arc>> tracePairs = new ArrayList<Pair<Vertex,Arc>>();
 		/* Stop at size()-2 iterations because we don't want to include the NULL exit node */
@@ -304,30 +219,142 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 			tracePairs.add(new Pair<Vertex,Arc>(v1,a));
 		}
 		System.out.println("The <Vertex,Arc> trace pairs are:"+tracePairs);
-		
-		/* Reverse lists before feeding them into analyzer */
-		List<Vertex> backwardTrace = forwardTrace; Collections.reverse(backwardTrace);
-		List<Stack<Pair<Vertex,Vertex>>> backwardTraceOfCDS = traceOfCDS; Collections.reverse(backwardTraceOfCDS);
-		List<Pair<Vertex,Arc>> backwardTracePairs = tracePairs; Collections.reverse(backwardTracePairs);
-		/* Make sure lists start with the branch preceding the error (assuming branch is next to error) */
-		int indexOfBranchPrecedingError = findIndexOfErrorVertex(backwardTrace) + 1;
-		backwardTrace = backwardTrace.subList(indexOfBranchPrecedingError,backwardTrace.size());
-		System.out.println(backwardTrace);
-		backwardTraceOfCDS = backwardTraceOfCDS.subList(indexOfBranchPrecedingError,backwardTraceOfCDS.size());
-		System.out.println(backwardTraceOfCDS);
-		/* Minus 2 because we didn't include the last two nodes in this trace */
-		backwardTracePairs = backwardTracePairs.subList(indexOfBranchPrecedingError-2, backwardTracePairs.size());
-		System.out.println(backwardTracePairs);
-		Pair<Set<Vertex>,Set<Vertex>> errorBranchesAndQuestionables = findErrorBranchesAndQuestionables(backwardTracePairs, backwardTraceOfCDS);
-	
-		Set<String> inputVars = this.expectedOutput.get(0);
-		System.out.println("Input symbolic expressions: \n"+inputVars);
-		Set<String> errorBranches = this.expectedOutput.get(1);
-		System.out.println("Error branches: \n"+errorBranches);
-		Set<String> questions = this.expectedOutput.get(2);
-		System.out.println("Questionable branches: \n"+questions);
+		return tracePairs;
 	}
-	
+
+	@SuppressWarnings("unchecked")
+	private List<Stack<Pair<Vertex, Vertex>>> collectCDSTrace(
+			Stack<Pair<Vertex, Vertex>> CDS) {
+		List<Stack<Pair<Vertex,Vertex>>> traceOfCDS = new ArrayList<Stack<Pair<Vertex,Vertex>>>();
+		for (Vertex v : forwardTrace) {
+			if (isImmediatePostdominator(v)) {
+				if (!CDS.empty()) {
+					CDS = merging(v,CDS);
+				}
+			}
+			if (isBranchPoint(v)) {
+				CDS = branching(v,IPDmap.get(v),CDS);
+			}
+			System.out.println("The Control Dependence Stack after looking at "+v+" is: \n  "+CDS);
+			traceOfCDS.add((Stack<Pair<Vertex,Vertex>>) CDS.clone());
+		}
+		System.out.println("CDS trace:");
+		for (Stack<Pair<Vertex,Vertex>> cds : traceOfCDS) System.out.println(cds);
+		return traceOfCDS;
+	}
+
+	private void discoverPostdominators() {
+		/* Discover the postdominators using the ICFG */
+		Map<Vertex,Set<Vertex>> ICFGmap = new HashMap<Vertex,Set<Vertex>>();
+		for (Vertex v : ICFG.vertices) {
+			Set<Vertex> targets = new HashSet<Vertex>();
+			for (Arc a : v.out) {
+				targets.add(a.target);
+			}
+			ICFGmap.put(v, targets);
+		}
+		/* We pass in the successor (not pred) map and the exit (not entry) node to compute the dual (postdominator) analysis */
+		DominatorAnalysis<Vertex> postDom = new CommonDominatorAnalysis<Vertex>(ICFG.vertices, ICFGmap, virtualExit);
+		Map<Vertex,Set<Vertex>> postDominatorMap = postDom.computeDominators();	
+		/* Discover the IPD by walking forward through the dynamic trace with postdominator map in hand */
+		
+		for (int j = 0; j < forwardTrace.size()-1; j++) {
+			if (!IPDmap.containsKey(forwardTrace.get(j))) {
+				IPDmap = findIPD(forwardTrace, j, postDominatorMap, IPDmap);
+			}
+		}
+		
+		Collection<Vertex> IPDcollection = IPDmap.values();
+		this.IPDset = new HashSet<Vertex>(IPDcollection);
+	}
+
+	private void writeDotFile() throws IOException {
+		String dotStr = toDotFileString(ICFG);
+		try(  PrintWriter outGraph = new PrintWriter( "/Users/mgerrard/Desktop/graph.dot" )  ){
+		    outGraph.println( dotStr );
+		}
+		
+		Runtime rt = Runtime.getRuntime();
+		rt.exec("/opt/local/bin/dot -Tpng -o /Users/mgerrard/Desktop/graph.png /Users/mgerrard/Desktop/graph.dot");
+	}
+
+	/* There is no location for the program exit, so let's create a virtual exit node */
+	private void addVirtualExit() {
+		this.virtualExit = new Vertex(null);
+		ICFG.vertices.add(virtualExit);
+		forwardTrace.add(virtualExit);
+		for (Arc a : ICFG.arcs) {
+			if (a.target == null) {
+				System.out.println("Pointing "+a+", which has a source of "+a.source+" to virtual exit");
+				a.target = virtualExit;
+			}
+		}
+	}
+
+	private void inlineFunctionsIntoICFG() {
+		int i = 0;
+		/* Step through the trace, inlining CFGs of encountered statements into the ICFG */
+		for (SliceTrace step : traceStepLocStmt) {
+			assert (positionInTraceAndGraph.left.equals(positionInTraceAndGraph.right.location)) : "Positions not synced: "+
+					positionInTraceAndGraph.left+" does not equal "+positionInTraceAndGraph.right.location;
+			Location loc = step.location; Statement stmt = step.statement;
+			if (isFunctionCall(stmt,visited) && isNotCIVLprimitive(stmt)) {
+				FlowGraph g = processFunctionStatement(stmt);
+				ICFG = spliceLocalGraphIntoICFG(positionInTraceAndGraph.right.out, ICFG, g);
+				/* Mark this call location so we don't remake a CFG if it is revisited */
+				visited.add(loc); 
+			}
+			syncTraceLocWithICFG(stmt, i);
+			i++;
+		}
+	}
+
+	private void syncTraceLocWithICFG(Statement stmt, int i) {
+		/* Sync trace location with ICFG vertex */
+		if (traceStepLocStmt.size() > (i+1)) {
+			Location nextLocation = traceStepLocStmt.get(i+1).location;
+			positionInTraceAndGraph.left = nextLocation;
+			Vertex currentVertex = positionInTraceAndGraph.right;
+			Vertex nextVertex = findTargetVertex(stmt, currentVertex);
+			nextVertex.onTracePath = true;
+			forwardTrace.add(nextVertex);
+			positionInTraceAndGraph.right = nextVertex;
+			System.out.println("______ The position pair after syncing: "+positionInTraceAndGraph);
+			/* Put some State into the Vertex */
+			currentVertex.state = traceStepLocStmt.get(i).state;
+			currentVertex.pid = traceStepLocStmt.get(i).pid;
+		}
+	}
+
+	private FlowGraph processFunctionStatement(Statement stmt) {
+		CallOrSpawnStatement callStmt = (CallOrSpawnStatement) stmt;
+		CIVLFunction f = callStmt.function();
+		Map<Variable,Set<Variable>> formalToActualMap = associateFormalToActual(f,callStmt);
+		/* Create function CFG */
+		FlowGraph g = new FlowGraph(f,formalToActualMap);
+		assert g.entryVertex != null : "The local graph's entry vertex is null";
+		return g;
+	}
+
+	/* Sync positions of first location in the trace and initial ICFG entry */
+	private void syncTraceWithICFG() {
+		positionInTraceAndGraph.left = traceStepLocStmt.get(0).location;
+		positionInTraceAndGraph.right = ICFG.entryVertex;
+		forwardTrace.add(ICFG.entryVertex);
+	}
+
+	private void initializeFlowGraph(Model model) {
+		this.ICFG = new FlowGraph(model.rootFunction(),null);
+		/* Keep track of which vertices are in the trace for coloring the output graph */
+		ICFG.entryVertex.onTracePath = true;
+	}
+
+	private void createTraceStructure(Trace<Transition, State> trace) {
+		List<TraceStepIF<Transition, State>> steps = trace.traceSteps();
+		Iterator<TraceStepIF<Transition, State>> it = steps.iterator();
+		this.traceStepLocStmt = traceLocStmtPairs(it);
+	}
+
 	private boolean isNotCIVLprimitive(Statement stmt) {
 		return (!stmt.toString().startsWith("$assume") &&
 				!stmt.toString().startsWith("$havoc")  &&
@@ -343,8 +370,6 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 	
 	private Pair<Set<Vertex>,Set<Vertex>> findErrorBranchesAndQuestionables (
 			List<Pair<Vertex,Arc>> trace, List<Stack<Pair<Vertex,Vertex>>> traceOfCDS) {
-		Set<Vertex> branches = new HashSet<Vertex>();
-		Set<Variable> variables = new HashSet<Variable>();
 		this.inputSymbolicExprs = new HashSet<Pair<SymbolicExpression,String>>();
 		this.symbolicToSyntactic = new HashMap<String,String>();
 		this.mergePointVariables = new HashMap<Vertex,Set<Variable>>();
@@ -352,23 +377,12 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 		
 		/* Assume there is some control dependency when the error is hit */
 		assert !traceOfCDS.get(0).empty() : "The error has no control dependencies";
-		/* Collect variables of conditional closest to the error */
-		Vertex branchClosestToError = traceOfCDS.get(0).peek().left;
-		System.out.println("***The branch closest to the error: "+branchClosestToError);
-		Expression cond = getConditionalExpression(branchClosestToError);
-		System.out.println("***The condition in this branch: "+cond);
-		variables.addAll(collectVariables(cond));
-		System.out.println("***Variables in conditional closest to error:");
-		for (Variable v : variables) {
-			System.out.println("  "+v);
-		}
-		
+		Expression cond = extractAssertionCondition(traceOfCDS);
+		Set<Variable> variables = collectVariablesInAssertion(cond);
+		Set<Vertex> branches = new HashSet<Vertex>();
 		branches.addAll(collectBranchesOfInterest(traceOfCDS.get(0)));
 		System.out.println("***Branches of interest after processing the error CDS:");
-		for (Vertex n : branches) {
-			System.out.println("  "+n);
-		}
-		
+		for (Vertex n : branches) System.out.println("  "+n);	
 		/* Here we want to create a global director of the statements
 		 * which aren't nested inside a conditional. This is to handle
 		 * the case when the stack is empty.
@@ -378,13 +392,57 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 		branches.add(globalEntry);
 		
 		/* Advance past error node */
-		trace = trace.subList(1, trace.size()); traceOfCDS = traceOfCDS.subList(1, traceOfCDS.size()); // advance past error node
-
-		Map<Arc,VariableState> funcReturnToLHSVarMap = createFunctionCallAssignmentMap(trace);
+		trace = trace.subList(1, trace.size()); traceOfCDS = traceOfCDS.subList(1, traceOfCDS.size()); 
 		
+		slice(trace, traceOfCDS, branches, globalEntry, cond, variables, branchesInQuestion);
+		
+		if (!branches.isEmpty()) {
+			System.out.println("**The error branches are**");
+			for (Vertex b : branches) {
+				System.out.println("  "+b);
+			}
+		} else {
+			System.out.println("** There are NO error branches!**");
+		}
+		/* Expected output for unit testing */
+		Set<String> errorBranches = new HashSet<String>();
+		for (Vertex b : branches) {
+			if (b.location != null) errorBranches.add(b.toTestString());
+		}
+		this.expectedOutput.set(1, errorBranches);
+		System.out.println(this.expectedOutput);
+		
+		if (!branchesInQuestion.isEmpty()) {
+			System.out.println("**The branches in QUESTION are**");
+			for (Vertex b : branchesInQuestion) {
+				System.out.println("  "+b);
+			}
+		} else {
+			System.out.println("** There are NO branches in question!**");
+		}
+		Set<String> questionables = new HashSet<String>();
+		for (Vertex b : branchesInQuestion) {
+			questionables.add(b.toTestString());
+		}
+		this.expectedOutput.set(2, questionables);
+		
+		Pair<Set<Vertex>,Set<Vertex>> errorBranchesAndQuestionables = 
+				new Pair<Set<Vertex>,Set<Vertex>>(branches, branchesInQuestion);
+		Set<String> inputVars = new HashSet<String>();
+		for (Pair<SymbolicExpression,String> v : this.inputSymbolicExprs) {
+			inputVars.add("("+v.left.toString()+","+v.right.trim()+")");
+		}
+		this.expectedOutput.set(0, inputVars);
+		return errorBranchesAndQuestionables;
+	}
+	
+	private void slice(List<Pair<Vertex, Arc>> trace, 
+			List<Stack<Pair<Vertex, Vertex>>> traceOfCDS, Set<Vertex> branches, 
+			Vertex globalEntry, Expression cond, Set<Variable> variables, 
+			Set<Vertex> branchesInQuestion) {
+		Map<Arc,VariableState> funcReturnToLHSVarMap = createFunctionCallAssignmentMap(trace);
 		int i = 0;
-		for (Pair<Vertex,Arc> elem : trace) {
-			
+		for (Pair<Vertex,Arc> elem : trace) {			
 			/* First discover the branch upon which this
 			 * statement immediately control depends
 			 */
@@ -398,7 +456,6 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 				 */
 				currentDirectingBranch = globalEntry;
 			}
-
 			/* Here we're looking for either assign statements, 
 			 * branch points, or merge points;
 			 * we don't care about the other statements
@@ -451,23 +508,26 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 						/* The assign is from a returned function call */
 						lhsVar = funcReturnToLHSVarMap.get(elem.right).variable;
 						System.out.println("Found an ASSIGN CALL, whose LHS variable is: "+lhsVar);
+						System.out.println("The element here is: "+elem);
 						if (variables.contains(lhsVar)) {
 							System.out.println("The LHS of "+elem.right+" contains a variable of interest");
 							if (statementString.contains("__VERIFIER_nondet_int")) {
-								System.out.println("+++++++++++This is an input variable of interest");
 								int successiveLine = Integer.parseInt(elem.right.target.location.getSource().toString().replaceAll(".*:([0-9]+)..*", "$1"));
 								String inputVarLine = String.valueOf(successiveLine - 1);
-								System.out.println("Declared at line number: "+inputVarLine);
-								
+								inputInstances.add(inputVarLine);
 								System.out.println("LHS var: "+lhsVar.name());
 								//this.inputVariables.add(lhsVar);
 								VariableState vs = funcReturnToLHSVarMap.get(elem.right);
-								State state = vs.state; int pid = vs.pid;
-								SymbolicExpression s = state.valueOf(pid, lhsVar);
+								State state = vs.state; 
+								int pid = vs.pid;
+								state.print(System.out);
+								
+								System.out.println("The RHS target state: "+state);
+								SymbolicExpression s = state.valueOf(pid, vs.variable); //'input' Variable not in scope
 								System.out.println("State: "+state);
 								System.out.println("Symbolic Expression: "+s);
 								this.inputSymbolicExprs.add(new Pair<SymbolicExpression,String>(s,inputVarLine+" "+lhsVar.name()+" "));
-								this.symbolicToSyntactic.put(s.toString(), lhsVar.name().toString());
+								this.symbolicToSyntactic.put(s.toString(), inputVarLine);
 							}
 							System.out.println("Let's remove the LHS variable from our variables worklist");
 							variables.remove(lhsVar);
@@ -503,48 +563,25 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 			}
 			i++;
 		}
-		
-		if (!branches.isEmpty()) {
-			System.out.println("**The error branches are**");
-			for (Vertex b : branches) {
-				System.out.println("  "+b);
-			}
-		} else {
-			System.out.println("** There are NO error branches!**");
-		}
-		/* Expected output for unit testing */
-		Set<String> errorBranches = new HashSet<String>();
-		for (Vertex b : branches) {
-			if (b.location != null) errorBranches.add(b.toTestString());
-		}
-		this.expectedOutput.set(1, errorBranches);
-		System.out.println(this.expectedOutput);
-		
-		if (!branchesInQuestion.isEmpty()) {
-			System.out.println("**The branches in QUESTION are**");
-			for (Vertex b : branchesInQuestion) {
-				System.out.println("  "+b);
-			}
-		} else {
-			System.out.println("** There are NO branches in question!**");
-		}
-		Set<String> questionables = new HashSet<String>();
-		for (Vertex b : branchesInQuestion) {
-			questionables.add(b.toTestString());
-		}
-		this.expectedOutput.set(2, questionables);
-		
-		Pair<Set<Vertex>,Set<Vertex>> errorBranchesAndQuestionables = 
-				new Pair<Set<Vertex>,Set<Vertex>>(branches, branchesInQuestion);
-		System.out.println("The input symbolic expressions of interest: "+this.inputSymbolicExprs);
-		Set<String> inputVars = new HashSet<String>();
-		for (Pair<SymbolicExpression,String> v : this.inputSymbolicExprs) {
-			inputVars.add("("+v.left.toString()+","+v.right+")");
-		}
-		this.expectedOutput.set(0, inputVars);
-		return errorBranchesAndQuestionables;
 	}
-	
+
+	private Expression extractAssertionCondition(
+			List<Stack<Pair<Vertex, Vertex>>> traceOfCDS) {
+		Vertex branchClosestToError = traceOfCDS.get(0).peek().left;
+		Expression cond = getConditionalExpression(branchClosestToError);
+		return cond;
+	}
+
+	private Set<Variable> collectVariablesInAssertion(Expression cond) {
+		Set<Variable> variables = new HashSet<Variable>();
+		variables.addAll(collectVariables(cond));
+		System.out.println("***Variables in conditional closest to error:");
+		for (Variable v : variables) {
+			System.out.println("  "+v);
+		}
+		return variables;
+	}
+
 	private boolean offBranchContainsNodeOfInterest(Vertex currentBranch,
 			Vertex mergePoint) {
 		this.reachableUpToMerge = new HashSet<Vertex>();
@@ -639,7 +676,6 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 		return (a.statement != null && a.statement instanceof CommonCallStatement);
 	}
 
-	@SuppressWarnings("unused")
 	private Map<Arc,VariableState> createFunctionCallAssignmentMap (List<Pair<Vertex,Arc>> trace) {
 		Map<Arc,VariableState> exprVarMap = new HashMap<Arc,VariableState>();
 		
@@ -651,10 +687,7 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 			 * push the Expression onto the stack */
 			if (elem.right.statement.statementKind() == Statement.StatementKind.RETURN &&
 					((ReturnStatement) elem.right.statement).expression() != null) {
-				System.out.println("----Walking backwards, saw a return, putting onto stack: "+elem.right);
 				returnedExprs.add(elem.right);
-				Arc a = elem.right;
-				/* TODO : attach the state info from the target of this arc to the arc itself */
 			}
 			/* If you see a CallOrSpawnStatement with an LHS,
 			 * get the returned Expression from the stack */
@@ -663,19 +696,16 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 				Expression lhs = ((CallOrSpawnStatement) elem.right.statement).lhs();
 				/* Get the Variable in the singleton set returned from calling collectVariables(lhs) */
 				Variable lhsVar = collectVariables(lhs).stream().findAny().get();
-				//System.out.println(">>>>Walking backwards, saw a CALL with an LHS: "+lhsVar);
 				Arc a = returnedExprs.pop();
-				//Expression e = ((ReturnStatement) a.statement).expression();
 				assert a != null;
-				//System.out.println(">>>>>>the top of the Expr stack is: "+e);
 				VariableState vs = new VariableState();
 				vs.variable = lhsVar; vs.pid = elem.left.pid;
-				/* Take the state from the arc's target, because we want the post-state of the assignment */
-				vs.state = a.target.state;
+				/* Take the state from the arc's source, because the state
+				 * needs to be in scope of the returned variable  */
+				vs.state = a.source.state;
 				exprVarMap.put(a, vs);
 			}
 		}
-		System.out.println(">>>> The final Expression to Variable map: "+exprVarMap);
 		return exprVarMap;
 	}
 	
@@ -722,7 +752,6 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 	
 	private <E> Stack<Pair<E,E>> merging (E mergePoint, Stack<Pair<E,E>> CDS) {
 		if (!CDS.empty() && CDS.peek().right.equals(mergePoint)) {
-			//System.out.println("**    Popping "+CDS.peek()+" from the CDS");
 			CDS.pop();
 		}
 		return CDS;
@@ -798,17 +827,10 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 				originalSuccVertex = p.target;
 			} else {
 				originalSuccVertex = p.originalTarget;
-			}
-			System.out.println("->>->> About to modify the target of "+p);
-			System.out.println(" ...where the entry vertex "+localGraph.entryVertex+" will be the target of "+p+" (Location: "+p.source.location+")");
-			p.target = localGraph.entryVertex; 
+			}			p.target = localGraph.entryVertex; 
 			localGraph.entryVertex.in.add(p);
-			System.out.println("  now the localGraph entry vertex has an in set of: "+localGraph.entryVertex.in);
 		}
 		for (Arc exit : localGraph.exitArcs) {
-			if (exit.source.location.toString().contains("186")) {
-				System.out.println("About to set 186's target to be "+originalSuccVertex);
-			}
 			exit.target = originalSuccVertex;
 			originalSuccVertex.in.add(exit);
 		}
@@ -818,10 +840,7 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 	private Vertex findTargetVertex(Statement stmt, Vertex currentVertex) {
 		for (Arc a : currentVertex.out) {
 			if (a.statement.equals(stmt)) {
-				if (a.toString().equals("$havoc(&(temp))")) System.out.println("+++Found HAVOC+++");
 				assert a.target != null : "This arc has no target: "+a+" \n   but its equivalent statement has target: "+stmt.target();
-				System.out.println("...The target location connecting "+currentVertex+" through stmt "+a.statement+" is: "+a.target);
-				System.out.println(".....and all of the Arcs are: "+currentVertex.out);
 				return a.target;
 			}
 		}
@@ -881,8 +900,13 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 				SliceTrace t = new SliceTrace();
 				t.location = l;
 				t.statement = s;
-				t.state = step.getFinalState();
+				//t.state = step.getFinalState();
+				t.state = atom.getPostState();
+				System.out.println("Post state: "+t.state);
+				t.state.print(System.out);
+				
 				t.pid = step.processIdentifier();
+				System.out.println("The state for "+t.statement+" is: "+t.state);
 				sliceTrace.add(t);
 			}
 		}
@@ -1015,6 +1039,54 @@ public class CommonSliceAnalysis implements SliceAnalysis {
 		} else {
 			assert false;
 		}
+	}
+	
+	private BooleanExpression getFinalPC (Model model, Trace<Transition, State> trace) {
+		/* Hack to access PC just before final state */
+		List<TraceStepIF<Transition,State>> traceSteps = trace.traceSteps();
+		State secondToLastState = traceSteps.get(traceSteps.size()-2).getFinalState();
+		BooleanExpression pathCondition = secondToLastState.getPathCondition();
+		return pathCondition;
+	}
+	
+	private void printAssumptions (Model model, Trace<Transition, State> trace) {
+		BooleanExpression pathCondition = getFinalPC(model, trace);
+		BooleanExpression[] pcClauses = pathCondition.getClauses();
+		Set<BooleanExpression> slice = new HashSet<BooleanExpression>();
+		Set<String> lineAndAssumption = new HashSet<String>();
+		for (BooleanExpression c : pcClauses) {
+			for (Pair<SymbolicExpression,String> s : this.inputSymbolicExprs) {
+				if (c.toString().contains(s.left.toString())) {
+					slice.add(c);
+					lineAndAssumption.add(s.right+" "+c.toString());
+				}
+			}
+		}
+		System.out.println("Clauses in slice:");
+		for (BooleanExpression c : slice) {
+			System.out.println("  "+c);
+		}
+		System.out.println("BEGIN ASSUMPTIONS");
+		for (String s : lineAndAssumption) {
+			System.out.println(s);
+		}
+		System.out.println("END ASSUMPTIONS");
+		System.out.println("BEGIN INPUT");
+		for(String input : inputInstances) {
+			System.out.println(input);
+		}
+		System.out.println("END INPUT");
+		System.out.println("BEGIN MAP");
+		for(String k : symbolicToSyntactic.keySet()) {
+			System.out.println(k+" "+symbolicToSyntactic.get(k));
+		}
+		System.out.println("END MAP");
+		System.out.println("Size of slice: "+slice.size());
+		System.out.println("Size of PC   : "+pcClauses.length);
+		/* Reasoner reasoner = modelTranslator.universe.reasoner(pathCondition);
+		String pcString = replayer.symbolicAnalyzer.pathconditionToString(source,
+				secondToLastState, "  ", reasoner.getReducedContext()).toString();
+		System.out.println("\nPath Condition:"+pcString); */
 	}
 
 	@Override

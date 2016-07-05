@@ -682,7 +682,7 @@ public class UserInterface {
 			if (sliceMode) {
 				out.println("*** Printing Slice Analysis ***");
 				@SuppressWarnings("unused")
-				SliceAnalysis sa = new CommonSliceAnalysis(model, trace);
+				SliceAnalysis sa = new CommonSliceAnalysis(model, trace, traceFile);
 			}
 			if (witnessMode) {
 				out.println("*** Printing Witness ***\n");
