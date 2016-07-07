@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -29,8 +28,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.value.IF.StringValue;
 import edu.udel.cis.vsl.abc.err.IF.ABCUnsupportedException;
-import edu.udel.cis.vsl.abc.front.c.preproc.CPreprocessor;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.StringLiteral;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -213,8 +210,6 @@ public class IOWorker extends BaseWorker {
 	private boolean hasStdout = false;
 	private boolean hasStdin = false;
 	private boolean hasStderr = false;
-
-	private FrontEnd frontEnd;
 	private TypeNode filesystemType;
 	private TypeNode fileType;
 	private TypeNode stdFileType;
@@ -234,10 +229,9 @@ public class IOWorker extends BaseWorker {
 	 * @param config
 	 *            The CIVL configuration.
 	 */
-	public IOWorker(ASTFactory astFactory, FrontEnd frontEnd) {
+	public IOWorker(ASTFactory astFactory) {
 		super(IOTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "_io_";
-		this.frontEnd = frontEnd;
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -958,20 +952,5 @@ public class IOWorker extends BaseWorker {
 					&& this.fopen_declaration != null)
 				break;
 		}
-	}
-
-	private void insertStdioHeader(SequenceNode<BlockItemNode> root)
-			throws SyntaxException {
-		AST header = this.parseSystemLibrary(this.frontEnd, new File(
-				CPreprocessor.ABC_INCLUDE_PATH, "civl-stdio.cvh"));
-		List<BlockItemNode> list = new LinkedList<>();
-		SequenceNode<BlockItemNode> headerRoot = header.getRootNode();
-
-		header.release();
-		for (BlockItemNode item : headerRoot) {
-			item.remove();
-			list.add(item);
-		}
-		root.insertChildren(0, list);
 	}
 }

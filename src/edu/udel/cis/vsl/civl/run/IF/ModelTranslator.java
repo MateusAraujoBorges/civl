@@ -13,12 +13,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
@@ -35,8 +32,6 @@ import edu.udel.cis.vsl.abc.main.TranslationTask;
 import edu.udel.cis.vsl.abc.main.TranslationTask.TranslationStage;
 import edu.udel.cis.vsl.abc.main.UnitTask;
 import edu.udel.cis.vsl.abc.program.IF.Program;
-import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
-import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.abc.transform.common.Pruner;
 import edu.udel.cis.vsl.abc.transform.common.SideEffectRemover;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -105,16 +100,6 @@ public class ModelTranslator {
 	 */
 	private static final String MPI_CONTRACT_MACRO = "_MPI_CONTRACT";
 
-	/**
-	 * An empty file array
-	 */
-	private final static File[] emptyFileArray = new File[0];
-
-	/**
-	 * The CIVL system include path for library implementations
-	 */
-	private final static File[] civlSysPathArray = new File[] { CIVLConstants.CIVL_INCLUDE_PATH };
-
 	// package-private fields, which are accessed by UserInterface
 	/**
 	 * The GMC configuration that this model translator associates with.
@@ -168,15 +153,13 @@ public class ModelTranslator {
 	 */
 	private TransformerFactory transformerFactory;
 
-	/**
-	 * The core name of teh user file.
-	 */
-	private String userFileCoreName;
+	// /**
+	// * The core name of teh user file.
+	// */
+	// private String userFileCoreName;
 
 	private Configuration abcConfiguration = Configurations
 			.newMinimalConfiguration();
-
-	private Set<String> cHeaders = new HashSet<>();
 
 	// constructor
 	/**
@@ -232,7 +215,7 @@ public class ModelTranslator {
 			throws PreprocessorException {
 		this.cmdSection = cmdSection;
 		this.gmcConfig = gmcConfig;
-		this.userFileCoreName = coreName;
+		// this.userFileCoreName = coreName;
 		this.universe = universe;
 		if (cmdSection.isTrue(showProverQueriesO))
 			universe.setShowProverQueries(true);
@@ -317,8 +300,7 @@ public class ModelTranslator {
 				.getSvcompTransformerRecord(config));
 		task.addTransformRecord(transformerFactory
 				.getGeneralTransformerRecord());
-		task.addTransformRecord(transformerFactory
-				.getIOTransformerRecord(frontEnd));
+		task.addTransformRecord(transformerFactory.getIOTransformerRecord());
 		// if (hasOmp) {
 		// if (!config.ompNoSimplify())
 		task.addTransformRecord(transformerFactory
@@ -349,12 +331,6 @@ public class ModelTranslator {
 		task.addTransformCode(Pruner.CODE);
 	}
 
-	private File[] fileListToArray(List<File> files) {
-		File[] result = new File[files.size()];
-
-		return files.toArray(result);
-	}
-
 	/**
 	 * Translates command line marcos into ABC macro objects.
 	 * 
@@ -376,75 +352,6 @@ public class ModelTranslator {
 			}
 		}
 		return macroDefs;
-	}
-
-	/**
-	 * preprocess all source files and find the list of implementation files of
-	 * CIVL standard headers, and add the file into the list.
-	 * 
-	 * @throws ABCException
-	 */
-	private void addSystemImplementations() throws ABCException {
-		TranslationTask task;// = new TranslationTask(unitTasks);
-		// UnitTask[] unitTask;
-		int numUnits = files.size();
-		UnitTask[] unitTasks = new UnitTask[numUnits];
-		ABCExecutor executor;// = new ABCExecutor(task);
-		Set<String> processedFiles = new HashSet<>();
-		Stack<CivlcTokenSource> workList = new Stack<>();
-
-		for (int i = 0; i < files.size(); i++) {
-			unitTasks[i] = new UnitTask(new File[] { files.get(i) });
-			unitTasks[i].setSystemIncludes(systemIncludes);
-			unitTasks[i].setUserIncludes(userIncludes);
-		}
-		task = new TranslationTask(unitTasks);
-		if (config.svcomp())
-			task.setSVCOMP(true);
-		task.setStage(TranslationStage.PREPROCESS_CONSUME);
-		executor = new ABCExecutor(task);
-		executor.execute();
-		for (int i = 0; i < numUnits; i++) {
-			workList.add(executor.getTokenSource(i));
-		}
-		while (!workList.isEmpty()) {
-			CivlcTokenSource tokens = workList.pop();
-
-			for (SourceFile sourceFile : tokens.getSourceFiles()) {
-				String filename = sourceFile.getName();
-
-				if (!processedFiles.add(filename))
-					continue;
-				if (filename.endsWith(".h"))
-					cHeaders.add(filename);
-
-				File systemFile = getSystemImplementation(sourceFile.getFile());
-
-				if (systemFile != null) {
-					String systemFilename = systemFile.getName();
-
-					if (processedFiles.add(systemFilename)) {
-						UnitTask unitTask;
-						TranslationTask preprocTask;
-
-						// the following ensures the file found will be
-						// /include/civl/name.cvl, not something in the
-						// current directory or elsewhere in the path.
-						// It also ensures any file included will also
-						// be found in either /include/civl or /include/abc.
-						unitTask = new UnitTask(new File[] { systemFile });
-						unitTask.setSystemIncludes(systemIncludes);
-						preprocTask = new TranslationTask(
-								new UnitTask[] { unitTask });
-						preprocTask.setStage(TranslationStage.PREPROCESS);
-						executor = new ABCExecutor(preprocTask);
-						executor.execute();
-						workList.add(executor.getTokenSource(0));
-						files.add(systemFile);
-					}
-				}
-			}
-		}
 	}
 
 	/**
@@ -536,26 +443,26 @@ public class ModelTranslator {
 
 	// private methods
 
-	/**
-	 * Prints the input variables declared in the given program to the output
-	 * stream.
-	 * 
-	 * @param program
-	 *            the program, which is the result of parsing, linking and
-	 *            transforming.
-	 */
-	private void printInputVariableNames(Program program) {
-		List<VariableDeclarationNode> inputVars = this
-				.inputVariablesOfProgram(program);
-
-		out.println(bar + " input variables of " + this.userFileCoreName + " "
-				+ bar);
-		for (VariableDeclarationNode var : inputVars) {
-			var.prettyPrint(out);
-			out.println();
-		}
-		out.flush();
-	}
+	// /**
+	// * Prints the input variables declared in the given program to the output
+	// * stream.
+	// *
+	// * @param program
+	// * the program, which is the result of parsing, linking and
+	// * transforming.
+	// */
+	// private void printInputVariableNames(Program program) {
+	// List<VariableDeclarationNode> inputVars = this
+	// .inputVariablesOfProgram(program);
+	//
+	// out.println(bar + " input variables of " + this.userFileCoreName + " "
+	// + bar);
+	// for (VariableDeclarationNode var : inputVars) {
+	// var.prettyPrint(out);
+	// out.println();
+	// }
+	// out.flush();
+	// }
 
 	/**
 	 * Gets the list of input variables declared in the given program.
@@ -658,27 +565,6 @@ public class ModelTranslator {
 		System.arraycopy(sysIncludes, 0, newSysIncludes, 0, numIncludes);
 		newSysIncludes[numIncludes] = CIVLConstants.CIVL_INCLUDE_PATH;
 		return newSysIncludes;
-	}
-
-	/**
-	 * Finds out the file name of the system implementation of a header file,
-	 * which stands for a certain system library, such as civlc.cvh, mpi.h,
-	 * omp.h, stdio.h, etc.
-	 * 
-	 * @param file
-	 * @return The file name of the system implementation of the given header
-	 *         file, or null if there is no implementation of the header file.
-	 */
-	private File getSystemImplementation(File file) {
-		String name = file.getName();
-
-		if (CIVLConstants.getAllCivlLibs().contains(name))
-			return new File(CIVLConstants.CIVL_INCLUDE_PATH, name.substring(0,
-					name.length() - 1) + "l");
-		else if (CIVLConstants.getCinterfaces().contains(name))
-			return new File(CIVLConstants.CIVL_INCLUDE_PATH, name.substring(0,
-					name.length() - 1) + "cvl");
-		return null;
 	}
 
 }

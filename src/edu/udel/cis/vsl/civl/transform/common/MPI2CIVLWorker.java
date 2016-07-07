@@ -7,10 +7,8 @@ import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
-import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
@@ -34,11 +32,8 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
-import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
-import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 import edu.udel.cis.vsl.civl.transform.IF.MPI2CIVLTransformer;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.civl.util.IF.Triple;
 
 //TODO: added CMPI_destroy call before each call to exit(k);
 /**
@@ -69,11 +64,6 @@ import edu.udel.cis.vsl.civl.util.IF.Triple;
  * 
  */
 public class MPI2CIVLWorker extends BaseWorker {
-
-	/* ************************** Pthread Constants ********************** */
-
-	private static final String PTHREAD_JOIN = "pthread_join";
-	private static final String PTHREAD_PTR = "value_ptr_value";
 
 	/* ************************** Private Static Fields ********************** */
 
@@ -476,6 +466,36 @@ public class MPI2CIVLWorker extends BaseWorker {
 		return mainFunction;
 	}
 
+	/**
+	 * 
+	 * Constructs the function MPI_Process() from the original MPI program. It
+	 * is a wrapper of the original MPI program with some additional features: <br>
+	 * 
+	 * <pre>
+	 * void _mpi_process(int _mpi_rank){
+	 *   $comm MPI_COMM_WORLD = $comm_create(...);
+	 *   //SLIGHTLY-MODIFIED ORIGINAL PROGRAM;
+	 *   int a, b, ...;
+	 *   ... function(){...}
+	 *   ...
+	 *   ... _main(){...} // renamed main() to _main()
+	 *   ....
+	 *   //ORIGINAL PROGRAM ENDS HERE;
+	 *   _main();
+	 *   $comm_destroy(MPI_COMM_WORLD);
+	 * }
+	 * </pre>
+	 * 
+	 * @param root
+	 *            The root node of the AST of the original MPI program.
+	 * @return The function definition node of MPI_Process, the list of AST
+	 *         nodes that are parsed from header files and will be moved up to
+	 *         the higher scope (i.e., the file scope of the final AST), and
+	 *         variable declaration nodes that are the arguments of the original
+	 *         main function which will be moved up to the higher scope (i.e.,
+	 *         the file scope of the final AST) and become $input variables of
+	 *         the final AST.
+	 */
 	private Pair<FunctionDefinitionNode, List<BlockItemNode>> transformMPIProcess(
 			SequenceNode<BlockItemNode> root) {
 		List<BlockItemNode> filescopeList = new LinkedList<>();
@@ -620,275 +640,6 @@ public class MPI2CIVLWorker extends BaseWorker {
 						mpiProcessBody);
 
 		return new Pair<>(mpiProcess, filescopeList);
-	}
-
-	/**
-	 * 
-	 * Constructs the function MPI_Process() from the original MPI program. It
-	 * is a wrapper of the original MPI program with some additional features: <br>
-	 * 
-	 * <pre>
-	 * void _mpi_process(int _mpi_rank){
-	 *   $comm MPI_COMM_WORLD = $comm_create(...);
-	 *   //SLIGHTLY-MODIFIED ORIGINAL PROGRAM;
-	 *   int a, b, ...;
-	 *   ... function(){...}
-	 *   ...
-	 *   ... _main(){...} // renamed main() to _main()
-	 *   ....
-	 *   //ORIGINAL PROGRAM ENDS HERE;
-	 *   _main();
-	 *   $comm_destroy(MPI_COMM_WORLD);
-	 * }
-	 * </pre>
-	 * 
-	 * @param root
-	 *            The root node of the AST of the original MPI program.
-	 * @return The function definition node of MPI_Process, the list of AST
-	 *         nodes that are parsed from header files and will be moved up to
-	 *         the higher scope (i.e., the file scope of the final AST), and the
-	 *         list of variable declaration nodes that are the arguments of the
-	 *         original main function which will be moved up to the higher scope
-	 *         (i.e., the file scope of the final AST) and become $input
-	 *         variables of the final AST.
-	 */
-	private Triple<FunctionDefinitionNode, List<BlockItemNode>, List<BlockItemNode>> mpiProcess(
-			SequenceNode<BlockItemNode> root) {
-		// List<BlockItemNode> includedNodes = new ArrayList<>();
-		List<String> vars = new LinkedList<>();
-		List<BlockItemNode> varDeclsAndAssumps = new LinkedList<>();
-		List<BlockItemNode> mpiItems;
-		int number;
-		CompoundStatementNode mpiProcessBody;
-		SequenceNode<VariableDeclarationNode> formals;
-		FunctionTypeNode mpiProcessType;
-		FunctionDefinitionNode mpiProcess;
-		VariableDeclarationNode commVar = this.commDeclaration();
-		ExpressionStatementNode commDestroy = this.commDestroy(COMM_DESTROY,
-				COMM_WORLD);
-		boolean commVarAdded = false;
-
-		// build MPI_Process() function:
-		mpiItems = new LinkedList<>();
-		number = root.numChildren();
-		// add MPI_Sys_status variable into each process
-		// items.add(mpiSysStatusDeclaration());
-		// items.add(mpiStatusDePruneAssertion());
-		// mpiItems.add(commVar);
-		for (int i = 0; i < number; i++) {
-			BlockItemNode child = root.getSequenceChild(i);
-			String sourceFile;
-
-			if (child == null)
-				continue;
-			sourceFile = child.getSource().getFirstToken().getSourceFile()
-					.getName();
-			root.removeChild(i);
-			if (sourceFile.equals("mpi.cvl")) {
-				NodeKind nodeKind = child.nodeKind();
-
-				if (nodeKind == NodeKind.VARIABLE_DECLARATION) {
-					VariableDeclarationNode variableDeclaration = (VariableDeclarationNode) child;
-
-					// if (variableDeclaration.getName().equals(MPI_SYS_STATUS))
-					// keep variable declaration node of __MPI_Status__
-					// __my_status = __UNINIT;
-					mpiItems.add(variableDeclaration);
-					// else
-					// includedNodes.add(child);
-				} else if (nodeKind == NodeKind.FUNCTION_DEFINITION) {
-					mpiItems.add(child);
-				} else if (nodeKind == NodeKind.FUNCTION_DECLARATION) {
-					FunctionDeclarationNode functionNode = (FunctionDeclarationNode) child;
-					Function function = functionNode.getEntity();
-
-					if (function.isSystemFunction() || function.isAbstract())
-						mpiItems.add(child);
-				} else
-					mpiItems.add(child);
-			} else if (sourceFile.equals("pthread.cvl")) {
-				// extern void *value_ptr_value = NULL;
-				// extern $scope root = $here;
-				// pthread_t * pool[];
-
-				if (child.nodeKind() == NodeKind.VARIABLE_DECLARATION) {
-					VariableDeclarationNode variableDeclaration = (VariableDeclarationNode) child;
-					String varName = variableDeclaration.getName();
-
-					if (varName.equals(Pthread2CIVLWorker.PTHREAD_GPOOL)
-					// || varName.equals(PTHREAD_ROOT)
-							|| varName.equals(PTHREAD_PTR))
-						// keep variable declaration nodes for _pool in
-						// pthread.cvl
-						mpiItems.add(variableDeclaration);
-					else
-						mpiItems.add(child);
-				} else if (child.nodeKind() == NodeKind.FUNCTION_DEFINITION) {
-					FunctionDefinitionNode functionDef = (FunctionDefinitionNode) child;
-					String name = functionDef.getName();
-
-					if (name.equals(Pthread2CIVLWorker.PTHREAD_EXIT_MAIN_NEW)
-							|| name.equals(PTHREAD_JOIN)
-							|| name.equals(Pthread2CIVLWorker.PTHREAD_CREATE)
-							|| name.equals(Pthread2CIVLWorker.PTHREAD_EXIT_NEW))
-						// // ||
-						// name.equals(Pthread2CIVLWorker.PTHREAD_MUTEX_LOCK))
-						// || name.equals(PTHREAD_MUTEX_UNLOCK)
-						// || name.equals(PTHREAD_MUTEX_TRYLOCK)
-						// || name.equals(PTHREAD_COND_WAIT))
-						mpiItems.add(functionDef);
-					else
-						mpiItems.add(child);
-				} else
-					mpiItems.add(child);
-			} else if (sourceFile.equals("stdio.h")) {
-				// ignore the variable declaration in stdio.h
-				if (child.nodeKind() != NodeKind.VARIABLE_DECLARATION)
-					mpiItems.add(child);
-			} else if (sourceFile.equals("stdio.cvl")) {
-				// keep variable declaration nodes from stdio.cvl, i.e.,
-				// stdout, stdin, stderr, etc.
-				if (child.nodeKind() == NodeKind.VARIABLE_DECLARATION) {
-					VariableDeclarationNode varDecl = (VariableDeclarationNode) child;
-
-					varDecl.setExternStorage(false);
-					mpiItems.add(varDecl);
-				} else
-					mpiItems.add(child);
-			} else if (sourceFile.equals("mpi.h")) {
-				NodeKind nodeKind = child.nodeKind();
-
-				if (nodeKind == NodeKind.VARIABLE_DECLARATION) {
-					VariableDeclarationNode variableDeclaration = (VariableDeclarationNode) child;
-
-					// ignore the MPI_COMM_WORLD declaration in mpi.h.
-					if (!variableDeclaration.getName().equals(COMM_WORLD))
-						mpiItems.add(child);
-				} else if (nodeKind == NodeKind.FUNCTION_DEFINITION) {
-					mpiItems.add(child);
-				} else if (nodeKind == NodeKind.FUNCTION_DECLARATION) {
-					FunctionDeclarationNode functionNode = (FunctionDeclarationNode) child;
-					Function function = functionNode.getEntity();
-
-					if (function.isSystemFunction() || function.isAbstract())
-						mpiItems.add(child);
-				} else
-					mpiItems.add(child);
-				if (!commVarAdded && child instanceof TypedefDeclarationNode) {
-					String typeName = ((TypedefDeclarationNode) child)
-							.getName();
-
-					if (typeName.equals(COMM_TYPE)) {
-						mpiItems.add(commVar);
-						commVarAdded = true;
-					}
-				}
-			} else if (CIVLConstants.getAllCLibraries().contains(sourceFile)) {// sourceFile.endsWith(".h"))
-																				// //
-																				// {
-				mpiItems.add(child);
-			} else if (sourceFile.endsWith(".cvh")
-					|| sourceFile.equals("civl-cuda.cvl")
-					|| sourceFile.equals("civl-mpi.cvl")
-					|| sourceFile.equals("civl-omp.cvl")
-					|| sourceFile.equals("civl-pthread.cvl")
-					|| sourceFile.equals("civlc.cvl")
-					|| sourceFile.equals("comm.cvl")
-					|| sourceFile.equals("concurrency.cvl")
-					|| sourceFile.equals("cuda.cvl")
-					|| sourceFile.equals("math.cvl")
-					|| sourceFile.equals("mpi.cvl")
-					|| sourceFile.equals("omp.cvl")
-					|| sourceFile.equals("pthread-functions.cvl")
-					|| sourceFile.equals("pthread-types.cvl")
-					|| sourceFile.equals("sched.cvl")
-					|| sourceFile.equals("seq.cvl")
-					|| sourceFile.equals("stdio.cvl")
-
-					|| sourceFile.equals("string.cvl")) {
-				if (child instanceof FunctionDeclarationNode
-						&& ((FunctionDeclarationNode) child).getName().equals(
-								"$assume")) {
-					varDeclsAndAssumps.add(child);
-				} else if (child instanceof TypedefDeclarationNode
-						&& ((TypedefDeclarationNode) child).getName().equals(
-								"$mpi_gcomm")) {
-					System.out.println("$mpi_gcomm found");
-					varDeclsAndAssumps.add(child);
-					child.prettyPrint(System.out);
-				} else
-					mpiItems.add(child);
-			} else {
-				if (isRelatedAssumptionNode(child, vars)) {
-					varDeclsAndAssumps.add(child);
-					continue;
-				}
-				if (child.nodeKind() == NodeKind.VARIABLE_DECLARATION) {
-					VariableDeclarationNode variable = (VariableDeclarationNode) child;
-
-					if (variable.getTypeNode().isInputQualified()
-							|| variable.getTypeNode().isOutputQualified()
-							|| (sourceFile.equals(GeneralTransformer.LONG_NAME))) {
-						vars.add(variable.getName());
-						varDeclsAndAssumps.add(variable);
-						continue;
-					}
-				}
-				if (child.nodeKind() == NodeKind.FUNCTION_DEFINITION) {
-					FunctionDefinitionNode functionNode = (FunctionDefinitionNode) child;
-					IdentifierNode functionName = (IdentifierNode) functionNode
-							.child(0);
-
-					if (functionName.name().equals(MAIN)) {
-						mpiItems.add(functionNode.getBody().copy());
-
-					} else
-						mpiItems.add((BlockItemNode) child);
-				} else
-					mpiItems.add((BlockItemNode) child);
-			}
-		}
-		mpiItems.add(commDestroy);
-		mpiProcessBody = nodeFactory.newCompoundStatementNode(this.newSource(
-				"function body of " + MPI_PROCESS,
-				CivlcTokenConstant.COMPOUND_STATEMENT), mpiItems);
-		formals = nodeFactory.newSequenceNode(this.newSource(
-				"formal parameters of function " + MPI_PROCESS,
-				CivlcTokenConstant.DECLARATION_LIST),
-				"FormalParameterDeclarations", Arrays.asList(this
-						.variableDeclaration(MPI_RANK,
-								this.basicType(BasicTypeKind.INT))));
-		mpiProcessType = nodeFactory.newFunctionTypeNode(this.newSource(
-				"type of function " + MPI_PROCESS, CivlcTokenConstant.TYPE),
-				this.voidType(), formals, true);
-		mpiProcess = nodeFactory.newFunctionDefinitionNode(this.newSource(
-				"definition of function",
-				CivlcTokenConstant.FUNCTION_DEFINITION), this
-				.identifier(MPI_PROCESS), mpiProcessType, null, mpiProcessBody);
-		return new Triple<>(mpiProcess, null, varDeclsAndAssumps);
-	}
-
-	StatementNode callMain(FunctionDefinitionNode function) {
-		for (BlockItemNode child : function.getBody()) {
-			if (child == null)
-				continue;
-			if (child instanceof ExpressionStatementNode) {
-				ExpressionNode expr = ((ExpressionStatementNode) child)
-						.getExpression();
-
-				if (expr instanceof FunctionCallNode) {
-					ExpressionNode functionNode = ((FunctionCallNode) expr)
-							.getFunction();
-
-					if (functionNode instanceof IdentifierExpressionNode) {
-						if (((IdentifierExpressionNode) functionNode)
-								.getIdentifier().name().equals(GEN_MAIN))
-							return (StatementNode) (child.copy());
-					}
-				}
-			}
-		}
-		return null;
 	}
 
 	/**
