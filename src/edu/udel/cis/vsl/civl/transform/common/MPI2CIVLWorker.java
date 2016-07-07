@@ -14,6 +14,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
@@ -27,6 +28,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.DeclarationListNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
@@ -35,6 +37,7 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 import edu.udel.cis.vsl.civl.transform.IF.MPI2CIVLTransformer;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Triple;
 
 //TODO: added CMPI_destroy call before each call to exit(k);
@@ -199,6 +202,8 @@ public class MPI2CIVLWorker extends BaseWorker {
 	private final static String NPROCS_LOWER_BOUND = MPI_PREFIX + "nprocs_lo";
 
 	private final static String ROOT = MPI_PREFIX + "root";
+	private static final String MPI_STATE_TYPE = "$mpi_state";
+	private static final String MPI_COROUTINE_NAME = "$mpi_coroutine_name";
 
 	/* ****************************** Constructor ************************** */
 	/**
@@ -278,6 +283,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 		TypeNode commType;
 		List<ExpressionNode> commCreateArgs;
 		ExpressionNode commCreate;
+		VariableDeclarationNode commVar;
 
 		commType = nodeFactory.newTypedefNameNode(nodeFactory
 				.newIdentifierNode(this.newSource("$comm type",
@@ -289,7 +295,9 @@ public class MPI2CIVLWorker extends BaseWorker {
 		commCreate = nodeFactory.newFunctionCallNode(this.newSource(
 				"function call " + COMM_CREATE, CivlcTokenConstant.CALL), this
 				.identifierExpression(COMM_CREATE), commCreateArgs, null);
-		return this.variableDeclaration(COMM_WORLD, commType, commCreate);
+		commVar = this.variableDeclaration(COMM_WORLD, commType, commCreate);
+		commVar.setExternStorage(true);
+		return commVar;
 	}
 
 	/**
@@ -468,6 +476,152 @@ public class MPI2CIVLWorker extends BaseWorker {
 		return mainFunction;
 	}
 
+	private Pair<FunctionDefinitionNode, List<BlockItemNode>> transformMPIProcess(
+			SequenceNode<BlockItemNode> root) {
+		List<BlockItemNode> filescopeList = new LinkedList<>();
+		List<BlockItemNode> processList = new LinkedList<>();
+		int commTypeIndex = -1, mpiInitIndex = -1;
+		boolean commCreated = false, newMPIinitMoved = false;
+		String gcommStructName = null;
+
+		for (BlockItemNode child : root) {
+			if (child == null)
+				continue;
+			child.remove();
+
+			String sourceName = child.getSource().getFirstToken()
+					.getSourceFile().getName();
+
+			switch (sourceName) {
+			case "civlc.cvh":
+			case "civlc.cvl":
+			case "bundle.cvh":
+			case "comm.cvh":
+			case "comm.cvl":
+			case "concurrency.cvh":
+			case "concurrency.cvl":
+			case "op.h":
+			case "pointer.cvh":
+			case "seq.cvh":
+			case "seq.cvl":
+				filescopeList.add(child);
+				continue;
+			default:
+			}
+			if (child instanceof VariableDeclarationNode) {
+				VariableDeclarationNode variable = (VariableDeclarationNode) child;
+				TypeNode type = variable.getTypeNode();
+				String name = variable.getName();
+
+				if (type.isInputQualified() || type.isOutputQualified())
+					filescopeList.add(child);
+				else if (name.equals(MPI_STATE_VAR)) {
+					processList.add(mpiInitIndex - 1, child);
+				} else if (name.equals(COMM_WORLD)) {
+					// ignore original MPI_COMM_WORLD declaration
+				} else
+					processList.add(child);
+			} else if (child instanceof ExpressionStatementNode) {
+				ExpressionStatementNode exprStmt = (ExpressionStatementNode) child;
+				ExpressionNode expression = exprStmt.getExpression();
+				boolean assumptionOnInputs = false;
+
+				if (expression instanceof FunctionCallNode) {
+					FunctionCallNode functionCall = (FunctionCallNode) expression;
+					ExpressionNode functionExpr = functionCall.getFunction();
+
+					if (functionExpr instanceof IdentifierExpressionNode
+							&& ((IdentifierExpressionNode) functionExpr)
+									.getIdentifier().name().equals(ASSUME)
+							&& this.refersInputVariable(functionCall
+									.getArguments())) {
+						assumptionOnInputs = true;
+					}
+				}
+				if (assumptionOnInputs)
+					filescopeList.add(child);
+				else
+					processList.add(child);
+			} else if (child instanceof FunctionDeclarationNode) {
+				FunctionDeclarationNode function = (FunctionDeclarationNode) child;
+				String name = function.getName();
+
+				if (name.equals(GCOMM_CREATE) || name.equals(GCOMM_DESTROY)
+						|| name.equals(MPI_COROUTINE_NAME)
+						|| name.equals(ASSUME))
+					filescopeList.add(child);
+				else if (!commCreated && name.equals(COMM_CREATE)) {
+					commCreated = true;
+					processList.add(commTypeIndex, child);
+					processList.add(commTypeIndex + 1, this.commDeclaration());
+				} else if (!newMPIinitMoved && name.equals(MPI_INIT_NEW)) {
+					newMPIinitMoved = true;
+					processList.add(mpiInitIndex, child);
+				} else if (child.nodeKind() == NodeKind.FUNCTION_DEFINITION
+						&& name.equals(MAIN)) {
+					FunctionDefinitionNode functionNode = (FunctionDefinitionNode) child;
+
+					processList.add(functionNode.getBody().copy());
+				} else
+					processList.add(child);
+				if (mpiInitIndex == -1 && name.equals(MPI_INIT))
+					mpiInitIndex = processList.size();
+			} else if (child instanceof TypedefDeclarationNode) {
+				TypedefDeclarationNode typedef = (TypedefDeclarationNode) child;
+				String name = typedef.getName();
+
+				if (name.equals(GCOMM_TYPE)) {
+					// gcommStructName
+					StructureOrUnionTypeNode struct = (StructureOrUnionTypeNode) typedef
+							.getTypeNode();
+
+					gcommStructName = struct.getName();
+					filescopeList.add(child);
+				} else if (name.equals(MPI_STATE_TYPE)) {
+					processList.add(mpiInitIndex - 5, child);
+				} else
+					processList.add(child);
+				if (commTypeIndex == -1 && name.equals(COMM_TYPE))
+					commTypeIndex = processList.size();
+			} else if (gcommStructName != null
+					&& child instanceof StructureOrUnionTypeNode) {
+				StructureOrUnionTypeNode struct = (StructureOrUnionTypeNode) child;
+				String name = struct.getName();
+
+				if (name.equals(gcommStructName))
+					filescopeList.add(child);
+				else
+					processList.add(child);
+			} else
+				processList.add(child);
+		}
+		processList.add(this.commDestroy(COMM_DESTROY, COMM_WORLD));
+
+		CompoundStatementNode mpiProcessBody = nodeFactory
+				.newCompoundStatementNode(this.newSource("function body of "
+						+ MPI_PROCESS, CivlcTokenConstant.COMPOUND_STATEMENT),
+						processList);
+		SequenceNode<VariableDeclarationNode> formals = nodeFactory
+				.newSequenceNode(this.newSource(
+						"formal parameters of function " + MPI_PROCESS,
+						CivlcTokenConstant.DECLARATION_LIST),
+						"FormalParameterDeclarations", Arrays.asList(this
+								.variableDeclaration(MPI_RANK,
+										this.basicType(BasicTypeKind.INT))));
+		FunctionTypeNode mpiProcessType = nodeFactory.newFunctionTypeNode(this
+				.newSource("type of function " + MPI_PROCESS,
+						CivlcTokenConstant.TYPE), this.voidType(), formals,
+				true);
+		FunctionDefinitionNode mpiProcess = nodeFactory
+				.newFunctionDefinitionNode(this.newSource(
+						"definition of function",
+						CivlcTokenConstant.FUNCTION_DEFINITION), this
+						.identifier(MPI_PROCESS), mpiProcessType, null,
+						mpiProcessBody);
+
+		return new Pair<>(mpiProcess, filescopeList);
+	}
+
 	/**
 	 * 
 	 * Constructs the function MPI_Process() from the original MPI program. It
@@ -500,10 +654,10 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 */
 	private Triple<FunctionDefinitionNode, List<BlockItemNode>, List<BlockItemNode>> mpiProcess(
 			SequenceNode<BlockItemNode> root) {
-		List<BlockItemNode> includedNodes = new ArrayList<>();
+		// List<BlockItemNode> includedNodes = new ArrayList<>();
 		List<String> vars = new LinkedList<>();
 		List<BlockItemNode> varDeclsAndAssumps = new LinkedList<>();
-		List<BlockItemNode> items;
+		List<BlockItemNode> mpiItems;
 		int number;
 		CompoundStatementNode mpiProcessBody;
 		SequenceNode<VariableDeclarationNode> formals;
@@ -512,14 +666,15 @@ public class MPI2CIVLWorker extends BaseWorker {
 		VariableDeclarationNode commVar = this.commDeclaration();
 		ExpressionStatementNode commDestroy = this.commDestroy(COMM_DESTROY,
 				COMM_WORLD);
+		boolean commVarAdded = false;
 
 		// build MPI_Process() function:
-		items = new LinkedList<>();
+		mpiItems = new LinkedList<>();
 		number = root.numChildren();
 		// add MPI_Sys_status variable into each process
 		// items.add(mpiSysStatusDeclaration());
 		// items.add(mpiStatusDePruneAssertion());
-		items.add(commVar);
+		// mpiItems.add(commVar);
 		for (int i = 0; i < number; i++) {
 			BlockItemNode child = root.getSequenceChild(i);
 			String sourceFile;
@@ -538,19 +693,19 @@ public class MPI2CIVLWorker extends BaseWorker {
 					// if (variableDeclaration.getName().equals(MPI_SYS_STATUS))
 					// keep variable declaration node of __MPI_Status__
 					// __my_status = __UNINIT;
-					items.add(variableDeclaration);
+					mpiItems.add(variableDeclaration);
 					// else
 					// includedNodes.add(child);
 				} else if (nodeKind == NodeKind.FUNCTION_DEFINITION) {
-					items.add(child);
+					mpiItems.add(child);
 				} else if (nodeKind == NodeKind.FUNCTION_DECLARATION) {
 					FunctionDeclarationNode functionNode = (FunctionDeclarationNode) child;
 					Function function = functionNode.getEntity();
 
 					if (function.isSystemFunction() || function.isAbstract())
-						items.add(child);
+						mpiItems.add(child);
 				} else
-					includedNodes.add(child);
+					mpiItems.add(child);
 			} else if (sourceFile.equals("pthread.cvl")) {
 				// extern void *value_ptr_value = NULL;
 				// extern $scope root = $here;
@@ -565,9 +720,9 @@ public class MPI2CIVLWorker extends BaseWorker {
 							|| varName.equals(PTHREAD_PTR))
 						// keep variable declaration nodes for _pool in
 						// pthread.cvl
-						items.add(variableDeclaration);
+						mpiItems.add(variableDeclaration);
 					else
-						includedNodes.add(child);
+						mpiItems.add(child);
 				} else if (child.nodeKind() == NodeKind.FUNCTION_DEFINITION) {
 					FunctionDefinitionNode functionDef = (FunctionDefinitionNode) child;
 					String name = functionDef.getName();
@@ -581,15 +736,15 @@ public class MPI2CIVLWorker extends BaseWorker {
 						// || name.equals(PTHREAD_MUTEX_UNLOCK)
 						// || name.equals(PTHREAD_MUTEX_TRYLOCK)
 						// || name.equals(PTHREAD_COND_WAIT))
-						items.add(functionDef);
+						mpiItems.add(functionDef);
 					else
-						includedNodes.add(child);
+						mpiItems.add(child);
 				} else
-					includedNodes.add(child);
+					mpiItems.add(child);
 			} else if (sourceFile.equals("stdio.h")) {
 				// ignore the variable declaration in stdio.h
 				if (child.nodeKind() != NodeKind.VARIABLE_DECLARATION)
-					includedNodes.add(child);
+					mpiItems.add(child);
 			} else if (sourceFile.equals("stdio.cvl")) {
 				// keep variable declaration nodes from stdio.cvl, i.e.,
 				// stdout, stdin, stderr, etc.
@@ -597,9 +752,9 @@ public class MPI2CIVLWorker extends BaseWorker {
 					VariableDeclarationNode varDecl = (VariableDeclarationNode) child;
 
 					varDecl.setExternStorage(false);
-					items.add(varDecl);
+					mpiItems.add(varDecl);
 				} else
-					includedNodes.add(child);
+					mpiItems.add(child);
 			} else if (sourceFile.equals("mpi.h")) {
 				NodeKind nodeKind = child.nodeKind();
 
@@ -608,20 +763,30 @@ public class MPI2CIVLWorker extends BaseWorker {
 
 					// ignore the MPI_COMM_WORLD declaration in mpi.h.
 					if (!variableDeclaration.getName().equals(COMM_WORLD))
-						includedNodes.add(child);
+						mpiItems.add(child);
 				} else if (nodeKind == NodeKind.FUNCTION_DEFINITION) {
-					items.add(child);
+					mpiItems.add(child);
 				} else if (nodeKind == NodeKind.FUNCTION_DECLARATION) {
 					FunctionDeclarationNode functionNode = (FunctionDeclarationNode) child;
 					Function function = functionNode.getEntity();
 
 					if (function.isSystemFunction() || function.isAbstract())
-						items.add(child);
+						mpiItems.add(child);
 				} else
-					includedNodes.add(child);
+					mpiItems.add(child);
+				if (!commVarAdded && child instanceof TypedefDeclarationNode) {
+					String typeName = ((TypedefDeclarationNode) child)
+							.getName();
+
+					if (typeName.equals(COMM_TYPE)) {
+						mpiItems.add(commVar);
+						commVarAdded = true;
+					}
+				}
 			} else if (CIVLConstants.getAllCLibraries().contains(sourceFile)) {// sourceFile.endsWith(".h"))
+																				// //
 																				// {
-				includedNodes.add(child);
+				mpiItems.add(child);
 			} else if (sourceFile.endsWith(".cvh")
 					|| sourceFile.equals("civl-cuda.cvl")
 					|| sourceFile.equals("civl-mpi.cvl")
@@ -641,7 +806,18 @@ public class MPI2CIVLWorker extends BaseWorker {
 					|| sourceFile.equals("stdio.cvl")
 
 					|| sourceFile.equals("string.cvl")) {
-				includedNodes.add(child);
+				if (child instanceof FunctionDeclarationNode
+						&& ((FunctionDeclarationNode) child).getName().equals(
+								"$assume")) {
+					varDeclsAndAssumps.add(child);
+				} else if (child instanceof TypedefDeclarationNode
+						&& ((TypedefDeclarationNode) child).getName().equals(
+								"$mpi_gcomm")) {
+					System.out.println("$mpi_gcomm found");
+					varDeclsAndAssumps.add(child);
+					child.prettyPrint(System.out);
+				} else
+					mpiItems.add(child);
 			} else {
 				if (isRelatedAssumptionNode(child, vars)) {
 					varDeclsAndAssumps.add(child);
@@ -664,18 +840,18 @@ public class MPI2CIVLWorker extends BaseWorker {
 							.child(0);
 
 					if (functionName.name().equals(MAIN)) {
-						items.add(functionNode.getBody().copy());
+						mpiItems.add(functionNode.getBody().copy());
 
 					} else
-						items.add((BlockItemNode) child);
+						mpiItems.add((BlockItemNode) child);
 				} else
-					items.add((BlockItemNode) child);
+					mpiItems.add((BlockItemNode) child);
 			}
 		}
-		items.add(commDestroy);
+		mpiItems.add(commDestroy);
 		mpiProcessBody = nodeFactory.newCompoundStatementNode(this.newSource(
 				"function body of " + MPI_PROCESS,
-				CivlcTokenConstant.COMPOUND_STATEMENT), items);
+				CivlcTokenConstant.COMPOUND_STATEMENT), mpiItems);
 		formals = nodeFactory.newSequenceNode(this.newSource(
 				"formal parameters of function " + MPI_PROCESS,
 				CivlcTokenConstant.DECLARATION_LIST),
@@ -689,7 +865,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 				"definition of function",
 				CivlcTokenConstant.FUNCTION_DEFINITION), this
 				.identifier(MPI_PROCESS), mpiProcessType, null, mpiProcessBody);
-		return new Triple<>(mpiProcess, includedNodes, varDeclsAndAssumps);
+		return new Triple<>(mpiProcess, null, varDeclsAndAssumps);
 	}
 
 	StatementNode callMain(FunctionDefinitionNode function) {
@@ -942,18 +1118,21 @@ public class MPI2CIVLWorker extends BaseWorker {
 		if (!this.hasHeader(ast, MPI_HEADER))
 			return ast;
 
-		ast.prettyPrint(System.out, false);
+		// ast.prettyPrint(System.out, false);
 		SequenceNode<BlockItemNode> root = ast.getRootNode();
 		AST newAst;
 		FunctionDefinitionNode mpiProcess, mainFunction;
 		VariableDeclarationNode gcommWorld;
 		List<BlockItemNode> externalList;
 		SequenceNode<BlockItemNode> newRootNode;
-		List<BlockItemNode> includedNodes = new ArrayList<>();
+		// List<BlockItemNode> includedNodes = new ArrayList<>();
 		List<BlockItemNode> mainParametersAndAssumps = new ArrayList<>();
 		int count;
 		StatementNode nprocsAssumption = null;
-		Triple<FunctionDefinitionNode, List<BlockItemNode>, List<BlockItemNode>> result;
+		// Triple<FunctionDefinitionNode, List<BlockItemNode>,
+		// List<BlockItemNode>> result;
+		Pair<FunctionDefinitionNode, List<BlockItemNode>> result;
+		// transformMPIProcess
 		VariableDeclarationNode nprocsVar = this.getVariabledeclaration(root,
 				NPROCS);
 		VariableDeclarationNode nprocsUpperBoundVar = this
@@ -1012,10 +1191,11 @@ public class MPI2CIVLWorker extends BaseWorker {
 		// declaring $gcomm GCOMM_WORLD = $gcomm_create($here, NPROCS);
 
 		gcommWorld = this.gcommDeclaration();
-		result = this.mpiProcess(root);
-		mpiProcess = result.first;
-		includedNodes = result.second;
-		mainParametersAndAssumps = result.third;
+		// result = this.mpiProcess(root);
+		result = this.transformMPIProcess(root);
+		mpiProcess = result.left;
+		// includedNodes = result.second;
+		mainParametersAndAssumps = result.right;
 		// defining the main function;
 		mainFunction = mainFunction();
 		// the translated program is:
@@ -1024,11 +1204,11 @@ public class MPI2CIVLWorker extends BaseWorker {
 		// MPI_Process() definition;
 		// main function.
 		externalList = new LinkedList<>();
-		count = includedNodes.size();
-		// adding nodes from header files.
-		for (int i = 0; i < count; i++) {
-			externalList.add(includedNodes.get(i));
-		}
+		// count = includedNodes.size();
+		// // adding nodes from header files.
+		// for (int i = 0; i < count; i++) {
+		// externalList.add(includedNodes.get(i));
+		// }
 		count = mainParametersAndAssumps.size();
 
 		// A flag indicating if the _mpi_nprocs declaration is inserted already
@@ -1065,10 +1245,11 @@ public class MPI2CIVLWorker extends BaseWorker {
 		externalList.add(mainFunction);
 		newRootNode = nodeFactory.newSequenceNode(null, "TranslationUnit",
 				externalList);
+		// newRootNode.prettyPrint(System.out);
 		this.completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, true);
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 

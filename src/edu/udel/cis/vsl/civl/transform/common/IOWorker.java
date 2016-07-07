@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -10,7 +11,9 @@ import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
@@ -23,20 +26,42 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ReturnNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.value.IF.StringValue;
 import edu.udel.cis.vsl.abc.err.IF.ABCUnsupportedException;
+import edu.udel.cis.vsl.abc.front.c.preproc.CPreprocessor;
+import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.StringLiteral;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.IOTransformer;
 import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
 
 /**
  * The IO transformer transforms<br>
  * <ul>
+ * <li>function calls
+ * <ul>
  * <li>all function calls printf(...) into frpintf(stdout, ...)</li>
  * <li>all function calls scanf(...) into fscanf(stdin, ...)</li>
  * <li>all function calls fopen(...) into $fopen(...)</li>
+ * </ul>
+ * </li>
+ * <li>new global variable declaration
+ * <ul>
+ * <li><code>$filesystem CIVL_filesystem = $filesystem_create($here);</code></li>
+ * <li><code>$output $file  CIVL_output_filesystem[];</code></li>
+ * <li>
+ * <code>extern FILE* stdout = $fopen(CIVL_filesystem, "CIVL_stdout", CIVL_FILE_MODE_WX);</code>
+ * </li>
+ * <li><code></code>extern FILE* stderr = $fopen(CIVL_filesystem, "CIVL_stderr",
+ * CIVL_FILE_MODE_WX);</li>
+ * <li>
+ * <code>extern FILE* stdin = $fopen(CIVL_filesystem, "CIVL_stdin", CIVL_FILE_MODE_R);</code>
+ * </li>
+ * </ul>
+ * </li>
  * </ul>
  * 
  * @author zmanchun
@@ -80,6 +105,16 @@ public class IOWorker extends BaseWorker {
 	private static String FOPEN_NEW = "$fopen";
 
 	private static String IO_HEADER = "stdio.h";
+
+	private static final String FILE_SYSTEM_TYPE = "$filesystem";
+
+	private static final String STD_FILE_TYPE = "FILE";
+
+	private static final String FILESYSTEM_CREATE = "$filesystem_create";
+
+	private static final String FILE_TYPE = "$file";
+
+	private static final String OUTPUT_FILESYSTEM = "_io_output_filesystem";
 
 	/**
 	 * The representation of the 16 modes of opening a file in CIVL.
@@ -148,12 +183,13 @@ public class IOWorker extends BaseWorker {
 	/**
 	 * The name of the default file system in the root scope.
 	 */
-	final static String CIVL_FILESYSTEM = "CIVL_filesystem";
+	final static String FILESYSTEM = ModelConfiguration.FILESYSTEM;
 
-	/**
-	 * The name of the output array of files.
-	 */
-	private final static String CIVL_OUTPUT_FILESYSTEM = "CIVL_output_filesystem";
+	// /**
+	// * The name of the output array of files.
+	// */
+	// private final static String CIVL_OUTPUT_FILESYSTEM =
+	// "CIVL_output_filesystem";
 
 	/**
 	 * The name of stdin.
@@ -178,6 +214,14 @@ public class IOWorker extends BaseWorker {
 	private boolean hasStdin = false;
 	private boolean hasStderr = false;
 
+	private FrontEnd frontEnd;
+	private TypeNode filesystemType;
+	private TypeNode fileType;
+	private TypeNode stdFileType;
+	private BlockItemNode fopen_declaration;
+
+	// private BlockItemNode filesystem_variable;
+
 	/* ****************************** Constructor ************************** */
 
 	/**
@@ -190,9 +234,10 @@ public class IOWorker extends BaseWorker {
 	 * @param config
 	 *            The CIVL configuration.
 	 */
-	public IOWorker(ASTFactory astFactory) {
+	public IOWorker(ASTFactory astFactory, FrontEnd frontEnd) {
 		super(IOTransformer.LONG_NAME, astFactory);
-		this.identifierPrefix = "$io_";
+		this.identifierPrefix = "_io_";
+		this.frontEnd = frontEnd;
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -314,10 +359,10 @@ public class IOWorker extends BaseWorker {
 	private StatementNode copyFilesToOutput(Source source) {
 		ExpressionNode civlFileSystem = nodeFactory
 				.newIdentifierExpressionNode(source,
-						nodeFactory.newIdentifierNode(source, CIVL_FILESYSTEM));
+						nodeFactory.newIdentifierNode(source, FILESYSTEM));
 		ExpressionNode outputArray = nodeFactory.newIdentifierExpressionNode(
 				source,
-				nodeFactory.newIdentifierNode(source, CIVL_OUTPUT_FILESYSTEM));
+				nodeFactory.newIdentifierNode(source, OUTPUT_FILESYSTEM));
 		FunctionCallNode copyCall = nodeFactory.newFunctionCallNode(source,
 				nodeFactory.newIdentifierExpressionNode(source, nodeFactory
 						.newIdentifierNode(source, FILESYSTEM_COPY_OUTPUT)),
@@ -352,7 +397,7 @@ public class IOWorker extends BaseWorker {
 		FunctionCallNode freeFilesystem, freeStdout, freeStdin, freeStderr;
 		ExpressionNode condition;
 		ExpressionNode argument = nodeFactory.newIdentifierExpressionNode(
-				source, nodeFactory.newIdentifierNode(source, CIVL_FILESYSTEM));
+				source, nodeFactory.newIdentifierNode(source, FILESYSTEM));
 		ExpressionNode nullPointer;
 
 		if (this.hasCIVLfileSystem) {
@@ -545,7 +590,7 @@ public class IOWorker extends BaseWorker {
 		Source source = functionCall.getFunction().getSource();
 		IdentifierExpressionNode civlFileSystem = nodeFactory
 				.newIdentifierExpressionNode(source,
-						nodeFactory.newIdentifierNode(source, CIVL_FILESYSTEM));
+						nodeFactory.newIdentifierNode(source, FILESYSTEM));
 		int oldCount = functionCall.getNumberOfArguments();
 		List<ExpressionNode> arguments = new ArrayList<>(oldCount + 1);
 		ExpressionNode modeArg = functionCall.getArgument(1);
@@ -779,7 +824,7 @@ public class IOWorker extends BaseWorker {
 			if (node instanceof VariableDeclarationNode) {
 				String name = ((VariableDeclarationNode) node).getName();
 
-				if (name.equals(CIVL_FILESYSTEM)) {
+				if (name.equals(FILESYSTEM)) {
 					if (!this.hasCIVLfileSystem)
 						count++;
 					this.hasCIVLfileSystem = true;
@@ -802,6 +847,52 @@ public class IOWorker extends BaseWorker {
 		}
 	}
 
+	private void addGlobalVariables(SequenceNode<BlockItemNode> root)
+			throws SyntaxException {
+		List<BlockItemNode> variables = new LinkedList<>();
+		VariableDeclarationNode variable;
+
+		variables.add(this.variableDeclaration(FILESYSTEM, this.filesystemType,
+				this.functionCall(this.newSource("$filesystem_create", 0),
+						FILESYSTEM_CREATE, Arrays.asList(this.hereNode()))));
+		variables.add(this.variableDeclaration(OUTPUT_FILESYSTEM,
+				this.nodeFactory.newArrayTypeNode(
+						this.newSource("_io_output_filesystem", 0),
+						this.fileType, null)));
+		// CIVL_filesystem, "CIVL_stdout", CIVL_FILE_MODE_WX)
+		variable = this.variableDeclaration(STDOUT, this.nodeFactory
+				.newPointerTypeNode(this.newSource("type of stdout", 0),
+						this.stdFileType.copy()), this.functionCall(this
+				.newSource("create stdout file", 0), FOPEN_NEW, Arrays.asList(
+				this.identifierExpression(FILESYSTEM), this
+						.stringLiteral("_stdout"), this.nodeFactory
+						.newEnumerationConstantNode(this
+								.identifier(CIVL_FILE_MODE_WX)))));
+		variable.setExternStorage(true);
+		variables.add(variable);
+		variable = this.variableDeclaration(STDIN, this.nodeFactory
+				.newPointerTypeNode(this.newSource("type of stdin", 0),
+						this.stdFileType.copy()), this.functionCall(this
+				.newSource("create stdin file", 0), FOPEN_NEW, Arrays.asList(
+				this.identifierExpression(FILESYSTEM), this
+						.stringLiteral("_stdin"), this.nodeFactory
+						.newEnumerationConstantNode(this
+								.identifier(CIVL_FILE_MODE_R)))));
+		variable.setExternStorage(true);
+		variables.add(variable);
+		variable = this.variableDeclaration(STDERR, this.nodeFactory
+				.newPointerTypeNode(this.newSource("type of stderr", 0),
+						this.stdFileType.copy()), this.functionCall(this
+				.newSource("create stderr file", 0), FOPEN_NEW, Arrays.asList(
+				this.identifierExpression(FILESYSTEM), this
+						.stringLiteral("_stderr"), this.nodeFactory
+						.newEnumerationConstantNode(this
+								.identifier(CIVL_FILE_MODE_WX)))));
+		variable.setExternStorage(true);
+		variables.add(variable);
+		root.insertChildren(fopen_declaration.childIndex() + 1, variables);
+	}
+
 	/* ********************* Methods From BaseTransformer ****************** */
 
 	@Override
@@ -815,8 +906,10 @@ public class IOWorker extends BaseWorker {
 		assert this.astFactory == unit.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();
 		unit.release();
+		preprocess(rootNode);
 		removeFflushCalls(rootNode);
 		if (transformationNeeded) {
+			addGlobalVariables(rootNode);
 			checkStdioVariables(rootNode);
 			this.renameFunctionCalls(rootNode);
 			this.transformMain(rootNode);
@@ -830,7 +923,55 @@ public class IOWorker extends BaseWorker {
 		AST result = astFactory.newAST(rootNode, unit.getSourceFiles(),
 				unit.isWholeProgram());
 
-		result.prettyPrint(System.out, false);
+		// result.prettyPrint(System.out, false);
 		return result;
+	}
+
+	private void preprocess(SequenceNode<BlockItemNode> rootNode) {
+		for (BlockItemNode item : rootNode) {
+			if (item instanceof TypedefDeclarationNode) {
+				if (!(this.filesystemType != null && this.fileType != null && this.stdFileType != null)) {
+					TypedefDeclarationNode typedef = (TypedefDeclarationNode) item;
+					String typeName = typedef.getName();
+
+					if (typeName.equals(FILE_SYSTEM_TYPE)) {
+						if (this.filesystemType == null) {
+							filesystemType = typedef.getTypeNode().copy();
+						}
+					} else if (typeName.equals(FILE_TYPE)) {
+						if (this.fileType == null) {
+							fileType = typedef.getTypeNode().copy();
+						}
+					} else if (typeName.equals(STD_FILE_TYPE)) {
+						if (this.stdFileType == null) {
+							stdFileType = typedef.getTypeNode().copy();
+						}
+					}
+				}
+			} else if (item instanceof FunctionDeclarationNode) {
+				if (((FunctionDeclarationNode) item).getName()
+						.equals(FOPEN_NEW))
+					this.fopen_declaration = item;
+			}
+			if (this.filesystemType != null && this.fileType != null
+					&& this.stdFileType != null
+					&& this.fopen_declaration != null)
+				break;
+		}
+	}
+
+	private void insertStdioHeader(SequenceNode<BlockItemNode> root)
+			throws SyntaxException {
+		AST header = this.parseSystemLibrary(this.frontEnd, new File(
+				CPreprocessor.ABC_INCLUDE_PATH, "civl-stdio.cvh"));
+		List<BlockItemNode> list = new LinkedList<>();
+		SequenceNode<BlockItemNode> headerRoot = header.getRootNode();
+
+		header.release();
+		for (BlockItemNode item : headerRoot) {
+			item.remove();
+			list.add(item);
+		}
+		root.insertChildren(0, list);
 	}
 }

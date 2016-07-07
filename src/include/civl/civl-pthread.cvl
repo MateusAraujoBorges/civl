@@ -20,7 +20,7 @@ struct _pthread_t{
 };
 
 struct _pthread_gpool_t{
-  pthread_t * threads[];
+  pthread_t threads[];
 };
 
 struct _pthread_pool_t{
@@ -61,10 +61,10 @@ $atomic_f $pthread_pool_t $pthread_pool_create($scope scope, $pthread_gpool_t gp
   int nthreads=$seq_length(&gpool->threads);
 
   for(int i=0; i<nthreads; i++){
-    pthread_t* thread=gpool->threads[i];
+    pthread_t thread=gpool->threads[i];
 
-    if(thread && !thread->terminated && thread->thr==$self){
-      pool->thread=thread;
+    if(!thread.terminated && thread.thr==$self){
+      pool->thread=&(gpool->threads[i]);
       break;
     }
   }
@@ -77,6 +77,49 @@ $atomic_f $pthread_pool_t $pthread_pool_create($scope scope, $pthread_gpool_t gp
   @*/
 $atomic_f void $pthread_pool_destroy($pthread_pool_t pool){
   $free(pool);
+}
+
+/*@ depends_on \nothing; */
+$atomic_f void $pthread_pool_terminates($pthread_pool_t pool, void* value){
+  $pthread_gpool_t gpool=pool->gpool;
+  int nthreads=$seq_length(&gpool->threads);
+  int i;
+
+  for(i=0; i<nthreads; i++){
+    pthread_t *thread=&(gpool->threads[i]);
+    
+    if(!thread->terminated && thread->thr==pool->tid){
+      thread->terminated = $true;
+      break;
+    }
+  }
+  /*if(i<nthreads)
+    $seq_remove(&gpool->threads, i, NULL, 1);*/
+}
+
+/*@ depends_on \nothing; */
+$atomic_f _Bool $pthread_pool_is_terminated($pthread_pool_t pool, $proc pid){
+   $pthread_gpool_t gpool=pool->gpool;
+  int nthreads=$seq_length(&gpool->threads);
+  int i;
+
+  for(i=0; i<nthreads; i++){
+    pthread_t thread=gpool->threads[i];
+    
+    if(!thread.terminated && thread.thr==pid){
+      return thread.terminated;
+    }
+  }
+  
+  return $true;
+}
+
+
+/*@ depends_on \nothing; */
+$atomic_f void $pthread_exit(void *value_ptr, $pthread_pool_t pool){
+  $pthread_pool_terminates(pool, value_ptr);
+  $free(pool);
+  $exit();
 }
 
 #endif

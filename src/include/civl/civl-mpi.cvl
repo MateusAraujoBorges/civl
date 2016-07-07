@@ -12,7 +12,7 @@
 #include <seq.cvh>
 
 /* Library private helper function declaration */
-char * getCoroutineName(int tag);
+char * $mpi_coroutine_name(int tag);
 
 /**************************** Duplicated Part *************************************/
 /* Duplicated definition with the same struct in mpi.h.
@@ -106,7 +106,7 @@ void $mpi_gcomm_destroy($mpi_gcomm gc) {
 
     src = $message_source(junkMsgs[i]);
     tag = $message_tag(junkMsgs[i]);
-    routine = getCoroutineName(tag);
+    routine = $mpi_coroutine_name(tag);
     $assert($false, "MPI message leak: There is a message sent by rank %d for collective routine %s"
 	    " that is never received.", 
 	    src, routine);
@@ -671,9 +671,9 @@ void $mpi_diff_coroutine_entries($bundle specEntry, $bundle mineEntry, int rank)
   
   $bundle_unpack(specEntry, &spec);
   $bundle_unpack(mineEntry, &mine);
-  routine = getCoroutineName(spec.routine_tag);
+  routine = $mpi_coroutine_name(spec.routine_tag);
   if(spec.routine_tag != mine.routine_tag) {
-    char * mineRoutine = getCoroutineName(mine.routine_tag);
+    char * mineRoutine = $mpi_coroutine_name(mine.routine_tag);
 
     $assert($false, "Process with rank %d reaches an MPI collective routine "
 	    "%s while at least one of others are collectively reaching %s.", 
@@ -705,7 +705,7 @@ void $mpi_diff_coroutine_entries($bundle specEntry, $bundle mineEntry, int rank)
 /********************* Private helper functions *********************/
 /* Returns the string literal of MPI collective routine names by
  * giving the unique message tag. */
-char * getCoroutineName(int tag) {
+char * $mpi_coroutine_name(int tag) {
   switch(tag) {
   case 9999: return "MPI_Bcast"; 
   case 9998: return "MPI_Reduce";

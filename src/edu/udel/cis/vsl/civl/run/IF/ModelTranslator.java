@@ -37,7 +37,6 @@ import edu.udel.cis.vsl.abc.main.UnitTask;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
-import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.common.Pruner;
 import edu.udel.cis.vsl.abc.transform.common.SideEffectRemover;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -267,6 +266,7 @@ public class ModelTranslator {
 			unitTasks[i].setUserIncludes(userIncludes);
 		}
 		task = new TranslationTask(unitTasks);
+		task.setPrettyPrint(true);
 		task.setLinkLanguage(Language.CIVL_C);
 		task.setStage(TranslationStage.TRANSFORM_PROGRAM);
 		if (config.svcomp()) {
@@ -317,7 +317,8 @@ public class ModelTranslator {
 				.getSvcompTransformerRecord(config));
 		task.addTransformRecord(transformerFactory
 				.getGeneralTransformerRecord());
-		task.addTransformRecord(transformerFactory.getIOTransformerRecord());
+		task.addTransformRecord(transformerFactory
+				.getIOTransformerRecord(frontEnd));
 		// if (hasOmp) {
 		// if (!config.ompNoSimplify())
 		task.addTransformRecord(transformerFactory
@@ -605,34 +606,6 @@ public class ModelTranslator {
 		if (lastDot >= 0)
 			result = result.substring(0, lastDot);
 		return result;
-	}
-
-	/**
-	 * Applies default transformers (pruner and side-effect remover) of the
-	 * given program.
-	 * 
-	 * @param program
-	 *            The result of compiling, linking and applying CIVL-specific
-	 *            transformers to the input program.
-	 * @param config
-	 *            The CIVL configuration.
-	 * @throws SyntaxException
-	 *             if there are syntax error when applying the transformers
-	 */
-	private void applyDefaultTransformers(Program program)
-			throws SyntaxException {
-		// always apply pruner and side effect remover
-		if (config.debugOrVerbose())
-			this.out.println("Apply pruner...");
-		// FIXME: don't use "prune" or "sef" explicitly
-		program.applyTransformer("prune");
-		if (config.debugOrVerbose())
-			program.prettyPrint(out);
-		if (config.debugOrVerbose())
-			this.out.println("Apply side-effect remover...");
-		program.applyTransformer("sef");
-		if (config.debugOrVerbose())
-			program.prettyPrint(out);
 	}
 
 	/**

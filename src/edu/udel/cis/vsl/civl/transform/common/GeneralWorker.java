@@ -18,7 +18,9 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.DeclarationNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ArrayLambdaNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
@@ -70,6 +72,8 @@ public class GeneralWorker extends BaseWorker {
 	private final static String MALLOC = "malloc";
 	final static String GENERAL_ROOT = ModelConfiguration.GENERAL_ROOT;
 	private final static String separator = "$";
+	private static final String SCOPE_TYPE = "$scope";
+	private static final String CIVL_MALLOC = "$malloc";
 	private int static_var_count = 0;
 	private String CIVL_argc_name;
 	private String CIVL_argv_name;
@@ -81,6 +85,8 @@ public class GeneralWorker extends BaseWorker {
 	private boolean argcUsed = false;
 	private boolean argvUsed = false;
 	private StatementNode argcAssumption = null;
+
+	private BlockItemNode scopeType, mallocDeclaration;
 
 	public GeneralWorker(ASTFactory astFactory) {
 		super(GeneralTransformer.LONG_NAME, astFactory);
@@ -98,6 +104,8 @@ public class GeneralWorker extends BaseWorker {
 		Function mainFunction;
 		FunctionDefinitionNode mainDef;
 
+		// unit.prettyPrint(System.out, false);
+
 		if (mainEntity == null) {
 			throw new SyntaxException("missing main function", unit
 					.getRootNode().getSource());
@@ -111,6 +119,7 @@ public class GeneralWorker extends BaseWorker {
 		checkAgumentsOfMainFunction(mainDef, root);
 		unit = renameStaticVariables(unit);
 		unit.release();
+		this.getCIVLMallocDeclaration(root);
 		root = moveStaticVariables(root);
 		processMalloc(root);
 		// remove main prototypes...
@@ -143,11 +152,15 @@ public class GeneralWorker extends BaseWorker {
 			}
 		}
 		// add my root
+		if (this.scopeType != null)
+			newExternalList.add(scopeType);
+		if (this.mallocDeclaration != null)
+			newExternalList.add(mallocDeclaration);
 		newExternalList.add(this.generalRootScopeNode());
 		for (BlockItemNode child : root) {
 			if (child != null) {
+				child.remove();
 				newExternalList.add(child);
-				child.parent().removeChild(child.childIndex());
 			}
 		}
 		if (newMainFunction != null)
@@ -159,6 +172,31 @@ public class GeneralWorker extends BaseWorker {
 				unit.isWholeProgram());
 		// newAst.prettyPrint(System.out, false);
 		return newAst;
+	}
+
+	private void getCIVLMallocDeclaration(SequenceNode<BlockItemNode> root) {
+		for (BlockItemNode child : root) {
+			if (child == null)
+				continue;
+			if (scopeType == null && child instanceof TypedefDeclarationNode) {
+				TypedefDeclarationNode typedef = (TypedefDeclarationNode) child;
+
+				if (typedef.getName().equals(SCOPE_TYPE)) {
+					scopeType = child;
+					child.remove();
+				}
+			} else if (this.mallocDeclaration == null
+					&& child instanceof FunctionDeclarationNode) {
+				FunctionDeclarationNode function = (FunctionDeclarationNode) child;
+
+				if (function.getName().equals(CIVL_MALLOC)) {
+					this.mallocDeclaration = child;
+					child.remove();
+				}
+			}
+			if (scopeType != null && this.mallocDeclaration != null)
+				return;
+		}
 	}
 
 	/**
@@ -378,7 +416,7 @@ public class GeneralWorker extends BaseWorker {
 					int callIndex = funcCall.childIndex();
 					ExpressionNode argument = funcCall.getArgument(0);
 
-					functionExpression.getIdentifier().setName("$" + MALLOC);
+					functionExpression.getIdentifier().setName(CIVL_MALLOC);
 					argument.parent().removeChild(argument.childIndex());
 					funcCall.setArguments(nodeFactory.newSequenceNode(
 							argument.getSource(), "Actual Parameters",

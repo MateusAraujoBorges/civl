@@ -13,7 +13,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 public class LibpthreadEvaluator extends BaseLibraryEvaluator implements
@@ -67,17 +66,11 @@ public class LibpthreadEvaluator extends BaseLibraryEvaluator implements
 		numThreads = this.symbolicUtil.extractInt(source,
 				universe.length(threads));
 		for (int i = 0; i < numThreads; i++) {
-			SymbolicExpression threadObj, threadPtr = universe.arrayRead(
-					threads, universe.integer(i));
+			SymbolicExpression threadObj = universe.arrayRead(threads,
+					universe.integer(i));
 			SymbolicExpression pidValue;
 			int pidInt;
 
-			if (this.symbolicAnalyzer.isDerefablePointer(state, threadPtr).right != ResultType.YES)
-				continue;
-			eval = this.evaluator.dereference(source, state, process, null,
-					universe.arrayRead(threads, universe.integer(i)), false);
-			threadObj = eval.value;
-			state = eval.state;
 			pidValue = universe.tupleRead(threadObj, this.zeroObject);
 			pidInt = modelFactory.getProcessId(source, pidValue);
 			if (!modelFactory.isProcessIdNull(pidInt)

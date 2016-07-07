@@ -26,6 +26,8 @@ public final class ModelConfiguration {
 	public final static int NULL_POINTER_VID = -1;
 
 	/* Transformer names */
+	
+	public final static String FILESYSTEM = "_io_filesystem";
 
 	public final static String GENERAL_ROOT = GeneralTransformer.PREFIX
 			+ "root";

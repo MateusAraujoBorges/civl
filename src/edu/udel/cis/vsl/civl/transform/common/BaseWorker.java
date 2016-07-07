@@ -9,6 +9,8 @@ import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Entity;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Entity.EntityKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
@@ -23,6 +25,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.StringLiteralNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
@@ -51,6 +54,7 @@ import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
 import edu.udel.cis.vsl.abc.token.IF.Formation;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
+import edu.udel.cis.vsl.abc.token.IF.StringToken;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.abc.token.IF.TransformFormation;
@@ -424,6 +428,7 @@ public abstract class BaseWorker {
 				.newFunctionDeclarationNode(source, name, funcType, null);
 
 		function.setSystemFunctionSpecifier(true);
+		function.setSystemLibrary("civlc");
 		return function;
 	}
 
@@ -1037,6 +1042,44 @@ public abstract class BaseWorker {
 
 			if (name.equals(header))
 				return true;
+		}
+		return false;
+	}
+
+	protected StringLiteralNode stringLiteral(String string)
+			throws SyntaxException {
+
+		string = "\"" + string + "\"";
+
+		TokenFactory tokenFactory = astFactory.getTokenFactory();
+		Formation formation = tokenFactory.newTransformFormation(
+				this.transformerName, "stringLiteral");
+		CivlcToken ctoke = tokenFactory.newCivlcToken(
+				CivlcTokenConstant.STRING_LITERAL, string, formation);
+		StringToken stringToken = tokenFactory.newStringToken(ctoke);
+
+		return nodeFactory.newStringLiteralNode(tokenFactory.newSource(ctoke),
+				string, stringToken.getStringLiteral());
+	}
+
+	protected boolean refersInputVariable(ASTNode node) {
+		if (node instanceof IdentifierNode) {
+			Entity entity = ((IdentifierNode) node).getEntity();
+
+			if (entity.getEntityKind() == EntityKind.VARIABLE) {
+				edu.udel.cis.vsl.abc.ast.entity.IF.Variable variable = (edu.udel.cis.vsl.abc.ast.entity.IF.Variable) entity;
+
+				return ((VariableDeclarationNode) variable
+						.getFirstDeclaration()).getTypeNode()
+						.isInputQualified();
+			}
+		} else {
+			for (ASTNode child : node.children()) {
+				if (child == null)
+					continue;
+				if (refersInputVariable(child))
+					return true;
+			}
 		}
 		return false;
 	}

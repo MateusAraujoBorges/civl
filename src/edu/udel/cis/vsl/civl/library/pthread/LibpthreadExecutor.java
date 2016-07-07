@@ -192,17 +192,11 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 		numThreads = this.symbolicUtil.extractInt(source,
 				universe.length(threads));
 		for (int i = 0; i < numThreads; i++) {
-			SymbolicExpression threadObj, threadPtr = universe.arrayRead(
-					threads, universe.integer(i));
+			SymbolicExpression threadObj = universe.arrayRead(threads,
+					universe.integer(i));
 			SymbolicExpression pidValue;
 			int pidInt;
 
-			if (this.symbolicAnalyzer.isDerefablePointer(state, threadPtr).right != ResultType.YES)
-				continue;
-			eval = this.evaluator.dereference(source, state, process, null,
-					universe.arrayRead(threads, universe.integer(i)), false);
-			threadObj = eval.value;
-			state = eval.state;
 			pidValue = universe.tupleRead(threadObj, this.zeroObject);
 			pidInt = modelFactory.getProcessId(source, pidValue);
 			if (!modelFactory.isProcessIdNull(pidInt)
@@ -441,7 +435,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression gpool = argumentValues[0], threadPointer = argumentValues[1];
+		SymbolicExpression gpool = argumentValues[0], threadPointer = argumentValues[1], threadObj;
 		Evaluation eval;
 		SymbolicExpression gpoolObj, threads;
 
@@ -449,8 +443,12 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 				gpool, false);
 		gpoolObj = eval.value;
 		state = eval.state;
+		eval = this.evaluator.dereference(source, state, process, arguments[0],
+				threadPointer, false);
+		state = eval.state;
+		threadObj = eval.value;
 		threads = universe.tupleRead(gpoolObj, this.zeroObject);
-		threads = universe.append(threads, threadPointer);
+		threads = universe.append(threads, threadObj);
 		gpoolObj = universe.tupleWrite(gpoolObj, zeroObject, threads);
 		state = this.primaryExecutor.assign(source, state, process, gpool,
 				gpoolObj);

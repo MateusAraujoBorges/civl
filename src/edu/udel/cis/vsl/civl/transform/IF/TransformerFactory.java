@@ -95,13 +95,13 @@ public class TransformerFactory {
 		};
 	}
 
-	public TransformRecord getIOTransformerRecord() {
+	public TransformRecord getIOTransformerRecord(FrontEnd frontEnd) {
 		return new TransformRecord(IOTransformer.CODE, IOTransformer.LONG_NAME,
 				IOTransformer.SHORT_DESCRIPTION) {
 			@Override
 			public Transformer create(ASTFactory astFactory) {
 				if (ioTransformer == null)
-					ioTransformer = new IOTransformer(astFactory);
+					ioTransformer = new IOTransformer(astFactory, frontEnd);
 				return ioTransformer;
 			}
 		};

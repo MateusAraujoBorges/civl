@@ -1196,7 +1196,7 @@ public class ImmutableStateFactory implements StateFactory {
 		// the root dyscope is forced to be 0
 		oldToNew[0] = 0;
 		for (int i = 1; i < numScopes; i++)
-			oldToNew[i] = -1;
+			oldToNew[i] = ModelConfiguration.DYNAMIC_REMOVED_SCOPE;
 		for (int pid = 0; pid < numProcs; pid++) {
 			ImmutableProcessState process = state.getProcessState(pid);
 			int stackSize;
@@ -1839,7 +1839,7 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public Map<Variable, SymbolicExpression> inputVariableValueMap(State state) {
 		Map<Variable, SymbolicExpression> result = new LinkedHashMap<>();
-		
+
 		// If the root process has no stack entry, return a empty map:
 		if (state.getProcessState(0).stackSize() > 0) {
 			// If the parameter is a merged state, the dynamic scope id of the

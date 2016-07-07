@@ -126,6 +126,10 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 			callEval = this.executeIsConcreteInt(state, pid, process,
 					arguments, argumentValues, source);
 			break;
+		case "$is_terminated":
+			callEval = this.executeIsTerminated(state, pid, process, arguments,
+					argumentValues, source);
+			break;
 		case "$pathCondition":
 			callEval = this.executePathCondition(state, pid, process,
 					arguments, argumentValues, source);
@@ -167,6 +171,20 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 	}
 
 	/* ************************** Private Methods ************************** */
+
+	private Evaluation executeIsTerminated(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source) {
+		SymbolicExpression proc = argumentValues[0];
+		int processID = this.modelFactory.getProcessId(source, proc);
+		SymbolicExpression result = this.trueValue;
+
+		if (processID >= 0 && processID < state.numProcs()) {
+			if (!state.getProcessState(processID).hasEmptyStack())
+				result = this.falseValue;
+		}
+		return new Evaluation(state, result);
+	}
 
 	private Evaluation executeHavoc(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
