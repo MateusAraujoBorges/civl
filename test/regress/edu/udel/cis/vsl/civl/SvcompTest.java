@@ -63,20 +63,6 @@ public class SvcompTest {
 				filename("stack_longest_true-unreach-call.i")));
 	}
 
-	// mix000_power.oepc_false-unreach-call.i
-	@Test
-	public void mix000_power() throws ABCException {
-		assertFalse(ui.run("verify", "-svcomp16", TestConstants.QUIET,
-				filename("mix000_power.oepc_false-unreach-call.i")));
-	}
-
-	// mix000_power.opt_false-unreach-call.i
-	@Test
-	public void mix000_power_opt() throws ABCException {
-		assertFalse(ui.run("verify", "-svcomp16", TestConstants.QUIET,
-				filename("mix000_power.opt_false-unreach-call.i")));
-	}
-
 	@Test
 	public void gcd_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
