@@ -3,7 +3,6 @@ package edu.udel.cis.vsl.civl.transform.common;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -41,16 +40,15 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
+import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
-import edu.udel.cis.vsl.abc.front.IF.ParseException;
-import edu.udel.cis.vsl.abc.front.IF.ParseTree;
-import edu.udel.cis.vsl.abc.front.IF.Preprocessor;
-import edu.udel.cis.vsl.abc.front.IF.PreprocessorException;
 import edu.udel.cis.vsl.abc.front.c.parse.COmpParser;
 import edu.udel.cis.vsl.abc.front.c.parse.CParser;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
+import edu.udel.cis.vsl.abc.main.ABCExecutor;
+import edu.udel.cis.vsl.abc.main.TranslationTask;
+import edu.udel.cis.vsl.abc.main.TranslationTask.TranslationStage;
+import edu.udel.cis.vsl.abc.main.UnitTask;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
-import edu.udel.cis.vsl.abc.token.IF.CivlcTokenSource;
 import edu.udel.cis.vsl.abc.token.IF.Formation;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
@@ -59,6 +57,7 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.abc.token.IF.TransformFormation;
 import edu.udel.cis.vsl.abc.transform.IF.Transformer;
+import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 
 /**
@@ -469,29 +468,30 @@ public abstract class BaseWorker {
 	 * parses a certain CIVL library (which resides in the folder text/include)
 	 * into an AST.
 	 * 
-	 * @param filename
-	 *            the file name of the library, e.g., civlc.cvh, civlc-omp.cvh,
-	 *            etc.
+	 * @param file
+	 *            the file of the library, e.g., civlc.cvh, civlc-omp.cvh, etc.
 	 * @return the AST of the given library.
-	 * @throws SyntaxException
+	 * @throws ABCException
 	 */
-	protected AST parseSystemLibrary(FrontEnd frontEnd, File file)
-			throws SyntaxException {
-		// FrontEnd frontEnd = new FrontEnd(
-		// Configurations.newMinimalConfiguration());
-		Preprocessor preprocessor = frontEnd.getPreprocessor(Language.C);
-		CivlcTokenSource tokenSource;
-		ParseTree tree;
+	protected AST parseSystemLibrary(File file) {
+		UnitTask task = new UnitTask(new File[] { file });
+
+		task.setLanguage(Language.C);
+
+		TranslationTask translation = new TranslationTask(
+				new UnitTask[] { task });
+
+		translation.setStage(TranslationStage.ANALYZE_ASTS);
+
+		ABCExecutor executor = new ABCExecutor(translation);
 
 		try {
-			tokenSource = preprocessor.preprocess(new File[0], new File[0],
-					new HashMap<String, String>(), new File[] { file });
-			tree = frontEnd.getParser(Language.CIVL_C).parse(tokenSource);
-		} catch (PreprocessorException | ParseException e) {
-			e.printStackTrace();
-			return null;
+			executor.execute();
+		} catch (ABCException e) {
+			throw new CIVLSyntaxException("unable to parse system library "
+					+ file + " while applying " + this.transformerName);
 		}
-		return frontEnd.getASTBuilder(Language.CIVL_C).getTranslationUnit(tree);
+		return executor.getAST(0);
 	}
 
 	/**

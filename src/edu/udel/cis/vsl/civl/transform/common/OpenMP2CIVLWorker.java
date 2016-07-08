@@ -70,7 +70,6 @@ import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.front.c.parse.COmpParser;
 import edu.udel.cis.vsl.abc.front.c.preproc.CPreprocessor;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -167,8 +166,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	private final static String TID = "_omp_tid";
 
 	/* **************************** Instance Fields ************************* */
-	private FrontEnd frontEnd;
-
 	/**
 	 * Variable that is increment for naming of temp variables that are created
 	 */
@@ -223,12 +220,10 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	 * @param astFactory
 	 *            The ASTFactory that will be used to create new nodes.
 	 */
-	public OpenMP2CIVLWorker(ASTFactory astFactory, CIVLConfiguration config,
-			FrontEnd frontEnd) {
+	public OpenMP2CIVLWorker(ASTFactory astFactory, CIVLConfiguration config) {
 		super(OpenMP2CIVLTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "$omp_";
 		this.config = config;
-		this.frontEnd = frontEnd;
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -712,9 +707,9 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		int count;
 		Triple<List<BlockItemNode>, List<BlockItemNode>, List<BlockItemNode>> result;
 		String criticalDeclaration = "criticalDeclarations";
-		AST civlcAST = this.parseSystemLibrary(frontEnd, new File(
+		AST civlcAST = this.parseSystemLibrary(new File(
 				CPreprocessor.ABC_INCLUDE_PATH, "civlc.cvh"));
-		AST civlcOmpAST = this.parseSystemLibrary(frontEnd, new File(
+		AST civlcOmpAST = this.parseSystemLibrary(new File(
 				CPreprocessor.ABC_INCLUDE_PATH, "civl-omp.cvh"));
 
 		assert this.astFactory == ast.getASTFactory();

@@ -292,7 +292,7 @@ public class ModelTranslator {
 					if (sourceFile.getName().endsWith(".i")) {
 						unitTask.addTransformCode(Pruner.CODE);
 						unitTask.addTransformRecord(transformerFactory
-								.getSvcompUnPPTransformerRecord(frontEnd));
+								.getSvcompUnPPTransformerRecord());
 					}
 				}
 			}
@@ -308,7 +308,7 @@ public class ModelTranslator {
 		task.addTransformRecord(transformerFactory
 				.getOpenMPOrphanTransformerRecord());
 		task.addTransformRecord(transformerFactory
-				.getOpenMP2CIVLTransformerRecord(config, frontEnd));
+				.getOpenMP2CIVLTransformerRecord(config));
 		// }
 		// if (hasPthread) {
 		task.addTransformRecord(transformerFactory
@@ -325,8 +325,7 @@ public class ModelTranslator {
 		// if (hasCuda)
 		task.addTransformRecord(transformerFactory
 				.getCuda2CIVLTransformerRecord());
-		task.addTransformRecord(transformerFactory
-				.getIntDivTransformerRecord(frontEnd));
+		task.addTransformRecord(transformerFactory.getIntDivTransformerRecord());
 		task.addTransformCode(SideEffectRemover.CODE);
 		task.addTransformCode(Pruner.CODE);
 	}

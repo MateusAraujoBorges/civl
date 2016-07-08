@@ -9,7 +9,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.front.IF.ASTBuilder;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.transform.IF.TransformRecord;
 import edu.udel.cis.vsl.abc.transform.IF.Transformer;
@@ -131,7 +130,7 @@ public class TransformerFactory {
 	}
 
 	public TransformRecord getOpenMP2CIVLTransformerRecord(
-			CIVLConfiguration config, FrontEnd frontEnd) {
+			CIVLConfiguration config) {
 		return new TransformRecord(OpenMP2CIVLTransformer.CODE,
 				OpenMP2CIVLTransformer.LONG_NAME,
 				OpenMP2CIVLTransformer.SHORT_DESCRIPTION) {
@@ -139,7 +138,7 @@ public class TransformerFactory {
 			public Transformer create(ASTFactory astFactory) {
 				if (openMP2CivlTransformer == null)
 					openMP2CivlTransformer = new OpenMP2CIVLTransformer(
-							astFactory, config, frontEnd);
+							astFactory, config);
 				return openMP2CivlTransformer;
 			}
 		};
@@ -186,7 +185,7 @@ public class TransformerFactory {
 		};
 	}
 
-	public TransformRecord getSvcompUnPPTransformerRecord(FrontEnd frontEnd) {
+	public TransformRecord getSvcompUnPPTransformerRecord() {
 		return new TransformRecord(SvcompUnPPTransformer.CODE,
 				SvcompUnPPTransformer.LONG_NAME,
 				SvcompUnPPTransformer.SHORT_DESCRIPTION) {
@@ -194,7 +193,7 @@ public class TransformerFactory {
 			public Transformer create(ASTFactory astFactory) {
 				if (svcompUnPPTransformer == null)
 					svcompUnPPTransformer = new SvcompUnPPTransformer(
-							astFactory, frontEnd);
+							astFactory);
 				return svcompUnPPTransformer;
 			}
 		};
@@ -211,15 +210,14 @@ public class TransformerFactory {
 		};
 	}
 
-	public TransformRecord getIntDivTransformerRecord(FrontEnd frontEnd) {
+	public TransformRecord getIntDivTransformerRecord() {
 		return new TransformRecord(IntDivisionTransformer.CODE,
 				IntDivisionTransformer.LONG_NAME,
 				IntDivisionTransformer.SHORT_DESCRIPTION) {
 			@Override
 			public Transformer create(ASTFactory astFactory) {
 				if (intDivTransformer == null)
-					intDivTransformer = new IntDivisionTransformer(astFactory,
-							frontEnd);
+					intDivTransformer = new IntDivisionTransformer(astFactory);
 				return intDivTransformer;
 			}
 		};
@@ -264,9 +262,8 @@ public class TransformerFactory {
 		return new OpenMPSimplifier(astFactory, config);
 	}
 
-	public Transformer getOpenMP2CIVLTransformer(CIVLConfiguration config,
-			FrontEnd frontEnd) {
-		return new OpenMP2CIVLTransformer(astFactory, config, frontEnd);
+	public Transformer getOpenMP2CIVLTransformer(CIVLConfiguration config) {
+		return new OpenMP2CIVLTransformer(astFactory, config);
 	}
 
 	//

@@ -99,7 +99,10 @@ $atomic_f void $pthread_pool_terminates($pthread_pool_t pool, void* value){
 
 /*@ depends_on \nothing; */
 $atomic_f _Bool $pthread_pool_is_terminated($pthread_pool_t pool, $proc pid){
-   $pthread_gpool_t gpool=pool->gpool;
+  if(pid==$proc_null)
+    return $false;
+
+  $pthread_gpool_t gpool=pool->gpool;
   int nthreads=$seq_length(&gpool->threads);
   int i;
 

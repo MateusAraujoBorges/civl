@@ -23,7 +23,6 @@ import edu.udel.cis.vsl.abc.ast.type.IF.IntegerType;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
@@ -60,15 +59,13 @@ public class IntDivWorker extends BaseWorker {
 	private static final String INT_DIV_SOURCE_FILE = "int_div.cvl";
 	private static final String INT_DIV_NO_CHECKING_SOURCE_FILE = "int_div_no_checking.cvl";
 	private Boolean check_division_by_zero = false;
-	private FrontEnd frontEnd;
 	private Entity divEntity = null, modEntity = null;
 
 	// private AttributeKey intDivMacroKey;
 
-	public IntDivWorker(ASTFactory astFactory, FrontEnd frontEnd) {
+	public IntDivWorker(ASTFactory astFactory) {
 		super(IntDivisionTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "_int_div_";
-		this.frontEnd = frontEnd;
 	}
 
 	@Override
@@ -207,11 +204,11 @@ public class IntDivWorker extends BaseWorker {
 		AST intDivLib;
 
 		if (check_division_by_zero)
-			intDivLib = this.parseSystemLibrary(frontEnd, new File(
+			intDivLib = this.parseSystemLibrary(new File(
 					CIVLConstants.CIVL_INCLUDE_PATH,
 					INT_DIV_NO_CHECKING_SOURCE_FILE));
 		else
-			intDivLib = this.parseSystemLibrary(frontEnd, new File(
+			intDivLib = this.parseSystemLibrary(new File(
 					CIVLConstants.CIVL_INCLUDE_PATH, INT_DIV_SOURCE_FILE));
 
 		SequenceNode<BlockItemNode> root = intDivLib.getRootNode();

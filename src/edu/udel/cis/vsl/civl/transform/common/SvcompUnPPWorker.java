@@ -32,7 +32,6 @@ import edu.udel.cis.vsl.abc.ast.value.IF.IntegerValue;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.front.c.preproc.CPreprocessor;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.SvcompUnPPTransformer;
@@ -80,12 +79,9 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private Map<Integer, VariableDeclarationNode> scalerVariableMap = new HashMap<>();
 
-	private FrontEnd frontEnd;
-
-	public SvcompUnPPWorker(ASTFactory astFactory, FrontEnd frontEnd) {
+	public SvcompUnPPWorker(ASTFactory astFactory) {
 		super(SvcompUnPPTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "_" + SvcompUnPPTransformer.CODE;
-		this.frontEnd = frontEnd;
 	}
 
 	@Override
@@ -260,22 +256,19 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private AST addHeaders(AST ast) throws SyntaxException {
 		if (needsStdlibHeader) {
-			AST stdlibHeaderAST = this.parseSystemLibrary(frontEnd, new File(
+			AST stdlibHeaderAST = this.parseSystemLibrary(new File(
 					CPreprocessor.ABC_INCLUDE_PATH, STDLIB_HEADER));
 
 			ast = this.combineASTs(stdlibHeaderAST, ast);
 		}
 		if (needsIoHeader) {
-			AST ioHeaderAST = this.parseSystemLibrary(frontEnd, new File(
+			AST ioHeaderAST = this.parseSystemLibrary(new File(
 					CPreprocessor.ABC_INCLUDE_PATH, IO_HEADER));
 
 			ast = this.combineASTs(ioHeaderAST, ast);
 		}
-		// ast = Transform.newTransformer("prune",
-		// ast.getASTFactory()).transform(
-		// ast);
 		if (needsPthreadHeader) {
-			AST pthreadHeaderAST = this.parseSystemLibrary(frontEnd, new File(
+			AST pthreadHeaderAST = this.parseSystemLibrary(new File(
 					CPreprocessor.ABC_INCLUDE_PATH, PTHREAD_HEADER));
 
 			ast = this.combineASTs(pthreadHeaderAST, ast);
