@@ -1,9 +1,14 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import edu.udel.cis.vsl.civl.kripke.IF.AtomicStep;
 import edu.udel.cis.vsl.civl.kripke.IF.TraceStep;
@@ -77,62 +82,64 @@ import edu.udel.cis.vsl.gmc.TraceStepIF;
 
 public class WitnessGenerator {
 	
+	Set<String> declaredNodes = new HashSet<String>();
+	BufferedWriter output = null;
+	
 	public WitnessGenerator (Model model, Trace<Transition, State> trace) throws IOException {
 		List<TraceStepIF<Transition, State>> steps = trace.traceSteps();
 		Iterator<TraceStepIF<Transition, State>> it = steps.iterator();
 		List<Pair<Location,Statement>> traceStepLocStmt = traceLocStmtPairs(it);
-		
-		System.out.println(header());
-		
-		String finalLocation = "";
-		for(Pair<Location,Statement> step : traceStepLocStmt) {
-			Location location = step.left; Statement statement = step.right;
-			String locationStr = location.toString(); String statementStr = statement.toString();
-			/* We need to strip the whitespace from the Location strings */
-			String compactSourceStr = locationStr.replaceAll("\\s+","");
-			String compactTargetStr = statement.target().toString().replaceAll("\\s+","");
-			
-			if (!locationStr.equals("Location 0")) { // Location 0 is hard-coded into the header
-				if (statementStr.equals("__VERIFIER_error()")) {
-					System.out.println("<node id=\""+compactSourceStr+"\">\n"
-							+ "  <data key=\"violation\">true</data>\n"
-							+ "</node>");
-					System.out.println("<node id=\""+compactTargetStr+"\"/>");
-				} else {
-					System.out.println("<node id=\""+compactSourceStr+"\"/>");
-				}
-			}
-			String sourceLocationStr = step.left.getSource().getLocation().toString();
-			if (sourceLocationStr.matches(".*.c:.*")) {
-			   String lineNumber = sourceLocationStr.replaceAll(".*:([0-9]+)..*", "$1");
-			   
-			   if (statementStr.equals("FALSE_BRANCH_IF")) {
-				    System.out.println("<edge source=\""+compactSourceStr+"\" target=\""+compactTargetStr+"\">");
-				    System.out.println("  <data key=\"sourcecode\">["+statement.guard()+"]</data>");
-				    System.out.println("  <data key=\"startline\">"+lineNumber+"</data>");
-				    System.out.println("  <data key=\"control\">condition-false</data>");
-				    System.out.println("</edge>");
-			   } else if (statementStr.equals("TRUE_BRANCH_IF")){
-				   	System.out.println("<edge source=\""+compactSourceStr+"\" target=\""+compactTargetStr+"\">");
-				    System.out.println("  <data key=\"sourcecode\">["+statement.guard()+"]</data>");
-				    System.out.println("  <data key=\"startline\">"+lineNumber+"</data>");
-				    System.out.println("  <data key=\"control\">condition-false</data>");
-				    System.out.println("</edge>");
-			   } else {
-				    System.out.println("<edge source=\""+compactSourceStr+"\" target=\""+compactTargetStr+"\">");
-				    System.out.println("  <data key=\"sourcecode\">"+statement+"</data>");
-				    System.out.println("  <data key=\"startline\">"+lineNumber+"</data>");
-				    System.out.println("</edge>");
-			   }
-			} else {
-				System.out.println("<edge source=\""+compactSourceStr+"\" target=\""+compactTargetStr+"\"/>");
-			}
-			
-			finalLocation = compactTargetStr;
-		}
-		System.out.println("<node id=\""+finalLocation+"\"/>");
-		
-		System.out.println(footer());
+
+		try {
+            File file = new File("./witness.graphml");
+            output = new BufferedWriter(new FileWriter(file));
+            
+            output.write(header());
+            writeEntryNode();
+    		
+    		String finalLocation = "";
+    		for(Pair<Location,Statement> step : traceStepLocStmt) {
+    			Location location = step.left; Statement statement = step.right;
+    			String locationStr = location.toString(); String statementStr = statement.toString();
+    			/* We need to strip the whitespace from the Location strings */
+    			String compactSourceStr = locationStr.replaceAll("\\s+","");
+    			String compactTargetStr = statement.target().toString().replaceAll("\\s+","");
+    			
+    			if (!locationStr.equals("Location 0")) { // The entry, Location 0, has already been declared
+    				if (statementStr.equals("__VERIFIER_error()")) {
+    					writeViolationNode(compactSourceStr);
+    					writeNode(compactTargetStr);
+    				} else {
+    					writeNode(compactSourceStr);
+    				}
+    			}
+    			String sourceLocationStr = step.left.getSource().getLocation().toString();
+    			if (sourceLocationStr.matches(".*.c:.*")) {
+    			   String lineNumber = sourceLocationStr.replaceAll(".*:([0-9]+)..*", "$1");
+    			   
+    			   if (statementStr.equals("FALSE_BRANCH_IF")) {
+    				   writeFalseEdge(compactSourceStr,compactTargetStr,statement,lineNumber);
+    			   } else if (statementStr.equals("TRUE_BRANCH_IF")){
+    				   writeTrueEdge(compactSourceStr,compactTargetStr,statement,lineNumber);
+    			   } else {
+    				   writeStmtEdge(compactSourceStr,compactTargetStr,statement,lineNumber);
+    			   }
+    			} else {
+    				output.write("<edge source=\""+compactSourceStr+"\" target=\""+compactTargetStr+"\"/>");output.newLine();
+    			}
+    			
+    			finalLocation = compactTargetStr;
+    		}
+    		writeNode(finalLocation);
+    		
+    		output.write(footer());
+        } catch ( IOException e ) {
+            e.printStackTrace();
+        } finally {
+          if ( output != null ) {
+            output.close();
+          }
+        }	
 	}
 	
 	/* Extract Location-Statement pairs from TraceStep Iterator */
@@ -151,62 +158,106 @@ public class WitnessGenerator {
 		return tracePairs;
 	}
 	
+	private void writeNode(String locationString) throws IOException {
+		if (!declaredNodes.contains(locationString)) {		
+			output.write("<node id=\""+locationString+"\"/>");output.newLine();
+			declaredNodes.add(locationString);
+		}
+	}
+	
+	private void writeViolationNode(String locationString) throws IOException {
+		output.write("<node id=\""+locationString+"\">\n"
+				   + "  <data key=\"violation\">true</data>\n"
+				   + "</node>"); output.newLine();
+		declaredNodes.add(locationString);
+	}
+	
+	private void writeEntryNode() throws IOException {
+		output.write("<node id=\"Location0\">\n"
+				   + "  <data key=\"entry\">true</data>\n"
+				   + "</node>\n");
+		declaredNodes.add("Location0");
+	}
+	
+	private void writeFalseEdge(String source, String target, 
+			Statement stmt, String lineNumber) throws IOException {
+		   output.write("<edge source=\""+source+"\" target=\""+target+"\">");output.newLine();
+		   output.write("  <data key=\"sourcecode\">["+stmt.guard()+"]</data>");output.newLine();
+		   output.write("  <data key=\"startline\">"+lineNumber+"</data>");output.newLine();
+		   output.write("  <data key=\"control\">condition-false</data>");output.newLine();
+		   output.write("</edge>");
+	}
+	
+	private void writeTrueEdge(String source, String target, 
+			Statement stmt, String lineNumber) throws IOException {
+		   output.write("<edge source=\""+source+"\" target=\""+target+"\">");output.newLine();
+		   output.write("  <data key=\"sourcecode\">["+stmt.guard()+"]</data>");output.newLine();
+		   output.write("  <data key=\"startline\">"+lineNumber+"</data>");output.newLine();
+		   output.write("  <data key=\"control\">condition-true</data>");output.newLine();
+		   output.write("</edge>");
+	}
+	
+	private void writeStmtEdge(String source, String target, 
+			Statement stmt, String lineNumber) throws IOException {
+		   output.write("<edge source=\""+source+"\" target=\""+target+"\">");output.newLine();
+		   output.write("  <data key=\"sourcecode\">"+stmt+"</data>");output.newLine();
+		   output.write("  <data key=\"startline\">"+lineNumber+"</data>");output.newLine();
+		   output.write("</edge>");output.newLine();
+	}
+	
 	private String header() {
-		return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n"
-				+ "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\r\n "
-				+ "<key attr.name=\"invariant\" attr.type=\"string\" for=\"node\" id=\"invariant\"/>\r\n "
-				+ "<key attr.name=\"invariant.scope\" attr.type=\"string\" for=\"node\" id=\"invariant.scope\"/>\r\n "
-				+ "<key attr.name=\"namedValue\" attr.type=\"string\" for=\"node\" id=\"named\"/>\r\n "
-				+ "<key attr.name=\"nodeType\" attr.type=\"string\" for=\"node\" id=\"nodetype\">\r\n  "
-				+ "<default>path</default>\r\n "
-				+ "</key>\r\n "
-				+ "<key attr.name=\"isFrontierNode\" attr.type=\"boolean\" for=\"node\" id=\"frontier\">\r\n  "
-				+ "<default>false</default>\r\n "
-				+ "</key>\r\n "
-				+ "<key attr.name=\"isViolationNode\" attr.type=\"boolean\" for=\"node\" id=\"violation\">\r\n  "
-				+ "<default>false</default>\r\n </key>\r\n "
-				+ "<key attr.name=\"isEntryNode\" attr.type=\"boolean\" for=\"node\" id=\"entry\">\r\n  "
-				+ "<default>false</default>\r\n "
-				+ "</key>\r\n "
-				+ "<key attr.name=\"isSinkNode\" attr.type=\"boolean\" for=\"node\" id=\"sink\">\r\n  "
-				+ "<default>false</default>\r\n "
-				+ "</key>\r\n "
-				+ "<key attr.name=\"isLoopHead\" attr.type=\"boolean\" for=\"node\" id=\"loopHead\">\r\n  "
-				+ "<default>false</default>\r\n "
-				+ "</key>\r\n "
-				+ "<key attr.name=\"violatedProperty\" attr.type=\"string\" for=\"node\" id=\"violatedProperty\"/>\r\n "
-				+ "<key attr.name=\"threadId\" attr.type=\"string\" for=\"edge\" id=\"threadId\"/>\r\n "
-				+ "<key attr.name=\"sourcecodeLanguage\" attr.type=\"string\" for=\"graph\" id=\"sourcecodelang\"/>\r\n "
-				+ "<key attr.name=\"programFile\" attr.type=\"string\" for=\"graph\" id=\"programfile\"/>\r\n "
-				+ "<key attr.name=\"programHash\" attr.type=\"string\" for=\"graph\" id=\"programhash\"/>\r\n "
-				+ "<key attr.name=\"specification\" attr.type=\"string\" for=\"graph\" id=\"specification\"/>\r\n "
-				+ "<key attr.name=\"memoryModel\" attr.type=\"string\" for=\"graph\" id=\"memorymodel\"/>\r\n "
-				+ "<key attr.name=\"architecture\" attr.type=\"string\" for=\"graph\" id=\"architecture\"/>\r\n "
-				+ "<key attr.name=\"producer\" attr.type=\"string\" for=\"graph\" id=\"producer\"/>\r\n "
-				+ "<key attr.name=\"sourcecode\" attr.type=\"string\" for=\"edge\" id=\"sourcecode\"/>\r\n "
-				+ "<key attr.name=\"startline\" attr.type=\"int\" for=\"edge\" id=\"startline\"/>\r\n "
-				+ "<key attr.name=\"startoffset\" attr.type=\"int\" for=\"edge\" id=\"startoffset\"/>\r\n "
-				+ "<key attr.name=\"lineColSet\" attr.type=\"string\" for=\"edge\" id=\"lineCols\"/>\r\n "
-				+ "<key attr.name=\"control\" attr.type=\"string\" for=\"edge\" id=\"control\"/>\r\n "
-				+ "<key attr.name=\"assumption\" attr.type=\"string\" for=\"edge\" id=\"assumption\"/>\r\n "
-				+ "<key attr.name=\"assumption.scope\" attr.type=\"string\" for=\"edge\" id=\"assumption.scope\"/>\r\n "
-				+ "<key attr.name=\"enterFunction\" attr.type=\"string\" for=\"edge\" id=\"enterFunction\"/>\r\n "
-				+ "<key attr.name=\"returnFromFunction\" attr.type=\"string\" for=\"edge\" id=\"returnFrom\"/>\r\n "
-				+ "<key attr.name=\"predecessor\" attr.type=\"string\" for=\"edge\" id=\"predecessor\"/>\r\n "
-				+ "<key attr.name=\"successor\" attr.type=\"string\" for=\"edge\" id=\"successor\"/>\r\n "
-				+ "<key attr.name=\"witness-type\" attr.type=\"string\" for=\"graph\" id=\"witness-type\"/>\r\n "
-				+ "<graph edgedefault=\"directed\">\r\n  <data key=\"witness-type\">violation_witness</data>\r\n  "
-				+ "<data key=\"sourcecodelang\">C</data>\r\n  <data key=\"producer\">CIVL</data>\r\n "
-				+ "<data key=\"specification\">CHECK( init(main()), LTL(G ! call(__VERIFIER_error())) )</data>\r\n "
-				+ "<data key=\"memorymodel\">precise</data>\r\n  <data key=\"architecture\">32bit</data>\r\n  "
-				+ "<node id=\"Location0\">\r\n"
-				+ "   <data key=\"entry\">true</data>\r\n  "
-				+ "</node>";
+		return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+				+ "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n "
+				+ "<key attr.name=\"invariant\" attr.type=\"string\" for=\"node\" id=\"invariant\"/>\n "
+				+ "<key attr.name=\"invariant.scope\" attr.type=\"string\" for=\"node\" id=\"invariant.scope\"/>\n "
+				+ "<key attr.name=\"namedValue\" attr.type=\"string\" for=\"node\" id=\"named\"/>\n "
+				+ "<key attr.name=\"nodeType\" attr.type=\"string\" for=\"node\" id=\"nodetype\">\n  "
+				+ "<default>path</default>\n "
+				+ "</key>\n "
+				+ "<key attr.name=\"isFrontierNode\" attr.type=\"boolean\" for=\"node\" id=\"frontier\">\n  "
+				+ "<default>false</default>\n "
+				+ "</key>\n "
+				+ "<key attr.name=\"isViolationNode\" attr.type=\"boolean\" for=\"node\" id=\"violation\">\n  "
+				+ "<default>false</default>\n </key>\n "
+				+ "<key attr.name=\"isEntryNode\" attr.type=\"boolean\" for=\"node\" id=\"entry\">\n  "
+				+ "<default>false</default>\n "
+				+ "</key>\n "
+				+ "<key attr.name=\"isSinkNode\" attr.type=\"boolean\" for=\"node\" id=\"sink\">\n  "
+				+ "<default>false</default>\n "
+				+ "</key>\n "
+				+ "<key attr.name=\"isLoopHead\" attr.type=\"boolean\" for=\"node\" id=\"loopHead\">\n  "
+				+ "<default>false</default>\n "
+				+ "</key>\n "
+				+ "<key attr.name=\"violatedProperty\" attr.type=\"string\" for=\"node\" id=\"violatedProperty\"/>\n "
+				+ "<key attr.name=\"threadId\" attr.type=\"string\" for=\"edge\" id=\"threadId\"/>\n "
+				+ "<key attr.name=\"sourcecodeLanguage\" attr.type=\"string\" for=\"graph\" id=\"sourcecodelang\"/>\n "
+				+ "<key attr.name=\"programFile\" attr.type=\"string\" for=\"graph\" id=\"programfile\"/>\n "
+				+ "<key attr.name=\"programHash\" attr.type=\"string\" for=\"graph\" id=\"programhash\"/>\n "
+				+ "<key attr.name=\"specification\" attr.type=\"string\" for=\"graph\" id=\"specification\"/>\n "
+				+ "<key attr.name=\"memoryModel\" attr.type=\"string\" for=\"graph\" id=\"memorymodel\"/>\n "
+				+ "<key attr.name=\"architecture\" attr.type=\"string\" for=\"graph\" id=\"architecture\"/>\n "
+				+ "<key attr.name=\"producer\" attr.type=\"string\" for=\"graph\" id=\"producer\"/>\n "
+				+ "<key attr.name=\"sourcecode\" attr.type=\"string\" for=\"edge\" id=\"sourcecode\"/>\n "
+				+ "<key attr.name=\"startline\" attr.type=\"int\" for=\"edge\" id=\"startline\"/>\n "
+				+ "<key attr.name=\"startoffset\" attr.type=\"int\" for=\"edge\" id=\"startoffset\"/>\n "
+				+ "<key attr.name=\"lineColSet\" attr.type=\"string\" for=\"edge\" id=\"lineCols\"/>\n "
+				+ "<key attr.name=\"control\" attr.type=\"string\" for=\"edge\" id=\"control\"/>\n "
+				+ "<key attr.name=\"assumption\" attr.type=\"string\" for=\"edge\" id=\"assumption\"/>\n "
+				+ "<key attr.name=\"assumption.scope\" attr.type=\"string\" for=\"edge\" id=\"assumption.scope\"/>\n "
+				+ "<key attr.name=\"enterFunction\" attr.type=\"string\" for=\"edge\" id=\"enterFunction\"/>\n "
+				+ "<key attr.name=\"returnFromFunction\" attr.type=\"string\" for=\"edge\" id=\"returnFrom\"/>\n "
+				+ "<key attr.name=\"predecessor\" attr.type=\"string\" for=\"edge\" id=\"predecessor\"/>\n "
+				+ "<key attr.name=\"successor\" attr.type=\"string\" for=\"edge\" id=\"successor\"/>\n "
+				+ "<key attr.name=\"witness-type\" attr.type=\"string\" for=\"graph\" id=\"witness-type\"/>\n "
+				+ "<graph edgedefault=\"directed\">\n  <data key=\"witness-type\">violation_witness</data>\n  "
+				+ "<data key=\"sourcecodelang\">C</data>\n  <data key=\"producer\">CIVL</data>\n "
+				+ "<data key=\"specification\">CHECK( init(main()), LTL(G ! call(__VERIFIER_error())) )</data>\n "
+				+ "<data key=\"memorymodel\">precise</data>\n  <data key=\"architecture\">32bit</data>\n";
 	}
 	
 	private String footer() {
-		return " </graph>\r\n"
-				+ "</graphml>";
+		return " </graph>\n"
+			 + "</graphml>";
 	}
 
 }
