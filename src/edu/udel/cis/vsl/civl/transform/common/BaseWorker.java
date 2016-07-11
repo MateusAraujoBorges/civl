@@ -858,27 +858,32 @@ public abstract class BaseWorker {
 	 * @throws SyntaxException
 	 */
 	protected AST combineASTs(AST first, AST second) throws SyntaxException {
-		SequenceNode<BlockItemNode> rootNode;
-		List<BlockItemNode> firstNodes = new ArrayList<>(), secondNodes = new ArrayList<>(), allNodes = new ArrayList<>();
+		SequenceNode<BlockItemNode> rootNode, firstRoot = first.getRootNode(), secondRoot = second
+				.getRootNode();
+		List<BlockItemNode> allNodes = new ArrayList<>();
 		List<SourceFile> sourceFiles = new ArrayList<>();
+		boolean isWholeProgram = first.isWholeProgram()
+				|| second.isWholeProgram();
 
-		for (BlockItemNode child : first.getRootNode()) {
-			if (child != null)
-				firstNodes.add(child.copy());
-		}
-		for (BlockItemNode child : second.getRootNode()) {
-			// avoid identical nodes introduced by same "includes"
-			if (child != null && !this.existNode(firstNodes, child))
-				secondNodes.add(child.copy());
-		}
-		allNodes.addAll(firstNodes);
-		allNodes.addAll(secondNodes);
 		sourceFiles.addAll(first.getSourceFiles());
 		sourceFiles.addAll(second.getSourceFiles());
-		rootNode = this.nodeFactory.newSequenceNode(first.getRootNode()
-				.getSource(), "Translation Unit", allNodes);
-		return this.astFactory.newAST(rootNode, sourceFiles,
-				first.isWholeProgram() || second.isWholeProgram());
+		first.release();
+		for (BlockItemNode child : firstRoot) {
+			if (child != null) {
+				child.remove();
+				allNodes.add(child);
+			}
+		}
+		second.release();
+		for (BlockItemNode child : secondRoot) {
+			if (child != null) {
+				child.remove();
+				allNodes.add(child);
+			}
+		}
+		rootNode = this.nodeFactory.newSequenceNode(secondRoot.getSource(),
+				"Translation Unit", allNodes);
+		return this.astFactory.newAST(rootNode, sourceFiles, isWholeProgram);
 	}
 
 	/**
@@ -916,24 +921,6 @@ public abstract class BaseWorker {
 	}
 
 	/* *************************** Private Methods ************************* */
-
-	/**
-	 * Checks if a list of nodes contains an equivalent node of a given node.
-	 * 
-	 * @param nodes
-	 *            the list of nodes
-	 * @param theNode
-	 *            the specified node
-	 * @return true iff the list of nodes contains an identical node of the
-	 *         specified node.
-	 */
-	private boolean existNode(List<? extends ASTNode> nodes, ASTNode theNode) {
-		for (ASTNode node : nodes) {
-			if (node.diff(theNode) == null)
-				return true;
-		}
-		return false;
-	}
 
 	/**
 	 * Determines whether the given node is a leaf node, i.e., a node with no
