@@ -29,11 +29,10 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.WaitsforNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteOnExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonMPIConstantNode;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -476,7 +475,7 @@ public class ContractTranslator extends FunctionTranslator {
 		}
 		case REMOTE_REFERENCE:
 			return translateRemoteReferenceNode(
-					(RemoteExpressionNode) expressionNode, scope);
+					(RemoteOnExpressionNode) expressionNode, scope);
 		case QUANTIFIED_EXPRESSION:
 			return translateQuantifiedExpressionNode(
 					(QuantifiedExpressionNode) expressionNode, scope);
@@ -526,6 +525,8 @@ public class ContractTranslator extends FunctionTranslator {
 			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE;
 			numArgs = 1;
 			break;
+		default:
+			throw new CIVLInternalException("Unreachable", node.getSource());
 		}
 		if (currentMPICollectiveTitle.left == null
 				|| currentMPICollectiveTitle.right == null) {
@@ -766,7 +767,7 @@ public class ContractTranslator extends FunctionTranslator {
 	}
 
 	/**
-	 * Translate a {@link RemoteExpressionNode} to a {@link BinaryExpression}
+	 * Translate a {@link RemoteOnExpressionNode} to a {@link BinaryExpression}
 	 * whose operator is {@link BINARY_OPERATOR#REMOTE}.
 	 * 
 	 * @param expressionNode
@@ -774,10 +775,10 @@ public class ContractTranslator extends FunctionTranslator {
 	 * @return
 	 */
 	private Expression translateRemoteReferenceNode(
-			RemoteExpressionNode expressionNode, Scope scope) {
+			RemoteOnExpressionNode expressionNode, Scope scope) {
 		ExpressionNode processNode = expressionNode.getProcessExpression();
-		IdentifierExpressionNode identifierNode = expressionNode
-				.getIdentifierNode();
+		ExpressionNode identifierNode = expressionNode
+				.getForeignExpressionNode();
 		VariableExpression variable;
 		Expression process;
 

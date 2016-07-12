@@ -1,0 +1,45 @@
+#ifndef _CIVL_COLLATE_
+#define _CIVL_COLLATE_
+
+#include<collate.cvh>
+#include<civlc.cvh>
+/******************* Definition of datatypes: *******************/
+
+struct _gcollator {
+  // The number of participants of a _gcollator object:
+  int nprocs; 
+  // $proc array:
+  $proc procs[];
+  // The length of the queue of collation states:
+  int queue_length;
+  // The queue of collation states. Note that elements in this queue
+  // are references to collate state objects:
+  $gcollate_state queue[]; 
+};
+
+struct _collator {
+  // The place of the process in a _gcollator who holds this handle:
+  int place; 
+  // A handle to the _gcollator object:
+  $gcollator gcollator;
+};
+
+struct _gcollate_state {
+  // An array of markers for whether a process has already arrived
+  // this entry:
+  _Bool arrived[];
+  // An array of markers for whether a process has already departed
+  // from this entry:
+  _Bool departed[];
+  // State ID:
+  int canonicalStateID;
+};
+
+struct _collate_state {
+  // The place of the process in a _gcollator who holds this handle:
+  int place;
+  // A reference to a _gcollate_state:
+  $gcollate_state gstate;
+};
+
+#endif

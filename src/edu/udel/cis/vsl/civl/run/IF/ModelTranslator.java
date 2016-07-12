@@ -298,6 +298,9 @@ public class ModelTranslator {
 			}
 		task.addTransformRecord(transformerFactory
 				.getSvcompTransformerRecord(config));
+		if (config.isEnableMpiContract())
+			task.addTransformRecord(transformerFactory
+					.getContractTransformerRecord());
 		task.addTransformRecord(transformerFactory
 				.getGeneralTransformerRecord());
 		task.addTransformRecord(transformerFactory.getIOTransformerRecord());
@@ -316,9 +319,6 @@ public class ModelTranslator {
 		task.addTransformRecord(transformerFactory
 				.getPthread2CIVLTransformerRecord());
 		// }
-		if (config.isEnableMpiContract())
-			task.addTransformRecord(transformerFactory
-					.getContractTransformerRecord());
 		// if (hasMpi)
 		task.addTransformRecord(transformerFactory
 				.getMPI2CIVLTransformerRecord());
