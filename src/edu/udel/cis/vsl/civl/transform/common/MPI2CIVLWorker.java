@@ -286,7 +286,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 				"function call " + COMM_CREATE, CivlcTokenConstant.CALL), this
 				.identifierExpression(COMM_CREATE), commCreateArgs, null);
 		commVar = this.variableDeclaration(COMM_WORLD, commType, commCreate);
-		commVar.setExternStorage(true);
+		// commVar.setExternStorage(true);
 		return commVar;
 	}
 

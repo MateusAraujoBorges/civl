@@ -556,11 +556,9 @@ public abstract class BaseWorker {
 									: preNode.getSource().getLastToken();
 							CivlcToken postToken = postNode == null ? null
 									: postNode.getSource().getFirstToken();
-							String text = node.prettyRepresentation()
+							String text = node.prettyRepresentation(20)
 									.toString();
 
-							if (text.length() > 20)
-								text = text.substring(0, 18) + "...";
 							tf.setPreToken(preToken);
 							tf.setPostToken(postToken);
 							firstToken.setText(text);

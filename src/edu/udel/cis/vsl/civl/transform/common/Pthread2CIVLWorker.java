@@ -16,6 +16,7 @@ import edu.udel.cis.vsl.abc.ast.entity.IF.Variable;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodePredicate;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.DeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
@@ -269,7 +270,23 @@ public class Pthread2CIVLWorker extends BaseWorker {
 
 		while (iterator.hasNext()) {
 			FunctionDefinitionNode function = iterator.next();
+			// int numDeclarations = function.getEntity().getNumDeclarations();
 
+			for (DeclarationNode declaration : function.getEntity()
+					.getDeclarations()) {
+				FunctionDeclarationNode functionDecl = (FunctionDeclarationNode) declaration;
+				FunctionTypeNode funcType = functionDecl.getTypeNode();
+				VariableDeclarationNode pthread_pool_param = this
+						.pthread_pool_declaration(false);
+
+				if (hasVoidParameter(funcType))
+					funcType.getParameters().setSequenceChild(0,
+							pthread_pool_param);
+				else
+					funcType.getParameters().addSequenceChild(
+							pthread_pool_param);
+
+			}
 			// function.getTypeNode()
 			// .getParameters()
 			// .addSequenceChild(
@@ -279,15 +296,15 @@ public class Pthread2CIVLWorker extends BaseWorker {
 			// "$phtread_pool_t type",
 			// CivlcTokenConstant.IDENTIFIER),
 			// PTHREAD_POOL_TYPE), null)));
-			FunctionTypeNode funcType = function.getTypeNode();
-			VariableDeclarationNode pthread_pool_param = this
-					.pthread_pool_declaration(false);
-
-			if (hasVoidParameter(funcType))
-				funcType.getParameters()
-						.setSequenceChild(0, pthread_pool_param);
-			else
-				funcType.getParameters().addSequenceChild(pthread_pool_param);
+			// FunctionTypeNode funcType = function.getTypeNode();
+			// VariableDeclarationNode pthread_pool_param = this
+			// .pthread_pool_declaration(false);
+			//
+			// if (hasVoidParameter(funcType))
+			// funcType.getParameters()
+			// .setSequenceChild(0, pthread_pool_param);
+			// else
+			// funcType.getParameters().addSequenceChild(pthread_pool_param);
 		}
 	}
 

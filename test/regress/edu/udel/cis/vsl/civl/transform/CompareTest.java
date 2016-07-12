@@ -35,7 +35,7 @@ public class CompareTest {
 
 	@Test
 	public void sumN() {
-		assertTrue(ui.run(COMPARE, "-inputN=10", SPEC,
+		assertTrue(ui.run(COMPARE, QUIET, "-inputN=10", SPEC,
 				filename("sum", "sumNspec.cvl"), IMPL,
 				filename("sum", "sumNimpl.cvl")));
 	}
