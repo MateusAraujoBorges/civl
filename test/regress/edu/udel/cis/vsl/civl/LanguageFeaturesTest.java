@@ -297,7 +297,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void mallocBad2() throws ABCException {
-		assertFalse(ui.run(VERIFY, filename("mallocBad2.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("mallocBad2.cvl")));
 	}
 
 	@Test
