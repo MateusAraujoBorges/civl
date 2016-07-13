@@ -339,7 +339,6 @@ public class MPI2CIVLWorker extends BaseWorker {
 		return this.variableDeclaration(GCOMM_WORLD, gcommType);
 	}
 
-	// TODO: doc
 	private VariableDeclarationNode gcommsSeqDeclaration() {
 		TypeNode gcommType, gcommArrayType;
 		VariableDeclarationNode node;
@@ -501,7 +500,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 		List<BlockItemNode> filescopeList = new LinkedList<>();
 		List<BlockItemNode> processList = new LinkedList<>();
 		int commTypeIndex = -1, mpiInitIndex = -1;
-		boolean commCreated = false, newMPIinitMoved = false;
+		boolean commCreated = false, newMPIinitMoved = false, commDestroyedMoved = false;
 		String gcommStructName = null;
 
 		for (BlockItemNode child : root) {
@@ -574,6 +573,13 @@ public class MPI2CIVLWorker extends BaseWorker {
 					commCreated = true;
 					processList.add(commTypeIndex, child);
 					processList.add(commTypeIndex + 1, this.commDeclaration());
+				} else if (!commDestroyedMoved && name.equals(COMM_DESTROY)) {
+					int commDestroyIndex = commTypeIndex + 2, mpiInitNextIndex = mpiInitIndex + 1;
+
+					if (mpiInitNextIndex > commDestroyIndex)
+						commDestroyIndex = mpiInitNextIndex;
+					commDestroyedMoved = true;
+					processList.add(commDestroyIndex, child);
 				} else if (!newMPIinitMoved && name.equals(MPI_INIT_NEW)) {
 					newMPIinitMoved = true;
 					processList.add(mpiInitIndex, child);
@@ -755,9 +761,10 @@ public class MPI2CIVLWorker extends BaseWorker {
 	}
 
 	/**
-	 * transforms exit(k); to CMPI_destroy(MPI_COMM_WORLD); exit(k);
+	 * transforms exit(k); to $mpi_destroy(MPI_COMM_WORLD, $mpi_state); exit(k);
 	 * 
 	 * @param node
+	 *            the node to be transformed
 	 */
 	private void transformExit(ASTNode node) {
 		if (node instanceof ExpressionStatementNode) {
@@ -869,21 +876,17 @@ public class MPI2CIVLWorker extends BaseWorker {
 		if (!this.hasHeader(ast, MPI_HEADER))
 			return ast;
 
-		// ast.prettyPrint(System.out, false);
 		SequenceNode<BlockItemNode> root = ast.getRootNode();
 		AST newAst;
 		FunctionDefinitionNode mpiProcess, mainFunction;
 		VariableDeclarationNode gcommWorld;
-		List<BlockItemNode> externalList;
+		List<BlockItemNode> externalList = new LinkedList<>();
+		;
 		SequenceNode<BlockItemNode> newRootNode;
-		// List<BlockItemNode> includedNodes = new ArrayList<>();
 		List<BlockItemNode> mainParametersAndAssumps = new ArrayList<>();
 		int count;
 		StatementNode nprocsAssumption = null;
-		// Triple<FunctionDefinitionNode, List<BlockItemNode>,
-		// List<BlockItemNode>> result;
 		Pair<FunctionDefinitionNode, List<BlockItemNode>> result;
-		// transformMPIProcess
 		VariableDeclarationNode nprocsVar = this.getVariabledeclaration(root,
 				NPROCS);
 		VariableDeclarationNode nprocsUpperBoundVar = this
@@ -901,14 +904,13 @@ public class MPI2CIVLWorker extends BaseWorker {
 			transformMainFunction(root);
 			createNewMainFunction(root);
 		}
-		// change MPI_Init(...) to _MPI_Init();
 		transformMPI_Init(root);
 		transformExit(root);
 		if (nprocsVar == null) {
-			// declaring $input int NPROCS;
+			// declaring $input int _mpi_nprocs;
 			nprocsVar = this.nprocsDeclaration();
 			if (nprocsUpperBoundVar == null) {
-				// declaring $input int NPROCS_UPPER_BOUND;
+				// declaring $input int _mpi_nprocs_hi;
 				nprocsUpperBoundVar = this.basicTypeVariableDeclaration(
 						BasicTypeKind.INT, NPROCS_UPPER_BOUND);
 				nprocsUpperBoundVar.getTypeNode().setInputQualified(true);
@@ -922,7 +924,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 				Source intTypeSource = this.newSource("int",
 						CivlcTokenConstant.TYPE);
 
-				// declaring $input int NPROCS_LOWER_BOUND;
+				// declaring $input int _mpi_nprocs_lo;
 				nprocsLowerBoundVar = this.variableDeclaration(
 						NPROCS_LOWER_BOUND, nodeFactory.newBasicTypeNode(
 								intTypeSource, BasicTypeKind.INT),
@@ -933,35 +935,20 @@ public class MPI2CIVLWorker extends BaseWorker {
 				nprocsLowerBoundVar.parent().removeChild(
 						nprocsLowerBoundVar.childIndex());
 			}
-			// assuming NPROCS_LOWER_BOUND < NPROCS && NPROCS <=
-			// NPROCS_UPPER_BOUND
+			// assuming _mpi_nprocs_lo <= _mpi_nprocs && _mpi_nprocs <=
+			// _mpi_nprocs_hi
 			nprocsAssumption = this.nprocsAssumption();
 		} else {
 			nprocsVar.parent().removeChild(nprocsVar.childIndex());
 		}
-		// declaring $gcomm GCOMM_WORLD = $gcomm_create($here, NPROCS);
-
+		// declaring $gcomm
 		gcommWorld = this.gcommDeclaration();
-		// result = this.mpiProcess(root);
 		result = this.transformMPIProcess(root);
 		mpiProcess = result.left;
-		// includedNodes = result.second;
 		mainParametersAndAssumps = result.right;
-		// defining the main function;
+		// creating the new main function;
 		mainFunction = mainFunction();
-		// the translated program is:
-		// input variables;
-		// gcomm
-		// MPI_Process() definition;
-		// main function.
-		externalList = new LinkedList<>();
-		// count = includedNodes.size();
-		// // adding nodes from header files.
-		// for (int i = 0; i < count; i++) {
-		// externalList.add(includedNodes.get(i));
-		// }
 		count = mainParametersAndAssumps.size();
-
 		// A flag indicating if the _mpi_nprocs declaration is inserted already
 		// for the following code:
 		boolean nprocsTouched = false;
@@ -996,65 +983,10 @@ public class MPI2CIVLWorker extends BaseWorker {
 		externalList.add(mainFunction);
 		newRootNode = nodeFactory.newSequenceNode(null, "TranslationUnit",
 				externalList);
-		// newRootNode.prettyPrint(System.out);
 		this.completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
 		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
-
-	// /**
-	// * Create a variable declaration node of "__MPI_Sys_status__" type which
-	// * should be in every process representing the status of the process which
-	// * is controlled by MPI_Init() and MPI_Finalize()
-	// *
-	// * @return
-	// */
-	// private VariableDeclarationNode mpiSysStatusDeclaration() {
-	// TypeNode sysStatusType;
-	// VariableDeclarationNode node;
-	//
-	// sysStatusType = nodeFactory.newTypedefNameNode(nodeFactory
-	// .newIdentifierNode(
-	// newSource("MPI_Sys_status in _MPI_Process",
-	// CivlcTokenConstant.IDENTIFIER),
-	// MPI_SYS_STATUS_TYPENAME), null);
-	// node = variableDeclaration(
-	// MPI_SYS_STATUS,
-	// sysStatusType,
-	// nodeFactory.newEnumerationConstantNode(nodeFactory
-	// .newIdentifierNode(
-	// newSource("__UNINIT",
-	// CivlcTokenConstant.ENUMERATION_CONSTANT),
-	// "__UNINIT")));
-	// return node;
-	// }
-
-	// /**
-	// * An inserted assertion "assert _my_status == __UNINIT" which is used to
-	// * prevent being pruned by Pruner.
-	// *
-	// * @return
-	// */
-	// private ExpressionStatementNode mpiStatusDePruneAssertion() {
-	// List<ExpressionNode> assertionNodesList = new LinkedList<>();
-	// Source assertSrc = newSource("_my_status initial value assertion",
-	// CivlcTokenConstant.EXPRESSION_STATEMENT);
-	// Source myStatusSrc = newSource("_my_status",
-	// CivlcTokenConstant.IDENTIFIER);
-	//
-	// assertionNodesList.add(nodeFactory.newIdentifierExpressionNode(
-	// myStatusSrc,
-	// nodeFactory.newIdentifierNode(myStatusSrc, MPI_STATE_VAR)));
-	// assertionNodesList.add(nodeFactory
-	// .newEnumerationConstantNode(nodeFactory.newIdentifierNode(
-	// newSource("__UNINIT",
-	// CivlcTokenConstant.ENUMERATION_CONSTANT),
-	// "__UNINIT")));
-	// return nodeFactory.newExpressionStatementNode(this.functionCall(
-	// assertSrc, ASSERT, Arrays.asList((ExpressionNode) nodeFactory
-	// .newOperatorNode(assertSrc, Operator.EQUALS,
-	// assertionNodesList))));
-	// }
 }
