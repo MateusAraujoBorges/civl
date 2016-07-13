@@ -27,7 +27,8 @@ public class ModelBuilderTest {
 	/* **************************** Test Methods *************************** */
 	@Test
 	public void arrayext() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("arrayext.c")));
+		assertTrue(ui.run(VERIFY, "-verbose=false", QUIET,
+				filename("arrayext.c")));
 	}
 
 	@Test

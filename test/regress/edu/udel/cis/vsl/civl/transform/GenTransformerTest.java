@@ -34,7 +34,8 @@ public class GenTransformerTest {
 	@Test
 	public void simpleMPI() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -enablePrintf=false",
-				TestConstants.QUIET, filename("simpleMPI.c")));
+		// TestConstants.QUIET,
+				filename("simpleMPI.c")));
 	}
 
 	@Test

@@ -266,7 +266,8 @@ public class LibraryTest {
 
 	@Test
 	public void scanfExit() throws ABCException {
-		assertTrue(ui.run("verify", QUIET, filename(STDIO, "scanfExit.cvl")));
+		assertTrue(ui.run("verify -verbose=false", QUIET,
+				filename(STDIO, "scanfExit.cvl")));
 	}
 
 	@Test
