@@ -35,7 +35,6 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.MPI2CIVLTransformer;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 
-//TODO: added CMPI_destroy call before each call to exit(k);
 /**
  * MPI2CIVLTransformer transforms an AST of an MPI program into an AST of an
  * equivalent CIVL-C program. See {@linkplain #transform(AST)}. TODO: copy
@@ -67,8 +66,19 @@ public class MPI2CIVLWorker extends BaseWorker {
 
 	/* ************************** Private Static Fields ********************** */
 
+	/**
+	 * The file name of the MPI standard header
+	 */
 	private final static String MPI_HEADER = "mpi.h";
+
+	/**
+	 * The name of the standard exit function
+	 */
 	private final static String EXIT = "exit";
+
+	/**
+	 * The prefix of identifiers created by this transformer
+	 */
 	private final static String MPI_PREFIX = "_mpi_";
 
 	/**
@@ -145,28 +155,11 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 */
 	private final static String MPI_INIT_NEW = "$mpi_init";
 
-	// /**
-	// * The name of the function MPI_Init in the original MPI program.
-	// */
-	// private final static String MPI_FINALIZE = "MPI_Finalize";
-	//
-	// /**
-	// * The name of the function translating MPI_Init in the final CIVL-C
-	// * program.
-	// */
-	// private final static String MPI_FINALIZE_NEW = "$mpi_finalize";
-
 	/**
 	 * The name of the variable representing the status of an MPI process, which
 	 * is modified by MPI_Init() and MPI_Finalized().
 	 */
 	private final static String MPI_STATE_VAR = MPI_PREFIX + "state";
-
-	// /**
-	// * The name of the type of variables representing the status of an MPI
-	// * process.
-	// */
-	// private final static String MPI_SYS_STATUS_TYPENAME = "$mpi_sys_status";
 
 	/**
 	 * The name of the MPI procedure in the final CIVL-C program.
@@ -191,8 +184,20 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 */
 	private final static String NPROCS_LOWER_BOUND = MPI_PREFIX + "nprocs_lo";
 
-	private final static String ROOT = MPI_PREFIX + "root";
+	/**
+	 * The name of the variable that represents the root scope of an MPI process
+	 */
+	private final static String PROCESS_ROOT = MPI_PREFIX + "root";
+
+	/**
+	 * The name of the type that represents the state of MPI routine calls
+	 */
 	private static final String MPI_STATE_TYPE = "$mpi_state";
+
+	/**
+	 * The name of the function $mpi_coroutine_name which is a helper function
+	 * for gcomm destroy
+	 */
 	private static final String MPI_COROUTINE_NAME = "$mpi_coroutine_name";
 
 	/* ****************************** Constructor ************************** */
@@ -208,17 +213,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 	}
 
 	/* *************************** Private Methods ************************* */
-
-	// /**
-	// * Checks the stdio transformer status of a given AST. Specifically, this
-	// * method checks if the any of the varaibles stdout, stdin and stderr are
-	// * present and store the result to
-	// *
-	// * @param root
-	// */
-	// private void checkStdioStatus(ASTNode root) {
-	// }
-
+	
 	/**
 	 * Creates a bound assumption node in the form of:
 	 * <code>$assume lowerBound < variable && variable <= upperBound</code>.
@@ -436,7 +431,7 @@ public class MPI2CIVLWorker extends BaseWorker {
 				.newSource("function call " + GCOMM_CREATE,
 						CivlcTokenConstant.CALL), this
 				.identifierExpression(GCOMM_CREATE), Arrays.asList(
-				this.identifierExpression(ROOT),
+				this.identifierExpression(PROCESS_ROOT),
 				this.identifierExpression(NPROCS)), null),
 
 		assignGcomm = nodeFactory.newOperatorNode(gcommCreate.getSource(),
@@ -893,7 +888,8 @@ public class MPI2CIVLWorker extends BaseWorker {
 				.getVariabledeclaration(root, NPROCS_UPPER_BOUND);
 		VariableDeclarationNode nprocsLowerBoundVar = this
 				.getVariabledeclaration(root, NPROCS_LOWER_BOUND);
-		VariableDeclarationNode rootVar = this.variableDeclaration(ROOT,
+		VariableDeclarationNode rootVar = this.variableDeclaration(
+				PROCESS_ROOT,
 				this.typeNode(this.astFactory.getTypeFactory().scopeType()),
 				this.nodeFactory.newHereNode(this.newSource("root", 0)));
 
