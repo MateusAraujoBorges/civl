@@ -1,49 +1,34 @@
 //======================= int_div.cvl ======================
 $system[civlc] void $assert(_Bool expr, ...);
-int $int_div(int numerator, int denominator)
-{
+int $int_div(int numerator, int denominator) {
   $assert(denominator != 0, "Possible division by zero");
   if (numerator == 0)
     return 0;
-  if (numerator >= 0)
-  {
+  if (numerator >= 0) {
     if (denominator >= 0)
       return numerator / denominator;
     else
       return -(numerator / (-denominator));
   }
-  else
-  {
+  else {
     if (denominator >= 0)
       return -((-numerator) / denominator);
     else
       return (-numerator) / (-denominator);
   }
 }
+//======================= sum_array.c ======================
+$input int _civl_argc;
+$system[civlc] void $assume(_Bool expression);
+$assume(0 < _civl_argc);
+$input char  _civl_argv[_civl_argc][];
 //======================== civlc.cvh =======================
-typedef struct $proc $proc;
 typedef struct $scope $scope;
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$system[civlc] void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assume(_Bool expr);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $elaborate(int x);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
 $system[civlc] void* $malloc($scope s, int size);
-/*@ depends_on \write(p);
-  @ executes_when $true;
-  @*/
-$system[civlc] void $free(void* p);
+typedef struct $proc $proc;
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
@@ -57,16 +42,14 @@ $system[civlc] void $assume(_Bool expr);
   @ executes_when $true;
   @*/
 $system[civlc] void $elaborate(int x);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void* $malloc($scope s, int size);
 /*@ depends_on \write(p);
   @ executes_when $true;
   @*/
 $system[civlc] void $free(void* p);
-//========================= stdio.h ========================
-$system[stdio] int printf(char* restrict format, ...);
+//======================= sum_array.c ======================
+$input long NB = 20;
+$input long N;
+$assume((0 < N) && (N <= NB));
 //========================= seq.cvh ========================
 /*@ depends_on \write(array);
   @ executes_when $true;
@@ -83,28 +66,6 @@ $system[seq] void $seq_insert(void* array, int index, void* values, int count);
 /*@ depends_on \write(array, values);
   @*/
 $atomic_f void $seq_append(void* array, void* values, int count);
-//======================== civlc.cvh =======================
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assume(_Bool expr);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $elaborate(int x);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void* $malloc($scope s, int size);
-/*@ depends_on \write(p);
-  @ executes_when $true;
-  @*/
-$system[civlc] void $free(void* p);
 //======================= bundle.cvh =======================
 typedef struct _bundle $bundle;
 /*@ depends_on \write(ptr);
@@ -159,84 +120,13 @@ $atomic_f $collator $collator_create($scope scope, $gcollator gcollator);
   @ executes_when $true;
   @*/
 $atomic_f void $collator_destroy($collator collator);
-//========================== mpi.h =========================
-typedef enum $anon_enum_0{
-  MPI_CHAR,
-  MPI_CHARACTER,
-  MPI_SIGNED_CHAR,
-  MPI_UNSIGNED_CHAR,
-  MPI_BYTE,
-  MPI_WCHAR,
-  MPI_SHORT,
-  MPI_UNSIGNED_SHORT,
-  MPI_INT,
-  MPI_INT16_T,
-  MPI_INT32_T,
-  MPI_INT64_T,
-  MPI_INT8_T,
-  MPI_INTEGER,
-  MPI_INTEGER1,
-  MPI_INTEGER16,
-  MPI_INTEGER2,
-  MPI_INTEGER4,
-  MPI_INTEGER8,
-  MPI_UNSIGNED,
-  MPI_LONG,
-  MPI_UNSIGNED_LONG,
-  MPI_FLOAT,
-  MPI_DOUBLE,
-  MPI_LONG_DOUBLE,
-  MPI_LONG_LONG_INT,
-  MPI_UNSIGNED_LONG_LONG,
-  MPI_LONG_LONG,
-  MPI_PACKED,
-  MPI_LB,
-  MPI_UB,
-  MPI_UINT16_T,
-  MPI_UINT32_T,
-  MPI_UINT64_T,
-  MPI_UINT8_T,
-  MPI_FLOAT_INT,
-  MPI_DOUBLE_INT,
-  MPI_LONG_INT,
-  MPI_SHORT_INT,
-  MPI_2INT,
-  MPI_LONG_DOUBLE_INT,
-  MPI_AINT,
-  MPI_OFFSET,
-  MPI_2DOUBLE_PRECISION,
-  MPI_2INTEGER,
-  MPI_2REAL,
-  MPI_C_BOOL,
-  MPI_C_COMPLEX,
-  MPI_C_DOUBLE_COMPLEX,
-  MPI_C_FLOAT_COMPLEX,
-  MPI_C_LONG_DOUBLE_COMPLEX,
-  MPI_COMPLEX,
-  MPI_COMPLEX16,
-  MPI_COMPLEX32,
-  MPI_COMPLEX4,
-  MPI_COMPLEX8,
-  MPI_REAL,
-  MPI_REAL16,
-  MPI_REAL2,
-  MPI_REAL4,
-  MPI_REAL8
-} MPI_Datatype;
-typedef struct MPI_Comm MPI_Comm;
-typedef struct MPI_Status{
-    int MPI_SOURCE;
-    int MPI_TAG;
-    int MPI_ERROR;
-    int size;
-} MPI_Status;
 //======================== comm.cvh ========================
 typedef struct _message{
-    int source;
-    int dest;
-    int tag;
-    $bundle data;
-    int size;
+  int source;
+  int dest;
+  int tag;
+  $bundle data;
+  int size;
 } $message;
 typedef struct _queue $queue;
 typedef struct _gcomm* $gcomm;
@@ -308,145 +198,44 @@ $system[comm] _Bool $comm_probe($comm comm, int source, int tag);
   @*/
 $system[comm] $message $comm_dequeue($comm comm, int source, int tag);
 //====================== civl-mpi.cvh ======================
-typedef enum _mpi_state{
-  _MPI_UNINIT,
-  _MPI_INIT,
-  _MPI_FINALIZED
-} $mpi_state;
-typedef struct MPI_Comm MPI_Comm;
-typedef struct MPI_Status MPI_Status;
 typedef struct $mpi_gcomm $mpi_gcomm;
-int sizeofDatatype(MPI_Datatype);
 $mpi_gcomm $mpi_gcomm_create($scope, int);
 void $mpi_gcomm_destroy($mpi_gcomm);
-MPI_Comm $mpi_comm_create($scope, $mpi_gcomm, int);
-void $mpi_comm_destroy(MPI_Comm, $mpi_state);
-int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
-int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system[mpi] void $mpi_check_buffer(void* buf, int count, MPI_Datatype datatype);
-//========================= mpi.cvl ========================
-struct MPI_Comm{
-    $comm p2p;
-    $comm col;
-    $collator collator;
-    $barrier barrier;
-    int gcommIndex;
-};
-//======================== civlc.cvh =======================
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assume(_Bool expr);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $elaborate(int x);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void* $malloc($scope s, int size);
-/*@ depends_on \write(p);
-  @ executes_when $true;
-  @*/
-$system[civlc] void $free(void* p);
-//======================= bundle.cvh =======================
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @*/
-$system[bundle] $bundle $bundle_pack(void* ptr, int size);
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @*/
-$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
-//===================== concurrency.cvh ====================
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
-$atomic_f $gbarrier $gbarrier_create($scope scope, int size);
-/*@ depends_on \write(gbarrier);
-  @ reads \nothing;
-  @ assigns gbarrier;
-  @*/
-$atomic_f void $gbarrier_destroy($gbarrier gbarrier);
-/*@ depends_on \nothing;
-  @ assigns gbarrier;
-  @ reads gbarrier;
-  @*/
-$atomic_f $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
-/*@ depends_on \write(barrier);
-  @ assigns barrier;
-  @ reads \nothing;
-  @*/
-$atomic_f void $barrier_destroy($barrier barrier);
-/*@ depends_on \nothing;
-  @ reads \nothing;
-  @ assigns \nothing;
-  @*/
-$atomic_f $gcollator $gcollator_create($scope scope);
-/*@ depends_on \write(gcollator);
-  @ assigns gcollator;
-  @ reads \nothing;
-  @*/
-$atomic_f int $gcollator_destroy($gcollator gcollator);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f $collator $collator_create($scope scope, $gcollator gcollator);
-/*@ depends_on \write(collator);
-  @ executes_when $true;
-  @*/
-$atomic_f void $collator_destroy($collator collator);
-//========================= seq.cvh ========================
-/*@ depends_on \write(array);
-  @ executes_when $true;
-  @*/
-$system[seq] int $seq_length(void* array);
-/*@ depends_on \write(array, value);
-  @ executes_when $true;
-  @*/
-$system[seq] void $seq_init(void* array, int count, void* value);
-/*@ depends_on \write(array, values);
-  @ executes_when $true;
-  @*/
-$system[seq] void $seq_insert(void* array, int index, void* values, int count);
+//========================= seq.cvl ========================
 /*@ depends_on \write(array, values);
   @*/
-$atomic_f void $seq_append(void* array, void* values, int count);
+$atomic_f void $seq_append(void* array, void* values, int count) {
+  int length = $seq_length(array);
+  $seq_insert(array, length, values, count);
+}
 //===================== concurrency.cvl ====================
 struct _gbarrier{
-    int nprocs;
-    $proc  proc_map[];
-    _Bool  in_barrier[];
-    int num_in_barrier;
+  int nprocs;
+  $proc  proc_map[];
+  _Bool  in_barrier[];
+  int num_in_barrier;
 };
 struct _barrier{
-    int place;
-    $gbarrier gbarrier;
+  int place;
+  $gbarrier gbarrier;
 };
 struct _collator_entry{
-    $bundle entries;
-    _Bool  marks[];
-    int numMarked;
+  $bundle entries;
+  _Bool  marks[];
+  int numMarked;
 };
 struct _gcollator{
-    int length;
-    $collator_entry  entries[];
+  int length;
+  $collator_entry  entries[];
 };
 struct _collator{
-    $gcollator gcollator;
+  $gcollator gcollator;
 };
 /*@ depends_on \nothing;
   @ assigns \nothing;
   @ reads \nothing;
   @*/
-$atomic_f $gbarrier $gbarrier_create($scope scope, int size)
-{
+$atomic_f $gbarrier $gbarrier_create($scope scope, int size) {
   $gbarrier gbarrier = ($gbarrier)($malloc(scope, sizeof(struct _gbarrier)));
   (gbarrier)->nprocs = size;
   (gbarrier)->proc_map = ($proc[size]) $lambda (int i) $proc_null;
@@ -458,16 +247,14 @@ $atomic_f $gbarrier $gbarrier_create($scope scope, int size)
   @ reads \nothing;
   @ assigns gbarrier;
   @*/
-$atomic_f void $gbarrier_destroy($gbarrier gbarrier)
-{
+$atomic_f void $gbarrier_destroy($gbarrier gbarrier) {
   $free(gbarrier);
 }
 /*@ depends_on \nothing;
   @ assigns gbarrier;
   @ reads gbarrier;
   @*/
-$atomic_f $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place)
-{
+$atomic_f $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place) {
   $assert(((gbarrier)->proc_map[place]) == $proc_null, "the place %d in the global barrier has already been taken.", place);
   $barrier barrier = ($barrier)($malloc(scope, sizeof(struct _barrier)));
   (barrier)->place = place;
@@ -479,16 +266,14 @@ $atomic_f $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place)
   @ assigns barrier;
   @ reads \nothing;
   @*/
-$atomic_f void $barrier_destroy($barrier barrier)
-{
+$atomic_f void $barrier_destroy($barrier barrier) {
   $free(barrier);
 }
 /*@ depends_on \nothing;
   @ reads \nothing;
   @ assigns \nothing;
   @*/
-$atomic_f $gcollator $gcollator_create($scope scope)
-{
+$atomic_f $gcollator $gcollator_create($scope scope) {
   $gcollator gcollator = ($gcollator)($malloc(scope, sizeof(struct _gcollator)));
   (gcollator)->length = 0;
   $seq_init(&((gcollator)->entries), 0, (void*)0);
@@ -498,8 +283,7 @@ $atomic_f $gcollator $gcollator_create($scope scope)
   @ assigns gcollator;
   @ reads \nothing;
   @*/
-$atomic_f int $gcollator_destroy($gcollator gcollator)
-{
+$atomic_f int $gcollator_destroy($gcollator gcollator) {
   int numRemaining = (gcollator)->length;
   $free(gcollator);
   return numRemaining;
@@ -507,8 +291,7 @@ $atomic_f int $gcollator_destroy($gcollator gcollator)
 /*@ depends_on \nothing;
   @ executes_when $true;
   @*/
-$atomic_f $collator $collator_create($scope scope, $gcollator gcollator)
-{
+$atomic_f $collator $collator_create($scope scope, $gcollator gcollator) {
   $collator collator = ($collator)($malloc(scope, sizeof(struct _collator)));
   (collator)->gcollator = gcollator;
   return collator;
@@ -516,214 +299,18 @@ $atomic_f $collator $collator_create($scope scope, $gcollator gcollator)
 /*@ depends_on \write(collator);
   @ executes_when $true;
   @*/
-$atomic_f void $collator_destroy($collator collator)
-{
+$atomic_f void $collator_destroy($collator collator) {
   $free(collator);
 }
-//======================== civlc.cvh =======================
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assume(_Bool expr);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $elaborate(int x);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void* $malloc($scope s, int size);
-/*@ depends_on \write(p);
-  @ executes_when $true;
-  @*/
-$system[civlc] void $free(void* p);
-//======================= bundle.cvh =======================
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @*/
-$system[bundle] $bundle $bundle_pack(void* ptr, int size);
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @*/
-$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
-//===================== concurrency.cvh ====================
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
-$atomic_f $gbarrier $gbarrier_create($scope scope, int size);
-/*@ depends_on \write(gbarrier);
-  @ reads \nothing;
-  @ assigns gbarrier;
-  @*/
-$atomic_f void $gbarrier_destroy($gbarrier gbarrier);
-/*@ depends_on \nothing;
-  @ assigns gbarrier;
-  @ reads gbarrier;
-  @*/
-$atomic_f $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place);
-/*@ depends_on \write(barrier);
-  @ assigns barrier;
-  @ reads \nothing;
-  @*/
-$atomic_f void $barrier_destroy($barrier barrier);
-/*@ depends_on \nothing;
-  @ reads \nothing;
-  @ assigns \nothing;
-  @*/
-$atomic_f $gcollator $gcollator_create($scope scope);
-/*@ depends_on \write(gcollator);
-  @ assigns gcollator;
-  @ reads \nothing;
-  @*/
-$atomic_f int $gcollator_destroy($gcollator gcollator);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f $collator $collator_create($scope scope, $gcollator gcollator);
-/*@ depends_on \write(collator);
-  @ executes_when $true;
-  @*/
-$atomic_f void $collator_destroy($collator collator);
-//======================== comm.cvh ========================
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f $message $message_pack(int source, int dest, int tag, void* data, int size);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $message_source($message message);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $message_tag($message message);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $message_dest($message message);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $message_size($message message);
-/*@ depends_on \write(buf);
-  @ executes_when $true;
-  @*/
-$atomic_f void $message_unpack($message message, void* buf, int size);
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
-$atomic_f $gcomm $gcomm_create($scope scope, int size);
-/*@ depends_on \write(junkMsgs), \write(gcomm);
-  @ assigns junkMsgs, gcomm;
-  @*/
-$atomic_f int $gcomm_destroy($gcomm gcomm, void* junkMsgs);
-$atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place);
-/*@ depends_on \write(comm);
-  @ assigns comm;
-  @ reads \nothing;
-  @*/
-$atomic_f void $comm_destroy($comm comm);
-/*@ pure;
-  @ depends_on \nothing;
-  @*/
-$atomic_f int $comm_size($comm comm);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $comm_place($comm comm);
-/*@ depends_on \write(comm);
-  @ executes_when $true;
-  @*/
-$system[comm] void $comm_enqueue($comm comm, $message message);
-/*@ pure;
-  @ depends_on \write(comm);
-  @ executes_when $true;
-  @*/
-$system[comm] _Bool $comm_probe($comm comm, int source, int tag);
-/*@ depends_on \write(comm);
-  @ executes_when $comm_probe(comm, source, tag);
-  @*/
-$system[comm] $message $comm_dequeue($comm comm, int source, int tag);
-//====================== civl-mpi.cvh ======================
-int sizeofDatatype(MPI_Datatype);
-$mpi_gcomm $mpi_gcomm_create($scope, int);
-void $mpi_gcomm_destroy($mpi_gcomm);
-MPI_Comm $mpi_comm_create($scope, $mpi_gcomm, int);
-void $mpi_comm_destroy(MPI_Comm, $mpi_state);
-int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
-int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
-$system[mpi] void $mpi_check_buffer(void* buf, int count, MPI_Datatype datatype);
-//========================= seq.cvh ========================
-/*@ depends_on \write(array);
-  @ executes_when $true;
-  @*/
-$system[seq] int $seq_length(void* array);
-/*@ depends_on \write(array, value);
-  @ executes_when $true;
-  @*/
-$system[seq] void $seq_init(void* array, int count, void* value);
-/*@ depends_on \write(array, values);
-  @ executes_when $true;
-  @*/
-$system[seq] void $seq_insert(void* array, int index, void* values, int count);
-/*@ depends_on \write(array, values);
-  @*/
-$atomic_f void $seq_append(void* array, void* values, int count);
 //====================== civl-mpi.cvl ======================
-char* getCoroutineName(int tag);
+char* $mpi_coroutine_name(int tag);
 struct $mpi_gcomm{
-    $gcomm p2p;
-    $gcomm col;
-    $gcollator gcollator;
-    $gbarrier gbarrier;
+  $gcomm p2p;
+  $gcomm col;
+  $gcollator gcollator;
+  $gbarrier gbarrier;
 };
-int sizeofDatatype(MPI_Datatype datatype)
-{
-  switch (datatype)
-  {
-    case MPI_INT:
-      return sizeof(int);
-    case MPI_2INT:
-      return sizeof(int) * 2;
-    case MPI_FLOAT:
-      return sizeof(float);
-    case MPI_DOUBLE:
-      return sizeof(double);
-    case MPI_CHAR:
-      return sizeof(char);
-    case MPI_BYTE:
-      return sizeof(char);
-    case MPI_SHORT:
-      return sizeof(short);
-    case MPI_LONG:
-      return sizeof(long);
-    case MPI_LONG_DOUBLE:
-      return sizeof(long double);
-    case MPI_LONG_LONG_INT:
-      return sizeof(long long);
-    case MPI_LONG_LONG:
-      return sizeof(long long);
-    case MPI_UNSIGNED_LONG_LONG:
-      return sizeof(unsigned long long);
-    default:
-      $assert(0, "Unreachable");
-  }
-}
-$mpi_gcomm $mpi_gcomm_create($scope scope, int size)
-{
+$mpi_gcomm $mpi_gcomm_create($scope scope, int size) {
   $mpi_gcomm result;
   result.p2p = $gcomm_create(scope, size);
   result.col = $gcomm_create(scope, size);
@@ -731,8 +318,7 @@ $mpi_gcomm $mpi_gcomm_create($scope scope, int size)
   result.gbarrier = $gbarrier_create(scope, size);
   return result;
 }
-void $mpi_gcomm_destroy($mpi_gcomm gc)
-{
+void $mpi_gcomm_destroy($mpi_gcomm gc) {
   int numJunkRecord;
   int numJunkMsg;
   $message  junkMsgs[];
@@ -740,8 +326,7 @@ void $mpi_gcomm_destroy($mpi_gcomm gc)
   numJunkMsg = $gcomm_destroy(gc.p2p, &(junkMsgs));
   {
     int i = 0;
-    for (; i < numJunkMsg; i = i + 1)
-    {
+    for (; i < numJunkMsg; i = i + 1) {
       int src;
       int dest;
       int tag;
@@ -754,14 +339,13 @@ void $mpi_gcomm_destroy($mpi_gcomm gc)
   numJunkMsg = $gcomm_destroy(gc.col, &(junkMsgs));
   {
     int i = 0;
-    for (; i < numJunkMsg; i = i + 1)
-    {
+    for (; i < numJunkMsg; i = i + 1) {
       int src;
       int tag;
       char* routine;
       src = $message_source(junkMsgs[i]);
       tag = $message_tag(junkMsgs[i]);
-      routine = getCoroutineName(tag);
+      routine = $mpi_coroutine_name(tag);
       $assert($false, "MPI message leak: There is a message sent by rank %d for collective routine %s that is never received.", src, routine);
     }
   }
@@ -769,65 +353,8 @@ void $mpi_gcomm_destroy($mpi_gcomm gc)
   $gbarrier_destroy(gc.gbarrier);
   $assert(numJunkRecord == 0, "MPI collective routines are called inappropriately because there are %d collective records still remaining the collective routine checker.", numJunkRecord);
 }
-MPI_Comm $mpi_comm_create($scope scope, $mpi_gcomm gc, int rank)
-{
-  MPI_Comm result;
-  result.p2p = $comm_create(scope, gc.p2p, rank);
-  result.col = $comm_create(scope, gc.col, rank);
-  result.collator = $collator_create(scope, gc.gcollator);
-  result.barrier = $barrier_create(scope, gc.gbarrier, rank);
-  result.gcommIndex = 0;
-  return result;
-}
-void $mpi_comm_destroy(MPI_Comm comm, $mpi_state mpi_state)
-{
-  if (comm.gcommIndex == 0)
-    $assert(mpi_state == _MPI_FINALIZED, "Process terminates without calling MPI_Finalize() first.");
-  $comm_destroy(comm.p2p);
-  $comm_destroy(comm.col);
-  $collator_destroy(comm.collator);
-  $barrier_destroy(comm.barrier);
-}
-int $mpi_send(void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
-{
-  if (dest >= 0)
-  {
-    int $sef$0 = sizeofDatatype(datatype);
-    int size = count * $sef$0;
-    int place = $comm_place(comm.p2p);
-    $message out = $message_pack(place, dest, tag, buf, size);
-    $comm_enqueue(comm.p2p, out);
-  }
-  return 0;
-}
-int $mpi_recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status* status)
-{
-  if ((source >= 0) || (source == (-1)))
-  {
-    $message in;
-    int place = $comm_place(comm.p2p);
-    int deterministicTag;
-    $assert((tag == (-2)) || (tag >= 0), "Illegal MPI message receive tag %d.\n", tag);
-    deterministicTag = tag < 0 ? -2 : tag;
-    $elaborate(source);
-    in = $comm_dequeue(comm.p2p, source, deterministicTag);
-    int $sef$1 = sizeofDatatype(datatype);
-    int size = count * $sef$1;
-    $message_unpack(in, buf, size);
-    if (status != (void*)0)
-    {
-      (status)->size = $message_size(in);
-      (status)->MPI_SOURCE = $message_source(in);
-      (status)->MPI_TAG = $message_tag(in);
-      (status)->MPI_ERROR = 0;
-    }
-  }
-  return 0;
-}
-char* getCoroutineName(int tag)
-{
-  switch (tag)
-  {
+char* $mpi_coroutine_name(int tag) {
+  switch (tag) {
     case 9999:
       return "MPI_Bcast";
     case 9998:
@@ -862,139 +389,24 @@ char* getCoroutineName(int tag)
       $assert($false, "Internal Error: Unexpected MPI routine tag:%d.\n", tag);
   }
 }
-//======================== civlc.cvh =======================
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assume(_Bool expr);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $elaborate(int x);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void* $malloc($scope s, int size);
-/*@ depends_on \write(p);
-  @ executes_when $true;
-  @*/
-$system[civlc] void $free(void* p);
-//======================= bundle.cvh =======================
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @*/
-$system[bundle] $bundle $bundle_pack(void* ptr, int size);
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @*/
-$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
-//======================== comm.cvh ========================
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f $message $message_pack(int source, int dest, int tag, void* data, int size);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $message_source($message message);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $message_tag($message message);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $message_dest($message message);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $message_size($message message);
-/*@ depends_on \write(buf);
-  @ executes_when $true;
-  @*/
-$atomic_f void $message_unpack($message message, void* buf, int size);
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
-$atomic_f $gcomm $gcomm_create($scope scope, int size);
-/*@ depends_on \write(junkMsgs), \write(gcomm);
-  @ assigns junkMsgs, gcomm;
-  @*/
-$atomic_f int $gcomm_destroy($gcomm gcomm, void* junkMsgs);
-$atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place);
-/*@ depends_on \write(comm);
-  @ assigns comm;
-  @ reads \nothing;
-  @*/
-$atomic_f void $comm_destroy($comm comm);
-/*@ pure;
-  @ depends_on \nothing;
-  @*/
-$atomic_f int $comm_size($comm comm);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$atomic_f int $comm_place($comm comm);
-/*@ depends_on \write(comm);
-  @ executes_when $true;
-  @*/
-$system[comm] void $comm_enqueue($comm comm, $message message);
-/*@ pure;
-  @ depends_on \write(comm);
-  @ executes_when $true;
-  @*/
-$system[comm] _Bool $comm_probe($comm comm, int source, int tag);
-/*@ depends_on \write(comm);
-  @ executes_when $comm_probe(comm, source, tag);
-  @*/
-$system[comm] $message $comm_dequeue($comm comm, int source, int tag);
-//========================= seq.cvh ========================
-/*@ depends_on \write(array);
-  @ executes_when $true;
-  @*/
-$system[seq] int $seq_length(void* array);
-/*@ depends_on \write(array, value);
-  @ executes_when $true;
-  @*/
-$system[seq] void $seq_init(void* array, int count, void* value);
-/*@ depends_on \write(array, values);
-  @ executes_when $true;
-  @*/
-$system[seq] void $seq_insert(void* array, int index, void* values, int count);
-/*@ depends_on \write(array, values);
-  @*/
-$atomic_f void $seq_append(void* array, void* values, int count);
 //======================== comm.cvl ========================
 struct _queue{
-    int length;
-    $message  messages[];
+  int length;
+  $message  messages[];
 };
 struct _gcomm{
-    int nprocs;
-    $proc  procs[];
-    _Bool  isInit[];
-    $queue  buf[][];
+  int nprocs;
+  $proc  procs[];
+  _Bool  isInit[];
+  $queue  buf[][];
 };
 struct _comm{
-    int place;
-    $gcomm gcomm;
+  int place;
+  $gcomm gcomm;
 };
 /*@ depends_on \write(data);
   @*/
-$atomic_f $message $message_pack(int source, int dest, int tag, void* data, int size)
-{
+$atomic_f $message $message_pack(int source, int dest, int tag, void* data, int size) {
   $message result;
   result.source = source;
   result.dest = dest;
@@ -1003,26 +415,21 @@ $atomic_f $message $message_pack(int source, int dest, int tag, void* data, int 
   result.size = size;
   return result;
 }
-int $message_source($message message)
-{
+int $message_source($message message) {
   return message.source;
 }
-int $message_tag($message message)
-{
+int $message_tag($message message) {
   return message.tag;
 }
-int $message_dest($message message)
-{
+int $message_dest($message message) {
   return message.dest;
 }
-int $message_size($message message)
-{
+int $message_size($message message) {
   return message.size;
 }
 /*@ depends_on \write(buf);
   @*/
-$atomic_f void $message_unpack($message message, void* buf, int size)
-{
+$atomic_f void $message_unpack($message message, void* buf, int size) {
   $bundle_unpack(message.data, buf);
   $assert(message.size <= size, "Message of size %d exceeds the specified size %d.", message.size, size);
 }
@@ -1030,15 +437,14 @@ $atomic_f void $message_unpack($message message, void* buf, int size)
   @ assigns \nothing;
   @ reads \nothing;
   @*/
-$atomic_f $gcomm $gcomm_create($scope scope, int size)
-{
+$atomic_f $gcomm $gcomm_create($scope scope, int size) {
   $gcomm gcomm = ($gcomm)($malloc(scope, sizeof(struct _gcomm)));
   $queue empty;
   empty.length = 0;
   $seq_init(&(empty.messages), 0, (void*)0);
   (gcomm)->nprocs = size;
-  (gcomm)->procs = ($proc[size]) $lambda (int i) $proc_null;
-  (gcomm)->isInit = (_Bool[size]) $lambda (int i) $false;
+  (gcomm)->procs = (($proc[size]) $lambda (int i) $proc_null);
+  (gcomm)->isInit = ((_Bool[size]) $lambda (int i) $false);
   (gcomm)->buf = (($queue[size][size]) $lambda (int i, j) empty);
   return gcomm;
 }
@@ -1046,19 +452,15 @@ $atomic_f $gcomm $gcomm_create($scope scope, int size)
   @ assigns junkMsgs, gcomm;
   @ reads \nothing;
   @*/
-$atomic_f int $gcomm_destroy($gcomm gcomm, void* junkMsgs)
-{
+$atomic_f int $gcomm_destroy($gcomm gcomm, void* junkMsgs) {
   int nprocs = (gcomm)->nprocs;
   int numJunks = 0;
-  if (junkMsgs != (void*)0)
-  {
+  if (junkMsgs != (void*)0) {
     {
       int i = 0;
-      for (; i < nprocs; i = i + 1)
-      {
+      for (; i < nprocs; i = i + 1) {
         int j = 0;
-        for (; j < nprocs; j = j + 1)
-        {
+        for (; j < nprocs; j = j + 1) {
           $queue queue = (gcomm)->buf[i][j];
           if (queue.length > 0)
             $seq_append(junkMsgs, queue.messages, queue.length);
@@ -1074,8 +476,7 @@ $atomic_f int $gcomm_destroy($gcomm gcomm, void* junkMsgs)
   @ reads gcomm;
   @ assigns gcomm;
   @*/
-$atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place)
-{
+$atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place) {
   $assert(!((gcomm)->isInit[place]), "the place %d is already occupied in the global communicator!", place);
   $comm comm = ($comm)($malloc(scope, sizeof(struct _comm)));
   (gcomm)->procs[place] = $self;
@@ -1088,131 +489,21 @@ $atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place)
   @ assigns comm;
   @ reads \nothing;
   @*/
-$atomic_f void $comm_destroy($comm comm)
-{
+$atomic_f void $comm_destroy($comm comm) {
   $free(comm);
 }
 /*@ pure;
   @ depends_on \nothing;
   @*/
-$atomic_f int $comm_place($comm comm)
-{
+$atomic_f int $comm_place($comm comm) {
   return (comm)->place;
 }
 /*@ pure;
   @ depends_on \nothing;
   @*/
-$atomic_f int $comm_size($comm comm)
-{
+$atomic_f int $comm_size($comm comm) {
   return ((comm)->gcomm)->nprocs;
 }
-//======================== civlc.cvh =======================
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assume(_Bool expr);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $elaborate(int x);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void* $malloc($scope s, int size);
-/*@ depends_on \write(p);
-  @ executes_when $true;
-  @*/
-$system[civlc] void $free(void* p);
-//========================= seq.cvh ========================
-/*@ depends_on \write(array);
-  @ executes_when $true;
-  @*/
-$system[seq] int $seq_length(void* array);
-/*@ depends_on \write(array, value);
-  @ executes_when $true;
-  @*/
-$system[seq] void $seq_init(void* array, int count, void* value);
-/*@ depends_on \write(array, values);
-  @ executes_when $true;
-  @*/
-$system[seq] void $seq_insert(void* array, int index, void* values, int count);
-/*@ depends_on \write(array, values);
-  @*/
-$atomic_f void $seq_append(void* array, void* values, int count);
-//========================= seq.cvl ========================
-/*@ depends_on \write(array, values);
-  @*/
-$atomic_f void $seq_append(void* array, void* values, int count)
-{
-  int length = $seq_length(array);
-  $seq_insert(array, length, values, count);
-}
-//======================== civlc.cvh =======================
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assume(_Bool expr);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $elaborate(int x);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void* $malloc($scope s, int size);
-/*@ depends_on \write(p);
-  @ executes_when $true;
-  @*/
-$system[civlc] void $free(void* p);
-//======================= bundle.cvh =======================
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @*/
-$system[bundle] $bundle $bundle_pack(void* ptr, int size);
-/*@ depends_on \write(ptr);
-  @ executes_when $true;
-  @*/
-$system[bundle] void $bundle_unpack($bundle bundle, void* ptr);
-//======================== civlc.cvh =======================
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assert(_Bool expr, ...);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $assume(_Bool expr);
-/*@ pure;
-  @ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $elaborate(int x);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void* $malloc($scope s, int size);
-/*@ depends_on \write(p);
-  @ executes_when $true;
-  @*/
-$system[civlc] void $free(void* p);
-//========================= stdio.h ========================
-$system[stdio] int printf(char* restrict format, ...);
-//======================= sum_array.c ======================
-$input int _civl_argc;
-$assume(0 < _civl_argc); 
-$input char  _civl_argv[_civl_argc][];
-$input long NB = 20;
-$input long N;
 //===================== MPITransformer =====================
 $input int _mpi_nprocs;
 $input int _mpi_nprocs_lo = 1;
@@ -1223,61 +514,106 @@ $assume((_mpi_nprocs_lo <= _mpi_nprocs) && (_mpi_nprocs <= _mpi_nprocs_hi));
 $scope _mpi_root = $here;
 $mpi_gcomm _mpi_gcomm;
 $mpi_gcomm  _mpi_gcomms[];
-void _mpi_process(int _mpi_rank)
-{
+void _mpi_process(int _mpi_rank) {
+  /*@ depends_on \write(format);  
+  @ executes_when $true;
+    @*/
+  $system[stdio] int printf(char* restrict format, ...);
+  typedef   enum MPI_Datatype{
+      MPI_CHAR,
+      MPI_CHARACTER,
+      MPI_SIGNED_CHAR,
+      MPI_UNSIGNED_CHAR,
+      MPI_BYTE,
+      MPI_WCHAR,
+      MPI_SHORT,
+      MPI_UNSIGNED_SHORT,
+      MPI_INT,
+      MPI_INT16_T,
+      MPI_INT32_T,
+      MPI_INT64_T,
+      MPI_INT8_T,
+      MPI_INTEGER,
+      MPI_INTEGER1,
+      MPI_INTEGER16,
+      MPI_INTEGER2,
+      MPI_INTEGER4,
+      MPI_INTEGER8,
+      MPI_UNSIGNED,
+      MPI_LONG,
+      MPI_UNSIGNED_LONG,
+      MPI_FLOAT,
+      MPI_DOUBLE,
+      MPI_LONG_DOUBLE,
+      MPI_LONG_LONG_INT,
+      MPI_UNSIGNED_LONG_LONG,
+      MPI_LONG_LONG,
+      MPI_PACKED,
+      MPI_LB,
+      MPI_UB,
+      MPI_UINT16_T,
+      MPI_UINT32_T,
+      MPI_UINT64_T,
+      MPI_UINT8_T,
+      MPI_FLOAT_INT,
+      MPI_DOUBLE_INT,
+      MPI_LONG_INT,
+      MPI_SHORT_INT,
+      MPI_2INT,
+      MPI_LONG_DOUBLE_INT,
+      MPI_AINT,
+      MPI_OFFSET,
+      MPI_2DOUBLE_PRECISION,
+      MPI_2INTEGER,
+      MPI_2REAL,
+      MPI_C_BOOL,
+      MPI_C_COMPLEX,
+      MPI_C_DOUBLE_COMPLEX,
+      MPI_C_FLOAT_COMPLEX,
+      MPI_C_LONG_DOUBLE_COMPLEX,
+      MPI_COMPLEX,
+      MPI_COMPLEX16,
+      MPI_COMPLEX32,
+      MPI_COMPLEX4,
+      MPI_COMPLEX8,
+      MPI_REAL,
+      MPI_REAL16,
+      MPI_REAL2,
+      MPI_REAL4,
+      MPI_REAL8
+  } MPI_Datatype;
+  typedef   struct MPI_Comm MPI_Comm;
+  MPI_Comm $mpi_comm_create($scope, $mpi_gcomm, int);
   MPI_Comm MPI_COMM_WORLD = $mpi_comm_create($here, _mpi_gcomm, _mpi_rank);
-  $system[sum_array] void $assume(_Bool expression);
+  typedef   struct MPI_Request* MPI_Request;
+  typedef   struct MPI_Status{
+      int MPI_SOURCE;
+      int MPI_TAG;
+      int MPI_ERROR;
+      int size;
+  } MPI_Status;
+  int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+  int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
+  int MPI_Get_count(MPI_Status*, MPI_Datatype, int*);
+  int MPI_Comm_size(MPI_Comm, int*);
+  int MPI_Comm_rank(MPI_Comm, int*);
+  typedef   enum _mpi_state{
+      _MPI_UNINIT,
+      _MPI_INIT,
+      _MPI_FINALIZED
+  } $mpi_state;
   $mpi_state _mpi_state = _MPI_UNINIT;
-  int $mpi_init(void)
-  {
+  int $mpi_init(void) {
     $assert(_mpi_state == _MPI_UNINIT, "Process can only call MPI_Init() at most once.");
     _mpi_state = _MPI_INIT;
     return 0;
   }
-  int MPI_Finalize(void)
-  {
-    $assert(_mpi_state == _MPI_INIT, "Process can only call MPI_Finalize() after the MPI enviroment is created and before cleaned.");
-    _mpi_state = _MPI_FINALIZED;
-    return 0;
-  }
-  int MPI_Comm_size(MPI_Comm comm, int* size)
-  {
-    $assert(_mpi_state == _MPI_INIT, "MPI_Comm_size() cannot be invoked without MPI_Init() being called before.\n");
-    *size = $comm_size(comm.p2p);
-    return 0;
-  }
-  int MPI_Comm_rank(MPI_Comm comm, int* rank)
-  {
-    $assert(_mpi_state == _MPI_INIT, "MPI_Comm_rank() cannot be invoked without MPI_Init() being called before.\n");
-    *rank = $comm_place(comm.p2p);
-    return 0;
-  }
-  int MPI_Send(void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
-  {
-    $assert(_mpi_state == _MPI_INIT, "MPI_Send() cannot be invoked without MPI_Init() being called before.\n");
-    $mpi_check_buffer(buf, count, datatype);
-    int $sef$2 = $mpi_send(buf, count, datatype, dest, tag, comm);
-    return $sef$2;
-  }
-  int MPI_Recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status* status)
-  {
-    $assert(_mpi_state == _MPI_INIT, "MPI_Recv() cannot be invoked without MPI_Init() being called before.\n");
-    int $sef$3 = $mpi_recv(buf, count, datatype, source, tag, comm, status);
-    return $sef$3;
-  }
-  int MPI_Get_count(MPI_Status* status, MPI_Datatype datatype, int* count)
-  {
-    $assert(_mpi_state == _MPI_INIT, "MPI_Get_count() cannot be invoked without MPI_Init() being called before.\n");
-    int $sef$4 = sizeofDatatype(datatype);
-    *count = $int_div((status)->size, $sef$4);
-    return 0;
-  }
-  $assume((0 < N) && (N <= NB));
+  void $mpi_comm_destroy(MPI_Comm, $mpi_state);
+  int MPI_Finalize(void);
   double oracle;
   void master(void);
   void slave(void);
-  int _civl_main(int argc, char** argv)
-  {
+  int _civl_main(int argc, char** argv) {
     int myrank;
     $mpi_init();
     MPI_Comm_rank(MPI_COMM_WORLD, &(myrank));
@@ -1288,8 +624,7 @@ void _mpi_process(int _mpi_rank)
     MPI_Finalize();
     return 0;
   }
-  void master(void)
-  {
+  void master(void) {
     float  array[N];
     double mysum;
     double tmpsum;
@@ -1315,8 +650,7 @@ void _mpi_process(int _mpi_rank)
       for (; i < N; i = i + 1)
         mysum = mysum + (array[i]);
     }
-    for (i = 1; i < size; )
-    {
+    for (i = 1; i < size; ) {
       MPI_Recv(&(tmpsum), 1, MPI_DOUBLE, -1, 101, MPI_COMM_WORLD, &(status));
       mysum = mysum + tmpsum;
       i = i + 1;
@@ -1324,8 +658,7 @@ void _mpi_process(int _mpi_rank)
     $assert(oracle == mysum, "The sum of %d array elements is %f but the expected one is %f.\n", N, mysum, oracle);
     printf("%lf\n", mysum);
   }
-  void slave(void)
-  {
+  void slave(void) {
     float  array[N];
     double sum;
     unsigned long long i;
@@ -1341,17 +674,144 @@ void _mpi_process(int _mpi_rank)
     }
     MPI_Send(&(sum), 1, MPI_DOUBLE, 0, 101, MPI_COMM_WORLD);
   }
+  int sizeofDatatype(MPI_Datatype);
+  int $mpi_send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+  int $mpi_recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status*);
+  /*@ depends_on \write(buf);  
+  @ executes_when $true;
+    @*/
+  $system[mpi] void $mpi_check_buffer(void* buf, int count, MPI_Datatype datatype);
+  struct MPI_Request{
+      MPI_Status status;
+      _Bool isSend;
+  };
+  struct MPI_Comm{
+      $comm p2p;
+      $comm col;
+      $collator collator;
+      $barrier barrier;
+      int gcommIndex;
+  };
+  int MPI_Finalize(void) {
+    $assert(_mpi_state == _MPI_INIT, "Process can only call MPI_Finalize() after the MPI enviroment is created and before cleaned.");
+    _mpi_state = _MPI_FINALIZED;
+    return 0;
+  }
+  int MPI_Comm_size(MPI_Comm comm, int* size) {
+    $assert(_mpi_state == _MPI_INIT, "MPI_Comm_size() cannot be invoked without MPI_Init() being called before.\n");
+    *size = $comm_size(comm.p2p);
+    return 0;
+  }
+  int MPI_Comm_rank(MPI_Comm comm, int* rank) {
+    $assert(_mpi_state == _MPI_INIT, "MPI_Comm_rank() cannot be invoked without MPI_Init() being called before.\n");
+    *rank = $comm_place(comm.p2p);
+    return 0;
+  }
+  int MPI_Send(void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
+    $assert(_mpi_state == _MPI_INIT, "MPI_Send() cannot be invoked without MPI_Init() being called before.\n");
+    $mpi_check_buffer(buf, count, datatype);
+    int $sef$0 = $mpi_send(buf, count, datatype, dest, tag, comm);
+    return $sef$0;
+  }
+  int MPI_Recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status* status) {
+    $assert(_mpi_state == _MPI_INIT, "MPI_Recv() cannot be invoked without MPI_Init() being called before.\n");
+    int $sef$1 = $mpi_recv(buf, count, datatype, source, tag, comm, status);
+    return $sef$1;
+  }
+  int MPI_Get_count(MPI_Status* status, MPI_Datatype datatype, int* count) {
+    $assert(_mpi_state == _MPI_INIT, "MPI_Get_count() cannot be invoked without MPI_Init() being called before.\n");
+    int $sef$2 = sizeofDatatype(datatype);
+    *count = $int_div((status)->size, $sef$2);
+    return 0;
+  }
+  int sizeofDatatype(MPI_Datatype datatype) {
+    switch (datatype) {
+      case MPI_INT:
+        return sizeof(int);
+      case MPI_2INT:
+        return sizeof(int) * 2;
+      case MPI_FLOAT:
+        return sizeof(float);
+      case MPI_DOUBLE:
+        return sizeof(double);
+      case MPI_CHAR:
+        return sizeof(char);
+      case MPI_BYTE:
+        return sizeof(char);
+      case MPI_SHORT:
+        return sizeof(short);
+      case MPI_LONG:
+        return sizeof(long);
+      case MPI_LONG_DOUBLE:
+        return sizeof(long double);
+      case MPI_LONG_LONG_INT:
+        return sizeof(long long);
+      case MPI_LONG_LONG:
+        return sizeof(long long);
+      case MPI_UNSIGNED_LONG_LONG:
+        return sizeof(unsigned long long);
+      default:
+        $assert(0, "Unreachable");
+    }
+  }
+  MPI_Comm $mpi_comm_create($scope scope, $mpi_gcomm gc, int rank) {
+    MPI_Comm result;
+    result.p2p = $comm_create(scope, gc.p2p, rank);
+    result.col = $comm_create(scope, gc.col, rank);
+    result.collator = $collator_create(scope, gc.gcollator);
+    result.barrier = $barrier_create(scope, gc.gbarrier, rank);
+    result.gcommIndex = 0;
+    return result;
+  }
+  void $mpi_comm_destroy(MPI_Comm comm, $mpi_state mpi_state) {
+    if (comm.gcommIndex == 0)
+      $assert(mpi_state == _MPI_FINALIZED, "Process terminates without calling MPI_Finalize() first.");
+    $comm_destroy(comm.p2p);
+    $comm_destroy(comm.col);
+    $collator_destroy(comm.collator);
+    $barrier_destroy(comm.barrier);
+  }
+  int $mpi_send(void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
+    if (dest >= 0) {
+      int $sef$5 = sizeofDatatype(datatype);
+      int size = count * $sef$5;
+      int place = $comm_place(comm.p2p);
+      $message out = $message_pack(place, dest, tag, buf, size);
+      $comm_enqueue(comm.p2p, out);
+    }
+    return 0;
+  }
+  int $mpi_recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status* status) {
+    if ((source >= 0) || (source == (-1))) {
+      $message in;
+      int place = $comm_place(comm.p2p);
+      int deterministicTag;
+      $assert((tag == (-2)) || (tag >= 0), "Illegal MPI message receive tag %d.\n", tag);
+      deterministicTag = tag < 0 ? -2 : tag;
+      $elaborate(source);
+      in = $comm_dequeue(comm.p2p, source, deterministicTag);
+      int $sef$6 = sizeofDatatype(datatype);
+      int size = count * $sef$6;
+      $message_unpack(in, buf, size);
+      if (status != (void*)0) {
+        (status)->size = $message_size(in);
+        (status)->MPI_SOURCE = $message_source(in);
+        (status)->MPI_TAG = $message_tag(in);
+        (status)->MPI_ERROR = 0;
+      }
+    }
+    return 0;
+  }
   {
     _civl_main(_civl_argc, (char*[_civl_argc]) $lambda (int i) _civl_argv[i]);
   }
   $mpi_comm_destroy(MPI_COMM_WORLD, _mpi_state);
 }
-int main()
-{
+int main() {
   _mpi_gcomm = $mpi_gcomm_create(_mpi_root, _mpi_nprocs);
   $seq_init(&(_mpi_gcomms), 1, &(_mpi_gcomm));
   $parfor (int i: 0 .. _mpi_nprocs - 1)
+
     _mpi_process(i);
   $mpi_gcomm_destroy(_mpi_gcomm);
 }
-
