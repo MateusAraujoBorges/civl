@@ -11,43 +11,47 @@
 //unsigned _rand_seed = DEFAULT_SEED;
 //unsigned _random_seed = DEFAULT_SEED;
 
-int rand(){
+$atomic_f void free(void*ptr){
+  $free(ptr);
+}
+
+$atomic_f int rand(){
   int tmp;
 
   $havoc(&tmp);
   return tmp;
 }
 
-void srand(unsigned int seed){
+$atomic_f void srand(unsigned int seed){
 }
 
-void srandom(unsigned int seed){
+$atomic_f void srandom(unsigned int seed){
 }
 
-long int random(){
+$atomic_f long int random(){
   long int tmp;
 
   $havoc(&tmp);
   return tmp;
 }
 
-void exit(int status){
+$atomic_f void exit(int status){
   $assert(status == 0, "erroneous exit with code %d", status);
   $exit();
 }
 
-_Noreturn void abort(void){
+$atomic_f _Noreturn void abort(void){
   $exit();
 }
 
-int abs(int x){
+$atomic_f int abs(int x){
   if(x >= 0)
     return x;
   return (-x);
 }
 
 #ifdef _LINUX
-int rand_r(unsigned int *seedp){
+$atomic_f int rand_r(unsigned int *seedp){
   int tmp;
 
   $havoc(&tmp);

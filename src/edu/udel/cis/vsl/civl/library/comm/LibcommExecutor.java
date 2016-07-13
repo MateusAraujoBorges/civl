@@ -82,9 +82,10 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		case "$comm_size":
 			callEval = this.executeCommSize(state, pid, process, arguments, argumentValues);
 			break;
-		case "$gcomm_dup":
-			callEval = this.executeGcommDup(state, pid, process, arguments, argumentValues, source);
-			break;
+		// case "$gcomm_dup":
+		// callEval = this.executeGcommDup(state, pid, process, arguments,
+		// argumentValues, source);
+		// break;
 		// case "$comm_destroy":
 		// callEval = executeFree(state, pid, process, arguments,
 		// argumentValues, source);
@@ -664,6 +665,7 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		return new Evaluation(state, universe.integer(remainMsgs.size()));
 	}
 
+	@SuppressWarnings("unused")
 	private Evaluation executeGcommDup(State state, int pid, String process, Expression arguments[],
 			SymbolicExpression argumentValues[], CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression newcomm, gcomm, newgcomm;

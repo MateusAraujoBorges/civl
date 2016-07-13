@@ -39,11 +39,6 @@ public abstract class BaseLibraryEnabler extends LibraryComponent implements
 	/* *************************** Instance Fields ************************* */
 
 	/**
-	 * The evaluator for evaluating expressions.
-	 */
-	protected Evaluator evaluator;
-
-	/**
 	 * The enabler for normal CIVL execution.
 	 */
 	protected Enabler primaryEnabler;
@@ -79,9 +74,8 @@ public abstract class BaseLibraryEnabler extends LibraryComponent implements
 			LibraryEvaluatorLoader libEvaluatorLoader) {
 		super(name, evaluator.universe(), symbolicUtil, symbolicAnalyzer,
 				civlConfig, libEvaluatorLoader, modelFactory, evaluator
-						.errorLogger());
+						.errorLogger(), evaluator);
 		this.primaryEnabler = primaryEnabler;
-		this.evaluator = evaluator;
 		this.stateFactory = evaluator.stateFactory();
 		this.memUnitFactory = stateFactory.memUnitFactory();
 

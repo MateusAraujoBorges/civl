@@ -35,8 +35,6 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 public class LibpointerExecutor extends BaseLibraryExecutor implements
 		LibraryExecutor {
 
-	private LibpointerEvaluator libevaluator;
-
 	public LibpointerExecutor(String name, Executor primaryExecutor,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
@@ -45,8 +43,6 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 		super(name, primaryExecutor, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
-		libevaluator = new LibpointerEvaluator(name, evaluator, modelFactory,
-				symbolicUtil, symbolicAnalyzer, civlConfig, libEvaluatorLoader);
 	}
 
 	@Override
@@ -190,11 +186,11 @@ public class LibpointerExecutor extends BaseLibraryExecutor implements
 		int operator;
 
 		objs = new SymbolicExpression[2];
-		eval = libevaluator.getDataFrom(state, pid, process, arguments[0],
+		eval = getDataFrom(state, pid, process, arguments[0],
 				argumentValues[0], one, false, false, source);
 		state = eval.state;
 		objs[0] = eval.value;
-		eval = libevaluator.getDataFrom(state, pid, process, arguments[2],
+		eval = getDataFrom(state, pid, process, arguments[2],
 				argumentValues[2], one, false, false, source);
 		state = eval.state;
 		objs[1] = eval.value;

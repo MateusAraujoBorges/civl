@@ -8,6 +8,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
@@ -506,7 +507,8 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 	}
 
 	private boolean isPointer(SymbolicExpression value) {
-		return value.type().equals(this.pointerType);
+		return value.type().equals(this.pointerType)
+				&& symbolicUtil.getDyscopeId(null, value) != ModelConfiguration.DYNAMIC_CONSTANT_SCOPE;
 	}
 
 	private MemoryUnit pointer2MemoryUnit(SymbolicExpression pointer) {

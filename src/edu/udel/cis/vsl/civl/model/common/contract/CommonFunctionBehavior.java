@@ -196,13 +196,13 @@ public class CommonFunctionBehavior extends CommonSourceable implements
 			out.println();
 		}
 		if (this.dependsNoact)
-			out.println(prefix + "depends noact");
+			out.println(prefix + "depends_on nothing");
 		else if (this.dependsAnyact)
-			out.println(prefix + "depends anyact");
+			out.println(prefix + "depends_on anything");
 		else if (this.numDependsEvents() > 0) {
 			boolean first = true;
 
-			out.print(prefix + "depends ");
+			out.print(prefix + "depends_on ");
 			for (DependsEvent event : this.dependsEvents) {
 				if (!first)
 					out.print(", ");

@@ -14,7 +14,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
-import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
@@ -44,11 +43,6 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 		LibraryExecutor {
 
 	/* ************************** Instance Fields ************************** */
-
-	/**
-	 * The evaluator for evaluating expressions.
-	 */
-	protected Evaluator evaluator;
 
 	/**
 	 * The primary executor of the system.
@@ -93,9 +87,8 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			LibraryEvaluatorLoader libEvaluatorLoader) {
 		super(name, primaryExecutor.evaluator().universe(), symbolicUtil,
 				symbolicAnalyzer, civlConfig, libEvaluatorLoader, modelFactory,
-				primaryExecutor.errorLogger());
+				primaryExecutor.errorLogger(), primaryExecutor.evaluator());
 		this.primaryExecutor = primaryExecutor;
-		this.evaluator = primaryExecutor.evaluator();
 		this.stateFactory = evaluator.stateFactory();
 		this.errorLogger = primaryExecutor.errorLogger();
 		this.libExecutorLoader = libExecutorLoader;

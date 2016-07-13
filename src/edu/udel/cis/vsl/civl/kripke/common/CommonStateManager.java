@@ -444,7 +444,7 @@ public class CommonStateManager implements StateManager {
 		else
 			pLocation = procState.getLocation();
 		assert pLocation != null;
-		if(pLocation.isGuardedLocation())
+		if (pLocation.isGuardedLocation())
 			return new StateStatus(false, null, atomCount,
 					EnabledStatus.BLOCKED);
 		enabled = enabler.enabledTransitionsOfProcess(state, pid);
@@ -478,7 +478,7 @@ public class CommonStateManager implements StateManager {
 			if (pidInAtomic == pid) {
 				// the process is in atomic execution
 				// assert pidInAtomic == pid;
-				if ((pLocation.getNumIncoming() > 1 && !pLocation.isSafeLoop())
+				if ((pLocation.isInLoop() && !pLocation.isSafeLoop())
 						|| (pLocation.isStart() && pLocation.getNumIncoming() > 0))
 					// possible loop, save state
 					return new StateStatus(false, null, atomCount,
@@ -684,19 +684,19 @@ public class CommonStateManager implements StateManager {
 	public void setOnStack(State state, boolean value) {
 		state.setOnStack(value);
 	}
-	
+
 	@Override
 	public void setSeen(State state, boolean value) {
 		state.setSeen(value);
 	}
-	
+
 	@Override
-	//TODO change
-	public boolean setseen(State state){
+	// TODO change
+	public boolean setseen(State state) {
 		synchronized (this) {
-			if(state.seen())
+			if (state.seen())
 				return false;
-			else{
+			else {
 				state.setSeen(true);
 				return true;
 			}

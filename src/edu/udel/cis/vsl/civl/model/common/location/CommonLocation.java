@@ -128,6 +128,12 @@ public class CommonLocation extends CommonSourceable implements Location {
 	 */
 	private int spawnBound = 0;
 
+	/**
+	 * true iff this location has more than one incoming location and is inside
+	 * a loop.
+	 */
+	private boolean isInLoop = false;
+
 	private boolean isSafeLoop = false;
 
 	/**
@@ -688,8 +694,39 @@ public class CommonLocation extends CommonSourceable implements Location {
 	@Override
 	public void staticAnalysis() {
 		isGuardedAnalysis();
+		isInLoopAnalysis();
 		this.computeReachableLocations();
 		this.computeSpawnBound();
+	}
+
+	private void isInLoopAnalysis() {
+		if (this.incoming.size() > 1) {
+			Stack<Location> working = new Stack<>();
+			Set<Integer> visited = new HashSet<>();
+			Location current;
+
+			working.push(this);
+			visited.add(this.id);
+			while (!working.isEmpty()) {
+				current = working.pop();
+				for (Statement stmt : current.outgoing()) {
+					Location target = stmt.target();
+
+					if (target != null) {
+						int targetId = target.id();
+
+						if (targetId == this.id) {
+							this.isInLoop = true;
+							return;
+						}
+						if (!visited.contains(targetId)) {
+							working.push(target);
+							visited.add(targetId);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	private void isGuardedAnalysis() {
@@ -868,4 +905,8 @@ public class CommonLocation extends CommonSourceable implements Location {
 		return isGuarded;
 	}
 
+	@Override
+	public boolean isInLoop() {
+		return this.isInLoop;
+	}
 }

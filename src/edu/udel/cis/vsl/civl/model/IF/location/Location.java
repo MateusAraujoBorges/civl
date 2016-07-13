@@ -377,4 +377,13 @@ public interface Location extends Sourceable {
 	 * @return
 	 */
 	boolean isBinaryBranching();
+
+	/**
+	 * returns true iff this location has more than one incoming location and is
+	 * inside a loop.
+	 * 
+	 * @return true iff this location has more than one incoming location and is
+	 *         inside a loop.
+	 */
+	boolean isInLoop();
 }

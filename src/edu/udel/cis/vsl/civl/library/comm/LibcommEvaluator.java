@@ -48,45 +48,45 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 	 * ********************* Methods from LibraryEvaluator *******************
 	 */
 
-	@Override
-	public Evaluation evaluateGuard(CIVLSource source, State state, int pid,
-			String function, Expression[] arguments)
-			throws UnsatisfiablePathConditionException {
-		SymbolicExpression[] argumentValues;
-		int numArgs;
-		BooleanExpression guard;
-
-		numArgs = arguments.length;
-		argumentValues = new SymbolicExpression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			Evaluation eval = null;
-
-			try {
-				eval = evaluator.evaluate(state, pid, arguments[i]);
-			} catch (UnsatisfiablePathConditionException e) {
-				// the error that caused the unsatifiable path condition should
-				// already have been reported.
-				return new Evaluation(state, universe.falseExpression());
-			}
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
-		switch (function) {
-		// case "$comm_dequeue":
-		// try {
-		// guard = getDequeueGuard(state, pid, process, arguments,
-		// argumentValues, source);
-		// } catch (UnsatisfiablePathConditionException e) {
-		// // the error that caused the unsatifiable path condition should
-		// // already have been reported.
-		// return new Evaluation(state, universe.falseExpression());
-		// }
-		// break;
-		default:
-			guard = universe.trueExpression();
-		}
-		return new Evaluation(state, guard);
-	}
+	// @Override
+	// public Evaluation evaluateGuard(CIVLSource source, State state, int pid,
+	// String function, Expression[] arguments)
+	// throws UnsatisfiablePathConditionException {
+	// SymbolicExpression[] argumentValues;
+	// int numArgs;
+	// BooleanExpression guard;
+	//
+	// numArgs = arguments.length;
+	// argumentValues = new SymbolicExpression[numArgs];
+	// for (int i = 0; i < numArgs; i++) {
+	// Evaluation eval = null;
+	//
+	// try {
+	// eval = evaluator.evaluate(state, pid, arguments[i]);
+	// } catch (UnsatisfiablePathConditionException e) {
+	// // the error that caused the unsatifiable path condition should
+	// // already have been reported.
+	// return new Evaluation(state, universe.falseExpression());
+	// }
+	// argumentValues[i] = eval.value;
+	// state = eval.state;
+	// }
+	// switch (function) {
+	// // case "$comm_dequeue":
+	// // try {
+	// // guard = getDequeueGuard(state, pid, process, arguments,
+	// // argumentValues, source);
+	// // } catch (UnsatisfiablePathConditionException e) {
+	// // // the error that caused the unsatifiable path condition should
+	// // // already have been reported.
+	// // return new Evaluation(state, universe.falseExpression());
+	// // }
+	// // break;
+	// default:
+	// guard = universe.trueExpression();
+	// }
+	// return new Evaluation(state, guard);
+	// }
 
 	/* *************************** Private Methods ************************* */
 

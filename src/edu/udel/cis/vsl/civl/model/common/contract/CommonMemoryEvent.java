@@ -65,7 +65,7 @@ public class CommonMemoryEvent extends CommonDependsEvent implements
 		else if (isWrite())
 			result.append("write");
 		else
-			result.append("reach");
+			result.append("access");
 		result.append("(");
 		for (Expression mu : this.memoryUnits) {
 			if (!first)

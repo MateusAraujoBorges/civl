@@ -4,7 +4,7 @@
  
 #ifndef __CIVLC_CONCURRENCY__
 #define __CIVLC_CONCURRENCY__
-
+#include<civlc.cvh>
 #include<concurrency.cvh>
 #include<seq.cvh>
 
@@ -52,15 +52,30 @@ struct _collator {
 /* *********************** Functions *********************** */
 
 /*@ depends_on \access(barrier);
-  @ assigns \nothing;
   @ executes_when \true;
   @ */ 
-$system void $barrier_enter($barrier barrier);
+$atomic_f void $barrier_enter($barrier barrier){
+  $gbarrier gbarrier=barrier->gbarrier;
+  int myplace=barrier->place;
+  int nprocs;
+
+  $assert(!gbarrier->in_barrier[myplace],
+	  "the barrier of has already been entered with the place %d",
+	  myplace);
+  gbarrier->in_barrier[barrier->place]=$true;
+  nprocs=gbarrier->nprocs;
+  if(++gbarrier->num_in_barrier == nprocs){
+    for(int i=0; i<nprocs; i++)
+      gbarrier->in_barrier[i]=$false;
+    gbarrier->num_in_barrier=0;
+  }
+}
 
 /*@ depends_on \access(barrier);
-  @ assigns \nothing;
   @ */
-$system void $barrier_exit($barrier barrier);
+$atomic_f void $barrier_exit($barrier barrier){
+  $when(!barrier->gbarrier->in_barrier[barrier->place]);
+}
 
 void $barrier_call($barrier barrier) {
   $barrier_enter(barrier);

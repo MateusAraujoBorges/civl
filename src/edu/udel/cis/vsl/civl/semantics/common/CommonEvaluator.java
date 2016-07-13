@@ -1434,8 +1434,8 @@ public class CommonEvaluator implements Evaluator {
 		if (function.isSystemFunction()) {
 			SystemFunction systemFunction = (SystemFunction) function;
 
-			return getSystemGuard(expression.getSource(), state, pid,
-					systemFunction.getLibrary(), systemFunction.name().name(),
+			return this.evaluateGuardofSystemFunction(expression.getSource(),
+					state, pid, systemFunction.getLibrary(), systemFunction,
 					expression.arguments());
 		}
 		return new Evaluation(state, universe.trueExpression());
@@ -2681,23 +2681,31 @@ public class CommonEvaluator implements Evaluator {
 	}
 
 	/**
-	 * evaluate a system guard expression
+	 * evaluate a the guard of a system function at a certain state with a list
+	 * of arguments
 	 * 
+	 * @param source
+	 *            the source information for error report
 	 * @param state
 	 *            The state where the computation happens.
 	 * @param pid
 	 *            The ID of the process that wants to evaluate the guard.
-	 * @param expression
-	 *            The system guard expression to be evaluated.
+	 * @param library
+	 *            the library that the system function belongs to
+	 * @param function
+	 *            the system function
+	 * @param arguments
+	 *            the list of arguments
 	 * @return The result of the evaluation, including the state and the
 	 *         symbolic expression of the value.
 	 * @throws UnsatisfiablePathConditionException
+	 *             if there is no contract specifying the guard and the library
+	 *             evaluator is missing
 	 */
-	private Evaluation evaluateSystemGuard(State state, int pid,
-			SystemGuardExpression expression)
+	private Evaluation evaluateGuardofSystemFunction(CIVLSource source,
+			State state, int pid, String library, CIVLFunction function,
+			List<Expression> arguments)
 			throws UnsatisfiablePathConditionException {
-		CIVLFunction function = expression.function();
-
 		if (function.functionContract() != null) {
 			Expression guard = function.functionContract().guard();
 
@@ -2705,25 +2713,24 @@ public class CommonEvaluator implements Evaluator {
 				if (guard.constantValue() != null)
 					return new Evaluation(state, guard.constantValue());
 
-				int numArgs = expression.arguments().size();
-				SymbolicExpression[] arguments = new SymbolicExpression[numArgs];
+				int numArgs = arguments.size();
+				SymbolicExpression[] argumentValues = new SymbolicExpression[numArgs];
 				Evaluation eval;
 
 				for (int i = 0; i < numArgs; i++) {
-					Expression arg = expression.arguments().get(i);
+					Expression arg = arguments.get(i);
 
 					eval = this.evaluate(state, pid, arg);
 					state = eval.state;
-					arguments[i] = eval.value;
+					argumentValues[i] = eval.value;
 				}
 				state = stateFactory.pushCallStack(state, pid, function,
-						arguments);
+						argumentValues);
 				return this.evaluate(state, pid, guard);
 			}
 		}
-		return getSystemGuard(expression.getSource(), state, pid,
-				expression.library(), expression.function().name().name(),
-				expression.arguments());
+		return getSystemGuard(source, state, pid, library, function.name()
+				.name(), arguments);
 	}
 
 	@Override
@@ -3325,10 +3332,25 @@ public class CommonEvaluator implements Evaluator {
 			result = evaluateSubscript(state, pid, process,
 					(SubscriptExpression) expression);
 			break;
-		case SYSTEM_GUARD:
-			result = evaluateSystemGuard(state, pid,
-					(SystemGuardExpression) expression);
+		case SYSTEM_GUARD: {
+			SystemGuardExpression systemGuard = (SystemGuardExpression) expression;
+			CIVLFunction function = systemGuard.function();
+
+			if (function.functionContract() != null) {
+				Expression guard = function.functionContract().guard();
+
+				if (guard != null)
+					return evaluateGuardofSystemFunction(
+							systemGuard.getSource(), state, pid,
+							systemGuard.library(), function,
+							systemGuard.arguments());
+			}
+			result = getSystemGuard(expression.getSource(), state, pid,
+					systemGuard.library(),
+					systemGuard.function().name().name(),
+					systemGuard.arguments());
 			break;
+		}
 		case UNARY:
 			result = evaluateUnary(state, pid, (UnaryExpression) expression);
 			break;

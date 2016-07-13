@@ -7,6 +7,7 @@
 #include <civlc.cvh>
 #include<comm.cvh>
 #include<seq.cvh>
+#include<pointer.cvh>
 /* *********************** Types *********************** */
 
 /* A datatype representing a queue of messages.  All message
@@ -121,6 +122,11 @@ $atomic_f int $gcomm_destroy($gcomm gcomm, void * junkMsgs){
   }
   $free(gcomm); 
   return numJunks;
+}
+
+/*@ depends_on \access(comm->gcomm, newcomm->gcomm); */
+$atomic_f void $gcomm_dup($comm comm, $comm newcomm){
+  $copy(newcomm->gcomm, comm->gcomm);
 }
 
 /*@ depends_on \nothing;

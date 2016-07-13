@@ -66,12 +66,11 @@ struct FILE {
   int isOpen;     // is this FILE open (0 or 1)?
 };
 
-/* Functions */
-
 /* Creates a new empty file system, returning a handle to it. */
 /*@ depends_on \nothing;
   @ assigns \nothing;
   @ reads \nothing;
+  @ executes_when \true;
   @*/
 $atomic_f $filesystem $filesystem_create($scope scope){
   $filesystem fileSys=($filesystem)$malloc(scope, sizeof(struct CIVL_filesystem));
@@ -80,15 +79,6 @@ $atomic_f $filesystem $filesystem_create($scope scope){
   $seq_init(&fileSys->files, 0, NULL);
   return fileSys;
 }
-
-//$filesystem CIVL_filesystem = $filesystem_create($here);
-
-/* The files which were modified or created are written here
- * at the end of the program.   They constitute outputs of
- * the program.  The files will be sorted in some canonical
- * way.
- */
-//$output $file CIVL_output_filesystem[];
 
 void _fflush(void){
   return;

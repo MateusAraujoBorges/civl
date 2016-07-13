@@ -9,7 +9,6 @@ import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
-import edu.udel.cis.vsl.civl.library.bundle.LibbundleEvaluator;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
@@ -23,7 +22,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
-import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
@@ -370,7 +368,6 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 		ResultType resultType;
 		Evaluation eval;
-		LibbundleEvaluator libEvaluator;
 		Pair<Evaluation, NumericExpression[]> ptrAddRet;
 		Pair<Evaluation, SymbolicExpression> setDataRet;
 		edu.udel.cis.vsl.sarl.IF.number.Number num_length;
@@ -463,21 +460,12 @@ public class LibstringExecutor extends BaseLibraryExecutor implements
 					objectElementType, length, zeroVar);
 		}
 		// Calling setDataFrom to set the pointed object to zero
-		try {
-			libEvaluator = (LibbundleEvaluator) this.libEvaluatorLoader
-					.getLibraryEvaluator("bundle", evaluator, modelFactory,
-							symbolicUtil, symbolicAnalyzer);
-			setDataRet = libEvaluator.setDataFrom(state, process, arguments[0],
-					pointer, length, zerosArray, false, source);
-			eval = setDataRet.left;
-			state = eval.state;
-			state = this.primaryExecutor.assign(source, state, process,
-					setDataRet.right, eval.value);
-		} catch (LibraryLoaderException e) {
-			throw new CIVLInternalException(
-					"Failure of loading library evaluator of library 'string'",
-					source);
-		}
+		setDataRet = setDataFrom(state, process, arguments[0], pointer, length,
+				zerosArray, false, source);
+		eval = setDataRet.left;
+		state = eval.state;
+		state = this.primaryExecutor.assign(source, state, process,
+				setDataRet.right, eval.value);
 		return new Evaluation(state, pointer);
 	}
 }
