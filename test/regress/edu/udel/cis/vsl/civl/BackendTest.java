@@ -2,7 +2,6 @@ package edu.udel.cis.vsl.civl;
 
 import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
-import static edu.udel.cis.vsl.civl.TestConstants.SHOW_TRANSITIONS;
 import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
 import static edu.udel.cis.vsl.civl.TestConstants.errorBound;
 import static org.junit.Assert.assertFalse;
@@ -42,8 +41,7 @@ public class BackendTest {
 
 	@Test
 	public void showTrans() {
-		assertTrue(ui.run(VERIFY, SHOW_TRANSITIONS, QUIET,
-				filename("showTrans.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("showTrans.cvl")));
 	}
 
 	@Test
