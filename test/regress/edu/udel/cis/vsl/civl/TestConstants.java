@@ -24,7 +24,7 @@ public class TestConstants {
 	/**
 	 * options
 	 */
-	public static String QUIET = "-quiet=false";
+	public static String QUIET = "-quiet";
 
 	public static String IMPL = "-impl";
 
