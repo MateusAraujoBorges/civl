@@ -4,7 +4,9 @@
 $system[civlc] void $assert(_Bool expr, ...);
 
 int $int_div(int numerator, int denominator) {
+#ifndef _NO_CHECK_DIVISION_BY_ZERO
   $assert(denominator != 0, "Possible division by zero");
+#endif
   if (numerator == 0)
     return 0;
   if (numerator >= 0) {

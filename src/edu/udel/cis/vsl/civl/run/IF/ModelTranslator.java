@@ -237,7 +237,6 @@ public class ModelTranslator {
 	// package private methods
 
 	Program buildProgram() throws ABCException {
-		// addSystemImplementations();
 		TranslationTask task;
 		UnitTask[] unitTasks = new UnitTask[files.size()];
 		Map<String, String> macros = this.getMacros();
@@ -264,28 +263,13 @@ public class ModelTranslator {
 		frontEnd = executor.getFrontEnd();
 		this.transformerFactory = Transforms.newTransformerFactory(frontEnd
 				.getASTFactory());
-		addTransformations(frontEnd, task);
+		addTransformations(frontEnd, task, macros);
 		executor.execute();
 		return executor.getProgram();
 	}
 
-	private void addTransformations(FrontEnd frontEnd, TranslationTask task)
-			throws ABCException {
-		// boolean isC = userFileName.endsWith(".c")
-		// || userFileName.endsWith(".i");
-		// boolean hasStdio = false, hasOmp = false, hasMpi = false, hasPthread
-		// = false, hasCuda = false;
-		//
-		// if (cHeaders.contains("stdio.h"))
-		// hasStdio = true;
-		// if (cHeaders.contains("omp.h"))// || program.hasOmpPragma())
-		// hasOmp = true;
-		// if (isC && cHeaders.contains("pthread.h"))
-		// hasPthread = true;
-		// if (isC && cHeaders.contains("mpi.h"))
-		// hasMpi = true;
-		// if (cHeaders.contains("cuda.h"))
-		// hasCuda = true;
+	private void addTransformations(FrontEnd frontEnd, TranslationTask task,
+			Map<String, String> macros) throws ABCException {
 		if (config.svcomp())
 			for (UnitTask unitTask : task.getUnitTasks()) {
 				for (File sourceFile : unitTask.getSourceFiles()) {
@@ -325,7 +309,8 @@ public class ModelTranslator {
 		// if (hasCuda)
 		task.addTransformRecord(transformerFactory
 				.getCuda2CIVLTransformerRecord());
-		task.addTransformRecord(transformerFactory.getIntDivTransformerRecord());
+		task.addTransformRecord(transformerFactory
+				.getIntDivTransformerRecord(macros));
 		task.addTransformCode(SideEffectRemover.CODE);
 		task.addTransformCode(Pruner.CODE);
 	}

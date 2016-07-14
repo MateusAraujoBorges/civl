@@ -3,8 +3,10 @@ package edu.udel.cis.vsl.civl.transform.common;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
@@ -68,6 +70,8 @@ import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
  */
 public abstract class BaseWorker {
 
+	protected final static Map<String, String> EMPTY_MACRO_MAP = new HashMap<>(
+			0);
 	protected final static String GEN_MAIN = GeneralTransformer.PREFIX + "main";
 	protected final static String MAIN = "main";
 	protected final static String ASSUME = "$assume";
@@ -473,10 +477,11 @@ public abstract class BaseWorker {
 	 * @return the AST of the given library.
 	 * @throws ABCException
 	 */
-	protected AST parseSystemLibrary(File file) {
+	protected AST parseSystemLibrary(File file, Map<String, String> macros) {
 		UnitTask task = new UnitTask(new File[] { file });
 
 		task.setLanguage(Language.C);
+		task.setMacros(macros);
 
 		TranslationTask translation = new TranslationTask(
 				new UnitTask[] { task });

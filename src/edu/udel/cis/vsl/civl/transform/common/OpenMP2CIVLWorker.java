@@ -708,9 +708,10 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		Triple<List<BlockItemNode>, List<BlockItemNode>, List<BlockItemNode>> result;
 		String criticalDeclaration = "criticalDeclarations";
 		AST civlcAST = this.parseSystemLibrary(new File(
-				CPreprocessor.ABC_INCLUDE_PATH, "civlc.cvh"));
+				CPreprocessor.ABC_INCLUDE_PATH, "civlc.cvh"), EMPTY_MACRO_MAP);
 		AST civlcOmpAST = this.parseSystemLibrary(new File(
-				CPreprocessor.ABC_INCLUDE_PATH, "civl-omp.cvh"));
+				CPreprocessor.ABC_INCLUDE_PATH, "civl-omp.cvh"),
+				EMPTY_MACRO_MAP);
 
 		assert this.astFactory == ast.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();

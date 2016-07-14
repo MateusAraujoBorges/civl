@@ -1,5 +1,7 @@
 package edu.udel.cis.vsl.civl.transform.IF;
 
+import java.util.Map;
+
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -29,13 +31,17 @@ public class IntDivisionTransformer extends BaseTransformer {
 	public final static String SHORT_DESCRIPTION = "transforms division and mod operator in program "
 			+ "to $int_div and $int_mod functions";
 
-	public IntDivisionTransformer(ASTFactory astFactory) {
+	private Map<String, String> macros;
+
+	public IntDivisionTransformer(ASTFactory astFactory,
+			Map<String, String> macros) {
 		super(CODE, LONG_NAME, SHORT_DESCRIPTION, astFactory);
+		this.macros = macros;
 	}
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		IntDivWorker worker = new IntDivWorker(astFactory);
+		IntDivWorker worker = new IntDivWorker(astFactory, macros);
 
 		return worker.transform(ast);
 	}

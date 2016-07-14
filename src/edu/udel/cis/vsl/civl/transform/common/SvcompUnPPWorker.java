@@ -257,19 +257,23 @@ public class SvcompUnPPWorker extends BaseWorker {
 	private AST addHeaders(AST ast) throws SyntaxException {
 		if (needsStdlibHeader) {
 			AST stdlibHeaderAST = this.parseSystemLibrary(new File(
-					CPreprocessor.ABC_INCLUDE_PATH, STDLIB_HEADER));
+					CPreprocessor.ABC_INCLUDE_PATH, STDLIB_HEADER),
+					EMPTY_MACRO_MAP);
 
 			ast = this.combineASTs(stdlibHeaderAST, ast);
 		}
 		if (needsIoHeader) {
-			AST ioHeaderAST = this.parseSystemLibrary(new File(
-					CPreprocessor.ABC_INCLUDE_PATH, IO_HEADER));
+			AST ioHeaderAST = this
+					.parseSystemLibrary(new File(
+							CPreprocessor.ABC_INCLUDE_PATH, IO_HEADER),
+							EMPTY_MACRO_MAP);
 
 			ast = this.combineASTs(ioHeaderAST, ast);
 		}
 		if (needsPthreadHeader) {
 			AST pthreadHeaderAST = this.parseSystemLibrary(new File(
-					CPreprocessor.ABC_INCLUDE_PATH, PTHREAD_HEADER));
+					CPreprocessor.ABC_INCLUDE_PATH, PTHREAD_HEADER),
+					EMPTY_MACRO_MAP);
 
 			ast = this.combineASTs(pthreadHeaderAST, ast);
 		}

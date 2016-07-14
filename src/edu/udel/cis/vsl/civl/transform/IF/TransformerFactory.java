@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.transform.IF;
 
 import java.util.List;
+import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
@@ -210,14 +211,15 @@ public class TransformerFactory {
 		};
 	}
 
-	public TransformRecord getIntDivTransformerRecord() {
+	public TransformRecord getIntDivTransformerRecord(Map<String, String> macros) {
 		return new TransformRecord(IntDivisionTransformer.CODE,
 				IntDivisionTransformer.LONG_NAME,
 				IntDivisionTransformer.SHORT_DESCRIPTION) {
 			@Override
 			public Transformer create(ASTFactory astFactory) {
 				if (intDivTransformer == null)
-					intDivTransformer = new IntDivisionTransformer(astFactory);
+					intDivTransformer = new IntDivisionTransformer(astFactory,
+							macros);
 				return intDivTransformer;
 			}
 		};

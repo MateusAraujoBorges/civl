@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.transform.common;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
@@ -57,15 +58,18 @@ public class IntDivWorker extends BaseWorker {
 	private static final String INT_MOD = "$int_mod";
 	private static final String ASSERT = "$assert";
 	private static final String INT_DIV_SOURCE_FILE = "int_div.cvl";
-	private static final String INT_DIV_NO_CHECKING_SOURCE_FILE = "int_div_no_checking.cvl";
-	private Boolean check_division_by_zero = false;
+	// private static final String INT_DIV_NO_CHECKING_SOURCE_FILE =
+	// "int_div_no_checking.cvl";
+	// private Boolean check_division_by_zero = false;
 	private Entity divEntity = null, modEntity = null;
+	private Map<String, String> macros;
 
 	// private AttributeKey intDivMacroKey;
 
-	public IntDivWorker(ASTFactory astFactory) {
+	public IntDivWorker(ASTFactory astFactory, Map<String, String> macros) {
 		super(IntDivisionTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "_int_div_";
+		this.macros = macros;
 	}
 
 	@Override
@@ -203,13 +207,14 @@ public class IntDivWorker extends BaseWorker {
 			throws SyntaxException {
 		AST intDivLib;
 
-		if (check_division_by_zero)
+		// if (check_division_by_zero)
+		// intDivLib = this.parseSystemLibrary(new File(
+		// CIVLConstants.CIVL_INCLUDE_PATH,
+		// INT_DIV_NO_CHECKING_SOURCE_FILE), macros);
+		// else
 			intDivLib = this.parseSystemLibrary(new File(
-					CIVLConstants.CIVL_INCLUDE_PATH,
-					INT_DIV_NO_CHECKING_SOURCE_FILE));
-		else
-			intDivLib = this.parseSystemLibrary(new File(
-					CIVLConstants.CIVL_INCLUDE_PATH, INT_DIV_SOURCE_FILE));
+					CIVLConstants.CIVL_INCLUDE_PATH, INT_DIV_SOURCE_FILE),
+					macros);
 
 		SequenceNode<BlockItemNode> root = intDivLib.getRootNode();
 		List<BlockItemNode> funcDefinitions = new ArrayList<>();
