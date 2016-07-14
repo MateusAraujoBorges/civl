@@ -67,8 +67,8 @@ struct OMP_team {
 
 /* *********************** Functions *********************** */
 
-$omp_gteam $omp_gteam_create($scope scope, int nthreads) {
-  //$omp_work_record empty[];
+/*@ depends_on \nothing; */
+$atomic_f $omp_gteam $omp_gteam_create($scope scope, int nthreads) {
   $omp_gteam result = ($omp_gteam)$malloc(scope, sizeof(struct OMP_gteam));
   _Bool f = $false;
 
@@ -82,7 +82,8 @@ $omp_gteam $omp_gteam_create($scope scope, int nthreads) {
   return result;
 }
 
-void $omp_gteam_destroy($omp_gteam gteam) {
+/*@ depends_on \access(gteam); */
+$atomic_f void $omp_gteam_destroy($omp_gteam gteam) {
   int length = $seq_length(&gteam->work);
   
   $assert(length == 0, "There are still %d queued worksharing events.", length);
@@ -91,7 +92,8 @@ void $omp_gteam_destroy($omp_gteam gteam) {
 }
 
 /* creates new local team object for a specific thread. */
-$omp_team $omp_team_create($scope scope, $omp_gteam gteam, int tid) {
+/*@ depends_on \access(gteam); */
+$atomic_f $omp_team $omp_team_create($scope scope, $omp_gteam gteam, int tid) {
   $omp_team result = ($omp_team)$malloc(scope, sizeof(struct OMP_team));
 
   $assert(!gteam->init[tid], "Thread %d has already joined gteam",
@@ -106,7 +108,8 @@ $omp_team $omp_team_create($scope scope, $omp_gteam gteam, int tid) {
 }
 
 /* destroys the local team object */
-void $omp_team_destroy($omp_team team) {
+/*@ depends_on \access(team); */
+$atomic_f void $omp_team_destroy($omp_team team) {
   /*int numShared = $seq_length(&team->shared);
 
   for(int i = 0; i < numShared; i++){
@@ -120,7 +123,8 @@ void $omp_team_destroy($omp_team team) {
  * global team. A pointer to the shared variable that this
  * object corresponds to is given.
  */
-$omp_gshared $omp_gshared_create($omp_gteam gteam,
+/*@ depends_on \access(gteam, original); */
+$atomic_f $omp_gshared $omp_gshared_create($omp_gteam gteam,
                                  void *original) {
   $omp_gshared result =
     ($omp_gshared)$malloc(gteam->scope, sizeof(struct OMP_gshared));
@@ -138,11 +142,13 @@ $omp_gshared $omp_gshared_create($omp_gteam gteam,
 /* destroys the global shared object, copying the content
  * to the original variable.
  */
-void $omp_gshared_destroy($omp_gshared gshared) {
+/*@ depends_on \access(gshared); */
+$atomic_f void $omp_gshared_destroy($omp_gshared gshared) {
   $free(gshared);
 }
 
-$omp_shared $omp_shared_create($omp_team team,
+/*@ depends_on \access(team, gshared, local, status); */
+$atomic_f $omp_shared $omp_shared_create($omp_team team,
                                $omp_gshared gshared, void *local, void *status) {
   $omp_shared result =
     ($omp_shared)$malloc(team->scope, sizeof(struct OMP_shared));
@@ -171,7 +177,8 @@ $omp_shared $omp_shared_create($omp_team team,
   return result;
 }
 
-void $omp_shared_destroy($omp_shared shared) {
+/*@ depends_on \access(shared); */
+$atomic_f void $omp_shared_destroy($omp_shared shared) {
   $free(shared);
 }
 
@@ -249,14 +256,13 @@ void $omp_write($omp_shared shared, void *ref, void *value) {
 }
 
 /* Only applicable to scalar type? */
-void $omp_apply_assoc($omp_shared shared,
+/*@ depends_on \access(shared, local, shared->gshared->original); */
+$atomic_f void $omp_apply_assoc($omp_shared shared,
                       $operation op,
                       void *local){
-  $atomic {
-    void *shared_ref = $translate_ptr(local, shared->gshared->original);
+  void *shared_ref = $translate_ptr(local, shared->gshared->original);
     
-    $apply(shared_ref, op, local, shared_ref);
-  }
+  $apply(shared_ref, op, local, shared_ref);
 }
 
 void $omp_flush($omp_shared shared, void *ref) {
