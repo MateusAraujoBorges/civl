@@ -162,10 +162,5 @@ public class ContractsTest {
 	// enableContract, QUIET, filename("contractsMPI/gather_bad.c")));
 	// }
 	//
-	// @Test
-	// public void allgather() {
-	// assertTrue(ui.run(VERIFY, "-input_mpi_nprocs=2 -errorBound=1
-	// -showAmpleSet", enableContract, QUIET,
-	// filename("contractsMPI/allgather.c")));
-	// }
+	//
 }

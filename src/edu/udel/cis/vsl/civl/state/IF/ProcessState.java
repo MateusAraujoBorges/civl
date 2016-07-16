@@ -127,6 +127,13 @@ public interface ProcessState {
 	boolean inAtomic();
 
 	/**
+	 * @return True if and only if this process is "self-destructable" i.e. This
+	 *         process doesn't need an explicit $wait to destroy it. It will
+	 *         destroy itself after it terminates.
+	 */
+	boolean isSelfDestructable();
+
+	/**
 	 * 
 	 * @return The number of $atomic blocks that are currently being executed in
 	 *         this process

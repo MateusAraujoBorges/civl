@@ -1,0 +1,8 @@
+#include <civlc.cvh>
+
+int main() { 
+  $run{
+    while(1) {}
+    
+  }
+}

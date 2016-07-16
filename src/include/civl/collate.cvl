@@ -31,8 +31,8 @@ struct _gcollate_state {
   // An array of markers for whether a process has already departed
   // from this entry:
   _Bool departed[];
-  // State ID:
-  int canonicalStateID;
+  // collate $state:
+  $state state;
 };
 
 struct _collate_state {
@@ -41,5 +41,17 @@ struct _collate_state {
   // A reference to a _gcollate_state:
   $gcollate_state gstate;
 };
+
+
+/******************* Function definitions ***************************/
+$gcollator gcollator_create($scope scope, int nprocs) {
+  $gcollator gcollator = ($gcollator)$malloc(scope, sizeof(struct _gcollator));
+  
+  gcollator_obj->nprocs = nprocs;
+  gcollator_obj->procs = (($proc[nprocs])$lambda(int i)$proc_null);
+  gcollator_obj->queue_length = 0;
+  $seq_init(&(gcollator_obj->queue), 0, NULL);
+  return gcollator;
+}
 
 #endif

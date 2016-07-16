@@ -24,4 +24,20 @@ public interface ReturnStatement extends Statement {
 	 */
 	void setExpression(Expression expression);
 
+	/**
+	 * @return True if and only if this is the return statement that belongs to
+	 *         a "Run" function.
+	 */
+	boolean fromRunProcFunction();
+
+	/**
+	 * Set this ReturnStatement as it belongs to a "Run" function. A Run
+	 * function is the function translated from a run statement.
+	 * 
+	 * @param fromRunProcFunc
+	 *            True to set this ReturnStatement as it belongs to a "Run"
+	 *            function.
+	 */
+	void setFromRunProcFunction(boolean fromRunProcFunc);
+
 }

@@ -35,6 +35,17 @@ public interface CallOrSpawnStatement extends Statement {
 	boolean isSpawn();
 
 	/**
+	 * <p>
+	 * <b>Pre-condition:</b><code> {@link #isSpawn()} == true </code>
+	 * </p>
+	 * Is this a spawn for $run statement ?
+	 * 
+	 * @return true if and only if this is a spawn and it is translated from a
+	 *         $run statement.
+	 */
+	boolean isRun();
+
+	/**
 	 * @return The left hand side expression if applicable. Else null.
 	 */
 	LHSExpression lhs();
@@ -56,6 +67,17 @@ public interface CallOrSpawnStatement extends Statement {
 	 *            The left hand side expression if applicable. Else null.
 	 */
 	void setLhs(LHSExpression lhs);
+
+	/**
+	 * <p>
+	 * <b>Pre-condition:</b><code> {@link #isSpawn()} == true </code>
+	 * </p>
+	 * Set the statement as a $spawn for $run. i.e. A $spawn statement which is
+	 * translated from a $run statement.
+	 * 
+	 * @param isRun
+	 */
+	void setAsRun(boolean isRun);
 
 	/**
 	 * TODO: get rid of this, but updates the function expression instead.

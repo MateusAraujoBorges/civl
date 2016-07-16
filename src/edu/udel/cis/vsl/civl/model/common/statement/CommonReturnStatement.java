@@ -23,12 +23,16 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public class CommonReturnStatement extends CommonStatement implements
-		ReturnStatement {
+public class CommonReturnStatement extends CommonStatement implements ReturnStatement {
 
 	private Expression expression;
 
 	private CIVLFunction function;
+
+	/**
+	 * A flag indicates if this "return" is returning from a "Run" function.
+	 */
+	private boolean fromRunProcFunction = false;
 
 	/**
 	 * A return statement.
@@ -38,11 +42,10 @@ public class CommonReturnStatement extends CommonStatement implements
 	 * @param expression
 	 *            The expression being returned. Null if non-existent.
 	 */
-	public CommonReturnStatement(CIVLSource civlSource, Location source,
-			Expression guard, Expression expression, CIVLFunction function) {
-		super(civlSource, expression != null ? expression.expressionScope()
-				: null, expression != null ? expression.lowestScope() : null,
-				source, guard);
+	public CommonReturnStatement(CIVLSource civlSource, Location source, Expression guard, Expression expression,
+			CIVLFunction function) {
+		super(civlSource, expression != null ? expression.expressionScope() : null,
+				expression != null ? expression.lowestScope() : null, source, guard);
 		this.expression = expression;
 		this.function = function;
 	}
@@ -69,8 +72,7 @@ public class CommonReturnStatement extends CommonStatement implements
 		if (expression == null) {
 			return "return (" + this.function.name().name() + ")";
 		}
-		return "return " + expression + " (" + this.function.name().name()
-				+ ")";
+		return "return " + expression + " (" + this.function.name().name() + ")";
 	}
 
 	@Override
@@ -95,15 +97,13 @@ public class CommonReturnStatement extends CommonStatement implements
 		this.guard().purelyLocalAnalysis();
 		if (this.expression != null) {
 			this.expression.purelyLocalAnalysis();
-			this.purelyLocal = this.expression.isPurelyLocal()
-					&& this.guard().isPurelyLocal();
+			this.purelyLocal = this.expression.isPurelyLocal() && this.guard().isPurelyLocal();
 		} else
 			this.purelyLocal = this.guard().isPurelyLocal();
 	}
 
 	@Override
-	public void replaceWith(ConditionalExpression oldExpression,
-			VariableExpression newExpression) {
+	public void replaceWith(ConditionalExpression oldExpression, VariableExpression newExpression) {
 		super.replaceWith(oldExpression, newExpression);
 
 		if (expression != null) {
@@ -116,22 +116,19 @@ public class CommonReturnStatement extends CommonStatement implements
 	}
 
 	@Override
-	public Statement replaceWith(ConditionalExpression oldExpression,
-			Expression newExpression) {
+	public Statement replaceWith(ConditionalExpression oldExpression, Expression newExpression) {
 		Expression newGuard = guardReplaceWith(oldExpression, newExpression);
 		CommonReturnStatement newStatement = null;
 
 		if (newGuard != null) {
-			newStatement = new CommonReturnStatement(this.getSource(),
-					this.source(), newGuard, this.expression, this.function);
+			newStatement = new CommonReturnStatement(this.getSource(), this.source(), newGuard, this.expression,
+					this.function);
 		} else if (expression != null) {
-			Expression newExpressionField = expression.replaceWith(
-					oldExpression, newExpression);
+			Expression newExpressionField = expression.replaceWith(oldExpression, newExpression);
 
 			if (newExpressionField != null) {
-				newStatement = new CommonReturnStatement(this.getSource(),
-						this.source(), this.guard(), newExpressionField,
-						this.function);
+				newStatement = new CommonReturnStatement(this.getSource(), this.source(), this.guard(),
+						newExpressionField, this.function);
 			}
 		}
 		return newStatement;
@@ -167,6 +164,16 @@ public class CommonReturnStatement extends CommonStatement implements
 		if (expression != null)
 			return expression.containsHere();
 		return false;
+	}
+
+	@Override
+	public boolean fromRunProcFunction() {
+		return fromRunProcFunction;
+	}
+
+	@Override
+	public void setFromRunProcFunction(boolean fromRunProcFunc) {
+		this.fromRunProcFunction = fromRunProcFunc;
 	}
 
 }

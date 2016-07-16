@@ -29,12 +29,13 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public class CommonCallStatement extends CommonStatement implements
-		CallOrSpawnStatement {
+public class CommonCallStatement extends CommonStatement implements CallOrSpawnStatement {
 
 	private static final BitSet EMPTY_BITSET = new BitSet();
 
 	private boolean isCall;
+
+	private boolean isRun;
 
 	private LHSExpression lhs = null;
 
@@ -54,10 +55,8 @@ public class CommonCallStatement extends CommonStatement implements
 	 * @param arguments
 	 *            The arguments to the function.
 	 */
-	public CommonCallStatement(CIVLSource civlSource, Scope hscope,
-			Scope lscope, Location source, Expression guard, boolean isCall,
-			LHSExpression lhs, Expression functionExpression,
-			List<Expression> arguments) {
+	public CommonCallStatement(CIVLSource civlSource, Scope hscope, Scope lscope, Location source, Expression guard,
+			boolean isCall, LHSExpression lhs, Expression functionExpression, List<Expression> arguments) {
 		super(civlSource, hscope, lscope, source, guard);
 		this.isCall = isCall;
 		this.lhs = lhs;
@@ -79,8 +78,7 @@ public class CommonCallStatement extends CommonStatement implements
 	@Override
 	public CIVLFunction function() {
 		if (this.functionExpression.expressionKind() == ExpressionKind.FUNCTION_IDENTIFIER)
-			return ((FunctionIdentifierExpression) functionExpression)
-					.function();
+			return ((FunctionIdentifierExpression) functionExpression).function();
 		return null;
 	}
 
@@ -216,8 +214,7 @@ public class CommonCallStatement extends CommonStatement implements
 	}
 
 	@Override
-	public void replaceWith(ConditionalExpression oldExpression,
-			VariableExpression newExpression) {
+	public void replaceWith(ConditionalExpression oldExpression, VariableExpression newExpression) {
 		int number = arguments.size();
 
 		super.replaceWith(oldExpression, newExpression);
@@ -233,16 +230,13 @@ public class CommonCallStatement extends CommonStatement implements
 	}
 
 	@Override
-	public Statement replaceWith(ConditionalExpression oldExpression,
-			Expression newExpression) {
+	public Statement replaceWith(ConditionalExpression oldExpression, Expression newExpression) {
 		Expression newGuard = guardReplaceWith(oldExpression, newExpression);
 		CommonCallStatement newStatement = null;
 
 		if (newGuard != null) {
-			newStatement = new CommonCallStatement(this.getSource(),
-					this.statementScope, this.lowestScope, this.source(),
-					newGuard, this.isCall, lhs, this.functionExpression,
-					this.arguments);
+			newStatement = new CommonCallStatement(this.getSource(), this.statementScope, this.lowestScope,
+					this.source(), newGuard, this.isCall, lhs, this.functionExpression, this.arguments);
 		} else {
 			boolean hasNewArg = false;
 			ArrayList<Expression> newArgs = new ArrayList<Expression>();
@@ -263,10 +257,8 @@ public class CommonCallStatement extends CommonStatement implements
 				}
 			}
 			if (hasNewArg) {
-				newStatement = new CommonCallStatement(this.getSource(),
-						this.statementScope, this.lowestScope, this.source(),
-						this.guard(), this.isCall, lhs,
-						this.functionExpression, newArgs);
+				newStatement = new CommonCallStatement(this.getSource(), this.statementScope, this.lowestScope,
+						this.source(), this.guard(), this.isCall, lhs, this.functionExpression, newArgs);
 			}
 		}
 		return newStatement;
@@ -289,8 +281,7 @@ public class CommonCallStatement extends CommonStatement implements
 			BitSet ignored = EMPTY_BITSET;
 
 			if (function != null)
-				ignored = StaticAnalysisConfiguration
-						.getIgnoredArgumenets(function);
+				ignored = StaticAnalysisConfiguration.getIgnoredArgumenets(function);
 			for (int i = 0; i < n; i++) {
 				if (ignored.get(i))
 					continue;
@@ -316,8 +307,7 @@ public class CommonCallStatement extends CommonStatement implements
 			BitSet ignored = EMPTY_BITSET;
 
 			if (function != null)
-				ignored = StaticAnalysisConfiguration
-						.getIgnoredArgumenets(function);
+				ignored = StaticAnalysisConfiguration.getIgnoredArgumenets(function);
 			for (int i = 0; i < n; i++) {
 				if (ignored.get(i))
 					continue;
@@ -379,4 +369,15 @@ public class CommonCallStatement extends CommonStatement implements
 		return false;
 	}
 
+	@Override
+	public boolean isRun() {
+		assert !isCall;
+		return isRun;
+	}
+
+	@Override
+	public void setAsRun(boolean isRun) {
+		assert !isCall;
+		this.isRun = isRun;
+	}
 }

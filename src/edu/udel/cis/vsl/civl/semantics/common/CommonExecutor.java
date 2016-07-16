@@ -174,9 +174,8 @@ public class CommonExecutor implements Executor {
 	 * @param civlConfig
 	 *            The CIVL configuration.
 	 */
-	public CommonExecutor(ModelFactory modelFactory, StateFactory stateFactory,
-			LibraryExecutorLoader loader, Evaluator evaluator,
-			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errorLogger,
+	public CommonExecutor(ModelFactory modelFactory, StateFactory stateFactory, LibraryExecutorLoader loader,
+			Evaluator evaluator, SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errorLogger,
 			CIVLConfiguration civlConfig) {
 		this.civlConfig = civlConfig;
 		this.universe = modelFactory.universe();
@@ -215,8 +214,7 @@ public class CommonExecutor implements Executor {
 	 * @return The updated state of the program
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeAssign(State state, int pid, String process,
-			AssignStatement statement)
+	private State executeAssign(State state, int pid, String process, AssignStatement statement)
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluator.evaluate(state, pid, statement.rhs());
 
@@ -239,8 +237,7 @@ public class CommonExecutor implements Executor {
 			}
 			// state = stateFactory.setProcessState(state, newProcState);
 		} else
-			state = assign(eval.state, pid, process, statement.getLhs(),
-					eval.value, statement.isInitialization());
+			state = assign(eval.state, pid, process, statement.getLhs(), eval.value, statement.isInitialization());
 
 		state = stateFactory.setLocation(state, pid, statement.target(), true);
 		return state;
@@ -261,44 +258,35 @@ public class CommonExecutor implements Executor {
 	 * @return The updated state of the program.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	protected State executeCall(State state, int pid,
-			CallOrSpawnStatement statement)
+	protected State executeCall(State state, int pid, CallOrSpawnStatement statement)
 			throws UnsatisfiablePathConditionException {
 		CIVLFunction function = statement.function();
 
 		if (function != null && function.isSystemFunction()) {
-			state = this.executeSystemFunctionCall(state, pid, statement,
-					(SystemFunction) function).state;
+			state = this.executeSystemFunctionCall(state, pid, statement, (SystemFunction) function).state;
 		} else {
 			SymbolicExpression[] arguments;
 
 			arguments = new SymbolicExpression[statement.arguments().size()];
 			for (int i = 0; i < statement.arguments().size(); i++) {
-				Evaluation eval = evaluator.evaluate(state, pid, statement
-						.arguments().get(i));
+				Evaluation eval = evaluator.evaluate(state, pid, statement.arguments().get(i));
 
 				state = eval.state;
 				arguments[i] = eval.value;
 			}
-			Analysis.analyzeCall(this.analyzers, state, pid, statement,
-					arguments);
+			Analysis.analyzeCall(this.analyzers, state, pid, statement, arguments);
 			if (function == null) {
-				Triple<State, CIVLFunction, Integer> eval = evaluator
-						.evaluateFunctionIdentifier(state, pid,
-								statement.functionExpression(),
-								statement.getSource());
+				Triple<State, CIVLFunction, Integer> eval = evaluator.evaluateFunctionIdentifier(state, pid,
+						statement.functionExpression(), statement.getSource());
 
 				function = eval.second;
 				state = eval.first;
 				if (function.isSystemFunction()) {
-					state = this.executeSystemFunctionCall(state, pid,
-							statement, (SystemFunction) function).state;
+					state = this.executeSystemFunctionCall(state, pid, statement, (SystemFunction) function).state;
 				} else
-					state = stateFactory.pushCallStack(state, pid, function,
-							eval.third, arguments);
+					state = stateFactory.pushCallStack(state, pid, function, eval.third, arguments);
 			} else
-				state = stateFactory.pushCallStack(state, pid, function,
-						arguments);
+				state = stateFactory.pushCallStack(state, pid, function, arguments);
 			if (!function.isSystemFunction() && function.isAtomicFunction())
 				state = stateFactory.enterAtomic(state, pid);
 		}
@@ -314,31 +302,24 @@ public class CommonExecutor implements Executor {
 		return state;
 	}
 
-	protected Evaluation executeSystemFunctionCall(State state, int pid,
-			CallOrSpawnStatement call, SystemFunction function)
-			throws UnsatisfiablePathConditionException {
+	protected Evaluation executeSystemFunctionCall(State state, int pid, CallOrSpawnStatement call,
+			SystemFunction function) throws UnsatisfiablePathConditionException {
 		String libraryName = function.getLibrary();
 		String funcName = function.name().name();
 
 		try {
-			LibraryExecutor executor = loader.getLibraryExecutor(libraryName,
-					this, this.modelFactory, this.symbolicUtil,
-					symbolicAnalyzer);
+			LibraryExecutor executor = loader.getLibraryExecutor(libraryName, this, this.modelFactory,
+					this.symbolicUtil, symbolicAnalyzer);
 
 			return executor.execute(state, pid, call, funcName);
 		} catch (LibraryLoaderException exception) {
-			String process = state.getProcessState(pid).name() + "(id=" + pid
-					+ ")";
+			String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
 
-			errorLogger.logSimpleError(call.getSource(), state, process,
-					symbolicAnalyzer.stateInformation(state),
-					ErrorKind.LIBRARY,
-					"unable to load the library executor for the library "
-							+ libraryName + " to execute the function "
-							+ funcName);
+			errorLogger.logSimpleError(call.getSource(), state, process, symbolicAnalyzer.stateInformation(state),
+					ErrorKind.LIBRARY, "unable to load the library executor for the library " + libraryName
+							+ " to execute the function " + funcName);
 			if (call.lhs() != null)
-				state = this.assign(state, pid, process, call.lhs(),
-						universe.nullExpression());
+				state = this.assign(state, pid, process, call.lhs(), universe.nullExpression());
 			state = this.stateFactory.setLocation(state, pid, call.target());
 			return new Evaluation(state, universe.nullExpression());
 		}
@@ -353,8 +334,7 @@ public class CommonExecutor implements Executor {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeMalloc(State state, int pid, String process,
-			MallocStatement statement)
+	private State executeMalloc(State state, int pid, String process, MallocStatement statement)
 			throws UnsatisfiablePathConditionException {
 		CIVLSource source = statement.getSource();
 		LHSExpression lhs = statement.getLHS();
@@ -371,32 +351,25 @@ public class CommonExecutor implements Executor {
 		eval = evaluator.evaluate(state, pid, statement.getScopeExpression());
 		state = eval.state;
 		scopeValue = eval.value;
-		dyScopeID = modelFactory.getScopeId(statement.getScopeExpression()
-				.getSource(), scopeValue);
+		dyScopeID = modelFactory.getScopeId(statement.getScopeExpression().getSource(), scopeValue);
 		eval = evaluator.evaluate(state, pid, statement.getSizeExpression());
 		state = eval.state;
 		mallocSize = (NumericExpression) eval.value;
-		eval = evaluator.evaluateSizeofType(source, state, pid,
-				statement.getStaticElementType());
+		eval = evaluator.evaluateSizeofType(source, state, pid, statement.getStaticElementType());
 		state = eval.state;
 		elementSize = (NumericExpression) eval.value;
 		pathCondition = state.getPathCondition();
 		if (!this.civlConfig.svcomp()) {
 			claim = universe.divides(elementSize, mallocSize);
-			validity = universe.reasoner(pathCondition).valid(claim)
-					.getResultType();
+			validity = universe.reasoner(pathCondition).valid(claim).getResultType();
 			if (validity != ResultType.YES) {
-				String elementType = statement.getStaticElementType()
-						.toString();
+				String elementType = statement.getStaticElementType().toString();
 				String message = "For a $malloc returning " + elementType
-						+ "*, the size argument must be a multiple of sizeof("
-						+ elementType + ")\n" + "      actual size argument: "
-						+ mallocSize.toString() + "\n"
-						+ "      expected size argument: a multile of "
-						+ elementSize.toString();
+						+ "*, the size argument must be a multiple of sizeof(" + elementType + ")\n"
+						+ "      actual size argument: " + mallocSize.toString() + "\n"
+						+ "      expected size argument: a multile of " + elementSize.toString();
 
-				state = errorLogger.logError(source, state, process,
-						symbolicAnalyzer.stateInformation(state), claim,
+				state = errorLogger.logError(source, state, process, symbolicAnalyzer.stateInformation(state), claim,
 						validity, ErrorKind.MALLOC, message);
 				throw new UnsatisfiablePathConditionException();
 			}
@@ -406,37 +379,32 @@ public class CommonExecutor implements Executor {
 		// type, field types can be array types which should be evaluated
 		// carefully to provide extents informations.
 		if (statement.getStaticElementType().isStructType()) {
-			CIVLStructOrUnionType staticType = (CIVLStructOrUnionType) statement
-					.getStaticElementType();
+			CIVLStructOrUnionType staticType = (CIVLStructOrUnionType) statement.getStaticElementType();
 			int numFields = staticType.numFields();
 			SymbolicType fieldTypes[] = new SymbolicType[numFields];
 
 			for (int i = 0; i < numFields; i++) {
-				CIVLType civlfieldType = (CIVLType) staticType.getField(i)
-						.type();
+				CIVLType civlfieldType = (CIVLType) staticType.getField(i).type();
 
 				if (civlfieldType.isArrayType()) {
-					Pair<State, SymbolicArrayType> pair = evaluator
-							.evaluateCIVLArrayType(state, pid,
-									(CIVLArrayType) civlfieldType);
+					Pair<State, SymbolicArrayType> pair = evaluator.evaluateCIVLArrayType(state, pid,
+							(CIVLArrayType) civlfieldType);
 
 					state = pair.left;
 					fieldTypes[i] = pair.right;
 				} else
 					fieldTypes[i] = civlfieldType.getDynamicType(universe);
 			}
-			dynamicElementType = universe.tupleType(
-					universe.stringObject(staticType.name().name()),
+			dynamicElementType = universe.tupleType(universe.stringObject(staticType.name().name()),
 					Arrays.asList(fieldTypes));
 		} else
 			dynamicElementType = statement.getDynamicElementType();
-		mallocResult = stateFactory.malloc(state, pid, dyScopeID,
-				statement.getMallocId(), dynamicElementType, elementCount);
+		mallocResult = stateFactory.malloc(state, pid, dyScopeID, statement.getMallocId(), dynamicElementType,
+				elementCount);
 		state = mallocResult.left;
 		if (lhs != null)
 			state = assign(state, pid, process, lhs, mallocResult.right);
-		state = stateFactory.setLocation(state, pid, statement.target(),
-				lhs != null);
+		state = stateFactory.setLocation(state, pid, statement.target(), lhs != null);
 		return state;
 	}
 
@@ -452,8 +420,7 @@ public class CommonExecutor implements Executor {
 	 * @return The updated state of the program.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeReturn(State state, int pid, String process,
-			ReturnStatement statement)
+	private State executeReturn(State state, int pid, String process, ReturnStatement statement)
 			throws UnsatisfiablePathConditionException {
 		Expression expr = statement.expression();
 		ProcessState processState;
@@ -472,15 +439,17 @@ public class CommonExecutor implements Executor {
 				for (ProcessState proc : state.getProcessStates()) {
 					if (proc == null)
 						continue;
+					// If that process is self-destructable, then it is not a
+					// process leak:
+					if (proc.isSelfDestructable())
+						continue;
 					if (proc.getPid() == pid)
 						continue;
 					if (!this.civlConfig.svcomp() && !proc.hasEmptyStack()) {
-						errorLogger.logSimpleError(statement.getSource(),
-								state, process,
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.PROCESS_LEAK,
-								"attempt to terminate the main process while process "
-										+ proc.name() + " is still running");
+						errorLogger.logSimpleError(statement.getSource(), state, process,
+								symbolicAnalyzer.stateInformation(state), ErrorKind.PROCESS_LEAK,
+								"attempt to terminate the main process while process " + proc.name()
+										+ " is still running");
 						throw new UnsatisfiablePathConditionException();
 					}
 				}
@@ -496,138 +465,37 @@ public class CommonExecutor implements Executor {
 			state = eval.state;
 			if (functionName.equals("_CIVL_system")) {
 				if (universe.equals(returnValue, universe.integer(0)).isFalse()) {
-					this.errorLogger.logSimpleError(statement.getSource(),
-							state, process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.OTHER, "program exits with error code: "
-									+ returnValue);
+					this.errorLogger.logSimpleError(statement.getSource(), state, process,
+							symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+							"program exits with error code: " + returnValue);
 				}
 			}
-		}
-		// Before popping call stack, check post-conditions if -mpiContract
-		// option is selected.
-		if (civlConfig.isEnableMpiContract()) {
-			// List<ContractClause> postconditions = function
-			// .postconditions();
-			//
-			// if (postconditions != null && !postconditions.isEmpty()) {
-			// Scope outerScope = function.outerScope();
-			// Variable resultVar = outerScope
-			// .variable(FunctionTranslator.contractResultName);
-			//
-			// // replacing $result if it exists:
-			// if (resultVar != null) {
-			// int sid = state.getDyscope(pid, outerScope);
-			//
-			// if (returnValue != null) {
-			// state = stateFactory.setVariable(state,
-			// resultVar.vid(), sid, returnValue);
-			// state = assertMPIContractClauses(state, pid,
-			// postconditions);
-			// } else {
-			// CIVLSource ensuresSource = postconditions.get(0)
-			// .getSource();
-			//
-			// errorLogger.logSimpleError(ensuresSource, state,
-			// process, symbolicAnalyzer.stateToString(state),
-			// ErrorKind.OTHER, "Function: " + functionName
-			// + "has no return value but the "
-			// + "contracts of it uses $result");
-			// // If there is no return value but $result is used in
-			// // contract, ignore all contracts.
-			// }
-			// } else
-			// state = assertMPIContractClauses(state, pid, postconditions);
-			// }
 		}
 		state = stateFactory.popCallStack(state, pid);
 		processState = state.getProcessState(pid);
 		if (!processState.hasEmptyStack()) {
 			StackEntry returnContext = processState.peekStack();
 			Location returnLocation = returnContext.location();
-			CallOrSpawnStatement call = (CallOrSpawnStatement) returnLocation
-					.getSoleOutgoing();
+			CallOrSpawnStatement call = (CallOrSpawnStatement) returnLocation.getSoleOutgoing();
 
 			if (call.lhs() != null) {
 				if (returnValue == null) {
-					errorLogger.logSimpleError(call.getSource(), state,
-							process, symbolicAnalyzer.stateInformation(state),
-							ErrorKind.OTHER,
-							"attempt to use the return value of function "
-									+ functionName + " when " + functionName
+					errorLogger.logSimpleError(call.getSource(), state, process,
+							symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+							"attempt to use the return value of function " + functionName + " when " + functionName
 									+ " has returned without a return value.");
 					returnValue = universe.nullExpression();
 				}
 				state = assign(state, pid, process, call.lhs(), returnValue);
 			}
-			state = stateFactory.setLocation(state, pid, call.target(),
-					call.lhs() != null);
+			state = stateFactory.setLocation(state, pid, call.target(), call.lhs() != null);
 		}
+		// If this "return" returns from a anonymous function which is
+		// translated from $run, then it is responsible for kill the process:
+		if (statement.fromRunProcFunction())
+			state = stateFactory.removeProcess(state, pid);
 		return state;
 	}
-
-	/**
-	 * Evaluates a list of contract clauses, once a contract clause being
-	 * evaluated as unsatisfiable, an error will be reported.
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The PID of the process
-	 * @param conditions
-	 *            The List of contract clauses
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	// private State assertMPIContractClauses(State state, int pid,
-	// List<ContractClause> conditions)
-	// throws UnsatisfiablePathConditionException {
-	// LibmpiExecutor libexec = null;
-	// String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
-	//
-	// for (ContractClause condition : conditions) {
-	// Expression clauseBody = condition.getBody();
-	//
-	// if (condition.isCollectiveClause()) {
-	// // if the contract is a collective contract, loads library
-	// // evaluator
-	// Expression group = condition.getCollectiveGroup();
-	// Expression[] args = { group, clauseBody };
-	//
-	// if (libexec == null)
-	// try {
-	// libexec = (LibmpiExecutor) loader.getLibraryExecutor(
-	// "mpi", this, modelFactory, symbolicUtil,
-	// symbolicAnalyzer);
-	// } catch (LibraryLoaderException e) {
-	// errorLogger.logSimpleError(condition.getSource(),
-	// state, process,
-	// symbolicAnalyzer.stateInformation(state),
-	// ErrorKind.LIBRARY,
-	// "unable to load the library executor for the library "
-	// + "mpi" + " to check mpi contracts");
-	// throw new UnsatisfiablePathConditionException();
-	// }
-	// state = libexec.executeCollectiveContract(state, pid, process,
-	// args, condition.contractKind(), condition.getSource());
-	// } else {
-	// Expression conditionExpr = condition.getBody();
-	// Reasoner reasoner = universe.reasoner(state.getPathCondition());
-	// Evaluation eval = evaluator.evaluate(state, pid, conditionExpr);
-	// ResultType resultType = reasoner.valid(
-	// (BooleanExpression) eval.value).getResultType();
-	//
-	// state = eval.state;
-	// // Check non-collective conditions once
-	// if (!resultType.equals(ResultType.YES))
-	// state = reportContractViolation(state,
-	// conditionExpr.getSource(), pid, resultType,
-	// (BooleanExpression) eval.value, conditionExpr,
-	// ErrorKind.CONTRACT, null);
-	// }
-	// }
-	// return state;
-	// }
 
 	/**
 	 * Executes a spawn statement. The state will be updated with a new process
@@ -642,8 +510,7 @@ public class CommonExecutor implements Executor {
 	 * @return The updated state of the program.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeSpawn(State state, int pid, String process,
-			CallOrSpawnStatement statement)
+	private State executeSpawn(State state, int pid, String process, CallOrSpawnStatement statement)
 			throws UnsatisfiablePathConditionException {
 		CIVLFunction function = statement.function();
 		int newPid = state.numProcs();
@@ -651,13 +518,15 @@ public class CommonExecutor implements Executor {
 		int numArgs = argumentExpressions.size();
 		SymbolicExpression[] arguments = new SymbolicExpression[numArgs];
 		int parentDyscopeId = -1;
+		boolean selfDestructable;
 
+		// If the statement is a $spawn which is translated from a $run, then
+		// the new process is self-destructable:
+		selfDestructable = statement.isRun();
 		assert !statement.isCall();
 		if (function == null) {
-			Triple<State, CIVLFunction, Integer> eval = evaluator
-					.evaluateFunctionIdentifier(state, pid,
-							statement.functionExpression(),
-							statement.getSource());
+			Triple<State, CIVLFunction, Integer> eval = evaluator.evaluateFunctionIdentifier(state, pid,
+					statement.functionExpression(), statement.getSource());
 
 			state = eval.first;
 			function = eval.second;
@@ -669,25 +538,20 @@ public class CommonExecutor implements Executor {
 			Expression actualArg = argumentExpressions.get(i);
 
 			if (!actualArg.getExpressionType().equals(expectedType))
-				eval = evaluator.evaluateCastWorker(state, pid, process,
-						expectedType, actualArg);
+				eval = evaluator.evaluateCastWorker(state, pid, process, expectedType, actualArg);
 			else
-				eval = evaluator.evaluate(state, pid,
-						argumentExpressions.get(i));
+				eval = evaluator.evaluate(state, pid, argumentExpressions.get(i));
 			state = eval.state;
 			arguments[i] = eval.value;
 		}
 		if (parentDyscopeId >= 0)
 
-			state = stateFactory.addProcess(state, function, parentDyscopeId,
-					arguments, pid);
+			state = stateFactory.addProcess(state, function, parentDyscopeId, arguments, pid, selfDestructable);
 		else
-			state = stateFactory.addProcess(state, function, arguments, pid);
+			state = stateFactory.addProcess(state, function, arguments, pid, selfDestructable);
 		if (statement.lhs() != null)
-			state = assign(state, pid, process, statement.lhs(),
-					modelFactory.processValue(newPid));
-		state = stateFactory.setLocation(state, pid, statement.target(),
-				statement.lhs() != null);
+			state = assign(state, pid, process, statement.lhs(), modelFactory.processValue(newPid));
+		state = stateFactory.setLocation(state, pid, statement.target(), statement.lhs() != null);
 		// state = stateFactory.computeReachableMemUnits(state, newPid);
 		return state;
 	}
@@ -729,16 +593,14 @@ public class CommonExecutor implements Executor {
 	 *            The statement to be executed.
 	 * @return The updated state of the program.
 	 */
-	private State executeWork(State state, int pid, Statement statement)
-			throws UnsatisfiablePathConditionException {
+	private State executeWork(State state, int pid, Statement statement) throws UnsatisfiablePathConditionException {
 		String process = "p" + pid;
 		StatementKind kind = statement.statementKind();
 
 		numSteps++;
 		switch (kind) {
 		case ASSIGN:
-			return executeAssign(state, pid, process,
-					(AssignStatement) statement);
+			return executeAssign(state, pid, process, (AssignStatement) statement);
 		case CALL_OR_SPAWN:
 			CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
 
@@ -747,15 +609,13 @@ public class CommonExecutor implements Executor {
 			else
 				return executeSpawn(state, pid, process, call);
 		case MALLOC:
-			return executeMalloc(state, pid, process,
-					(MallocStatement) statement);
+			return executeMalloc(state, pid, process, (MallocStatement) statement);
 		case NOOP: {
 			NoopStatement noop = (NoopStatement) statement;
 			Expression expression = noop.expression();
 
 			if (expression != null) {
-				Evaluation eval = this.evaluator.evaluate(state, pid,
-						expression);
+				Evaluation eval = this.evaluator.evaluate(state, pid, expression);
 
 				state = eval.state;
 			}
@@ -769,17 +629,13 @@ public class CommonExecutor implements Executor {
 			return state;
 		}
 		case RETURN:
-			return executeReturn(state, pid, process,
-					(ReturnStatement) statement);
+			return executeReturn(state, pid, process, (ReturnStatement) statement);
 		case DOMAIN_ITERATOR:
-			return executeNextInDomain(state, pid,
-					(DomainIteratorStatement) statement);
+			return executeNextInDomain(state, pid, (DomainIteratorStatement) statement);
 		case CIVL_PAR_FOR_ENTER:
-			return executeCivlParFor(state, pid,
-					(CivlParForSpawnStatement) statement);
+			return executeCivlParFor(state, pid, (CivlParForSpawnStatement) statement);
 		default:
-			throw new CIVLInternalException("Unknown statement kind: " + kind,
-					statement);
+			throw new CIVLInternalException("Unknown statement kind: " + kind, statement);
 		}
 	}
 
@@ -792,8 +648,7 @@ public class CommonExecutor implements Executor {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeCivlParFor(State state, int pid,
-			CivlParForSpawnStatement parFor)
+	private State executeCivlParFor(State state, int pid, CivlParForSpawnStatement parFor)
 			throws UnsatisfiablePathConditionException {
 		CIVLSource source = parFor.getSource();
 		Expression domain = parFor.domain();
@@ -817,15 +672,12 @@ public class CommonExecutor implements Executor {
 		state = this.assign(state, pid, process, domSize, domSizeValue);
 		number_domSize = (IntegerNumber) reasoner.extractNumber(domSizeValue);
 		if (number_domSize == null) {
-			this.errorLogger.logSimpleError(source, state, process,
-					symbolicAnalyzer.stateToString(state), ErrorKind.OTHER,
-					"The arguments of the domain for $parfor "
-							+ "must be concrete.");
+			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateToString(state),
+					ErrorKind.OTHER, "The arguments of the domain for $parfor " + "must be concrete.");
 			// throw new UnsatisfiablePathConditionException();
 		} else if (!number_domSize.isZero()) {
 			// only spawns processes when the domain is not empty.
-			state = this.executeSpawns(state, pid, parProcsVar,
-					parFor.parProcFunction(), dim, domainValue);
+			state = this.executeSpawns(state, pid, parProcsVar, parFor.parProcFunction(), dim, domainValue);
 		}
 		state = stateFactory.setLocation(state, pid, parFor.target(), true);
 		return state;
@@ -854,10 +706,8 @@ public class CommonExecutor implements Executor {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeSpawns(State state, int pid,
-			VariableExpression parProcsVar, CIVLFunction function, int dim,
-			SymbolicExpression domainValue)
-			throws UnsatisfiablePathConditionException {
+	private State executeSpawns(State state, int pid, VariableExpression parProcsVar, CIVLFunction function, int dim,
+			SymbolicExpression domainValue) throws UnsatisfiablePathConditionException {
 		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
 		List<SymbolicExpression> myValues = null;
 		// int procPtrOffset = 0;
@@ -876,12 +726,11 @@ public class CommonExecutor implements Executor {
 			myValues = domainIter.next();
 			myValues.toArray(arguments);
 			newPid = state.numProcs();
-			state = stateFactory.addProcess(state, function, arguments, pid);
+			state = stateFactory.addProcess(state, function, arguments, pid, false);
 			processes.add(modelFactory.processValue(newPid));
 		}
-		state = this.assign(state, pid, process, parProcsVar, universe.array(
-				this.modelFactory.typeFactory().processSymbolicType(),
-				processes));
+		state = this.assign(state, pid, process, parProcsVar,
+				universe.array(this.modelFactory.typeFactory().processSymbolicType(), processes));
 		return state;
 	}
 
@@ -900,8 +749,7 @@ public class CommonExecutor implements Executor {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private State executeNextInDomain(State state, int pid,
-			DomainIteratorStatement nextInDomain)
+	private State executeNextInDomain(State state, int pid, DomainIteratorStatement nextInDomain)
 			throws UnsatisfiablePathConditionException {
 		List<Variable> loopVars = nextInDomain.loopVariables();
 		Expression domain = nextInDomain.domain();
@@ -933,8 +781,7 @@ public class CommonExecutor implements Executor {
 				int counter = -1; // The concrete literal counter value
 				Variable literalCounterVar;
 
-				literalDomain = universe.unionExtract(oneObj,
-						universe.tupleRead(domValue, twoObj));
+				literalDomain = universe.unionExtract(oneObj, universe.tupleRead(domValue, twoObj));
 				literalCounterVar = nextInDomain.getLiteralDomCounter();
 				counterValue = state.valueOf(pid, literalCounterVar);
 				// Evaluate the value of the counter variable. Here we can
@@ -948,77 +795,56 @@ public class CommonExecutor implements Executor {
 					if (isAllNull)// this is the first iteration
 						counter = 0;
 					else
-						counter = symbolicUtil.literalDomainSearcher(
-								literalDomain, varValues, dim);
+						counter = symbolicUtil.literalDomainSearcher(literalDomain, varValues, dim);
 				} else
-					counter = ((IntegerNumber) universe
-							.extractNumber((NumericExpression) counterValue))
-							.intValue();
+					counter = ((IntegerNumber) universe.extractNumber((NumericExpression) counterValue)).intValue();
 
 				if (counter == -1)
-					throw new CIVLExecutionException(ErrorKind.OTHER,
-							Certainty.CONCRETE, process,
-							"Loop variables are not belong to the domain",
-							state, source);
+					throw new CIVLExecutionException(ErrorKind.OTHER, Certainty.CONCRETE, process,
+							"Loop variables are not belong to the domain", state, source);
 				// it's guaranteed that this iteration will have a
 				// subsequence.
 				if (counter < ((IntegerNumber) universe
-						.extractNumber((NumericExpression) universe
-								.length(literalDomain))).intValue())
-					nextElement = universe.arrayRead(literalDomain,
-							universe.integer(counter));
+						.extractNumber((NumericExpression) universe.length(literalDomain))).intValue())
+					nextElement = universe.arrayRead(literalDomain, universe.integer(counter));
 				else
-					throw new CIVLInternalException(
-							"Domain iteration out of bound", source);
+					throw new CIVLInternalException("Domain iteration out of bound", source);
 				// increase the counter
 				counter++;
-				state = stateFactory.setVariable(state, literalCounterVar, pid,
-						universe.integer(counter));
+				state = stateFactory.setVariable(state, literalCounterVar, pid, universe.integer(counter));
 				// Put domain element into a list
 				for (int i = 0; i < dim; i++)
-					nextEleValues.add(universe.arrayRead(nextElement,
-							universe.integer(i)));
+					nextEleValues.add(universe.arrayRead(nextElement, universe.integer(i)));
 				// This function is guaranteed have a next element, so it doesnt
 				// need to consider the loop end situation
 			} else if (symbolicUtil.isRectangularDomain(domValue)) {
 				// If it's rectangular domain, just use the value to get the
 				// next element
-				SymbolicExpression recDomUnion = universe.tupleRead(domValue,
-						twoObj);
-				SymbolicExpression recDom = universe.unionExtract(zeroObj,
-						recDomUnion);
+				SymbolicExpression recDomUnion = universe.tupleRead(domValue, twoObj);
+				SymbolicExpression recDom = universe.unionExtract(zeroObj, recDomUnion);
 
 				if (!isAllNull)
-					nextEleValues = symbolicUtil.getNextInRectangularDomain(
-							recDom, varValues, dim);
+					nextEleValues = symbolicUtil.getNextInRectangularDomain(recDom, varValues, dim);
 				else
 					nextEleValues = symbolicUtil.getDomainInit(domValue);
 			} else
-				throw new CIVLExecutionException(
-						ErrorKind.OTHER,
-						Certainty.CONCRETE,
-						process,
-						"The domian object is neither a literal domain nor a rectangular domain",
-						state, source);
+				throw new CIVLExecutionException(ErrorKind.OTHER, Certainty.CONCRETE, process,
+						"The domian object is neither a literal domain nor a rectangular domain", state, source);
 		} catch (SARLException | ClassCastException e) {
-			throw new CIVLInternalException(
-					"Interanl errors happened in executeNextInDomain()", source);
+			throw new CIVLInternalException("Interanl errors happened in executeNextInDomain()", source);
 		}
 		// Set domain element components one by one.(Domain element is an array
 		// of integers of length 'dim')
 		for (int i = 0; i < dim; i++)
-			state = stateFactory.setVariable(state, loopVars.get(i), pid,
-					nextEleValues.get(i));
+			state = stateFactory.setVariable(state, loopVars.get(i), pid, nextEleValues.get(i));
 		// TODO: why set location here ?
 		state = stateFactory.setLocation(state, pid, nextInDomain.target());
 		return state;
 	}
 
 	@Override
-	public Evaluation execute_printf(CIVLSource source, State state, int pid,
-			String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
+	public Evaluation execute_printf(CIVLSource source, State state, int pid, String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
 		StringBuffer stringOfSymbolicExpression;
 		StringBuffer formatBuffer;
 		List<StringBuffer> printedContents = new ArrayList<>();
@@ -1026,8 +852,8 @@ public class CommonExecutor implements Executor {
 		List<Format> formats;
 		List<Format> nonVoidFormats = new ArrayList<>();
 
-		concreteString = this.evaluator.getString(arguments[0].getSource(),
-				state, process, arguments[0], argumentValues[0]);
+		concreteString = this.evaluator.getString(arguments[0].getSource(), state, process, arguments[0],
+				argumentValues[0]);
 		formatBuffer = concreteString.second;
 		state = concreteString.first;
 		formats = this.splitFormat(arguments[0].getSource(), formatBuffer);
@@ -1040,40 +866,32 @@ public class CommonExecutor implements Executor {
 			SymbolicExpression argumentValue = argumentValues[i];
 			CIVLType argumentType = arguments[i].getExpressionType();
 
-			if (argumentType instanceof CIVLPointerType
-					&& ((CIVLPointerType) argumentType).baseType().isCharType()
+			if (argumentType instanceof CIVLPointerType && ((CIVLPointerType) argumentType).baseType().isCharType()
 					&& argumentValue.operator() == SymbolicOperator.TUPLE) {
 				Format myFormat = nonVoidFormats.get(i - 1);
 
 				if (myFormat.type == ConversionType.STRING) {
-					concreteString = this.evaluator.getString(
-							arguments[i].getSource(), state, process,
-							arguments[i], argumentValue);
+					concreteString = this.evaluator.getString(arguments[i].getSource(), state, process, arguments[i],
+							argumentValue);
 					stringOfSymbolicExpression = concreteString.second;
 					state = concreteString.first;
 					printedContents.add(stringOfSymbolicExpression);
 				} else if (myFormat.type == ConversionType.POINTER) {
 					printedContents.add(new StringBuffer(symbolicAnalyzer
-							.symbolicExpressionToString(
-									arguments[i].getSource(), state, null,
-									argumentValue)));
+							.symbolicExpressionToString(arguments[i].getSource(), state, null, argumentValue)));
 				} else {
-					throw new CIVLSyntaxException("Array pointer unaccepted",
-							arguments[i].getSource());
+					throw new CIVLSyntaxException("Array pointer unaccepted", arguments[i].getSource());
 				}
 
-			} else if (argumentType instanceof CIVLPointerType
-					&& this.symbolicUtil.isNullPointer(argumentValue)
+			} else if (argumentType instanceof CIVLPointerType && this.symbolicUtil.isNullPointer(argumentValue)
 					&& nonVoidFormats.get(i - 1).type == ConversionType.INT) {
 				printedContents.add(new StringBuffer("0"));
 			} else
 				printedContents.add(new StringBuffer(this.symbolicAnalyzer
-						.symbolicExpressionToString(arguments[i].getSource(),
-								state, argumentType, argumentValue)));
+						.symbolicExpressionToString(arguments[i].getSource(), state, argumentType, argumentValue)));
 		}
 		if (!civlConfig.isQuiet() && civlConfig.enablePrintf())
-			this.printf(civlConfig.out(), arguments[0].getSource(), process,
-					formats, printedContents);
+			this.printf(civlConfig.out(), arguments[0].getSource(), process, formats, printedContents);
 		return new Evaluation(state, null);
 	}
 
@@ -1104,7 +922,8 @@ public class CommonExecutor implements Executor {
 	 * only the period is specified, the precision is taken as zero. If a
 	 * precision appears with any other conversion specifier, the behavior is
 	 * undefined.</li>
-	 * <li>An optional length modifier that specifies the size of the argument.</li>
+	 * <li>An optional length modifier that specifies the size of the argument.
+	 * </li>
 	 * <li>A conversion specifier character that specifies the type of
 	 * conversion to be applied.</li>
 	 * </ul>
@@ -1139,10 +958,8 @@ public class CommonExecutor implements Executor {
 					continue;
 				}
 				if (stringBuffer.length() > 0) {
-					if (stringBuffer.charAt(0) == '%'
-							&& stringBuffer.charAt(1) != '%') {
-						throw new CIVLSyntaxException("The format %"
-								+ stringBuffer + " is not allowed in fprintf",
+					if (stringBuffer.charAt(0) == '%' && stringBuffer.charAt(1) != '%') {
+						throw new CIVLSyntaxException("The format %" + stringBuffer + " is not allowed in fprintf",
 								source);
 					}
 					result.add(new Format(stringBuffer, type));
@@ -1162,9 +979,7 @@ public class CommonExecutor implements Executor {
 
 					if (hasFieldWidth) {
 						stringBuffer.append(next);
-						throw new CIVLSyntaxException(
-								"Duplicate field width in \"" + stringBuffer
-										+ "\"...", source);
+						throw new CIVLSyntaxException("Duplicate field width in \"" + stringBuffer + "\"...", source);
 					}
 					hasFieldWidth = true;
 					while (numbers.contains(next)) {
@@ -1180,9 +995,8 @@ public class CommonExecutor implements Executor {
 					next = formatBuffer.charAt(++i);
 					stringBuffer.append('.');
 					if (hasPrecision) {
-						throw new CIVLSyntaxException(
-								"Duplicate precision detected in \""
-										+ stringBuffer + "\"...", source);
+						throw new CIVLSyntaxException("Duplicate precision detected in \"" + stringBuffer + "\"...",
+								source);
 					}
 					hasPrecision = true;
 					if (next.equals('*')) {
@@ -1202,8 +1016,7 @@ public class CommonExecutor implements Executor {
 				case 'l':
 					stringBuffer.append(current);
 					if (i + 1 >= count)
-						throw new CIVLSyntaxException("The format "
-								+ stringBuffer + " is not allowed.", source);
+						throw new CIVLSyntaxException("The format " + stringBuffer + " is not allowed.", source);
 					else {
 						Character next = formatBuffer.charAt(i + 1);
 
@@ -1221,8 +1034,7 @@ public class CommonExecutor implements Executor {
 					stringBuffer.append(current);
 					i++;
 					if (i >= count)
-						throw new CIVLSyntaxException("Invalid format \"%"
-								+ current + "\" for fprintf/printf", source);
+						throw new CIVLSyntaxException("Invalid format \"%" + current + "\" for fprintf/printf", source);
 					current = formatBuffer.charAt(i);
 					break;
 				default:
@@ -1233,9 +1045,8 @@ public class CommonExecutor implements Executor {
 				case 'p':
 				case 'n':
 					if (hasFieldWidth || hasPrecision) {
-						throw new CIVLSyntaxException(
-								"Invalid precision for the format \"%"
-										+ current + "\"...", source);
+						throw new CIVLSyntaxException("Invalid precision for the format \"%" + current + "\"...",
+								source);
 					}
 				default:
 				}
@@ -1270,8 +1081,7 @@ public class CommonExecutor implements Executor {
 					break;
 				default:
 					stringBuffer.append(current);
-					throw new CIVLSyntaxException("The format %" + stringBuffer
-							+ " is not allowed in fprintf", source);
+					throw new CIVLSyntaxException("The format %" + stringBuffer + " is not allowed in fprintf", source);
 				}
 				stringBuffer.append(current);
 				result.add(new Format(stringBuffer, type));
@@ -1289,8 +1099,8 @@ public class CommonExecutor implements Executor {
 	}
 
 	@Override
-	public void printf(PrintStream printStream, CIVLSource source,
-			String process, List<Format> formats, List<StringBuffer> arguments) {
+	public void printf(PrintStream printStream, CIVLSource source, String process, List<Format> formats,
+			List<StringBuffer> arguments) {
 		int argIndex = 0;
 		int numArguments = arguments.size();
 
@@ -1335,25 +1145,16 @@ public class CommonExecutor implements Executor {
 	 * @throws UnsatisfiablePathConditionException
 	 *             if the memory represented by the lhs expression is invalid
 	 */
-	protected State assign(CIVLSource source, State state, String process,
-			SymbolicExpression pointer, SymbolicExpression value,
-			boolean isInitialization, boolean toCheckPointer)
+	protected State assign(CIVLSource source, State state, String process, SymbolicExpression pointer,
+			SymbolicExpression value, boolean isInitialization, boolean toCheckPointer)
 			throws UnsatisfiablePathConditionException {
-		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer
-				.isDerefablePointer(state, pointer);
+		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer.isDerefablePointer(state, pointer);
 
 		if (checkPointer.right != ResultType.YES) // {
-			state = errorLogger.logError(
-					source,
-					state,
-					process,
-					symbolicAnalyzer.stateInformation(state),
-					checkPointer.left,
-					checkPointer.right,
-					ErrorKind.DEREFERENCE,
+			state = errorLogger.logError(source, state, process, symbolicAnalyzer.stateInformation(state),
+					checkPointer.left, checkPointer.right, ErrorKind.DEREFERENCE,
 					"attempt to write to a memory location through the pointer "
-							+ this.symbolicAnalyzer.symbolicExpressionToString(
-									source, state, null, pointer)
+							+ this.symbolicAnalyzer.symbolicExpressionToString(source, state, null, pointer)
 							+ " which can't be dereferenced");
 		// throw new UnsatisfiablePathConditionException();
 		// } else {
@@ -1365,56 +1166,38 @@ public class CommonExecutor implements Executor {
 		Variable variable;
 		Evaluation eval;
 
-		eval = evaluator.dereference(source, state, process, null, pointer,
-				false);
+		eval = evaluator.dereference(source, state, process, null, pointer, false);
 		state = eval.state;
 		if (sid < 0) {
-			errorLogger
-					.logSimpleError(source, state, process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.DEREFERENCE,
-							"Attempt to dereference pointer into scope which has been removed from state");
+			errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+					ErrorKind.DEREFERENCE,
+					"Attempt to dereference pointer into scope which has been removed from state");
 			throw new UnsatisfiablePathConditionException();
 		}
 		variable = state.getDyscope(sid).lexicalScope().variable(vid);
 		if (!isInitialization) {
 			if (variable.isInput()) {
-				errorLogger
-						.logSimpleError(source, state, process,
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.INPUT_WRITE,
-								"Attempt to write to input variable "
-										+ variable.name());
+				errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+						ErrorKind.INPUT_WRITE, "Attempt to write to input variable " + variable.name());
 				throw new UnsatisfiablePathConditionException();
 			} else if (variable.isConst()) {
-				errorLogger.logSimpleError(
-						source,
-						state,
-						process,
-						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.CONSTANT_WRITE,
-						"Attempt to write to constant variable "
-								+ variable.name());
+				errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+						ErrorKind.CONSTANT_WRITE, "Attempt to write to constant variable " + variable.name());
 				throw new UnsatisfiablePathConditionException();
 			}
 		}
 		if (symRef.isIdentityReference()) {
 			result = stateFactory.setVariable(state, vid, sid, value);
 		} else {
-			SymbolicExpression oldVariableValue = state.getVariableValue(sid,
-					vid);
+			SymbolicExpression oldVariableValue = state.getVariableValue(sid, vid);
 
 			try {
-				SymbolicExpression newVariableValue = universe.assign(
-						oldVariableValue, symRef, value);
+				SymbolicExpression newVariableValue = universe.assign(oldVariableValue, symRef, value);
 
-				result = stateFactory.setVariable(state, vid, sid,
-						newVariableValue);
+				result = stateFactory.setVariable(state, vid, sid, newVariableValue);
 			} catch (SARLException e) {
-				errorLogger.logSimpleError(source, state, process,
-						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.DEREFERENCE,
-						"Invalid assignment: " + e.getMessage());
+				errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+						ErrorKind.DEREFERENCE, "Invalid assignment: " + e.getMessage());
 				throw new UnsatisfiablePathConditionException();
 			}
 		}
@@ -1446,15 +1229,12 @@ public class CommonExecutor implements Executor {
 	 * @throws UnsatisfiablePathConditionException
 	 *             if the memory represented by the lhs expression is invalid
 	 */
-	protected State assign(State state, int pid, String process,
-			LHSExpression lhs, SymbolicExpression value,
-			boolean isInitialization)
-			throws UnsatisfiablePathConditionException {
+	protected State assign(State state, int pid, String process, LHSExpression lhs, SymbolicExpression value,
+			boolean isInitialization) throws UnsatisfiablePathConditionException {
 		LHSExpressionKind kind = lhs.lhsExpressionKind();
 
 		if (kind == LHSExpressionKind.VARIABLE)
-			return this.stateFactory.setVariable(state,
-					((VariableExpression) lhs).variable(), pid, value);
+			return this.stateFactory.setVariable(state, ((VariableExpression) lhs).variable(), pid, value);
 		else {
 			Evaluation eval = evaluator.reference(state, pid, lhs);
 			boolean toCheckPointer = kind == LHSExpressionKind.DEREFERENCE;
@@ -1465,35 +1245,27 @@ public class CommonExecutor implements Executor {
 				if (dot.isUnion()) {
 					int memberIndex = dot.fieldIndex();
 
-					value = evaluator
-							.universe()
-							.unionInject(
-									(SymbolicUnionType) (dot.structOrUnion()
-											.getExpressionType()
-											.getDynamicType(evaluator
-													.universe())),
-									evaluator.universe().intObject(memberIndex),
-									value);
+					value = evaluator.universe().unionInject(
+							(SymbolicUnionType) (dot.structOrUnion().getExpressionType()
+									.getDynamicType(evaluator.universe())),
+							evaluator.universe().intObject(memberIndex), value);
 				}
 			}
 			// TODO check if lhs is constant or input value
-			return assign(lhs.getSource(), eval.state, process, eval.value,
-					value, isInitialization, toCheckPointer);
+			return assign(lhs.getSource(), eval.state, process, eval.value, value, isInitialization, toCheckPointer);
 		}
 	}
 
 	/* *********************** Methods from Executor *********************** */
 
 	@Override
-	public State assign(CIVLSource source, State state, String process,
-			SymbolicExpression pointer, SymbolicExpression value)
-			throws UnsatisfiablePathConditionException {
+	public State assign(CIVLSource source, State state, String process, SymbolicExpression pointer,
+			SymbolicExpression value) throws UnsatisfiablePathConditionException {
 		return this.assign(source, state, process, pointer, value, false, true);
 	}
 
 	@Override
-	public State assign(State state, int pid, String process,
-			LHSExpression lhs, SymbolicExpression value)
+	public State assign(State state, int pid, String process, LHSExpression lhs, SymbolicExpression value)
 			throws UnsatisfiablePathConditionException {
 		return this.assign(state, pid, process, lhs, value, false);
 	}
@@ -1509,13 +1281,11 @@ public class CommonExecutor implements Executor {
 	}
 
 	@Override
-	public State malloc(CIVLSource source, State state, int pid,
-			String process, LHSExpression lhs, Expression scopeExpression,
-			SymbolicExpression scopeValue, CIVLType objectType,
-			SymbolicExpression objectValue)
-			throws UnsatisfiablePathConditionException {
-		Evaluation eval = this.malloc(source, state, pid, process,
-				scopeExpression, scopeValue, objectType, objectValue);
+	public State malloc(CIVLSource source, State state, int pid, String process, LHSExpression lhs,
+			Expression scopeExpression, SymbolicExpression scopeValue, CIVLType objectType,
+			SymbolicExpression objectValue) throws UnsatisfiablePathConditionException {
+		Evaluation eval = this.malloc(source, state, pid, process, scopeExpression, scopeValue, objectType,
+				objectValue);
 
 		state = eval.state;
 		if (lhs != null)
@@ -1524,21 +1294,17 @@ public class CommonExecutor implements Executor {
 	}
 
 	@Override
-	public Evaluation malloc(CIVLSource source, State state, int pid,
-			String process, Expression scopeExpression,
-			SymbolicExpression scopeValue, CIVLType objectType,
-			SymbolicExpression objectValue)
+	public Evaluation malloc(CIVLSource source, State state, int pid, String process, Expression scopeExpression,
+			SymbolicExpression scopeValue, CIVLType objectType, SymbolicExpression objectValue)
 			throws UnsatisfiablePathConditionException {
 		int mallocId = typeFactory.getHeapFieldId(objectType);
 		int dyscopeID;
 		SymbolicExpression heapObject;
-		CIVLSource scopeSource = scopeExpression == null ? source
-				: scopeExpression.getSource();
+		CIVLSource scopeSource = scopeExpression == null ? source : scopeExpression.getSource();
 		Pair<State, SymbolicExpression> result;
 
 		dyscopeID = modelFactory.getScopeId(scopeSource, scopeValue);
-		heapObject = universe.array(objectType.getDynamicType(universe),
-				Arrays.asList(objectValue));
+		heapObject = universe.array(objectType.getDynamicType(universe), Arrays.asList(objectValue));
 		result = stateFactory.malloc(state, dyscopeID, mallocId, heapObject);
 		return new Evaluation(result.left, result.right);
 	}
@@ -1549,8 +1315,7 @@ public class CommonExecutor implements Executor {
 	}
 
 	@Override
-	public State execute(State state, int pid, Transition transition)
-			throws UnsatisfiablePathConditionException {
+	public State execute(State state, int pid, Transition transition) throws UnsatisfiablePathConditionException {
 		AtomicLockAction atomicLockAction = transition.atomicLockAction();
 
 		switch (atomicLockAction) {
@@ -1564,9 +1329,8 @@ public class CommonExecutor implements Executor {
 			break;
 		default:
 			throw new CIVLUnimplementedFeatureException(
-					"Executing a transition with the atomic lock action "
-							+ atomicLockAction.toString(), transition
-							.statement().getSource());
+					"Executing a transition with the atomic lock action " + atomicLockAction.toString(),
+					transition.statement().getSource());
 		}
 		state = state.setPathCondition(transition.pathCondition());
 		switch (transition.transitionKind()) {
@@ -1574,14 +1338,11 @@ public class CommonExecutor implements Executor {
 			state = this.executeStatement(state, pid, transition.statement());
 			break;
 		case NOOP:
-			state = this.stateFactory.setLocation(state, pid,
-					((NoopTransition) transition).statement().target());
+			state = this.stateFactory.setLocation(state, pid, ((NoopTransition) transition).statement().target());
 			break;
 		default:
-			throw new CIVLUnimplementedFeatureException(
-					"Executing a transition of kind "
-							+ transition.transitionKind(), transition
-							.statement().getSource());
+			throw new CIVLUnimplementedFeatureException("Executing a transition of kind " + transition.transitionKind(),
+					transition.statement().getSource());
 
 		}
 		if (transition.simpifyState())
@@ -1595,10 +1356,9 @@ public class CommonExecutor implements Executor {
 	}
 
 	@Override
-	public State reportContractViolation(State state, CIVLSource source,
-			int place, ResultType resultType, BooleanExpression assertValue,
-			Expression violatedCondition, ErrorKind errorKind,
-			String groupString) throws UnsatisfiablePathConditionException {
+	public State reportContractViolation(State state, CIVLSource source, int place, ResultType resultType,
+			BooleanExpression assertValue, Expression violatedCondition, ErrorKind errorKind, String groupString)
+			throws UnsatisfiablePathConditionException {
 		String format = "Contract violation: \n";
 		String mergedStateExplanation = "";
 		String process;
@@ -1611,11 +1371,9 @@ public class CommonExecutor implements Executor {
 					+ "a set of snapshots. PID in this state is indeed the place of the process in the group";
 		} else
 			process = "pid: " + place;
-		format += "[" + process + "]:" + violatedCondition + "\n"
-				+ violatedCondition + " is evaluated as " + assertValue + "\n"
-				+ mergedStateExplanation;
-		return errorLogger.logError(source, state, process,
-				symbolicAnalyzer.stateInformation(state), assertValue,
+		format += "[" + process + "]:" + violatedCondition + "\n" + violatedCondition + " is evaluated as "
+				+ assertValue + "\n" + mergedStateExplanation;
+		return errorLogger.logError(source, state, process, symbolicAnalyzer.stateInformation(state), assertValue,
 				resultType, errorKind, format);
 	}
 }

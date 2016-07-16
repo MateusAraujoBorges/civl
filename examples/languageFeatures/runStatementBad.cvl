@@ -1,0 +1,11 @@
+#include<civlc.cvh>
+
+int main () {
+  int x = 5;
+
+  $run{
+    x++;
+  }
+  x++;
+  $assert(x == 7);
+}
