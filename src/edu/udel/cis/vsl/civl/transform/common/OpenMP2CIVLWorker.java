@@ -766,8 +766,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 									CivlcTokenConstant.BOOL),
 							BasicTypeKind.BOOL), nodeFactory
 							.newBooleanConstantNode(
-									newSource(criticalDeclaration,
-											CivlcTokenConstant.FALSE), false)));
+									newSource(criticalDeclaration, 0), false)));
 		}
 
 		externalList.addAll(result.first);
@@ -2159,18 +2158,12 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 						.newExpressionStatementNode(nodeFactory.newOperatorNode(
 								newSource(syncNode, CivlcTokenConstant.ASSIGN),
 								Operator.ASSIGN,
-								Arrays.asList(
-										this.identifierExpression(
-												newSource(
-														syncNode,
-														CivlcTokenConstant.IDENTIFIER),
-												criticalName),
-										nodeFactory
-												.newBooleanConstantNode(
-														newSource(
-																syncNode,
-																CivlcTokenConstant.TRUE),
-														true))));
+								Arrays.asList(this.identifierExpression(
+										newSource(syncNode,
+												CivlcTokenConstant.IDENTIFIER),
+										criticalName), nodeFactory
+										.newBooleanConstantNode(
+												newSource(syncNode, 1), true))));
 
 				// Create and add when node
 				// $when (!_critical_a) _critical_a=$true;
@@ -2195,18 +2188,12 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 						.newExpressionStatementNode(nodeFactory.newOperatorNode(
 								newSource(syncNode, CivlcTokenConstant.ASSIGN),
 								Operator.ASSIGN,
-								Arrays.asList(
-										this.identifierExpression(
-												newSource(
-														syncNode,
-														CivlcTokenConstant.IDENTIFIER),
-												criticalName),
-										nodeFactory
-												.newBooleanConstantNode(
-														newSource(
-																syncNode,
-																CivlcTokenConstant.FALSE),
-														false))));
+								Arrays.asList(this.identifierExpression(
+										newSource(syncNode,
+												CivlcTokenConstant.IDENTIFIER),
+										criticalName), nodeFactory
+										.newBooleanConstantNode(
+												newSource(syncNode, 0), false))));
 				items.add(criticalFalse);
 
 				// Add body to the CompoundstatementNode and replace the omp

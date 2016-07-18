@@ -829,8 +829,7 @@ public abstract class BaseWorker {
 	 */
 	protected ExpressionNode booleanConstant(boolean value) {
 		String method = value ? "constant $true" : "constant $false";
-		int tokenType = value ? CivlcTokenConstant.TRUE
-				: CivlcTokenConstant.FALSE;
+		int tokenType = value ? 1 : 0;
 
 		return nodeFactory.newBooleanConstantNode(
 				this.newSource(method, tokenType), value);
