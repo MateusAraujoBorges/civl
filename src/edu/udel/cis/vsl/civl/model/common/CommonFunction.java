@@ -213,7 +213,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 			out.print(" [$system]");
 		else if (this.isAtomic)
 			out.print(" [$atomic_f]");
-		if (isDebug)
+		if (isDebug && this.isPurelyLocal)
 			out.print(" [purely local]");
 		out.println();
 		outerScope.print(prefix + "| ", out, isDebug);
