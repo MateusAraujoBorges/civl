@@ -1019,7 +1019,7 @@ void main() {
       Web page & \url{http://vsl.cis.udel.edu/civl}\\
       Subversion & \url{svn://vsl.cis.udel.edu/civl}\\
       Trac repository & \url{https://vsl.cis.udel.edu/trac/civl}\\
-      Automated build/test & \url{http://vsl.cis.udel.edu/civl/test}\\
+      Automated build/test & \url{http://vsl.cis.udel.edu/lib/sw/civl}\\
       \hline
     \end{tabular}
   \end{center}
@@ -1084,12 +1084,12 @@ void main() {
     \item select ``New'' and create a classpath variable \texttt{VSL}
     \item specify its value to be \texttt{/opt/vsl}
     \end{itemize}
-  \item Create string variable \texttt{vsl{\U}lib}:
-    \begin{itemize}
-    \item Preferences$\ra$Run/Debug$\ra$String Substitution$\ra$New
-    \item define an entry \texttt{vsl{\U}lib}
-    \item set its value to be \texttt{/opt/vsl/lib}
-    \end{itemize}
+%  \item Create string variable \texttt{vsl{\U}lib}:
+%    \begin{itemize}
+%    \item Preferences$\ra$Run/Debug$\ra$String Substitution$\ra$New
+%    \item define an entry \texttt{vsl{\U}lib}
+%    \item set its value to be \texttt{/opt/vsl/lib}
+%    \end{itemize}
   \end{enumerate}
 \end{frame}
 
@@ -1157,10 +1157,10 @@ void main() {
     \item select ``Run all tests in the selected project\ldots''
     \item navigate and select the \texttt{test} folder in the SARL project
     \item under Arguments tab, type \texttt{-ea} into the VM arguments field
-    \item under Environment tab, create an entry
-      \texttt{DYLD{\U}LIBRARY{\U}PATH} (OS X) or
-      \texttt{LD{\U}LIBRARY{\U}PATH} (linux), specify its value by
-      clicking Variables, choose \texttt{vsl{\U}lib} from the list
+%    \item under Environment tab, create an entry
+%      \texttt{DYLD{\U}LIBRARY{\U}PATH} (OS X) or
+%      \texttt{LD{\U}LIBRARY{\U}PATH} (linux), specify its value by
+%      clicking Variables, choose \texttt{vsl{\U}lib} from the list
     \item click ``Run'' to run the tests
     \end{itemize}
   \end{enumerate}
@@ -1182,10 +1182,10 @@ void main() {
     \item select ``Run all tests in the selected project\ldots''
     \item navigate and select the \texttt{test} folder in the CIVL project
     \item under Arguments tab, type \texttt{-ea} into the VM arguments field
-    \item under Environment tab, create an entry
-      \texttt{DYLD{\U}LIBRARY{\U}PATH} (OS X) or
-      \texttt{LD{\U}LIBRARY{\U}PATH} (linux), specify its value by
-      clicking Variables, choose \texttt{vsl{\U}lib} from the list
+%    \item under Environment tab, create an entry
+%      \texttt{DYLD{\U}LIBRARY{\U}PATH} (OS X) or
+%      \texttt{LD{\U}LIBRARY{\U}PATH} (linux), specify its value by
+%      clicking Variables, choose \texttt{vsl{\U}lib} from the list
     \item click ``Run'' to run the tests
     \end{itemize}
   \item \alert{optional:} configure to build and run with \texttt{ant}
