@@ -66,7 +66,7 @@ PetscScalar FormFunctionPt(PetscScalar C,PetscScalar S,PetscScalar N,PetscScalar
       PetscScalar    f;
 
       f = FormFunctionLin(C,S,N,W,E,hxdhy,hydhx,sc);
-      f += FormFunctionNonlin(C,S,N,W,E,hxdhy,hydhx,sc);
+      f -= FormFunctionNonlin(C,S,N,W,E,hxdhy,hydhx,sc);
 
       return f;
 }
