@@ -18,8 +18,8 @@ typedef struct {
 
 $input PetscScalar x_data[M][N];
 PetscScalar f_data[M][N];
-$input AppCtx user[K];
-$input DMDALocalInfo info[L];
+$input AppCtx user;
+$input DMDALocalInfo info;
 
 PetscErrorCode FormFunctionLocal(DMDALocalInfo *,PetscScalar **,PetscScalar **,AppCtx *);
 
