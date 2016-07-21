@@ -49,4 +49,11 @@ int main() {
     for (int j = 0; j < N ; j++) {
       f_data[i][j] = f[i][j];
     }
+
+  for(int i = 0; i< M; i++) {
+    free(x[i]);
+    free(f[i]);
+  }
+  free(x);
+  free(f);  
 }
