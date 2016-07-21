@@ -92,11 +92,11 @@ PETSC_STATIC_INLINE PetscErrorCode PetscLogFlops(PetscLogDouble n)
  */
 
 /*   static char help[] = "Bratu nonlinear PDE in 2d.\n			\
-  3: We solve the  Bratu (SFI - solid fuel ignition) problem in a 2D rectangular\n\
-  4: domain, using distributed arrays (DMDAs) to partition the parallel grid.\n\
-  5: The command line options include:\n\
-  6:   -par <parameter>, where <parameter> indicates the problem's nonlinearity\n\
-  7:      problem SFI:  <parameter> = Bratu parameter (0 <= par <= 6.81)\n\n\
-  8:   -m_par/n_par <parameter>, where <parameter> indicates an integer\n \
-  9:       that MMS3 will be evaluated with 2^m_par, 2^n_par";
+ *   We solve the  Bratu (SFI - solid fuel ignition) problem in a 2D rectangular\n \
+ *   domain, using distributed arrays (DMDAs) to partition the parallel grid.\n \
+ *   The command line options include:\n					\
+ *   -par <parameter>, where <parameter> indicates the problem's nonlinearity\n\
+ *   problem SFI:  <parameter> = Bratu parameter (0 <= par <= 6.81)\n\n \
+ *   -m_par/n_par <parameter>, where <parameter> indicates an integer\n	\
+ *   that MMS3 will be evaluated with 2^m_par, 2^n_par";
 */
