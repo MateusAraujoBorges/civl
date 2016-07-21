@@ -18,7 +18,12 @@ $input int N = 5;
 $input PetscScalar x_data[M][N];
 $output PetscScalar f_data[M][N];
 $input AppCtx user;
-$input DMDALocalInfo info;
+
+$input int xs, ys;
+DMDALocalInfo info;
+info.xs=xs;
+info.ys=ys;
+
 $assume(info.ys >=0 && info.ys+info.ym < M);
 $assume(info.xs >=0 && info.xs+info.xm < N);
 
