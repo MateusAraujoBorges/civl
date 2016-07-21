@@ -11,15 +11,14 @@ typedef struct {
    PassiveReal param;          /* test problem parameter */
 } AppCtx;
 
-#define M 5
-#define N 5
-#define K 3
-#define L 3
-
+$input int M;
+$input int N;
 $input PetscScalar x_data[M][N];
 PetscScalar f_data[M][N];
 $input AppCtx user;
 $input DMDALocalInfo info;
+$assume(M >=0 && M < info.ys+info.ym);
+$assume(N >=0 && N < info.ys+info.ym);
 
 PetscErrorCode FormFunctionLocal(DMDALocalInfo *,PetscScalar **,PetscScalar **,AppCtx *);
 
