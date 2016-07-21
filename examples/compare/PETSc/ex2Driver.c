@@ -4,7 +4,6 @@
  */
 
 #include <civlc.cvh>
-#include <stdio.h>
 #include <stdlib.h>
 #include "petsc.h"
 
@@ -16,8 +15,9 @@ typedef struct {
 #define N 5
 #define K 3
 #define L 3
+
 $input PetscScalar x_data[M][N];
-$input PetscScalar f_data[M][N];
+PetscScalar f_data[M][N];
 $input AppCtx user[K];
 $input DMDALocalInfo info[L];
 
