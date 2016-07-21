@@ -19,8 +19,8 @@ $input PetscScalar x_data[M][N];
 PetscScalar f_data[M][N];
 $input AppCtx user;
 $input DMDALocalInfo info;
-$assume(info.ys+info.ym >=0 && info.ys+info.ym < M);
-$assume(info.xs+info.xm >=0 && info.xs+info.xm < N);
+$assume(info.ys >=0 && info.ys+info.ym < M);
+$assume(info.xs >=0 && info.xs+info.xm < N);
 
 PetscErrorCode FormFunctionLocal(DMDALocalInfo *,PetscScalar **,PetscScalar **,AppCtx *);
 
