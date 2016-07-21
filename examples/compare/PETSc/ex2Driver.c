@@ -1,6 +1,7 @@
-/* PETSc example driver for ex2a.c, ex2b.c,ex2c.c,ex2d.c,
+/* PETSc examples driver for ex2a.c, ex2b.c,ex2c.c,ex2d.c,
  * https://repo.anl-external.org/repos/provesa/codes/mxm/
- * command: civl verify ex2Driver.c ex2a.c
+ * simple examples run command: civl verify ex2Driver.c ex2a.c
+ * compare examples command: make
  */
 
 #include <civlc.cvh>
@@ -11,21 +12,29 @@ typedef struct {
    PassiveReal param;          /* test problem parameter */
 } AppCtx;
 
-$input int M = 5;
-$input int N = 5;
+$input int M = 3;
+$input int N = 3;
 //$assume(M>=0 && M < 5);
 //$assume(N>=0 && N < 5);
-$input PetscScalar x_data[M][N];
-$output PetscScalar f_data[M][N];
-$input AppCtx user;
+$input double x_data[M][N];
 
-$input int xs, ys;
+AppCtx user;
+$input double user2;
+user.param = user2;
+
+$input int xs, ys, xm, ym;
 DMDALocalInfo info;
-info.xs=xs;
-info.ys=ys;
+info.xs = xs;
+info.ys = ys;
+info.xm = xm;
+info.ym = ym;
+info.mx = N;
+info.my = M;
 
-$assume(info.ys >=0 && info.ys+info.ym < M);
-$assume(info.xs >=0 && info.xs+info.xm < N);
+$assume(ys >= 0 && ym >0 && ys+ym <= M);
+$assume(xs >= 0 && xm >0 && xs+xm <= N);
+
+$output double f_data[ym][xm];
 
 PetscErrorCode FormFunctionLocal(DMDALocalInfo *,PetscScalar **,PetscScalar **,AppCtx *);
 
@@ -35,7 +44,6 @@ int main() {
   x = (double **)malloc(M*sizeof(double *));
     for (int i = 0; i < M ; i++) {
       x[i] = (double *)malloc(N*sizeof(double));
-      //x[i] = $havoc(&x[i]) 
     }
 
   f = (double **)malloc(M*sizeof(double *));
@@ -47,15 +55,18 @@ int main() {
     for (int j = 0; j < N ; j++) {
       x[i][j] = x_data[i][j];
     }
-  
+
+  $elaborate(info.xs);
+  $elaborate(info.ys);
+
   FormFunctionLocal(&info, x, f, &user);
 
-  for (int i = 0; i < M ; i++)
-    for (int j = 0; j < N ; j++) {
-      f_data[i][j] = f[i][j];
+  for (int i = 0; i < info.ym ; i++)
+    for (int j = 0; j < info.xm ; j++) {
+      f_data[i][j] = f[info.ys+i][info.xs+j];
     }
-
-  for(int i = 0; i< M; i++) {
+    
+  for (int i = 0; i< M; i++) {
     free(x[i]);
     free(f[i]);
   }
