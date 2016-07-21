@@ -16,7 +16,7 @@ $input int N = 5;
 //$assume(M>=0 && M < 5);
 //$assume(N>=0 && N < 5);
 $input PetscScalar x_data[M][N];
-PetscScalar f_data[M][N];
+$output PetscScalar f_data[M][N];
 $input AppCtx user;
 $input DMDALocalInfo info;
 $assume(info.ys >=0 && info.ys+info.ym < M);
@@ -41,8 +41,12 @@ int main() {
   for (int i = 0; i < M ; i++)
     for (int j = 0; j < N ; j++) {
       x[i][j] = x_data[i][j];
-      f[i][j] = f_data[i][j];
     }
   
   FormFunctionLocal(&info, x, f, &user);
+
+  for (int i = 0; i < M ; i++)
+    for (int j = 0; j < N ; j++) {
+      f_data[i][j] = f[i][j];
+    }
 }
