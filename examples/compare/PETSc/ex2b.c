@@ -20,6 +20,7 @@ typedef struct {
    PassiveReal param;          /* test problem parameter */
 } AppCtx;
 
+PetscScalar FormFunctionPt(PetscScalar,PetscScalar,PetscScalar,PetscScalar,PetscScalar,PetscReal,PetscReal,PetscReal);
 /* ------------------------------------------------------------------- */
 #undef __FUNCT__
 #define __FUNCT__ "FormFunctionLocal"
@@ -51,7 +52,7 @@ PetscErrorCode FormFunctionLocal(DMDALocalInfo *info,PetscScalar **x,PetscScalar
         f[j][i] = 2.0*(hydhx+hxdhy)*x[j][i];
         ierr = PetscLogFlops(3.0);CHKERRQ(ierr);
       } else {
-        f[j][i] = FormFunctionPt(x[j][i],x[j-1][i],x[j+1][i],x[j][i-1],x[j][i+1],hxdhy,hyhdx,sc);
+        f[j][i] = FormFunctionPt(x[j][i],x[j-1][i],x[j+1][i],x[j][i-1],x[j][i+1],hxdhy,hydhx,sc);
         ierr = PetscLogFlops(11.0);CHKERRQ(ierr);
       }
     }
