@@ -29,6 +29,11 @@ public class CompareTest {
 		assertTrue(ui.run("compare", "-spec", filename("type_bad/spec.c"), "-impl", filename("type_bad/impl.c")));
 	}
 
+	@Test
+	public void unableExtractInt() {
+		assertTrue(ui.run("verify", filename("petscBad/ex2Driver.c"), filename("petscBad/ex2a.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
