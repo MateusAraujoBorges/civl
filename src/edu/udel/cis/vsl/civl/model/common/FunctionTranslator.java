@@ -86,6 +86,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.RunNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.SwitchNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.WhenNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.WithNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.EnumerationTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
@@ -498,9 +499,12 @@ public class FunctionTranslator {
 		case WHEN:
 			result = translateWhenNode(scope, (WhenNode) statementNode);
 			break;
+		case WITH:
+			result = translateWithNode(scope, (WithNode) statementNode);
+			break;
 		default:
 			throw new CIVLUnimplementedFeatureException(
-					"statements of type " + statementNode.getClass().getSimpleName(),
+					"translating statement nodes of type " + statementNode.statementKind(),
 					modelFactory.sourceOf(statementNode));
 		}
 		if (modelFactory.hasConditionalExpressions() == true) {
@@ -534,6 +538,40 @@ public class FunctionTranslator {
 	// }
 	// return null;
 	// }
+
+	/**
+	 * translating a $with block, which has the format:
+	 * <pre>
+	 * $with (col) {
+	 *   s1;
+	 *   s2;
+	 *   ...
+	 * }
+	 * </pre>
+	 * 
+	 * into
+	 * 
+	 * <pre>
+	 * $atom{
+	 * col_old=col;
+	 * rs=$enter_collate_state(col);
+	 * s1;
+	 * s2;
+	 * ..
+	 * $exit_collate_state(rs, col_old, col);
+	 * }
+	 * </pre>
+	 * 
+	 * @param scope
+	 * @param statementNode
+	 * @return
+	 */
+	private Fragment translateWithNode(Scope scope, WithNode statementNode) {
+		
+		
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	private Fragment translateCivlParForNode(Scope scope, CivlForNode civlForNode) {
 		DeclarationListNode loopInits = civlForNode.getVariables();
@@ -4560,6 +4598,9 @@ public class FunctionTranslator {
 				break;
 			case SCOPE:
 				result = typeFactory.scopeType();
+				break;
+			case STATE:
+				result = typeFactory.stateType();
 				break;
 			case QUALIFIED:
 				result = translateABCType(source, scope, ((QualifiedObjectType) abcType).getBaseType());

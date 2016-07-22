@@ -35,7 +35,8 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
  */
 public interface CIVLTypeFactory {
 
-	/* ************************************************************************
+	/*
+	 * ************************************************************************
 	 * CIVL Types
 	 * ************************************************************************
 	 */
@@ -82,8 +83,7 @@ public interface CIVLTypeFactory {
 	 *            array
 	 * @return the complete array type, as specified
 	 */
-	CIVLCompleteArrayType completeArrayType(CIVLType elementType,
-			Expression extent);
+	CIVLCompleteArrayType completeArrayType(CIVLType elementType, Expression extent);
 
 	/**
 	 * Creates a complete regular domain type, which is has the given dimension
@@ -221,6 +221,10 @@ public interface CIVLTypeFactory {
 	 */
 	CIVLPrimitiveType scopeType();
 
+	CIVLPrimitiveType stateType();
+
+	SymbolicTupleType stateSymbolicType();
+
 	/**
 	 * Returns a new struct field, used to complete a struct type.
 	 * 
@@ -270,7 +274,8 @@ public interface CIVLTypeFactory {
 	 */
 	CIVLPrimitiveType voidType();
 
-	/* ************************************************************************
+	/*
+	 * ************************************************************************
 	 * SARL symbolic types
 	 * ************************************************************************
 	 */
@@ -312,7 +317,8 @@ public interface CIVLTypeFactory {
 	 */
 	SymbolicTupleType scopeSymbolicType();
 
-	/* ************************************************************************
+	/*
+	 * ************************************************************************
 	 * Special handling of types
 	 * ************************************************************************
 	 */
@@ -352,8 +358,7 @@ public interface CIVLTypeFactory {
 	 * @param types
 	 *            the set of all dynamic types which occur as bundle elements
 	 */
-	void completeBundleType(CIVLBundleType bundleType, List<CIVLType> eleTypes,
-			Collection<SymbolicType> types);
+	void completeBundleType(CIVLBundleType bundleType, List<CIVLType> eleTypes, Collection<SymbolicType> types);
 
 	/**
 	 * Completes the heap type.
@@ -364,8 +369,7 @@ public interface CIVLTypeFactory {
 	 *            sequence of malloc statements that can access heaps of that
 	 *            type
 	 */
-	void completeHeapType(CIVLHeapType heapType,
-			Collection<MallocStatement> mallocs);
+	void completeHeapType(CIVLHeapType heapType, Collection<MallocStatement> mallocs);
 
 	/**
 	 * Returns the type of the heap field of the given index. A CIVL model has

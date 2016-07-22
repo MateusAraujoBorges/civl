@@ -30,6 +30,11 @@ public class ContractsTest {
 		assertTrue(true);
 	}
 
+	@Test
+	public void with() {
+		assertTrue(ui.run("show -showProgram ", filename("with.cvl")));
+	}
+
 	// @Test
 	// public void seq_sum() {
 	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
