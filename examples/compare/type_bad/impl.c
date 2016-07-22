@@ -1,4 +1,4 @@
-/* Bad test for comparing functional equivalence which have self-define type
+/* Bad test for comparing functional equivalence which have self-define type.
  */
 
 #ifdef _CIVL
