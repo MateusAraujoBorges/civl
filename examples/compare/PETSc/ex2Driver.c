@@ -18,6 +18,7 @@ $input int N = 3;
 //$assume(N>=0 && N < 5);
 $input double x_data[M][N];
 
+//TypeAnalyzer Exception if we define $input AppCtx user;
 AppCtx user;
 $input double user2;
 user.param = user2;
@@ -61,6 +62,7 @@ int main() {
 
   FormFunctionLocal(&info, x, f, &user);
 
+  // store the portion of array to f_data
   for (int i = 0; i < info.ym ; i++)
     for (int j = 0; j < info.xm ; j++) {
       f_data[i][j] = f[info.ys+i][info.xs+j];
