@@ -18,8 +18,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public class CommonPrimitiveType extends CommonType implements
-		CIVLPrimitiveType {
+public class CommonPrimitiveType extends CommonType
+		implements
+			CIVLPrimitiveType {
 
 	private PrimitiveTypeKind kind;
 
@@ -72,27 +73,30 @@ public class CommonPrimitiveType extends CommonType implements
 	@Override
 	public String toString() {
 		switch (kind) {
-		case INT:
-			return "int";
-		case BOOL:
-			return "$bool";
-		case REAL:
-			return "$real";
-		case SCOPE:
-			return "$scope";
-		case PROCESS:
-			return "$proc";
-		case DYNAMIC:
-			return "$dynamicType";
-		case VOID:
-			return "void";
-		case CHAR:
-			return "char";
-		case MEMORY:
-			return "$memory";
-		default:
-			throw new CIVLInternalException("Unknown primitive type kind: "
-					+ kind, (CIVLSource) null);
+			case INT :
+				return "int";
+			case BOOL :
+				return "$bool";
+			case REAL :
+				return "$real";
+			case SCOPE :
+				return "$scope";
+			case STATE :
+				return "$state";
+			case PROCESS :
+				return "$proc";
+			case DYNAMIC :
+				return "$dynamicType";
+			case VOID :
+				return "void";
+			case CHAR :
+				return "char";
+			case MEMORY :
+				return "$memory";
+			default :
+				throw new CIVLInternalException(
+						"Unknown primitive type kind: " + kind,
+						(CIVLSource) null);
 		}
 	}
 
@@ -167,25 +171,32 @@ public class CommonPrimitiveType extends CommonType implements
 	@Override
 	public SymbolicExpression initialValue(SymbolicUniverse universe) {
 		switch (this.kind) {
-		case BOOL:
-			return universe.bool(false);
-		case DYNAMIC:
-			return null;
-		case INT:
-			return universe.integer(0);
-		case PROCESS:
-			return universe.canonic(universe.tuple(
-					(SymbolicTupleType) this.dynamicType,
-					new Singleton<SymbolicExpression>(universe.integer(-2))));
-		case REAL:
-			return universe.rational(0);
-		case SCOPE:
-			return universe.canonic(universe.tuple(
-					(SymbolicTupleType) this.dynamicType,
-					new Singleton<SymbolicExpression>(universe.integer(-2))));
-		case CHAR:
-			return universe.character('\0');
-		default:
+			case BOOL :
+				return universe.bool(false);
+			case DYNAMIC :
+				return null;
+			case INT :
+				return universe.integer(0);
+			case PROCESS :
+				return universe.canonic(
+						universe.tuple((SymbolicTupleType) this.dynamicType,
+								new Singleton<SymbolicExpression>(
+										universe.integer(-2))));
+			case STATE :
+				return universe.canonic(
+						universe.tuple((SymbolicTupleType) this.dynamicType,
+								new Singleton<SymbolicExpression>(
+										universe.integer(-1))));
+			case REAL :
+				return universe.rational(0);
+			case SCOPE :
+				return universe.canonic(
+						universe.tuple((SymbolicTupleType) this.dynamicType,
+								new Singleton<SymbolicExpression>(
+										universe.integer(-2))));
+			case CHAR :
+				return universe.character('\0');
+			default :
 		}
 		return null;
 	}

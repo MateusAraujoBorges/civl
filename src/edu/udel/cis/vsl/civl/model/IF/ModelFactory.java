@@ -53,6 +53,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.ScopeofExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SelfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SizeofExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SizeofTypeExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.StatenullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
@@ -113,7 +114,8 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  */
 public interface ModelFactory {
 
-	/* ************************************************************************
+	/*
+	 * ************************************************************************
 	 * CIVL Expressions
 	 * ************************************************************************
 	 */
@@ -227,7 +229,8 @@ public interface ModelFactory {
 	 * @return a new character literal expression with the given character
 	 *         value.
 	 */
-	CharLiteralExpression charLiteralExpression(CIVLSource sourceOf, char value);
+	CharLiteralExpression charLiteralExpression(CIVLSource sourceOf,
+			char value);
 
 	/**
 	 * The ternary conditional expression ("?" in C).
@@ -243,7 +246,8 @@ public interface ModelFactory {
 	 * @return The conditional expression.
 	 */
 	ConditionalExpression conditionalExpression(CIVLSource source,
-			Expression condition, Expression trueBranch, Expression falseBranch);
+			Expression condition, Expression trueBranch,
+			Expression falseBranch);
 
 	/**
 	 * Create a cast expression
@@ -308,8 +312,8 @@ public interface ModelFactory {
 	 * @param function
 	 * @return the new function identifier expression of the given function
 	 */
-	FunctionIdentifierExpression functionIdentifierExpression(
-			CIVLSource source, CIVLFunction function);
+	FunctionIdentifierExpression functionIdentifierExpression(CIVLSource source,
+			CIVLFunction function);
 
 	/**
 	 * @param source
@@ -318,7 +322,8 @@ public interface ModelFactory {
 	 *            otherwise, <code>$here</code>
 	 * @return a new here or root expression
 	 */
-	HereOrRootExpression hereOrRootExpression(CIVLSource source, boolean isRoot);
+	HereOrRootExpression hereOrRootExpression(CIVLSource source,
+			boolean isRoot);
 
 	/**
 	 * Returns an "initial value" expression for the given variable. This is an
@@ -365,6 +370,15 @@ public interface ModelFactory {
 	 * @return the new <code>$proc_null</code> constant expression
 	 */
 	ProcnullExpression procnullExpression(CIVLSource source);
+
+	/**
+	 * Creates a <code>$state_null</code> constant expression.
+	 * 
+	 * @param source
+	 *            The source of the <code>$state_null</code>
+	 * @return the new <code>$state_null</code> constant expression
+	 */
+	StatenullExpression statenullExpression(CIVLSource source);
 
 	/**
 	 * Creates a new quantified expression.
@@ -664,7 +678,8 @@ public interface ModelFactory {
 			List<Pair<Variable, IntegerLiteralExpression>> partials,
 			List<Expression> arguments);
 
-	/* ************************************************************************
+	/*
+	 * ************************************************************************
 	 * Memory Unit Expressions
 	 * ************************************************************************
 	 */
@@ -718,7 +733,8 @@ public interface ModelFactory {
 			MemoryUnitReference reference, boolean writable,
 			boolean hasPinterRef);
 
-	/* ************************************************************************
+	/*
+	 * ************************************************************************
 	 * Fragments and Statements
 	 * ************************************************************************
 	 */
@@ -894,8 +910,8 @@ public interface ModelFactory {
 	 */
 	MallocStatement mallocStatement(CIVLSource civlSource, Location source,
 			LHSExpression lhs, CIVLType staticElementType,
-			Expression scopeExpression, Expression sizeExpression,
-			int mallocId, Expression guard);
+			Expression scopeExpression, Expression sizeExpression, int mallocId,
+			Expression guard);
 
 	/**
 	 * A noop statement with the default guard of true.
@@ -920,7 +936,8 @@ public interface ModelFactory {
 	 *            The source location for this noop statement.
 	 * @return A new temporary noop statement with the true guard
 	 */
-	NoopStatement noopStatementTemporary(CIVLSource civlSource, Location source);
+	NoopStatement noopStatementTemporary(CIVLSource civlSource,
+			Location source);
 
 	/**
 	 * A temporary noop statement with the true guard
@@ -997,7 +1014,8 @@ public interface ModelFactory {
 	NoopStatement switchBranchStatement(CIVLSource civlSource, Location source,
 			Expression guard, Expression label);
 
-	/* *********************************************************************
+	/*
+	 * *********************************************************************
 	 * CIVL Source
 	 * *********************************************************************
 	 */
@@ -1088,7 +1106,8 @@ public interface ModelFactory {
 	 */
 	CIVLSource systemSource();
 
-	/* *********************************************************************
+	/*
+	 * *********************************************************************
 	 * Translating away conditional expressions
 	 * *********************************************************************
 	 */
@@ -1170,7 +1189,8 @@ public interface ModelFactory {
 	 *         expressions
 	 */
 	Pair<Fragment, Expression> refineConditionalExpression(Scope scope,
-			Expression expression, CIVLSource startSource, CIVLSource endSource);
+			Expression expression, CIVLSource startSource,
+			CIVLSource endSource);
 
 	/**
 	 * Translate away conditional expressions from a statement. First create a
@@ -1189,7 +1209,8 @@ public interface ModelFactory {
 	Fragment refineConditionalExpressionOfStatement(Statement statement,
 			Location oldLocation);
 
-	/* *********************************************************************
+	/*
+	 * *********************************************************************
 	 * Atomic Lock Variable
 	 * *********************************************************************
 	 */
@@ -1202,7 +1223,8 @@ public interface ModelFactory {
 	 */
 	VariableExpression atomicLockVariableExpression();
 
-	/* *********************************************************************
+	/*
+	 * *********************************************************************
 	 * Identifier, Function, Location, Model, Scope, Variable
 	 * *********************************************************************
 	 */
@@ -1341,7 +1363,8 @@ public interface ModelFactory {
 	 *            The index of this variable in its scope.
 	 * @return The variable
 	 */
-	Variable variable(CIVLSource source, CIVLType type, Identifier name, int vid);
+	Variable variable(CIVLSource source, CIVLType type, Identifier name,
+			int vid);
 
 	/**
 	 * Create a new variable which is also a parameter of some function.
@@ -1359,7 +1382,8 @@ public interface ModelFactory {
 	Variable variableAsParameter(CIVLSource source, CIVLType type,
 			Identifier name, int vid);
 
-	/* *********************************************************************
+	/*
+	 * *********************************************************************
 	 * Setters and Getters
 	 * *********************************************************************
 	 */
@@ -1403,7 +1427,8 @@ public interface ModelFactory {
 	 */
 	SymbolicUniverse universe();
 
-	/* ************************************************************************
+	/*
+	 * ************************************************************************
 	 * Symbolic Expressions: Dyscope References
 	 * ************************************************************************
 	 */
@@ -1432,7 +1457,31 @@ public interface ModelFactory {
 	 */
 	SymbolicExpression scopeValue(int sid);
 
-	/* ************************************************************************
+	/**
+	 * Translate an integer canonical state id into a symbolic expression
+	 * 
+	 * @param canonicalId
+	 *            The canonical id of a state is to be translated.
+	 * @return The symbolic expression representing the scope id
+	 */
+	SymbolicExpression stateValue(int canonicalId);
+
+	/**
+	 * Translate a symbolic state value into an integer. A symbolic state value
+	 * is a tuple with one element of integer type. A CIVL internal exception is
+	 * thrown if the value can't be computed.
+	 * 
+	 * @param source
+	 *            The CIVL source information of the symbolic state value
+	 * @param scopeValue
+	 *            The symbolic object of the state value
+	 * @return The integer canonical ID of state represented by the symbolic
+	 *         state value.
+	 */
+	int getStateRef(CIVLSource source, SymbolicExpression stateValue);
+
+	/*
+	 * ************************************************************************
 	 * Symbolic Expressions: Process References
 	 * ************************************************************************
 	 */
@@ -1486,7 +1535,8 @@ public interface ModelFactory {
 	 */
 	SymbolicExpression undefinedValue(SymbolicType type);
 
-	/* ************************************************************************
+	/*
+	 * ************************************************************************
 	 * Malicious
 	 * ************************************************************************
 	 */
@@ -1748,6 +1798,8 @@ public interface ModelFactory {
 	LoopContract loopContract(CIVLSource civlSource, Location loopLocation,
 			List<Expression> loopInvariants, List<LHSExpression> loopAssigns,
 			List<Expression> loopVariants);
+
+	public Scope leastCommonAncestor(Scope s0, Scope s1);
 
 	Nothing nothing(CIVLSource source);
 

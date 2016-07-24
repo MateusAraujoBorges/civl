@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
+import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
@@ -80,8 +81,9 @@ public interface StateFactory {
 	 * 
 	 * @return the canonical version of the given state
 	 */
-	State canonic(State state, boolean collectProcesses, boolean collectScopes, boolean collectHeaps,
-			Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException;
+	State canonic(State state, boolean collectProcesses, boolean collectScopes,
+			boolean collectHeaps, Set<HeapErrorKind> toBeIgnored)
+			throws CIVLHeapException;
 
 	/**
 	 * Returns the canonic, initial state for a CIVL Model.
@@ -106,7 +108,8 @@ public interface StateFactory {
 	 * @return A new state that is the old state modified by updating the value
 	 *         of the variable
 	 */
-	State setVariable(State state, Variable variable, int pid, SymbolicExpression value);
+	State setVariable(State state, Variable variable, int pid,
+			SymbolicExpression value);
 
 	/**
 	 * <p>
@@ -134,7 +137,8 @@ public interface StateFactory {
 	 *         of the variable
 	 * @see #setVariable(State, Variable, int, SymbolicExpression)
 	 */
-	State setVariable(State state, int vid, int scopeId, SymbolicExpression value);
+	State setVariable(State state, int vid, int scopeId,
+			SymbolicExpression value);
 
 	/**
 	 * <p>
@@ -170,7 +174,8 @@ public interface StateFactory {
 	 *         new dynamic scope corresponding to the outermost lexical scope of
 	 *         the function.
 	 */
-	State addProcess(State state, CIVLFunction function, SymbolicExpression[] arguments, int callerPid,
+	State addProcess(State state, CIVLFunction function,
+			SymbolicExpression[] arguments, int callerPid,
 			boolean isSelfDestructable);
 
 	/**
@@ -209,7 +214,8 @@ public interface StateFactory {
 	 *         new dynamic scope corresponding to the outermost lexical scope of
 	 *         the function.
 	 */
-	State addProcess(State state, CIVLFunction function, int functionParentDyscope, SymbolicExpression[] arguments,
+	State addProcess(State state, CIVLFunction function,
+			int functionParentDyscope, SymbolicExpression[] arguments,
 			int callerPid, boolean isSelfDestructable);
 
 	/**
@@ -284,7 +290,8 @@ public interface StateFactory {
 	 *         process at a new location, and scopes added and removed as
 	 *         necessary
 	 */
-	State setLocation(State state, int pid, Location location, boolean accessChanged);
+	State setLocation(State state, int pid, Location location,
+			boolean accessChanged);
 
 	/**
 	 * Pushes a new entry onto the call stack for a process. Used when a process
@@ -302,7 +309,8 @@ public interface StateFactory {
 	 * @return A new state that is the same as the old state with the given
 	 *         process having a new entry on its call stack.
 	 */
-	State pushCallStack(State state, int pid, CIVLFunction function, SymbolicExpression[] arguments);
+	State pushCallStack(State state, int pid, CIVLFunction function,
+			SymbolicExpression[] arguments);
 
 	/**
 	 * Pushes a new entry onto the call stack for a process. Used when a process
@@ -322,8 +330,8 @@ public interface StateFactory {
 	 * @return A new state that is the same as the old state with the given
 	 *         process having a new entry on its call stack.
 	 */
-	State pushCallStack(State state, int pid, CIVLFunction function, int functionParentDyscope,
-			SymbolicExpression[] arguments);
+	State pushCallStack(State state, int pid, CIVLFunction function,
+			int functionParentDyscope, SymbolicExpression[] arguments);
 
 	/**
 	 * Pops an entry off the call stack for a process. Does not modify or remove
@@ -380,7 +388,8 @@ public interface StateFactory {
 	 * @return the state after canonicalizing heaps, which may be this state or
 	 *         a new one
 	 */
-	State collectHeaps(State state, Set<HeapErrorKind> toBeIgnored) throws CIVLStateException;
+	State collectHeaps(State state, Set<HeapErrorKind> toBeIgnored)
+			throws CIVLStateException;
 
 	/**
 	 * Performs a garbage collection and canonicalization of dynamic scopes.
@@ -395,7 +404,8 @@ public interface StateFactory {
 	 * @return the state after canonicalizing scopes, which may be this state or
 	 *         a new one
 	 */
-	State collectScopes(State state, Set<HeapErrorKind> toBeIgnored) throws CIVLStateException;
+	State collectScopes(State state, Set<HeapErrorKind> toBeIgnored)
+			throws CIVLStateException;
 
 	/**
 	 * Performs a garbage collection and canonicalization of the process states.
@@ -551,7 +561,8 @@ public interface StateFactory {
 	 *            The value of the new heap object.
 	 * @return The new state after the new heap object
 	 */
-	Pair<State, SymbolicExpression> malloc(State state, int dyscopeID, int mallocID, SymbolicExpression heapObject);
+	Pair<State, SymbolicExpression> malloc(State state, int dyscopeID,
+			int mallocID, SymbolicExpression heapObject);
 
 	/**
 	 * Allocates an object for the given malloc ID in the heap of the given
@@ -576,7 +587,8 @@ public interface StateFactory {
 	 *            The number of elements contained by the new heap object.
 	 * @return The new state after the new heap object is added.
 	 */
-	Pair<State, SymbolicExpression> malloc(State state, int pid, int dyscopeID, int mallocID, SymbolicType elementType,
+	Pair<State, SymbolicExpression> malloc(State state, int pid, int dyscopeID,
+			int mallocID, SymbolicType elementType,
 			NumericExpression elementCount);
 
 	/**
@@ -602,7 +614,8 @@ public interface StateFactory {
 	 * @return A new state after the heap object is removed from the heap, and
 	 *         corresponding pointers updated.
 	 */
-	State deallocate(State state, SymbolicExpression heapObjectPointer, int dyscopeId, int mallocId, int index);
+	State deallocate(State state, SymbolicExpression heapObjectPointer,
+			int dyscopeId, int mallocId, int index);
 
 	/**
 	 * returns the memory unit factory associated with this state factory, which
@@ -644,7 +657,8 @@ public interface StateFactory {
 	 *         with a unique name and has the prefix corresponding to the given
 	 *         index
 	 */
-	Pair<State, SymbolicConstant> getFreshSymbol(State state, int index, SymbolicType type);
+	Pair<State, SymbolicConstant> getFreshSymbol(State state, int index,
+			SymbolicType type);
 
 	/* ****************** Snapshots related method ****************** */
 	/* Note: Snapshots are objects with type ImmutableMonoState */
@@ -661,7 +675,8 @@ public interface StateFactory {
 	 *            The array of {@link ImmutableMonoState}
 	 * @return
 	 */
-	ImmutableState mergeMonostates(State state, ImmutableCollectiveSnapshotsEntry entry);
+	ImmutableState mergeMonostates(State state,
+			ImmutableCollectiveSnapshotsEntry entry);
 
 	/**
 	 * Partially merging monoStates which stored in the
@@ -672,7 +687,8 @@ public interface StateFactory {
 	 * @param entry
 	 * @return
 	 */
-	ImmutableState partialMergeMonostates(State state, ImmutableCollectiveSnapshotsEntry entry, int place2Pid[]);
+	ImmutableState partialMergeMonostates(State state,
+			ImmutableCollectiveSnapshotsEntry entry, int place2Pid[]);
 
 	/**
 	 * Take a snapshot on current state then store the snapshot with the
@@ -695,8 +711,8 @@ public interface StateFactory {
 	 *            The expression of a assertion asserted by the process
 	 * @return
 	 */
-	ImmutableState addToCollectiveSnapshotsEntry(ImmutableState state, int pid, int place, int queueID, int entryPos,
-			Expression assertion);
+	ImmutableState addToCollectiveSnapshotsEntry(ImmutableState state, int pid,
+			int place, int queueID, int entryPos, Expression assertion);
 
 	/**
 	 * The process with "pid" creates a fresh new
@@ -720,8 +736,9 @@ public interface StateFactory {
 	 *            Message buffer snapshot
 	 * @return
 	 */
-	ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state, int pid, int numProcesses, int place,
-			int queueID, Expression assertion, SymbolicExpression channels, ContractKind kind, int[][] agreedVars,
+	ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state, int pid,
+			int numProcesses, int place, int queueID, Expression assertion,
+			SymbolicExpression channels, ContractKind kind, int[][] agreedVars,
 			SymbolicExpression[] agreedVals);
 
 	/**
@@ -746,7 +763,8 @@ public interface StateFactory {
 	 *            The ID identifies a collective queue
 	 * @return
 	 */
-	ImmutableCollectiveSnapshotsEntry peekCollectiveSnapshotsEntry(State state, int queueID);
+	ImmutableCollectiveSnapshotsEntry peekCollectiveSnapshotsEntry(State state,
+			int queueID);
 
 	/**
 	 * Update all entries in a collective queue with a group of message buffers.
@@ -766,7 +784,8 @@ public interface StateFactory {
 	 *            {@link CollectiveSnapshotsEntry#getMsgBuffers()}
 	 * @return
 	 */
-	ImmutableState commitUpdatedChannelsToEntries(State state, int queueId, SymbolicExpression[] newChannels);
+	ImmutableState commitUpdatedChannelsToEntries(State state, int queueId,
+			SymbolicExpression[] newChannels);
 
 	/**
 	 * Returns the corresponding snapshot queue by giving the identifier of an
@@ -778,7 +797,8 @@ public interface StateFactory {
 	 *            The identifier of a MPI communicator
 	 * @return
 	 */
-	ImmutableCollectiveSnapshotsEntry[] getSnapshotsQueue(State state, int queueID);
+	ImmutableCollectiveSnapshotsEntry[] getSnapshotsQueue(State state,
+			int queueID);
 
 	/**
 	 * <p>
@@ -811,5 +831,110 @@ public interface StateFactory {
 	 * @return The new state after renumbering.
 	 */
 	ImmutableState updateProcessesForState(State state, int[] procsNewToOld);
+
+	/**
+	 * <p>
+	 * Take a snapshot for the process pid on the given state, returns a new
+	 * state which only contains that one process state and associated dyscopes.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The state which will be taken snapshot.
+	 * @param pid
+	 *            The pid of the process for the snapshot
+	 * @param topDyscope
+	 *            A dyscope that is reachable from the call stack of the process
+	 *            pid. It controls the top call stack frame of the process in
+	 *            the returned state: the top call stack frame is the toppest
+	 *            one that can reach topDyscope.
+	 * @return A state reference to the new state which only contains exact one
+	 *         process state and the process state is obtained from the process
+	 *         state of pid in the input state by popping all stack frames that
+	 *         cannnot reach the topDyscope.
+	 */
+	int getStateSnapshot(State state, int pid, int topDyscope);
+
+	/**
+	 * <p>
+	 * <b>Pre-conditions:</b>
+	 * <ul>
+	 * <li>A monoState is a state with one processState; A monoState for a
+	 * unique pid can only be commited once.</li>
+	 * <li>nprocs greater than newPid</li>
+	 * <li>combiningStateReference must refer to a state</li>
+	 * </ul>
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>Summary:</b> This method combines a combining state which is a state
+	 * during the combination (The combination of states may take several steps)
+	 * and a monoState which is a state contains exact one process. It sets the
+	 * only process of the monoState to the newPid process in the combining
+	 * state. The invariants of the combining state is it totally contains
+	 * nprocs processes.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>Invariants:</b> Let s be the lexical function scope associates with
+	 * the bottom call stack entry of the only process in the monoState, S be
+	 * the set of lexical function scopes associates with the bottom call stack
+	 * entries of all processes in the state. There must be a lexical scope s'
+	 * that is the least common ancester of scopes in set S ^ {s} (S union with
+	 * {s}).s' and its' ancestors can only have one dynamic scope in the
+	 * combining state. One can proof that for a concurrency model among the
+	 * total 'nprocs' processes, that there is no shared storage in any
+	 * decesdant scope of s', the combination is sound.
+	 * </p>
+	 * 
+	 * @param combiningStateReference
+	 *            A reference (ID) to a {@link State}, which is the combineing
+	 *            state that will be combined with the monoState
+	 * @param monoState
+	 *            A {@link State} only contains exact one process state.
+	 * @param newPid
+	 *            The new pid of the only process in monoState in the returned
+	 *            state after combination.
+	 * @param nprocs
+	 *            The invariant total number of processes in the combining
+	 *            state.
+	 * @return A state reference to the new state which is obtained by combine
+	 *         combining state and the monoState.
+	 */
+	int combineStates(int combiningStateReference, State monoState, int newPid,
+			int nprocs);
+
+	/**
+	 * Get a saved state by the state reference. The reference can be obtained
+	 * from saving states with the methods {@link #saveState(State)},
+	 * {@link #combineStates(int, State, int, int, CIVLSource)} or
+	 * {@link #getStateSnapshot(State, int, int)}}.
+	 * 
+	 * @param stateReference
+	 *            The reference of a saved state.
+	 * @return The saved state
+	 */
+	State getStateByReference(int stateReference);
+
+	/**
+	 * Save a state, returns a int type reference to the saved state.
+	 * 
+	 * @param state
+	 *            The state will be saved in the stateFactory.
+	 * @param pid
+	 *            The pid of the calling process
+	 * @return A reference that can be used to get the state back with
+	 *         {@link #getStateByReference(int)}
+	 */
+	int saveState(State state, int pid);
+
+	/**
+	 * Remove a state from the saved state set, the state reference is no longer
+	 * valid.
+	 * 
+	 * @param stateRef
+	 *            The state reference to the state that will be removed from the
+	 *            saved state set.
+	 */
+	void unsaveStateByReference(int stateRef);
 	/* ****************** End of Snapshots related method ****************** */
 }

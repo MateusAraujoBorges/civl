@@ -118,19 +118,18 @@ $atomic_f void collator_destroy($collator c) {
   @ depends_on \nothing;
   @ executes_when \true;
   @*/
-$atomic_f $collate_state $collate_snapshot($collator c, $scope scope) {
+$atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   int place = c->place;
   int queue_size, nprocs;
   _Bool first = $true;
   $gcollate_state queue[];
+  $gcollate_state gcollate_state;
+  $collate_state result;
   $proc proc = c->gcollator->procs[place];
 
   nprocs = c->gcollator->nprocs;
   queue = c->gcollator->queue;
   queue_size = c->gcollator->queue_length;
-
-  $state new_state = $get_state(proc, scope);
-  $gcollate_state gcollate_state;
 
   // Looking for the first unarrived collate state. If no such a collate
   // state, create and insert one:
@@ -143,23 +142,17 @@ $atomic_f $collate_state $collate_snapshot($collator c, $scope scope) {
   if (first) {
     _Bool initValue = $false;
     
-    gcollate_state = ($ggcollate_state)$malloc($here, sizeof(struct _ggcollate_state));    
+    gcollate_state = ($gcollate_state)$malloc($here, sizeof(struct _gcollate_state));    
     $seq_init(&gcollate_state->arrived, nprocs, &initValue);
     $seq_init(&gcollate_state->departed, nprocs, &initValue);
-    gcollate_state->state = new_state;
+    gcollate_state->state = $state_null;
     $seq_append(&queue, &gcollate_state, 1);
     c->gcollator->queue_length++;
-  } else {
-    new_state = $combine_states(gcollate_state->state, new_state, scope);
-    
-    gcollate_state->state = new_state;
-  }
-  gcollate_state->arrived[place] = $true;
-  
-  $collate_state result;
-  
+  }  
   result.place = place;
   result.gstate = gcollate_state;
+  $collate_snapshot(result, nprocs, scope);
+  gcollate_state->arrived[place] = $true;
   return result;
 }
 
@@ -178,7 +171,7 @@ $atomic_f $collate_state $collate_snapshot($collator c, $scope scope) {
   @ depends_on \nothing;  
   @ executes_when \true;
   @*/
-$atomic_f $collate_state $collate_unsnapshot($collator c) {
+$atomic_f $collate_state $collate_departs($collator c) {
   int nprocs, queue_size, place, index;
   $gcollate_state queue[];
   $gcollate_state marking;

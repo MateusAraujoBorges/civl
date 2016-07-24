@@ -1,0 +1,10 @@
+#include<pointer.cvh>
+int main() {
+
+  $state s0 = $state_null;
+  $state s1 = $state_null;
+
+  $assert($equals(&s0, &s1));
+}
+
+

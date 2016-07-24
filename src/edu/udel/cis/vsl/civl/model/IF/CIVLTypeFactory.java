@@ -221,9 +221,14 @@ public interface CIVLTypeFactory {
 	 */
 	CIVLPrimitiveType scopeType();
 
-	CIVLPrimitiveType stateType();
-
 	SymbolicTupleType stateSymbolicType();
+
+	/**
+	 * Get the state primitive tyoe
+	 * 
+	 * @return The state primitive type.
+	 */
+	CIVLPrimitiveType stateType();
 
 	/**
 	 * Returns a new struct field, used to complete a struct type.

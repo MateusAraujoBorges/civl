@@ -16,7 +16,12 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 public interface CIVLPrimitiveType extends CIVLType {
 
 	public enum PrimitiveTypeKind {
-		BOOL, DYNAMIC, INT, PROCESS, REAL, SCOPE, STATE, VOID, CHAR, MEMORY
+		BOOL, DYNAMIC, INT, PROCESS, REAL, SCOPE,
+		/**
+		 * An object of a STATE type represents a canonicalized state in CIVL-C
+		 * language.
+		 */
+		STATE, VOID, CHAR, MEMORY
 	};
 
 	/**
