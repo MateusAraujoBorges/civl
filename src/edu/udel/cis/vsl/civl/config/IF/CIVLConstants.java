@@ -52,8 +52,8 @@ public class CIVLConstants {
 	 * path. Since the "include" directory is in the class path, this will cause
 	 * ABC to look in include/civl.
 	 */
-	public final static File CIVL_INCLUDE_PATH = new File(new File(
-			File.separator + "include"), "civl");
+	public final static File CIVL_INCLUDE_PATH = new File(
+			new File(File.separator + "include"), "civl");
 
 	/** The version of this release of CIVL. */
 	public final static String version = "1.7.1+";
@@ -202,8 +202,8 @@ public class CIVLConstants {
 	 * The maximal number of errors allowed before terminating CIVL. 1 by
 	 * default.
 	 */
-	public final static Option errorBoundO = Option.newScalarOption(
-			ERROR_BOUND, INTEGER, "stop after finding this many errors", 1);
+	public final static Option errorBoundO = Option.newScalarOption(ERROR_BOUND,
+			INTEGER, "stop after finding this many errors", 1);
 
 	/**
 	 * The semantics for used to determine when error states are equivalent;
@@ -221,9 +221,10 @@ public class CIVLConstants {
 	/**
 	 * User guided simulation?
 	 */
-	public final static Option guidedO = Option.newScalarOption(GUIDED,
-			BOOLEAN, "user guided simulation; applies only to run, ignored\n"
-					+ "    for all other commands", null);
+	public final static Option guidedO = Option.newScalarOption(GUIDED, BOOLEAN,
+			"user guided simulation; applies only to run, ignored\n"
+					+ "    for all other commands",
+			null);
 
 	/**
 	 * The id of the trace for replay, 0 by default.
@@ -234,9 +235,8 @@ public class CIVLConstants {
 	/**
 	 * Specify values of input variables.
 	 */
-	public final static Option inputO = Option
-			.newMapOption(INPUT,
-					"initialize input variable KEY to VALUE; applies only to run and verify");
+	public final static Option inputO = Option.newMapOption(INPUT,
+			"initialize input variable KEY to VALUE; applies only to run and verify");
 
 	/**
 	 * The maximal depth for search. Infinite by default.
@@ -258,23 +258,23 @@ public class CIVLConstants {
 	 * default.
 	 */
 	public final static Option procBoundO = Option.newScalarOption(PROC_BOUND,
-			INTEGER,
-			"bound on number of live processes (no bound if negative)", -1);
+			INTEGER, "bound on number of live processes (no bound if negative)",
+			-1);
 
 	/**
 	 * TODO can it be cleaned up? Select enabled transitions randomly? Default
 	 * for run.
 	 */
-	public final static Option randomO = Option.newScalarOption(RANDOM,
-			BOOLEAN, "select enabled transitions randomly; default for run,\n"
-					+ "    ignored for all other commands", null);
+	public final static Option randomO = Option.newScalarOption(RANDOM, BOOLEAN,
+			"select enabled transitions randomly; default for run,\n"
+					+ "    ignored for all other commands",
+			null);
 
 	/**
 	 * Save states during depth-first search? true by default.
 	 */
-	public final static Option saveStatesO = Option
-			.newScalarOption(SAVE_STATES, BOOLEAN,
-					"save states during depth-first search", true);
+	public final static Option saveStatesO = Option.newScalarOption(SAVE_STATES,
+			BOOLEAN, "save states during depth-first search", true);
 
 	/**
 	 * Set the random seed for run mode.
@@ -285,8 +285,8 @@ public class CIVLConstants {
 	/**
 	 * Analyze abs calls? false by default.
 	 */
-	public final static Option analyzeAbsO = Option.newScalarOption(
-			ANALYZE_ABS, BOOLEAN, "analyze abs calls? false by default", false);
+	public final static Option analyzeAbsO = Option.newScalarOption(ANALYZE_ABS,
+			BOOLEAN, "analyze abs calls? false by default", false);
 
 	/**
 	 * Show the AST of the program? false by default.
@@ -316,12 +316,10 @@ public class CIVLConstants {
 	 * Print the impact/reachable memory units when the state contains more than
 	 * one processes? false by default.
 	 */
-	public final static Option showMemoryUnitsO = Option
-			.newScalarOption(
-					SHOW_MEM_UNITS,
-					BOOLEAN,
-					"print the impact/reachable memory units when the state contains more than one processes",
-					false);
+	public final static Option showMemoryUnitsO = Option.newScalarOption(
+			SHOW_MEM_UNITS, BOOLEAN,
+			"print the impact/reachable memory units when the state contains more than one processes",
+			false);
 
 	/**
 	 * Show the CIVL model of the program? false by default.
@@ -339,8 +337,8 @@ public class CIVLConstants {
 	/**
 	 * Show all SARL queries? false by default.
 	 */
-	public final static Option showQueriesO = Option.newScalarOption(
-			SHOW_QUERIES, BOOLEAN, "print all queries", false);
+	public final static Option showQueriesO = Option
+			.newScalarOption(SHOW_QUERIES, BOOLEAN, "print all queries", false);
 
 	/**
 	 * Show all states that are saved? false by default.
@@ -351,8 +349,8 @@ public class CIVLConstants {
 	/**
 	 * Show all states? false by default.
 	 */
-	public final static Option showStatesO = Option.newScalarOption(
-			SHOW_STATES, BOOLEAN, "print all states", false);
+	public final static Option showStatesO = Option.newScalarOption(SHOW_STATES,
+			BOOLEAN, "print all states", false);
 
 	/**
 	 * Show the time used by each translation phase? false by default.
@@ -486,8 +484,8 @@ public class CIVLConstants {
 	/**
 	 * Collect output? false by default.
 	 */
-	public final static Option collectOutputO = Option.newScalarOption(
-			COLLECT_OUTPUT, BOOLEAN, "collect output?", false);
+	public final static Option collectOutputO = Option
+			.newScalarOption(COLLECT_OUTPUT, BOOLEAN, "collect output?", false);
 
 	/**
 	 * Collect processes? true by default.
@@ -504,8 +502,8 @@ public class CIVLConstants {
 	/**
 	 * Collect heaps? true by default.
 	 */
-	public final static Option collectHeapsO = Option.newScalarOption(
-			COLLECT_HEAPS, BOOLEAN, "collect heaps?", true);
+	public final static Option collectHeapsO = Option
+			.newScalarOption(COLLECT_HEAPS, BOOLEAN, "collect heaps?", true);
 
 	/**
 	 * Link a source file with the target program.
@@ -545,18 +543,18 @@ public class CIVLConstants {
 	 */
 	public final static Option quietO = Option.newScalarOption(QUIET, BOOLEAN,
 			"ignore output?", false);
-	
+
 	/**
 	 * Perform slice analysis on trace? false by default.
 	 */
-	public final static Option sliceAnalysisO = Option.newScalarOption(SLICE_ANALYSIS, BOOLEAN,
-			"Perform slice analysis on trace?", false);
-	
+	public final static Option sliceAnalysisO = Option.newScalarOption(
+			SLICE_ANALYSIS, BOOLEAN, "Perform slice analysis on trace?", false);
+
 	/**
 	 * Generate witness from trace? false by default.
 	 */
-	public final static Option witnessO = Option.newScalarOption(WITNESS, BOOLEAN,
-			"Generate witness from trace?", false);
+	public final static Option witnessO = Option.newScalarOption(WITNESS,
+			BOOLEAN, "Generate witness from trace?", false);
 
 	/**
 	 * The name of the CIVL system function, which is the starting point of a
@@ -577,11 +575,11 @@ public class CIVLConstants {
 				preprocO, procBoundO, randomO, saveStatesO, seedO,
 				showAmpleSetO, showAmpleSetWtStatesO, showInputVarsO,
 				showMemoryUnitsO, showModelO, showPathConditionO, showProgramO,
-				showProverQueriesO, showQueriesO, showSavedStatesO,
-				showStatesO, showTimeO, showTransitionsO, showUnreachedCodeO,
-				simplifyO, solveO, statelessPrintfO, svcomp16O, quietO,
-				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
-				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
+				showProverQueriesO, showQueriesO, showSavedStatesO, showStatesO,
+				showTimeO, showTransitionsO, showUnreachedCodeO, simplifyO,
+				solveO, statelessPrintfO, svcomp16O, quietO, sysIncludePathO,
+				traceO, userIncludePathO, verboseO, webO, CIVLMacroO,
+				analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
 				sliceAnalysisO, witnessO };
 	}
@@ -608,6 +606,7 @@ public class CIVLConstants {
 	public final static String TIME = "time.h";
 	public final static String CUDA = "cuda.h";
 	public final static String CIVL_CUDA = "civl-cuda.cvh";
+	public final static String COLLATE = "collate.cvh";
 
 	public final static String ASSERT = "assert.h";
 	public final static String COMPLEX = "complex.h";
@@ -630,7 +629,7 @@ public class CIVLConstants {
 	 */
 	public final static Set<String> getAllCivlLibs() {
 		return new HashSet<String>(Arrays.asList(CIVLC, CIVL_MPI, CIVL_PTHREAD,
-				COMM, CONCURRENCY, CIVL_OMP, SEQ, CIVL_CUDA));
+				COMM, CONCURRENCY, CIVL_OMP, SEQ, CIVL_CUDA, COLLATE));
 	}
 
 	/**
@@ -639,9 +638,9 @@ public class CIVLConstants {
 	 * @return all standard c libraries.
 	 */
 	public final static Set<String> getCinterfaces() {
-		return new HashSet<String>(Arrays.asList(MPI, MATH, OMP, PTHREAD,
-				STRING_LIB, SVCOMP, STDIO, STDLIB, TIME, CUDA, SYS_TIME,
-				UNISTD, STDINT));
+		return new HashSet<String>(
+				Arrays.asList(MPI, MATH, OMP, PTHREAD, STRING_LIB, SVCOMP,
+						STDIO, STDLIB, TIME, CUDA, SYS_TIME, UNISTD, STDINT));
 	}
 
 	/**
@@ -651,8 +650,8 @@ public class CIVLConstants {
 	 */
 	public final static Set<String> getAllCLibraries() {
 		return new HashSet<String>(Arrays.asList(MPI, MATH, OMP, PTHREAD,
-				STRING_LIB, SVCOMP, STDIO, STDLIB, TIME, CUDA, SYS_TIME,
-				ASSERT, COMPLEX, CTYPE, FLOAT, GD, GDFX, LIMITS, OP, STDARG,
-				STDBOOL, STDDEF, STDINT, UNISTD));
+				STRING_LIB, SVCOMP, STDIO, STDLIB, TIME, CUDA, SYS_TIME, ASSERT,
+				COMPLEX, CTYPE, FLOAT, GD, GDFX, LIMITS, OP, STDARG, STDBOOL,
+				STDDEF, STDINT, UNISTD));
 	}
 }

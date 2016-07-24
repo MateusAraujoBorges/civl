@@ -94,14 +94,16 @@ public class ImmutableStateFactory implements StateFactory {
 	 * should be the same, in order to allow fast checking of existence and
 	 * returning the value.
 	 */
-	private Map<ImmutableProcessState, ImmutableProcessState> processMap = new HashMap<>(100000);
+	private Map<ImmutableProcessState, ImmutableProcessState> processMap = new HashMap<>(
+			100000);
 
 	/**
 	 * The map of canonic dyscopes. The key and the corresponding value should
 	 * be the same, in order to allow fast checking of existence and returning
 	 * the value.
 	 */
-	private Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap = new HashMap<>(100000);
+	private Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap = new HashMap<>(
+			100000);
 
 	/**
 	 * The number of canonic states.
@@ -113,7 +115,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 * the same, in order to allow fast checking of existence and returning the
 	 * value.
 	 */
-	private Map<ImmutableState, ImmutableState> stateMap = new HashMap<>(1000000);
+	private Map<ImmutableState, ImmutableState> stateMap = new HashMap<>(
+			1000000);
 
 	protected SymbolicExpression undefinedProcessValue;
 
@@ -182,7 +185,8 @@ public class ImmutableStateFactory implements StateFactory {
 	/**
 	 * Factory to create all state objects.
 	 */
-	public ImmutableStateFactory(ModelFactory modelFactory, SymbolicUtility symbolicUtil, MemoryUnitFactory memFactory,
+	public ImmutableStateFactory(ModelFactory modelFactory,
+			SymbolicUtility symbolicUtil, MemoryUnitFactory memFactory,
 			GMCConfiguration gmcConfig, CIVLConfiguration config) {
 		this.modelFactory = modelFactory;
 		this.inputVariables = modelFactory.inputVariables();
@@ -192,7 +196,8 @@ public class ImmutableStateFactory implements StateFactory {
 		this.trueReasoner = universe.reasoner(universe.trueExpression());
 		this.simplify = gmcConfig.getAnonymousSection().isTrue(simplifyO);
 		this.memUnitFactory = (ImmutableMemoryUnitFactory) memFactory;
-		this.undefinedProcessValue = modelFactory.undefinedValue(typeFactory.processSymbolicType());
+		this.undefinedProcessValue = modelFactory
+				.undefinedValue(typeFactory.processSymbolicType());
 		isReservedSymbolicConstant = new ReservedConstant();
 		this.config = config;
 		this.gmcConfig = gmcConfig;
@@ -201,19 +206,23 @@ public class ImmutableStateFactory implements StateFactory {
 	/* ********************** Methods from StateFactory ******************** */
 
 	@Override
-	public ImmutableState addProcess(State state, CIVLFunction function, SymbolicExpression[] arguments, int callerPid,
+	public ImmutableState addProcess(State state, CIVLFunction function,
+			SymbolicExpression[] arguments, int callerPid,
 			boolean selfDestructable) {
 		ImmutableState theState = createNewProcess(state, selfDestructable);
 
-		return pushCallStack2(theState, state.numProcs(), function, -1, arguments, callerPid);
+		return pushCallStack2(theState, state.numProcs(), function, -1,
+				arguments, callerPid);
 	}
 
 	@Override
-	public State addProcess(State state, CIVLFunction function, int functionParentDyscope,
-			SymbolicExpression[] arguments, int callerPid, boolean selfDestructable) {
+	public State addProcess(State state, CIVLFunction function,
+			int functionParentDyscope, SymbolicExpression[] arguments,
+			int callerPid, boolean selfDestructable) {
 		ImmutableState theState = createNewProcess(state, selfDestructable);
 
-		return pushCallStack2(theState, state.numProcs(), function, functionParentDyscope, arguments, callerPid);
+		return pushCallStack2(theState, state.numProcs(), function,
+				functionParentDyscope, arguments, callerPid);
 	}
 
 	/**
@@ -228,7 +237,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @throws CIVLStateException
 	 */
 	@Override
-	public ImmutableState canonic(State state, boolean collectProcesses, boolean collectScopes, boolean collectHeaps,
+	public ImmutableState canonic(State state, boolean collectProcesses,
+			boolean collectScopes, boolean collectHeaps,
 			Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
 		ImmutableState theState = (ImmutableState) state;
 
@@ -263,14 +273,16 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public ImmutableState collectHeaps(State state, Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
+	public ImmutableState collectHeaps(State state,
+			Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
 		ImmutableState theState = (ImmutableState) state;
 
 		// only collect heaps when necessary.
 		if (!this.hasNonEmptyHeaps(theState))
 			return theState;
 		else {
-			Set<SymbolicExpression> reachable = this.reachableHeapObjectsOfState(theState);
+			Set<SymbolicExpression> reachable = this
+					.reachableHeapObjectsOfState(theState);
 			int numDyscopes = theState.numDyscopes();
 			int numHeapFields = typeFactory.heapType().getNumMallocs();
 			Map<SymbolicExpression, SymbolicExpression> oldToNewHeapMemUnits = new HashMap<>();
@@ -278,7 +290,8 @@ public class ImmutableStateFactory implements StateFactory {
 			ReferenceExpression[] fieldRefs = new ReferenceExpression[numHeapFields];
 
 			for (int mallocId = 0; mallocId < numHeapFields; mallocId++) {
-				fieldRefs[mallocId] = universe.tupleComponentReference(universe.identityReference(),
+				fieldRefs[mallocId] = universe.tupleComponentReference(
+						universe.identityReference(),
 						universe.intObject(mallocId));
 			}
 			for (int dyscopeId = 0; dyscopeId < numDyscopes; dyscopeId++) {
@@ -289,66 +302,87 @@ public class ImmutableStateFactory implements StateFactory {
 					continue;
 				else {
 					SymbolicExpression newHeap = heap;
-					SymbolicExpression heapPointer = this.symbolicUtil.makePointer(dyscopeId, 0,
-							universe.identityReference());
+					SymbolicExpression heapPointer = this.symbolicUtil
+							.makePointer(dyscopeId, 0,
+									universe.identityReference());
 
 					for (int mallocId = 0; mallocId < numHeapFields; mallocId++) {
-						SymbolicExpression heapField = universe.tupleRead(heap, universe.intObject(mallocId));
-						int length = this.symbolicUtil.extractInt(null, (NumericExpression) universe.length(heapField));
+						SymbolicExpression heapField = universe.tupleRead(heap,
+								universe.intObject(mallocId));
+						int length = this.symbolicUtil.extractInt(null,
+								(NumericExpression) universe.length(heapField));
 						Map<Integer, Integer> oldID2NewID = new HashMap<>();
 						int numRemoved = 0;
 						SymbolicExpression newHeapField = heapField;
 						boolean hasNew = false;
 
 						for (int objectId = 0; objectId < length; objectId++) {
-							ReferenceExpression objectRef = universe.arrayElementReference(fieldRefs[mallocId],
-									universe.integer(objectId));
-							SymbolicExpression objectPtr = this.symbolicUtil.setSymRef(heapPointer, objectRef);
+							ReferenceExpression objectRef = universe
+									.arrayElementReference(fieldRefs[mallocId],
+											universe.integer(objectId));
+							SymbolicExpression objectPtr = this.symbolicUtil
+									.setSymRef(heapPointer, objectRef);
 
 							if (!reachable.contains(objectPtr)) {
-								SymbolicExpression heapObj = universe.arrayRead(heapField, universe.integer(objectId));
+								SymbolicExpression heapObj = universe.arrayRead(
+										heapField, universe.integer(objectId));
 
-								if (config.checkMemoryLeak() && !symbolicUtil.isInvalidHeapObject(heapObj)
-										&& !toBeIgnored.contains(HeapErrorKind.UNREACHABLE)) {
-									throw new CIVLHeapException(ErrorKind.MEMORY_LEAK, Certainty.CONCRETE, theState,
-											"d" + dyscopeId, dyscopeId, heap, mallocId, objectId,
-											HeapErrorKind.UNREACHABLE, dyscope.lexicalScope().getSource());
+								if (config.checkMemoryLeak()
+										&& !symbolicUtil
+												.isInvalidHeapObject(heapObj)
+										&& !toBeIgnored.contains(
+												HeapErrorKind.UNREACHABLE)) {
+									throw new CIVLHeapException(
+											ErrorKind.MEMORY_LEAK,
+											Certainty.CONCRETE, theState,
+											"d" + dyscopeId, dyscopeId, heap,
+											mallocId, objectId,
+											HeapErrorKind.UNREACHABLE,
+											dyscope.lexicalScope().getSource());
 								}
 								// remove unreachable heap object
 								// updates references
-								for (int nextId = objectId + 1; nextId < length; nextId++) {
+								for (int nextId = objectId
+										+ 1; nextId < length; nextId++) {
 									if (oldID2NewID.containsKey(nextId))
-										oldID2NewID.put(nextId, oldID2NewID.get(nextId) - 1);
+										oldID2NewID.put(nextId,
+												oldID2NewID.get(nextId) - 1);
 									else
 										oldID2NewID.put(nextId, nextId - 1);
 								}
 								// remove object
 								hasNew = true;
-								newHeapField = universe.removeElementAt(newHeapField, objectId - numRemoved);
+								newHeapField = universe.removeElementAt(
+										newHeapField, objectId - numRemoved);
 								numRemoved++;
 							}
 						}
 						if (oldID2NewID.size() > 0)
-							addOldToNewHeapMemUnits(oldID2NewID, heapPointer, fieldRefs[mallocId],
-									oldToNewHeapMemUnits);
+							addOldToNewHeapMemUnits(oldID2NewID, heapPointer,
+									fieldRefs[mallocId], oldToNewHeapMemUnits);
 						if (hasNew)
-							newHeap = universe.tupleWrite(newHeap, universe.intObject(mallocId), newHeapField);
+							newHeap = universe.tupleWrite(newHeap,
+									universe.intObject(mallocId), newHeapField);
 					}
 					if (symbolicUtil.isEmptyHeap(newHeap))
 						newHeap = universe.nullExpression();
-					theState = this.setVariable(theState, 0, dyscopeId, newHeap);
+					theState = this.setVariable(theState, 0, dyscopeId,
+							newHeap);
 				}
 			}
-			computeOldToNewHeapPointers(theState, oldToNewHeapMemUnits, oldToNewHeapMemUnits);
+			computeOldToNewHeapPointers(theState, oldToNewHeapMemUnits,
+					oldToNewHeapMemUnits);
 			for (int i = 0; i < numDyscopes; i++)
-				newScopes[i] = theState.getDyscope(i).updateHeapPointers(oldToNewHeapMemUnits, universe);
+				newScopes[i] = theState.getDyscope(i)
+						.updateHeapPointers(oldToNewHeapMemUnits, universe);
 			theState = theState.setScopes(newScopes);
 			return theState;
 		}
 	}
 
 	@Override
-	public ImmutableState collectScopes(State state, Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
+	public ImmutableState collectScopes(State state,
+			Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
 		ImmutableState theState = (ImmutableState) state;
 		int oldNumScopes = theState.numDyscopes();
 		int[] oldToNew = numberScopes(theState);
@@ -362,20 +396,26 @@ public class ImmutableStateFactory implements StateFactory {
 				newNumScopes++;
 			if (!change && id != i)
 				change = true;
-			if (id < 0 && config.checkMemoryLeak() && !toBeIgnored.contains(HeapErrorKind.NONEMPTY)) {
+			if (id < 0 && config.checkMemoryLeak()
+					&& !toBeIgnored.contains(HeapErrorKind.NONEMPTY)) {
 				ImmutableDynamicScope scopeToBeRemoved = theState.getDyscope(i);
-				Variable heapVariable = scopeToBeRemoved.lexicalScope().variable(ModelConfiguration.HEAP_VAR);
-				SymbolicExpression heapValue = scopeToBeRemoved.getValue(heapVariable.vid());
+				Variable heapVariable = scopeToBeRemoved.lexicalScope()
+						.variable(ModelConfiguration.HEAP_VAR);
+				SymbolicExpression heapValue = scopeToBeRemoved
+						.getValue(heapVariable.vid());
 
-				if (!(heapValue.isNull() || symbolicUtil.isEmptyHeap(heapValue))) {
-					throw new CIVLHeapException(ErrorKind.MEMORY_LEAK, Certainty.CONCRETE, state, "d" + i, i, heapValue,
+				if (!(heapValue.isNull()
+						|| symbolicUtil.isEmptyHeap(heapValue))) {
+					throw new CIVLHeapException(ErrorKind.MEMORY_LEAK,
+							Certainty.CONCRETE, state, "d" + i, i, heapValue,
 							HeapErrorKind.NONEMPTY, heapVariable.getSource());
 				}
 			}
 		}
 		if (change) {
 			IntArray key = new IntArray(oldToNew);
-			UnaryOperator<SymbolicExpression> substituter = dyscopeSubMap.get(key);
+			UnaryOperator<SymbolicExpression> substituter = dyscopeSubMap
+					.get(key);
 
 			if (substituter == null) {
 				substituter = universe.mapSubstituter(scopeSubMap(oldToNew));
@@ -385,7 +425,8 @@ public class ImmutableStateFactory implements StateFactory {
 			ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[newNumScopes];
 			int numProcs = theState.numProcs();
 			ImmutableProcessState[] newProcesses = new ImmutableProcessState[numProcs];
-			BooleanExpression newPathCondition = (BooleanExpression) substituter.apply(theState.getPathCondition());
+			BooleanExpression newPathCondition = (BooleanExpression) substituter
+					.apply(theState.getPathCondition());
 
 			for (int i = 0; i < oldNumScopes; i++) {
 				int newId = oldToNew[i];
@@ -395,23 +436,29 @@ public class ImmutableStateFactory implements StateFactory {
 					int oldParent = oldScope.getParent();
 					// int oldParentIdentifier = oldScope.identifier();
 
-					newScopes[newId] = oldScope.updateDyscopeIds(substituter, universe,
+					newScopes[newId] = oldScope.updateDyscopeIds(substituter,
+							universe,
 							oldParent < 0 ? oldParent : oldToNew[oldParent]);
 				}
 			}
 			for (int pid = 0; pid < numProcs; pid++)
-				newProcesses[pid] = theState.getProcessState(pid).updateDyscopes(oldToNew);
-			theState = ImmutableState.newState(theState, newProcesses, newScopes, newPathCondition);
+				newProcesses[pid] = theState.getProcessState(pid)
+						.updateDyscopes(oldToNew);
+			theState = ImmutableState.newState(theState, newProcesses,
+					newScopes, newPathCondition);
 		}
-		if (theState.numDyscopes() == 1 && !toBeIgnored.contains(HeapErrorKind.NONEMPTY)
+		if (theState.numDyscopes() == 1
+				&& !toBeIgnored.contains(HeapErrorKind.NONEMPTY)
 				&& theState.getProcessState(0).hasEmptyStack()) {
 			// checks the memory leak for the final state
 			DynamicScope dyscope = state.getDyscope(0);
 			SymbolicExpression heap = dyscope.getValue(0);
 
 			if (config.checkMemoryLeak() && !symbolicUtil.isEmptyHeap(heap))
-				throw new CIVLHeapException(ErrorKind.MEMORY_LEAK, Certainty.CONCRETE, state, "d0", 0, heap,
-						HeapErrorKind.NONEMPTY, dyscope.lexicalScope().getSource());
+				throw new CIVLHeapException(ErrorKind.MEMORY_LEAK,
+						Certainty.CONCRETE, state, "d0", 0, heap,
+						HeapErrorKind.NONEMPTY,
+						dyscope.lexicalScope().getSource());
 
 		}
 		return theState;
@@ -419,10 +466,12 @@ public class ImmutableStateFactory implements StateFactory {
 
 	// @Override
 	public State getAtomicLock(State state, int pid) {
-		Variable atomicVar = modelFactory.atomicLockVariableExpression().variable();
+		Variable atomicVar = modelFactory.atomicLockVariableExpression()
+				.variable();
 
 		// assert state.getVariableValue(0, atomicVar.vid())
-		return this.setVariable(state, atomicVar.vid(), 0, modelFactory.processValue(pid));
+		return this.setVariable(state, atomicVar.vid(), 0,
+				modelFactory.processValue(pid));
 	}
 
 	@Override
@@ -445,12 +494,13 @@ public class ImmutableStateFactory implements StateFactory {
 		CIVLFunction function = model.rootFunction();
 		int numArgs = function.parameters().size();
 		SymbolicExpression[] arguments = new SymbolicExpression[numArgs];
-		Variable atomicVar = modelFactory.atomicLockVariableExpression().variable();
+		Variable atomicVar = modelFactory.atomicLockVariableExpression()
+				.variable();
 		Variable timeCountVar = modelFactory.timeCountVariable();
 
 		// reachableMUs.put(0, new HashMap<SymbolicExpression, Boolean>());
-		state = new ImmutableState(new ImmutableProcessState[0], new ImmutableDynamicScope[0],
-				universe.trueExpression());
+		state = new ImmutableState(new ImmutableProcessState[0],
+				new ImmutableDynamicScope[0], universe.trueExpression());
 		state.collectibleCounts = new int[ModelConfiguration.SYMBOL_PREFIXES.length];
 		for (int i = 0; i < ModelConfiguration.SYMBOL_PREFIXES.length; i++) {
 			state.collectibleCounts[i] = 0;
@@ -458,9 +508,11 @@ public class ImmutableStateFactory implements StateFactory {
 		// system function doesn't have any argument, because the General
 		// transformer has translated away all parameters of the main function.
 		state = addProcess(state, function, arguments, -1, false);
-		state = this.setVariable(state, atomicVar.vid(), 0, undefinedProcessValue);
+		state = this.setVariable(state, atomicVar.vid(), 0,
+				undefinedProcessValue);
 		if (timeCountVar != null)
-			state = this.setVariable(state, timeCountVar.vid(), 0, universe.zeroInt());
+			state = this.setVariable(state, timeCountVar.vid(), 0,
+					universe.zeroInt());
 		// state = this.computeReachableMemUnits(state, 0);
 		return canonic(state, false, false, false, emptyHeapErrorSet);
 	}
@@ -485,7 +537,8 @@ public class ImmutableStateFactory implements StateFactory {
 	public boolean lockedByAtomic(State state) {
 		SymbolicExpression symbolicAtomicPid = state.getVariableValue(0,
 				modelFactory.atomicLockVariableExpression().variable().vid());
-		int atomicPid = modelFactory.getProcessId(modelFactory.systemSource(), symbolicAtomicPid);
+		int atomicPid = modelFactory.getProcessId(modelFactory.systemSource(),
+				symbolicAtomicPid);
 
 		return atomicPid >= 0;
 	}
@@ -499,7 +552,8 @@ public class ImmutableStateFactory implements StateFactory {
 			int parent = one;
 
 			while (parent >= 0) {
-				if (parent == another || this.isDescendantOf(state, parent, another))
+				if (parent == another
+						|| this.isDescendantOf(state, parent, another))
 					return parent;
 				parent = state.getParentId(parent);
 			}
@@ -532,7 +586,8 @@ public class ImmutableStateFactory implements StateFactory {
 		// this.computeReachableMUofProc(theState, pid, true),
 		// true);
 		// }
-		theState = ImmutableState.newState(theState, processArray, newScopes, null);
+		theState = ImmutableState.newState(theState, processArray, newScopes,
+				null);
 		return theState;
 	}
 
@@ -542,18 +597,22 @@ public class ImmutableStateFactory implements StateFactory {
 		SymbolicExpression symbolicAtomicPid = state.getVariableValue(0,
 				modelFactory.atomicLockVariableExpression().variable().vid());
 
-		return modelFactory.getProcessId(modelFactory.systemSource(), symbolicAtomicPid);
+		return modelFactory.getProcessId(modelFactory.systemSource(),
+				symbolicAtomicPid);
 	}
 
 	@Override
-	public ImmutableState pushCallStack(State state, int pid, CIVLFunction function, SymbolicExpression[] arguments) {
-		return pushCallStack2((ImmutableState) state, pid, function, -1, arguments, pid);
+	public ImmutableState pushCallStack(State state, int pid,
+			CIVLFunction function, SymbolicExpression[] arguments) {
+		return pushCallStack2((ImmutableState) state, pid, function, -1,
+				arguments, pid);
 	}
 
 	@Override
-	public State pushCallStack(State state, int pid, CIVLFunction function, int functionParentDyscope,
-			SymbolicExpression[] arguments) {
-		return pushCallStack2((ImmutableState) state, pid, function, functionParentDyscope, arguments, pid);
+	public State pushCallStack(State state, int pid, CIVLFunction function,
+			int functionParentDyscope, SymbolicExpression[] arguments) {
+		return pushCallStack2((ImmutableState) state, pid, function,
+				functionParentDyscope, arguments, pid);
 	}
 
 	@Override
@@ -594,7 +653,8 @@ public class ImmutableStateFactory implements StateFactory {
 				int newPid = oldToNewPidMap[i];
 
 				if (newPid >= 0)
-					newProcesses[newPid] = theState.getProcessState(i).setPid(newPid);
+					newProcesses[newPid] = theState.getProcessState(i)
+							.setPid(newPid);
 			}
 			// newReachableMemUnitsMap =
 			// updateProcessReferencesInReachableMemoryUnitsMap(
@@ -603,8 +663,10 @@ public class ImmutableStateFactory implements StateFactory {
 			// oldToNewPidMap, theState, true);
 			// reachableMUsWoPointer = this.updatePIDsForReachableMUs(
 			// oldToNewPidMap, theState, false);
-			newScopes = updateProcessReferencesInScopes(theState, oldToNewPidMap);
-			theState = ImmutableState.newState(theState, newProcesses, newScopes, null);
+			newScopes = updateProcessReferencesInScopes(theState,
+					oldToNewPidMap);
+			theState = ImmutableState.newState(theState, newProcesses,
+					newScopes, null);
 		}
 		return theState;
 	}
@@ -612,7 +674,8 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public State terminateProcess(State state, int pid) {
 		ImmutableState theState = (ImmutableState) state;
-		ImmutableProcessState emptyProcessState = new ImmutableProcessState(pid, false);
+		ImmutableProcessState emptyProcessState = new ImmutableProcessState(pid,
+				false);
 
 		return theState.setProcessState(pid, emptyProcessState);
 	}
@@ -627,9 +690,11 @@ public class ImmutableStateFactory implements StateFactory {
 
 	@Override
 	public State releaseAtomicLock(State state) {
-		Variable atomicVar = modelFactory.atomicLockVariableExpression().variable();
+		Variable atomicVar = modelFactory.atomicLockVariableExpression()
+				.variable();
 
-		return this.setVariable(state, atomicVar.vid(), 0, modelFactory.processValue(-1));
+		return this.setVariable(state, atomicVar.vid(), 0,
+				modelFactory.processValue(-1));
 	}
 
 	/**
@@ -657,17 +722,20 @@ public class ImmutableStateFactory implements StateFactory {
 	 */
 	@Override
 	// TODO UPDATE reachable mem units
-	public ImmutableState setLocation(State state, int pid, Location location, boolean accessChanged) {
+	public ImmutableState setLocation(State state, int pid, Location location,
+			boolean accessChanged) {
 		ImmutableState theState = (ImmutableState) state;
 		ImmutableProcessState[] processArray = theState.copyProcessStates();
 		int dynamicScopeId = theState.getProcessState(pid).getDyscopeId();
-		ImmutableDynamicScope dynamicScope = theState.getDyscope(dynamicScopeId);
+		ImmutableDynamicScope dynamicScope = theState
+				.getDyscope(dynamicScopeId);
 		// int dynamicScopeIdentifier = dynamicScope.identifier();
 		Scope ss0 = dynamicScope.lexicalScope();
 		Scope ss1 = location.scope();
 
 		if (ss0 == ss1) {// remains in the same dyscope
-			processArray[pid] = theState.getProcessState(pid).replaceTop(stackEntry(location, dynamicScopeId));
+			processArray[pid] = theState.getProcessState(pid)
+					.replaceTop(stackEntry(location, dynamicScopeId));
 			theState = theState.setProcessStates(processArray);
 			// if (accessChanged)
 			// theState = updateReachableMemUnitsAccess(theState, pid);
@@ -691,14 +759,16 @@ public class ImmutableStateFactory implements StateFactory {
 				// reachableMUwoPtr, reachableMUwtPtr;
 
 				// the previous scope(s) just disappear
-				processArray[pid] = theState.getProcessState(pid).replaceTop(stackEntry(location, dynamicScopeId));
+				processArray[pid] = theState.getProcessState(pid)
+						.replaceTop(stackEntry(location, dynamicScopeId));
 				// reachableMUwoPtr = this.setReachableMemUnits(theState, pid,
 				// this.removeReachableMUwoPtrFromDyscopes(
 				// dyscopeIDsequence, theState, pid), false);
 				// reachableMUwtPtr = this.setReachableMemUnits(theState, pid,
 				// this.computeReachableMUofProc(theState, pid, true),
 				// true);
-				theState = ImmutableState.newState(theState, processArray, null, null);
+				theState = ImmutableState.newState(theState, processArray, null,
+						null);
 			} else {
 				// iterate DOWN, adding new dynamic scopes...
 				int oldNumScopes = theState.numDyscopes();
@@ -714,14 +784,17 @@ public class ImmutableStateFactory implements StateFactory {
 					BitSet reachers = new BitSet(processArray.length);
 
 					reachers.set(pid);
-					newScopes[index] = initialDynamicScope(joinSequence[i], dynamicScopeId, index, reachers);
+					newScopes[index] = initialDynamicScope(joinSequence[i],
+							dynamicScopeId, index, reachers);
 					dynamicScopeId = index;
 					newDyscopes[i - 1] = dynamicScopeId;
 					index++;
 				}
-				processArray[pid] = processArray[pid].replaceTop(stackEntry(location, dynamicScopeId));
+				processArray[pid] = processArray[pid]
+						.replaceTop(stackEntry(location, dynamicScopeId));
 				setReachablesForProc(newScopes, processArray[pid]);
-				theState = ImmutableState.newState(theState, processArray, newScopes, null);
+				theState = ImmutableState.newState(theState, processArray,
+						newScopes, null);
 				// theState = addReachableMemUnitsFromDyscope(newDyscopes,
 				// newScopes, theState, pid);
 			}
@@ -741,23 +814,27 @@ public class ImmutableStateFactory implements StateFactory {
 		newProcesses = theState.copyProcessStates();
 		newProcesses[pid] = (ImmutableProcessState) p;
 		theState = theState.setProcessStates(newProcesses);
-		newState = new ImmutableState(newProcesses, theState.copyScopes(), theState.getPathCondition());
+		newState = new ImmutableState(newProcesses, theState.copyScopes(),
+				theState.getPathCondition());
 		newState.collectibleCounts = theState.collectibleCounts;
 		newState = newState.setSnapshotsQueues(theState.getSnapshotsQueues());
 		return newState;
 	}
 
 	@Override
-	public ImmutableState setVariable(State state, int vid, int scopeId, SymbolicExpression value) {
+	public ImmutableState setVariable(State state, int vid, int scopeId,
+			SymbolicExpression value) {
 		ImmutableState theState = (ImmutableState) state;
-		ImmutableDynamicScope oldScope = (ImmutableDynamicScope) theState.getDyscope(scopeId);
+		ImmutableDynamicScope oldScope = (ImmutableDynamicScope) theState
+				.getDyscope(scopeId);
 		ImmutableDynamicScope[] newScopes = theState.copyScopes();
 		SymbolicExpression[] newValues = oldScope.copyValues();
 		ImmutableDynamicScope newScope;
 
 		newValues[vid] = value;
-		newScope = new ImmutableDynamicScope(oldScope.lexicalScope(), oldScope.getParent(), // TODO
-																							// oldScope.getParentIdentifier()
+		newScope = new ImmutableDynamicScope(oldScope.lexicalScope(),
+				oldScope.getParent(), // TODO
+										// oldScope.getParentIdentifier()
 				newValues, oldScope.getReachers());
 		newScopes[scopeId] = newScope;
 		theState = theState.setScopes(newScopes);
@@ -765,7 +842,8 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public ImmutableState setVariable(State state, Variable variable, int pid, SymbolicExpression value) {
+	public ImmutableState setVariable(State state, Variable variable, int pid,
+			SymbolicExpression value) {
 		int scopeId = state.getDyscopeID(pid, variable);
 
 		return setVariable(state, variable.vid(), scopeId, value);
@@ -807,7 +885,8 @@ public class ImmutableStateFactory implements StateFactory {
 					newDynamicScopes[i2] = theState.getDyscope(i2);
 			}
 			if (newDynamicScopes != null)
-				newDynamicScopes[i] = newVariableValues != null ? oldScope.setVariableValues(newVariableValues)
+				newDynamicScopes[i] = newVariableValues != null
+						? oldScope.setVariableValues(newVariableValues)
 						: oldScope;
 		}
 		newPathCondition = reasoner.getReducedContext();
@@ -817,11 +896,13 @@ public class ImmutableStateFactory implements StateFactory {
 		} else
 			newPathCondition = null;
 		if (newDynamicScopes != null || newPathCondition != null) {
-			theState = ImmutableState.newState(theState, null, newDynamicScopes, newPathCondition);
+			theState = ImmutableState.newState(theState, null, newDynamicScopes,
+					newPathCondition);
 			theState.simplifiedState = theState;
 		}
 		if (config.isEnableMpiContract()) {
-			ImmutableCollectiveSnapshotsEntry[][] queues = theState.getSnapshotsQueues();
+			ImmutableCollectiveSnapshotsEntry[][] queues = theState
+					.getSnapshotsQueues();
 			ImmutableCollectiveSnapshotsEntry[][] newQueues = new ImmutableCollectiveSnapshotsEntry[queues.length][];
 
 			for (int i = 0; i < queues.length; i++) {
@@ -841,8 +922,8 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public Pair<State, SymbolicExpression> malloc(State state, int dyscopeId, int mallocId,
-			SymbolicExpression heapObject) {
+	public Pair<State, SymbolicExpression> malloc(State state, int dyscopeId,
+			int mallocId, SymbolicExpression heapObject) {
 		DynamicScope dyscope = state.getDyscope(dyscopeId);
 		IntObject indexObj = universe.intObject(mallocId);
 		SymbolicExpression heapValue = dyscope.getValue(0);
@@ -858,7 +939,8 @@ public class ImmutableStateFactory implements StateFactory {
 		heapField = universe.append(heapField, heapObject);
 		heapValue = universe.tupleWrite(heapValue, indexObj, heapField);
 		state = setVariable(state, 0, dyscopeId, heapValue);
-		symRef = (ReferenceExpression) universe.canonic(universe.identityReference());
+		symRef = (ReferenceExpression) universe
+				.canonic(universe.identityReference());
 		symRef = universe.tupleComponentReference(symRef, indexObj);
 		symRef = universe.arrayElementReference(symRef, heapLength);
 		symRef = universe.arrayElementReference(symRef, universe.zeroInt());
@@ -867,27 +949,34 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public Pair<State, SymbolicExpression> malloc(State state, int pid, int dyscopeId, int mallocId,
-			SymbolicType elementType, NumericExpression elementCount) {
+	public Pair<State, SymbolicExpression> malloc(State state, int pid,
+			int dyscopeId, int mallocId, SymbolicType elementType,
+			NumericExpression elementCount) {
 		DynamicScope dyscope = state.getDyscope(dyscopeId);
-		SymbolicExpression heapValue = dyscope.getValue(0).isNull() ? typeFactory.heapType().getInitialValue()
+		SymbolicExpression heapValue = dyscope.getValue(0).isNull()
+				? typeFactory.heapType().getInitialValue()
 				: dyscope.getValue(0);
 		IntObject index = universe.intObject(mallocId);
 		SymbolicExpression heapField = universe.tupleRead(heapValue, index);
-		int length = ((IntegerNumber) universe.extractNumber(universe.length(heapField))).intValue();
-		StringObject heapObjectName = universe
-				.stringObject("Hp" + pid + "s" + dyscopeId + "f" + mallocId + "o" + length);
-		SymbolicType heapObjectType = universe.arrayType(elementType, elementCount);
-		SymbolicExpression heapObject = universe.symbolicConstant(heapObjectName, heapObjectType);
+		int length = ((IntegerNumber) universe
+				.extractNumber(universe.length(heapField))).intValue();
+		StringObject heapObjectName = universe.stringObject(
+				"Hp" + pid + "s" + dyscopeId + "f" + mallocId + "o" + length);
+		SymbolicType heapObjectType = universe.arrayType(elementType,
+				elementCount);
+		SymbolicExpression heapObject = universe
+				.symbolicConstant(heapObjectName, heapObjectType);
 
 		return this.malloc(state, dyscopeId, mallocId, heapObject);
 	}
 
 	@Override
-	public State deallocate(State state, SymbolicExpression heapObjectPointer, int dyscopeId, int mallocId, int index) {
+	public State deallocate(State state, SymbolicExpression heapObjectPointer,
+			int dyscopeId, int mallocId, int index) {
 		SymbolicExpression heapValue = state.getDyscope(dyscopeId).getValue(0);
 		IntObject mallocIndex = universe.intObject(mallocId);
-		SymbolicExpression heapField = universe.tupleRead(heapValue, mallocIndex);
+		SymbolicExpression heapField = universe.tupleRead(heapValue,
+				mallocIndex);
 		// int heapFieldLength = ((IntegerNumber)
 		// universe.extractNumber(universe
 		// .length(heapField))).intValue();
@@ -904,7 +993,8 @@ public class ImmutableStateFactory implements StateFactory {
 		// oldToNewHeapMemUnits.put(symbolicUtil.heapMemUnit(heapObjectPointer),
 		// this.symbolicUtil.undefinedPointer());
 		heapField = universe.arrayWrite(heapField, universe.integer(index),
-				symbolicUtil.invalidHeapObject(((SymbolicArrayType) heapField.type()).elementType()));
+				symbolicUtil.invalidHeapObject(
+						((SymbolicArrayType) heapField.type()).elementType()));
 		heapValue = universe.tupleWrite(heapValue, mallocIndex, heapField);
 		theState = this.setVariable(theState, 0, dyscopeId, heapValue);
 		// computes all affected pointers' oldToNew map
@@ -928,13 +1018,15 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            If the created process is self-destructable
 	 * @return A new instance of state with only the process states changed.
 	 */
-	protected ImmutableState createNewProcess(State state, boolean selfDestructable) {
+	protected ImmutableState createNewProcess(State state,
+			boolean selfDestructable) {
 		ImmutableState theState = (ImmutableState) state;
 		int numProcs = theState.numProcs();
 		ImmutableProcessState[] newProcesses;
 
 		newProcesses = theState.copyAndExpandProcesses();
-		newProcesses[numProcs] = new ImmutableProcessState(numProcs, selfDestructable);
+		newProcesses[numProcs] = new ImmutableProcessState(numProcs,
+				selfDestructable);
 		theState = theState.setProcessStates(newProcesses);
 		return theState;
 	}
@@ -975,9 +1067,10 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            The parent of this dyscope. -1 only for the topmost dyscope.
 	 * @return A new dynamic scope.
 	 */
-	private ImmutableDynamicScope initialDynamicScope(Scope lexicalScope, int parent, int dynamicScopeId,
-			BitSet reachers) {
-		return new ImmutableDynamicScope(lexicalScope, parent, initialValues(lexicalScope), reachers);
+	private ImmutableDynamicScope initialDynamicScope(Scope lexicalScope,
+			int parent, int dynamicScopeId, BitSet reachers) {
+		return new ImmutableDynamicScope(lexicalScope, parent,
+				initialValues(lexicalScope), reachers);
 	}
 
 	/**
@@ -990,7 +1083,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 */
 	protected SymbolicExpression[] initialValues(Scope lexicalScope) {
 		// TODO: special handling for input variables in root scope?
-		SymbolicExpression[] values = new SymbolicExpression[lexicalScope.numVariables()];
+		SymbolicExpression[] values = new SymbolicExpression[lexicalScope
+				.numVariables()];
 
 		for (int i = 0; i < values.length; i++) {
 			values[i] = universe.nullExpression();
@@ -1061,8 +1155,10 @@ public class ImmutableStateFactory implements StateFactory {
 	private Scope[] joinSequence(Scope scope1, Scope scope2) {
 		if (scope1 == scope2)
 			return new Scope[] { scope2 };
-		for (Scope scope1a = scope1; scope1a != null; scope1a = scope1a.parent())
-			for (Scope scope2a = scope2; scope2a != null; scope2a = scope2a.parent())
+		for (Scope scope1a = scope1; scope1a != null; scope1a = scope1a
+				.parent())
+			for (Scope scope2a = scope2; scope2a != null; scope2a = scope2a
+					.parent())
 				if (scope1a.equals(scope2a)) {
 					Scope join = scope2a;
 					int length = 1;
@@ -1079,7 +1175,8 @@ public class ImmutableStateFactory implements StateFactory {
 					}
 					return result;
 				}
-		throw new IllegalArgumentException("No common scope:\n" + scope1 + "\n" + scope2);
+		throw new IllegalArgumentException(
+				"No common scope:\n" + scope1 + "\n" + scope2);
 	}
 
 	/**
@@ -1154,13 +1251,16 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @return The map of process value's from old process value to new process
 	 *         value.
 	 */
-	private Map<SymbolicExpression, SymbolicExpression> procSubMap(int[] oldToNewPidMap) {
+	private Map<SymbolicExpression, SymbolicExpression> procSubMap(
+			int[] oldToNewPidMap) {
 		int size = oldToNewPidMap.length;
-		Map<SymbolicExpression, SymbolicExpression> result = new HashMap<SymbolicExpression, SymbolicExpression>(size);
+		Map<SymbolicExpression, SymbolicExpression> result = new HashMap<SymbolicExpression, SymbolicExpression>(
+				size);
 
 		for (int i = 0; i < size; i++) {
 			SymbolicExpression oldVal = modelFactory.processValue(i);
-			SymbolicExpression newVal = modelFactory.processValue(oldToNewPidMap[i]);
+			SymbolicExpression newVal = modelFactory
+					.processValue(oldToNewPidMap[i]);
 
 			result.put(oldVal, newVal);
 		}
@@ -1192,8 +1292,9 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            which has no caller
 	 * @return new stack with new frame on call stack of process pid
 	 */
-	protected ImmutableState pushCallStack2(ImmutableState state, int pid, CIVLFunction function,
-			int functionParentDyscope, SymbolicExpression[] arguments, int callerPid) {
+	protected ImmutableState pushCallStack2(ImmutableState state, int pid,
+			CIVLFunction function, int functionParentDyscope,
+			SymbolicExpression[] arguments, int callerPid) {
 		Scope containingStaticScope = function.containingScope();
 		Scope functionStaticScope = function.outerScope();
 		ImmutableProcessState[] newProcesses = state.copyProcessStates();
@@ -1211,17 +1312,25 @@ public class ImmutableStateFactory implements StateFactory {
 				ImmutableDynamicScope containingDynamicScope;
 
 				if (caller.stackSize() == 0)
-					throw new IllegalArgumentException("Calling process has empty stack: " + callerPid);
+					throw new IllegalArgumentException(
+							"Calling process has empty stack: " + callerPid);
 				containingDynamicScopeId = caller.getDyscopeId();
 				while (containingDynamicScopeId >= 0) {
-					containingDynamicScope = (ImmutableDynamicScope) state.getDyscope(containingDynamicScopeId);
-					if (containingStaticScope == containingDynamicScope.lexicalScope())
+					containingDynamicScope = (ImmutableDynamicScope) state
+							.getDyscope(containingDynamicScopeId);
+					if (containingStaticScope == containingDynamicScope
+							.lexicalScope())
 						break;
-					containingDynamicScopeId = state.getParentId(containingDynamicScopeId);
+					containingDynamicScopeId = state
+							.getParentId(containingDynamicScopeId);
 				}
 				if (containingDynamicScopeId < 0)
-					throw new IllegalArgumentException("Called function not visible:\nfunction: " + function + "\npid: "
-							+ pid + "\ncallerPid:" + callerPid + "\narguments: " + Arrays.toString(arguments));
+					throw new IllegalArgumentException(
+							"Called function not visible:\nfunction: "
+									+ function + "\npid: " + pid
+									+ "\ncallerPid:" + callerPid
+									+ "\narguments: "
+									+ Arrays.toString(arguments));
 			} else {
 				containingDynamicScopeId = -1;
 			}
@@ -1238,7 +1347,8 @@ public class ImmutableStateFactory implements StateFactory {
 		// containingDynamicScopeIdentifier =
 		// newScopes[containingDynamicScopeId]
 		// .identifier();
-		newScopes[sid] = new ImmutableDynamicScope(functionStaticScope, containingDynamicScopeId, // containingDynamicScopeIdentifier,
+		newScopes[sid] = new ImmutableDynamicScope(functionStaticScope,
+				containingDynamicScopeId, // containingDynamicScopeIdentifier,
 				values, bitSet);
 		{
 			int id = containingDynamicScopeId;
@@ -1255,7 +1365,8 @@ public class ImmutableStateFactory implements StateFactory {
 				id = scope.getParent();
 			}
 		}
-		newProcesses[pid] = state.getProcessState(pid).push(stackEntry(null, sid));
+		newProcesses[pid] = state.getProcessState(pid)
+				.push(stackEntry(null, sid));
 		// newProcesses[pid] = addReachableMemUnitsFromDyscope(sid,
 		// newScopes[sid], newProcesses[pid]);
 		// state = new ImmutableState(newProcesses, newScopes,
@@ -1278,13 +1389,16 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            oldToNewSidMap[old dyscope ID] = new dyscope ID.
 	 * @return The map of scope value's from old scope value to new scope value.
 	 */
-	private Map<SymbolicExpression, SymbolicExpression> scopeSubMap(int[] oldToNewSidMap) {
+	private Map<SymbolicExpression, SymbolicExpression> scopeSubMap(
+			int[] oldToNewSidMap) {
 		int size = oldToNewSidMap.length;
-		Map<SymbolicExpression, SymbolicExpression> result = new HashMap<SymbolicExpression, SymbolicExpression>(size);
+		Map<SymbolicExpression, SymbolicExpression> result = new HashMap<SymbolicExpression, SymbolicExpression>(
+				size);
 
 		for (int i = 0; i < size; i++) {
 			SymbolicExpression oldVal = modelFactory.scopeValue(i);
-			SymbolicExpression newVal = modelFactory.scopeValue(oldToNewSidMap[i]);
+			SymbolicExpression newVal = modelFactory
+					.scopeValue(oldToNewSidMap[i]);
 
 			result.put(oldVal, newVal);
 		}
@@ -1302,7 +1416,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @param process
 	 *            a process state
 	 */
-	private void setReachablesForProc(ImmutableDynamicScope[] dynamicScopes, ImmutableProcessState process) {
+	private void setReachablesForProc(ImmutableDynamicScope[] dynamicScopes,
+			ImmutableProcessState process) {
 		int stackSize = process.stackSize();
 		int numScopes = dynamicScopes.length;
 		boolean reached[] = new boolean[numScopes];
@@ -1403,16 +1518,21 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            removed.
 	 * @return new dynamic scopes or null
 	 */
-	private ImmutableDynamicScope[] updateProcessReferencesInScopes(State state, int[] oldToNewPidMap) {
-		Map<SymbolicExpression, SymbolicExpression> procSubMap = procSubMap(oldToNewPidMap);
-		UnaryOperator<SymbolicExpression> substituter = universe.mapSubstituter(procSubMap);
+	private ImmutableDynamicScope[] updateProcessReferencesInScopes(State state,
+			int[] oldToNewPidMap) {
+		Map<SymbolicExpression, SymbolicExpression> procSubMap = procSubMap(
+				oldToNewPidMap);
+		UnaryOperator<SymbolicExpression> substituter = universe
+				.mapSubstituter(procSubMap);
 		ImmutableDynamicScope[] newScopes = null;
 		int numScopes = state.numDyscopes();
 
 		for (int i = 0; i < numScopes; i++) {
-			ImmutableDynamicScope dynamicScope = (ImmutableDynamicScope) state.getDyscope(i);
+			ImmutableDynamicScope dynamicScope = (ImmutableDynamicScope) state
+					.getDyscope(i);
 			Scope staticScope = dynamicScope.lexicalScope();
-			Collection<Variable> procrefVariableIter = staticScope.variablesWithProcrefs();
+			Collection<Variable> procrefVariableIter = staticScope
+					.variablesWithProcrefs();
 			SymbolicExpression[] newValues = null;
 			BitSet oldBitSet = dynamicScope.getReachers();
 			BitSet newBitSet = updateBitSet(oldBitSet, oldToNewPidMap);
@@ -1432,13 +1552,14 @@ public class ImmutableStateFactory implements StateFactory {
 				if (newScopes == null) {
 					newScopes = new ImmutableDynamicScope[numScopes];
 					for (int j = 0; j < i; j++)
-						newScopes[j] = (ImmutableDynamicScope) state.getDyscope(j);
+						newScopes[j] = (ImmutableDynamicScope) state
+								.getDyscope(j);
 				}
 				if (newValues == null)
 					newScopes[i] = dynamicScope.setReachers(newBitSet);
 				else
-					newScopes[i] = new ImmutableDynamicScope(staticScope, dynamicScope.getParent(), newValues,
-							newBitSet);
+					newScopes[i] = new ImmutableDynamicScope(staticScope,
+							dynamicScope.getParent(), newValues, newBitSet);
 			} else if (newScopes != null) {
 				newScopes[i] = dynamicScope;
 			}
@@ -1464,7 +1585,8 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@SuppressWarnings("incomplete-switch")
-	private void reachableHeapObjectsOfValue(State state, SymbolicExpression value, Set<SymbolicExpression> reachable) {
+	private void reachableHeapObjectsOfValue(State state,
+			SymbolicExpression value, Set<SymbolicExpression> reachable) {
 		if (value.isNull())
 			return;
 		else if (!this.isPointer(value)) {
@@ -1486,10 +1608,12 @@ public class ImmutableStateFactory implements StateFactory {
 				default:
 					switch (kind) {
 					case EXPRESSION:
-						reachableHeapObjectsOfValue(state, (SymbolicExpression) arg, reachable);
+						reachableHeapObjectsOfValue(state,
+								(SymbolicExpression) arg, reachable);
 						break;
 					case SEQUENCE: {
-						Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg).iterator();
+						Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg)
+								.iterator();
 
 						while (iter.hasNext()) {
 							SymbolicExpression expr = iter.next();
@@ -1503,22 +1627,27 @@ public class ImmutableStateFactory implements StateFactory {
 		} else if (value.operator() != SymbolicOperator.TUPLE) {
 			return;
 		} else if (symbolicUtil.isHeapPointer(value)) {
-			SymbolicExpression heapObjPtr = this.symbolicUtil.heapMemUnit(value);
+			SymbolicExpression heapObjPtr = this.symbolicUtil
+					.heapMemUnit(value);
 
 			// if (!reachable.contains(heapObjPtr))
 			reachable.add(heapObjPtr);
-		} else if (value.type().equals(this.typeFactory.pointerSymbolicType())) {
+		} else if (value.type()
+				.equals(this.typeFactory.pointerSymbolicType())) {
 			// other pointers
 			int dyscopeId = this.symbolicUtil.getDyscopeId(null, value);
 
 			if (dyscopeId >= 0) {
 				int vid = this.symbolicUtil.getVariableId(null, value);
-				ReferenceExpression reference = this.symbolicUtil.getSymRef(value);
-				SymbolicExpression varValue = state.getVariableValue(dyscopeId, vid);
+				ReferenceExpression reference = this.symbolicUtil
+						.getSymRef(value);
+				SymbolicExpression varValue = state.getVariableValue(dyscopeId,
+						vid);
 				SymbolicExpression objectValue;
 
 				try {
-					objectValue = this.universe.dereference(varValue, reference);
+					objectValue = this.universe.dereference(varValue,
+							reference);
 				} catch (SARLException e) {
 					return;
 				}
@@ -1546,7 +1675,8 @@ public class ImmutableStateFactory implements StateFactory {
 		return false;
 	}
 
-	private void computeOldToNewHeapPointers(State state, Map<SymbolicExpression, SymbolicExpression> heapMemUnitsMap,
+	private void computeOldToNewHeapPointers(State state,
+			Map<SymbolicExpression, SymbolicExpression> heapMemUnitsMap,
 			Map<SymbolicExpression, SymbolicExpression> oldToNewExpressions) {
 		if (heapMemUnitsMap.size() < 1)
 			return;
@@ -1558,7 +1688,8 @@ public class ImmutableStateFactory implements StateFactory {
 				int numVars = dyscope.numberOfValues();
 
 				for (int vid = 0; vid < numVars; vid++) {
-					computeNewHeapPointer(dyscope.getValue(vid), heapMemUnitsMap, oldToNewExpressions);
+					computeNewHeapPointer(dyscope.getValue(vid),
+							heapMemUnitsMap, oldToNewExpressions);
 				}
 			}
 		}
@@ -1601,30 +1732,37 @@ public class ImmutableStateFactory implements StateFactory {
 				default:
 					switch (kind) {
 					case EXPRESSION:
-						computeNewHeapPointer((SymbolicExpression) arg, heapMemUnitsMap, oldToNewHeapPointers);
+						computeNewHeapPointer((SymbolicExpression) arg,
+								heapMemUnitsMap, oldToNewHeapPointers);
 						break;
 					case SEQUENCE: {
-						Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg).iterator();
+						Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg)
+								.iterator();
 
 						while (iter.hasNext()) {
 							SymbolicExpression expr = iter.next();
 
-							computeNewHeapPointer(expr, heapMemUnitsMap, oldToNewHeapPointers);
+							computeNewHeapPointer(expr, heapMemUnitsMap,
+									oldToNewHeapPointers);
 						}
 					}
 					}
 				}
 			}
 		} else if (symbolicUtil.isHeapPointer(value)) {
-			SymbolicExpression heapObjPtr = this.symbolicUtil.heapMemUnit(value);
+			SymbolicExpression heapObjPtr = this.symbolicUtil
+					.heapMemUnit(value);
 			SymbolicExpression newHeapObjPtr = heapMemUnitsMap.get(heapObjPtr);
 
-			if (newHeapObjPtr != null && !oldToNewHeapPointers.containsKey(value)) {
+			if (newHeapObjPtr != null
+					&& !oldToNewHeapPointers.containsKey(value)) {
 				if (newHeapObjPtr.isNull())
 					oldToNewHeapPointers.put(value, newHeapObjPtr);
 				else {
-					ReferenceExpression ref = symbolicUtil.referenceToHeapMemUnit(value);
-					SymbolicExpression newPointer = symbolicUtil.extendPointer(newHeapObjPtr, ref);
+					ReferenceExpression ref = symbolicUtil
+							.referenceToHeapMemUnit(value);
+					SymbolicExpression newPointer = symbolicUtil
+							.extendPointer(newHeapObjPtr, ref);
 
 					oldToNewHeapPointers.put(value, newPointer);
 				}
@@ -1632,13 +1770,18 @@ public class ImmutableStateFactory implements StateFactory {
 		}
 	}
 
-	private void addOldToNewHeapMemUnits(Map<Integer, Integer> oldID2NewID, SymbolicExpression heapPointer,
-			ReferenceExpression fieldRef, Map<SymbolicExpression, SymbolicExpression> oldToNewMap) {
+	private void addOldToNewHeapMemUnits(Map<Integer, Integer> oldID2NewID,
+			SymbolicExpression heapPointer, ReferenceExpression fieldRef,
+			Map<SymbolicExpression, SymbolicExpression> oldToNewMap) {
 		for (Map.Entry<Integer, Integer> entry : oldID2NewID.entrySet()) {
-			ReferenceExpression oldRef = universe.arrayElementReference(fieldRef, universe.integer(entry.getKey()));
-			SymbolicExpression oldPtr = this.symbolicUtil.setSymRef(heapPointer, oldRef);
-			ReferenceExpression newRef = universe.arrayElementReference(fieldRef, universe.integer(entry.getValue()));
-			SymbolicExpression newPtr = this.symbolicUtil.setSymRef(heapPointer, newRef);
+			ReferenceExpression oldRef = universe.arrayElementReference(
+					fieldRef, universe.integer(entry.getKey()));
+			SymbolicExpression oldPtr = this.symbolicUtil.setSymRef(heapPointer,
+					oldRef);
+			ReferenceExpression newRef = universe.arrayElementReference(
+					fieldRef, universe.integer(entry.getValue()));
+			SymbolicExpression newPtr = this.symbolicUtil.setSymRef(heapPointer,
+					newRef);
 
 			oldToNewMap.put(oldPtr, newPtr);
 		}
@@ -1666,7 +1809,8 @@ public class ImmutableStateFactory implements StateFactory {
 
 		for (int dyscopeId = 0; dyscopeId < numDyscopes; dyscopeId++) {
 			ImmutableDynamicScope oldScope = theState.getDyscope(dyscopeId);
-			ImmutableDynamicScope newScope = oldScope.updateSymbolicConstants(canonicRenamer);
+			ImmutableDynamicScope newScope = oldScope
+					.updateSymbolicConstants(canonicRenamer);
 
 			change = change || newScope != oldScope;
 			newScopes[dyscopeId] = newScope;
@@ -1675,15 +1819,18 @@ public class ImmutableStateFactory implements StateFactory {
 			newScopes = null;
 
 		BooleanExpression oldPathCondition = theState.getPathCondition();
-		BooleanExpression newPathCondition = (BooleanExpression) canonicRenamer.apply(oldPathCondition);
+		BooleanExpression newPathCondition = (BooleanExpression) canonicRenamer
+				.apply(oldPathCondition);
 
 		if (oldPathCondition == newPathCondition)
 			newPathCondition = null;
 		else
 			change = true;
 		if (change) {
-			theState = ImmutableState.newState(theState, null, newScopes, newPathCondition);
-			theState = theState.updateCollectibleCount(ModelConfiguration.HAVOC_PREFIX_INDEX,
+			theState = ImmutableState.newState(theState, null, newScopes,
+					newPathCondition);
+			theState = theState.updateCollectibleCount(
+					ModelConfiguration.HAVOC_PREFIX_INDEX,
 					canonicRenamer.getNumNewNames());
 		}
 		return theState;
@@ -1700,7 +1847,8 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public Map<Variable, SymbolicExpression> inputVariableValueMap(State state) {
+	public Map<Variable, SymbolicExpression> inputVariableValueMap(
+			State state) {
 		Map<Variable, SymbolicExpression> result = new LinkedHashMap<>();
 
 		// If the root process has no stack entry, return a empty map:
@@ -1708,11 +1856,14 @@ public class ImmutableStateFactory implements StateFactory {
 			// If the parameter is a merged state, the dynamic scope id of the
 			// root
 			// lexical scope may not be 0:
-			int rootDysid = state.getDyscope(0, ModelConfiguration.STATIC_ROOT_SCOPE);
+			int rootDysid = state.getDyscope(0,
+					ModelConfiguration.STATIC_ROOT_SCOPE);
 
 			for (Variable variable : this.inputVariables) {
-				assert variable.scope().id() == ModelConfiguration.STATIC_ROOT_SCOPE;
-				result.put(variable, state.getVariableValue(rootDysid, variable.vid()));
+				assert variable.scope()
+						.id() == ModelConfiguration.STATIC_ROOT_SCOPE;
+				result.put(variable,
+						state.getVariableValue(rootDysid, variable.vid()));
 			}
 		}
 		return result;
@@ -1720,13 +1871,16 @@ public class ImmutableStateFactory implements StateFactory {
 
 	/* **************** MPI contracts related functions ******************* */
 	@Override
-	public ImmutableState commitUpdatedChannelsToEntries(State state, int queueId, SymbolicExpression[] newBuffers) {
+	public ImmutableState commitUpdatedChannelsToEntries(State state,
+			int queueId, SymbolicExpression[] newBuffers) {
 		ImmutableState tmpState = (ImmutableState) state;
-		ImmutableCollectiveSnapshotsEntry[][] queues = tmpState.getSnapshotsQueues();
+		ImmutableCollectiveSnapshotsEntry[][] queues = tmpState
+				.getSnapshotsQueues();
 		ImmutableCollectiveSnapshotsEntry[] queue;
 		int queueLength;
 
-		assert queues != null : "Commite updated message channels to a " + "state with empty collective queue";
+		assert queues != null : "Commite updated message channels to a "
+				+ "state with empty collective queue";
 		assert queues.length > queueId;
 		queue = queues[queueId];
 		assert queue != null : "Commite updated message channels to an unexisted collective queue";
@@ -1743,7 +1897,8 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public ImmutableState mergeMonostates(State state, ImmutableCollectiveSnapshotsEntry entry) {
+	public ImmutableState mergeMonostates(State state,
+			ImmutableCollectiveSnapshotsEntry entry) {
 		ImmutableMonoState[] monoStates = entry.getMonoStates();
 		return mergeStatesWorker(state, entry, monoStates, entry.getMaxPid());
 	}
@@ -1758,8 +1913,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @return
 	 */
 	@Override
-	public ImmutableState partialMergeMonostates(State state, ImmutableCollectiveSnapshotsEntry entry,
-			int place2Pid[]) {
+	public ImmutableState partialMergeMonostates(State state,
+			ImmutableCollectiveSnapshotsEntry entry, int place2Pid[]) {
 		assert entry.contractKind() == ContractKind.WAITSFOR;
 		int numMonoStates = entry.numMonoStates();
 		ImmutableMonoState monoStates[] = entry.getMonoStates();
@@ -1778,7 +1933,8 @@ public class ImmutableStateFactory implements StateFactory {
 			// Reorganize monoStates:
 			for (int i = 0; i < numMissing; i++) {
 				int missPlace = missingPlaces[i];
-				ImmutableMonoState missOne = takeSnapshot((ImmutableState) state, place2Pid[missPlace]);
+				ImmutableMonoState missOne = takeSnapshot(
+						(ImmutableState) state, place2Pid[missPlace]);
 
 				monoStates[missPlace] = missOne;
 				if (maxPid < missOne.getProcessState().getPid())
@@ -1790,8 +1946,9 @@ public class ImmutableStateFactory implements StateFactory {
 
 	// pre-condition: entry exists.
 	@Override
-	public ImmutableState addToCollectiveSnapshotsEntry(ImmutableState state, int pid, int place, int queueID,
-			int entryPos, Expression assertion) {
+	public ImmutableState addToCollectiveSnapshotsEntry(ImmutableState state,
+			int pid, int place, int queueID, int entryPos,
+			Expression assertion) {
 		ImmutableCollectiveSnapshotsEntry[] queue = state.getSnapshots(queueID);
 		ImmutableCollectiveSnapshotsEntry entry;
 		ImmutableMonoState snapshot;
@@ -1806,12 +1963,15 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state, int pid, int numProcesses, int place,
-			int queueID, Expression assertion, SymbolicExpression channels, ContractKind kind, int[][] agreedVars,
+	public ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state,
+			int pid, int numProcesses, int place, int queueID,
+			Expression assertion, SymbolicExpression channels,
+			ContractKind kind, int[][] agreedVars,
 			SymbolicExpression[] agreedVals) {
 		ImmutableCollectiveSnapshotsEntry[] queue = state.getSnapshots(queueID);
 		ImmutableCollectiveSnapshotsEntry[] newQueue;
-		ImmutableCollectiveSnapshotsEntry entry = new ImmutableCollectiveSnapshotsEntry(numProcesses, universe, kind);
+		ImmutableCollectiveSnapshotsEntry entry = new ImmutableCollectiveSnapshotsEntry(
+				numProcesses, universe, kind);
 		ImmutableMonoState snapshot;
 
 		// take a snapshot
@@ -1834,7 +1994,8 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public State dequeueCollectiveSnapshotsEntry(State state, int queueID) {
 		ImmutableState immuState = (ImmutableState) state;
-		ImmutableCollectiveSnapshotsEntry[] queue = immuState.getSnapshots(queueID);
+		ImmutableCollectiveSnapshotsEntry[] queue = immuState
+				.getSnapshots(queueID);
 
 		assert queue != null && queue.length > 0 : "Dequeues on an empty queue";
 		if (queue.length == 1)
@@ -1845,9 +2006,11 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public ImmutableCollectiveSnapshotsEntry peekCollectiveSnapshotsEntry(State state, int queueID) {
+	public ImmutableCollectiveSnapshotsEntry peekCollectiveSnapshotsEntry(
+			State state, int queueID) {
 		ImmutableState immuState = (ImmutableState) state;
-		ImmutableCollectiveSnapshotsEntry[] queue = immuState.getSnapshots(queueID);
+		ImmutableCollectiveSnapshotsEntry[] queue = immuState
+				.getSnapshots(queueID);
 		ImmutableCollectiveSnapshotsEntry entry;
 		;
 
@@ -1857,13 +2020,15 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public ImmutableCollectiveSnapshotsEntry[] getSnapshotsQueue(State state, int queueID) {
+	public ImmutableCollectiveSnapshotsEntry[] getSnapshotsQueue(State state,
+			int queueID) {
 		return ((ImmutableState) state).getSnapshots(queueID);
 	}
 
 	@Override
 	public ImmutableState copySnapshotsQueues(State fromState, State toState) {
-		ImmutableCollectiveSnapshotsEntry[][] queues = ((ImmutableState) fromState).getSnapshotsQueues();
+		ImmutableCollectiveSnapshotsEntry[][] queues = ((ImmutableState) fromState)
+				.getSnapshotsQueues();
 
 		return ((ImmutableState) toState).setSnapshotsQueues(queues);
 	}
@@ -1883,8 +2048,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @param outputDyscopes
 	 *            An array of new {@link DynamicScope}
 	 */
-	private void renumberDyscopes(ImmutableDynamicScope[] oldDyscopes, int[] oldToNew,
-			ImmutableDynamicScope[] outputDyscopes) {
+	private void renumberDyscopes(ImmutableDynamicScope[] oldDyscopes,
+			int[] oldToNew, ImmutableDynamicScope[] outputDyscopes) {
 		IntArray key = new IntArray(oldToNew);
 		UnaryOperator<SymbolicExpression> substituter = dyscopeSubMap.get(key);
 		int numOldDyscopes = oldDyscopes.length;
@@ -1901,7 +2066,8 @@ public class ImmutableStateFactory implements StateFactory {
 				int oldParent = oldScope.getParent();
 				// int oldParentIdentifier = oldScope.identifier();
 
-				outputDyscopes[newId] = oldScope.updateDyscopeIds(substituter, universe,
+				outputDyscopes[newId] = oldScope.updateDyscopeIds(substituter,
+						universe,
 						oldParent < 0 ? oldParent : oldToNew[oldParent]);
 			}
 		}
@@ -1968,12 +2134,14 @@ public class ImmutableStateFactory implements StateFactory {
 			}
 		}
 		renumberDyscopes(oldDyscopes, oldToNew, newDyscopes);
-		processState = (ImmutableProcessState) processState.setStackEntries(newMonoFrame);
+		processState = (ImmutableProcessState) processState
+				.setStackEntries(newMonoFrame);
 		newProcessState = processState.updateDyscopes(oldToNew);
 		// TODO: Does the path condition contain references on other processes ?
 		pathCondition = state.getPathCondition();
 		newDyscopes = Arrays.copyOf(newDyscopes, newDyscopesCounter);
-		snapshot = new ImmutableMonoState(newProcessState, newDyscopes, pathCondition);
+		snapshot = new ImmutableMonoState(newProcessState, newDyscopes,
+				pathCondition);
 		return snapshot;
 	}
 
@@ -2012,8 +2180,9 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            enough for saving PIDs.
 	 * @return
 	 */
-	private ImmutableState mergeStatesWorker(State state, CollectiveSnapshotsEntry entry,
-			ImmutableMonoState[] monoStates, int maxPid) {
+	private ImmutableState mergeStatesWorker(State state,
+			CollectiveSnapshotsEntry entry, ImmutableMonoState[] monoStates,
+			int maxPid) {
 		ImmutableState newState;
 		int numProcesses = monoStates.length;
 		ImmutableProcessState[] processes = new ImmutableProcessState[numProcesses];
@@ -2033,26 +2202,32 @@ public class ImmutableStateFactory implements StateFactory {
 
 			processes[place] = process.setPid(place);
 			procOldToNew[oldPid] = place;
-			localDyscopes[place] = this.updateProcessReferencesInScopes(monoState, procOldToNew);
+			localDyscopes[place] = this
+					.updateProcessReferencesInScopes(monoState, procOldToNew);
 			// computes oldToNew arrays
 			dyscopeOldToNews[place] = new int[localDyscopes[place].length];
 			for (int sid = 0; sid < numDyscopes; sid++)
 				dyscopeOldToNews[place][sid] = totalDyscopeCounter++;
-			pathCondition = universe.and(pathCondition, monoState.getPathCondition());
+			pathCondition = universe.and(pathCondition,
+					monoState.getPathCondition());
 		}
 		dyscopes = new ImmutableDynamicScope[totalDyscopeCounter];
 		// re-numbers dyscopes
 		for (int place = 0; place < numProcesses; place++) {
-			renumberDyscopes(localDyscopes[place], dyscopeOldToNews[place], dyscopes);
-			processes[place] = processes[place].updateDyscopes(dyscopeOldToNews[place]);
+			renumberDyscopes(localDyscopes[place], dyscopeOldToNews[place],
+					dyscopes);
+			processes[place] = processes[place]
+					.updateDyscopes(dyscopeOldToNews[place]);
 		}
 		newState = new ImmutableState(processes, dyscopes, pathCondition);
-		newState = newState.setSnapshotsQueues(((ImmutableState) state).getSnapshotsQueues());
+		newState = newState.setSnapshotsQueues(
+				((ImmutableState) state).getSnapshotsQueues());
 		return newState;
 	}
 
 	@Override
-	public ImmutableState updateProcessesForState(State state, int[] procsNewToOld) {
+	public ImmutableState updateProcessesForState(State state,
+			int[] procsNewToOld) {
 		int numProcesses = procsNewToOld.length;
 		ImmutableProcessState processes[] = new ImmutableProcessState[numProcesses];
 		int procsOldToNew[] = new int[state.numProcs()];
@@ -2061,7 +2236,8 @@ public class ImmutableStateFactory implements StateFactory {
 		for (int i = 0; i < procsOldToNew.length; i++)
 			procsOldToNew[i] = -1;
 		for (int place = 0; place < numProcesses; place++) {
-			ImmutableProcessState process = (ImmutableProcessState) state.getProcessState(procsNewToOld[place]);
+			ImmutableProcessState process = (ImmutableProcessState) state
+					.getProcessState(procsNewToOld[place]);
 			int oldPid = process.getPid();
 
 			processes[place] = process.setPid(place);
@@ -2075,16 +2251,21 @@ public class ImmutableStateFactory implements StateFactory {
 		// processes[place] = processes[place]
 		// .updateDyscopes(dyscopeOldToNews[place]);
 		// }
-		return new ImmutableState(processes, updatedDyscopes, state.getPathCondition());
+		return new ImmutableState(processes, updatedDyscopes,
+				state.getPathCondition());
 	}
 
 	@Override
-	public Pair<State, SymbolicConstant> getFreshSymbol(State state, int index, SymbolicType type) {
+	public Pair<State, SymbolicConstant> getFreshSymbol(State state, int index,
+			SymbolicType type) {
 		ImmutableState immutableState = (ImmutableState) state;
 		int count = immutableState.collectibleCounts[index];
-		SymbolicConstant newSymbol = universe
-				.symbolicConstant(universe.stringObject(ModelConfiguration.SYMBOL_PREFIXES[index] + count), type);
-		State newState = immutableState.updateCollectibleCount(index, count + 1);
+		SymbolicConstant newSymbol = universe.symbolicConstant(
+				universe.stringObject(
+						ModelConfiguration.SYMBOL_PREFIXES[index] + count),
+				type);
+		State newState = immutableState.updateCollectibleCount(index,
+				count + 1);
 
 		return new Pair<>(newState, newSymbol);
 	}

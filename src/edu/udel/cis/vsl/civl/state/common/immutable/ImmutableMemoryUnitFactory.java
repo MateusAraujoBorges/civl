@@ -143,7 +143,8 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 	 *            The second reference expression.
 	 * @return True iff the two given references do NOT have any intersection.
 	 */
-	private boolean isJoint(ReferenceExpression ref1, ReferenceExpression ref2) {
+	private boolean isJoint(ReferenceExpression ref1,
+			ReferenceExpression ref2) {
 		List<ReferenceExpression> ancestors1, ancestors2;
 		int numAncestors1, numAncestors2, minNum;
 
@@ -155,8 +156,8 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 		numAncestors2 = ancestors2.size();
 		minNum = numAncestors1 <= numAncestors2 ? numAncestors1 : numAncestors2;
 		for (int i = 0; i < minNum; i++) {
-			ReferenceExpression ancestor1 = ancestors1.get(i), ancestor2 = ancestors2
-					.get(i);
+			ReferenceExpression ancestor1 = ancestors1.get(i),
+					ancestor2 = ancestors2.get(i);
 			BooleanExpression sameAncestors = universe.equals(ancestor1,
 					ancestor2);
 
@@ -188,9 +189,9 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 	public void add(MemoryUnitSet muSet, SymbolicExpression pointer) {
 		int scope = modelFactory.getScopeId(null,
 				universe.tupleRead(pointer, zero));
-		int var = ((IntegerNumber) universe
-				.extractNumber((NumericExpression) universe.tupleRead(pointer,
-						one))).intValue();
+		int var = ((IntegerNumber) universe.extractNumber(
+				(NumericExpression) universe.tupleRead(pointer, one)))
+						.intValue();
 		ReferenceExpression reference = (ReferenceExpression) universe
 				.tupleRead(pointer, two);
 		ImmutableMemoryUnit mu = this.newMemoryUnit(scope, var, reference);

@@ -184,8 +184,8 @@ public class ModelTranslator {
 	 */
 	ModelTranslator(GMCConfiguration gmcConfig, GMCSection gmcSection,
 			String[] filenames, String coreName) throws PreprocessorException {
-		this(gmcConfig, gmcSection, filenames, coreName, SARL
-				.newStandardUniverse());
+		this(gmcConfig, gmcSection, filenames, coreName,
+				SARL.newStandardUniverse());
 	}
 
 	/**
@@ -261,8 +261,8 @@ public class ModelTranslator {
 
 		task.setDynamicTask(new ParseSystemLibrary(executor));
 		frontEnd = executor.getFrontEnd();
-		this.transformerFactory = Transforms.newTransformerFactory(frontEnd
-				.getASTFactory());
+		this.transformerFactory = Transforms
+				.newTransformerFactory(frontEnd.getASTFactory());
 		addTransformations(frontEnd, task, macros);
 		executor.execute();
 		return executor.getProgram();
@@ -280,37 +280,30 @@ public class ModelTranslator {
 					}
 				}
 			}
-		task.addTransformRecord(transformerFactory
-				.getSvcompTransformerRecord(config));
+		task.addTransformRecord(
+				transformerFactory.getSvcompTransformerRecord(config));
 		if (config.isEnableMpiContract())
-			task.addTransformRecord(transformerFactory
-					.getContractTransformerRecord());
-		task.addTransformRecord(transformerFactory
-				.getGeneralTransformerRecord());
+			task.addTransformRecord(
+					transformerFactory.getContractTransformerRecord());
+		task.addTransformRecord(
+				transformerFactory.getGeneralTransformerRecord());
 		task.addTransformRecord(transformerFactory.getIOTransformerRecord());
-		// if (hasOmp) {
-		// if (!config.ompNoSimplify())
-		task.addTransformRecord(transformerFactory
-				.getOpenMPSimplifierRecord(config));
-		task.addTransformRecord(transformerFactory
-				.getOpenMPOrphanTransformerRecord());
-		task.addTransformRecord(transformerFactory
-				.getOpenMP2CIVLTransformerRecord(config));
-		// }
-		// if (hasPthread) {
-		task.addTransformRecord(transformerFactory
-				.getMacroTransformerRecord(config));
-		task.addTransformRecord(transformerFactory
-				.getPthread2CIVLTransformerRecord());
-		// }
-		// if (hasMpi)
-		task.addTransformRecord(transformerFactory
-				.getMPI2CIVLTransformerRecord());
-		// if (hasCuda)
-		task.addTransformRecord(transformerFactory
-				.getCuda2CIVLTransformerRecord());
-		task.addTransformRecord(transformerFactory
-				.getIntDivTransformerRecord(macros));
+		task.addTransformRecord(
+				transformerFactory.getOpenMPSimplifierRecord(config));
+		task.addTransformRecord(
+				transformerFactory.getOpenMPOrphanTransformerRecord());
+		task.addTransformRecord(
+				transformerFactory.getOpenMP2CIVLTransformerRecord(config));
+		task.addTransformRecord(
+				transformerFactory.getMacroTransformerRecord(config));
+		task.addTransformRecord(
+				transformerFactory.getPthread2CIVLTransformerRecord());
+		task.addTransformRecord(
+				transformerFactory.getMPI2CIVLTransformerRecord());
+		task.addTransformRecord(
+				transformerFactory.getCuda2CIVLTransformerRecord());
+		task.addTransformRecord(
+				transformerFactory.getIntDivTransformerRecord(macros));
 		task.addTransformCode(SideEffectRemover.CODE);
 		task.addTransformCode(Pruner.CODE);
 	}
@@ -387,8 +380,8 @@ public class ModelTranslator {
 	 *             if there is a problem reading source files.
 	 * @throws ABCException
 	 */
-	List<VariableDeclarationNode> getInputVariables() throws IOException,
-			ABCException {
+	List<VariableDeclarationNode> getInputVariables()
+			throws IOException, ABCException {
 		Program program;
 
 		program = this.buildProgram();
@@ -541,8 +534,8 @@ public class ModelTranslator {
 	 *         tacked on at the end
 	 */
 	private File[] getSysIncludes(GMCSection config) {
-		File[] sysIncludes = extractPaths((String) config
-				.getValue(sysIncludePathO));
+		File[] sysIncludes = extractPaths(
+				(String) config.getValue(sysIncludePathO));
 		int numIncludes = sysIncludes.length;
 		File[] newSysIncludes = new File[numIncludes + 1];
 
