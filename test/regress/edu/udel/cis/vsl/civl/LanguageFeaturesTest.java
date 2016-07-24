@@ -409,7 +409,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void stateNullObjects() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("stateNull.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("stateNull.cvl"))); 
 	}
 
 	@Test
