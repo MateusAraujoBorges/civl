@@ -1,0 +1,25 @@
+#include <collate.cvh>
+#include <stdlib.h>
+#include <stdio.h>
+
+$scope root = $here;
+$gcollator gcollator;
+
+void process(int place) {
+  $scope here = $here;	
+  $collator collator = $collator_create(gcollator, here, place);
+  $collate_state cs;
+
+  cs = $collate_arrives(collator, here);
+  $collate_departs(collator);
+  free(collator);
+}
+
+int main() {
+  gcollator = $gcollator_create(root, 5);
+  $parfor (int i : 0 .. 4)    {
+    process(i);
+}   
+  free(gcollator);
+  return 0;
+}

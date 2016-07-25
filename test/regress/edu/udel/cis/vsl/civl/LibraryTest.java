@@ -33,6 +33,7 @@ public class LibraryTest {
 	@SuppressWarnings("unused")
 	private final static String EXTERNAL = "external";
 	private final static String MATH = "math";
+	private final static String COLLATE = "collate";
 
 	/* *************************** Helper Methods *************************** */
 
@@ -64,7 +65,8 @@ public class LibraryTest {
 
 	@Test
 	public void string() throws ABCException {
-		assertTrue(ui.run("verify", QUIET, filename(STRING, "string_test.cvl")));
+		assertTrue(
+				ui.run("verify", QUIET, filename(STRING, "string_test.cvl")));
 	}
 
 	@Test
@@ -173,8 +175,8 @@ public class LibraryTest {
 
 	@Test
 	public void translatePointer() throws ABCException {
-		assertTrue(ui
-				.run("verify", QUIET, filename(CIVLC, "translate_ptr.cvl")));
+		assertTrue(
+				ui.run("verify", QUIET, filename(CIVLC, "translate_ptr.cvl")));
 	}
 
 	@Test
@@ -199,8 +201,8 @@ public class LibraryTest {
 
 	@Test
 	public void bundleAndHeap() throws ABCException {
-		assertTrue(ui
-				.run("verify", QUIET, filename(CIVLC, "bundleAndHeap.cvl")));
+		assertTrue(
+				ui.run("verify", QUIET, filename(CIVLC, "bundleAndHeap.cvl")));
 	}
 
 	@Test
@@ -210,8 +212,8 @@ public class LibraryTest {
 
 	@Test
 	public void rand_r() throws ABCException {
-		assertTrue(ui.run("verify -D_LINUX", QUIET,
-				filename(STDLIB, "rand_r.c")));
+		assertTrue(
+				ui.run("verify -D_LINUX", QUIET, filename(STDLIB, "rand_r.c")));
 	}
 
 	@Test
@@ -295,8 +297,8 @@ public class LibraryTest {
 
 	@Test
 	public void sqrt() throws ABCException {
-		assertTrue(ui
-				.run("verify ", QUIET, NO_PRINTF, filename(MATH, "sqrt.c")));
+		assertTrue(
+				ui.run("verify ", QUIET, NO_PRINTF, filename(MATH, "sqrt.c")));
 	}
 
 	@Test
@@ -324,6 +326,12 @@ public class LibraryTest {
 	@Test
 	public void power() {
 		assertTrue(ui.run("verify", QUIET, filename(CIVLC, "pow.cvl")));
+	}
+
+	@Test
+	public void completeCollateState() {
+		assertTrue(ui.run("verify", QUIET,
+				filename(COLLATE, "completeCollateState.cvl")));
 	}
 
 	@AfterClass

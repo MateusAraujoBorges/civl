@@ -3,6 +3,8 @@
 
 #include<collate.cvh>
 #include<civlc.cvh>
+#include<seq.cvh>
+#include <stdio.h>
 /******************* Definition of datatypes: *******************/
 
 struct _gcollator {
@@ -51,19 +53,14 @@ struct _collate_state {
  * scope : The scope where the object is allocated.  
  * nprocs: The number of processes included in the global collator.
  */
-$gcollator gcollator_create($scope scope, int nprocs) {
+$gcollator $gcollator_create($scope scope, int nprocs) {
   $gcollator gcollator = ($gcollator)$malloc(scope, sizeof(struct _gcollator));
-  
-  gcollator_obj->nprocs = nprocs;
-  gcollator_obj->procs = (($proc[nprocs])$lambda(int i) $proc_null);
-  gcollator_obj->queue_length = 0;
-  $seq_init(&(gcollator_obj->queue), 0, NULL);
-  return gcollator;
-}
 
-/* Destroy a $gcollator*/
-$atomic_f void gcollator_destroy($gcollator g) {
-  $free(g);
+  gcollator->nprocs = nprocs;
+  gcollator->procs = (($proc[nprocs])$lambda(int i) $proc_null);
+  gcollator->queue_length = 0;
+  $seq_init(&(gcollator->queue), 0, NULL);
+  return gcollator;
 }
 
 
@@ -78,18 +75,13 @@ $atomic_f void gcollator_destroy($gcollator g) {
  * be greater than or equal to 0 and less than the number of all
  * participants.
  */
-$collator collator_create($gcollator gcollator, $scope scope, int place) {
-  $collator collator = ($collator)$malloc(scope, sizeof(_collator));
+$collator $collator_create($gcollator gcollator, $scope scope, int place) {
+  $collator collator = ($collator)$malloc(scope, sizeof(struct _collator));
   
   collator->place = place;
   collator->gcollator = gcollator;
   collator->gcollator->procs[place] = $self;
   return collator;
-}
-
-/* Destroy a collator */
-$atomic_f void collator_destroy($collator c) {
-  $free(c);
 }
 
 /* Takes a snapshot for the calling process on the current state.  Let
@@ -114,18 +106,16 @@ $atomic_f void collator_destroy($collator c) {
  * Explanation for contracts:
  *
  */
-/*@ pure;  
-  @ depends_on \nothing;
+/*@ depends_on \nothing;
   @ executes_when \true;
   @*/
 $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   int place = c->place;
   int queue_size, nprocs;
   _Bool first = $true;
-  $gcollate_state queue[];
+  $gcollate_state * queue;
   $gcollate_state gcollate_state;
   $collate_state result;
-  $proc proc = c->gcollator->procs[place];
 
   nprocs = c->gcollator->nprocs;
   queue = c->gcollator->queue;
@@ -141,12 +131,13 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
     }
   if (first) {
     _Bool initValue = $false;
-    
-    gcollate_state = ($gcollate_state)$malloc($here, sizeof(struct _gcollate_state));    
+    $scope root = $scopeof(*c->gcollator);
+
+    gcollate_state = ($gcollate_state)$malloc(root, sizeof(struct _gcollate_state));    
     $seq_init(&gcollate_state->arrived, nprocs, &initValue);
     $seq_init(&gcollate_state->departed, nprocs, &initValue);
     gcollate_state->state = $state_null;
-    $seq_append(&queue, &gcollate_state, 1);
+    $seq_append(&c->gcollator->queue, &gcollate_state, 1);
     c->gcollator->queue_length++;
   }  
   result.place = place;
@@ -171,9 +162,9 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   @ depends_on \nothing;  
   @ executes_when \true;
   @*/
-$atomic_f $collate_state $collate_departs($collator c) {
+$atomic_f void $collate_departs($collator c) {
   int nprocs, queue_size, place, index;
-  $gcollate_state queue[];
+  $gcollate_state *queue;
   $gcollate_state marking;
   _Bool found = $false;
 
@@ -202,10 +193,10 @@ $atomic_f $collate_state $collate_departs($collator c) {
     }
   if (last) {
     $assert(index == 0, "Internal violation of a FIFO queue");
-    $seq_remove(&queue, 0, NULL, 1);
+    $seq_remove(&c->gcollator->queue, 0, NULL, 1);
+    $free(marking);
     c->gcollator->queue_length--;
   }
-  return marking;
 }
 
 // state_pure
