@@ -2360,7 +2360,7 @@ public class ImmutableStateFactory implements StateFactory {
 		Scope leastCommonAncestor;
 
 		// Get the least common ancestor static scope:
-		leastCommonAncestor = monoProcScope;
+		leastCommonAncestor = monoProcScope.parent();
 		// For the initial case, there is only one process state, so the
 		// invariants must hold; Then for each time adding a new process
 		// state to the state, it always looking for the least common

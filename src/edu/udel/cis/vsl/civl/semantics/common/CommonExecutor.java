@@ -782,6 +782,7 @@ public class CommonExecutor implements Executor {
 
 				State mono = stateFactory.getStateSnapshot(state, pid,
 						dyscopeID);
+
 				colState = stateFactory.getStateByReference(colStateID);
 				colState = stateFactory.combineStates(colState, mono, placeID);
 				colState = executeSystemFunctionCallWithValues(colState,

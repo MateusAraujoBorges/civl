@@ -1828,4 +1828,10 @@ public interface ModelFactory {
 	 * @return
 	 */
 	Scope staticConstantScope();
+
+	/**
+	 * @return the value of the constant <code>$state_null</code> defined in
+	 *         CIVL model.
+	 */
+	SymbolicExpression statenullConstantValue();
 }

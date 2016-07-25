@@ -780,6 +780,11 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
+	public SymbolicExpression statenullConstantValue() {
+		return this.nullStateValue;
+	}
+
+	@Override
 	public SizeofExpression sizeofExpressionExpression(CIVLSource source,
 			Expression argument) {
 		return new CommonSizeofExpression(source, typeFactory.integerType,
