@@ -22,7 +22,8 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 
 public class LibcollateExecutor extends BaseLibraryExecutor
-		implements LibraryExecutor {
+		implements
+			LibraryExecutor {
 
 	public LibcollateExecutor(String name, Executor primaryExecutor,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -42,21 +43,22 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$enter_collate_state":
-			callEval = executeEnterCollateState(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$exit_collate_state":
-			callEval = executeExitCollateState(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$collate_snapshot":
-			callEval = executeCollateSnapshot(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"the function " + name + " of library pointer.cvh", source);
+			case "$enter_collate_state" :
+				callEval = executeEnterCollateState(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$exit_collate_state" :
+				callEval = executeExitCollateState(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$collate_snapshot" :
+				callEval = executeCollateSnapshot(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"the function " + name + " of library pointer.cvh",
+						source);
 		}
 		return callEval;
 	}
@@ -160,7 +162,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		colStateID = this.symbolicUtil.extractInt(source, stateIDExpr);
 		colState = stateFactory.getStateByReference(colStateID);
 		realStateRef = universe.tuple(this.typeFactory.stateSymbolicType(),
-				new SymbolicExpression[] { universe.integer(realStateID) });
+				new SymbolicExpression[]{universe.integer(realStateID)});
 		colStateComp = universe.tupleWrite(colStateComp, twoObject,
 				realStateRef);
 		colState = primaryExecutor.assign(source, colState, process,
@@ -211,13 +213,11 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression scopeValue = argumentValues[2];
 		SymbolicExpression gcollateStateHandle, gcollateState, symStateId;
 		int scopeId = modelFactory.getScopeId(source, scopeValue);
-		int stateRef, nprocs, place;
-		int resultRef, monoRef;
+		int stateRef, nprocs, place, resultRef;
 		Evaluation eval;
 		State mono;
 
-		monoRef = stateFactory.getStateSnapshot(state, pid, scopeId);
-		mono = stateFactory.getStateByReference(monoRef);
+		mono = stateFactory.getStateSnapshot(state, pid, scopeId);
 		symPlace = (NumericExpression) universe.tupleRead(collateState,
 				zeroObject);
 		gcollateStateHandle = universe.tupleRead(collateState, oneObject);
@@ -225,15 +225,13 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 				gcollateStateHandle, false);
 		state = eval.state;
 		gcollateState = eval.value;
-		symStateId = universe.tupleRead(gcollateState, twoObject);
+		symStateId = universe.tupleRead(gcollateState, oneObject);
 		stateRef = modelFactory.getStateRef(source, symStateId);
 		place = ((IntegerNumber) universe.extractNumber(symPlace)).intValue();
 		nprocs = ((IntegerNumber) universe.extractNumber(symNprocs)).intValue();
 		resultRef = stateFactory.combineStates(stateRef, mono, place, nprocs);
-		// The mono state is uncessary to keep being saved any more:
-		// stateFactory.unsaveStateByReference(monoRef);
 		symStateId = modelFactory.stateValue(resultRef);
-		gcollateState = universe.tupleWrite(gcollateState, twoObject,
+		gcollateState = universe.tupleWrite(gcollateState, oneObject,
 				symStateId);
 		state = this.primaryExecutor.assign(source, state, process,
 				gcollateStateHandle, gcollateState);

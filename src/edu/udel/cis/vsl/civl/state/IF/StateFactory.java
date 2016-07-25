@@ -847,12 +847,12 @@ public interface StateFactory {
 	 *            pid. It controls the top call stack frame of the process in
 	 *            the returned state: the top call stack frame is the toppest
 	 *            one that can reach topDyscope.
-	 * @return A state reference to the new state which only contains exact one
-	 *         process state and the process state is obtained from the process
-	 *         state of pid in the input state by popping all stack frames that
-	 *         cannnot reach the topDyscope.
+	 * @return A new state which only contains exact one process state and the
+	 *         process state is obtained from the process state of pid in the
+	 *         input state by popping all stack frames that cannnot reach the
+	 *         topDyscope.
 	 */
-	int getStateSnapshot(State state, int pid, int topDyscope);
+	State getStateSnapshot(State state, int pid, int topDyscope);
 
 	/**
 	 * <p>

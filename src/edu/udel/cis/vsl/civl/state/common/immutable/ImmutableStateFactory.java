@@ -2305,7 +2305,7 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public int getStateSnapshot(State state, int pid, int topDyscope) {
+	public State getStateSnapshot(State state, int pid, int topDyscope) {
 		// Pre-condition: topDyscope must be reachable from the call stack of
 		// pid in state:
 		ImmutableState theState = (ImmutableState) state;
@@ -2334,7 +2334,13 @@ public class ImmutableStateFactory implements StateFactory {
 				theState = theState.setProcessState(otherPid, null);
 			else
 				theState = theState.setProcessState(pid, processState);
-		return saveState(theState, pid);
+		try {
+			return canonic(theState, true, true, true, fullHeapErrorSet);
+		} catch (CIVLHeapException e) {
+			throw new CIVLInternalException(
+					"Canonicalization with ignorance of all kinds of heap errors still throws an Heap Exception",
+					state.getProcessState(pid).getLocation());
+		}
 	}
 
 	@Override

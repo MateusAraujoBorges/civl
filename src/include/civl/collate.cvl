@@ -4,9 +4,16 @@
 #include<collate.cvh>
 #include<civlc.cvh>
 #include<seq.cvh>
-#include <stdio.h>
-/******************* Definition of datatypes: *******************/
 
+// Status of a collate state for a process
+#define NONARRIVED 0
+#define ARRIVED    1
+#define DEPARTED   2
+
+#define arrived(gstate, i)  (gstate->status[i] >= ARRIVED)
+#define departed(gstate, i)  (gstate->status[i] == DEPARTED)
+
+/******************* Definition of datatypes: *******************/
 struct _gcollator {
   // The number of participants of a _gcollator object:
   int nprocs; 
@@ -29,11 +36,8 @@ struct _collator {
 // TODO: maybe changes two arrays to an array of a new enumerator
 struct _gcollate_state {
   // An array of markers for whether a process has already arrived
-  // this entry:
-  _Bool arrived[];
-  // An array of markers for whether a process has already departed
-  // from this entry:
-  _Bool departed[];
+  // this entry or departed:
+  int status[];
   // collate $state:
   $state state;
 };
@@ -86,31 +90,7 @@ $collator $collator_create($gcollator gcollator, $scope scope, int place) {
   return collator;
 }
 
-/* Takes a snapshot for the calling process on the current state.  Let
- * d be the youngest dynamic scope (dyscope) of 'scope' in the set of
- * reachable dyscopes from the call stack of the calling process. The
- * snapshot should contains the call stack of the calling process that
- * the youngest dyscope is d (i.e. the reachable dyscopes of the call
- * stack in snapshot is a subset of which in current state). It
- * returns a handle to the collate state which contains the
- * snapshot. This is a implementation of the specification of this
- * function.
- *
- * c: A handle to a global collate object where all collate
- * states are stored.  
- *
- * scope: The lexcial scope which specifies the scope of the
- * location of the calling process in the collate state.
- * 
- * This is a state_pure function though processes are modifying the
- * same gcollate_state, their modification never affects each other.
- *
- * Explanation for contracts:
- *
- */
-/*@ depends_on \nothing;
-  @ executes_when \true;
-  @*/
+
 $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   int place = c->place;
   int queue_size, nprocs;
@@ -126,7 +106,7 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   // Looking for the first unarrived collate state. If no such a collate
   // state, create and insert one:
   for (int i = 0; i < queue_size; i++) 
-    if (!queue[i]->arrived[place]) {
+    if (!arrived(queue[i], place)) {
       gcollate_state = queue[i];
       first = $false;
       break;
@@ -136,8 +116,7 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
     $scope root = $scopeof(*c->gcollator);
 
     gcollate_state = ($gcollate_state)$malloc(root, sizeof(struct _gcollate_state));    
-    $seq_init(&gcollate_state->arrived, nprocs, &initValue);
-    $seq_init(&gcollate_state->departed, nprocs, &initValue);
+    gcollate_state->status = ((int[nprocs])$lambda(int i)NONARRIVED);
     gcollate_state->state = $state_null;
     $seq_append(&c->gcollator->queue, &gcollate_state, 1);
     c->gcollator->queue_length++;
@@ -146,25 +125,10 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   result.gstate = gcollate_state;
   result.real=$state_null;
   $collate_snapshot(result, nprocs, scope);
-  gcollate_state->arrived[place] = $true;
+  gcollate_state->status[place] = ARRIVED;
   return result;
 }
 
-
-/* Frees a snapshot from the toppest live collate state (a collate
- * state hasn't been freed by the calling process). All participants
- * free their own snapshots collectively and the process who frees the
- * last snapshot should dequeue the collate state.
- *
- * c: the handle to a collate object.
- *
- * Explanation for contracts:
- *
- */
-/*@   //state pure
-  @ depends_on \nothing;  
-  @ executes_when \true;
-  @*/
 $atomic_f void $collate_departs($collator c) {
   int nprocs, queue_size, place, index;
   $gcollate_state *queue;
@@ -178,19 +142,20 @@ $atomic_f void $collate_departs($collator c) {
   // Mark the toppest arrived but not departed collate state as
   // departed:
   for (int i = 0; i < queue_size; i++) 
-    if (!queue[i]->departed[place] && queue[i]->arrived[place]) {
+    if (!departed(queue[i], place) && arrived(queue[i], place)) {
       marking = queue[i];
       found = $true;
       index = i;
       break;
     }
-  $assert(found, "No collate state can be unsnapshot");
+  $assert(found && marking->status[place] == ARRIVED, 
+	  "No collate state can be unsnapshot");
 
   _Bool last = $true;
 
-  marking->departed[place] = $true;
+  marking->status[place] = DEPARTED;
   for (int i = 0; i < nprocs; i++) 
-    if (!marking->departed[i]) {
+    if (!departed(marking, i)) {
       last = $false;
       break;
     }
@@ -202,35 +167,19 @@ $atomic_f void $collate_departs($collator c) {
   }
 }
 
-// state_pure
-/*@ 
-  @ depends_on \access(cp);
-  @ executes_when \true;
-  @*/
 $atomic_f _Bool $collate_complete($collate_state cp) {
-  int nprocs = $seq_length(&cp.gstate->arrived);
-  _Bool arrived[]; 
+  int nprocs = $seq_length(&cp.gstate->status);
 
-
-  arrived = cp.gstate->arrived;
   for (int i = 0; i < nprocs; i++)
-    if (!arrived[i]) return $false;
+    if (!arrived(cp.gstate, i)) return $false;
   return $true;
 }
 
-// state_pure
-/*@ 
-  @ depends_on \access(cp);
-  @ executes_when \true;
-  @*/
 $atomic_f _Bool $collate_arrived($collate_state cp, $range range) { 
-  int nprocs = $seq_length(&cp.gstate->arrived);
-  _Bool arrived[]; 
+  int nprocs = $seq_length(&cp.gstate->status);
 
-
-  arrived = cp.gstate->arrived;
   $for (int i : range)
-    if (!arrived[i]) return $false;
+    if (!arrived(cp.gstate, i)) return $false;
   return $true; 
 }
 
