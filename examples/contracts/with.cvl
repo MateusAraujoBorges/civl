@@ -4,9 +4,7 @@ $gcollator gcollator=$gcollator_create($here, 1);
 $collator collator=$collator_create(gcollator, $here, 0);
 
 int main(){
-  $collate_state cs;
-
-  cs=$collate_arrives(collator, $here);
+  $collate_state cs=$collate_arrives(collator, $here);
     
   $with (cs) {
     $assert($true);

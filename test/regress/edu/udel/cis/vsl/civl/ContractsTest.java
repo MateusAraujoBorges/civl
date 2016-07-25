@@ -32,6 +32,13 @@ public class ContractsTest {
 						QUIET, filename("with.cvl")));
 	}
 
+	@Test
+	public void update() {
+		assertTrue(
+				ui.run("verify -showModel=false -showProgram=false -showTransitions=true -showSavedStates=true -quiet=false",
+						QUIET, filename("update.cvl")));
+	}
+
 	// @Test
 	// public void seq_sum() {
 	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,

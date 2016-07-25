@@ -39,8 +39,8 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
  * @author Manchun Zheng (zmanchun)
  * 
  */
-public abstract class BaseLibraryExecutor extends LibraryComponent implements
-		LibraryExecutor {
+public abstract class BaseLibraryExecutor extends LibraryComponent
+		implements LibraryExecutor {
 
 	/* ************************** Instance Fields ************************** */
 
@@ -131,19 +131,20 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 				message.append("\n        -> ");
 				message.append(secondEvaluation);
 			}
-			result = this.symbolicAnalyzer.symbolicExpressionToString(
-					arguments[0].getSource(), state, null, assertValue)
+			result = this.symbolicAnalyzer
+					.symbolicExpressionToString(arguments[0].getSource(), state,
+							null, assertValue)
 					.toString();
 			if (!secondEvaluation.equals(result)) {
 				message.append("\n        -> ");
 				message.append(result);
 			}
-			state = this.reportAssertionFailure(state, pid, process,
-					resultType, message.toString(), arguments, argumentValues,
-					source, assertValue, 1);
-			state = state.setPathCondition(this.universe.and(
-					state.getPathCondition(),
-					(BooleanExpression) argumentValues[0]));
+			state = this.reportAssertionFailure(state, pid, process, resultType,
+					message.toString(), arguments, argumentValues, source,
+					assertValue, 1);
+			state = state.setPathCondition(
+					this.universe.and(state.getPathCondition(),
+							(BooleanExpression) argumentValues[0]));
 		}
 		return state;
 	}
@@ -175,22 +176,17 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 				.isDefinedPointer(state, firstElementPointer);
 
 		if (checkPointer.right != ResultType.YES) {
-			state = this.errorLogger
-					.logError(source, state, process,
-							symbolicAnalyzer.stateInformation(state),
-							checkPointer.left, checkPointer.right,
-							ErrorKind.MEMORY_MANAGE,
-							"attempt to deallocate memory space through an undefined pointer");
+			state = this.errorLogger.logError(source, state, process,
+					symbolicAnalyzer.stateInformation(state), checkPointer.left,
+					checkPointer.right, ErrorKind.MEMORY_MANAGE,
+					"attempt to deallocate memory space through an undefined pointer");
 			// dont report unsatisfiable path condition exception
 		} else if (this.symbolicUtil.isNullPointer(firstElementPointer)) {
 			// does nothing for null pointer.
 		} else if (!this.symbolicUtil.isHeapPointer(firstElementPointer)
 				|| !this.symbolicUtil.isMallocPointer(source,
 						firstElementPointer)) {
-			this.errorLogger.logSimpleError(
-					source,
-					state,
-					process,
+			this.errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.MEMORY_MANAGE,
 					"the argument of free "
@@ -214,18 +210,18 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 			}
 			if (heapObject != null && heapObject.isNull()) {
 				// the heap object has been deallocated
-				this.errorLogger
-						.logSimpleError(source, state, process,
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.MEMORY_MANAGE,
-								"attempt to deallocate an object that has been deallocated previously");
+				this.errorLogger.logSimpleError(source, state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.MEMORY_MANAGE,
+						"attempt to deallocate an object that has been deallocated previously");
 			} else {
 				Pair<Integer, Integer> indexes;
 
 				indexes = getMallocIndex(firstElementPointer);
 				state = stateFactory.deallocate(state, firstElementPointer,
-						modelFactory.getScopeId(source, universe.tupleRead(
-								firstElementPointer, zeroObject)),
+						modelFactory.getScopeId(source,
+								universe.tupleRead(firstElementPointer,
+										zeroObject)),
 						indexes.left, indexes.right);
 			}
 		}
@@ -260,10 +256,10 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 	 * @return the new state after reporting the assertion failure
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	protected State reportAssertionFailure(State state, int pid,
-			String process, ResultType resultType, String message,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source, BooleanExpression claim, int msgOffset)
+	protected State reportAssertionFailure(State state, int pid, String process,
+			ResultType resultType, String message, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source,
+			BooleanExpression claim, int msgOffset)
 			throws UnsatisfiablePathConditionException {
 		assert resultType != ResultType.YES;
 		if (arguments.length > msgOffset) {
@@ -332,6 +328,34 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 		return eval;
 	}
 
+	@Override
+	public State executeWithValue(State state, int pid,
+			CallOrSpawnStatement call, String functionName,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Evaluation eval;
+		LHSExpression lhs = call.lhs();
+		Location target = call.target();
+		Expression[] arguments;
+		int numArgs;
+		String process = state.getProcessState(pid).name();
+
+		numArgs = call.arguments().size();
+		arguments = new Expression[numArgs];
+		for (int i = 0; i < numArgs; i++) {
+			arguments[i] = call.arguments().get(i);
+		}
+		eval = this.executeValue(state, pid, process, call.getSource(),
+				functionName, arguments, argumentValues);
+		state = eval.state;
+		if (lhs != null && eval.value != null)
+			state = this.primaryExecutor.assign(state, pid, process, lhs,
+					eval.value);
+		if (target != null && !state.getProcessState(pid).hasEmptyStack())
+			state = this.stateFactory.setLocation(state, pid, target);
+		return state;
+	}
+
 	abstract protected Evaluation executeValue(State state, int pid,
 			String process, CIVLSource source, String functionName,
 			Expression[] arguments, SymbolicExpression[] argumentValues)
@@ -354,8 +378,8 @@ public abstract class BaseLibraryExecutor extends LibraryComponent implements
 		// objectPointer points to array:
 		ArrayElementReference objectPointer = (ArrayElementReference) ref
 				.getParent();
-		int mallocIndex = ((IntegerNumber) universe.extractNumber(objectPointer
-				.getIndex())).intValue();
+		int mallocIndex = ((IntegerNumber) universe
+				.extractNumber(objectPointer.getIndex())).intValue();
 		// fieldPointer points to the field:
 		TupleComponentReference fieldPointer = (TupleComponentReference) objectPointer
 				.getParent();

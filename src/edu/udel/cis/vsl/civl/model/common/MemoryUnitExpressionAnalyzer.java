@@ -45,6 +45,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
+import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 
@@ -237,90 +238,100 @@ public class MemoryUnitExpressionAnalyzer {
 		computeImpactMemoryUnitsOfExpression(writableVars, statement.guard(),
 				result);
 		switch (statementKind) {
-			// case ASSERT: {
-			// AssertStatement assertStatement = (AssertStatement) statement;
-			// Expression[] explanation = assertStatement.getExplanation();
-			//
-			// computeImpactMemoryUnitsOfExpression(writableVars,
-			// assertStatement.getCondition(), result);
-			// if (explanation != null)
-			// for (Expression arg : explanation)
-			// computeImpactMemoryUnitsOfExpression(writableVars, arg,
-			// result);
-			// break;
-			// }
-			case ASSIGN : {
-				AssignStatement assignStatement = (AssignStatement) statement;
+		// case ASSERT: {
+		// AssertStatement assertStatement = (AssertStatement) statement;
+		// Expression[] explanation = assertStatement.getExplanation();
+		//
+		// computeImpactMemoryUnitsOfExpression(writableVars,
+		// assertStatement.getCondition(), result);
+		// if (explanation != null)
+		// for (Expression arg : explanation)
+		// computeImpactMemoryUnitsOfExpression(writableVars, arg,
+		// result);
+		// break;
+		// }
+		case ASSIGN: {
+			AssignStatement assignStatement = (AssignStatement) statement;
 
-				if (!assignStatement.isInitialization())
-					computeImpactMemoryUnitsOfExpression(writableVars,
-							assignStatement.getLhs(), result);
+			if (!assignStatement.isInitialization())
 				computeImpactMemoryUnitsOfExpression(writableVars,
-						assignStatement.rhs(), result);
-				break;
-			}
-			// case ASSUME:
-			// computeImpactMemoryUnitsOfExpression(writableVars,
-			// ((AssumeStatement) statement).getExpression(), result);
-			// break;
-			case CALL_OR_SPAWN : {
-				CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
+						assignStatement.getLhs(), result);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					assignStatement.rhs(), result);
+			break;
+		}
+		// case ASSUME:
+		// computeImpactMemoryUnitsOfExpression(writableVars,
+		// ((AssumeStatement) statement).getExpression(), result);
+		// break;
+		case CALL_OR_SPAWN: {
+			CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
 
-				if (call.isSystemCall()) {
-					if (currentScope != null && isLowerThan(
-							statement.lowestScope(), currentScope))
-						break;
-					systemCalls.add(call);
-				}
-				for (Expression argument : call.arguments())
-					computeImpactMemoryUnitsOfExpression(writableVars, argument,
-							result);
-				break;
+			if (call.isSystemCall()) {
+				if (currentScope != null
+						&& isLowerThan(statement.lowestScope(), currentScope))
+					break;
+				systemCalls.add(call);
 			}
-			case DOMAIN_ITERATOR :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((DomainIteratorStatement) statement).domain(), result);
-				break;
-			case CIVL_PAR_FOR_ENTER :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((CivlParForSpawnStatement) statement).domain(),
+			for (Expression argument : call.arguments())
+				computeImpactMemoryUnitsOfExpression(writableVars, argument,
 						result);
-				break;
-			case CONTRACT_VERIFY :
-				break;
-			case CONTRACTED_CALL :
-				ContractedFunctionCallStatement conctCall = (ContractedFunctionCallStatement) statement;
+			break;
+		}
+		case DOMAIN_ITERATOR:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((DomainIteratorStatement) statement).domain(), result);
+			break;
+		case CIVL_PAR_FOR_ENTER:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((CivlParForSpawnStatement) statement).domain(), result);
+			break;
+		case CONTRACT_VERIFY:
+			break;
+		case CONTRACTED_CALL:
+			ContractedFunctionCallStatement conctCall = (ContractedFunctionCallStatement) statement;
 
-				for (Expression argument : conctCall.arguments())
-					computeImpactMemoryUnitsOfExpression(writableVars, argument,
-							result);
-				break;
-			case MALLOC : {
-				MallocStatement mallocStatement = (MallocStatement) statement;
+			for (Expression argument : conctCall.arguments())
+				computeImpactMemoryUnitsOfExpression(writableVars, argument,
+						result);
+			break;
+		case MALLOC: {
+			MallocStatement mallocStatement = (MallocStatement) statement;
 
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					mallocStatement.getLHS(), result);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					mallocStatement.getScopeExpression(), result);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					mallocStatement.getSizeExpression(), result);
+			break;
+		}
+		case NOOP:
+			break;
+		case RETURN: {
+			ReturnStatement returnStatement = (ReturnStatement) statement;
+
+			if (returnStatement.expression() != null)
 				computeImpactMemoryUnitsOfExpression(writableVars,
-						mallocStatement.getLHS(), result);
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						mallocStatement.getScopeExpression(), result);
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						mallocStatement.getSizeExpression(), result);
-				break;
+						returnStatement.expression(), result);
+			break;
+		}
+		case UPDATE: {// the body of the function called by $update is
+						// independent because it only affects the collate state
+			UpdateStatement updateStatement = (UpdateStatement) statement;
+			CallOrSpawnStatement call = updateStatement.call();
+
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					updateStatement.collator(), result);
+			for (Expression arg : call.arguments()) {
+				computeImpactMemoryUnitsOfExpression(writableVars, arg, result);
 			}
-			case NOOP :
-				break;
-			case RETURN : {
-				ReturnStatement returnStatement = (ReturnStatement) statement;
-
-				if (returnStatement.expression() != null)
-					computeImpactMemoryUnitsOfExpression(writableVars,
-							returnStatement.expression(), result);
-				break;
-			}
-			default :
-				throw new CIVLUnimplementedFeatureException(
-						"computing the impact memory units"
-								+ " of statements of " + statementKind
-								+ " kind");
+			break;
+		}
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"computing the impact memory units" + " of statements of "
+							+ statementKind + " kind");
 		}
 
 	}
@@ -364,227 +375,225 @@ public class MemoryUnitExpressionAnalyzer {
 		ExpressionKind expressionKind = expression.expressionKind();
 
 		switch (expressionKind) {
-			case ABSTRACT_FUNCTION_CALL :
-				for (Expression arg : ((AbstractFunctionCallExpression) expression)
-						.arguments()) {
-					computeImpactMemoryUnitsOfExpression(writableVars, arg,
-							result, derefCount);
-				}
-				break;
-			case ADDRESS_OF :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((AddressOfExpression) expression).operand(), result,
+		case ABSTRACT_FUNCTION_CALL:
+			for (Expression arg : ((AbstractFunctionCallExpression) expression)
+					.arguments()) {
+				computeImpactMemoryUnitsOfExpression(writableVars, arg, result,
 						derefCount);
-				break;
-			case ARRAY_LAMBDA : {
-				ArrayLambdaExpression arrayLambda = (ArrayLambdaExpression) expression;
-
-				for (Pair<List<Variable>, Expression> variables : arrayLambda
-						.boundVariableList()) {
-					if (variables.right != null)
-						computeImpactMemoryUnitsOfExpression(writableVars,
-								variables.right, result, derefCount);
-				}
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						arrayLambda.restriction(), result, derefCount);
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						arrayLambda.expression(), result, derefCount);
-				break;
 			}
-			case ARRAY_LITERAL : {
-				Expression[] elements = ((ArrayLiteralExpression) expression)
-						.elements();
+			break;
+		case ADDRESS_OF:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((AddressOfExpression) expression).operand(), result,
+					derefCount);
+			break;
+		case ARRAY_LAMBDA: {
+			ArrayLambdaExpression arrayLambda = (ArrayLambdaExpression) expression;
 
-				for (Expression element : elements) {
-					computeImpactMemoryUnitsOfExpression(writableVars, element,
-							result, derefCount);
-				}
-				break;
-			}
-			case BINARY : {
-				BinaryExpression binaryExpression = (BinaryExpression) expression;
-
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						binaryExpression.left(), result, derefCount);
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						binaryExpression.right(), result, derefCount);
-				break;
-			}
-			case BOOLEAN_LITERAL :
-				break;
-			case BOUND_VARIABLE :
-				// A bound variable only appears in quantifier expressions such
-				// as
-				// $forall (i=0 .. 10) f(i)=10*i, and it disappears after the
-				// expression so it won't affect the POR.
-				break;
-			case CAST :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((CastExpression) expression).getExpression(), result,
-						derefCount);
-				break;
-			case CHAR_LITERAL :
-				break;
-			case COND :
-				throw new CIVLInternalException(
-						"Encounter conditional expression in "
-								+ "memory unit analyzer which should already been translated away in the "
-								+ "model translator",
-						expression.getSource());
-			case DEREFERENCE :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((DereferenceExpression) expression).pointer(), result,
-						derefCount + 1);
-				break;
-			case DERIVATIVE :// TODO check if its arguments should be checked
-				break;
-			case DOMAIN_GUARD :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((DomainGuardExpression) expression).domain(), result,
-						derefCount);
-				break;
-			case DOT :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((DotExpression) expression).structOrUnion(), result,
-						derefCount);
-				break;
-			case DYNAMIC_TYPE_OF :
-				break;
-			case FUNCTION_IDENTIFIER :// TODO clean it up
-				break;
-			case FUNCTION_GUARD :
-				break;
-			case INITIAL_VALUE :
-				break;
-			case INTEGER_LITERAL :
-				break;
-			case MEMORY_UNIT :
-				break;
-			case NULL_LITERAL :
-				break;
-			case QUANTIFIER : {
-				QuantifiedExpression quantified = (QuantifiedExpression) expression;
-
-				for (Pair<List<Variable>, Expression> variables : quantified
-						.boundVariableList()) {
-					if (variables.right != null)
-						computeImpactMemoryUnitsOfExpression(writableVars,
-								variables.right, result, derefCount);
-				}
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						quantified.restriction(), result, derefCount);
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						quantified.expression(), result, derefCount);
-				break;
-			}
-			case REAL_LITERAL :
-				break;
-			case REC_DOMAIN_LITERAL : {
-				RecDomainLiteralExpression domain = (RecDomainLiteralExpression) expression;
-				int dim = domain.dimension();
-
-				for (int i = 0; i < dim; i++)
+			for (Pair<List<Variable>, Expression> variables : arrayLambda
+					.boundVariableList()) {
+				if (variables.right != null)
 					computeImpactMemoryUnitsOfExpression(writableVars,
-							domain.rangeAt(i), result, derefCount);
-				break;
+							variables.right, result, derefCount);
 			}
-			case REGULAR_RANGE : {
-				RegularRangeExpression rangeExpr = (RegularRangeExpression) expression;
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					arrayLambda.restriction(), result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					arrayLambda.expression(), result, derefCount);
+			break;
+		}
+		case ARRAY_LITERAL: {
+			Expression[] elements = ((ArrayLiteralExpression) expression)
+					.elements();
 
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						rangeExpr.getLow(), result, derefCount);
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						rangeExpr.getHigh(), result, derefCount);
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						rangeExpr.getStep(), result, derefCount);
-				break;
+			for (Expression element : elements) {
+				computeImpactMemoryUnitsOfExpression(writableVars, element,
+						result, derefCount);
 			}
-			case RESULT :
-				break;
-			case SCOPEOF :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((ScopeofExpression) expression).argument(), result,
-						derefCount);
-				break;
-			case SELF :
-				break;
-			case SIZEOF_TYPE :
-				break;
-			case SIZEOF_EXPRESSION :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((SizeofExpression) expression).getArgument(), result,
-						derefCount);
-				break;
-			case STRING_LITERAL :
-				break;
-			case STRUCT_OR_UNION_LITERAL : {
-				Expression[] fields = ((StructOrUnionLiteralExpression) expression)
-						.fields();
+			break;
+		}
+		case BINARY: {
+			BinaryExpression binaryExpression = (BinaryExpression) expression;
 
-				for (Expression field : fields) {
-					computeImpactMemoryUnitsOfExpression(writableVars, field,
-							result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					binaryExpression.left(), result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					binaryExpression.right(), result, derefCount);
+			break;
+		}
+		case BOOLEAN_LITERAL:
+			break;
+		case BOUND_VARIABLE:
+			// A bound variable only appears in quantifier expressions such
+			// as
+			// $forall (i=0 .. 10) f(i)=10*i, and it disappears after the
+			// expression so it won't affect the POR.
+			break;
+		case CAST:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((CastExpression) expression).getExpression(), result,
+					derefCount);
+			break;
+		case CHAR_LITERAL:
+			break;
+		case COND:
+			throw new CIVLInternalException(
+					"Encounter conditional expression in "
+							+ "memory unit analyzer which should already been translated away in the "
+							+ "model translator",
+					expression.getSource());
+		case DEREFERENCE:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((DereferenceExpression) expression).pointer(), result,
+					derefCount + 1);
+			break;
+		case DERIVATIVE:// TODO check if its arguments should be checked
+			break;
+		case DOMAIN_GUARD:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((DomainGuardExpression) expression).domain(), result,
+					derefCount);
+			break;
+		case DOT:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((DotExpression) expression).structOrUnion(), result,
+					derefCount);
+			break;
+		case DYNAMIC_TYPE_OF:
+			break;
+		case FUNCTION_IDENTIFIER:// TODO clean it up
+			break;
+		case FUNCTION_GUARD:
+			break;
+		case INITIAL_VALUE:
+			break;
+		case INTEGER_LITERAL:
+			break;
+		case MEMORY_UNIT:
+			break;
+		case NULL_LITERAL:
+			break;
+		case QUANTIFIER: {
+			QuantifiedExpression quantified = (QuantifiedExpression) expression;
+
+			for (Pair<List<Variable>, Expression> variables : quantified
+					.boundVariableList()) {
+				if (variables.right != null)
+					computeImpactMemoryUnitsOfExpression(writableVars,
+							variables.right, result, derefCount);
+			}
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					quantified.restriction(), result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					quantified.expression(), result, derefCount);
+			break;
+		}
+		case REAL_LITERAL:
+			break;
+		case REC_DOMAIN_LITERAL: {
+			RecDomainLiteralExpression domain = (RecDomainLiteralExpression) expression;
+			int dim = domain.dimension();
+
+			for (int i = 0; i < dim; i++)
+				computeImpactMemoryUnitsOfExpression(writableVars,
+						domain.rangeAt(i), result, derefCount);
+			break;
+		}
+		case REGULAR_RANGE: {
+			RegularRangeExpression rangeExpr = (RegularRangeExpression) expression;
+
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					rangeExpr.getLow(), result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					rangeExpr.getHigh(), result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					rangeExpr.getStep(), result, derefCount);
+			break;
+		}
+		case RESULT:
+			break;
+		case SCOPEOF:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((ScopeofExpression) expression).argument(), result,
+					derefCount);
+			break;
+		case SELF:
+			break;
+		case SIZEOF_TYPE:
+			break;
+		case SIZEOF_EXPRESSION:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((SizeofExpression) expression).getArgument(), result,
+					derefCount);
+			break;
+		case STRING_LITERAL:
+			break;
+		case STRUCT_OR_UNION_LITERAL: {
+			Expression[] fields = ((StructOrUnionLiteralExpression) expression)
+					.fields();
+
+			for (Expression field : fields) {
+				computeImpactMemoryUnitsOfExpression(writableVars, field,
+						result, derefCount);
+			}
+		}
+			break;
+		case SUBSCRIPT:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((SubscriptExpression) expression).array(), result,
+					derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((SubscriptExpression) expression).index(), result,
+					derefCount);
+
+			break;
+		case SYSTEM_GUARD:
+			break;
+		case UNARY:
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					((UnaryExpression) expression).operand(), result,
+					derefCount);
+			break;
+		case UNDEFINED_PROC:
+			break;
+		case VARIABLE: {
+			Variable variable = ((VariableExpression) expression).variable();
+
+			if (!((variable.scope().id() == 0 && variable.name().name()
+					.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX)))) {// ||
+																				// variable
+				// .type().isHandleType())) {
+				boolean deref = false;
+
+				if (derefCount > 0) {
+					deref = true;
+					derefCount--;
 				}
+				result.add(this.modelFactory.memoryUnitExpression(
+						variable.getSource(), variable, variable.type(),
+						modelFactory.selfReference(),
+						writableVars.contains(variable), deref));
 			}
-				break;
-			case SUBSCRIPT :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((SubscriptExpression) expression).array(), result,
-						derefCount);
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((SubscriptExpression) expression).index(), result,
-						derefCount);
+			break;
+		}
+		case HERE_OR_ROOT:
+			break;
+		case PROC_NULL:
+		case STATE_NULL:
+			break;
+		case FUNC_CALL: {
+			CallOrSpawnStatement callStmt = ((FunctionCallExpression) expression)
+					.callStatement();
 
-				break;
-			case SYSTEM_GUARD :
-				break;
-			case UNARY :
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						((UnaryExpression) expression).operand(), result,
-						derefCount);
-				break;
-			case UNDEFINED_PROC :
-				break;
-			case VARIABLE : {
-				Variable variable = ((VariableExpression) expression)
-						.variable();
-
-				if (!((variable.scope().id() == 0 && variable.name().name()
-						.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX)))) {// ||
-																					// variable
-					// .type().isHandleType())) {
-					boolean deref = false;
-
-					if (derefCount > 0) {
-						deref = true;
-						derefCount--;
-					}
-					result.add(this.modelFactory.memoryUnitExpression(
-							variable.getSource(), variable, variable.type(),
-							modelFactory.selfReference(),
-							writableVars.contains(variable), deref));
-				}
-				break;
-			}
-			case HERE_OR_ROOT :
-				break;
-			case PROC_NULL :
-			case STATE_NULL :
-				break;
-			case FUNC_CALL : {
-				CallOrSpawnStatement callStmt = ((FunctionCallExpression) expression)
-						.callStatement();
-
-				this.computeImpactMemoryUnitsOfStatement(writableVars,
-						expression.expressionScope(), callStmt, result,
-						new HashSet<>(0));
-				break;
-			}
-			default :
-				throw new CIVLUnimplementedFeatureException(
-						"computing the impact memory units"
-								+ " of expressions of " + expressionKind
-								+ " kind");
+			this.computeImpactMemoryUnitsOfStatement(writableVars,
+					expression.expressionScope(), callStmt, result,
+					new HashSet<>(0));
+			break;
+		}
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"computing the impact memory units" + " of expressions of "
+							+ expressionKind + " kind");
 		}
 
 	}

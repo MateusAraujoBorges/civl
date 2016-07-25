@@ -14,7 +14,8 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 public class CommonStatenullExpression extends CommonExpression
 		implements StatenullExpression {
 
-	public CommonStatenullExpression(CIVLSource source, CIVLType type, SymbolicExpression constantValue) {
+	public CommonStatenullExpression(CIVLSource source, CIVLType type,
+			SymbolicExpression constantValue) {
 		super(source, null, null, type);
 		this.constantValue = constantValue;
 	}
@@ -39,4 +40,8 @@ public class CommonStatenullExpression extends CommonExpression
 		return expression instanceof StatenullExpression;
 	}
 
+	@Override
+	public String toString() {
+		return "$state_null";
+	}
 }

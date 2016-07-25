@@ -6,6 +6,7 @@ package edu.udel.cis.vsl.civl.model.IF.statement;
 import java.util.List;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
+import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
@@ -102,11 +103,7 @@ public interface CallOrSpawnStatement extends Statement {
 
 	Expression functionExpression();
 
-	// /**
-	// * complete the guard with the system guard if the current call is a
-	// system
-	// * function call.
-	// */
-	// void completeSystemGuard();
-
+	@Override
+	CallOrSpawnStatement replaceWith(ConditionalExpression oldExpression,
+			Expression newExpression);
 }

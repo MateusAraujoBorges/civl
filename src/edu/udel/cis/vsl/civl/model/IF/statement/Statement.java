@@ -49,7 +49,9 @@ public interface Statement extends Sourceable {
 		/** No operation */
 		NOOP,
 		/** Return statement */
-		RETURN
+		RETURN,
+		/** $update statement */
+		UPDATE,
 	}
 
 	/* **************************** Public Methods ************************* */

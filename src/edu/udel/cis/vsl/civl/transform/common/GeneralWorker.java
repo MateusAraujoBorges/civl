@@ -41,7 +41,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
-import edu.udel.cis.vsl.abc.ast.type.IF.TypeFactory;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -89,12 +88,12 @@ public class GeneralWorker extends BaseWorker {
 
 	private BlockItemNode scopeType, mallocDeclaration;
 
-	private TypeFactory typeFactory;
+	// private TypeFactory typeFactory;
 
 	public GeneralWorker(ASTFactory astFactory) {
 		super(GeneralTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = GeneralTransformer.PREFIX;
-		this.typeFactory = astFactory.getTypeFactory();
+		// this.typeFactory = astFactory.getTypeFactory();
 	}
 
 	@Override

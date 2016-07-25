@@ -101,6 +101,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
+import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
@@ -170,6 +171,7 @@ import edu.udel.cis.vsl.civl.model.common.statement.CommonMallocStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonNoopStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonReturnStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonSwitchBranchStatement;
+import edu.udel.cis.vsl.civl.model.common.statement.CommonUpdateStatement;
 import edu.udel.cis.vsl.civl.model.common.variable.CommonVariable;
 import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -2474,5 +2476,15 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public int getStateRef(CIVLSource source, SymbolicExpression stateValue) {
 		return extractIntField(source, stateValue, zeroObj);
+	}
+
+	@Override
+	public UpdateStatement updateStatement(CIVLSource source,
+			Location sourceLoc, Expression guard, Expression collator,
+			CallOrSpawnStatement call) {
+		if (guard == null)
+			guard = this.trueExpression(source);
+		return new CommonUpdateStatement(source, sourceLoc, guard, collator,
+				call);
 	}
 }

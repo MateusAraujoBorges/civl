@@ -1,7 +1,5 @@
 package edu.udel.cis.vsl.civl.library.collate;
 
-import java.util.Arrays;
-
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
@@ -23,8 +21,7 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 
 public class LibcollateExecutor extends BaseLibraryExecutor
-		implements
-			LibraryExecutor {
+		implements LibraryExecutor {
 	private final IntObject collate_state_gstate;
 
 	private final IntObject gcollate_state_state;
@@ -51,22 +48,21 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		Evaluation callEval = null;
 
 		switch (functionName) {
-			case "$enter_collate_state" :
-				callEval = executeEnterCollateState(state, pid, process,
-						arguments, argumentValues, source);
-				break;
-			case "$exit_collate_state" :
-				callEval = executeExitCollateState(state, pid, process,
-						arguments, argumentValues, source);
-				break;
-			case "$collate_snapshot" :
-				callEval = executeCollateSnapshot(state, pid, process,
-						arguments, argumentValues, source);
-				break;
-			default :
-				throw new CIVLUnimplementedFeatureException(
-						"the function " + name + " of library pointer.cvh",
-						source);
+		case "$enter_collate_state":
+			callEval = executeEnterCollateState(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$exit_collate_state":
+			callEval = executeExitCollateState(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$collate_snapshot":
+			callEval = executeCollateSnapshot(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"the function " + name + " of library pointer.cvh", source);
 		}
 		return callEval;
 	}
@@ -90,7 +86,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression colStatePointer = argumentValues[0], colStateComp;
 		Evaluation eval;
 		SymbolicExpression rsVal, newColStateRef;
-		int rsID;
+		int rsID, newColStateID;
 		State realState = null;
 		SymbolicExpression ghandle, ghandleStatePointer;
 
@@ -100,12 +96,15 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		colStateComp = eval.value;
 		ghandle = universe.tupleRead(colStateComp, oneObject);
 		rsVal = universe.tupleRead(colStateComp, twoObject);
-		rsID = this.symbolicUtil.extractInt(source,
-				(NumericExpression) universe.tupleRead(rsVal, zeroObject));
+		rsID = this.modelFactory.getStateRef(source, rsVal);
 		realState = stateFactory.getStateByReference(rsID);
-		newColStateRef = this.universe.tuple(typeFactory.stateSymbolicType(),
-				Arrays.asList(
-						universe.integer(stateFactory.saveState(state, pid))));
+		newColStateID = stateFactory.saveState(state, pid);
+		if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
+				|| civlConfig.showSavedStates()) {
+			civlConfig.out().println(this.symbolicAnalyzer.stateToString(
+					stateFactory.getStateByReference(newColStateID)));
+		}
+		newColStateRef = this.modelFactory.stateValue(newColStateID);
 		ghandleStatePointer = symbolicUtil.extendPointer(ghandle,
 				universe.tupleComponentReference(universe.identityReference(),
 						gcollate_state_state));
@@ -114,20 +113,6 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		realState = realState.setPathCondition(universe
 				.and(realState.getPathCondition(), state.getPathCondition()));
 		return new Evaluation(realState, null);
-	}
-
-	@SuppressWarnings("unused")
-	private Evaluation getState(State state, SymbolicExpression colstate,
-			CIVLSource source, String process)
-			throws UnsatisfiablePathConditionException {
-		SymbolicExpression gstateHandle = universe.tupleRead(colstate,
-				oneObject);
-		Evaluation eval = this.evaluator.dereference(source, state, process,
-				null, gstateHandle, false);
-		SymbolicExpression gstate = eval.value;
-
-		return new Evaluation(eval.state,
-				universe.tupleRead(gstate, gcollate_state_state));
 	}
 
 	/**
@@ -149,7 +134,6 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		Evaluation eval;
 		SymbolicExpression colStatePointer = argumentValues[0], colStateComp,
 				gstateHandle, gstate, colStateVal;
-		NumericExpression stateIDExpr;
 		int colStateID, realStateID;
 		State colState = null;
 		SymbolicExpression realStateRef;
@@ -165,17 +149,18 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		state = eval.state;
 		gstate = eval.value;
 		colStateVal = universe.tupleRead(gstate, gcollate_state_state);
-		stateIDExpr = (NumericExpression) universe.tupleRead(colStateVal,
-				zeroObject);
-		colStateID = this.symbolicUtil.extractInt(source, stateIDExpr);
+		colStateID = this.modelFactory.getStateRef(source, colStateVal);
 		colState = stateFactory.getStateByReference(colStateID);
-		realStateRef = universe.tuple(this.typeFactory.stateSymbolicType(),
-				new SymbolicExpression[]{universe.integer(realStateID)});
+		realStateRef = modelFactory.stateValue(realStateID);
+		if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
+				|| civlConfig.showSavedStates()) {
+			civlConfig.out().println(this.symbolicAnalyzer.stateToString(
+					stateFactory.getStateByReference(realStateID)));
+		}
 		colStateComp = universe.tupleWrite(colStateComp, twoObject,
 				realStateRef);
 		colState = primaryExecutor.assign(source, colState, process,
 				colStatePointer, colStateComp);
-		System.out.println(this.symbolicAnalyzer.stateToString(colState));
 		return new Evaluation(colState, null);
 	}
 
@@ -239,6 +224,8 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		place = ((IntegerNumber) universe.extractNumber(symPlace)).intValue();
 		nprocs = ((IntegerNumber) universe.extractNumber(symNprocs)).intValue();
 		resultRef = stateFactory.combineStates(stateRef, mono, place, nprocs);
+		// System.out.println(this.symbolicAnalyzer
+		// .stateToString(stateFactory.getStateByReference(resultRef)));
 		symStateId = modelFactory.stateValue(resultRef);
 		gcollateState = universe.tupleWrite(gcollateState, gcollate_state_state,
 				symStateId);

@@ -75,6 +75,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement.
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
+import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -1013,6 +1014,24 @@ public interface ModelFactory {
 	 */
 	NoopStatement switchBranchStatement(CIVLSource civlSource, Location source,
 			Expression guard, Expression label);
+
+	/**
+	 * Creates an <code>$update</code> statement.
+	 * 
+	 * @param source
+	 *            the source code information of the statement
+	 * @param srcLoc
+	 *            the source location of the <code>$update</code> statement
+	 * @param guard
+	 *            the guard of the <code>$update</code> statement.
+	 * @param collator
+	 *            the collator of the <code>$update</code> statement.
+	 * @param call
+	 *            the function call of the <code>$update</code> statement.
+	 * @return the new <code>$update</code> statement.
+	 */
+	UpdateStatement updateStatement(CIVLSource source, Location srcLoc,
+			Expression guard, Expression collator, CallOrSpawnStatement call);
 
 	/*
 	 * *********************************************************************
