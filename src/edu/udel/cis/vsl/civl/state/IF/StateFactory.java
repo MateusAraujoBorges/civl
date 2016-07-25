@@ -900,8 +900,19 @@ public interface StateFactory {
 	 * @return A state reference to the new state which is obtained by combine
 	 *         combining state and the monoState.
 	 */
-	int combineStates(int combiningStateReference, State monoState, int newPid,
-			int nprocs);
+	State combineStates(State state, State monoState, int newPid);
+
+	/**
+	 * Creates an empty state which contains no dyscopes but an array of process
+	 * states with length 'nprocs'. Each process state has an empty call stack.
+	 * 
+	 * @param nprocs
+	 *            Number of process states in the created state.
+	 * @return A new state which contains no dyscopes but an array of process
+	 *         states with length 'nprocs'. Each process state has an empty call
+	 *         stack. The path condtion is simply 'true'.
+	 */
+	State emptyState(int nprocs);
 
 	/**
 	 * Get a saved state by the state reference. The reference can be obtained

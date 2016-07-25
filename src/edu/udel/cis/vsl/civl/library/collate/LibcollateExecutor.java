@@ -208,7 +208,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		int scopeId = modelFactory.getScopeId(source, scopeValue);
 		int stateRef, nprocs, place, resultRef;
 		Evaluation eval;
-		State mono;
+		State mono, resultState, coState;
 
 		mono = stateFactory.getStateSnapshot(state, pid, scopeId);
 		symPlace = (NumericExpression) universe.tupleRead(collateState,
@@ -219,11 +219,16 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 				gcollateStateHandle, false);
 		state = eval.state;
 		gcollateState = eval.value;
-		symStateId = universe.tupleRead(gcollateState, gcollate_state_state);
-		stateRef = modelFactory.getStateRef(source, symStateId);
 		place = ((IntegerNumber) universe.extractNumber(symPlace)).intValue();
 		nprocs = ((IntegerNumber) universe.extractNumber(symNprocs)).intValue();
-		resultRef = stateFactory.combineStates(stateRef, mono, place, nprocs);
+		symStateId = universe.tupleRead(gcollateState, gcollate_state_state);
+		stateRef = modelFactory.getStateRef(source, symStateId);
+		if (stateRef == -1) // TODO: hide this information
+			coState = stateFactory.emptyState(nprocs);
+		else
+			coState = stateFactory.getStateByReference(stateRef);
+		resultState = stateFactory.combineStates(coState, mono, place);
+		resultRef = stateFactory.saveState(resultState, pid);
 		// System.out.println(this.symbolicAnalyzer
 		// .stateToString(stateFactory.getStateByReference(resultRef)));
 		symStateId = modelFactory.stateValue(resultRef);

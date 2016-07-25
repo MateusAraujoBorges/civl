@@ -2335,7 +2335,8 @@ public class ImmutableStateFactory implements StateFactory {
 			else
 				theState = theState.setProcessState(pid, processState);
 		try {
-			return canonic(theState, true, true, true, fullHeapErrorSet);
+			theState = collectProcesses(theState);
+			return collectScopes(theState, fullHeapErrorSet);
 		} catch (CIVLHeapException e) {
 			throw new CIVLInternalException(
 					"Canonicalization with ignorance of all kinds of heap errors still throws an Heap Exception",
@@ -2344,94 +2345,75 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public int combineStates(int stateCanonicId, State monoState, int newPid,
-			int nprocs) {
+	public State combineStates(State state, State monoState, int newPid) {
 		assert monoState.numProcs() == 1;
-		ImmutableState theState = getStateByReference(stateCanonicId);
 		ImmutableState theMono = (ImmutableState) monoState;
+		ImmutableState theState = (ImmutableState) state;
 		ImmutableState result;
 		ImmutableDynamicScope dyscopes[];
 		ImmutableProcessState[] processes;
-		ImmutableProcessState monoProcess = theMono.getProcessState(0);
+		// Change the PID of the mono process:
+		ImmutableProcessState monoProcess = theMono.getProcessState(0)
+				.setPid(newPid);
+		Scope monoProcScope = monoProcess.getStackEntry(0).location().function()
+				.outerScope();
+		Scope leastCommonAncestor;
 
-		monoProcess = monoProcess.setPid(newPid);
-		// First process, creates a state with 'nprocs' process states, each
-		// process state is initialized with an empty call stack:
-		if (theState == null) {
-			int procOld2New[] = new int[nprocs];
+		// Get the least common ancestor static scope:
+		leastCommonAncestor = monoProcScope;
+		// For the initial case, there is only one process state, so the
+		// invariants must hold; Then for each time adding a new process
+		// state to the state, it always looking for the least common
+		// ancestor (LCA) scope in between the new process scope and the LCA
+		// of all processes in the state, thus the new LCA can only either
+		// be the old LCA or an ancestor of the old LCA. It is guaranteed
+		// that LCA and any ancestor of LCA has only one dyscope in the
+		// state:
+		processes = theState.copyProcessStates();
+		assert theState.numLiveProcs() > 0;
+		for (ImmutableProcessState process : processes)
+			if (!process.hasEmptyStack()) {
+				Scope otherProcScope = process.getStackEntry(0).location()
+						.function().outerScope();
 
-			processes = new ImmutableProcessState[nprocs];
-			Arrays.fill(procOld2New, -1);
-			Arrays.fill(processes, new ImmutableProcessState(-1, false));
-			processes[newPid] = monoProcess;
-			dyscopes = theMono.copyScopes();
-			result = ImmutableState.newState(theMono, processes, dyscopes,
-					theMono.getPathCondition());
-			procOld2New[0] = newPid;
-			dyscopes = updateProcessReferencesInScopes(result, procOld2New);
-			result = result.setScopes(dyscopes);
-		} else {
-			// Get the least common ancestor static scope:
-			Scope newFuncScope = monoProcess.getStackEntry(0).location()
-					.function().outerScope();
-			Scope leastCommonAncestor = newFuncScope;
-			// As long as the invariants hold, one can get the unique dynamic
-			// scope of the least common scope from any live process:
-			ImmutableProcessState anyLiveProcess = null;
+				leastCommonAncestor = modelFactory.leastCommonAncestor(
+						leastCommonAncestor, otherProcScope);
+			}
 
-			// For the initial case, there is only one process state, so the
-			// invariants must hold; Then for each time adding a new process
-			// state to the state, it always looking for the least common
-			// ancestor (LCA) scope in between the new process scope and the LCA
-			// of all processes in the state, thus the new LCA can only either
-			// be the old LCA or an ancestor of the old LCA. It is guaranteed
-			// that LCA and any ancestor of LCA has only one dyscope in the
-			// state:
-			processes = theState.copyProcessStates();
-			assert processes.length == nprocs;
-			assert theState.numLiveProcs() > 0;
-			for (ImmutableProcessState process : processes)
-				if (process.getPid() >= 0) {
-					Scope otherFuncScope = process.getStackEntry(0).location()
-							.function().outerScope();
+		ImmutableDynamicScope monoDyscopes[] = theMono.copyScopes();
+		int dyscopeOld2New[] = new int[monoDyscopes.length];
+		int counter = theState.numDyscopes();
+		BooleanExpression newMonoPC;
 
-					leastCommonAncestor = modelFactory.leastCommonAncestor(
-							leastCommonAncestor, otherFuncScope);
-					if (anyLiveProcess == null)
-						anyLiveProcess = process;
-				}
-			assert anyLiveProcess != null;
+		// For any dyscope whose scope is LCA or an ancestor of LCA, the
+		// dyscope will be replaced with the unique dysocpe assocates to the
+		// scope in the state; Otherwise, it is a dyscope only reachable by
+		// the new process:
+		for (int i = 0; i < monoDyscopes.length; i++)
+			if (monoDyscopes[i].lexicalScope()
+					.isDescendantOf(leastCommonAncestor))
+				dyscopeOld2New[i] = counter++;
+			else {
+				int uniqueDyscopeId = 0;
 
-			ImmutableDynamicScope monoDyscopes[] = theMono.copyScopes();
-			int dyscopeOld2New[] = new int[monoDyscopes.length];
-			int counter = theState.numDyscopes();
-			BooleanExpression newMonoPC;
-
-			// For any dyscope whose scope is LCA or an ancestor of LCA, the
-			// dyscope will be replaced with the unique dysocpe assocates to the
-			// scope in the state; Otherwise, it is a dyscope only reachable by
-			// the new process:
-			for (int i = 0; i < monoDyscopes.length; i++)
-				if (monoDyscopes[i].lexicalScope()
-						.isDescendantOf(leastCommonAncestor))
-					dyscopeOld2New[i] = counter++;
-				else
-					dyscopeOld2New[i] = theState.getDyscope(
-							anyLiveProcess.getPid(),
-							monoDyscopes[i].lexicalScope());
-			dyscopes = new ImmutableDynamicScope[counter];
-			System.arraycopy(theState.copyScopes(), 0, dyscopes, 0,
-					theState.numDyscopes());
-			newMonoPC = renumberDyscopes(monoDyscopes, dyscopeOld2New, dyscopes,
-					theMono.getPathCondition());
-			processes[newPid] = monoProcess.updateDyscopes(dyscopeOld2New);
-			for (ImmutableProcessState proc : processes)
-				if (proc.getPid() >= 0)
-					setReachablesForProc(dyscopes, proc);
-			result = ImmutableState.newState(theState, processes, dyscopes,
-					universe.and(newMonoPC, theState.getPathCondition()));
-		}
-		return saveState(result, newPid);
+				for (int d = 0; d < theState.numDyscopes(); d++)
+					if (theState.getDyscope(d).lexicalScope()
+							.id() == monoDyscopes[i].lexicalScope().id())
+						uniqueDyscopeId = d;
+				dyscopeOld2New[i] = uniqueDyscopeId;
+			}
+		dyscopes = new ImmutableDynamicScope[counter];
+		System.arraycopy(theState.copyScopes(), 0, dyscopes, 0,
+				theState.numDyscopes());
+		newMonoPC = renumberDyscopes(monoDyscopes, dyscopeOld2New, dyscopes,
+				theMono.getPathCondition());
+		processes[newPid] = monoProcess.updateDyscopes(dyscopeOld2New);
+		for (ImmutableProcessState proc : processes)
+			if (!proc.hasEmptyStack())
+				setReachablesForProc(dyscopes, proc);
+		result = ImmutableState.newState(theState, processes, dyscopes,
+				universe.and(newMonoPC, theState.getPathCondition()));
+		return result;
 	}
 
 	@Override
@@ -2460,5 +2442,19 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public void unsaveStateByReference(int stateRef) {
 		savedCanonicStates.remove(stateRef);
+	}
+
+	@Override
+	public State emptyState(int nprocs) {
+		ImmutableProcessState processes[] = new ImmutableProcessState[nprocs];
+		ImmutableDynamicScope dyscopes[] = new ImmutableDynamicScope[0];
+		ImmutableState result;
+
+		for (int i = 0; i < nprocs; i++)
+			processes[i] = new ImmutableProcessState(i, false);
+		result = new ImmutableState(processes, dyscopes,
+				universe.trueExpression());
+		result.collectibleCounts = new int[ModelConfiguration.SYMBOL_PREFIXES.length];
+		return result;
 	}
 }
