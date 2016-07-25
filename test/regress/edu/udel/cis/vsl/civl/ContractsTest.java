@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl;
 
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -24,17 +25,11 @@ public class ContractsTest {
 	}
 
 	/* **************************** Test Methods *************************** */
-
-	@Test
-	public void dummy() {
-		assertTrue(true);
-	}
-
 	@Test
 	public void with() {
 		assertTrue(
-				ui.run("verify -showProgram=false -showTransitions=true -showSavedStates=true -quiet",
-						filename("with.cvl")));
+				ui.run("verify -showProgram=false -showTransitions=true -showSavedStates=true",
+						QUIET, filename("with.cvl")));
 	}
 
 	// @Test

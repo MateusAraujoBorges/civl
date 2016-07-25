@@ -108,7 +108,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 						universe.integer(stateFactory.saveState(state, pid))));
 		ghandleStatePointer = symbolicUtil.extendPointer(ghandle,
 				universe.tupleComponentReference(universe.identityReference(),
-						twoObject));
+						gcollate_state_state));
 		realState = this.primaryExecutor.assign(source, realState, process,
 				ghandleStatePointer, newColStateRef);
 		realState = realState.setPathCondition(universe
