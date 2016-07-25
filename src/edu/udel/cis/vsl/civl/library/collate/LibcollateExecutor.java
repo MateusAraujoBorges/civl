@@ -20,10 +20,14 @@ import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 
 public class LibcollateExecutor extends BaseLibraryExecutor
 		implements
 			LibraryExecutor {
+	private final IntObject collate_state_gstate;
+
+	private final IntObject gcollate_state_state;
 
 	public LibcollateExecutor(String name, Executor primaryExecutor,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -33,6 +37,10 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		super(name, primaryExecutor, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
+		collate_state_gstate = universe
+				.intObject(LibcollateConstants.COLLATE_STATE_GSTATE);
+		gcollate_state_state = universe
+				.intObject(LibcollateConstants.GCOLLATE_STATE_STATE);
 	}
 
 	@Override
@@ -119,7 +127,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression gstate = eval.value;
 
 		return new Evaluation(eval.state,
-				universe.tupleRead(gstate, twoObject));
+				universe.tupleRead(gstate, gcollate_state_state));
 	}
 
 	/**
@@ -156,7 +164,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 				gstateHandle, false);
 		state = eval.state;
 		gstate = eval.value;
-		colStateVal = universe.tupleRead(gstate, twoObject);
+		colStateVal = universe.tupleRead(gstate, gcollate_state_state);
 		stateIDExpr = (NumericExpression) universe.tupleRead(colStateVal,
 				zeroObject);
 		colStateID = this.symbolicUtil.extractInt(source, stateIDExpr);
@@ -220,18 +228,19 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		mono = stateFactory.getStateSnapshot(state, pid, scopeId);
 		symPlace = (NumericExpression) universe.tupleRead(collateState,
 				zeroObject);
-		gcollateStateHandle = universe.tupleRead(collateState, oneObject);
+		gcollateStateHandle = universe.tupleRead(collateState,
+				collate_state_gstate);
 		eval = evaluator.dereference(source, state, process, arguments[0],
 				gcollateStateHandle, false);
 		state = eval.state;
 		gcollateState = eval.value;
-		symStateId = universe.tupleRead(gcollateState, oneObject);
+		symStateId = universe.tupleRead(gcollateState, gcollate_state_state);
 		stateRef = modelFactory.getStateRef(source, symStateId);
 		place = ((IntegerNumber) universe.extractNumber(symPlace)).intValue();
 		nprocs = ((IntegerNumber) universe.extractNumber(symNprocs)).intValue();
 		resultRef = stateFactory.combineStates(stateRef, mono, place, nprocs);
 		symStateId = modelFactory.stateValue(resultRef);
-		gcollateState = universe.tupleWrite(gcollateState, oneObject,
+		gcollateState = universe.tupleWrite(gcollateState, gcollate_state_state,
 				symStateId);
 		state = this.primaryExecutor.assign(source, state, process,
 				gcollateStateHandle, gcollateState);
