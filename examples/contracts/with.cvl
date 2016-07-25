@@ -1,15 +1,17 @@
 #include<collate.cvh>
 
-$gcollator gcollator=gcollator_create($here, 1);
-$collator collator=collator_create(gcollator, $here, 0);
+$gcollator gcollator=$gcollator_create($here, 1);
+$collator collator=$collator_create(gcollator, $here, 0);
 
 int main(){
-  $collate_state cs=$collate_snapshot(collator);
+  $collate_state cs;
+
+  cs=$collate_arrives(collator, $here);
     
-  $with(cs){
+  $with (cs) {
     $assert($true);
   }
-  $collate_unsnapshot(collator);
+  $collate_departs(collator);
   $free(collator);
   $free(gcollator);
 }

@@ -43,6 +43,8 @@ struct _collate_state {
   int place;
   // A reference to a _gcollate_state:
   $gcollate_state gstate;
+  // Reference to the real state
+  $state real;
 };
 
 
@@ -142,6 +144,7 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   }  
   result.place = place;
   result.gstate = gcollate_state;
+  result.real=$state_null;
   $collate_snapshot(result, nprocs, scope);
   gcollate_state->arrived[place] = $true;
   return result;

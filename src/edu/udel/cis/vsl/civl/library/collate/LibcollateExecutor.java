@@ -15,7 +15,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
@@ -23,8 +22,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 
 public class LibcollateExecutor extends BaseLibraryExecutor
-		implements
-			LibraryExecutor {
+		implements LibraryExecutor {
 
 	public LibcollateExecutor(String name, Executor primaryExecutor,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -44,22 +42,21 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		Evaluation callEval = null;
 
 		switch (functionName) {
-			case "$enter_collate_state" :
-				callEval = executeEnterCollateState(state, pid, process,
-						arguments, argumentValues, source);
-				break;
-			case "$exit_collate_state" :
-				callEval = executeExitCollateState(state, pid, process,
-						arguments, argumentValues, source);
-				break;
-			case "$collate_snapshot" :
-				callEval = executeCollateSnapshot(state, pid, process,
-						arguments, argumentValues, source);
-				break;
-			default :
-				throw new CIVLUnimplementedFeatureException(
-						"the function " + name + " of library pointer.cvh",
-						source);
+		case "$enter_collate_state":
+			callEval = executeEnterCollateState(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$exit_collate_state":
+			callEval = executeExitCollateState(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$collate_snapshot":
+			callEval = executeCollateSnapshot(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"the function " + name + " of library pointer.cvh", source);
 		}
 		return callEval;
 	}
@@ -80,29 +77,32 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression rsVal = argumentValues[1],
-				colStateVal = argumentValues[0], newColStateRef;
-		@SuppressWarnings("unused")
-		int rsID = this.symbolicUtil.extractInt(source,
-				(NumericExpression) rsVal);
+		SymbolicExpression colStatePointer = argumentValues[0], colStateComp;
+		Evaluation eval;
+		SymbolicExpression rsVal, newColStateRef;
+		int rsID;
 		State realState = null;
-		SymbolicExpression ghandle = universe.tupleRead(colStateVal, oneObject),
-				ghandleStatePointer;
+		SymbolicExpression ghandle, ghandleStatePointer;
 
-		// TODO realState=stateFactory.getState(rsID);
-		// TODO realState=stateFactory.subsitute(realState);
-		try {
-			state = stateFactory.canonic(state, false, false, false, null);
-		} catch (CIVLHeapException e) {
-			throw new UnsatisfiablePathConditionException();
-		}
+		eval = this.evaluator.dereference(source, state, process, arguments[0],
+				colStatePointer, false);
+		state = eval.state;
+		colStateComp = eval.value;
+		ghandle = universe.tupleRead(colStateComp, oneObject);
+		rsVal = universe.tupleRead(colStateComp, twoObject);
+		rsID = this.symbolicUtil.extractInt(source,
+				(NumericExpression) universe.tupleRead(rsVal, zeroObject));
+		realState = stateFactory.getStateByReference(rsID);
 		newColStateRef = this.universe.tuple(typeFactory.stateSymbolicType(),
-				Arrays.asList(universe.integer(state.getCanonicId())));
+				Arrays.asList(
+						universe.integer(stateFactory.saveState(state, pid))));
 		ghandleStatePointer = symbolicUtil.extendPointer(ghandle,
 				universe.tupleComponentReference(universe.identityReference(),
 						twoObject));
 		realState = this.primaryExecutor.assign(source, realState, process,
 				ghandleStatePointer, newColStateRef);
+		realState = realState.setPathCondition(universe
+				.and(realState.getPathCondition(), state.getPathCondition()));
 		return new Evaluation(realState, null);
 	}
 
@@ -136,25 +136,37 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression colStateVal = universe.tupleRead(
-				universe.tupleRead(argumentValues[0], oneObject),
-				this.twoObject);
-		NumericExpression stateIDExpr = (NumericExpression) universe
-				.tupleRead(colStateVal, zeroObject);
-		@SuppressWarnings("unused")
-		int colStateID = this.symbolicUtil.extractInt(source, stateIDExpr);
-		State colState = null; // TODO stateFactory.getState(colStateID);
+		Evaluation eval;
+		SymbolicExpression colStatePointer = argumentValues[0], colStateComp,
+				gstateHandle, gstate, colStateVal;
+		NumericExpression stateIDExpr;
+		int colStateID, realStateID;
+		State colState = null;
 		SymbolicExpression realStateRef;
 
-		try {
-			state = this.stateFactory.canonic(state, true, true, true, null);
-		} catch (CIVLHeapException e) {
-			throw new UnsatisfiablePathConditionException();
-		}
+		realStateID = stateFactory.saveState(state, pid);
+		eval = this.evaluator.dereference(source, state, process, arguments[0],
+				colStatePointer, false);
+		state = eval.state;
+		colStateComp = eval.value;
+		gstateHandle = universe.tupleRead(colStateComp, oneObject);
+		eval = this.evaluator.dereference(source, state, process, arguments[0],
+				gstateHandle, false);
+		state = eval.state;
+		gstate = eval.value;
+		colStateVal = universe.tupleRead(gstate, twoObject);
+		stateIDExpr = (NumericExpression) universe.tupleRead(colStateVal,
+				zeroObject);
+		colStateID = this.symbolicUtil.extractInt(source, stateIDExpr);
+		colState = stateFactory.getStateByReference(colStateID);
 		realStateRef = universe.tuple(this.typeFactory.stateSymbolicType(),
-				new SymbolicExpression[]{
-						universe.integer(state.getCanonicId())});
-		return new Evaluation(colState, realStateRef);
+				new SymbolicExpression[] { universe.integer(realStateID) });
+		colStateComp = universe.tupleWrite(colStateComp, twoObject,
+				realStateRef);
+		colState = primaryExecutor.assign(source, colState, process,
+				colStatePointer, colStateComp);
+		System.out.println(this.symbolicAnalyzer.stateToString(colState));
+		return new Evaluation(colState, null);
 	}
 
 	/**
@@ -219,7 +231,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		nprocs = ((IntegerNumber) universe.extractNumber(symNprocs)).intValue();
 		resultRef = stateFactory.combineStates(stateRef, mono, place, nprocs);
 		// The mono state is uncessary to keep being saved any more:
-		stateFactory.unsaveStateByReference(monoRef);
+		// stateFactory.unsaveStateByReference(monoRef);
 		symStateId = modelFactory.stateValue(resultRef);
 		gcollateState = universe.tupleWrite(gcollateState, twoObject,
 				symStateId);

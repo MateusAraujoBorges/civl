@@ -32,7 +32,9 @@ public class ContractsTest {
 
 	@Test
 	public void with() {
-		assertTrue(ui.run("show -showProgram ", filename("with.cvl")));
+		assertTrue(
+				ui.run("verify -showProgram=false -showTransitions=true -showSavedStates=true -quiet",
+						filename("with.cvl")));
 	}
 
 	// @Test
