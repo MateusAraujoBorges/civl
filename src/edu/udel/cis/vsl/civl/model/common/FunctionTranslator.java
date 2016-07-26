@@ -1896,6 +1896,9 @@ public class FunctionTranslator {
 				result = result.combineWith(fragment);
 			}
 		}
+		if (result.isEmpty()) 
+			result = new CommonFragment(modelFactory.noopStatement(
+					modelFactory.sourceOf(statementNode), location, null));
 		return result;
 	}
 

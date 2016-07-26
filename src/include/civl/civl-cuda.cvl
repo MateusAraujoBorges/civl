@@ -391,5 +391,3 @@ void $cuda_kernel_finish($cuda_kernel_instance_t *k) {
   k->status = $cuda_kernel_status_finished;
 }
 
-#endif
-
