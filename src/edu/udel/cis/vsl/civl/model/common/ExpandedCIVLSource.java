@@ -4,12 +4,12 @@ import java.io.PrintStream;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 
-public class ExpandedCIVL implements CIVLSource {
+public class ExpandedCIVLSource implements CIVLSource {
 
 	private CIVLSource expandedSource;
 	private CIVLSource baseSource;
 
-	public ExpandedCIVL(CIVLSource expanded, CIVLSource base) {
+	public ExpandedCIVLSource(CIVLSource expanded, CIVLSource base) {
 		this.expandedSource = expanded;
 		this.baseSource = base;
 	}

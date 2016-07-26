@@ -1234,7 +1234,7 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	private CIVLSource expandedSource(CIVLSource expanded, CIVLSource base) {
-		return new ExpandedCIVL(expanded, base);
+		return new ExpandedCIVLSource(expanded, base);
 	}
 
 	@Override

@@ -2586,7 +2586,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			return new Pair<>(universe.trueExpression(), ResultType.YES);
 		if (pointer.isNull())
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
-
+		
 		int dyscope = symbolicUtil.getDyscopeId(null, pointer);
 
 		if (dyscope == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE)

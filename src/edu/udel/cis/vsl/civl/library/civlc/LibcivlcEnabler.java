@@ -364,11 +364,11 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 				int lower = Integer.MIN_VALUE, upper = Integer.MAX_VALUE;
 
 				if (lowerNum != null) {
-					assert !interval.strictLower();
+					//assert !interval.strictLower();
 					lower = ((IntegerNumber) lowerNum).intValue();
 				}
 				if (upperNum != null) {
-					assert !interval.strictUpper();
+					//assert !interval.strictUpper();
 					upper = ((IntegerNumber) upperNum).intValue();
 				}
 				bounds.add(new ConstantBound(var, lower, upper));

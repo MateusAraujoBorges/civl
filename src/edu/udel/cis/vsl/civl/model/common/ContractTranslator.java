@@ -153,15 +153,15 @@ public class ContractTranslator extends FunctionTranslator {
 	 * Thus, the specifications for different kind of contracts is as follows:
 	 * <p>
 	 * <ol>
-	 * <li>
-	 * A {@link NamedFunctionBehavior} will be added as a component of a
+	 * <li>A {@link NamedFunctionBehavior} will be added as a component of a
 	 * {@link MPICollectiveBehavior} if it is non-null, else as of a
 	 * {@link FunctionContract}.</li>
 	 * <li>{@link ASSUMES} can only be added as a component of a
 	 * {@link NamedFunctionBehavior}</li>
 	 * <li>Other contract clauses will be added as a component of one of the
 	 * three main blocks with such a precedence:
-	 * <code>{@link NamedFunctionBehavior} higher than {@link MPICollectiveBehavior} high than {@link FunctionContract}<code>
+	 * <code>{@link NamedFunctionBehavior} higher than
+	 * {@link MPICollectiveBehavior} high than {@link FunctionContract}<code>
 	 * </li>
 	 * </ol>
 	 * </p>
@@ -244,8 +244,8 @@ public class ContractTranslator extends FunctionTranslator {
 			assert behavior == null;
 			BehaviorNode behaviorNode = (BehaviorNode) contractNode;
 			NamedFunctionBehavior namedBehavior = this.contractFactory
-					.newNamedFunctionBehavior(source, behaviorNode.getName()
-							.name());
+					.newNamedFunctionBehavior(source,
+							behaviorNode.getName().name());
 			SequenceNode<ContractNode> body = behaviorNode.getBody();
 
 			for (ContractNode item : body) {
@@ -274,7 +274,8 @@ public class ContractTranslator extends FunctionTranslator {
 								"depends \\noact conflicts with previous depends clause",
 								source);
 					targetBehavior.setDependsNoact();
-				} else if (event.dependsEventKind() == DependsEventKind.ANYACT) {
+				} else if (event
+						.dependsEventKind() == DependsEventKind.ANYACT) {
 					if (targetBehavior.dependsNoact())
 						throw new CIVLSyntaxException(
 								"depends \\anyact conflicts with previous depends \\noact clause",
@@ -307,7 +308,7 @@ public class ContractTranslator extends FunctionTranslator {
 			Expression guard = this.translateExpressionNode(
 					((GuardsNode) contractNode).getExpression(), scope, true);
 
-			functionContract.setGuard(guard);
+			functionContract.setGuard(modelFactory.booleanExpression(guard));
 			break;
 		}
 		case MPI_COLLECTIVE:
@@ -351,7 +352,8 @@ public class ContractTranslator extends FunctionTranslator {
 				Expression argExpr = translateExpressionNode(arg, scope, true);
 
 				if (!argExpr.getExpressionType().isIntegerType())
-					if (argExpr.expressionKind() != Expression.ExpressionKind.REGULAR_RANGE)
+					if (argExpr
+							.expressionKind() != Expression.ExpressionKind.REGULAR_RANGE)
 						throw new CIVLSyntaxException(
 								"waitsfor clause only accepts arguments of integer type or regualr range type");
 				arguments.add(argExpr);
@@ -408,11 +410,11 @@ public class ContractTranslator extends FunctionTranslator {
 			CallEvent call;
 
 			for (ExpressionNode argNode : argumentNodes) {
-				arguments.add(this
-						.translateExpressionNode(argNode, scope, true));
+				arguments.add(
+						this.translateExpressionNode(argNode, scope, true));
 			}
-			call = this.contractFactory.newCallEvent(source,
-					functionPair.right, arguments);
+			call = this.contractFactory.newCallEvent(source, functionPair.right,
+					arguments);
 			if (functionPair.right == null)
 				this.modelBuilder.callEvents.put(call, functionPair.left);
 			return call;
@@ -435,11 +437,12 @@ public class ContractTranslator extends FunctionTranslator {
 			default:
 				throw new CIVLUnimplementedFeatureException(
 						"unknown kind of composite event operatore: "
-								+ compositeEvent.eventOperator(), source);
+								+ compositeEvent.eventOperator(),
+						source);
 			}
 			left = this.translateDependsEvent(compositeEvent.getLeft(), scope);
-			right = this
-					.translateDependsEvent(compositeEvent.getRight(), scope);
+			right = this.translateDependsEvent(compositeEvent.getRight(),
+					scope);
 			return this.contractFactory.newCompositeEvent(source, operator,
 					left, right);
 		}
@@ -468,8 +471,7 @@ public class ContractTranslator extends FunctionTranslator {
 			return this.modelFactory.nothing(source);
 		}
 		case WILDCARD: {
-			return this.modelFactory.wildcardExpression(
-					source,
+			return this.modelFactory.wildcardExpression(source,
 					this.translateABCType(source, scope,
 							expressionNode.getConvertedType()));
 		}
@@ -503,8 +505,8 @@ public class ContractTranslator extends FunctionTranslator {
 
 		switch (kind) {
 		case MPI_INTEGER_CONSTANT:
-			return translateMPIIntegerConstantNode(
-					(CommonMPIConstantNode) node, scope);
+			return translateMPIIntegerConstantNode((CommonMPIConstantNode) node,
+					scope);
 		case MPI_EMPTY_IN:
 			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_IN;
 			numArgs = 1;
@@ -530,9 +532,9 @@ public class ContractTranslator extends FunctionTranslator {
 		}
 		if (currentMPICollectiveTitle.left == null
 				|| currentMPICollectiveTitle.right == null) {
-			throw new CIVLSyntaxException("MPI Contract expression: "
-					+ civlMpiContractKind
-					+ " can only be used in MPI collective behaviors");
+			throw new CIVLSyntaxException(
+					"MPI Contract expression: " + civlMpiContractKind
+							+ " can only be used in MPI collective behaviors");
 		}
 		assert numArgs > 0 && civlMpiContractKind != null;
 
@@ -545,8 +547,8 @@ public class ContractTranslator extends FunctionTranslator {
 		if (civlMpiContractKind == MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE)
 			if (currentContractKind == ContractKind.REQUIRES) {
 				if (currentContractKind == ContractKind.REQUIRES)
-					agreedVaraibles.add(((VariableExpression) arguments[0])
-							.variable());
+					agreedVaraibles.add(
+							((VariableExpression) arguments[0]).variable());
 			} else
 				throw new CIVLSyntaxException(
 						"\\mpi_agree currently can only be used in requirements.",
@@ -588,7 +590,8 @@ public class ContractTranslator extends FunctionTranslator {
 	}
 
 	@Override
-	protected Expression translateResultNode(ResultNode resultNode, Scope scope) {
+	protected Expression translateResultNode(ResultNode resultNode,
+			Scope scope) {
 		CIVLSource resultSource = modelFactory.sourceOf(resultNode);
 		Variable resultVariable;
 		Identifier resultIdentifier = modelFactory.identifier(resultSource,
@@ -632,14 +635,13 @@ public class ContractTranslator extends FunctionTranslator {
 			return translateValidOperator(modelFactory.sourceOf(operatorNode),
 					arg, scope);
 		case PLUS:
-			ExpressionNode arg0,
-			arg1;
+			ExpressionNode arg0, arg1;
 
 			arg0 = operatorNode.getArgument(0);
 			arg1 = operatorNode.getArgument(1);
 			if (arg0.expressionKind().equals(ExpressionKind.REGULAR_RANGE)
-					|| arg1.expressionKind().equals(
-							ExpressionKind.REGULAR_RANGE))
+					|| arg1.expressionKind()
+							.equals(ExpressionKind.REGULAR_RANGE))
 				return translatePointerSet(modelFactory.sourceOf(operatorNode),
 						this.translateExpressionNode(arg0, scope, true),
 						this.translateExpressionNode(arg1, scope, true),
@@ -694,8 +696,8 @@ public class ContractTranslator extends FunctionTranslator {
 	 * @param scope
 	 * @return
 	 */
-	private Expression translateValidOperator(CIVLSource source,
-			Expression arg, Scope scope) {
+	private Expression translateValidOperator(CIVLSource source, Expression arg,
+			Scope scope) {
 		PointerSetExpression mem;
 		UnaryExpression result;
 
@@ -711,14 +713,14 @@ public class ContractTranslator extends FunctionTranslator {
 						"Singleton pointer set but the element is not a LHSExpression.");
 		} else
 			mem = (PointerSetExpression) arg;
-		result = modelFactory
-				.unaryExpression(source, UNARY_OPERATOR.VALID, mem);
+		result = modelFactory.unaryExpression(source, UNARY_OPERATOR.VALID,
+				mem);
 		if (currentContractKind == ContractKind.REQUIRES) {
 			// This \valid expression may be a consequence of requirements:
 			int mallocId = modelBuilder.mallocStatements.size();
 			LHSExpression memPointer = mem.getBasePointer();
-			CIVLType staticElementType = ((CIVLPointerType) mem
-					.getBasePointer().getExpressionType()).baseType();
+			CIVLType staticElementType = ((CIVLPointerType) mem.getBasePointer()
+					.getExpressionType()).baseType();
 
 			// TODO: what if pointer is void *?
 			modelBuilder.mallocStatements.add(modelFactory.mallocStatement(
@@ -782,8 +784,8 @@ public class ContractTranslator extends FunctionTranslator {
 		VariableExpression variable;
 		Expression process;
 
-		variable = (VariableExpression) this.translateExpressionNode(
-				identifierNode, scope, true);
+		variable = (VariableExpression) this
+				.translateExpressionNode(identifierNode, scope, true);
 		process = this.translateExpressionNode(processNode, scope, false);
 		return modelFactory.binaryExpression(
 				modelFactory.sourceOf(expressionNode), BINARY_OPERATOR.REMOTE,
