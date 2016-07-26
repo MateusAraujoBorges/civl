@@ -27,7 +27,6 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.predicate.IF.AndPredicate;
 import edu.udel.cis.vsl.civl.predicate.IF.CIVLStatePredicate;
 import edu.udel.cis.vsl.civl.predicate.IF.Predicates;
-import edu.udel.cis.vsl.civl.semantics.IF.ContractConditionGenerator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -36,7 +35,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
-import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
@@ -146,47 +144,20 @@ public abstract class Player {
 				.newLibraryEvaluatorLoader(this.civlConfig);
 		this.symbolicAnalyzer = Semantics.newSymbolicAnalyzer(this.civlConfig,
 				universe, modelFactory, symbolicUtil);
-		this.gui = (Boolean) gmcConfig.getAnonymousSection().getValueOrDefault(
-				guiO);
+		this.gui = (Boolean) gmcConfig.getAnonymousSection()
+				.getValueOrDefault(guiO);
 		this.libraryExecutorLoader = Semantics.newLibraryExecutorLoader(
 				this.libraryEvaluatorLoader, this.civlConfig);
 		this.libraryEnablerLoader = Kripkes.newLibraryEnablerLoader(
 				this.libraryEvaluatorLoader, this.civlConfig);
-		if (this.civlConfig.isEnableMpiContract()) {
-			ContractConditionGenerator conditionGenerator = Semantics
-					.newContractConditionGenerator(modelFactory, stateFactory,
-							libraryEvaluatorLoader, libraryExecutorLoader,
-							symbolicUtil, symbolicAnalyzer, memUnitFactory,
-							log, civlConfig);
-
-			this.evaluator = Semantics.newContractEvaluator(modelFactory,
-					stateFactory, libraryEvaluatorLoader,
-					libraryExecutorLoader, symbolicUtil, symbolicAnalyzer,
-					memUnitFactory, log, this.civlConfig);
-			this.executor = Semantics.newContractExecutor(modelFactory,
-					stateFactory, libraryExecutorLoader,
-					(ContractEvaluator) evaluator, symbolicAnalyzer, log,
-					civlConfig, conditionGenerator);
-			enabler = Kripkes.newEnabler(stateFactory, evaluator,
-					symbolicAnalyzer, memUnitFactory,
-					this.libraryEnablerLoader, log, civlConfig,
-					conditionGenerator);
-			// enabler = Kripkes.newEnabler(stateFactory, evaluator,
-			// symbolicAnalyzer, memUnitFactory,
-			// this.libraryEnablerLoader, log, civlConfig,
-			// conditionGenerator);
-		} else {
-			this.evaluator = Semantics.newEvaluator(modelFactory, stateFactory,
-					libraryEvaluatorLoader, libraryExecutorLoader,
-					symbolicUtil, symbolicAnalyzer, memUnitFactory, log,
-					this.civlConfig);
-			this.executor = Semantics.newExecutor(modelFactory, stateFactory,
-					libraryExecutorLoader, evaluator, symbolicAnalyzer, log,
-					civlConfig);
-			enabler = Kripkes.newEnabler(stateFactory, evaluator,
-					symbolicAnalyzer, memUnitFactory,
-					this.libraryEnablerLoader, log, civlConfig, null);
-		}
+		this.evaluator = Semantics.newEvaluator(modelFactory, stateFactory,
+				libraryEvaluatorLoader, libraryExecutorLoader, symbolicUtil,
+				symbolicAnalyzer, memUnitFactory, log, this.civlConfig);
+		this.executor = Semantics.newExecutor(modelFactory, stateFactory,
+				libraryExecutorLoader, evaluator, symbolicAnalyzer, log,
+				civlConfig);
+		enabler = Kripkes.newEnabler(stateFactory, evaluator, symbolicAnalyzer,
+				memUnitFactory, this.libraryEnablerLoader, log, civlConfig);
 		this.random = gmcConfig.getAnonymousSection().isTrue(randomO);
 		this.minimize = gmcConfig.getAnonymousSection().isTrue(minO);
 		this.maxdepth = (int) gmcConfig.getAnonymousSection()

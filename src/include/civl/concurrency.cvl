@@ -30,25 +30,6 @@ struct _barrier {
   $gbarrier gbarrier; // initialized as 0.
 };
 
-/******************* Collective Arrive Checking Records *******************/
-/* Record entry */
-struct _collator_entry {
-  $bundle entries;
-  _Bool marks[];  //an array stores marks for processes
-  int numMarked;  //number of processes already marked this record
-};
-
-/* Global records queue */
-struct _gcollator {
-  int length;
-  $collator_entry entries[];
-};
-
-/* Local handle of the global records queue */
-struct _collator {
-  $gcollator gcollator;
-};
-
 /* *********************** Functions *********************** */
 
 /*@ depends_on \access(barrier);
@@ -128,43 +109,4 @@ $atomic_f void $barrier_destroy($barrier barrier){
   $free(barrier);
 }
 
-/*@ depends_on \nothing;
-  @ reads \nothing;
-  @ assigns \nothing;
-  @ */
-$atomic_f $gcollator $gcollator_create($scope scope){
-  $gcollator gcollator=($gcollator)$malloc(scope, sizeof(struct _gcollator));
-
-  gcollator->length=0;
-  $seq_init(&gcollator->entries, 0, NULL);
-  return gcollator;
-}
-
-/*@ depends_on \access(gcollator);
-  @ assigns gcollator;
-  @ reads \nothing;
-  @ */
-$atomic_f int $gcollator_destroy($gcollator gcollator){
-  int numRemaining=gcollator->length;
-
-  $free(gcollator);
-  return numRemaining;
-}
-
-/*@ depends_on \nothing;
-  @ executes_when \true;
-  @ */
-$atomic_f $collator $collator_create($scope scope, $gcollator gcollator){
-  $collator collator=($collator)$malloc(scope, sizeof(struct _collator));
-  
-  collator->gcollator=gcollator;
-  return collator;
-}
-
-/*@ depends_on \access(collator);
-  @ executes_when \true;
-  @ */
-$atomic_f void $collator_destroy($collator collator){
-  $free(collator);
-}
 #endif

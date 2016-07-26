@@ -5,7 +5,6 @@ import edu.udel.cis.vsl.civl.kripke.common.CommonLibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.kripke.common.CommonStateManager;
 import edu.udel.cis.vsl.civl.kripke.common.PointeredEnabler;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
-import edu.udel.cis.vsl.civl.semantics.IF.ContractConditionGenerator;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -43,11 +42,9 @@ public class Kripkes {
 	public static Enabler newEnabler(StateFactory stateFactory,
 			Evaluator evaluator, SymbolicAnalyzer symbolicAnalyzer,
 			MemoryUnitFactory memUnitFactory, LibraryEnablerLoader libLoader,
-			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig,
-			ContractConditionGenerator conditionGenerator) {
+			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig) {
 		return new PointeredEnabler(stateFactory, evaluator, symbolicAnalyzer,
-				memUnitFactory, libLoader, errorLogger, civlConfig,
-				conditionGenerator);
+				memUnitFactory, libLoader, errorLogger, civlConfig);
 	}
 
 	/**

@@ -2402,8 +2402,7 @@ public class ImmutableStateFactory implements StateFactory {
 					if (theState.getDyscope(d).lexicalScope()
 							.id() == monoDyscopes[i].lexicalScope().id())
 						uniqueDyscopeId = d;
-				assert uniqueDyscopeId >= 0;
-				dyscopeOld2New[i] = uniqueDyscopeId;
+				dyscopeOld2New[i] = uniqueDyscopeId >= 0 ? uniqueDyscopeId : i;
 			}
 		dyscopes = new ImmutableDynamicScope[counter];
 		System.arraycopy(theState.copyScopes(), 0, dyscopes, 0,

@@ -10,8 +10,8 @@
 #define ARRIVED    1
 #define DEPARTED   2
 
-#define arrived(gstate, i)  (gstate->status[i] >= ARRIVED)
-#define departed(gstate, i)  (gstate->status[i] == DEPARTED)
+#define arrived(gstate, i)  ((gstate)->status[(i)] >= ARRIVED)
+#define departed(gstate, i) ((gstate)->status[(i)] == DEPARTED)
 
 /******************* Definition of datatypes: *******************/
 struct _gcollator {
@@ -40,6 +40,11 @@ struct _gcollate_state {
   int status[];
   // collate $state:
   $state state;
+  // A customized attribute, it can be used to check some attribute
+  // that must be equivalent collectively at some point:
+  $bundle attribute;
+  // Note: for one $gcollate_state object, state and attribute cannot
+  // be in use at the same time.
 };
 
 struct _collate_state {
@@ -181,6 +186,54 @@ $atomic_f _Bool $collate_arrived($collate_state cp, $range range) {
   $for (int i : range)
     if (!arrived(cp.gstate, i)) return $false;
   return $true; 
+}
+
+
+$bundle $collate_check($collator c, $bundle bundle) {
+  int nprocs, queue_size, place, index;
+  _Bool first = $true;
+  $gcollate_state attr;
+  $bundle result;
+
+  nprocs = c->gcollator->nprocs;
+  place = c->place;
+  queue_size = c->gcollator->queue_length;
+  for (int i = 0; i < queue_size; i++) {
+    if (!arrived(c->gcollator->queue[i], place)) {
+      first = $false;
+      attr = c->gcollator->queue[i];      
+      index = i;
+      break;
+    }
+  }
+
+  if (first) {
+    $scope gcollate_scope = $scopeof(*c->gcollator);    
+
+    attr = ($gcollate_state)$malloc(gcollate_scope, sizeof(struct _gcollate_state));
+    attr->status = ((int[nprocs])$lambda(int i)NONARRIVED);
+    attr->attribute = bundle;
+    $seq_append(&c->gcollator->queue, &attr, 1);
+    index = c->gcollator->queue_length++;
+  }
+  attr->status[place] = $true;
+  result = attr->attribute;
+
+  // if complete, dequeue; else modify the entry:
+  _Bool complete = $true;
+
+  for (int i = 0; i < nprocs; i++) 
+    if (!arrived(attr, i)) {
+      complete = $false;
+      break;
+    }
+  if (complete) {
+    $assert(index == 0);
+    $free(c->gcollator->queue[0]);
+    $seq_remove(&c->gcollator->queue, 0, NULL, 1);
+    c->gcollator->queue_length--;
+  }
+  return result;
 }
 
 #endif

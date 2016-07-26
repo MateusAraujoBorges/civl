@@ -3,6 +3,7 @@
 
 #include <civlc.cvh>
 #include <concurrency.cvh>
+#include <collate.cvh>
 #include <comm.cvh>
 #include <bundle.cvh>
 #include <mpi.h>
@@ -10,6 +11,7 @@
 #include <string.h>
 #include <pointer.cvh>
 #include <seq.cvh>
+
 
 /* Library private helper function declaration */
 char * $mpi_coroutine_name(int tag);
@@ -73,7 +75,7 @@ $mpi_gcomm $mpi_gcomm_create($scope scope, int size) {
 
   result.p2p = $gcomm_create(scope, size);
   result.col = $gcomm_create(scope, size);
-  result.gcollator = $gcollator_create(scope);
+  result.gcollator = $gcollator_create(scope, size);
   result.gbarrier = $gbarrier_create(scope, size);
   return result;
 }
@@ -111,12 +113,8 @@ void $mpi_gcomm_destroy($mpi_gcomm gc) {
 	    " that is never received.", 
 	    src, routine);
   }  
-  numJunkRecord = $gcollator_destroy(gc.gcollator);
+  $free(gc.gcollator);
   $gbarrier_destroy(gc.gbarrier);
-  $assert(numJunkRecord == 0, "MPI collective routines are called "
-	  "inappropriately because there are %d collective records"
-	  " still remaining the collective routine checker.",
-	  numJunkRecord);
 }
 
 MPI_Comm $mpi_comm_create($scope scope, $mpi_gcomm gc, int rank) {
@@ -124,7 +122,7 @@ MPI_Comm $mpi_comm_create($scope scope, $mpi_gcomm gc, int rank) {
   
   result.p2p = $comm_create(scope, gc.p2p, rank);
   result.col = $comm_create(scope, gc.col, rank);
-  result.collator = $collator_create(scope, gc.gcollator);
+  result.collator = $collator_create(gc.gcollator, scope, rank);
   result.barrier = $barrier_create(scope, gc.gbarrier, rank);
   result.gcommIndex = 0;
   return result;
@@ -138,7 +136,7 @@ void $mpi_comm_destroy(MPI_Comm comm, $mpi_state mpi_state) {
 #endif
   $comm_destroy(comm.p2p);
   $comm_destroy(comm.col);
-  $collator_destroy(comm.collator);
+  $free(comm.collator);
   $barrier_destroy(comm.barrier);
 }
 
