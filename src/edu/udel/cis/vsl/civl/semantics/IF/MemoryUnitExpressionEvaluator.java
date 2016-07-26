@@ -10,12 +10,25 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 public interface MemoryUnitExpressionEvaluator {
+	/**
+	 * evaluates the static impact memory unit expression which is the result of
+	 * static analysis
+	 * 
+	 * @param state
+	 *            the current state
+	 * @param pid
+	 *            the PID of the process that triggers this evaluation
+	 * @param memUnit the impact memory unit expression
+	 * @param muSet 
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	MemoryUnitSet evaluates(State state, int pid, MemoryUnitExpression memUnit,
 			MemoryUnitSet muSet) throws UnsatisfiablePathConditionException;
 
 	/**
-	 * Evaluates the memory unit represented by an expression. A memory unit
-	 * expression should be side-effect free.
+	 * Evaluates the memory unit represented by an expression in a contract. A
+	 * memory unit expression should be side-effect free.
 	 * 
 	 * @param state
 	 * @param pid
