@@ -23,8 +23,14 @@ import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 public class LibcollateExecutor extends BaseLibraryExecutor
 		implements
 			LibraryExecutor {
+	/**
+	 * Field index for $collate_state.gstate:
+	 */
 	private final IntObject collate_state_gstate;
 
+	/**
+	 * Field index for $gcollate_state->$state:
+	 */
 	private final IntObject gcollate_state_state;
 
 	public LibcollateExecutor(String name, Executor primaryExecutor,
@@ -212,6 +218,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		Evaluation eval;
 		State mono, resultState, coState;
 
+		// Take a snapshot on the given state for the calling process:
 		mono = stateFactory.getStateSnapshot(state, pid, scopeId);
 		symPlace = (NumericExpression) universe.tupleRead(collateState,
 				zeroObject);
@@ -224,16 +231,16 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		place = ((IntegerNumber) universe.extractNumber(symPlace)).intValue();
 		nprocs = ((IntegerNumber) universe.extractNumber(symNprocs)).intValue();
 		symStateRef = universe.tupleRead(gcollateState, gcollate_state_state);
+		// If gcollate->$state == $state_null, then create a empty state first:
 		if (modelFactory.statenullConstantValue().equals(symStateRef))
 			coState = stateFactory.emptyState(nprocs);
 		else {
 			stateRef = modelFactory.getStateRef(source, symStateRef);
 			coState = stateFactory.getStateByReference(stateRef);
+			assert coState != null;
 		}
 		resultState = stateFactory.combineStates(coState, mono, place);
 		resultRef = stateFactory.saveState(resultState, pid);
-		// System.out.println(this.symbolicAnalyzer
-		// .stateToString(stateFactory.getStateByReference(resultRef)));
 		symStateRef = modelFactory.stateValue(resultRef);
 		gcollateState = universe.tupleWrite(gcollateState, gcollate_state_state,
 				symStateRef);

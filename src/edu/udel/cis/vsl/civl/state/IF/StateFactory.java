@@ -858,10 +858,10 @@ public interface StateFactory {
 	 * <p>
 	 * <b>Pre-conditions:</b>
 	 * <ul>
-	 * <li>A monoState is a state with one processState; A monoState for a
-	 * unique pid can only be commited once.</li>
-	 * <li>nprocs greater than newPid</li>
-	 * <li>combiningStateReference must refer to a state</li>
+	 * <li>A 'monoState' is a state consists of exact one process.</li>
+	 * <li>The 'state' must have a number n of processes such that n greater
+	 * than newPid.</li>
+	 * <li>The call stack of the process newPid in 'state' is empty.</li>
 	 * </ul>
 	 * </p>
 	 * 
@@ -869,36 +869,36 @@ public interface StateFactory {
 	 * <b>Summary:</b> This method combines a combining state which is a state
 	 * during the combination (The combination of states may take several steps)
 	 * and a monoState which is a state contains exact one process. It sets the
-	 * only process of the monoState to the newPid process in the combining
-	 * state. The invariants of the combining state is it totally contains
-	 * nprocs processes.
+	 * only process in the monoState to the newPid process in the combining
+	 * state.
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>Invariants:</b> Let s be the lexical function scope associates with
-	 * the bottom call stack entry of the only process in the monoState, S be
-	 * the set of lexical function scopes associates with the bottom call stack
-	 * entries of all processes in the state. There must be a lexical scope s'
-	 * that is the least common ancester of scopes in set S ^ {s} (S union with
-	 * {s}).s' and its' ancestors can only have one dynamic scope in the
-	 * combining state. One can proof that for a concurrency model among the
-	 * total 'nprocs' processes, that there is no shared storage in any
-	 * decesdant scope of s', the combination is sound.
+	 * <b>Invariants:</b>
+	 * <ul>
+	 * <li>Let s be the lexical function scope associates with the bottom call
+	 * stack entry of the only process in the monoState, S be the set of lexical
+	 * function scopes associates with the bottom call stack entries of all
+	 * processes in the state. There must be a lexical scope s' that is the
+	 * least common ancester of scopes in set S ^ {s} (S union with {s}).s' and
+	 * its' ancestors can only have one dynamic scope in the combining state.
+	 * One can proof that for a concurrency model among the total 'nprocs'
+	 * processes, that there is no shared storage in any decesdant scope of s',
+	 * the combination is sound.</li>
+	 * <li>The number of processes in the combineing state is unchanged</li>
+	 * </ul>
 	 * </p>
 	 * 
-	 * @param combiningStateReference
-	 *            A reference (ID) to a {@link State}, which is the combineing
-	 *            state that will be combined with the monoState
+	 * @param state
+	 *            A {@link State}, which is the combineing state that will be
+	 *            combined with the monoState
 	 * @param monoState
 	 *            A {@link State} only contains exact one process state.
 	 * @param newPid
 	 *            The new pid of the only process in monoState in the returned
 	 *            state after combination.
-	 * @param nprocs
-	 *            The invariant total number of processes in the combining
-	 *            state.
-	 * @return A state reference to the new state which is obtained by combine
-	 *         combining state and the monoState.
+	 * @return The new state which is obtained by combine combining state and
+	 *         the monoState.
 	 */
 	State combineStates(State state, State monoState, int newPid);
 

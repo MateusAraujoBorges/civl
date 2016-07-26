@@ -2335,6 +2335,7 @@ public class ImmutableStateFactory implements StateFactory {
 			else
 				theState = theState.setProcessState(pid, processState);
 		try {
+			// Get rid of other processes and unrelated dyscopes:
 			theState = collectProcesses(theState);
 			return collectScopes(theState, fullHeapErrorSet);
 		} catch (CIVLHeapException e) {
@@ -2349,17 +2350,16 @@ public class ImmutableStateFactory implements StateFactory {
 		assert monoState.numProcs() == 1;
 		ImmutableState theMono = (ImmutableState) monoState;
 		ImmutableState theState = (ImmutableState) state;
-		ImmutableState result;
+		ImmutableState theResult;
 		ImmutableDynamicScope dyscopes[];
 		ImmutableProcessState[] processes;
-		// Change the PID of the mono process:
+		// Change the PID of the mono process to newPid:
 		ImmutableProcessState monoProcess = theMono.getProcessState(0)
 				.setPid(newPid);
 		Scope monoProcScope = monoProcess.getStackEntry(0).location().function()
 				.outerScope();
 		Scope leastCommonAncestor;
 
-		// Get the least common ancestor static scope:
 		leastCommonAncestor = monoProcScope.parent();
 		// For the initial case, there is only one process state, so the
 		// invariants must hold; Then for each time adding a new process
@@ -2385,21 +2385,24 @@ public class ImmutableStateFactory implements StateFactory {
 		int counter = theState.numDyscopes();
 		BooleanExpression newMonoPC;
 
-		// For any dyscope whose scope is LCA or an ancestor of LCA, the
-		// dyscope will be replaced with the unique dysocpe assocates to the
-		// scope in the state; Otherwise, it is a dyscope only reachable by
-		// the new process:
+		// For any dyscope whose scope is a descendant of the LCA, then it is
+		// taken as a local dyscope (i.e. only reachable by the new process and
+		// will be added into the collate state as a new dyscope), otherwise, it
+		// is the LCA or an ancestor of LCA, then the dyscope will be replaced
+		// with the one already in the collate state (it is guaranteed that such
+		// a dyscope must exists in the collate state).
 		for (int i = 0; i < monoDyscopes.length; i++)
 			if (monoDyscopes[i].lexicalScope()
 					.isDescendantOf(leastCommonAncestor))
 				dyscopeOld2New[i] = counter++;
 			else {
-				int uniqueDyscopeId = 0;
+				int uniqueDyscopeId = -1;
 
 				for (int d = 0; d < theState.numDyscopes(); d++)
 					if (theState.getDyscope(d).lexicalScope()
 							.id() == monoDyscopes[i].lexicalScope().id())
 						uniqueDyscopeId = d;
+				assert uniqueDyscopeId >= 0;
 				dyscopeOld2New[i] = uniqueDyscopeId;
 			}
 		dyscopes = new ImmutableDynamicScope[counter];
@@ -2411,9 +2414,9 @@ public class ImmutableStateFactory implements StateFactory {
 		for (ImmutableProcessState proc : processes)
 			if (!proc.hasEmptyStack())
 				setReachablesForProc(dyscopes, proc);
-		result = ImmutableState.newState(theState, processes, dyscopes,
+		theResult = ImmutableState.newState(theState, processes, dyscopes,
 				universe.and(newMonoPC, theState.getPathCondition()));
-		return result;
+		return theResult;
 	}
 
 	@Override
