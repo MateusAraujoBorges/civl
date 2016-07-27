@@ -74,7 +74,6 @@ $gcollator $gcollator_create($scope scope, int nprocs) {
   return gcollator;
 }
 
-
 /* Creates a local collate object. The object is allocated in the
  * given scope. A local collate represents a local handle to part of
  * the global collate object. 
