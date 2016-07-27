@@ -171,6 +171,10 @@ $atomic_f void $collate_departs($collator c) {
   }
 }
 
+/*@ pure;
+  @ depends_on \access(cp.gstate);
+  @ executes_when \true;
+  @*/
 $atomic_f _Bool $collate_complete($collate_state cp) {
   int nprocs = $seq_length(&cp.gstate->status);
 
@@ -179,6 +183,10 @@ $atomic_f _Bool $collate_complete($collate_state cp) {
   return $true;
 }
 
+/*@ pure;
+  @ depends_on \access(cp.gstate);
+  @ executes_when \true;
+  @*/
 $atomic_f _Bool $collate_arrived($collate_state cp, $range range) { 
   int nprocs = $seq_length(&cp.gstate->status);
 
