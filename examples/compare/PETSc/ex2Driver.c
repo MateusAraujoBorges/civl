@@ -1,7 +1,7 @@
 /* PETSc examples driver for ex2a.c, ex2b.c,ex2c.c,ex2d.c,
  * https://repo.anl-external.org/repos/provesa/codes/mxm/
  * simple examples run command: civl verify ex2Driver.c ex2a.c
- * compare examples command: make
+ * compare all examples command: make
  */
 
 #include <civlc.cvh>
