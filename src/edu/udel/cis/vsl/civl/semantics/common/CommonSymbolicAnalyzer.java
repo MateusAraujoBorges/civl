@@ -44,6 +44,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLHeapType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
@@ -2119,6 +2120,18 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					update.call()));
 			break;
 		}
+		case WITH: {
+			WithStatement with = (WithStatement) statement;
+
+			if (with.isEnter())
+				result.append("WITH_ENTER (");
+			else
+				result.append("WITH_EXIT (");
+			result.append(this.expressionEvaluation(state, pid,
+					with.collateState()).right);
+			result.append(")");
+			break;
+		}
 		default:
 			throw new CIVLUnimplementedFeatureException(
 					"pretty-printing statement of " + kind + " kind",
@@ -2586,7 +2599,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			return new Pair<>(universe.trueExpression(), ResultType.YES);
 		if (pointer.isNull())
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
-		
+
 		int dyscope = symbolicUtil.getDyscopeId(null, pointer);
 
 		if (dyscope == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE)

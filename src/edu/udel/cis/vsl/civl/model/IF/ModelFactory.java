@@ -76,6 +76,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -1834,4 +1835,18 @@ public interface ModelFactory {
 	 *         CIVL model.
 	 */
 	SymbolicExpression statenullConstantValue();
+
+	/**
+	 * creates a new instance of $with statement.
+	 * 
+	 * @param source
+	 *            the source code information
+	 * @param colStateExpr
+	 *            the lvalue expression that represents the collate state
+	 * @param isEnter
+	 *            true if this is entering $with, otherwise leaving
+	 * @return the new $with statement
+	 */
+	WithStatement withStatement(CIVLSource source, Location srcLoc,
+			LHSExpression colStateExpr, boolean isEnter);
 }

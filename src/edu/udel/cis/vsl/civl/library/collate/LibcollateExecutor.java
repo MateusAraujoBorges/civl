@@ -21,8 +21,7 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 
 public class LibcollateExecutor extends BaseLibraryExecutor
-		implements
-			LibraryExecutor {
+		implements LibraryExecutor {
 	/**
 	 * Field index for $collate_state.gstate:
 	 */
@@ -55,22 +54,21 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		Evaluation callEval = null;
 
 		switch (functionName) {
-			case "$enter_collate_state" :
-				callEval = executeEnterCollateState(state, pid, process,
-						arguments, argumentValues, source);
-				break;
-			case "$exit_collate_state" :
-				callEval = executeExitCollateState(state, pid, process,
-						arguments, argumentValues, source);
-				break;
-			case "$collate_snapshot" :
-				callEval = executeCollateSnapshot(state, pid, process,
-						arguments, argumentValues, source);
-				break;
-			default :
-				throw new CIVLUnimplementedFeatureException(
-						"the function " + name + " of library pointer.cvh",
-						source);
+		case "$enter_collate_state":
+			callEval = executeEnterCollateState(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$exit_collate_state":
+			callEval = executeExitCollateState(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$collate_snapshot":
+			callEval = executeCollateSnapshot(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"the function " + name + " of library pointer.cvh", source);
 		}
 		return callEval;
 	}
@@ -241,6 +239,11 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		}
 		resultState = stateFactory.combineStates(coState, mono, place);
 		resultRef = stateFactory.saveState(resultState, pid);
+		if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
+				|| civlConfig.showSavedStates()) {
+			civlConfig.out().println(this.symbolicAnalyzer.stateToString(
+					stateFactory.getStateByReference(resultRef)));
+		}
 		symStateRef = modelFactory.stateValue(resultRef);
 		gcollateState = universe.tupleWrite(gcollateState, gcollate_state_state,
 				symStateRef);

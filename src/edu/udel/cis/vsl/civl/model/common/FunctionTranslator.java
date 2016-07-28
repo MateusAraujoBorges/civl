@@ -589,7 +589,7 @@ public class FunctionTranslator {
 	 * translating a $with block, which has the format:
 	 * 
 	 * <pre>
-	 * $with (col) {
+	 * $with (cs) {
 	 *   s1;
 	 *   s2;
 	 *   ...
@@ -600,12 +600,11 @@ public class FunctionTranslator {
 	 * 
 	 * <pre>
 	 * $atom{
-	 * col_old=col;
-	 * rs=$enter_collate_state(col);
+	 * ENTER_WITH(cs);
 	 * s1;
 	 * s2;
 	 * ..
-	 * $exit_collate_state(rs, col_old, col);
+	 * EXIT_WITH(cs);
 	 * }
 	 * </pre>
 	 * 
@@ -613,10 +612,23 @@ public class FunctionTranslator {
 	 * @param statementNode
 	 * @return
 	 */
-	private Fragment translateWithNode(Scope scope, WithNode statementNode) {
+	private Fragment translateWithNode(Scope scope, WithNode with) {
+		CIVLSource sourceStart = modelFactory.sourceOfBeginning(with),
+				sourceEnd = modelFactory.sourceOfEnd(with);
+		Location start = modelFactory.location(sourceStart, scope);
+		Location end = modelFactory.location(sourceEnd, scope);
+		Expression colStateExpr = this
+				.translateExpressionNode(with.getStateReference(), scope, true);
+		Fragment result = new CommonFragment(this.modelFactory.withStatement(
+				sourceStart, modelFactory.location(sourceStart, scope),
+				(LHSExpression) colStateExpr, true));
+		Fragment body = this.translateStatementNode(scope, with.getBodyNode());
 
-		// TODO Auto-generated method stub
-		return null;
+		result.combineWith(body);
+		result.addNewStatement(this.modelFactory.withStatement(sourceEnd,
+				modelFactory.location(sourceEnd, scope),
+				(LHSExpression) colStateExpr, false));
+		return modelFactory.atomicFragment(true, result, start, end);
 	}
 
 	private Fragment translateCivlParForNode(Scope scope,
@@ -4308,7 +4320,7 @@ public class FunctionTranslator {
 			result = modelFactory.abstractFunctionCallExpression(source,
 					(AbstractFunction) civlFunction, arguments);
 			return result;
-		} else if (civlFunction.isSystemFunction()
+		} else if ((civlFunction.isSystemFunction())
 				&& (civlFunction.isPureFunction()
 						|| civlFunction.isStateFunction())) {
 			Fragment fragment = this.translateFunctionCallNode(scope, callNode,

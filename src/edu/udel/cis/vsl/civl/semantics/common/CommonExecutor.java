@@ -48,6 +48,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
@@ -1689,5 +1690,89 @@ public class CommonExecutor implements Executor {
 		return errorLogger.logError(source, state, process,
 				symbolicAnalyzer.stateInformation(state), assertValue,
 				resultType, errorKind, format);
+	}
+
+	@Override
+	public Pair<State, Integer> executeWithStatement(State state, int pid,
+			WithStatement with) throws UnsatisfiablePathConditionException {
+		LHSExpression collateStateExpr = with.collateState();
+		CIVLSource csSource = collateStateExpr.getSource();
+		String process = state.getProcessState(pid).name();
+
+		if (with.isEnter()) {
+			Evaluation eval;
+			SymbolicExpression colStateComp, gstateHandle, gstate, colStateVal;
+			int colStateID, realStateID, place;
+			State colState = null;
+			SymbolicExpression realStateRef;
+
+			realStateID = stateFactory.saveState(state, pid);
+			realStateRef = modelFactory.stateValue(realStateID);
+			eval = this.evaluator.evaluate(state, pid, collateStateExpr);
+			state = eval.state;
+			colStateComp = eval.value;
+			place = this.symbolicUtil.extractInt(csSource,
+					(NumericExpression) universe.tupleRead(colStateComp,
+							zeroObj));
+			gstateHandle = universe.tupleRead(colStateComp, oneObj);
+			eval = this.evaluator.dereference(csSource, state, process,
+					collateStateExpr, gstateHandle, false);
+			state = eval.state;
+			gstate = eval.value;
+			colStateVal = universe.tupleRead(gstate, oneObj);
+			colStateID = this.modelFactory.getStateRef(csSource, colStateVal);
+			colState = stateFactory.getStateByReference(colStateID);
+			if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
+					|| civlConfig.showSavedStates()) {
+				civlConfig.out().println(this.symbolicAnalyzer.stateToString(
+						stateFactory.getStateByReference(realStateID)));
+			}
+			colStateComp = universe.tupleWrite(colStateComp, twoObj,
+					realStateRef);
+			colStateComp = universe.tupleWrite(colStateComp, threeObj,
+					universe.integer(pid));
+			colState = this.assign(colState, place, process, collateStateExpr,
+					colStateComp);
+			colState = stateFactory.setLocation(colState, place, with.target());
+			return new Pair<>(colState, place);
+		} else {
+			SymbolicExpression colStateComp;
+			Evaluation eval;
+			SymbolicExpression rsVal, newColStateRef;
+			int rsID, newColStateID, realPid;
+			State realState = null;
+			SymbolicExpression ghandle, ghandleStatePointer;
+
+			eval = this.evaluator.evaluate(state, pid, collateStateExpr);
+			state = eval.state;
+			colStateComp = eval.value;
+			realPid = symbolicUtil.extractInt(csSource,
+					(NumericExpression) universe.tupleRead(colStateComp,
+							threeObj));
+			rsVal = universe.tupleRead(colStateComp, twoObj);
+			rsID = this.modelFactory.getStateRef(csSource, rsVal);
+			realState = stateFactory.getStateByReference(rsID);
+			eval = this.evaluator.evaluate(realState, pid, collateStateExpr);
+			realState = eval.state;
+			colStateComp = eval.value;
+			ghandle = universe.tupleRead(colStateComp, oneObj);
+			newColStateID = stateFactory.saveState(state, pid);
+			if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
+					|| civlConfig.showSavedStates()) {
+				civlConfig.out().println(this.symbolicAnalyzer.stateToString(
+						stateFactory.getStateByReference(newColStateID)));
+			}
+			newColStateRef = this.modelFactory.stateValue(newColStateID);
+			ghandleStatePointer = symbolicUtil.extendPointer(ghandle,
+					universe.tupleComponentReference(
+							universe.identityReference(), oneObj));
+			realState = this.assign(csSource, realState, process,
+					ghandleStatePointer, newColStateRef);
+			realState = realState.setPathCondition(universe.and(
+					realState.getPathCondition(), state.getPathCondition()));
+			realState = stateFactory.setLocation(realState, realPid,
+					with.target());
+			return new Pair<>(realState, realPid);
+		}
 	}
 }

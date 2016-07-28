@@ -1,15 +1,23 @@
 #include<collate.cvh>
 
-$gcollator gcollator=$gcollator_create($here, 1);
-$collator collator=$collator_create(gcollator, $here, 0);
+$input int N=2;
 
-int main(){
+$gcollator gcollator=$gcollator_create($here, N);
+
+void process(int id){
+  $collator collator=$collator_create(gcollator, $here, id);
   $collate_state cs=$collate_arrives(collator, $here);
-    
+
   $with (cs) {
     $assert($true);
   }
   $collate_departs(collator);
   $free(collator);
+}
+
+
+int main(){
+  $parfor(int i: 0 .. N-1)
+    process(i);
   $free(gcollator);
 }

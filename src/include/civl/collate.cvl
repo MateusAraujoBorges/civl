@@ -60,8 +60,9 @@ struct _collate_state {
   $gcollate_state gstate;
   // Reference to the real state
   $state real;
+  // The pid at the real state
+  int pid;
 };
-
 
 /******************* Function definitions ***************************/
 /* Creates an global collator object. The object is allocated in the

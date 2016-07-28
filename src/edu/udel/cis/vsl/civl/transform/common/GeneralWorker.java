@@ -108,7 +108,6 @@ public class GeneralWorker extends BaseWorker {
 		FunctionDefinitionNode mainDef;
 
 		// unit.prettyPrint(System.out, false);
-
 		if (mainEntity == null) {
 			throw new SyntaxException("missing main function",
 					unit.getRootNode().getSource());
@@ -125,7 +124,7 @@ public class GeneralWorker extends BaseWorker {
 		this.getCIVLMallocDeclaration(root);
 		root = moveStaticVariables(root);
 		processMalloc(root);
-		transformWith(root);
+		// transformWith(root);
 		// remove main prototypes...
 		for (DeclarationNode decl : mainFunction.getDeclarations()) {
 			if (!decl.isDefinition()) {

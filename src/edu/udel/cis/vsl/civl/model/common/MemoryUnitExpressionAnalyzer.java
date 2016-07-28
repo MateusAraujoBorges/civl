@@ -46,6 +46,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 
@@ -326,6 +327,13 @@ public class MemoryUnitExpressionAnalyzer {
 			for (Expression arg : call.arguments()) {
 				computeImpactMemoryUnitsOfExpression(writableVars, arg, result);
 			}
+			break;
+		}
+		case WITH: {
+			WithStatement with = (WithStatement) statement;
+
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					with.collateState(), result);
 			break;
 		}
 		default:
