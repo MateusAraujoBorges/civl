@@ -1,0 +1,12 @@
+
+int main(){
+  int x=10, y;
+
+  $havoc(&y);
+  if($is_concrete_int(x))
+    $havoc(&y);
+  if($is_concrete_int(y))
+    $havoc(&x);
+  $assert($is_concrete_int(x));
+  $assert(!$is_concrete_int(y));
+}

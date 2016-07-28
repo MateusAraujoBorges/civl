@@ -14,7 +14,8 @@ import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 public class ModelBuilderTest {
 	/* *************************** Static Fields *************************** */
 
-	private static File rootDir = new File(new File("examples"), "modelbuilder");
+	private static File rootDir = new File(new File("examples"),
+			"modelbuilder");
 
 	private static UserInterface ui = new UserInterface();
 
@@ -49,6 +50,11 @@ public class ModelBuilderTest {
 	@Test
 	public void copyArrayLiteral() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("copyArrayLiteral.cvl")));
+	}
+
+	@Test
+	public void stateFunction() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("stateFunction.cvl")));
 	}
 
 	@AfterClass

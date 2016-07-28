@@ -226,22 +226,12 @@ public class CommonExecutor implements Executor {
 
 		if (statement instanceof AtomicLockAssignStatement) {
 			AtomicLockAssignStatement atomicLockAssign = (AtomicLockAssignStatement) statement;
-			// ProcessState procState = state.getProcessState(pid),
-			// newProcState;
-			// int atomicCount = procState.atomicCount();
 
 			if (atomicLockAssign.enterAtomic()) {
 				state = stateFactory.enterAtomic(state, pid);
-				// newProcState = procState.incrementAtomicCount();
-				// if (atomicCount == 0)
-				// state = stateFactory.getAtomicLock(state, pid);
 			} else {// leave atomic
-				// newProcState = procState.decrementAtomicCount();
-				// if (atomicCount == 1)
-				// state = stateFactory.releaseAtomicLock(state);
 				state = stateFactory.leaveAtomic(state, pid);
 			}
-			// state = stateFactory.setProcessState(state, newProcState);
 		} else
 			state = assign(eval.state, pid, process, statement.getLhs(),
 					eval.value, statement.isInitialization());
@@ -702,6 +692,19 @@ public class CommonExecutor implements Executor {
 		}
 	}
 
+	/**
+	 * executes an <code> $update </code> statement, which takes an collator,
+	 * and runs a system function on the IDLE collate-state of that collator.
+	 * 
+	 * @param state
+	 *            the current state where the execution is to happen
+	 * @param pid
+	 *            the PID of the process that runs <code>$update</code>
+	 * @param update
+	 *            the update statement
+	 * @return the new state after executing the <code>$update</code> statement
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private State executeUpdate(State state, int pid, UpdateStatement update)
 			throws UnsatisfiablePathConditionException {
 		CIVLSource source = update.getSource();
@@ -748,6 +751,24 @@ public class CommonExecutor implements Executor {
 		return state;
 	}
 
+	/**
+	 * executes function call at all IDLE collate states of a queue, with a list
+	 * of given argument values
+	 * 
+	 * @param source
+	 * @param state
+	 * @param pid
+	 * @param process
+	 * @param gstateQueue
+	 * @param qLength
+	 * @param place
+	 * @param placeID
+	 * @param collator
+	 * @param call
+	 * @param argumentValues
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private State executeFunctionAtCollateState(CIVLSource source, State state,
 			int pid, String process, SymbolicExpression gstateQueue,
 			int qLength, NumericExpression place, int placeID,

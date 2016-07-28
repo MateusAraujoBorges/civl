@@ -30,7 +30,7 @@ public class MPITranslationTest {
 
 	@Test
 	public void ring1() {
-		assertTrue(ui.run("verify", "-input_mpi_nprocs=2", TestConstants.QUIET,
+		assertTrue(ui.run("verify", "-input_mpi_nprocs=2", // TestConstants.QUIET,
 				filename("ring1.c")));
 	}
 
@@ -98,9 +98,9 @@ public class MPITranslationTest {
 
 	@Test
 	public void mpi_wave1d() throws ABCException {
-		assertTrue(ui.run("verify", "-input_mpi_nprocs_hi=3",
-				"-inputNSTEPSB=2", "-inputNXB=4", "-enablePrintf=false",
-				TestConstants.QUIET, filename("wave1d.c")));
+		assertTrue(ui.run("verify", "-input_mpi_nprocs_hi=3", "-inputNSTEPSB=2",
+				"-inputNXB=4", "-enablePrintf=false", TestConstants.QUIET,
+				filename("wave1d.c")));
 	}
 
 	@Test
@@ -113,10 +113,10 @@ public class MPITranslationTest {
 
 	@Test
 	public void mpi_diff2d1() throws ABCException {
-		assertTrue(ui
-				.run("verify -showTransitions=false -inputNSTEPSB=2 -inputNXB=1 -inputNYB=2 "
+		assertTrue(ui.run(
+				"verify -showTransitions=false -inputNSTEPSB=2 -inputNXB=1 -inputNYB=2 "
 						+ "-inputNPROCSX=1 -inputNPROCSY=2 -enablePrintf=false",
-						TestConstants.QUIET, filename("diffusion2d.c")));
+				TestConstants.QUIET, filename("diffusion2d.c")));
 	}
 
 	@Test
@@ -156,10 +156,9 @@ public class MPITranslationTest {
 
 	@Test
 	public void gaussJordan() {
-		assertTrue(ui
-				.run("verify -enablePrintf=false -inputnumRow=2 -inputnumCol=2 -input_mpi_nprocs=2",
-						TestConstants.QUIET,
-						filename("gaussJordan_elimination.c")));
+		assertTrue(ui.run(
+				"verify -enablePrintf=false -inputnumRow=2 -inputnumCol=2 -input_mpi_nprocs=2",
+				TestConstants.QUIET, filename("gaussJordan_elimination.c")));
 	}
 
 	@AfterClass

@@ -79,6 +79,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	private boolean isPurelyLocalAnalysisDone = false;
 
+	private boolean isStateFunction = false;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -117,8 +119,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 					factory.typeFactory().functionPointerSymbolicType());
 		} else {
 			this.functionType = new CommonFunctionType(returnType,
-					new CIVLType[0], factory.typeFactory()
-							.functionPointerSymbolicType());
+					new CIVLType[0],
+					factory.typeFactory().functionPointerSymbolicType());
 		}
 		this.containingScope = containingScope;
 		scopes = new HashSet<Scope>();
@@ -131,7 +133,9 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 		statements = new LinkedHashSet<Statement>();
 	}
 
-	/************************** Methods from CIVLFunction *************************/
+	/**************************
+	 * Methods from CIVLFunction
+	 *************************/
 
 	/**
 	 * @param location
@@ -239,8 +243,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 		// outerScope.print(prefix + "| ", out, isDebug);
 		// print locations
 		if (!isRootFunction()) {
-			out.println(prefix + "| locations (start=" + startLocation.id()
-					+ ")");
+			out.println(
+					prefix + "| locations (start=" + startLocation.id() + ")");
 			for (Location location : this.locations) {
 				location.print(prefix + "| | ", out, isDebug);
 			}
@@ -590,9 +594,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	@Override
 	public boolean isContracted() {
-		return contract != null
-				&& (contract.hasRequirementsOrEnsurances() || contract
-						.numMPICollectiveBehaviors() > 0);
+		return contract != null && (contract.hasRequirementsOrEnsurances()
+				|| contract.numMPICollectiveBehaviors() > 0);
 	}
 
 	@Override
@@ -609,8 +612,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 		Location current;
 
 		working.add(startLocation);
-		startLocation.setPathcondition(factory.trueExpression(startLocation
-				.getSource()));
+		startLocation.setPathcondition(
+				factory.trueExpression(startLocation.getSource()));
 		while (!working.isEmpty()) {
 			int numIncoming;
 
@@ -652,9 +655,8 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 			if (this.contract != null) {
 				FunctionBehavior behavior = contract.defaultBehavior();
 
-				if (!behavior.dependsNoact()
-						&& !(behavior.assignsNothing() && behavior
-								.readsNothing()))
+				if (!behavior.dependsNoact() && !(behavior.assignsNothing()
+						&& behavior.readsNothing()))
 					this.isPurelyLocal = false;
 				isPurelyLocalAnalysisDone = true;
 				return;
@@ -675,5 +677,20 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 		if (!this.isPurelyLocalAnalysisDone)
 			purelyLocalAnalysis();
 		return isPurelyLocal;
+	}
+
+	@Override
+	public void setStateFunction(boolean value) {
+		isStateFunction = value;
+	}
+
+	@Override
+	public boolean isStateFunction() {
+		return isStateFunction;
+	}
+
+	@Override
+	public void setPureFunction(Boolean value) {
+		this.isPure = value;
 	}
 }

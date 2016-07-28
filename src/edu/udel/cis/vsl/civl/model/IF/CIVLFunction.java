@@ -301,7 +301,8 @@ public interface CIVLFunction extends Sourceable {
 	 * 
 	 * @param validConsequences
 	 */
-	void addPossibleValidConsequence(Pair<Expression, Integer> validConsequences);
+	void addPossibleValidConsequence(
+			Pair<Expression, Integer> validConsequences);
 
 	/**
 	 * Possible valid consequence is a valid contract expression which is
@@ -343,4 +344,26 @@ public interface CIVLFunction extends Sourceable {
 	 * @return
 	 */
 	boolean isPurelyLocal();
+
+	/**
+	 * updates the property of this function to be a state function
+	 * 
+	 * @param value
+	 */
+	void setStateFunction(boolean value);
+
+	/**
+	 * updates the property of this function to be pure
+	 * 
+	 * @param value
+	 */
+	void setPureFunction(Boolean value);
+
+	/**
+	 * returns true iff this function is a state function
+	 * 
+	 * @return true iff this function is a state function
+	 */
+	boolean isStateFunction();
+
 }

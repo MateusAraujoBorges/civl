@@ -42,8 +42,9 @@ public class CompareTest {
 
 	@Test
 	public void adder() {
-		assertTrue(ui.run(COMPARE, QUIET, NO_PRINTF, "-input_mpi_nprocs_hi=2",
-				"-inputNB=4", IMPL, filename("adder", "adder_par.c"), SPEC,
+		assertTrue(ui.run(COMPARE, QUIET, NO_PRINTF,
+				"-showProgram=false -input_mpi_nprocs_hi=2", "-inputNB=4", IMPL,
+				filename("adder", "adder_par.c"), SPEC,
 				filename("adder", "adder_spec.c")));
 	}
 
@@ -102,10 +103,9 @@ public class CompareTest {
 
 	@Test
 	public void dotMpiHybrid() {
-		assertFalse(ui.run(COMPARE, QUIET,
-				"-inputVECLEN=4 -input_mpi_nprocs=2", SPEC,
-				filename("dot", "mpithreads_mpi.c"), IMPL, "-inputMAXTHRDS=2",
-				filename("dot", "mpithreads_both.c")));
+		assertFalse(ui.run(COMPARE, QUIET, "-inputVECLEN=4 -input_mpi_nprocs=2",
+				SPEC, filename("dot", "mpithreads_mpi.c"), IMPL,
+				"-inputMAXTHRDS=2", filename("dot", "mpithreads_both.c")));
 	}
 
 	@Test

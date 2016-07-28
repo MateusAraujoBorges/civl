@@ -1896,7 +1896,7 @@ public class FunctionTranslator {
 				result = result.combineWith(fragment);
 			}
 		}
-		if (result.isEmpty()) 
+		if (result.isEmpty())
 			result = new CommonFragment(modelFactory.noopStatement(
 					modelFactory.sourceOf(statementNode), location, null));
 		return result;
@@ -2500,6 +2500,8 @@ public class FunctionTranslator {
 						functionIdentifier, parameterScope, parameters,
 						returnType, scope, continuity, modelFactory);
 			}
+			result.setStateFunction(node.hasStatefFunctionSpecifier());
+			result.setPureFunction(node.hasPureFunctionSpecifier());
 			scope.addFunction(result);
 			parameterScope.setFunction(result);
 			modelBuilder.functionMap.put(entity, result);
@@ -4307,7 +4309,8 @@ public class FunctionTranslator {
 					(AbstractFunction) civlFunction, arguments);
 			return result;
 		} else if (civlFunction.isSystemFunction()
-				&& civlFunction.isPureFunction()) {
+				&& (civlFunction.isPureFunction()
+						|| civlFunction.isStateFunction())) {
 			Fragment fragment = this.translateFunctionCallNode(scope, callNode,
 					source);
 			CallOrSpawnStatement callStmt = (CallOrSpawnStatement) fragment

@@ -99,8 +99,14 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * 
  * Modularization of the user interface:
  * 
- * <ui> <li>preprocess</li> <li>ast</li> <li>program</li> <li>model</li> <li>
- * random run</li> <li>verify</li> <li>replay</li> </ui>
+ * <ui>
+ * <li>preprocess</li>
+ * <li>ast</li>
+ * <li>program</li>
+ * <li>model</li>
+ * <li>random run</li>
+ * <li>verify</li>
+ * <li>replay</li> </ui>
  * 
  * @author Stephen F. Siegel
  * 
@@ -244,10 +250,10 @@ public class UserInterface {
 				traceFilename = (String) gmcConfig.getAnonymousSection()
 						.getValue(traceO);
 				if (traceFilename == null) {
-					traceFilename = commandLine.getCoreFileName()
-							+ "_"
+					traceFilename = commandLine.getCoreFileName() + "_"
 							+ gmcConfig.getAnonymousSection()
-									.getValueOrDefault(idO) + ".trace";
+									.getValueOrDefault(idO)
+							+ ".trace";
 					traceFile = new File(CIVLConstants.CIVLREP, traceFilename);
 				} else
 					traceFile = new File(traceFilename);
@@ -307,11 +313,11 @@ public class UserInterface {
 			throws CommandLineException, ABCException, IOException,
 			MisguidedExecutionException {
 		GMCConfiguration gmcConfig = compareCommand.gmcConfig();
-		GMCSection anonymousSection = gmcConfig.getAnonymousSection(), specSection = gmcConfig
-				.getSection(CompareCommandLine.SPEC), implSection = gmcConfig
-				.getSection(CompareCommandLine.IMPL);
-		NormalCommandLine spec = compareCommand.specification(), impl = compareCommand
-				.implementation();
+		GMCSection anonymousSection = gmcConfig.getAnonymousSection(),
+				specSection = gmcConfig.getSection(CompareCommandLine.SPEC),
+				implSection = gmcConfig.getSection(CompareCommandLine.IMPL);
+		NormalCommandLine spec = compareCommand.specification(),
+				impl = compareCommand.implementation();
 		SymbolicUniverse universe = SARL.newStandardUniverse();
 		File traceFile = null;
 
@@ -331,16 +337,17 @@ public class UserInterface {
 			gmcConfig = parser.newConfig();
 			parser.parse(gmcConfig, traceFile);
 			anonymousSection = gmcConfig.getAnonymousSection();
-			setToDefault(anonymousSection, Arrays.asList(showModelO, verboseO,
-					debugO, showStatesO, showQueriesO, showProverQueriesO,
-					enablePrintfO, statelessPrintfO, showTransitionsO,
-					showUnreachedCodeO));
+			setToDefault(anonymousSection,
+					Arrays.asList(showModelO, verboseO, debugO, showStatesO,
+							showQueriesO, showProverQueriesO, enablePrintfO,
+							statelessPrintfO, showTransitionsO,
+							showUnreachedCodeO));
 			// anonymousSection.setScalarValue(showTransitionsO, true);
 			anonymousSection.setScalarValue(collectScopesO, false);
 			anonymousSection.setScalarValue(collectProcessesO, false);
 			anonymousSection.setScalarValue(collectHeapsO, false);
-			anonymousSection.read(compareCommand.gmcConfig()
-					.getAnonymousSection());
+			anonymousSection
+					.read(compareCommand.gmcConfig().getAnonymousSection());
 		} else {
 			setToDefault(anonymousSection, Arrays.asList(showUnreachedCodeO));
 		}
@@ -353,16 +360,16 @@ public class UserInterface {
 		implSection = this.readInputs(implSection,
 				gmcConfig.getAnonymousSection());
 
-		ModelTranslator specWorker = new ModelTranslator(gmcConfig,
-				specSection, spec.files(), spec.getCoreFileName(), universe), implWorker = new ModelTranslator(
-				gmcConfig, implSection, impl.files(), impl.getCoreFileName(),
-				universe);
+		ModelTranslator specWorker = new ModelTranslator(gmcConfig, specSection,
+				spec.files(), spec.getCoreFileName(), universe),
+				implWorker = new ModelTranslator(gmcConfig, implSection,
+						impl.files(), impl.getCoreFileName(), universe);
 
 		// if (anonymousSection.isTrue(echoO))
 		// out.println(compareCommand.getCommandString());
 		universe.setShowQueries(anonymousSection.isTrue(showQueriesO));
-		universe.setShowProverQueries(anonymousSection
-				.isTrue(showProverQueriesO));
+		universe.setShowProverQueries(
+				anonymousSection.isTrue(showProverQueriesO));
 		gmcConfig.setAnonymousSection(anonymousSection);
 		if (anonymousSection.isTrue(strictCompareO))
 			return this.strictCompareWorker(compareCommand, specWorker,
@@ -392,32 +399,32 @@ public class UserInterface {
 			IOException, MisguidedExecutionException, ABCException {
 		Combiner combiner = Transform.compareCombiner();
 		AST combinedAST;
-		Program specProgram = specWorker.buildProgram(), implProgram = implWorker
-				.buildProgram(), compositeProgram;
+		Program specProgram = specWorker.buildProgram(),
+				implProgram = implWorker.buildProgram(), compositeProgram;
 		Model model;
 		ModelBuilder modelBuilder = Models.newModelBuilder(specWorker.universe);
-		NormalCommandLine spec = compareCommand.specification(), impl = compareCommand
-				.implementation();
+		NormalCommandLine spec = compareCommand.specification(),
+				impl = compareCommand.implementation();
 		CIVLConfiguration civlConfig = new CIVLConfiguration(anonymousSection);
 
+		// implProgram.prettyPrint(out);
 		if (civlConfig.debugOrVerbose())
 			out.println("Generating composite program...");
 		// specProgram.prettyPrint(System.out);
 		combinedAST = combiner.combine(specProgram.getAST(),
 				implProgram.getAST());
 		// combinedAST.prettyPrint(System.out, true);
-		compositeProgram = specWorker.frontEnd.getProgramFactory(
-				Language.CIVL_C).newProgram(combinedAST);
+		compositeProgram = specWorker.frontEnd
+				.getProgramFactory(Language.CIVL_C).newProgram(combinedAST);
 		if (civlConfig.debugOrVerbose() || civlConfig.showProgram()) {
 			compositeProgram.prettyPrint(out);
 		}
 		if (civlConfig.debugOrVerbose())
 			out.println("Extracting CIVL model...");
 		model = modelBuilder.buildModel(
-				anonymousSection,
-				compositeProgram,
-				"Composite_" + spec.getCoreFileName() + "_"
-						+ impl.getCoreFileName(), debug, out);
+				anonymousSection, compositeProgram, "Composite_"
+						+ spec.getCoreFileName() + "_" + impl.getCoreFileName(),
+				debug, out);
 		if (civlConfig.debugOrVerbose() || civlConfig.showModel()) {
 			out.println(bar + " Model " + bar + "\n");
 			model.print(out, civlConfig.debugOrVerbose());
@@ -452,8 +459,8 @@ public class UserInterface {
 	private boolean lessStrictCompareWorker(CompareCommandLine compareCommand,
 			ModelTranslator specWorker, ModelTranslator implWorker,
 			GMCConfiguration gmcConfig, GMCSection anonymousSection,
-			File traceFile) throws ABCException, CommandLineException,
-			IOException {
+			File traceFile)
+			throws ABCException, CommandLineException, IOException {
 		Model model = specWorker.translate();
 		Verifier verifier = new Verifier(gmcConfig, model, out, err, startTime,
 				true);
@@ -479,8 +486,8 @@ public class UserInterface {
 			out.print("   states saved        : ");
 			out.println(statusSpec.numSavedStates + statusImpl.numSavedStates);
 			out.print("   state matches       : ");
-			out.println(statusSpec.numMatchedStates
-					+ statusImpl.numMatchedStates);
+			out.println(
+					statusSpec.numMatchedStates + statusImpl.numMatchedStates);
 			out.print("   transitions         : ");
 			out.println(statusSpec.numTransitions + statusImpl.numTransitions);
 			out.print("   trace steps         : ");
@@ -491,7 +498,8 @@ public class UserInterface {
 			out.println("\nThe standard properties hold for all executions and "
 					+ "the specification and the implementation are functionally equivalent.");
 		else
-			out.println("\nThe specification and the implementation may NOT be functionally equivalent.");
+			out.println(
+					"\nThe specification and the implementation may NOT be functionally equivalent.");
 		return result;
 	}
 
@@ -554,8 +562,8 @@ public class UserInterface {
 			// "-quiet=false" has 12 characters.
 			if (lastQuietIndex + 12 > commandSize)
 				return true;
-			if (command.substring(lastQuietIndex, lastQuietIndex + 12).equals(
-					"-quiet=false"))
+			if (command.substring(lastQuietIndex, lastQuietIndex + 12)
+					.equals("-quiet=false"))
 				return false;
 			else
 				return true;
@@ -590,8 +598,8 @@ public class UserInterface {
 					+ " for more instructions.");
 			return false;
 		} else {
-			CommandLine commandLine = CIVLCommandFactory.parseCommand(
-					definedOptions.values(), args);
+			CommandLine commandLine = CIVLCommandFactory
+					.parseCommand(definedOptions.values(), args);
 
 			try {
 				switch (commandLine.commandLineKind()) {
@@ -612,8 +620,9 @@ public class UserInterface {
 				err.println(e);
 			} catch (MisguidedExecutionException e) {
 				// this is almost definitely a bug, so throw it:
-				throw new CIVLInternalException("Error in replay: "
-						+ e.getMessage(), (CIVLSource) null);
+				throw new CIVLInternalException(
+						"Error in replay: " + e.getMessage(),
+						(CIVLSource) null);
 			} catch (CIVLInternalException e) {
 				// Something went wrong, report with full stack trace.
 				throw e;
@@ -682,7 +691,8 @@ public class UserInterface {
 			if (sliceMode) {
 				out.println("*** Printing Slice Analysis ***");
 				@SuppressWarnings("unused")
-				SliceAnalysis sa = new CommonSliceAnalysis(model, trace, traceFile);
+				SliceAnalysis sa = new CommonSliceAnalysis(model, trace,
+						traceFile);
 			}
 			if (witnessMode) {
 				out.println("*** Printing Witness ***\n");
@@ -791,9 +801,7 @@ public class UserInterface {
 		return false;
 	}
 
-	private void printOutput(
-			PrintStream out,
-			SymbolicAnalyzer symbolicAnalyzer,
+	private void printOutput(PrintStream out, SymbolicAnalyzer symbolicAnalyzer,
 			String[] outputNames,
 			Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> outputValues) {
 		StringBuffer result = new StringBuffer();
@@ -823,8 +831,8 @@ public class UserInterface {
 
 				if (j > 0)
 					result.append("or");
-				result.append(symbolicAnalyzer
-						.inputVariablesToStringBuffer(state));
+				result.append(
+						symbolicAnalyzer.inputVariablesToStringBuffer(state));
 				result.append("\nOutput:\n");
 				// result.append("(");
 				for (int k = 0; k < numOutputs; k++) {
@@ -847,8 +855,8 @@ public class UserInterface {
 	}
 
 	private void printCommand(PrintStream out, String command) {
-		double time = Math
-				.ceil((System.currentTimeMillis() - startTime) / 10.0) / 100.0;
+		double time = Math.ceil((System.currentTimeMillis() - startTime) / 10.0)
+				/ 100.0;
 		long memory = Runtime.getRuntime().totalMemory();
 
 		out.println("\n" + statsBar + " Command " + statsBar);
@@ -892,8 +900,8 @@ public class UserInterface {
 		}
 	}
 
-	private boolean runCompareVerify(String command,
-			GMCConfiguration cmdConfig, Model model, SymbolicUniverse universe)
+	private boolean runCompareVerify(String command, GMCConfiguration cmdConfig,
+			Model model, SymbolicUniverse universe)
 			throws CommandLineException, ABCException, IOException {
 		Verifier verifier = new Verifier(cmdConfig, model, out, err, startTime);
 		boolean result = false;
@@ -921,11 +929,11 @@ public class UserInterface {
 		return result;
 	}
 
-	private boolean runCompareReplay(String command,
-			GMCConfiguration gmcConfig, File traceFile, Model model,
-			SymbolicUniverse universe) throws CommandLineException,
-			FileNotFoundException, IOException, SyntaxException,
-			PreprocessorException, ParseException, MisguidedExecutionException {
+	private boolean runCompareReplay(String command, GMCConfiguration gmcConfig,
+			File traceFile, Model model, SymbolicUniverse universe)
+			throws CommandLineException, FileNotFoundException, IOException,
+			SyntaxException, PreprocessorException, ParseException,
+			MisguidedExecutionException {
 		boolean guiMode = gmcConfig.getAnonymousSection().isTrue(guiO);
 		TracePlayer replayer;
 		Trace<Transition, State> trace;
@@ -976,9 +984,11 @@ public class UserInterface {
 			out.println();
 			switch (arg) {
 			case CommandLine.COMPARE:
-				out.println("COMPARE the functional equivalence of two programs.");
-				out.println("\nUsage: civl compare [common options] -spec [spec options] "
-						+ "filename+ -impl [impl options] filename+");
+				out.println(
+						"COMPARE the functional equivalence of two programs.");
+				out.println(
+						"\nUsage: civl compare [common options] -spec [spec options] "
+								+ "filename+ -impl [impl options] filename+");
 				out.println("\nOptions:");
 				break;
 			case CommandLine.GUI:
@@ -992,11 +1002,14 @@ public class UserInterface {
 						+ "compare, gui, help, replay, run, show and verify.");
 				break;
 			case CommandLine.REPLAY:
-				out.println("REPLAY the counterexample trace of some verification result.");
+				out.println(
+						"REPLAY the counterexample trace of some verification result.");
 				out.println("\nUsage: civl replay [options] filename+");
-				out.println("    or civl replay [common options] -spec [spec options] "
-						+ "filename+ -impl [impl options] filename+");
-				out.println("the latter replays the counterexample of some comparison result.");
+				out.println(
+						"    or civl replay [common options] -spec [spec options] "
+								+ "filename+ -impl [impl options] filename+");
+				out.println(
+						"the latter replays the counterexample of some comparison result.");
 				out.println("\nOptions:");
 				break;
 			case CommandLine.RUN:
@@ -1005,12 +1018,14 @@ public class UserInterface {
 				out.println("\nOptions:");
 				break;
 			case CommandLine.SHOW:
-				out.println("SHOW the preprocessing, parsing and translating result of a program.");
+				out.println(
+						"SHOW the preprocessing, parsing and translating result of a program.");
 				out.println("\nUsage: civl show [options] filename+");
 				out.println("\nOptions:");
 				break;
 			case CommandLine.CONFIG:
-				out.println("Configure CIVL.  Detect theorem provers and create .sarl.");
+				out.println(
+						"Configure CIVL.  Detect theorem provers and create .sarl.");
 				out.println("\nUsage: civl config");
 				break;
 			case CommandLine.VERIFY:
@@ -1021,7 +1036,8 @@ public class UserInterface {
 			default:
 				throw new CIVLInternalException(
 						"missing implementation for command of " + arg
-								+ " kind", (CIVLSource) null);
+								+ " kind",
+						(CIVLSource) null);
 			}
 			CIVLCommand.printOptionsOfCommand(arg, out);
 		}
@@ -1035,7 +1051,8 @@ public class UserInterface {
 	 */
 	private void printUsage(PrintStream out) {
 		out.println("Usage: civl (replay|run|show|verify) [options] filename+");
-		out.println("    or civl (compare|replay) [common options] -spec [spec options]");
+		out.println(
+				"    or civl (compare|replay) [common options] -spec [spec options]");
 		out.println("       filename+ -impl [impl options] filename+");
 		out.println("    or civl config");
 		out.println("    or civl gui");
@@ -1045,7 +1062,8 @@ public class UserInterface {
 		out.println("  replay : replay trace for program filename");
 		out.println("  run    : run program filename");
 		out.println("  help   : print this message");
-		out.println("  show   : show result of preprocessing and parsing filename(s)");
+		out.println(
+				"  show   : show result of preprocessing and parsing filename(s)");
 		out.println("  verify : verify program filename");
 		out.println("  gui    : launch civl in gui mode (beta)");
 		out.println("Options:");
@@ -1078,7 +1096,8 @@ public class UserInterface {
 	 * @param transitions
 	 *            the number of transitions executed in the course of the run
 	 */
-	private void printUniverseStats(PrintStream out, SymbolicUniverse universe) {
+	private void printUniverseStats(PrintStream out,
+			SymbolicUniverse universe) {
 		// round up time to nearest 1/100th of second...
 		long numValidCalls = universe.numValidCalls();
 		long numProverCalls = universe.numProverValidCalls();
