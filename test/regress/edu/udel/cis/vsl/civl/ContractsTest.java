@@ -39,6 +39,12 @@ public class ContractsTest {
 						QUIET, filename("update.cvl")));
 	}
 
+	@Test
+	public void guardSE() {
+		assertTrue(ui.run("show -showProgram", QUIET,
+				filename("contractsMPI/simpleGuard.c")));
+	}
+
 	// @Test
 	// public void seq_sum() {
 	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,

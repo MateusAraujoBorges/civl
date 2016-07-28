@@ -9,9 +9,15 @@
 #define NONARRIVED 0
 #define ARRIVED    1
 #define DEPARTED   2
-
-#define arrived(gstate, i)  ((gstate)->status[(i)] >= ARRIVED)
-#define departed(gstate, i) ((gstate)->status[(i)] == DEPARTED)
+#define UNCHECKED  3
+#define CHECKED    4
+// The $gcollate_state whose state field is significant:
+#define _STATE_USED(gstate, i)  ((gstate)->status[(i)] >= NONARRIVED || (gstate)->status[(i)] <= DEPARTED)
+#define _ARRIVED(gstate, i)     ((gstate)->status[(i)] == ARRIVED || (gstate)->status[(i)] == DEPARTED)
+#define _DEPARTED(gstate, i)    ((gstate)->status[(i)] == DEPARTED)
+// The $gcollate_state whose attribute field is significant:
+#define _ATTR_USED(gstate, i)   ((gstate)->status[(i)] >= UNCHECKED || (gstate)->status[(i)] <= CHECKED)
+#define _CHECKED(gstate, i)     ((gstate)->status[(i)] == CHECKED)
 
 /******************* Definition of datatypes: *******************/
 struct _gcollator {
@@ -110,7 +116,7 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   // Looking for the first unarrived collate state. If no such a collate
   // state, create and insert one:
   for (int i = 0; i < queue_size; i++) 
-    if (!arrived(queue[i], place)) {
+    if (_STATE_USED(queue[i], place) && !_ARRIVED(queue[i], place)) {
       gcollate_state = queue[i];
       first = $false;
       break;
@@ -146,7 +152,8 @@ $atomic_f void $collate_departs($collator c) {
   // Mark the toppest arrived but not departed collate state as
   // departed:
   for (int i = 0; i < queue_size; i++) 
-    if (!departed(queue[i], place) && arrived(queue[i], place)) {
+    if (_STATE_USED(queue[i], place) && !_DEPARTED(queue[i], place) 
+	&& _ARRIVED(queue[i], place)) {
       marking = queue[i];
       found = $true;
       index = i;
@@ -159,7 +166,7 @@ $atomic_f void $collate_departs($collator c) {
 
   marking->status[place] = DEPARTED;
   for (int i = 0; i < nprocs; i++) 
-    if (!departed(marking, i)) {
+    if (!_DEPARTED(marking, i)) {
       last = $false;
       break;
     }
@@ -179,7 +186,7 @@ $atomic_f _Bool $collate_complete($collate_state cp) {
   int nprocs = $seq_length(&cp.gstate->status);
 
   for (int i = 0; i < nprocs; i++)
-    if (!arrived(cp.gstate, i)) return $false;
+    if (!_ARRIVED(cp.gstate, i)) return $false;
   return $true;
 }
 
@@ -191,7 +198,7 @@ $atomic_f _Bool $collate_arrived($collate_state cp, $range range) {
   int nprocs = $seq_length(&cp.gstate->status);
 
   $for (int i : range)
-    if (!arrived(cp.gstate, i)) return $false;
+    if (!_ARRIVED(cp.gstate, i)) return $false;
   return $true; 
 }
 
@@ -206,31 +213,32 @@ $bundle $collate_check($collator c, $bundle bundle) {
   place = c->place;
   queue_size = c->gcollator->queue_length;
   for (int i = 0; i < queue_size; i++) {
-    if (!arrived(c->gcollator->queue[i], place)) {
+    if (_ATTR_USED(c->gcollator->queue[i], place)
+	&& !_CHECKED(c->gcollator->queue[i], place)) {
       first = $false;
       attr = c->gcollator->queue[i];      
       index = i;
       break;
     }
   }
-
+  
   if (first) {
     $scope gcollate_scope = $scopeof(*c->gcollator);    
-
+    
     attr = ($gcollate_state)$malloc(gcollate_scope, sizeof(struct _gcollate_state));
-    attr->status = ((int[nprocs])$lambda(int i)NONARRIVED);
+    attr->status = ((int[nprocs])$lambda(int i)UNCHECKED);
     attr->attribute = bundle;
     $seq_append(&c->gcollator->queue, &attr, 1);
     index = c->gcollator->queue_length++;
   }
-  attr->status[place] = $true;
+  attr->status[place] = CHECKED;
   result = attr->attribute;
 
   // if complete, dequeue; else modify the entry:
   _Bool complete = $true;
 
   for (int i = 0; i < nprocs; i++) 
-    if (!arrived(attr, i)) {
+    if (!_CHECKED(attr, i)) {
       complete = $false;
       break;
     }
