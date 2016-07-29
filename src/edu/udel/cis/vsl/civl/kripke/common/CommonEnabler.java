@@ -333,7 +333,7 @@ public abstract class CommonEnabler implements Enabler {
 		LinkedList<Transition> transitions = new LinkedList<>();
 		AtomicLockAction atomicLockAction = AtomicLockAction.NONE;
 
-		if (pLocation == null)
+		if (pLocation == null || pLocation.isSleep())
 			return transitions;
 		if (stateFactory.processInAtomic(state) != pid && p.atomicCount() > 0) {
 			atomicLockAction = AtomicLockAction.GRAB;
@@ -575,6 +575,7 @@ public abstract class CommonEnabler implements Enabler {
 		}
 		return localTransitions;
 	}
+	
 
 	/* ************************ Package-private Methods ******************** */
 	/**

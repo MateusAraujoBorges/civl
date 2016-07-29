@@ -99,7 +99,8 @@ public class CommonLocation extends CommonSourceable implements Location {
 	 * <li>if it is not the starting point of an $atomic/$atom block, then all
 	 * its outgoing statements should be purely local;</li>
 	 * <li>if it is the starting point of an $atomic/$atom bloc, then all
-	 * statements reachable within that $atomic/$atom block are purely local.</li>
+	 * statements reachable within that $atomic/$atom block are purely
+	 * local.</li>
 	 * </ol>
 	 */
 	private boolean purelyLocal = true;
@@ -149,7 +150,14 @@ public class CommonLocation extends CommonSourceable implements Location {
 
 	private boolean isGuarded = false;
 
+	private boolean isSleep = false;
+
 	/* **************************** Constructors *************************** */
+
+	public CommonLocation(CIVLSource source, boolean isSleep) {
+		super(source);
+		this.isSleep = isSleep;
+	}
 
 	/**
 	 * The parent of all locations.
@@ -243,7 +251,8 @@ public class CommonLocation extends CommonSourceable implements Location {
 		}
 		throw new CIVLInternalException(
 				"Expected 1 outgoing transition but saw 0 at " + this
-						+ " in function " + function, this.getSource());
+						+ " in function " + function,
+				this.getSource());
 	}
 
 	@Override
@@ -407,9 +416,8 @@ public class CommonLocation extends CommonSourceable implements Location {
 			if (statement.guard() != null) {
 				guardString = "(" + statement.guard() + ")";
 			}
-			gotoString = prefix + "| " + "when " + guardString + " "
-					+ statement + " @ " + statement.getSource().getSummary()
-					+ " ;";
+			gotoString = prefix + "| " + "when " + guardString + " " + statement
+					+ " @ " + statement.getSource().getSummary() + " ;";
 			if (targetLocation != null) {
 				gotoString += " goto location " + targetLocation;
 			}
@@ -908,5 +916,10 @@ public class CommonLocation extends CommonSourceable implements Location {
 	@Override
 	public boolean isInLoop() {
 		return this.isInLoop;
+	}
+
+	@Override
+	public boolean isSleep() {
+		return this.isSleep;
 	}
 }

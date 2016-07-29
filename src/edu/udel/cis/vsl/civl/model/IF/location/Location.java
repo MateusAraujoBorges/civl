@@ -386,4 +386,12 @@ public interface Location extends Sourceable {
 	 *         inside a loop.
 	 */
 	boolean isInLoop();
+
+	/**
+	 * returns true iff this location is the SLEEP location, which has no
+	 * outgoing statement
+	 * 
+	 * @return
+	 */
+	boolean isSleep();
 }

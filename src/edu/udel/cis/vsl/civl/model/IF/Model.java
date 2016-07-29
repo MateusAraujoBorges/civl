@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.udel.cis.vsl.abc.program.IF.Program;
+import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -198,4 +199,8 @@ public interface Model extends Sourceable {
 	 *         scope
 	 */
 	List<Variable> outputVariables();
+
+	void setSleepLocation(Location sleep);
+
+	Location sleepLocation();
 }

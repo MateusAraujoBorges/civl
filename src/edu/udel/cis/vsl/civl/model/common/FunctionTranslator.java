@@ -625,7 +625,7 @@ public class FunctionTranslator {
 				(LHSExpression) colStateExpr, true));
 		Fragment body = this.translateStatementNode(scope, with.getBodyNode());
 
-		result.combineWith(body);
+		result = result.combineWith(body);
 		result.addNewStatement(this.modelFactory.withStatement(sourceEnd,
 				modelFactory.location(sourceEnd, scope),
 				(LHSExpression) colStateExpr, false));

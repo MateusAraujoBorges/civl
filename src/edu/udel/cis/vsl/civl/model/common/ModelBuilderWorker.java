@@ -60,6 +60,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.type.StructOrUnionField;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.civl.model.common.location.CommonLocation;
 import edu.udel.cis.vsl.civl.model.common.type.CommonType;
 //import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 import edu.udel.cis.vsl.gmc.CommandLineException;
@@ -339,7 +340,8 @@ public class ModelBuilderWorker {
 	 * @param debugOut
 	 * @param debugging
 	 */
-	public ModelBuilderWorker(GMCSection config, ModelFactory factory, Program program, String name, boolean debugging,
+	public ModelBuilderWorker(GMCSection config, ModelFactory factory,
+			Program program, String name, boolean debugging,
 			PrintStream debugOut) {
 		this.config = config;
 		this.civlConfig = new CIVLConfiguration(config);
@@ -368,18 +370,24 @@ public class ModelBuilderWorker {
 	/* ************************** Protected Methods ************************ */
 
 	protected void initialization() {
-		Identifier rootID = factory.identifier(factory.systemSource(), CIVLConstants.civlSystemFunction);
-		CIVLSource rootFunctionSource = factory.sourceOf(program.getAST().getMain().getDefinition());
+		Identifier rootID = factory.identifier(factory.systemSource(),
+				CIVLConstants.civlSystemFunction);
+		CIVLSource rootFunctionSource = factory
+				.sourceOf(program.getAST().getMain().getDefinition());
 		// the order of creating the static scope and the root scope does
 		// matters
 		// always create the static scope first and then the root scope
 		// because the static scope has id 0 while the root scope has id 1
-		Scope staticScope = this.factory.scope(rootFunctionSource, null, new ArrayList<Variable>(0), null);
+		Scope staticScope = this.factory.scope(rootFunctionSource, null,
+				new ArrayList<Variable>(0), null);
 
-		rootScope = this.factory.scope(rootFunctionSource, staticScope, new ArrayList<Variable>(0), null);
+		rootScope = this.factory.scope(rootFunctionSource, staticScope,
+				new ArrayList<Variable>(0), null);
 		factory.setScopes(rootScope);
-		rootFunction = factory.function(factory.sourceOf(program.getAST().getMain().getDefinition()), false, rootID,
-				rootScope, new ArrayList<Variable>(), null, null, null);
+		rootFunction = factory.function(
+				factory.sourceOf(program.getAST().getMain().getDefinition()),
+				false, rootID, rootScope, new ArrayList<Variable>(), null, null,
+				null);
 		rootScope.setFunction(rootFunction);
 		callStatements = new LinkedHashMap<>();
 		callEvents = new LinkedHashMap<>();
@@ -394,7 +402,8 @@ public class ModelBuilderWorker {
 	 */
 	protected void translateUndefinedFunctions() {
 		while (!unprocessedFunctions.isEmpty()) {
-			FunctionDefinitionNode functionDefinition = unprocessedFunctions.remove(0);
+			FunctionDefinitionNode functionDefinition = unprocessedFunctions
+					.remove(0);
 
 			translateFunctionDefinitionNode(functionDefinition);
 		}
@@ -429,10 +438,12 @@ public class ModelBuilderWorker {
 			if (child == null)
 				continue;
 			if (child instanceof FunctionCallNode) {
-				ExpressionNode functionExpr = ((FunctionCallNode) child).getFunction();
+				ExpressionNode functionExpr = ((FunctionCallNode) child)
+						.getFunction();
 
 				if (functionExpr instanceof IdentifierExpressionNode) {
-					if (((IdentifierExpressionNode) functionExpr).getIdentifier().name()
+					if (((IdentifierExpressionNode) functionExpr)
+							.getIdentifier().name()
 							.equals(ModelConfiguration.NEXT_TIME_COUNT))
 						return true;
 				}
@@ -451,8 +462,10 @@ public class ModelBuilderWorker {
 	 */
 	private boolean hasTimeLibrary(ASTNode node) {
 		Source source = node.getSource();
-		CivlcToken token = source == null ? null : node.getSource().getFirstToken();
-		SourceFile file = token == null ? null : token.getFormation().getLastFile();
+		CivlcToken token = source == null ? null
+				: node.getSource().getFirstToken();
+		SourceFile file = token == null ? null
+				: token.getFormation().getLastFile();
 
 		if (file != null && file.getName().equals(ModelConfiguration.TIME_LIB))
 			return true;
@@ -479,8 +492,10 @@ public class ModelBuilderWorker {
 		for (CIVLType handleObjectType : this.handledObjectTypes) {
 			int mallocId = mallocStatements.size();
 
-			mallocStatements.add(factory.mallocStatement(null, null, null, handleObjectType, null,
-					factory.sizeofTypeExpression(null, handleObjectType), mallocId, null));
+			mallocStatements.add(factory.mallocStatement(null, null, null,
+					handleObjectType, null,
+					factory.sizeofTypeExpression(null, handleObjectType),
+					mallocId, null));
 			typeFactory.addHeapFieldObjectType(handleObjectType, mallocId);
 		}
 	}
@@ -495,15 +510,18 @@ public class ModelBuilderWorker {
 	 * @throws CIVLInternalException
 	 *             if no corresponding CIVL function could be found.
 	 */
-	private void translateFunctionDefinitionNode(FunctionDefinitionNode functionNode) {
+	private void translateFunctionDefinitionNode(
+			FunctionDefinitionNode functionNode) {
 		Entity entity = functionNode.getEntity();
 		CIVLFunction result;
 		FunctionTranslator functionTranslator;
 
 		result = functionMap.get(entity);
 		if (result == null)
-			throw new CIVLInternalException("Did not process declaration", factory.sourceOf(functionNode));
-		functionTranslator = new FunctionTranslator(this, factory, functionNode.getBody(), result);
+			throw new CIVLInternalException("Did not process declaration",
+					factory.sourceOf(functionNode));
+		functionTranslator = new FunctionTranslator(this, factory,
+				functionNode.getBody(), result);
 		// no return value because the result will be stored in the variable
 		// "result" of CIVLFunction type.
 		functionTranslator.translateFunction();
@@ -523,7 +541,8 @@ public class ModelBuilderWorker {
 		while (!working.isEmpty()) {
 			CIVLFunction function = working.pop();
 			StatementNode bodyNode = parProcFunctions.get(function);
-			FunctionTranslator translator = new FunctionTranslator(this, factory, bodyNode, function);
+			FunctionTranslator translator = new FunctionTranslator(this,
+					factory, bodyNode, function);
 
 			checkedFunctions.add(function);
 			translator.translateFunction();
@@ -550,7 +569,8 @@ public class ModelBuilderWorker {
 		while (!working.isEmpty()) {
 			CIVLFunction function = working.pop();
 			StatementNode bodyNode = runProcFunctions.get(function);
-			FunctionTranslator translator = new FunctionTranslator(this, factory, bodyNode, function);
+			FunctionTranslator translator = new FunctionTranslator(this,
+					factory, bodyNode, function);
 			Scope funcOuterScope;
 			Location returnLocation;
 			Statement returnStmt;
@@ -560,9 +580,10 @@ public class ModelBuilderWorker {
 			// Add an artificial return statement at the end of the body, the
 			// return statement is set as "return from run statement":
 			funcOuterScope = function.outerScope();
-			returnLocation = factory.location(factory.sourceOfEnd(bodyNode), funcOuterScope);
-			returnStmt = factory.returnFragment(function.getSource(), returnLocation, null, function)
-					.uniqueFinalStatement();
+			returnLocation = factory.location(factory.sourceOfEnd(bodyNode),
+					funcOuterScope);
+			returnStmt = factory.returnFragment(function.getSource(),
+					returnLocation, null, function).uniqueFinalStatement();
 			((ReturnStatement) returnStmt).setFromRunProcFunction(true);
 			function.addStatement(returnStmt);
 			for (CIVLFunction func : this.runProcFunctions.keySet()) {
@@ -611,7 +632,8 @@ public class ModelBuilderWorker {
 		} else if (type.isArrayType()) {
 			result = bundleableType(((CIVLArrayType) type).elementType());
 		} else if (type.isStructType()) {
-			for (StructOrUnionField f : ((CIVLStructOrUnionType) type).fields()) {
+			for (StructOrUnionField f : ((CIVLStructOrUnionType) type)
+					.fields()) {
 				result = result && bundleableType(f.type());
 				if (!result)
 					break;
@@ -649,7 +671,8 @@ public class ModelBuilderWorker {
 			}
 			((CommonType) type).setDynamicTypeIndex(id);
 		}
-		typeFactory.completeBundleType(bundleType, bundleableTypeList, dynamicTypeMap.keySet());
+		typeFactory.completeBundleType(bundleType, bundleableTypeList,
+				dynamicTypeMap.keySet());
 	}
 
 	/**
@@ -686,6 +709,10 @@ public class ModelBuilderWorker {
 		// model.addFunction(entry.getValue());
 		// }
 		((CommonModel) model).setMallocStatements(mallocStatements);
+		// if (this.civlConfig.isEnableMpiContract()) {
+		model.setSleepLocation(
+				new CommonLocation(factory.systemSource(), true));
+		// }
 		model.complete();
 		// TODO check scope/proc/pointers of variables.
 	}
@@ -712,7 +739,8 @@ public class ModelBuilderWorker {
 	 */
 	protected void staticAnalysis() {
 		Set<Variable> addressedOfVariables = new HashSet<>();
-		MemoryUnitExpressionAnalyzer memUnitAnalyzer = new MemoryUnitExpressionAnalyzer(this.factory);
+		MemoryUnitExpressionAnalyzer memUnitAnalyzer = new MemoryUnitExpressionAnalyzer(
+				this.factory);
 		List<CodeAnalyzer> analyzers = factory.codeAnalyzers();
 
 		for (CIVLFunction f : model.functions()) {
@@ -733,7 +761,8 @@ public class ModelBuilderWorker {
 		if (debugging) {
 			debugOut.println("Variable addressed of:");
 			for (Variable variable : addressedOfVariables) {
-				debugOut.print(variable.name() + "-" + variable.scope().id() + ", ");
+				debugOut.print(
+						variable.name() + "-" + variable.scope().id() + ", ");
 			}
 			debugOut.println();
 		}
@@ -783,12 +812,15 @@ public class ModelBuilderWorker {
 	 * @param location
 	 * @param addressedOfVariables
 	 */
-	private void loopAnalysis(Location location, Set<Variable> addressedOfVariables) {
+	private void loopAnalysis(Location location,
+			Set<Variable> addressedOfVariables) {
 		if (location.getNumOutgoing() == 2) {
-			Statement outgoing0 = location.getOutgoing(0), outgoing1 = location.getOutgoing(1);
+			Statement outgoing0 = location.getOutgoing(0),
+					outgoing1 = location.getOutgoing(1);
 
 			// loop detected
-			if ((outgoing0 instanceof LoopBranchStatement) && (outgoing1 instanceof LoopBranchStatement)) {
+			if ((outgoing0 instanceof LoopBranchStatement)
+					&& (outgoing1 instanceof LoopBranchStatement)) {
 				LoopBranchStatement loopEnter, loopExit;
 				Expression condition;
 				Statement increment;
@@ -803,7 +835,8 @@ public class ModelBuilderWorker {
 					loopExit = (LoopBranchStatement) outgoing0;
 				}
 				condition = loopEnter.guard();
-				if (condition.hasConstantValue() && condition.constantValue().isTrue())
+				if (condition.hasConstantValue()
+						&& condition.constantValue().isTrue())
 					return;
 				increment = this.getIncrement(location, loopEnter);
 				if (increment instanceof AssignStatement) {
@@ -813,33 +846,39 @@ public class ModelBuilderWorker {
 					iterVar = assign.getLhs();
 					// The loop body modifies the iteration variable
 					if (iterVar instanceof VariableExpression) {
-						Variable var = ((VariableExpression) iterVar).variable();
+						Variable var = ((VariableExpression) iterVar)
+								.variable();
 
 						// iteration variable could be modified through
 						// pointers.
 						if (addressedOfVariables.contains(var))
 							return;
 					}
-					if (modifiesIterVarInBody(loopEnter.target(), iterVar, increment.source(), loopExit.target()))
+					if (modifiesIterVarInBody(loopEnter.target(), iterVar,
+							increment.source(), loopExit.target()))
 						return;
 					if (condition instanceof BinaryExpression) {
 						BinaryExpression binary = (BinaryExpression) condition;
-						Expression condLeft = binary.left(), condRight = binary.right();
+						Expression condLeft = binary.left(),
+								condRight = binary.right();
 						BINARY_OPERATOR condOp = binary.operator();
 
-						if (condOp != BINARY_OPERATOR.LESS_THAN && condOp != BINARY_OPERATOR.LESS_THAN_EQUAL)
+						if (condOp != BINARY_OPERATOR.LESS_THAN
+								&& condOp != BINARY_OPERATOR.LESS_THAN_EQUAL)
 							return;
 						if (incrExpr instanceof BinaryExpression) {
 							BinaryExpression incrementExpr = (BinaryExpression) incrExpr;
 							BINARY_OPERATOR incrOp = incrementExpr.operator();
-							Expression incrLeft = incrementExpr.left(), incrRight = incrementExpr.right();
+							Expression incrLeft = incrementExpr.left(),
+									incrRight = incrementExpr.right();
 
 							if (condLeft.equals(iterVar)) {
 								// i < K, then the increment should be i = i + x
 								// or i = x + i;
 								if (incrOp != BINARY_OPERATOR.PLUS)
 									return;
-								if (incrLeft.equals(iterVar) || incrRight.equals(iterVar)) {
+								if (incrLeft.equals(iterVar)
+										|| incrRight.equals(iterVar)) {
 									location.setSafeLoop(true);
 								}
 							} else if (condRight.equals(iterVar)) {
@@ -867,8 +906,8 @@ public class ModelBuilderWorker {
 	 * @param increment
 	 * @return
 	 */
-	private boolean modifiesIterVarInBody(Location loopStart, LHSExpression iterVar, Location increment,
-			Location loopExit) {
+	private boolean modifiesIterVarInBody(Location loopStart,
+			LHSExpression iterVar, Location increment, Location loopExit) {
 		Stack<Location> working = new Stack<>();
 		Set<Location> visited = new HashSet<>();
 		int incrementId = increment.id(), exitId = loopExit.id();
@@ -883,7 +922,8 @@ public class ModelBuilderWorker {
 					return true;
 				Location target = statement.target();
 
-				if (target != null && !visited.contains(target) && target.id() != incrementId
+				if (target != null && !visited.contains(target)
+						&& target.id() != incrementId
 						&& target.id() != exitId) {
 					working.add(target);
 					visited.add(target);
@@ -893,7 +933,8 @@ public class ModelBuilderWorker {
 		return false;
 	}
 
-	private boolean modifiesVariable(LHSExpression iterVar, Statement statement) {
+	private boolean modifiesVariable(LHSExpression iterVar,
+			Statement statement) {
 		if (statement instanceof AssignStatement) {
 			LHSExpression lhs = ((AssignStatement) statement).getLhs();
 
@@ -945,7 +986,8 @@ public class ModelBuilderWorker {
 
 		preprocess();
 		initialization();
-		rootFunctionTranslator = new FunctionTranslator(this, factory, rootFunction);
+		rootFunctionTranslator = new FunctionTranslator(this, factory,
+				rootFunction);
 		rootFunctionTranslator.translateRootFunction(rootScope, rootNode);
 		if (inputInitMap != null) {
 			// if commandline specified input variables that do not
@@ -984,25 +1026,31 @@ public class ModelBuilderWorker {
 		completeCallEvents();
 		completeModel(rootFunction);
 		this.calculateConstantValue();
-		this.factory.setCodeAnalyzers(Analysis.getAnalyzers(civlConfig, universe));
+		this.factory
+				.setCodeAnalyzers(Analysis.getAnalyzers(civlConfig, universe));
 		this.staticAnalysis();
 	}
 
 	private void completeMallocStatements() {
 		for (MallocStatement malloc : this.mallocStatements) {
 			CIVLType staticElementType = malloc.getStaticElementType();
-			SymbolicType dynamicElementType = staticElementType.getDynamicType(universe);
+			SymbolicType dynamicElementType = staticElementType
+					.getDynamicType(universe);
 			SymbolicArrayType dynamicObjectType = (SymbolicArrayType) universe
 					.canonic(universe.arrayType(dynamicElementType));
-			SymbolicExpression undefinedObject = factory.undefinedValue(dynamicObjectType);
+			SymbolicExpression undefinedObject = factory
+					.undefinedValue(dynamicObjectType);
 
-			malloc.complete(dynamicElementType, dynamicObjectType, undefinedObject);
+			malloc.complete(dynamicElementType, dynamicObjectType,
+					undefinedObject);
 		}
 	}
 
 	private void completeCallEvents() {
-		for (Map.Entry<CallEvent, Function> callEventPair : this.callEvents.entrySet()) {
-			callEventPair.getKey().setFunction(this.functionMap.get(callEventPair.getValue()));
+		for (Map.Entry<CallEvent, Function> callEventPair : this.callEvents
+				.entrySet()) {
+			callEventPair.getKey().setFunction(
+					this.functionMap.get(callEventPair.getValue()));
 		}
 	}
 
@@ -1010,7 +1058,8 @@ public class ModelBuilderWorker {
 		Variable brokenTimeVar = this.factory.brokenTimeVariable();
 
 		if (brokenTimeVar != null) {
-			CIVLType tmType = this.typeFactory.systemType(ModelConfiguration.TM_TYPE);
+			CIVLType tmType = this.typeFactory
+					.systemType(ModelConfiguration.TM_TYPE);
 
 			if (tmType != null)// tmType may be null because of the pruner
 				brokenTimeVar.setType(tmType);

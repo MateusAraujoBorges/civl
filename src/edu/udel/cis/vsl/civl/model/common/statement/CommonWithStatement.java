@@ -69,4 +69,18 @@ public class CommonWithStatement extends CommonStatement
 		this.colStateExpr.calculateConstantValue(universe);
 	}
 
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+
+		sb.append("$with_");
+		if (this.isEnter)
+			sb.append("enter");
+		else
+			sb.append("exit");
+		sb.append(" (");
+		sb.append(this.colStateExpr);
+		sb.append(")");
+		return sb.toString();
+	}
 }

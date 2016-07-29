@@ -42,6 +42,7 @@ public class CommonModel extends CommonSourceable implements Model {
 	private List<MallocStatement> mallocStatements;
 	private Scope staticConstantScope;
 	private boolean hasFscanf;
+	private Location sleep = null;
 
 	/**
 	 * A model of a Chapel program.
@@ -296,5 +297,15 @@ public class CommonModel extends CommonSourceable implements Model {
 	@Override
 	public Scope staticConstantScope() {
 		return this.staticConstantScope;
+	}
+
+	@Override
+	public void setSleepLocation(Location sleep) {
+		this.sleep = sleep;
+	}
+
+	@Override
+	public Location sleepLocation() {
+		return this.sleep;
 	}
 }
