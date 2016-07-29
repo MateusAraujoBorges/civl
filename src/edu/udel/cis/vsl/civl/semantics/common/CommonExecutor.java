@@ -525,10 +525,11 @@ public class CommonExecutor implements Executor {
 			state = stateFactory.setLocation(state, pid, call.target(),
 					call.lhs() != null);
 		}
-		// If this "return" returns from a anonymous function which is
-		// translated from $run, then it is responsible for kill the process:
-		if (statement.fromRunProcFunction())
-			state = stateFactory.removeProcess(state, pid);
+		// If the process has an empty call stack and it is a self destructable
+		// process, kill it:
+		if (state.getProcessState(pid).hasEmptyStack()
+				&& state.getProcessState(pid).isSelfDestructable())
+			state = stateFactory.terminateProcess(state, pid);
 		return state;
 	}
 

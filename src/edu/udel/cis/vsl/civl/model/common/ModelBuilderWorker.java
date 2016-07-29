@@ -462,9 +462,11 @@ public class ModelBuilderWorker {
 	 */
 	private boolean hasTimeLibrary(ASTNode node) {
 		Source source = node.getSource();
-		CivlcToken token = source == null ? null
+		CivlcToken token = source == null
+				? null
 				: node.getSource().getFirstToken();
-		SourceFile file = token == null ? null
+		SourceFile file = token == null
+				? null
 				: token.getFormation().getLastFile();
 
 		if (file != null && file.getName().equals(ModelConfiguration.TIME_LIB))
@@ -571,21 +573,9 @@ public class ModelBuilderWorker {
 			StatementNode bodyNode = runProcFunctions.get(function);
 			FunctionTranslator translator = new FunctionTranslator(this,
 					factory, bodyNode, function);
-			Scope funcOuterScope;
-			Location returnLocation;
-			Statement returnStmt;
 
 			checkedFunctions.add(function);
 			translator.translateFunction();
-			// Add an artificial return statement at the end of the body, the
-			// return statement is set as "return from run statement":
-			funcOuterScope = function.outerScope();
-			returnLocation = factory.location(factory.sourceOfEnd(bodyNode),
-					funcOuterScope);
-			returnStmt = factory.returnFragment(function.getSource(),
-					returnLocation, null, function).uniqueFinalStatement();
-			((ReturnStatement) returnStmt).setFromRunProcFunction(true);
-			function.addStatement(returnStmt);
 			for (CIVLFunction func : this.runProcFunctions.keySet()) {
 				if (!checkedFunctions.contains(func) && !working.contains(func))
 					working.push(func);
