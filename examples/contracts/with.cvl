@@ -5,8 +5,9 @@ $input int N=2;
 $gcollator gcollator=$gcollator_create($here, N);
 
 void process(int id){
-  $collator collator=$collator_create(gcollator, $here, id);
-  $collate_state cs=$collate_arrives(collator, $here);
+  $scope here = $here;	
+  $collator collator=$collator_create(gcollator, here, id);
+  $collate_state cs=$collate_arrives(collator, here);
 
   $with (cs) {
     $assert($true);
