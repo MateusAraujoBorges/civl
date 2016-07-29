@@ -8,6 +8,7 @@ import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
+import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
@@ -19,6 +20,8 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode.ContractKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICollectiveKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.WaitsforNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
@@ -52,59 +55,134 @@ import edu.udel.cis.vsl.civl.transform.IF.ContractTransformer;
  *
  */
 public class ContractTransformerWorker extends BaseWorker {
+	/**
+	 * The common prefix for all generated identifiers, 'ctat' is short for
+	 * 'contract':
+	 */
+	private final static String CONTRACT_VAR_PREFIX = "_ctat_";
 
-	// private final static String CONTRACT_PREFIX = "_contract_";
-
-	private final static String CONTRACT_VAR_PREFIX = "_conc_";
-
+	/**
+	 * $havoc system function identifier:
+	 */
 	private final static String HAVOC = "$havoc";
 
+	/**
+	 * MPI_Comm typedef name:
+	 */
 	private final static String MPI_COMM_TYPE = "MPI_Comm";
 
+	/**
+	 * The default MPI communicator identifier:
+	 */
 	private final static String MPI_COMM_WORLD = "MPI_COMM_WORLD";
 
+	/**
+	 * A constant which is defined by the CIVL-C extention of ACSL:
+	 */
 	private final static String MPI_COMM_SIZE_CONST = "$mpi_comm_size";
 
+	/**
+	 * A constant which is defined by the CIVL-C extention of ACSL:
+	 */
 	private final static String MPI_COMM_RANK_CONST = "$mpi_comm_rank";
 
+	/**
+	 * An MPI routine identifier:
+	 */
 	private final static String MPI_COMM_SIZE_CALL = "MPI_Comm_size";
 
+	/**
+	 * An MPI routine identifier:
+	 */
 	private final static String MPI_COMM_RANK_CALL = "MPI_Comm_rank";
 
+	/**
+	 * An MPI routine identifier:
+	 */
 	private final static String MPI_INIT_CALL = "MPI_Init";
 
+	/**
+	 * An MPI routine identifier:
+	 */
 	private final static String MPI_FINALIZE_CALL = "MPI_Finalize";
 
+	/**
+	 * A CIVL-MPI function identifier:
+	 */
 	private final static String MPI_SNAPSHOT = "$mpi_snapshot";
 
+	/**
+	 * A CIVL-MPI function identifier:
+	 */
 	private final static String MPI_CONTRACT_ENTERS = "$mpi_contract_enters";
 
+	/**
+	 * A CIVL-MPI function identifier:
+	 */
 	private final static String MPI_CONTRACT_ENTERED = "$mpi_contract_entered";
 
+	/**
+	 * A comm-library function identifier:
+	 */
 	private final static String COMM_EMPTY_IN = "$comm_empty_in";
 
+	/**
+	 * A comm-library function identifier:
+	 */
 	private final static String COMM_EMPTY_OUT = "$comm_empty_out";
 
+	/**
+	 * p2p field of an MPI_Comm sturct object:
+	 */
 	private final static String P2P = "p2p";
 
+	/**
+	 * col field of an MPI_Comm sturct object:
+	 */
 	private final static String COL = "col";
 
+	/**
+	 * A collate-library function identifier:
+	 */
 	private final static String COLLATE_COMPLETE = "$collate_complete";
 
+	/**
+	 * A collate-library function identifier:
+	 */
 	private final static String COLLATE_ARRIVED = "$collate_arrived";
 
+	/**
+	 * A collate-library function identifier:
+	 */
 	private final static String COLLATE_STATE = "$collate_state";
 
-	private final static String DRIVER_COLLATE_STATE_VAR_PRE = "pre_cp";
+	/**
+	 * Within each function (either non-target : )
+	 */
+	/**
+	 * A pre-call collate state identifier:
+	 */
+	private final static String COLLATE_STATE_VAR_PRE = "pre_cp";
 
-	private final static String DRIVER_COLLATE_STATE_VAR = "cp";
+	/**
+	 * A post-call collate state identifier:
+	 */
+	private final static String COLLATE_STATE_VAR_POST = "post_cp";
 
-	private final static String DRIVER_COLLATE_STATE_VAR_POST = "post_cp";
-
+	/**
+	 * The name prefix for a driver function
+	 */
 	private final static String DRIVER_PREFIX = "_driver_";
 
+	/**
+	 * An identifier representing the returned value of a contracted function
+	 * call:
+	 */
 	private final static String RESULT = "$result";
 
+	/**
+	 * A string source for a return statement:
+	 */
 	private final static String RETURN_RESULT = "return $result;";
 
 	/**
@@ -335,11 +413,6 @@ public class ContractTransformerWorker extends BaseWorker {
 
 	/* ********************* Private class fields: ********************** */
 	/**
-	 * Name counter for generated variables
-	 */
-	private int varNameCounter = 0;
-
-	/**
 	 * The target function that will be verified independently. Other functions
 	 * will be not verified. For other functions that been annotated with
 	 * contracts, the transformer will remove their bodies, since only their
@@ -415,7 +488,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				externalList.add(child);
 			}
 		}
-		externalList.addAll(createDeclarationsForUsedFunctions());
+		// externalList.addAll(createDeclarationsForUsedFunctions());
 		externalList.addAll(processedSourceFiles.right);
 		externalList.add(mainFunction(processedSourceFiles.left, hasMPI));
 		newRootNode = nodeFactory.newSequenceNode(null, "TranslationUnit",
@@ -849,7 +922,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			Source mpiCommSizeSource) {
 		ExpressionNode mpiComm = mpiBlock.mpiComm;
 		VariableDeclarationNode collateStateDecl = createCollateStateDeclaration(
-				DRIVER_COLLATE_STATE_VAR_PRE, mpiComm);
+				COLLATE_STATE_VAR_PRE, mpiComm);
 		StatementNode coAssumeStmt;
 		List<BlockItemNode> coAssumesComponents = new LinkedList<>();
 		List<BlockItemNode> bodyItems = new LinkedList<>();
@@ -860,6 +933,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ExpressionNode requires : condClauses.getRequires(nodeFactory))
 				coAssumesComponents.add(translateConditionalPredicates(true,
 						condClauses.condition, requires));
+		if (coAssumesComponents.isEmpty())
+			return bodyItems;
 		// $when ($complete) $with(...) { $assume( ... ) } :
 		coAssumeStmt = nodeFactory.newCompoundStatementNode(mpiBlock.source,
 				coAssumesComponents);
@@ -912,7 +987,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			ParsedContractBlock mpiBlock) {
 		ExpressionNode mpiComm = mpiBlock.mpiComm;
 		VariableDeclarationNode collateStateDecl = createCollateStateDeclaration(
-				DRIVER_COLLATE_STATE_VAR, mpiComm);
+				COLLATE_STATE_VAR_PRE, mpiComm);
 		List<BlockItemNode> coAssertsComponents = new LinkedList<>();
 		List<BlockItemNode> bodyItems = new LinkedList<>();
 		StatementNode stmt;
@@ -960,7 +1035,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			ParsedContractBlock mpiBlock) {
 		ExpressionNode mpiComm = mpiBlock.mpiComm;
 		VariableDeclarationNode collateStateDecl = createCollateStateDeclaration(
-				DRIVER_COLLATE_STATE_VAR_POST, mpiComm);
+				COLLATE_STATE_VAR_POST, mpiComm);
 		StatementNode stmt;
 		List<BlockItemNode> bodyItems = new LinkedList<>();
 
@@ -975,13 +1050,15 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ExpressionNode ensures : condClauses.getEnsures(nodeFactory))
 				coAssertStmtComponents.add(translateConditionalPredicates(false,
 						condClauses.condition, ensures));
-			stmt = nodeFactory.newCompoundStatementNode(mpiBlock.source,
-					coAssertStmtComponents);
-			withStmt = nodeFactory.newWithNode(stmt.getSource(),
-					identifierExpression(collateStateDecl.getName()), stmt);
-			bodyItems.add(execAfterComplete(
-					identifierExpression(collateStateDecl.getName()), withStmt,
-					withStmt.getSource()));
+			if (!coAssertStmtComponents.isEmpty()) {
+				stmt = nodeFactory.newCompoundStatementNode(mpiBlock.source,
+						coAssertStmtComponents);
+				withStmt = nodeFactory.newWithNode(stmt.getSource(),
+						identifierExpression(collateStateDecl.getName()), stmt);
+				bodyItems.add(execAfterComplete(
+						identifierExpression(collateStateDecl.getName()),
+						withStmt, withStmt.getSource()));
+			}
 		}
 		stmt = createAssertion(commEmptyInAndOut(mpiComm, mpiBlock.pattern));
 		bodyItems.add(execAfterComplete(
@@ -1019,7 +1096,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		StatementNode stmt;
 		List<BlockItemNode> bodyItems = new LinkedList<>();
 		VariableDeclarationNode collateStateDecl = createCollateStateDeclaration(
-				DRIVER_COLLATE_STATE_VAR_PRE, mpiBlock.mpiComm);
+				COLLATE_STATE_VAR_POST, mpiBlock.mpiComm);
 
 		bodyItems.add(collateStateDecl);
 		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
@@ -1059,6 +1136,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				? createAssumption(preds)
 				: createAssertion(preds);
 
+		getMPIAgreeExpressionNodes(preds);
 		// If the condition is null, it doesn't need a
 		// branch:
 		if (cond != null)
@@ -1267,9 +1345,12 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private ExpressionNode createMPISnapshotCall(ExpressionNode mpiComm) {
 		Source source = newSource(MPI_SNAPSHOT, CivlcTokenConstant.CALL);
+		Source hereSource = newSource("$here", CivlcTokenConstant.HERE);
 		ExpressionNode callIdentifier = identifierExpression(MPI_SNAPSHOT);
+		ExpressionNode hereNode = nodeFactory.newHereNode(hereSource);
 		FunctionCallNode call = nodeFactory.newFunctionCallNode(source,
-				callIdentifier, Arrays.asList(mpiComm.copy()), null);
+				callIdentifier, Arrays.asList(mpiComm.copy(), hereNode), null);
+
 		return call;
 	}
 
@@ -1373,15 +1454,12 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private VariableDeclarationNode createCollateStateDeclaration(
 			String varName, ExpressionNode mpiComm) {
-		Source source = newSource(
-				COLLATE_STATE + " " + DRIVER_COLLATE_STATE_VAR_PRE
-						+ (varNameCounter) + " = " + MPI_SNAPSHOT,
-				CivlcTokenConstant.DECLARATION);
+		Source source = newSource(COLLATE_STATE + " " + COLLATE_STATE_VAR_PRE
+				+ " = " + MPI_SNAPSHOT, CivlcTokenConstant.DECLARATION);
 		InitializerNode initializer = createMPISnapshotCall(mpiComm.copy());
 		TypeNode collateStateTypeName = nodeFactory
 				.newTypedefNameNode(identifier(COLLATE_STATE), null);
-		String generatedVarName = identifierPrefix + varName
-				+ (varNameCounter++);
+		String generatedVarName = identifierPrefix + varName;
 		IdentifierNode varIdent = identifier(generatedVarName);
 
 		return nodeFactory.newVariableDeclarationNode(source, varIdent,
@@ -1951,5 +2029,23 @@ public class ContractTransformerWorker extends BaseWorker {
 			}
 		}
 		return null;
+	}
+
+	// TODO: doc
+	private List<MPIContractExpressionNode> getMPIAgreeExpressionNodes(
+			ExpressionNode expression) {
+		ASTNode astNode = expression;
+		List<MPIContractExpressionNode> results = new LinkedList<>();
+
+		do {
+			if (astNode instanceof MPIContractExpressionNode) {
+				MPIContractExpressionNode mpiCtatExpr = (MPIContractExpressionNode) astNode;
+
+				if (mpiCtatExpr
+						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_AGREE)
+					results.add(mpiCtatExpr);
+			}
+		} while ((astNode = astNode.nextDFS()) != null);
+		return results;
 	}
 }

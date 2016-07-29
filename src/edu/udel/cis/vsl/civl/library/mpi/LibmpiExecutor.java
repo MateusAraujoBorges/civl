@@ -11,7 +11,6 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -71,8 +70,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * @author ziqingluo
  * 
  */
-public class LibmpiExecutor extends BaseLibraryExecutor implements
-		LibraryExecutor {
+public class LibmpiExecutor extends BaseLibraryExecutor
+		implements
+			LibraryExecutor {
 	private LibmpiEvaluator libEvaluator;
 
 	public LibmpiExecutor(String name, Executor primaryExecutor,
@@ -122,8 +122,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		eval = evaluator.evaluate(state, pid, args[0]);
 		state = eval.state;
 		argumentValues[0] = eval.value;
-		state = executeCoassertWorker(state, pid, process, args,
-				argumentValues, source, true, kind, argreedVars).left;
+		state = executeCoassertWorker(state, pid, process, args, argumentValues,
+				source, true, kind, argreedVars).left;
 		return state;
 	}
 
@@ -137,51 +137,52 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$mpi_set_status":
-			callEval = executeSetStatus(state, pid, arguments, argumentValues);
-			break;
-		case "$mpi_get_status":
-			callEval = executeGetStatus(state, pid);
-			break;
-		case "$mpi_check_buffer":
-			callEval = executeMpiCheckBuffer(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$mpi_new_gcomm":
-			callEval = executeNewGcomm(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$mpi_get_gcomm":
-			callEval = executeGetGcomm(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$mpi_root_scope":
-			callEval = executeRootScope(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$mpi_proc_scope":
-			callEval = executeProcScope(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$mpi_p2pSendShot":
-			callEval = executeSendShot(state, pid, process, functionName,
-					arguments, argumentValues, zero, source);
-			break;
-		case "$mpi_colSendShot":
-			callEval = executeSendShot(state, pid, process, functionName,
-					arguments, argumentValues, one, source);
-			break;
-		case "$mpi_p2pRecvShot":
-			callEval = executeRecvShot(state, pid, process, functionName,
-					arguments, argumentValues, zero, source);
-			break;
-		case "$mpi_colRecvShot":
-			callEval = executeRecvShot(state, pid, process, functionName,
-					arguments, argumentValues, one, source);
-			break;
-		default:
-			throw new CIVLInternalException("Unknown civl-mpi function: "
-					+ name, source);
+			case "$mpi_set_status" :
+				callEval = executeSetStatus(state, pid, arguments,
+						argumentValues);
+				break;
+			case "$mpi_get_status" :
+				callEval = executeGetStatus(state, pid);
+				break;
+			case "$mpi_check_buffer" :
+				callEval = executeMpiCheckBuffer(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$mpi_new_gcomm" :
+				callEval = executeNewGcomm(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$mpi_get_gcomm" :
+				callEval = executeGetGcomm(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$mpi_root_scope" :
+				callEval = executeRootScope(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$mpi_proc_scope" :
+				callEval = executeProcScope(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$mpi_p2pSendShot" :
+				callEval = executeSendShot(state, pid, process, functionName,
+						arguments, argumentValues, zero, source);
+				break;
+			case "$mpi_colSendShot" :
+				callEval = executeSendShot(state, pid, process, functionName,
+						arguments, argumentValues, one, source);
+				break;
+			case "$mpi_p2pRecvShot" :
+				callEval = executeRecvShot(state, pid, process, functionName,
+						arguments, argumentValues, zero, source);
+				break;
+			case "$mpi_colRecvShot" :
+				callEval = executeRecvShot(state, pid, process, functionName,
+						arguments, argumentValues, one, source);
+				break;
+			default :
+				throw new CIVLInternalException(
+						"Unknown civl-mpi function: " + name, source);
 		}
 		return callEval;
 	}
@@ -228,8 +229,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 
 		myStatusVarInfo = getVariableWTDynamicScoping(state, pid,
 				"_mpi_process", "_mpi_status");
-		valueOfMyStatusVar = state.getDyscope(myStatusVarInfo.left).getValue(
-				myStatusVarInfo.right.vid());
+		valueOfMyStatusVar = state.getDyscope(myStatusVarInfo.left)
+				.getValue(myStatusVarInfo.right.vid());
 		return new Evaluation(state, valueOfMyStatusVar);
 	}
 
@@ -265,8 +266,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				if (currDyscope.lexicalScope().containsVariable(varName))
 					if (currDyscope.lexicalScope().function().name().name()
 							.equals(functionName))
-						return new Pair<>(currDyscopeId, currDyscope
-								.lexicalScope().variable(varName));
+						return new Pair<>(currDyscopeId,
+								currDyscope.lexicalScope().variable(varName));
 				currDyscopeId = currDyscope.getParent();
 			}
 		}
@@ -303,7 +304,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			throws UnsatisfiablePathConditionException {
 		CIVLSource ptrSource = arguments[0].getSource();
 		SymbolicExpression pointer = argumentValues[0];
-		NumericExpression assertedType = (NumericExpression) argumentValues[2], primitiveTypeCount, count;
+		NumericExpression assertedType = (NumericExpression) argumentValues[2],
+				primitiveTypeCount, count;
 		CIVLType realType;
 		SymbolicType realSymType, assertedSymType;
 		Reasoner reasoner;
@@ -314,18 +316,18 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 
 		count = (NumericExpression) argumentValues[1];
 		reasoner = universe.reasoner(state.getPathCondition());
-		if (reasoner.isValid(universe.equals(count, zero)) || pointer.isNull()) {
+		if (reasoner.isValid(universe.equals(count, zero))
+				|| pointer.isNull()) {
 			return new Evaluation(state, null);
 		}
 		if (symbolicUtil.isNullPointer(pointer))
 			return new Evaluation(state, null);
 		// this assertion doesn't need recovery:
 		if (!pointer.operator().equals(SymbolicOperator.TUPLE)) {
-			errorLogger
-					.logSimpleError(arguments[0].getSource(), state, process,
-							this.symbolicAnalyzer.stateInformation(state),
-							ErrorKind.POINTER,
-							"attempt to read/write a non-concrete pointer type variable");
+			errorLogger.logSimpleError(arguments[0].getSource(), state, process,
+					this.symbolicAnalyzer.stateInformation(state),
+					ErrorKind.POINTER,
+					"attempt to read/write a non-concrete pointer type variable");
 			return new Evaluation(state, null);
 		}
 		checkPointer = symbolicAnalyzer.isDerefablePointer(state, pointer);
@@ -339,26 +341,20 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		realType = symbolicAnalyzer.getArrayBaseType(state, ptrSource, pointer);
 		realSymType = realType.getDynamicType(universe);
 		assertedTypeEnum = (IntegerNumber) reasoner.extractNumber(assertedType);
-		mpiType2Civl = mpiTypeToCIVLType(assertedTypeEnum.intValue(), source);
+		mpiType2Civl = LibmpiEvaluator.mpiTypeToCIVLType(universe, typeFactory,
+				assertedTypeEnum.intValue(), source);
 		assertedSymType = mpiType2Civl.left.getDynamicType(universe);
 		primitiveTypeCount = mpiType2Civl.right;
 		// assertion doesn't need recovery:
 		if (!assertedSymType.equals(realSymType)) {
-			errorLogger
-					.logSimpleError(
-							source,
-							state,
-							process,
-							this.symbolicAnalyzer.stateInformation(state),
-							ErrorKind.MPI_ERROR,
-							"The primitive type "
-									+ realType.toString()
-									+ " of the object pointed by the input pointer argument ["
-									+ ptrSource.getLocation()
-									+ ":"
-									+ arguments[0]
-									+ "] of"
-									+ " MPI routines is not consistent with the specified MPI_Datatype.");
+			errorLogger.logSimpleError(source, state, process,
+					this.symbolicAnalyzer.stateInformation(state),
+					ErrorKind.MPI_ERROR,
+					"The primitive type " + realType.toString()
+							+ " of the object pointed by the input pointer argument ["
+							+ ptrSource.getLocation() + ":" + arguments[0]
+							+ "] of"
+							+ " MPI routines is not consistent with the specified MPI_Datatype.");
 		}
 		eval = evaluator.dereference(source, state, process, arguments[0],
 				pointer, false);
@@ -368,19 +364,14 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		if (reasoner.isValid(universe.equals(count, one)))
 			return new Evaluation(state, null);
 		try {
-			libEvaluator.getDataFrom(state, pid, process, arguments[0],
-					pointer, count, true, false, ptrSource);
+			libEvaluator.getDataFrom(state, pid, process, arguments[0], pointer,
+					count, true, false, ptrSource);
 		} catch (UnsatisfiablePathConditionException e) {
-			errorLogger
-					.logSimpleError(
-							source,
-							state,
-							process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.MPI_ERROR,
-							"The type of the object pointed by "
-									+ arguments[0]
-									+ " is inconsistent with the specified MPI datatype signiture.");
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.MPI_ERROR,
+					"The type of the object pointed by " + arguments[0]
+							+ " is inconsistent with the specified MPI datatype signiture.");
 		}
 		return new Evaluation(state, null);
 	}
@@ -553,8 +544,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				universe.intObject(LibmpiEvaluator.colCommField));
 		NumericExpression symNprocs;
 		NumericExpression symPlace;
-		NumericExpression symQueueID = (NumericExpression) universe.tupleRead(
-				MPIComm, universe.intObject(4));
+		NumericExpression symQueueID = (NumericExpression) universe
+				.tupleRead(MPIComm, universe.intObject(4));
 		SymbolicExpression colGcomm, colGcommHandle, colComm;
 		ImmutableCollectiveSnapshotsEntry[] queue;
 		boolean createNewEntry;
@@ -565,21 +556,21 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		int queueID;
 		Evaluation eval;
 
-		eval = evaluator.dereference(MPICommExpr.getSource(), tmpState,
-				process, MPICommExpr, colCommHandle, false);
+		eval = evaluator.dereference(MPICommExpr.getSource(), tmpState, process,
+				MPICommExpr, colCommHandle, false);
 		tmpState = (ImmutableState) eval.state;
 		colComm = eval.value;
 		colGcommHandle = universe.tupleRead(colComm, oneObject);
-		eval = evaluator.dereference(MPICommExpr.getSource(), tmpState,
-				process, MPICommExpr, colGcommHandle, false);
+		eval = evaluator.dereference(MPICommExpr.getSource(), tmpState, process,
+				MPICommExpr, colGcommHandle, false);
 		tmpState = (ImmutableState) eval.state;
 		colGcomm = eval.value;
 		// reads and makes following variables concrete:
 		// place: another name for ranks of process in MPI communicator
 		// nprocs: number of processes
 		symPlace = (NumericExpression) universe.tupleRead(colComm, zeroObject);
-		symNprocs = (NumericExpression) universe
-				.tupleRead(colGcomm, zeroObject);
+		symNprocs = (NumericExpression) universe.tupleRead(colGcomm,
+				zeroObject);
 		tmpNumber = (IntegerNumber) universe.extractNumber(symPlace);
 		assert tmpNumber != null : "The place of a process in MPI should be concrete.";
 		place = tmpNumber.intValue();
@@ -621,9 +612,9 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			SymbolicExpression agreedValues[] = null;
 
 			if (civlConfig.isEnableMpiContract()) {
-				SymbolicExpression colChannel = universe
-						.tupleRead(colGcomm, universe
-								.intObject(LibcommEvaluator.messageBufferField));
+				SymbolicExpression colChannel = universe.tupleRead(colGcomm,
+						universe.intObject(
+								LibcommEvaluator.messageBufferField));
 				SymbolicExpression p2pChannel = this.getchannelsFromCommHandle(
 						tmpState, pid, process, MPICommExpr,
 						universe.tupleRead(MPIComm, universe
@@ -653,63 +644,6 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		return new Pair<>(tmpState, false);
 	}
 
-	private Pair<CIVLPrimitiveType, NumericExpression> mpiTypeToCIVLType(
-			int MPI_TYPE, CIVLSource source) {
-		CIVLPrimitiveType primitiveType;
-		NumericExpression count = one;
-
-		switch (MPI_TYPE) {
-		case 0: // char
-			primitiveType = typeFactory.charType();
-			break;
-		case 1: // character
-			primitiveType = typeFactory.charType();
-			break;
-		case 8: // int
-			primitiveType = typeFactory.integerType();
-			break;
-		case 20: // long
-			primitiveType = typeFactory.integerType();
-			break;
-		case 22: // float
-			primitiveType = typeFactory.realType();
-			break;
-		case 23: // double
-			primitiveType = typeFactory.realType();
-			break;
-		case 24: // long double
-			primitiveType = typeFactory.realType();
-			break;
-		case 27: // long long
-			primitiveType = typeFactory.integerType();
-			break;
-		case 39: // 2int
-			primitiveType = typeFactory.integerType();
-			count = two;
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"CIVL doesn't have such a CIVLPrimitiveType", source);
-		}
-		return new Pair<>(primitiveType, count);
-		/*
-		 * MPI_CHAR, MPI_CHARACTER, MPI_SIGNED_CHAR, MPI_UNSIGNED_CHAR,
-		 * MPI_BYTE, MPI_WCHAR, MPI_SHORT, MPI_UNSIGNED_SHORT, MPI_INT,
-		 * MPI_INT16_T, MPI_INT32_T, MPI_INT64_T, MPI_INT8_T, MPI_INTEGER,
-		 * MPI_INTEGER1, MPI_INTEGER16, MPI_INTEGER2, MPI_INTEGER4,
-		 * MPI_INTEGER8, MPI_UNSIGNED, MPI_LONG, MPI_UNSIGNED_LONG, MPI_FLOAT,
-		 * MPI_DOUBLE, MPI_LONG_DOUBLE, MPI_LONG_LONG_INT,
-		 * MPI_UNSIGNED_LONG_LONG, MPI_LONG_LONG, MPI_PACKED, MPI_LB, MPI_UB,
-		 * MPI_UINT16_T, MPI_UINT32_T, MPI_UINT64_T, MPI_UINT8_T, MPI_FLOAT_INT,
-		 * MPI_DOUBLE_INT, MPI_LONG_INT, MPI_SHORT_INT, MPI_2INT,
-		 * MPI_LONG_DOUBLE_INT, MPI_AINT, MPI_OFFSET, MPI_2DOUBLE_PRECISION,
-		 * MPI_2INTEGER, MPI_2REAL, MPI_C_BOOL, MPI_C_COMPLEX,
-		 * MPI_C_DOUBLE_COMPLEX, MPI_C_FLOAT_COMPLEX, MPI_C_LONG_DOUBLE_COMPLEX,
-		 * MPI_COMPLEX, MPI_COMPLEX16, MPI_COMPLEX32, MPI_COMPLEX4,
-		 * MPI_COMPLEX8, MPI_REAL, MPI_REAL16, MPI_REAL2, MPI_REAL4, MPI_REAL8
-		 */
-	}
-
 	/**
 	 * Dequeues a complete collective entry and evaluates assertions of it.
 	 * 
@@ -734,8 +668,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 
 		entry = stateFactory.peekCollectiveSnapshotsEntry(state, queueID);
 		mergedState = stateFactory.mergeMonostates(state, entry);
-		collectiveEvaluation(mergedState, entry.getAllAssertions(),
-				MPICommExpr, isContract);
+		collectiveEvaluation(mergedState, entry.getAllAssertions(), MPICommExpr,
+				isContract);
 		state = stateFactory.dequeueCollectiveSnapshotsEntry(state, queueID);
 		return state;
 	}
@@ -779,8 +713,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 			reasoner = universe.reasoner(mergedState.getPathCondition());
 			resultType = reasoner.valid(assertionVal).getResultType();
 			if (!resultType.equals(ResultType.YES)) {
-				Expression[] args = { snapShotAssertion };
-				SymbolicExpression[] argVals = { assertionVal };
+				Expression[] args = {snapShotAssertion};
+				SymbolicExpression[] argVals = {assertionVal};
 
 				// Contracts don't need recovery:
 				if (isContract) {
@@ -865,7 +799,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		// MPI_Comm ID should always be concrete:
 		mpiCommIdInt = ((IntegerNumber) universe
 				.extractNumber((NumericExpression) argumentValues[0]))
-				.intValue();
+						.intValue();
 		queue = stateFactory.getSnapshotsQueue(tmpState, mpiCommIdInt);
 		if (queue != null && queue.length > 0) {
 			// change entries in the queue
@@ -876,7 +810,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 				SymbolicExpression twoBuffers;
 				int place = ((IntegerNumber) universe
 						.extractNumber((NumericExpression) argumentValues[2]))
-						.intValue();
+								.intValue();
 
 				twoBuffers = entry.getMsgBuffers();
 				if (!entry.isRecorded(place)) {
@@ -884,11 +818,10 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 						SymbolicExpression channel;
 
 						channel = universe.arrayRead(twoBuffers, channelIdx);
-						channel = doMPISendOnSnapshots(state, process,
-								function, channel, argumentValues[1],
-								civlsource);
-						twoBuffers = universe.arrayWrite(twoBuffers,
-								channelIdx, channel);
+						channel = doMPISendOnSnapshots(state, process, function,
+								channel, argumentValues[1], civlsource);
+						twoBuffers = universe.arrayWrite(twoBuffers, channelIdx,
+								channel);
 					}
 				}
 				msgBuffers[i] = twoBuffers;
@@ -952,11 +885,11 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		// MPI_Comm ID should always be concrete:
 		mpiCommIdInt = ((IntegerNumber) universe
 				.extractNumber((NumericExpression) argumentValues[0]))
-				.intValue();
+						.intValue();
 		queue = stateFactory.getSnapshotsQueue(tmpState, mpiCommIdInt);
 		place = ((IntegerNumber) universe
 				.extractNumber((NumericExpression) argumentValues[2]))
-				.intValue();
+						.intValue();
 		if (queue != null && queue.length > 0) {
 			// change entries in the queue
 			queueLength = queue.length;
@@ -969,11 +902,11 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 					twoMsgBuffers = entry.getMsgBuffers();
 					anyEntryModified = true;
 					if (twoMsgBuffers != null) {
-						SymbolicExpression msgBuffer = universe.arrayRead(
-								twoMsgBuffers, channelIdx);
+						SymbolicExpression msgBuffer = universe
+								.arrayRead(twoMsgBuffers, channelIdx);
 
-						msgBuffer = doMPIRecvOnSnapshots(tmpState, pid,
-								process, function, msgBuffer, src, dest, tag,
+						msgBuffer = doMPIRecvOnSnapshots(tmpState, pid, process,
+								function, msgBuffer, src, dest, tag,
 								civlsource);
 						twoMsgBuffers = universe.arrayWrite(twoMsgBuffers,
 								channelIdx, msgBuffer);
@@ -1010,10 +943,9 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private SymbolicExpression doMPISendOnSnapshots(State state,
-			String process, String function, SymbolicExpression channel,
-			SymbolicExpression msg, CIVLSource civlsource)
-			throws UnsatisfiablePathConditionException {
+	private SymbolicExpression doMPISendOnSnapshots(State state, String process,
+			String function, SymbolicExpression channel, SymbolicExpression msg,
+			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
 		LibcommExecutor libexecutor;
 
 		try {
@@ -1075,8 +1007,9 @@ public class LibmpiExecutor extends BaseLibraryExecutor implements
 		} catch (LibraryLoaderException e) {
 			StringBuffer message = new StringBuffer();
 
-			message.append("unable to load the library executor for the library comm"
-					+ " for the function " + function);
+			message.append(
+					"unable to load the library executor for the library comm"
+							+ " for the function " + function);
 			errorLogger.logSimpleError(civlsource, state, process,
 					this.symbolicAnalyzer.stateInformation(state),
 					ErrorKind.LIBRARY, message.toString());

@@ -378,57 +378,59 @@ public abstract class LibraryComponent {
 		 */
 		try {
 			switch (op) {
-			// TODO: consider using heuristic to switch to abstract
-			// functions if these expressions get too big (max,min):
-			case CIVL_MAX:
-				claim = universe.lessThan((NumericExpression) op1[0],
-						(NumericExpression) op0[0]);
-				result[0] = universe.cond(claim, op0[0], op1[0]);
-				break;
-			case CIVL_MIN:
-				claim = universe.lessThan((NumericExpression) op0[0],
-						(NumericExpression) op1[0]);
-				result[0] = universe.cond(claim, op0[0], op1[0]);
-				break;
-			case CIVL_SUM:
-				result[0] = universe.add((NumericExpression) op0[0],
-						(NumericExpression) op1[0]);
-				break;
-			case CIVL_PROD:
-				result[0] = universe.multiply((NumericExpression) op0[0],
-						(NumericExpression) op1[0]);
-				break;
-			case CIVL_LAND:
-				result[0] = universe.and((BooleanExpression) op0[0],
-						(BooleanExpression) op1[0]);
-				break;
-			case CIVL_LOR:
-				result[0] = universe.or((BooleanExpression) op0[0],
-						(BooleanExpression) op1[0]);
-				break;
-			case CIVL_LXOR:
-				BooleanExpression notNewData = universe
-						.not((BooleanExpression) op0[0]);
-				BooleanExpression notPrevData = universe
-						.not((BooleanExpression) op1[0]);
+				// TODO: consider using heuristic to switch to abstract
+				// functions if these expressions get too big (max,min):
+				case CIVL_MAX :
+					claim = universe.lessThan((NumericExpression) op1[0],
+							(NumericExpression) op0[0]);
+					result[0] = universe.cond(claim, op0[0], op1[0]);
+					break;
+				case CIVL_MIN :
+					claim = universe.lessThan((NumericExpression) op0[0],
+							(NumericExpression) op1[0]);
+					result[0] = universe.cond(claim, op0[0], op1[0]);
+					break;
+				case CIVL_SUM :
+					result[0] = universe.add((NumericExpression) op0[0],
+							(NumericExpression) op1[0]);
+					break;
+				case CIVL_PROD :
+					result[0] = universe.multiply((NumericExpression) op0[0],
+							(NumericExpression) op1[0]);
+					break;
+				case CIVL_LAND :
+					result[0] = universe.and((BooleanExpression) op0[0],
+							(BooleanExpression) op1[0]);
+					break;
+				case CIVL_LOR :
+					result[0] = universe.or((BooleanExpression) op0[0],
+							(BooleanExpression) op1[0]);
+					break;
+				case CIVL_LXOR :
+					BooleanExpression notNewData = universe
+							.not((BooleanExpression) op0[0]);
+					BooleanExpression notPrevData = universe
+							.not((BooleanExpression) op1[0]);
 
-				result[0] = universe.or(
-						universe.and(notNewData, (BooleanExpression) op0[0]),
-						universe.and((BooleanExpression) op1[0], notPrevData));
-				break;
-			case CIVL_MINLOC:
-				return applyMINOrMAXLOC(state, process, op0, op1, true,
-						civlsource);
-			case CIVL_MAXLOC:
-				return applyMINOrMAXLOC(state, process, op0, op1, false,
-						civlsource);
-			case CIVL_REPLACE:
-			case CIVL_BAND:
-			case CIVL_BOR:
-			case CIVL_BXOR:
-			default:
-				throw new CIVLUnimplementedFeatureException("CIVLOperation: "
-						+ op.name());
+					result[0] = universe.or(
+							universe.and(notNewData,
+									(BooleanExpression) op0[0]),
+							universe.and((BooleanExpression) op1[0],
+									notPrevData));
+					break;
+				case CIVL_MINLOC :
+					return applyMINOrMAXLOC(state, process, op0, op1, true,
+							civlsource);
+				case CIVL_MAXLOC :
+					return applyMINOrMAXLOC(state, process, op0, op1, false,
+							civlsource);
+				case CIVL_REPLACE :
+				case CIVL_BAND :
+				case CIVL_BOR :
+				case CIVL_BXOR :
+				default :
+					throw new CIVLUnimplementedFeatureException(
+							"CIVLOperation: " + op.name());
 			}
 			return result;
 		} catch (ClassCastException e) {
@@ -467,13 +469,14 @@ public abstract class LibraryComponent {
 			SymbolicExpression[] operand0, SymbolicExpression[] operand1,
 			boolean isMin, CIVLSource civlsource)
 			throws UnsatisfiablePathConditionException {
-		NumericExpression locations[] = { (NumericExpression) operand0[0],
-				(NumericExpression) operand1[0] };
-		NumericExpression indices[] = { (NumericExpression) operand0[1],
-				(NumericExpression) operand1[1] };
+		NumericExpression locations[] = {(NumericExpression) operand0[0],
+				(NumericExpression) operand1[0]};
+		NumericExpression indices[] = {(NumericExpression) operand0[1],
+				(NumericExpression) operand1[1]};
 
 		assert (operand0.length == 2) && (operand1.length == 2);
-		return isMin ? applyMinLocOperation(locations, indices)
+		return isMin
+				? applyMinLocOperation(locations, indices)
 				: applyMaxLocOperation(locations, indices);
 	}
 
@@ -495,26 +498,24 @@ public abstract class LibraryComponent {
 			NumericExpression locations[], NumericExpression indices[]) {
 		BooleanExpression loc0LTloc1 = universe.lessThan(locations[0],
 				locations[1]);
-		BooleanExpression loc0NEQloc1 = universe.not(universe.equals(
-				locations[0], locations[1]));
-		BooleanExpression idx0LTidx1 = universe
-				.lessThan(indices[0], indices[1]);
+		BooleanExpression loc0NEQloc1 = universe
+				.not(universe.equals(locations[0], locations[1]));
+		BooleanExpression idx0LTidx1 = universe.lessThan(indices[0],
+				indices[1]);
 		SymbolicExpression locResult, idxResult;
 
 		// optimize:
 		if (loc0LTloc1.isTrue() && loc0NEQloc1.isTrue()) {
-			SymbolicExpression[] result = { locations[0], indices[0] };
+			SymbolicExpression[] result = {locations[0], indices[0]};
 
 			return result;
 		} else {
 			locResult = universe.cond(loc0LTloc1, locations[0], locations[1]);
-			idxResult = universe.cond(
-					loc0LTloc1,
-					indices[0],
+			idxResult = universe.cond(loc0LTloc1, indices[0],
 					universe.cond(loc0NEQloc1, indices[1],
 							universe.cond(idx0LTidx1, indices[0], indices[1])));
 
-			SymbolicExpression[] result = { locResult, idxResult };
+			SymbolicExpression[] result = {locResult, idxResult};
 
 			return result;
 		}
@@ -540,26 +541,24 @@ public abstract class LibraryComponent {
 			NumericExpression locations[], NumericExpression indices[]) {
 		BooleanExpression loc0GTloc1 = universe.lessThan(locations[1],
 				locations[0]);
-		BooleanExpression loc0NEQloc1 = universe.not(universe.equals(
-				locations[0], locations[1]));
-		BooleanExpression idx0LTidx1 = universe
-				.lessThan(indices[0], indices[1]);
+		BooleanExpression loc0NEQloc1 = universe
+				.not(universe.equals(locations[0], locations[1]));
+		BooleanExpression idx0LTidx1 = universe.lessThan(indices[0],
+				indices[1]);
 		SymbolicExpression locResult, idxResult;
 
 		// optimize:
 		if (loc0GTloc1.isTrue() && loc0NEQloc1.isTrue()) {
-			SymbolicExpression[] result = { locations[0], indices[0] };
+			SymbolicExpression[] result = {locations[0], indices[0]};
 
 			return result;
 		} else {
 			locResult = universe.cond(loc0GTloc1, locations[0], locations[1]);
-			idxResult = universe.cond(
-					loc0GTloc1,
-					indices[0],
+			idxResult = universe.cond(loc0GTloc1, indices[0],
 					universe.cond(loc0NEQloc1, indices[1],
 							universe.cond(idx0LTidx1, indices[0], indices[1])));
 
-			SymbolicExpression[] result = { locResult, idxResult };
+			SymbolicExpression[] result = {locResult, idxResult};
 
 			return result;
 
@@ -650,8 +649,8 @@ public abstract class LibraryComponent {
 		}
 		// Else, count greater than one:
 		startPtr = pointer;
-		eval_and_slices = evaluator.evaluatePointerAdd(state, process,
-				startPtr, count, checkOutput, source);
+		eval_and_slices = evaluator.evaluatePointerAdd(state, process, startPtr,
+				count, checkOutput, source);
 		eval = eval_and_slices.left;
 		endPtr = eval.value;
 		state = eval.state;
@@ -675,8 +674,8 @@ public abstract class LibraryComponent {
 			for (int i = 1; !startPtr.equals(endPtr); i++) {
 				startPtr = symbolicUtil.parentPointer(source, startPtr);
 				endPtr = symbolicUtil.parentPointer((CIVLSource) null, endPtr);
-				startPos = universe.add(startPos, universe
-						.multiply(startIndices[numIndices - i],
+				startPos = universe.add(startPos,
+						universe.multiply(startIndices[numIndices - i],
 								arraySlicesSizes[dim - i]));
 			}
 		}
@@ -700,7 +699,7 @@ public abstract class LibraryComponent {
 	 * Pre-condition:
 	 * <ol>
 	 * <li>"pointer" is valid</li>
-	 * <li>"count" > 0</li>
+	 * <li>"count" >= 0</li>
 	 * </ol>
 	 * post_condition:
 	 * <ol>
@@ -790,9 +789,9 @@ public abstract class LibraryComponent {
 			for (int i = 1; !startPtr.equals(endPtr); i++) {
 				startPtr = symbolicUtil.parentPointer(source, startPtr);
 				endPtr = symbolicUtil.parentPointer((CIVLSource) null, endPtr);
-				startPos = universe.add(startPos, universe.multiply(
-						startPtrIndices[numIndices - i], arraySlicesSizes[dim
-								- i]));
+				startPos = universe.add(startPos,
+						universe.multiply(startPtrIndices[numIndices - i],
+								arraySlicesSizes[dim - i]));
 			}
 		}
 		eval = evaluator.dereference(source, state, process, pointerExpr,
@@ -829,9 +828,8 @@ public abstract class LibraryComponent {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	public SymbolicExpression arrayCasting(State state, String process,
-			SymbolicExpression oldArray,
-			SymbolicCompleteArrayType typeTemplate, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+			SymbolicExpression oldArray, SymbolicCompleteArrayType typeTemplate,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		BooleanExpression claim;
 		NumericExpression[] coordinatesSizes, arraySlicesSizes;
 		// temporary arrays store dimensional slices
@@ -849,8 +847,8 @@ public abstract class LibraryComponent {
 		if (oldArray.type().equals(typeTemplate))
 			return oldArray;
 		flattenOldArray = arrayFlatten(state, process, oldArray, source);
-		flattenLength = (IntegerNumber) reasoner.extractNumber(universe
-				.length(flattenOldArray));
+		flattenLength = (IntegerNumber) reasoner
+				.extractNumber(universe.length(flattenOldArray));
 		if (flattenLength == null)
 			throw new CIVLUnimplementedFeatureException(
 					"Transform arrays with non-concrete sizes");
@@ -862,9 +860,8 @@ public abstract class LibraryComponent {
 		if (!this.civlConfig.svcomp()) {
 			// check if the flatten array is compatible with the given array
 			// type
-			claim = universe
-					.equals(universe.length(flattenOldArray), universe
-							.multiply(arraySlicesSizes[0], coordinatesSizes[0]));
+			claim = universe.equals(universe.length(flattenOldArray), universe
+					.multiply(arraySlicesSizes[0], coordinatesSizes[0]));
 			resultType = reasoner.valid(claim).getResultType();
 			if (!resultType.equals(ResultType.YES))
 				throw new CIVLInternalException(
@@ -878,15 +875,17 @@ public abstract class LibraryComponent {
 			throw new CIVLUnimplementedFeatureException(
 					"Transform arrays with non-concrete sizes");
 		numElements = flattenLength.intValue();
-		for (int j = 0, i = 0; j < flattenLength.intValue(); j += dimensionalSpace
-				.intValue()) {
-			arraySlices[i++] = symbolicAnalyzer.getSubArray(flattenOldArray,
-					universe.integer(j), universe.add(universe.integer(j),
-							coordinatesSizes[dim - 1]), state, process, source);
+		for (int j = 0, i = 0; j < flattenLength
+				.intValue(); j += dimensionalSpace.intValue()) {
+			arraySlices[i++] = symbolicAnalyzer
+					.getSubArray(flattenOldArray, universe.integer(j),
+							universe.add(universe.integer(j),
+									coordinatesSizes[dim - 1]),
+							state, process, source);
 		}
 		numElements /= dimensionalSpace.intValue();
-		elementType = universe
-				.arrayType(elementType, coordinatesSizes[dim - 1]);
+		elementType = universe.arrayType(elementType,
+				coordinatesSizes[dim - 1]);
 		// Keep compressing sub-arrays
 		for (int i = dim - 1; --i >= 0;) {
 			SymbolicExpression[] subArray;
@@ -900,8 +899,8 @@ public abstract class LibraryComponent {
 			for (int j = 0; j < numElements; j++) {
 				int offset = j * dimensionalSpace.intValue();
 
-				subArray = Arrays.copyOfRange(arraySlices, offset, offset
-						+ dimensionalSpace.intValue());
+				subArray = Arrays.copyOfRange(arraySlices, offset,
+						offset + dimensionalSpace.intValue());
 				arraySlices[j] = universe.array(elementType,
 						Arrays.asList(subArray));
 			}
@@ -940,15 +939,16 @@ public abstract class LibraryComponent {
 			return array;
 		// If the array is already a one-dimensional array no matter if the
 		// length is concrete or non-concrete, return it directly.
-		if (!(((SymbolicArrayType) array.type()).elementType() instanceof SymbolicArrayType))
+		if (!(((SymbolicArrayType) array.type())
+				.elementType() instanceof SymbolicArrayType))
 			return array;
 		// If the array has at least one dimension whose length is non-concrete,
 		// using array lambda to flatten it.
 		if (this.hasNonConcreteExtent(reasoner, array)) {
 			if (array.type().typeKind().equals(SymbolicTypeKind.ARRAY))
-				arrayElementsSizes = symbolicUtil.arraySlicesSizes(symbolicUtil
-						.arrayCoordinateSizes((SymbolicCompleteArrayType) array
-								.type()));
+				arrayElementsSizes = symbolicUtil
+						.arraySlicesSizes(symbolicUtil.arrayCoordinateSizes(
+								(SymbolicCompleteArrayType) array.type()));
 			else {
 				arrayElementsSizes = new NumericExpression[1];
 				arrayElementsSizes[0] = one;
@@ -958,12 +958,13 @@ public abstract class LibraryComponent {
 		}
 		flattenElementList = this.arrayFlattenWorker(state, array, civlsource);
 		if (flattenElementList.size() > 0) {
-			assert (!(flattenElementList.get(0).type() instanceof SymbolicArrayType));
+			assert (!(flattenElementList.get(0)
+					.type() instanceof SymbolicArrayType));
 			return universe.array(flattenElementList.get(0).type(),
 					flattenElementList);
 		} else if (array instanceof SymbolicArrayType)
-			return universe.emptyArray(((SymbolicArrayType) array)
-					.elementType());
+			return universe
+					.emptyArray(((SymbolicArrayType) array).elementType());
 		else
 			return universe.emptyArray(array.type());
 	}
@@ -1045,7 +1046,7 @@ public abstract class LibraryComponent {
 							(SymbolicCompleteArrayType) array.type(), source);
 				return new Evaluation(state, dataSequence);
 			}
-		}// TODO: what if the length of dataSize is non-concrete and cannot be
+		} // TODO: what if the length of dataSize is non-concrete and cannot be
 			// decided by reasoner?
 		flattenArray = arrayFlatten(state, process, array, source);
 		i = startPos;
@@ -1132,12 +1133,13 @@ public abstract class LibraryComponent {
 			NumericExpression length = universe.length(array);
 
 			claim = universe.lessThan(i, length);
-			if (((SymbolicArrayType) array.type()).elementType() instanceof SymbolicArrayType) {
+			if (((SymbolicArrayType) array.type())
+					.elementType() instanceof SymbolicArrayType) {
 				while (reasoner.isValid(claim)) {
 					SymbolicExpression element = universe.arrayRead(array, i);
 
-					flattenElementList.addAll(arrayFlattenWorker(state,
-							element, civlsource));
+					flattenElementList.addAll(
+							arrayFlattenWorker(state, element, civlsource));
 					// update
 					i = universe.add(i, one);
 					claim = universe.lessThan(i, length);
@@ -1190,8 +1192,8 @@ public abstract class LibraryComponent {
 
 			capacity = arrayElementsSizes[i];
 			newIndex = universe.divide(tempIndex, capacity);
-			newExtent = universe
-					.multiply(newExtent, universe.length(tempArray));
+			newExtent = universe.multiply(newExtent,
+					universe.length(tempArray));
 			tempArray = universe.arrayRead(tempArray, newIndex);
 			tempIndex = universe.modulo(tempIndex, capacity);
 		}
@@ -1258,19 +1260,17 @@ public abstract class LibraryComponent {
 				+ "Pointer:"
 				+ symbolicAnalyzer.symbolicExpressionToString(source, state,
 						null, pointer)
-				+ "\n"
-				+ "Offset:"
+				+ "\n" + "Offset:"
 				+ symbolicAnalyzer.symbolicExpressionToString(source, state,
 						null, offset)
-				+ "\n"
-				+ "Array length:"
+				+ "\n" + "Array length:"
 				+ symbolicAnalyzer.symbolicExpressionToString(source, state,
 						null, arrayLength);
 
 		if (claim != null && resultType != null)
 			state = errorLogger.logError(source, state, process,
-					symbolicAnalyzer.stateInformation(state), claim,
-					resultType, ErrorKind.OUT_OF_BOUNDS, message);
+					symbolicAnalyzer.stateInformation(state), claim, resultType,
+					ErrorKind.OUT_OF_BOUNDS, message);
 		else
 			errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),

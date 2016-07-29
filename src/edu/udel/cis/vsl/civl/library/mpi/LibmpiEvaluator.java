@@ -8,6 +8,8 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
@@ -18,6 +20,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluator;
@@ -29,6 +32,7 @@ import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableCollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -56,7 +60,8 @@ import edu.udel.cis.vsl.sarl.IF.object.IntObject;
  * function merge(Sp) which maps a set of snapshots Sp to a state s and a set of
  * snapshots Sp. The MPI communicator comm associates to a set of MPI processes
  * P, for each process p in P, it matches a unique snapshot sp in Sp. Thus |Sp|
- * == |P|. The result of the collective evaluation is a set of symbolic values.</li>
+ * == |P|. The result of the collective evaluation is a set of symbolic values.
+ * </li>
  * 
  * <li><b>Partial collective evaluation pc[E, comm, merge', Sp', s]:</b> A
  * partial collective evaluation is a tuple, in addition to the 4 elements of
@@ -83,8 +88,9 @@ import edu.udel.cis.vsl.sarl.IF.object.IntObject;
  * @author ziqingluo
  *
  */
-public class LibmpiEvaluator extends BaseLibraryEvaluator implements
-		LibraryEvaluator {
+public class LibmpiEvaluator extends BaseLibraryEvaluator
+		implements
+			LibraryEvaluator {
 	public static int p2pCommField = 0;
 	public static int colCommField = 1;
 	public final IntObject queueIDField = universe.intObject(4);
@@ -98,6 +104,64 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 		super(name, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer,
 				civlConfig, libEvaluatorLoader);
 
+	}
+
+	public static Pair<CIVLPrimitiveType, NumericExpression> mpiTypeToCIVLType(
+			SymbolicUniverse universe, CIVLTypeFactory typeFactory,
+			int MPI_TYPE, CIVLSource source) {
+		CIVLPrimitiveType primitiveType;
+		NumericExpression count = universe.oneInt();
+
+		switch (MPI_TYPE) {
+			case 0 : // char
+				primitiveType = typeFactory.charType();
+				break;
+			case 1 : // character
+				primitiveType = typeFactory.charType();
+				break;
+			case 8 : // int
+				primitiveType = typeFactory.integerType();
+				break;
+			case 20 : // long
+				primitiveType = typeFactory.integerType();
+				break;
+			case 22 : // float
+				primitiveType = typeFactory.realType();
+				break;
+			case 23 : // double
+				primitiveType = typeFactory.realType();
+				break;
+			case 24 : // long double
+				primitiveType = typeFactory.realType();
+				break;
+			case 27 : // long long
+				primitiveType = typeFactory.integerType();
+				break;
+			case 39 : // 2int
+				primitiveType = typeFactory.integerType();
+				count = universe.integer(2);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"CIVL doesn't have such a CIVLPrimitiveType", source);
+		}
+		return new Pair<>(primitiveType, count);
+		/*
+		 * MPI_CHAR, MPI_CHARACTER, MPI_SIGNED_CHAR, MPI_UNSIGNED_CHAR,
+		 * MPI_BYTE, MPI_WCHAR, MPI_SHORT, MPI_UNSIGNED_SHORT, MPI_INT,
+		 * MPI_INT16_T, MPI_INT32_T, MPI_INT64_T, MPI_INT8_T, MPI_INTEGER,
+		 * MPI_INTEGER1, MPI_INTEGER16, MPI_INTEGER2, MPI_INTEGER4,
+		 * MPI_INTEGER8, MPI_UNSIGNED, MPI_LONG, MPI_UNSIGNED_LONG, MPI_FLOAT,
+		 * MPI_DOUBLE, MPI_LONG_DOUBLE, MPI_LONG_LONG_INT,
+		 * MPI_UNSIGNED_LONG_LONG, MPI_LONG_LONG, MPI_PACKED, MPI_LB, MPI_UB,
+		 * MPI_UINT16_T, MPI_UINT32_T, MPI_UINT64_T, MPI_UINT8_T, MPI_FLOAT_INT,
+		 * MPI_DOUBLE_INT, MPI_LONG_INT, MPI_SHORT_INT, MPI_2INT,
+		 * MPI_LONG_DOUBLE_INT, MPI_AINT, MPI_OFFSET, MPI_2DOUBLE_PRECISION,
+		 * MPI_2INTEGER, MPI_2REAL, MPI_C_BOOL, MPI_C_COMPLEX,
+		 * MPI_C_DOUBLE_COMPLEX, MPI_C_FLOAT_COMPLEX, MPI_C_LONG_DOUBLE_COMPLEX,
+		 * MPI_COMPLEX, MPI_COMPLEX16, MPI_COMPLEX32, MPI_COMPLEX4,
+		 * MPI_COMPLEX8, MPI_REAL, MPI_REAL16, MPI_REAL2, MPI_REAL4, MPI_REAL8
+		 */
 	}
 
 	/**************************** Contract section ****************************/
@@ -124,21 +188,21 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 				.mpiContractKind();
 
 		switch (mpiContractKind) {
-		case MPI_EMPTY_IN:
-			return this.evaluateMPIEmptyExpression(state, pid, process,
-					expression, false);
-		case MPI_EMPTY_OUT:
-			return this.evaluateMPIEmptyExpression(state, pid, process,
-					expression, true);
-		case MPI_AGREE:
-			return this.evaluateMPIAgreeExpression(state, pid, process,
-					expression);
-		case MPI_EQUALS:
-			return this.evaluateMPIEqualsExpression(state, pid, process,
-					expression);
-		default:
-			throw new CIVLInternalException("Unreachable",
-					expression.getSource());
+			case MPI_EMPTY_IN :
+				return evaluateMPIEmptyExpression(state, pid, process,
+						expression, false);
+			case MPI_EMPTY_OUT :
+				return evaluateMPIEmptyExpression(state, pid, process,
+						expression, true);
+			case MPI_AGREE :
+				return evaluateMPIAgreeExpression(state, pid, process,
+						expression);
+			case MPI_EQUALS :
+				return evaluateMPIEqualsExpression(state, pid, process,
+						expression);
+			default :
+				throw new CIVLInternalException("Unreachable",
+						expression.getSource());
 		}
 	}
 
@@ -298,10 +362,10 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 					MPIComm, eval.value, MPIComm.getSource());
 			place = ((IntegerNumber) reasoner
 					.extractNumber((NumericExpression) place_queueId.left))
-					.intValue();
+							.intValue();
 			queueId = ((IntegerNumber) reasoner
 					.extractNumber((NumericExpression) place_queueId.right))
-					.intValue();
+							.intValue();
 			queue = stateFactory.getSnapshotsQueue(state, queueId);
 			for (int i = 0; i < queue.length; i++) {
 				entry = queue[i];
@@ -318,8 +382,8 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 					&& place == wfClausesInCollective.nextSetBit(0))
 				continue;
 			if (foundEntry) {
-				for (int i = wfClausesInCollective.nextSetBit(0); i >= 0; i = wfClausesInCollective
-						.nextSetBit(i + 1))
+				for (int i = wfClausesInCollective.nextSetBit(
+						0); i >= 0; i = wfClausesInCollective.nextSetBit(i + 1))
 					subResult &= entry.isRecorded(i) || i == place;
 				result &= subResult;
 			} else
@@ -365,8 +429,9 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 		NumericExpression argVals[], place[], queueId;
 		int queueIdInt;
 		NumericExpression patternIndex = expression
-				.getMpiCommunicationPattern() == MPICommunicationPattern.P2P ? p2pCommIndexValue
-				: colCommIndexValue;
+				.getMpiCommunicationPattern() == MPICommunicationPattern.P2P
+						? p2pCommIndexValue
+						: colCommIndexValue;
 
 		place = new NumericExpression[1];
 		eval = evaluator.evaluate(state, pid, communicator);
@@ -423,8 +488,8 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 		msgBuffers = stateFactory.peekCollectiveSnapshotsEntry(state, queueId)
 				.getMsgBuffers();
 		for (int i = 0; i < msgSrcs.length; i++)
-			for (int j = 0; j < msgDests.length; j++, claim = universe.and(
-					claim, subClaim))
+			for (int j = 0; j < msgDests.length; j++, claim = universe
+					.and(claim, subClaim))
 				subClaim = messageBufferEmpty(state, msgSrcs[i], msgDests[j],
 						msgBuffers, patternIndex);
 		return new Evaluation(state, claim);
@@ -507,9 +572,19 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 
 	/**
 	 * <p>
-	 * <b>Summary:</b> Evaluates an MPI agree expression: This expression will
-	 * be checked collectively. Until all MPI processes committed their agreed
-	 * variables, compare if they are equal to each other.
+	 * <b>Pre-condition:</b> The state is a collate state and the pid represents
+	 * the process in the collate state. By looking at the call stack of a
+	 * collate state, one can decide weather a process has committed its'
+	 * snapshot to the collate state.
+	 * </p>
+	 * 
+	 * <p>
+	 * Let eval(e, p, s) denote the evaluation of expression e on process p in
+	 * state s. There is a set P of processes in the collate state c that for
+	 * each p in P, p has a non-empty call stack (i.e. process p has committed
+	 * its snapshot), then <code> for all p_i and p_j in P (p_i != p_j),
+	 * eval(expression, p_i, c) == eval(expression, p_j, c)
+	 * </code>
 	 * </p>
 	 * 
 	 * @param state
@@ -526,8 +601,72 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 	private Evaluation evaluateMPIAgreeExpression(State state, int pid,
 			String process, MPIContractExpression expression)
 			throws UnsatisfiablePathConditionException {
-		// TODO: check this
-		return new Evaluation(state, universe.trueExpression());
+		int nprocs = state.numProcs();
+		BooleanExpression pred = universe.trueExpression();
+		SymbolicExpression value;
+		Evaluation eval;
+		Expression expr = expression.arguments()[0];
+
+		eval = evaluator.evaluate(state, pid, expr);
+		state = eval.state;
+		value = eval.value;
+		for (int i = 0; i < nprocs; i++)
+			if (i != pid && !state.getProcessState(i).hasEmptyStack()) {
+				eval = evaluator.evaluate(state, i, expr);
+				state = eval.state;
+				pred = universe.and(pred, universe.equals(value, eval.value));
+			}
+		eval.state = state;
+		eval.value = pred;
+		return eval;
+	}
+
+	/**
+	 * <p>
+	 * An \mpi_region expression shall evaluate to an array of objects, the
+	 * length of the array and the type of the objects are defined by the MPI
+	 * type signiture: count and MPI_Datatype.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The current PID of the process
+	 * @param process
+	 *            The String identifier of the process
+	 * @param expression
+	 *            The \mpi_region(void *, int, MPI_Datatype) expression
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation evaluateMPIRegion(State state, int pid, String process,
+			MPIContractExpression expression)
+			throws UnsatisfiablePathConditionException {
+		Expression buf = expression.arguments()[0];
+		Expression count = expression.arguments()[1];
+		Expression datatype = expression.arguments()[2];
+		SymbolicExpression bufVal, countVal, datatypeVal, data;
+		int datatypeCode;
+		Evaluation eval;
+
+		eval = evaluator.evaluate(state, pid, buf);
+		state = eval.state;
+		bufVal = eval.value;
+		eval = evaluator.evaluate(state, pid, count);
+		state = eval.state;
+		countVal = eval.value;
+		eval = evaluator.evaluate(state, pid, datatype);
+		state = eval.state;
+		datatypeVal = eval.value;
+
+		// TODO: report error for non-concrete datatype
+		datatypeCode = ((IntegerNumber) universe
+				.extractNumber((NumericExpression) datatypeVal)).intValue();
+		eval = getDataFrom(state, pid, process, buf, bufVal,
+				(NumericExpression) countVal, true, false,
+				expression.getSource());
+		// TODO: check type consistency
+		return eval;
 	}
 
 	/**
@@ -568,9 +707,9 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 		}
 		countNum = reasoner.extractNumber((NumericExpression) values[1]);
 		if (countNum == null)
-			throw new CIVLInternalException("Value of expression: "
-					+ expression.arguments()[2]
-					+ "are expecting to be elaborated to concrete",
+			throw new CIVLInternalException(
+					"Value of expression: " + expression.arguments()[2]
+							+ "are expecting to be elaborated to concrete",
 					expression.arguments()[2].getSource());
 		count = ((IntegerNumber) countNum).intValue();
 		// Offset = 0:
@@ -585,13 +724,13 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 		for (int i = 1; i < count; i++) {
 			eval = evaluator.evaluatePointerAdd(state, process, values[0],
 					universe.integer(i), false, source).left;
-			eval = evaluator.dereference(expression.getSource(), state,
-					process, expression.arguments()[0], eval.value, false);
+			eval = evaluator.dereference(expression.getSource(), state, process,
+					expression.arguments()[0], eval.value, false);
 			result0 = eval.value;
 			eval = evaluator.evaluatePointerAdd(state, process, values[3],
 					universe.integer(i), false, source).left;
-			eval = evaluator.dereference(expression.getSource(), state,
-					process, expression.arguments()[3], eval.value, false);
+			eval = evaluator.dereference(expression.getSource(), state, process,
+					expression.arguments()[3], eval.value, false);
 			result1 = eval.value;
 			result = universe.and(result, universe.equals(result0, result1));
 		}
@@ -638,8 +777,8 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator implements
 					for (Expression wfSetExpr : namedBehav.getWaitsforList()) {
 						eval = evaluator.evaluate(state, pid, wfSetExpr);
 						state = eval.state;
-						wfSet.or(symbolicUtil
-								.range2BitSet(eval.value, reasoner));
+						wfSet.or(symbolicUtil.range2BitSet(eval.value,
+								reasoner));
 					}
 				}
 		}

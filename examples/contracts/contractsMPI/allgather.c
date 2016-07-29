@@ -20,7 +20,7 @@
   @     assigns \nothing;
   @   behavior on_nonroot:
   @     assumes \mpi_comm_rank != root;
-  @     assigns \mpi_region(buf, count, datatype);
+  @    // assigns \mpi_region(buf, count, datatype);
   @     waitsfor root;
   @*/
 int broadcast(void * buf, int count, 
@@ -53,7 +53,7 @@ int broadcast(void * buf, int count,
   @     requires \mpi_valid(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @     requires recvcount * \mpi_extent(recvtype) == 
   @              sendcount * \mpi_extent(sendtype);
-  @     assigns  \mpi_region(recvbuf, recvcount, recvtype);
+  @     //assigns  \mpi_region(recvbuf, recvcount, recvtype);
   @     ensures  \mpi_equals(\mpi_offset(recvbuf, root * sendcount, sendtype),
   @                          sendcount, sendtype, sendbuf);
   @     ensures  \forall int i; i >= 0 && i < \mpi_comm_size ==>
@@ -106,7 +106,7 @@ int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
   @   requires \mpi_valid(sendbuf, sendcount, sendtype);
   @   requires \mpi_valid(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @   requires \mpi_extent(recvtype) * recvcount == \mpi_extent(sendtype) * sendcount;
-  @   assigns \mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype);
+  @   //assigns \mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @   ensures \mpi_agree(\mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype));
   @   ensures \mpi_equals(sendbuf, sendcount, sendtype, 
   @                       \mpi_offset(recvbuf, \mpi_comm_rank * recvcount, recvtype));

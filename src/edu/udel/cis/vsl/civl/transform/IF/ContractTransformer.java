@@ -29,7 +29,7 @@ public class ContractTransformer extends BaseTransformer {
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		return new ContractTransformerWorker(astFactory, "exchange")
+		return new ContractTransformerWorker(astFactory, "target")
 				.transform(ast);
 	}
 }

@@ -326,13 +326,22 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 	}
 
 	/**
+	 * * A system implementation of the <code>$collate_arrived</code>. Make it a
+	 * system function so that it can be used as a guard expression.
 	 * 
 	 * @param state
+	 *            The program state when this function is called.
 	 * @param pid
+	 *            The PID of the calling process
 	 * @param process
+	 *            The String identifier of the calling process
 	 * @param arguments
+	 *            An array of {@link Expression}s for actual parameters
 	 * @param values
+	 *            An array of {@link SymbolicExpression}s for values of actual
+	 *            parameters.
 	 * @param source
+	 *            The CIVLSource associates to the function call.
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
