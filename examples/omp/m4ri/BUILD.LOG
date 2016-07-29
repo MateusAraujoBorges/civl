@@ -1,0 +1,40 @@
+Error: m4ri/xor_template.h line 736:38 no viable alternatCIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+CIVL v1.7+ of 2016-03-31 -- http://vsl.cis.udel.edu/civl
+.c:33.9-16 ""xor.h""
+Error: missing main function
+at Program:0.-1-6 "Program"Program
+Error: missing main function
+at Program:0.-1-6 "Program"Program
+Error: missing main function
+at Program:0.-1-6 "Program"Program
+Error: m4ri/xor_template.h line 736:38 no viable alternative at input ' #'
+At misc.h:736.38-40 " #" from misc.h:737.37-60 "__M4RI_TEMPLATE_EXPAND0" from misc.h:738.34-57 "__M4RI_TEMPLATE_EXPAND1" from xor_template.h:12.19-39 "__M4RI_TEMPLATE_NAME" included from xor.h:99.9-25 ""xor_template.h"" included from triangular_russian.c:9.9-16 ""xor.h""
+Error: missing main function
+at Program:0.-1-6 "Program"Program

@@ -1,0 +1,817 @@
+In file included from ./m4ri/mzd.h:50:0,
+                 from ./m4ri/mzp.h:31,
+                 from ./m4ri/m4ri.h:56,
+                 from tests/test_colswap.c:24:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from ./m4ri/mzp.h:31:0,
+                 from ./m4ri/m4ri.h:56,
+                 from tests/test_colswap.c:24:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/m4ri.h:61:0,
+                 from tests/test_colswap.c:24:
+./m4ri/graycode.h: In function 'log2_floor':
+./m4ri/graycode.h:139:3: error: 'for' loop initial declarations are only allowed in C99 mode
+tests/test_colswap.c: In function 'test_colswap':
+tests/test_colswap.c:32:3: error: 'for' loop initial declarations are only allowed in C99 mode
+tests/test_colswap.c:37:5: error: 'for' loop initial declarations are only allowed in C99 mode
+tests/test_colswap.c:49:13: error: redefinition of 'r'
+tests/test_colswap.c:37:13: note: previous definition of 'r' was here
+tests/test_colswap.c:49:5: error: 'for' loop initial declarations are only allowed in C99 mode
+tests/test_colswap.c: In function 'main':
+tests/test_colswap.c:77:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/brilliantrussian.h:41,
+                 from m4ri/brilliantrussian.c:26:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/brilliantrussian.h:41:0,
+                 from m4ri/brilliantrussian.c:26:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:99:0,
+                 from m4ri/brilliantrussian.c:27:
+m4ri/xor_template.h: In function '_mzd_combine_2':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:103:0,
+                 from m4ri/brilliantrussian.c:27:
+m4ri/xor_template.h: In function '_mzd_combine_3':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:107:0,
+                 from m4ri/brilliantrussian.c:27:
+m4ri/xor_template.h: In function '_mzd_combine_4':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:111:0,
+                 from m4ri/brilliantrussian.c:27:
+m4ri/xor_template.h: In function '_mzd_combine_5':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:115:0,
+                 from m4ri/brilliantrussian.c:27:
+m4ri/xor_template.h: In function '_mzd_combine_6':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:119:0,
+                 from m4ri/brilliantrussian.c:27:
+m4ri/xor_template.h: In function '_mzd_combine_7':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:123:0,
+                 from m4ri/brilliantrussian.c:27:
+m4ri/xor_template.h: In function '_mzd_combine_8':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/brilliantrussian.c:28:0:
+m4ri/graycode.h: In function 'log2_floor':
+m4ri/graycode.h:139:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c: In function '_mzd_gauss_submatrix_full':
+m4ri/brilliantrussian.c:54:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:58:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:66:11: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c: In function '_mzd_gauss_submatrix':
+m4ri/brilliantrussian.c:108:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:110:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c: In function '_mzd_gauss_submatrix_top':
+m4ri/brilliantrussian.c:149:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:150:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c: In function '_mzd_copy_back_rows':
+m4ri/brilliantrussian.c:165:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:168:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c: In function 'mzd_make_table':
+m4ri/brilliantrussian.c:185:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c: In function '_mzd_mul_m4rm':
+m4ri/brilliantrussian.c:1087:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:1103:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:1104:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:1108:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:1116:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:1157:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:1161:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:1169:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:1173:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/brilliantrussian.c:1180:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/mzd.h:50:0,
+                 from m4ri/debug_dump.c:24:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/debug_dump.c:24:0:
+m4ri/mzd.h: In function '_mzd_row_swap':
+m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.h: In function 'mzd_hash':
+m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/djb.c:10:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/djb.c:10:0:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/xor.h:99:0,
+                 from m4ri/djb.c:14:
+./m4ri/xor_template.h: In function '_mzd_combine_2':
+./m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/xor.h:103:0,
+                 from m4ri/djb.c:14:
+./m4ri/xor_template.h: In function '_mzd_combine_3':
+./m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/xor.h:107:0,
+                 from m4ri/djb.c:14:
+./m4ri/xor_template.h: In function '_mzd_combine_4':
+./m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/xor.h:111:0,
+                 from m4ri/djb.c:14:
+./m4ri/xor_template.h: In function '_mzd_combine_5':
+./m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/xor.h:115:0,
+                 from m4ri/djb.c:14:
+./m4ri/xor_template.h: In function '_mzd_combine_6':
+./m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/xor.h:119:0,
+                 from m4ri/djb.c:14:
+./m4ri/xor_template.h: In function '_mzd_combine_7':
+./m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/xor.h:123:0,
+                 from m4ri/djb.c:14:
+./m4ri/xor_template.h: In function '_mzd_combine_8':
+./m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/djb.c: In function 'mzd_compare_rows_revlex':
+m4ri/djb.c:20:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/djb.c: At top level:
+m4ri/djb.c:63:38: error: expected ';', ',' or ')' before 'h'
+m4ri/djb.c:84:37: error: expected ';', ',' or ')' before 'h'
+m4ri/djb.c: In function 'djb_compile':
+m4ri/djb.c:119:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/djb.c: In function 'djb_print':
+m4ri/djb.c:160:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/djb.c:163:9: error: redefinition of 'i'
+m4ri/djb.c:160:11: note: previous definition of 'i' was here
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/echelonform.h:31,
+                 from m4ri/echelonform.c:25:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/echelonform.h:31:0,
+                 from m4ri/echelonform.c:25:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/echelonform.c: In function 'mzd_echelonize_pluq':
+m4ri/echelonform.c:117:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/echelonform.c:118:7: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/graycode.c:27:0:
+m4ri/graycode.h: In function 'log2_floor':
+m4ri/graycode.h:139:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/graycode.h:139:3: note: use option -std=c99 or -std=gnu99 to compile your code
+m4ri/graycode.c: In function 'm4ri_gray_code':
+m4ri/graycode.c:34:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/graycode.c: In function 'm4ri_build_code':
+m4ri/graycode.c:43:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/graycode.c:47:11: error: redefinition of 'i'
+m4ri/graycode.c:43:11: note: previous definition of 'i' was here
+m4ri/graycode.c:47:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/graycode.c:48:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/graycode.c: In function 'm4ri_build_all_codes':
+m4ri/graycode.c:60:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/graycode.c: In function 'm4ri_destroy_all_codes':
+m4ri/graycode.c:72:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/io.h:32,
+                 from m4ri/io.c:32:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/io.h:32:0,
+                 from m4ri/io.c:32:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/io.c: In function 'mzd_print':
+m4ri/io.c:50:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/io.c:53:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/io.c:59:14: error: redefinition of 'j'
+m4ri/io.c:53:15: note: previous definition of 'j' was here
+m4ri/io.c:59:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/io.c: In function 'mzd_print_row':
+m4ri/io.c:75:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/io.c:81:12: error: redefinition of 'j'
+m4ri/io.c:75:13: note: previous definition of 'j' was here
+m4ri/io.c:81:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/io.c: In function 'mzd_from_str':
+m4ri/io.c:391:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/io.c:392:5: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/misc.c:32:0:
+m4ri/graycode.h: In function 'log2_floor':
+m4ri/graycode.h:139:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/graycode.h:139:3: note: use option -std=c99 or -std=gnu99 to compile your code
+m4ri/misc.c: In function 'm4ri_word_to_str':
+m4ri/misc.c:47:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/mp.h:32,
+                 from m4ri/mp.c:24:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/mp.h:32:0,
+                 from m4ri/mp.c:24:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/mzd.h:50:0,
+                 from m4ri/mzd.c:32:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/mzd.c:32:0:
+m4ri/mzd.h: In function '_mzd_row_swap':
+m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.h: In function 'mzd_hash':
+m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'log2_floor':
+m4ri/mzd.c:61:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_init':
+m4ri/mzd.c:178:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:185:15: error: redefinition of 'i'
+m4ri/mzd.c:178:13: note: previous definition of 'i' was here
+m4ri/mzd.c:185:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_init_window':
+m4ri/mzd.c:258:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_row_clear_offset':
+m4ri/mzd.c:300:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_gauss_delayed':
+m4ri/mzd.c:311:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:312:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:317:2: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_copy_transpose_64x64':
+m4ri/mzd.c:391:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:392:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:405:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_copy_transpose_64x64_2':
+m4ri/mzd.c:449:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:478:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_transpose_Nxjx64':
+m4ri/mzd.c:554:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_copy_transpose_lt64x64':
+m4ri/mzd.c:618:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:628:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:640:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:656:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:659:2: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:678:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:681:2: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:697:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_copy_transpose_64xlt64':
+m4ri/mzd.c:735:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:744:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:753:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:764:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:781:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:799:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:813:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:825:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_copy_transpose_le8xle8':
+m4ri/mzd.c:853:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:871:12: error: redefinition of 'shift'
+m4ri/mzd.c:852:7: note: previous definition of 'shift' was here
+m4ri/mzd.c:871:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_copy_transpose_le16xle16':
+m4ri/mzd.c:923:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:975:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_copy_transpose_le32xle32':
+m4ri/mzd.c:1016:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1020:9: error: redefinition of 'j'
+m4ri/mzd.c:1016:14: note: previous definition of 'j' was here
+m4ri/mzd.c:1039:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1044:14: error: redefinition of 'j'
+m4ri/mzd.c:1039:14: note: previous definition of 'j' was here
+m4ri/mzd.c:1044:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1053:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_copy_transpose_le64xle64':
+m4ri/mzd.c:1077:12: error: redeclaration of 'k' with no linkage
+m4ri/mzd.c:1068:7: note: previous declaration of 'k' was here
+m4ri/mzd.c:1077:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_transpose':
+m4ri/mzd.c:1157:2: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_transpose_multiblock':
+m4ri/mzd.c:1304:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1306:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1334:4: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_mul_naive':
+m4ri/mzd.c:1457:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1473:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1478:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1479:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1482:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1483:2: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1486:11: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1496:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1499:11: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1507:14: error: redefinition of 'i'
+m4ri/mzd.c:1473:12: note: previous definition of 'i' was here
+m4ri/mzd.c:1507:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1510:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1511:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1514:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1524:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1527:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_mul_va':
+m4ri/mzd.c:1545:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1546:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_randomize':
+m4ri/mzd.c:1557:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1558:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_set_ui':
+m4ri/mzd.c:1569:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1571:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1582:14: error: redefinition of 'i'
+m4ri/mzd.c:1569:14: note: previous definition of 'i' was here
+m4ri/mzd.c:1582:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_equal':
+m4ri/mzd.c:1596:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1597:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1604:14: error: redefinition of 'i'
+m4ri/mzd.c:1596:14: note: previous definition of 'i' was here
+m4ri/mzd.c:1604:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_cmp':
+m4ri/mzd.c:1623:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1629:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_copy':
+m4ri/mzd.c:1652:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1655:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_concat':
+m4ri/mzd.c:1675:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1678:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1683:14: error: redefinition of 'i'
+m4ri/mzd.c:1675:14: note: previous definition of 'i' was here
+m4ri/mzd.c:1683:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1684:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_stack':
+m4ri/mzd.c:1704:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1707:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1712:13: error: redefinition of 'i'
+m4ri/mzd.c:1704:13: note: previous definition of 'i' was here
+m4ri/mzd.c:1712:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1715:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_add':
+m4ri/mzd.c:1773:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1778:15: error: redefinition of 'i'
+m4ri/mzd.c:1773:15: note: previous definition of 'i' was here
+m4ri/mzd.c:1778:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1784:15: error: redefinition of 'i'
+m4ri/mzd.c:1778:15: note: previous definition of 'i' was here
+m4ri/mzd.c:1784:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1791:15: error: redefinition of 'i'
+m4ri/mzd.c:1784:15: note: previous definition of 'i' was here
+m4ri/mzd.c:1791:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1799:15: error: redefinition of 'i'
+m4ri/mzd.c:1791:15: note: previous definition of 'i' was here
+m4ri/mzd.c:1799:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1808:15: error: redefinition of 'i'
+m4ri/mzd.c:1799:15: note: previous definition of 'i' was here
+m4ri/mzd.c:1808:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1818:15: error: redefinition of 'i'
+m4ri/mzd.c:1808:15: note: previous definition of 'i' was here
+m4ri/mzd.c:1818:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1829:15: error: redefinition of 'i'
+m4ri/mzd.c:1818:15: note: previous definition of 'i' was here
+m4ri/mzd.c:1829:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1842:15: error: redefinition of 'i'
+m4ri/mzd.c:1829:15: note: previous definition of 'i' was here
+m4ri/mzd.c:1842:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_submatrix':
+m4ri/mzd.c:1866:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1872:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1880:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_is_zero':
+m4ri/mzd.c:1988:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:1989:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_copy_row':
+m4ri/mzd.c:2008:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_find_pivot':
+m4ri/mzd.c:2026:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2028:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2037:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2055:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2069:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2081:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2082:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2093:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2108:10: error: redefinition of 'wi'
+m4ri/mzd.c:2081:14: note: previous definition of 'wi' was here
+m4ri/mzd.c:2109:15: error: redefinition of 'i'
+m4ri/mzd.c:2055:15: note: previous definition of 'i' was here
+m4ri/mzd.c:2109:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2120:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function '_mzd_density':
+m4ri/mzd.c:2159:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2160:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2171:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2173:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2178:14: error: redefinition of 'j'
+m4ri/mzd.c:2173:15: note: previous definition of 'j' was here
+m4ri/mzd.c:2178:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2182:13: error: redefinition of 'j'
+m4ri/mzd.c:2178:14: note: previous definition of 'j' was here
+m4ri/mzd.c:2182:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_first_zero_row':
+m4ri/mzd.c:2200:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2203:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_extract_u':
+m4ri/mzd.c:2221:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2222:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c: In function 'mzd_extract_l':
+m4ri/mzd.c:2237:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.c:2240:5: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/mzp.h:31,
+                 from m4ri/mzp.c:24:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/mzp.h:31:0,
+                 from m4ri/mzp.c:24:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function 'mzp_init':
+m4ri/mzp.c:31:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function 'mzp_copy':
+m4ri/mzp.c:57:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function 'mzp_set_ui':
+m4ri/mzp.c:64:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function 'mzd_apply_p_left':
+m4ri/mzp.c:73:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function 'mzd_apply_p_left_trans':
+m4ri/mzp.c:83:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function 'mzd_write_col_to_rows_blockd':
+m4ri/mzp.c:92:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:103:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:110:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function '_mzd_apply_p_right_even':
+m4ri/mzp.c:212:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:216:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:222:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:231:13: error: redefinition of 'i'
+m4ri/mzp.c:212:13: note: previous definition of 'i' was here
+m4ri/mzp.c:231:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:233:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:241:13: error: redefinition of 'i'
+m4ri/mzp.c:231:13: note: previous definition of 'i' was here
+m4ri/mzp.c:241:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:243:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:248:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function '_mzd_apply_p_right_trans':
+m4ri/mzp.c:268:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:270:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function '_mzd_apply_p_right':
+m4ri/mzp.c:287:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:289:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function 'mzp_print':
+m4ri/mzp.c:330:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function 'mzd_apply_p_right_trans_tri':
+m4ri/mzp.c:340:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:342:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c: In function '_mzd_compress_l':
+m4ri/mzp.c:397:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzp.c:404:13: error: redefinition of 'i'
+m4ri/mzp.c:397:14: note: previous definition of 'i' was here
+m4ri/mzp.c:404:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/mzd.h:50:0,
+                 from m4ri/ple.c:26:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/ple.c:26:0:
+m4ri/mzd.h: In function '_mzd_row_swap':
+m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/mzd.h: In function 'mzd_hash':
+m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c: In function '_mzd_ple':
+m4ri/ple.c:69:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c:71:13: error: redefinition of 'i'
+m4ri/ple.c:69:13: note: previous definition of 'i' was here
+m4ri/ple.c:71:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c:158:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c:162:15: error: redefinition of 'i'
+m4ri/ple.c:158:16: note: previous definition of 'i' was here
+m4ri/ple.c:162:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c:165:15: error: redefinition of 'i'
+m4ri/ple.c:162:15: note: previous definition of 'i' was here
+m4ri/ple.c:165:23: error: redefinition of 'j'
+m4ri/ple.c:162:22: note: previous definition of 'j' was here
+m4ri/ple.c:165:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c: In function '_mzd_pluq_naive':
+m4ri/ple.c:215:2: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c:226:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c:228:14: error: redefinition of 'i'
+m4ri/ple.c:226:14: note: previous definition of 'i' was here
+m4ri/ple.c:228:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c: In function '_mzd_ple_naive':
+m4ri/ple.c:263:2: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c:275:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c:277:14: error: redefinition of 'i'
+m4ri/ple.c:275:14: note: previous definition of 'i' was here
+m4ri/ple.c:277:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple.c:281:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/ple_russian.h:33,
+                 from m4ri/ple_russian.c:30:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/ple_russian.h:33:0,
+                 from m4ri/ple_russian.c:30:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/ple_russian.c:32:0:
+m4ri/graycode.h: In function 'log2_floor':
+m4ri/graycode.h:139:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:99:0,
+                 from m4ri/ple_russian.c:33:
+m4ri/xor_template.h: In function '_mzd_combine_2':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:103:0,
+                 from m4ri/ple_russian.c:33:
+m4ri/xor_template.h: In function '_mzd_combine_3':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:107:0,
+                 from m4ri/ple_russian.c:33:
+m4ri/xor_template.h: In function '_mzd_combine_4':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:111:0,
+                 from m4ri/ple_russian.c:33:
+m4ri/xor_template.h: In function '_mzd_combine_5':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:115:0,
+                 from m4ri/ple_russian.c:33:
+m4ri/xor_template.h: In function '_mzd_combine_6':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:119:0,
+                 from m4ri/ple_russian.c:33:
+m4ri/xor_template.h: In function '_mzd_combine_7':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:123:0,
+                 from m4ri/ple_russian.c:33:
+m4ri/xor_template.h: In function '_mzd_combine_8':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c: In function '_max_value':
+m4ri/ple_russian.c:59:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c: In function '_kk_setup':
+m4ri/ple_russian.c:86:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:91:11: error: redefinition of 'i'
+m4ri/ple_russian.c:86:11: note: previous definition of 'i' was here
+m4ri/ple_russian.c:91:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:92:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c: In function '_mzd_ple_submatrix':
+m4ri/ple_russian.c:135:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:163:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:164:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c: In function 'mzd_make_table_ple':
+m4ri/ple_russian.c:214:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:243:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:275:13: error: redefinition of 'i'
+m4ri/ple_russian.c:243:14: note: previous definition of 'i' was here
+m4ri/ple_russian.c:275:5: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/ple_russian.c:288:0:
+m4ri/ple_russian_template.h: In function '_mzd_process_rows_ple_2':
+m4ri/ple_russian_template.h:28:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian_template.h: In function '_mzd_ple_a11_2':
+m4ri/ple_russian_template.h:78:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/ple_russian.c:292:0:
+m4ri/ple_russian_template.h: In function '_mzd_process_rows_ple_3':
+m4ri/ple_russian_template.h:28:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian_template.h: In function '_mzd_ple_a11_3':
+m4ri/ple_russian_template.h:78:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/ple_russian.c:296:0:
+m4ri/ple_russian_template.h: In function '_mzd_process_rows_ple_4':
+m4ri/ple_russian_template.h:28:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian_template.h: In function '_mzd_ple_a11_4':
+m4ri/ple_russian_template.h:78:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/ple_russian.c:300:0:
+m4ri/ple_russian_template.h: In function '_mzd_process_rows_ple_5':
+m4ri/ple_russian_template.h:28:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian_template.h: In function '_mzd_ple_a11_5':
+m4ri/ple_russian_template.h:78:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/ple_russian.c:304:0:
+m4ri/ple_russian_template.h: In function '_mzd_process_rows_ple_6':
+m4ri/ple_russian_template.h:28:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian_template.h: In function '_mzd_ple_a11_6':
+m4ri/ple_russian_template.h:78:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/ple_russian.c:308:0:
+m4ri/ple_russian_template.h: In function '_mzd_process_rows_ple_7':
+m4ri/ple_russian_template.h:28:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian_template.h: In function '_mzd_ple_a11_7':
+m4ri/ple_russian_template.h:78:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/ple_russian.c:312:0:
+m4ri/ple_russian_template.h: In function '_mzd_process_rows_ple_8':
+m4ri/ple_russian_template.h:28:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian_template.h: In function '_mzd_ple_a11_8':
+m4ri/ple_russian_template.h:78:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c: In function '_mzd_ple_a10':
+m4ri/ple_russian.c:321:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:325:11: error: redefinition of 'i'
+m4ri/ple_russian.c:321:13: note: previous definition of 'i' was here
+m4ri/ple_russian.c:325:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:328:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:331:9: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c: In function '_mzd_ple_a11_1':
+m4ri/ple_russian.c:350:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c: In function '_mzd_ple_to_e':
+m4ri/ple_russian.c:368:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:369:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c: In function '_mzd_ple_russian':
+m4ri/ple_russian.c:405:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:408:13: error: redefinition of 'i'
+m4ri/ple_russian.c:405:13: note: previous definition of 'i' was here
+m4ri/ple_russian.c:408:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:413:11: error: redefinition of 'i'
+m4ri/ple_russian.c:408:13: note: previous definition of 'i' was here
+m4ri/ple_russian.c:413:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:484:11: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:524:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:591:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/ple_russian.c:601:11: error: redefinition of 'i'
+m4ri/ple_russian.c:413:11: note: previous definition of 'i' was here
+m4ri/ple_russian.c:601:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/mzd.h:50:0,
+                 from ./m4ri/mzp.h:31,
+                 from m4ri/solve.h:32,
+                 from m4ri/solve.c:24:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from ./m4ri/mzp.h:31:0,
+                 from m4ri/solve.h:32,
+                 from m4ri/solve.c:24:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/solve.c: In function '_mzd_pluq_solve_left':
+m4ri/solve.c:105:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/solve.c:106:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/solve.c: In function 'mzd_kernel_left_pluq':
+m4ri/solve.c:164:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/solve.c:165:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/solve.c:173:13: error: redefinition of 'i'
+m4ri/solve.c:164:13: note: previous definition of 'i' was here
+m4ri/solve.c:173:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/strassen.c:27:0:
+m4ri/graycode.h: In function 'log2_floor':
+m4ri/graycode.h:139:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/graycode.h:139:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/strassen.h:36,
+                 from m4ri/strassen.c:28:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/strassen.h:36:0,
+                 from m4ri/strassen.c:28:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/triangular.h:32,
+                 from m4ri/triangular.c:26:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/triangular.h:32:0,
+                 from m4ri/triangular.c:26:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c: In function '_mzd_trsm_upper_right_base':
+m4ri/triangular.c:116:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:119:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:176:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:178:13: error: redefinition of 'babystep'
+m4ri/triangular.c:176:13: note: previous definition of 'babystep' was here
+m4ri/triangular.c:178:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:182:13: error: redefinition of 'babystep'
+m4ri/triangular.c:178:13: note: previous definition of 'babystep' was here
+m4ri/triangular.c:182:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c: In function '_mzd_trsm_lower_right_base':
+m4ri/triangular.c:259:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:262:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:319:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:321:13: error: redefinition of 'babystep'
+m4ri/triangular.c:319:13: note: previous definition of 'babystep' was here
+m4ri/triangular.c:321:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:325:13: error: redefinition of 'babystep'
+m4ri/triangular.c:321:13: note: previous definition of 'babystep' was here
+m4ri/triangular.c:325:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c: In function '_mzd_trsm_lower_left':
+m4ri/triangular.c:355:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:360:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:362:11: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c: In function '_mzd_trsm_upper_left':
+m4ri/triangular.c:418:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:424:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular.c:426:11: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from ./m4ri/mzd.h:50:0,
+                 from m4ri/triangular_russian.h:31,
+                 from m4ri/triangular_russian.c:5:
+./m4ri/debug_dump.h: In function 'calculate_hash':
+./m4ri/debug_dump.h:29:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/debug_dump.h:29:3: note: use option -std=c99 or -std=gnu99 to compile your code
+In file included from m4ri/triangular_russian.h:31:0,
+                 from m4ri/triangular_russian.c:5:
+./m4ri/mzd.h: In function '_mzd_row_swap':
+./m4ri/mzd.h:396:3: error: 'for' loop initial declarations are only allowed in C99 mode
+./m4ri/mzd.h: In function 'mzd_hash':
+./m4ri/mzd.h:1289:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/triangular_russian.c:6:0:
+m4ri/graycode.h: In function 'log2_floor':
+m4ri/graycode.h:139:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:99:0,
+                 from m4ri/triangular_russian.c:9:
+m4ri/xor_template.h: In function '_mzd_combine_2':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:103:0,
+                 from m4ri/triangular_russian.c:9:
+m4ri/xor_template.h: In function '_mzd_combine_3':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:107:0,
+                 from m4ri/triangular_russian.c:9:
+m4ri/xor_template.h: In function '_mzd_combine_4':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:111:0,
+                 from m4ri/triangular_russian.c:9:
+m4ri/xor_template.h: In function '_mzd_combine_5':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:115:0,
+                 from m4ri/triangular_russian.c:9:
+m4ri/xor_template.h: In function '_mzd_combine_6':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:119:0,
+                 from m4ri/triangular_russian.c:9:
+m4ri/xor_template.h: In function '_mzd_combine_7':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+In file included from m4ri/xor.h:123:0,
+                 from m4ri/triangular_russian.c:9:
+m4ri/xor_template.h: In function '_mzd_combine_8':
+m4ri/xor_template.h:146:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c: In function '_mzd_trsm_upper_left_submatrix':
+m4ri/triangular_russian.c:15:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:16:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c: In function '_mzd_trsm_upper_left_russian':
+m4ri/triangular_russian.c:77:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:88:9: error: redefinition of 'i'
+m4ri/triangular_russian.c:77:11: note: previous definition of 'i' was here
+m4ri/triangular_russian.c:108:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:152:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:158:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:162:11: error: redefinition of 'i'
+m4ri/triangular_russian.c:88:9: note: previous definition of 'i' was here
+m4ri/triangular_russian.c:162:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c: In function '_mzd_trsm_lower_left_submatrix':
+m4ri/triangular_russian.c:174:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:175:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c: In function '_mzd_trsm_lower_left_russian':
+m4ri/triangular_russian.c:233:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:244:9: error: redefinition of 'i'
+m4ri/triangular_russian.c:233:11: note: previous definition of 'i' was here
+m4ri/triangular_russian.c:264:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:309:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:315:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:319:11: error: redefinition of 'i'
+m4ri/triangular_russian.c:244:9: note: previous definition of 'i' was here
+m4ri/triangular_russian.c:319:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c: In function 'mzd_make_table_trtri':
+m4ri/triangular_russian.c:353:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:376:11: error: redefinition of 'i'
+m4ri/triangular_russian.c:353:12: note: previous definition of 'i' was here
+m4ri/triangular_russian.c:376:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c: In function '_mzd_trtri_upper_submatrix':
+m4ri/triangular_russian.c:385:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:386:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c: In function 'mzd_trtri_upper_russian':
+m4ri/triangular_russian.c:406:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:411:11: error: redefinition of 'i'
+m4ri/triangular_russian.c:406:12: note: previous definition of 'i' was here
+m4ri/triangular_russian.c:411:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:418:11: error: redefinition of 'i'
+m4ri/triangular_russian.c:411:11: note: previous definition of 'i' was here
+m4ri/triangular_russian.c:418:3: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:464:5: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:465:7: error: 'for' loop initial declarations are only allowed in C99 mode
+m4ri/triangular_russian.c:476:11: error: redefinition of 'i'
+m4ri/triangular_russian.c:418:11: note: previous definition of 'i' was here
+m4ri/triangular_russian.c:476:3: error: 'for' loop initial declarations are only allowed in C99 mode
+make: *** [compile] Error 1

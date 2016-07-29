@@ -4,7 +4,8 @@ CIVL=civl
 
 INCLUDES=-userIncludePath=./AMG2013:AMG2013/IJ_mv:AMG2013/krylov:AMG2013/parcsr_ls:AMG2013/parcsr_mv:AMG2013/seq_mv:AMG2013/sstruct_mv:AMG2013/struct_mv:AMG2013/test:AMG2013/utilities:
 
-SHOW=${CIVL} show -verbose -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
+SHOWV=${CIVL} show -verbose -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
+SHOW=${CIVL} show -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
 VERIFY=${CIVL} verify -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
 VERIFYALL=${CIVL} verify -ompNoSimplify -ompLoopDecomp=ALL -inputTHREAD_MAX=3 -enablePrintf=false 
 SIMPLIFY=${CIVL} verify -ompLoopDecomp=ALL -inputTHREAD_MAX=3 -enablePrintf=false 
@@ -83,5 +84,8 @@ all:
 
 amg2013: 
 	${SHOW} ${INCLUDES} AMG2013/test/amg2013.c 
+
+allGCC: 
+	gcc ${INCLUDES} AMG2013/test/amg2013.c ${SOURCE}
 
 clean: 

@@ -1,0 +1,4 @@
+Path=./ tests/test_colswap.c m4ri/brilliantrussian.c m4ri/debug_dump.c m4ri/djb.c m4ri/echelonform.c m4ri/graycode.c m4ri/io.c m4ri/misc.c m4ri/mmc.c m4ri/mp.c m4ri/mzd.c m4ri/mzp.c m4ri/ple.c m4ri/ple_russian.c m4ri/solve.c m4ri/strassen.c m4ri/triangular.c m4ri/triangular_russian.c
+CIVL v1.7.1+ of 2016-05-31 -- http://vsl.cis.udel.edu/civl
+Error: Expected integer or real constant, not SIZEOF[(struct mzd_t_cache) *]
+at mzd.c:46.40-69 "2 * sizeof(struct mzd_t_cache*"
