@@ -1,5 +1,7 @@
 package edu.udel.cis.vsl.civl.library.collate;
 
+import java.util.BitSet;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
@@ -15,13 +17,17 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
+import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 
 public class LibcollateExecutor extends BaseLibraryExecutor
-		implements LibraryExecutor {
+		implements
+			LibraryExecutor {
 	/**
 	 * Field index for $collate_state.gstate:
 	 */
@@ -31,6 +37,11 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 	 * Field index for $gcollate_state->$state:
 	 */
 	private final IntObject gcollate_state_state;
+
+	/**
+	 * Field index for $gcollate_state->status
+	 */
+	private final IntObject gcollate_state_status;
 
 	public LibcollateExecutor(String name, Executor primaryExecutor,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -44,6 +55,8 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 				.intObject(LibcollateConstants.COLLATE_STATE_GSTATE);
 		gcollate_state_state = universe
 				.intObject(LibcollateConstants.GCOLLATE_STATE_STATE);
+		gcollate_state_status = universe
+				.intObject(LibcollateConstants.GCOLLATE_STATE_STATUS);
 	}
 
 	@Override
@@ -54,21 +67,30 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$enter_collate_state":
-			callEval = executeEnterCollateState(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$exit_collate_state":
-			callEval = executeExitCollateState(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$collate_snapshot":
-			callEval = executeCollateSnapshot(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"the function " + name + " of library pointer.cvh", source);
+			case "$collate_complete" :
+				callEval = executeCollateComplete(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$collate_arrived" :
+				callEval = executeCollateArrived(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$enter_collate_state" :
+				callEval = executeEnterCollateState(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$exit_collate_state" :
+				callEval = executeExitCollateState(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$collate_snapshot" :
+				callEval = executeCollateSnapshot(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"the function " + name + " of library pointer.cvh",
+						source);
 		}
 		return callEval;
 	}
@@ -250,5 +272,101 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		state = this.primaryExecutor.assign(source, state, process,
 				gcollateStateHandle, gcollateState);
 		return new Evaluation(state, null);
+	}
+
+	/**
+	 * A system implementation of the <code>$collate_complete</code>. Make it a
+	 * system function so that it can be used as a guard expression.
+	 * 
+	 * @param state
+	 *            The program state when this function is called.
+	 * @param pid
+	 *            The PID of the calling process
+	 * @param process
+	 *            The String identifier of the calling process
+	 * @param arguments
+	 *            An array of {@link Expression}s for actual parameters
+	 * @param values
+	 *            An array of {@link SymbolicExpression}s for values of actual
+	 *            parameters.
+	 * @param source
+	 *            The CIVLSource associates to the function call.
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeCollateComplete(State state, int pid,
+			String process, Expression[] arguments, SymbolicExpression[] values,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		SymbolicExpression colState = values[0];
+		NumericExpression nprocs;
+		SymbolicExpression gstateHanlde = universe.tupleRead(colState,
+				collate_state_gstate);
+		SymbolicExpression gstate, statusArray;
+		Evaluation eval;
+
+		eval = evaluator.dereference(source, state, process, arguments[0],
+				gstateHanlde, false);
+		gstate = eval.value;
+		statusArray = universe.tupleRead(gstate, gcollate_state_status);
+		nprocs = universe.length(statusArray);
+
+		NumericSymbolicConstant i = (NumericSymbolicConstant) universe
+				.symbolicConstant(universe.stringObject("i"),
+						universe.integerType());
+		BooleanExpression pred;
+		SymbolicExpression status = universe.arrayRead(statusArray, i);
+
+		// forall i : [0, nprocs) that status[i] == 1 (ARRIVED) || status[i] ==
+		// 2 (DEPARTED):
+		pred = universe.equals(status, one);
+		pred = universe.or(universe.equals(status, two), pred);
+		pred = universe.forallInt(i, zero, nprocs, pred);
+		eval.value = pred;
+		return eval;
+	}
+
+	/**
+	 * 
+	 * @param state
+	 * @param pid
+	 * @param process
+	 * @param arguments
+	 * @param values
+	 * @param source
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeCollateArrived(State state, int pid,
+			String process, Expression[] arguments, SymbolicExpression[] values,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		SymbolicExpression colState = values[0];
+		SymbolicExpression range = values[1];
+
+		SymbolicExpression gstateHanlde = universe.tupleRead(colState,
+				collate_state_gstate);
+		SymbolicExpression gstate, statusArray;
+		Evaluation eval;
+
+		eval = evaluator.dereference(source, state, process, arguments[0],
+				gstateHanlde, false);
+		gstate = eval.value;
+		statusArray = universe.tupleRead(gstate, gcollate_state_status);
+
+		BooleanExpression pred = universe.trueExpression();
+		SymbolicExpression status;
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		BitSet rangeVal = symbolicUtil.range2BitSet(range, reasoner);
+
+		for (int i = rangeVal.nextSetBit(0); i >= 0; i = rangeVal
+				.nextSetBit(i + 1)) {
+			BooleanExpression claim;
+
+			status = universe.arrayRead(statusArray, universe.integer(i));
+			claim = universe.equals(status, one);
+			claim = universe.or(universe.equals(status, two), claim);
+			pred = universe.and(pred, claim);
+		}
+		eval.value = pred;
+		return eval;
 	}
 }
