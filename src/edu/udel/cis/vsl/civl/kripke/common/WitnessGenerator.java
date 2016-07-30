@@ -96,14 +96,33 @@ public class WitnessGenerator {
             
             output.write(header());
             writeEntryNode();
+            List<String> locationPath = new ArrayList<String>();
+            for(Pair<Location,Statement> step : traceStepLocStmt) {
+            	String compactLocationStr = step.left.toString().replaceAll("\\s+", "");
+            	locationPath.add(compactLocationStr);
+            }
+            
+            List<Pair<String,String>> locationStringPairs = new ArrayList<Pair<String,String>>();
+            for (int i = 0; i < locationPath.size() - 1; i++) {
+            	Pair<String,String> pair = new Pair<String,String>(locationPath.get(i), locationPath.get(i+1));
+            	locationStringPairs.add(pair);
+            	System.out.println("Pair "+i+pair);
+            }
+            Pair<String,String> finalPair = new Pair<String,String>(locationPath.get(locationPath.size()-1),"FinalLocation");
+            locationStringPairs.add(finalPair);
+            
+            int locationPairIndex = 0;
     		
     		String finalLocation = "";
     		for(Pair<Location,Statement> step : traceStepLocStmt) {
     			Location location = step.left; Statement statement = step.right;
     			String locationStr = location.toString(); String statementStr = statement.toString();
     			/* We need to strip the whitespace from the Location strings */
-    			String compactSourceStr = locationStr.replaceAll("\\s+","");
-    			String compactTargetStr = statement.target().toString().replaceAll("\\s+","");
+    			//String compactSourceStr = locationStr.replaceAll("\\s+","");
+    			String compactSourceStr = locationStringPairs.get(locationPairIndex).left;
+    			System.out.println(location+"; about to look at target for: "+statement.toString());
+    			//String compactTargetStr = statement.target().toString().replaceAll("\\s+","");
+    			String compactTargetStr = locationStringPairs.get(locationPairIndex).right;
     			
     			if (!locationStr.equals("Location 0")) { // The entry, Location 0, has already been declared
     				if (statementStr.equals("__VERIFIER_error()")) {
@@ -114,7 +133,7 @@ public class WitnessGenerator {
     				}
     			}
     			String sourceLocationStr = step.left.getSource().getLocation().toString();
-    			if (sourceLocationStr.matches(".*.c:.*")) {
+    			if (isStatementOrBranch(sourceLocationStr)) {
     			   String lineNumber = sourceLocationStr.replaceAll(".*:([0-9]+)..*", "$1");
     			   
     			   if (statementStr.equals("FALSE_BRANCH_IF")) {
@@ -129,6 +148,7 @@ public class WitnessGenerator {
     			}
     			
     			finalLocation = compactTargetStr;
+    			locationPairIndex++;
     		}
     		writeNode(finalLocation);
     		
@@ -156,6 +176,16 @@ public class WitnessGenerator {
 			}
 		}
 		return tracePairs;
+	}
+	
+	private boolean isStatementOrBranch(String locationString) {
+		if (locationString.matches(".*.c:.*")) {
+			return true;
+		} else if (locationString.matches(".*.i:.*")) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	private void writeNode(String locationString) throws IOException {
