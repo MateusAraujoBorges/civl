@@ -2359,10 +2359,13 @@ public class ImmutableStateFactory implements StateFactory {
 		// Change the PID of the mono process to newPid:
 		ImmutableProcessState monoProcess = theMono.getProcessState(0)
 				.setPid(newPid);
-		Scope monoProcScope = monoProcess.getStackEntry(0).location().function()
-				.outerScope();
+		Scope monoProcScope;
 		Scope leastCommonAncestor;
+		int bottomDyscopeId = monoProcess
+				.getStackEntry(monoProcess.stackSize() - 1).scope();
 
+		monoProcScope = monoState.getDyscope(bottomDyscopeId).lexicalScope()
+				.function().outerScope();
 		leastCommonAncestor = monoProcScope.parent();
 		// For the initial case, there is only one process state, so the
 		// invariants must hold; Then for each time adding a new process
@@ -2376,9 +2379,12 @@ public class ImmutableStateFactory implements StateFactory {
 		assert theState.numLiveProcs() > 0;
 		for (ImmutableProcessState process : processes)
 			if (!process.hasEmptyStack()) {
-				Scope otherProcScope = process.getStackEntry(0).location()
-						.function().outerScope();
+				Scope otherProcScope;
 
+				bottomDyscopeId = process.getStackEntry(process.stackSize() - 1)
+						.scope();
+				otherProcScope = theState.getDyscope(bottomDyscopeId)
+						.lexicalScope().function().outerScope();
 				leastCommonAncestor = modelFactory.leastCommonAncestor(
 						leastCommonAncestor, otherProcScope);
 			}
