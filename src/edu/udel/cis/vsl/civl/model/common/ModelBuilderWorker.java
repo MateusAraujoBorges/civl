@@ -462,11 +462,9 @@ public class ModelBuilderWorker {
 	 */
 	private boolean hasTimeLibrary(ASTNode node) {
 		Source source = node.getSource();
-		CivlcToken token = source == null
-				? null
+		CivlcToken token = source == null ? null
 				: node.getSource().getFirstToken();
-		SourceFile file = token == null
-				? null
+		SourceFile file = token == null ? null
 				: token.getFormation().getLastFile();
 
 		if (file != null && file.getName().equals(ModelConfiguration.TIME_LIB))
@@ -571,6 +569,11 @@ public class ModelBuilderWorker {
 		while (!working.isEmpty()) {
 			CIVLFunction function = working.pop();
 			StatementNode bodyNode = runProcFunctions.get(function);
+
+			// body node of functions for $update doesn't contain a body node
+			if (bodyNode == null)
+				continue;
+
 			FunctionTranslator translator = new FunctionTranslator(this,
 					factory, bodyNode, function);
 
@@ -1015,6 +1018,7 @@ public class ModelBuilderWorker {
 		completeTimeVar();
 		completeCallEvents();
 		completeModel(rootFunction);
+		// this.model.print(System.out, false);
 		this.calculateConstantValue();
 		this.factory
 				.setCodeAnalyzers(Analysis.getAnalyzers(civlConfig, universe));

@@ -9,6 +9,7 @@ import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
+import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
@@ -57,11 +58,11 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 	 *            The configuration of the CIVL model.
 	 */
 	public PointeredEnabler(StateFactory stateFactory, Evaluator evaluator,
-			SymbolicAnalyzer symbolicAnalyzer, MemoryUnitFactory memUnitFactory,
-			LibraryEnablerLoader libLoader, CIVLErrorLogger errorLogger,
-			CIVLConfiguration civlConfig) {
-		super(stateFactory, evaluator, symbolicAnalyzer, libLoader, errorLogger,
-				civlConfig);
+			Executor executor, SymbolicAnalyzer symbolicAnalyzer,
+			MemoryUnitFactory memUnitFactory, LibraryEnablerLoader libLoader,
+			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig) {
+		super(stateFactory, evaluator, executor, symbolicAnalyzer, libLoader,
+				errorLogger, civlConfig);
 		this.memUnitFactory = memUnitFactory;
 	}
 

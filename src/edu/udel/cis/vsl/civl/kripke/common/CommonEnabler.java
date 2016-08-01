@@ -2,10 +2,12 @@ package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnabler;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
@@ -13,11 +15,18 @@ import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
+import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
+import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
+import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
+import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
@@ -33,6 +42,8 @@ import edu.udel.cis.vsl.gmc.EnablerIF;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
  * CommonEnabler implements {@link EnablerIF} for CIVL models. It is an abstract
@@ -60,6 +71,8 @@ public abstract class CommonEnabler implements Enabler {
 	 * The unique evaluator used by the system.
 	 */
 	protected Evaluator evaluator;
+
+	private Executor executor;
 
 	/**
 	 * The unique model factory used by the system.
@@ -144,10 +157,12 @@ public abstract class CommonEnabler implements Enabler {
 	 *            The option to enable or disable the printing of ample sets.
 	 */
 	protected CommonEnabler(StateFactory stateFactory, Evaluator evaluator,
-			SymbolicAnalyzer symbolicAnalyzer, LibraryEnablerLoader libLoader,
-			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig) {
+			Executor executor, SymbolicAnalyzer symbolicAnalyzer,
+			LibraryEnablerLoader libLoader, CIVLErrorLogger errorLogger,
+			CIVLConfiguration civlConfig) {
 		this.errorLogger = errorLogger;
 		this.evaluator = evaluator;
+		this.executor = executor;
 		this.symbolicAnalyzer = symbolicAnalyzer;
 		this.config = civlConfig;
 		this.debugOut = civlConfig.out();
@@ -189,7 +204,6 @@ public abstract class CommonEnabler implements Enabler {
 				|| transitionsAssumption.left != null) {
 			// return ample transitions.
 			transitions.addAll(enabledTransitionsPOR(state).transitions());
-
 		}
 		return transitions;
 	}
@@ -555,7 +569,10 @@ public abstract class CommonEnabler implements Enabler {
 		List<Transition> localTransitions = new LinkedList<>();
 
 		try {
-			if (statement instanceof CallOrSpawnStatement) {
+			StatementKind kind = statement.statementKind();
+
+			switch (kind) {
+			case CALL_OR_SPAWN: {
 				CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
 
 				if (call.isSystemCall()) { // TODO check function pointer
@@ -567,6 +584,13 @@ public abstract class CommonEnabler implements Enabler {
 					// empty set: spawn is disabled due to procBound
 					return localTransitions;
 				}
+				break;
+			}
+			case WITH: {
+				return enabledTransitionsOfWithStatement(state, pid,
+						(WithStatement) statement, atomicLockAction);
+			}
+			default:
 			}
 			localTransitions.add(Semantics.newTransition(pathCondition, pid,
 					statement, atomicLockAction));
@@ -575,7 +599,81 @@ public abstract class CommonEnabler implements Enabler {
 		}
 		return localTransitions;
 	}
-	
+
+	/**
+	 * prepares the appropriate collate state, and invokes the
+	 * colExecutor.run2Completion() to run a sub-program, which returns a number
+	 * of collate states.
+	 * 
+	 * @param state
+	 *            the current state
+	 * @param pid
+	 *            the current PID
+	 * @param with
+	 *            the with statement
+	 * @return a list of transitions, each of which has the form
+	 *         col_state.gstate->state=state_ID;
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private List<Transition> enabledTransitionsOfWithStatement(State state,
+			int pid, WithStatement with, AtomicLockAction atomicLockAction)
+			throws UnsatisfiablePathConditionException {
+		Expression colStateExpr = with.collateState();
+		CIVLSource csSource = colStateExpr.getSource();
+		Evaluation eval;
+		SymbolicExpression colStateComp, gstateHandle;
+		int place, colStateID;
+		SymbolicUtility symbolicUtil = evaluator.symbolicUtility();
+		List<Transition> result = new LinkedList<>();
+		State colState;
+		Collection<State> newColStates;
+		CollateExecutor collateExecutor = new CollateExecutor(this, executor,
+				errorLogger, civlConfig);
+		LHSExpression colStateRef = modelFactory.dotExpression(csSource,
+				modelFactory.dereferenceExpression(csSource,
+						modelFactory.dotExpression(csSource, colStateExpr, 1)),
+				1);
+		AssignStatement assign;
+		BooleanExpression oldPC = state.getPathCondition();
+
+		eval = this.evaluator.evaluate(state, pid, colStateExpr);
+		state = eval.state;
+		colStateComp = eval.value;
+		place = symbolicUtil.extractInt(csSource, (NumericExpression) universe
+				.tupleRead(colStateComp, universe.intObject(0)));
+		gstateHandle = universe.tupleRead(colStateComp, universe.intObject(1));
+		eval = this.evaluator.dereference(csSource, state, "p" + pid,
+				colStateExpr, gstateHandle, false);
+		state = eval.state;
+		colStateID = this.modelFactory.getStateRef(csSource,
+				universe.tupleRead(eval.value, universe.intObject(1)));
+		colState = stateFactory.getStateByReference(colStateID);
+		colState = stateFactory.addExternalProcess(colState, state, pid, place,
+				with.function(), new SymbolicExpression[0]);
+		System.out.println(this.symbolicAnalyzer.stateToString(colState));
+		newColStates = collateExecutor.run2Completion(colState);
+		for (State newColState : newColStates) {
+			int newStateID = stateFactory.saveState(newColState, pid);
+
+			assign = modelFactory
+					.assignStatement(csSource, null, colStateRef,
+							modelFactory.stateExpression(csSource,
+									colStateExpr.expressionScope(), newStateID),
+							false);
+			result.add(Semantics.newTransition(
+					universe.and(oldPC, newColState.getPathCondition()), pid,
+					assign, atomicLockAction));
+		}
+		return result;
+	}
+
+	// TODO
+	private List<Transition> enabledTransitionsOfUpdateStatement(State state,
+			int pid, UpdateStatement udpate, AtomicLockAction atomicLockAction)
+			throws UnsatisfiablePathConditionException {
+		return null;
+
+	}
 
 	/* ************************ Package-private Methods ******************** */
 	/**
@@ -644,8 +742,7 @@ public abstract class CommonEnabler implements Enabler {
 			Statement statement, int statementId,
 			BooleanExpression newGuardMap[][]) {
 		BooleanExpression guard;
-		BooleanExpression myMap[] = newGuardMap != null
-				? newGuardMap[pid]
+		BooleanExpression myMap[] = newGuardMap != null ? newGuardMap[pid]
 				: null;
 
 		guard = myMap != null ? myMap[statementId] : null;

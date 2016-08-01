@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
@@ -25,23 +26,25 @@ public class ContractsTest {
 	}
 
 	/* **************************** Test Methods *************************** */
+	@Ignore
 	@Test
 	public void with() {
-		assertTrue(
-				ui.run("verify -showProgram=false -showTransitions=true -showSavedStates=true",
-						QUIET, filename("with.cvl")));
+		assertTrue(ui.run(
+				"verify -showModel=false -showTransitions=false -showSavedStates=false",
+				// QUIET,
+				filename("with.cvl")));
 	}
 
 	@Test
 	public void update() {
 		assertTrue(
-				ui.run("verify -showModel=false -showProgram=false -showTransitions=true -showSavedStates=true -quiet=false",
+				ui.run("show -showModel=false -showProgram=false -showTransitions=true -showSavedStates=true -quiet=false",
 						QUIET, filename("update.cvl")));
 	}
 
 	@Test
 	public void guardSE() {
-		assertTrue(ui.run("show -showProgram", QUIET,
+		assertTrue(ui.run("verify -showProgram", // QUIET,
 				filename("contractsMPI/simpleGuard.c")));
 	}
 

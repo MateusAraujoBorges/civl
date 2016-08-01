@@ -54,12 +54,12 @@ public class CommonStateManager implements StateManager {
 	/**
 	 * The unique enabler instance used by the system
 	 */
-	private CommonEnabler enabler;
+	protected CommonEnabler enabler;
 
 	/**
 	 * The unique executor instance used by the system
 	 */
-	private Executor executor;
+	protected Executor executor;
 
 	private CIVLConfiguration config;
 
@@ -71,7 +71,7 @@ public class CommonStateManager implements StateManager {
 	/**
 	 * The unique state factory used by the system.
 	 */
-	private StateFactory stateFactory;
+	protected StateFactory stateFactory;
 
 	/**
 	 * The object whose toString() method will be used to print the periodic
@@ -103,7 +103,7 @@ public class CommonStateManager implements StateManager {
 	 */
 	private SymbolicAnalyzer symbolicAnalyzer;
 
-	private BooleanExpression falseExpr;
+	protected BooleanExpression falseExpr;
 
 	private int numStatesExplored = 1;
 
@@ -172,7 +172,7 @@ public class CommonStateManager implements StateManager {
 	 * @return the resulting trace step after executing the state.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private TraceStepIF<Transition, State> nextStateWork(State state,
+	protected TraceStepIF<Transition, State> nextStateWork(State state,
 			Transition transition) throws UnsatisfiablePathConditionException {
 		int pid;
 		int numProcs;
@@ -187,14 +187,12 @@ public class CommonStateManager implements StateManager {
 		int startStateId = state.getCanonicId();
 		int sequenceId = 1;
 
-		assert transition instanceof Transition;
-		pid = ((Transition) transition).pid();
+		pid = transition.pid();
 		process = "p" + pid;
 		traceStep = new CommonTraceStep(pid);
 		firstTransition = (Transition) transition;
 		if (state.getProcessState(pid).getLocation().enterAtom())
 			atomCount = 1;
-
 		if (firstTransition.statement().statementKind() == StatementKind.WITH) {
 			Pair<State, Integer> colstateAndPlace = executor
 					.executeWithStatement(state, pid,

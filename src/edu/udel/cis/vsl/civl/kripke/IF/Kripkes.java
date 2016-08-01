@@ -40,11 +40,13 @@ public class Kripkes {
 	 * @return The new enabler created.
 	 */
 	public static Enabler newEnabler(StateFactory stateFactory,
-			Evaluator evaluator, SymbolicAnalyzer symbolicAnalyzer,
-			MemoryUnitFactory memUnitFactory, LibraryEnablerLoader libLoader,
-			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig) {
-		return new PointeredEnabler(stateFactory, evaluator, symbolicAnalyzer,
-				memUnitFactory, libLoader, errorLogger, civlConfig);
+			Evaluator evaluator, Executor executor,
+			SymbolicAnalyzer symbolicAnalyzer, MemoryUnitFactory memUnitFactory,
+			LibraryEnablerLoader libLoader, CIVLErrorLogger errorLogger,
+			CIVLConfiguration civlConfig) {
+		return new PointeredEnabler(stateFactory, evaluator, executor,
+				symbolicAnalyzer, memUnitFactory, libLoader, errorLogger,
+				civlConfig);
 	}
 
 	/**

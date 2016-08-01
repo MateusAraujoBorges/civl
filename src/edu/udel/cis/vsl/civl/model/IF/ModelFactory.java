@@ -53,6 +53,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.ScopeofExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SelfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SizeofExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SizeofTypeExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.StateExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.StatenullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
@@ -381,6 +382,8 @@ public interface ModelFactory {
 	 * @return the new <code>$state_null</code> constant expression
 	 */
 	StatenullExpression statenullExpression(CIVLSource source);
+
+	StateExpression stateExpression(CIVLSource source, Scope scope, int id);
 
 	/**
 	 * Creates a new quantified expression.
@@ -1033,6 +1036,10 @@ public interface ModelFactory {
 	 */
 	UpdateStatement updateStatement(CIVLSource source, Location srcLoc,
 			Expression guard, Expression collator, CallOrSpawnStatement call);
+
+	UpdateStatement updateStatement(CIVLSource source, Location srcLoc,
+			Expression guard, Expression collator, CIVLFunction function,
+			Expression[] arguments);
 
 	/*
 	 * *********************************************************************
@@ -1849,4 +1856,18 @@ public interface ModelFactory {
 	 */
 	WithStatement withStatement(CIVLSource source, Location srcLoc,
 			LHSExpression colStateExpr, boolean isEnter);
+
+	/**
+	 * creates a new instance of $with statement.
+	 * 
+	 * @param source
+	 *            the source code information
+	 * @param colStateExpr
+	 *            the lvalue expression that represents the collate state
+	 * @param function
+	 *            the function to be executed
+	 * @return the new $with statement
+	 */
+	WithStatement withStatement(CIVLSource source, Location srcLoc,
+			Expression colStateExpr, CIVLFunction function);
 }

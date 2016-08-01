@@ -1703,7 +1703,7 @@ public class CommonExecutor implements Executor {
 	@Override
 	public Pair<State, Integer> executeWithStatement(State state, int pid,
 			WithStatement with) throws UnsatisfiablePathConditionException {
-		LHSExpression collateStateExpr = with.collateState();
+		LHSExpression collateStateExpr = (LHSExpression) with.collateState();
 		CIVLSource csSource = collateStateExpr.getSource();
 		String process = state.getProcessState(pid).name();
 

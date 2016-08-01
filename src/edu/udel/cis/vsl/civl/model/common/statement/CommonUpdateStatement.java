@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.model.common.statement;
 import java.util.HashSet;
 import java.util.Set;
 
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
@@ -19,14 +20,25 @@ public class CommonUpdateStatement extends CommonStatement
 
 	private Expression collator;
 
-	private CallOrSpawnStatement call;
+	private CIVLFunction function;
+
+	private Expression[] arguments;
 
 	public CommonUpdateStatement(CIVLSource source, Location sourceLoc,
 			Expression guard, Expression collator, CallOrSpawnStatement call) {
 		super(source, collator.expressionScope(), collator.lowestScope(),
 				sourceLoc, guard);
 		this.collator = collator;
-		this.call = call;
+	}
+
+	public CommonUpdateStatement(CIVLSource source, Location sourceLoc,
+			Expression guard, Expression collator, CIVLFunction function,
+			Expression[] arguments) {
+		super(source, collator.expressionScope(), collator.lowestScope(),
+				sourceLoc, guard);
+		this.collator = collator;
+		this.function = function;
+		this.arguments = arguments;
 	}
 
 	@Override
@@ -34,7 +46,7 @@ public class CommonUpdateStatement extends CommonStatement
 			Expression newExpression) {
 		Expression newGuard = this.guard().replaceWith(oldExpression,
 				newExpression), newCollator = collator;
-		CallOrSpawnStatement newCall = call;
+		Expression[] newArgs = this.arguments;
 		boolean hasNew = false;
 
 		if (newGuard != null)
@@ -49,13 +61,24 @@ public class CommonUpdateStatement extends CommonStatement
 				newCollator = collator;
 		}
 		if (!hasNew) {
-			newCall = call.replaceWith(oldExpression, newExpression);
-			if (newCall != null)
-				hasNew = true;
+			int numArgs = arguments.length;
+
+			newArgs = new Expression[numArgs];
+			for (int i = 0; i < numArgs; i++) {
+				Expression newArg = arguments[i].replaceWith(oldExpression,
+						newExpression);
+
+				if (newArg != null) {
+					hasNew = true;
+					break;
+				} else
+					newArg = arguments[i];
+				newArgs[i] = newArg;
+			}
 		}
 		if (hasNew)
 			return new CommonUpdateStatement(this.getSource(), this.source(),
-					this.guard(), newCollator, newCall);
+					this.guard(), newCollator, function, newArgs);
 		return null;
 	}
 
@@ -66,8 +89,11 @@ public class CommonUpdateStatement extends CommonStatement
 
 		if (subResult != null)
 			result.addAll(subResult);
-		subResult = call.variableAddressedOf(scope);
-		result.addAll(call.variableAddressedOf(scope));
+		for (Expression arg : arguments) {
+			subResult = arg.variableAddressedOf(scope);
+			if (subResult != null)
+				result.addAll(subResult);
+		}
 		if (result.size() > 0)
 			return result;
 		return null;
@@ -80,8 +106,11 @@ public class CommonUpdateStatement extends CommonStatement
 
 		if (subResult != null)
 			result.addAll(subResult);
-		subResult = call.variableAddressedOf();
-		result.addAll(call.variableAddressedOf());
+		for (Expression arg : arguments) {
+			subResult = arg.variableAddressedOf();
+			if (subResult != null)
+				result.addAll(subResult);
+		}
 		if (result.size() > 0)
 			return result;
 		return null;
@@ -99,13 +128,45 @@ public class CommonUpdateStatement extends CommonStatement
 
 	@Override
 	public CallOrSpawnStatement call() {
-		return call;
+		return null;
 	}
 
 	@Override
 	protected void calculateConstantValueWork(SymbolicUniverse universe) {
 		this.collator.calculateConstantValue(universe);
-		this.call.calculateConstantValue(universe);
+		for (Expression arg : arguments)
+			arg.calculateConstantValue(universe);
 	}
 
+	@Override
+	public CIVLFunction function() {
+		return this.function;
+	}
+
+	@Override
+	public Expression[] arguments() {
+		return this.arguments;
+	}
+
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		int numArgs = arguments.length;
+		boolean isFirst = true;
+
+		sb.append("$update (");
+		sb.append(collator);
+		sb.append(") ");
+		sb.append(function.name().name());
+		sb.append("(");
+		for (int i = 0; i < numArgs; i++) {
+			if (isFirst)
+				isFirst = false;
+			else
+				sb.append(", ");
+			sb.append(arguments[i]);
+		}
+		sb.append(")");
+		return sb.toString();
+	}
 }
