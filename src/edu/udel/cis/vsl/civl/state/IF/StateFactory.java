@@ -900,7 +900,31 @@ public interface StateFactory {
 	 * @return The new state which is obtained by combine combining state and
 	 *         the monoState.
 	 */
-	State combineStates(State state, State monoState, int newPid);
+	State addInternalProcess(State state, State monoState, int newPid);
+
+	/**
+	 * <p>
+	 * Combines a process from the given real state to the given collate state
+	 * as an extenal process.
+	 * </p>
+	 * 
+	 * @param colState
+	 *            The collate state
+	 * @param realState
+	 *            The real state
+	 * @param pid
+	 *            The PID of the calling process
+	 * @param place
+	 *            The place of the corresponding internal process
+	 * @param withOrUpdate
+	 *            The function translated from $with or $update
+	 * @param argumentValues
+	 *            An array of values for arguments of the withOrUpdate function
+	 * @return
+	 */
+	State addExternalProcess(State colState, State realState, int pid,
+			int place, CIVLFunction withOrUpdate,
+			SymbolicExpression[] argumentValues[]);
 
 	/**
 	 * Creates an empty state which contains no dyscopes but an array of process

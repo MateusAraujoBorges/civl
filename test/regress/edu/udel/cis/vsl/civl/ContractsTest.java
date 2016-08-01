@@ -45,6 +45,24 @@ public class ContractsTest {
 				filename("contractsMPI/simpleGuard.c")));
 	}
 
+	@Test
+	public void mpiAgree() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract",
+				filename("contractsMPI/simpleMpiAgree.c")));
+	}
+
+	@Test
+	public void mpiRegion() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract",
+				filename("contractsMPI/simpleMpiRegion.c")));
+	}
+
+	@Test
+	public void mpiOffset() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract",
+				filename("contractsMPI/simpleMpiOffset.c")));
+	}
+
 	// @Test
 	// public void seq_sum() {
 	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,

@@ -1,40 +1,32 @@
 package edu.udel.cis.vsl.civl.library.mpi;
 
-import java.util.BitSet;
-
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
-import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
+import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
-import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
-import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior;
-import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
-import edu.udel.cis.vsl.civl.model.IF.contract.NamedFunctionBehavior;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.state.IF.CollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableCollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
@@ -188,386 +180,23 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 				.mpiContractKind();
 
 		switch (mpiContractKind) {
-			case MPI_EMPTY_IN :
-				return evaluateMPIEmptyExpression(state, pid, process,
-						expression, false);
-			case MPI_EMPTY_OUT :
-				return evaluateMPIEmptyExpression(state, pid, process,
-						expression, true);
 			case MPI_AGREE :
 				return evaluateMPIAgreeExpression(state, pid, process,
 						expression);
 			case MPI_EQUALS :
-				return evaluateMPIEqualsExpression(state, pid, process,
-						expression);
+				return evaluateMPIEquals(state, pid, process, expression);
+			case MPI_EXTENT :
+				return evaluateMPIExtent(state, pid, process, expression);
+			case MPI_OFFSET :
+				return evaluateMPIOffset(state, pid, process, expression);
+			case MPI_REGION :
+				return evaluateMPIRegion(state, pid, process, expression);
+			case MPI_VALID :
+				return evaluateMPIValid(state, pid, process, expression);
 			default :
 				throw new CIVLInternalException("Unreachable",
 						expression.getSource());
 		}
-	}
-
-	/**
-	 * <p>
-	 * <b>Notes for pre-condition:</b> This method doesn't requires that all
-	 * DESIRED processes already committed their snapshots, this should be
-	 * guaranteed by the caller of this method.
-	 * </p>
-	 * <p>
-	 * <b>Summary:</b> Partial collective evaluation on a set of expressions E.
-	 * </p>
-	 * <p>
-	 * <b>Details:</b> This method first looks for a corresponding WAITSFOR
-	 * collective entry. If e exists, the evaluation of the expression happens
-	 * on a merged state s which consists of all saved snapshots in entry.
-	 * Snapshots of unrecorded processes are taken from the current state. If e
-	 * not exists, a state s' will be created by replacing PIDs with Places of
-	 * processes in MPI communicator in the current state.
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The PID of the current process
-	 * @param process
-	 *            The String identifier of the process
-	 * @param expression
-	 *            The expression e in E that will evaluate (partial)
-	 *            collectively.
-	 * @param mpiComm
-	 *            The MPI communicator associates to this partial collective
-	 *            evaluation.
-	 * @return The results of the evaluation.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	public Evaluation partialCollectiveEvaluate(State state, int pid,
-			String process, Expression expression, Expression mpiComm)
-			throws UnsatisfiablePathConditionException {
-		// Find out the top unrecorded WAITSFOR entry first, it no such entry,
-		// just do regular evaluation:
-		Evaluation eval = evaluator.evaluate(state, pid, mpiComm);
-		Pair<NumericExpression, NumericExpression> place_queueId;
-		ImmutableCollectiveSnapshotsEntry[] queue;
-		ImmutableCollectiveSnapshotsEntry entry = null;
-		SymbolicExpression mpiCommVal;
-		boolean foundEntry = false;
-		int place, queueId;
-		int[] place2Pids;
-		Pair<SymbolicExpression, Integer> procArray;
-
-		state = eval.state;
-		mpiCommVal = eval.value;
-		place_queueId = getPlaceAndQueueIDFromMPIComm(state, pid, process,
-				mpiComm, mpiCommVal, mpiComm.getSource());
-		place = ((IntegerNumber) universe.extractNumber(place_queueId.left))
-				.intValue();
-		queueId = ((IntegerNumber) universe.extractNumber(place_queueId.right))
-				.intValue();
-		queue = stateFactory.getSnapshotsQueue(state, queueId);
-		for (int i = 0; i < queue.length; i++) {
-			entry = queue[i];
-			if (entry.contractKind() == ContractKind.WAITSFOR
-					&& !entry.isRecorded(place)) {
-				foundEntry = true;
-				break;
-			}
-		}
-		procArray = getProcArrayFromMPIComm(state, pid, process, mpiComm,
-				mpiCommVal, mpiComm.getSource());
-		place2Pids = new int[procArray.right];
-		for (int i = 0; i < procArray.right; i++) {
-			place2Pids[i] = modelFactory.getProcessId(mpiComm.getSource(),
-					universe.arrayRead(procArray.left, universe.integer(i)));
-		}
-		if (!foundEntry) {
-			// if not found an entry, the state still needs to be modified so
-			// that PIDs in it are same as places in MPI communicators:
-			State evalState = stateFactory.updateProcessesForState(state,
-					place2Pids);
-
-			eval = evaluator.evaluate(evalState, place, expression);
-			eval.state = state;
-			return eval;
-		} else {
-			State mergedState;
-
-			mergedState = stateFactory.partialMergeMonostates(state, entry,
-					place2Pids);
-			eval = evaluator.evaluate(mergedState, place, expression);
-			eval.state = state;
-			return eval;
-		}
-	}
-
-	/**
-	 * <p>
-	 * <b>Summary:</b> Evaluates whether all "waitsfor" clauses specified in the
-	 * {@link FunctionContract} are satisfied at the current state for the
-	 * current process.
-	 * </p>
-	 * 
-	 * <p>
-	 * <b>Details:</b> "waitsfor" clauses specifies a set of MPI processes WP
-	 * that the current process needs to wait before it can continue executing.
-	 * The evaluation on "waitsfor" clauses is partial collective evaluation:
-	 * <ol>
-	 * <li>If there is no "waitsfor" clause corresponding to the current process
-	 * (there is no "waitsfor" clause or they are under a named-behavior whose
-	 * assumption is unsatisfied for the current process), the evaluation is
-	 * true.</li>
-	 * <li>Else if there is only one MPI process wp denoted by all corresponding
-	 * "waitsfor" clauses and <code>wp == current process</code>, the evaluation
-	 * is true.</li>
-	 * <li>Else if there is a "WAITSFOR" collective entry in the snapshot queue
-	 * and a set of MPI processes P has been recorded on the entry. If
-	 * <code>P == WP</code>, the evaluation is true</li>
-	 * <li>Otherwise, the evaluation is false.</li>
-	 * </ol>
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The current PID
-	 * @param process
-	 *            The String identifier of the process
-	 * @param contracts
-	 *            The {@link FunctionContracts} of the given function
-	 * @param function
-	 *            The function who owns the function contracts
-	 * @return A boolean expression which indicates whether the aforementioned
-	 *         conditions are satisfied.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	public Evaluation evaluateMPIWaitsfor(State state, int pid, String process,
-			FunctionContract contracts, CIVLFunction function)
-			throws UnsatisfiablePathConditionException {
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		boolean result = true;
-		Evaluation eval;
-
-		// found the entry first:
-		for (MPICollectiveBehavior collective : contracts.getMPIBehaviors()) {
-			Pair<NumericExpression, NumericExpression> place_queueId;
-			int place, queueId;
-			CollectiveSnapshotsEntry[] queue;
-			CollectiveSnapshotsEntry entry = null;
-			boolean foundEntry = false;
-			boolean subResult = true;
-			BitSet wfClausesInCollective;
-			Expression MPIComm = collective.communicator();
-
-			eval = evaluator.evaluate(state, pid, MPIComm);
-			state = eval.state;
-			place_queueId = getPlaceAndQueueIDFromMPIComm(state, pid, process,
-					MPIComm, eval.value, MPIComm.getSource());
-			place = ((IntegerNumber) reasoner
-					.extractNumber((NumericExpression) place_queueId.left))
-							.intValue();
-			queueId = ((IntegerNumber) reasoner
-					.extractNumber((NumericExpression) place_queueId.right))
-							.intValue();
-			queue = stateFactory.getSnapshotsQueue(state, queueId);
-			for (int i = 0; i < queue.length; i++) {
-				entry = queue[i];
-				if (entry.contractKind() == ContractKind.WAITSFOR
-						&& !entry.isRecorded(place)) {
-					foundEntry = true;
-					break;
-				}
-			}
-			wfClausesInCollective = getWaitsforPlacesIn(collective, state, pid);
-			if (wfClausesInCollective.cardinality() == 0)
-				continue;
-			if (wfClausesInCollective.cardinality() == 1
-					&& place == wfClausesInCollective.nextSetBit(0))
-				continue;
-			if (foundEntry) {
-				for (int i = wfClausesInCollective.nextSetBit(
-						0); i >= 0; i = wfClausesInCollective.nextSetBit(i + 1))
-					subResult &= entry.isRecorded(i) || i == place;
-				result &= subResult;
-			} else
-				// If there is no entry (and the current process is not the only
-				// waited one), blocks:
-				return new Evaluation(state, universe.falseExpression());
-			if (!result)
-				return new Evaluation(state, universe.falseExpression());
-		}
-		return new Evaluation(state, universe.bool(result));
-	}
-
-	/**
-	 * <p>
-	 * <b>Summary: </b> Evaluates \mpi_empty_in(int src) / \mpi_empty_out(int
-	 * dest) expression (both accept wild card argument which means for all
-	 * sources (src) or destinations (dest)).
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The PID of the process
-	 * @param process
-	 *            The String of the process identifier
-	 * @param expression
-	 *            The {@link MPIContractExpression} expression
-	 * @param isOut
-	 *            flag indicates weather it's a \mpi_empty_out or \mpi_empty_in
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation evaluateMPIEmptyExpression(State state, int pid,
-			String process, MPIContractExpression expression, boolean isOut)
-			throws UnsatisfiablePathConditionException {
-		Expression communicator = expression.communicator();
-		Expression argument = expression.arguments()[0];
-		Evaluation eval;
-		Pair<NumericExpression, NumericExpression> place_queueId;
-		// The reason why the types of the values of the only argument and place
-		// is array type is in case of wild-card argument which represents a set
-		// of values:
-		NumericExpression argVals[], place[], queueId;
-		int queueIdInt;
-		NumericExpression patternIndex = expression
-				.getMpiCommunicationPattern() == MPICommunicationPattern.P2P
-						? p2pCommIndexValue
-						: colCommIndexValue;
-
-		place = new NumericExpression[1];
-		eval = evaluator.evaluate(state, pid, communicator);
-		state = eval.state;
-		place_queueId = getPlaceAndQueueIDFromMPIComm(state, pid, process,
-				communicator, eval.value, communicator.getSource());
-		place[0] = place_queueId.left;
-		queueId = place_queueId.right;
-		assert universe.extractNumber(queueId) != null;
-		queueIdInt = ((IntegerNumber) universe.extractNumber(queueId))
-				.intValue();
-		assert argument.getExpressionType().isIntegerType();
-		argVals = deterministicalizeMsgSourceOrDest(state, pid, queueIdInt,
-				argument);
-		if (isOut)
-			return evaluateBufferEmptyExpression(state, pid, place, argVals,
-					queueIdInt, patternIndex, expression.getSource());
-		else
-			return evaluateBufferEmptyExpression(state, pid, argVals, place,
-					queueIdInt, patternIndex, expression.getSource());
-	}
-
-	/**
-	 * <p>
-	 * <b>Summary:</b> A helper method for
-	 * {@link #evaluateMPIEmptyExpression(State, int, String, MPIContractExpression, boolean)}
-	 * . This method has no idea about weather it's "empty_in" or "empty_out".
-	 * </p>
-	 * 
-	 * @param state
-	 *            The state on where the evaluation happens
-	 * @param pid
-	 *            The PID of the process
-	 * @param msgSrcs
-	 *            Values representing the source place, only one value if it's
-	 *            not a wild-card
-	 * @param msgDests
-	 *            Values representing the destination place, only one value if
-	 *            it's not a wild-card
-	 * @param patternIndex
-	 *            The index indicating which MPI communication pattern is the
-	 *            message buffer belong to.
-	 * @param source
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation evaluateBufferEmptyExpression(State state, int pid,
-			NumericExpression[] msgSrcs, NumericExpression[] msgDests,
-			int queueId, NumericExpression patternIndex, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
-		SymbolicExpression msgBuffers;
-		BooleanExpression claim = trueValue, subClaim;
-
-		msgBuffers = stateFactory.peekCollectiveSnapshotsEntry(state, queueId)
-				.getMsgBuffers();
-		for (int i = 0; i < msgSrcs.length; i++)
-			for (int j = 0; j < msgDests.length; j++, claim = universe
-					.and(claim, subClaim))
-				subClaim = messageBufferEmpty(state, msgSrcs[i], msgDests[j],
-						msgBuffers, patternIndex);
-		return new Evaluation(state, claim);
-	}
-
-	/**
-	 * <p>
-	 * <b>Summary:</b> A helper method. In case of the message source or
-	 * destination expression e has a wild-card value, this helper method
-	 * returns all deterministic values of e as an array.
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The PID of the current process
-	 * @param queueId
-	 *            The Snapshots queue Id (A.K.A the index of a MPI
-	 *            communicator).
-	 * @param srcOrDest
-	 *            The expression represents the message source or destionation.
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private NumericExpression[] deterministicalizeMsgSourceOrDest(State state,
-			int pid, int queueId, Expression srcOrDest)
-			throws UnsatisfiablePathConditionException {
-		NumericExpression results[];
-		if (srcOrDest.expressionKind() == ExpressionKind.WILDCARD) {
-			CollectiveSnapshotsEntry entry = stateFactory
-					.peekCollectiveSnapshotsEntry(state, queueId);
-			int nprocs = entry.numInvolvedProcesses();
-
-			results = new NumericExpression[nprocs];
-			for (int i = 0; i < nprocs; i++)
-				results[i] = universe.integer(i);
-		} else {
-			Evaluation eval = evaluator.evaluate(state, pid, srcOrDest);
-
-			assert srcOrDest.getExpressionType().isIntegerType();
-			results = new NumericExpression[1];
-			results[0] = (NumericExpression) eval.value;
-		}
-		return results;
-	}
-
-	/**
-	 * <p>
-	 * <b>Summary:</b> A helper method for generating a boolean expression which
-	 * expresses the property that a message buffer, which specified by a given
-	 * source, destination and communication pattern, is empty.
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state;
-	 * @param msgSrc
-	 *            The message source value
-	 * @param msgDest
-	 *            The message destination value;
-	 * @param msgBuffers
-	 *            The value of the whole message buffers (which is a matrix)
-	 * @param patternIndex
-	 *            The index indicating which MPI communication pattern is the
-	 *            message buffer belong to.
-	 * @return
-	 */
-	private BooleanExpression messageBufferEmpty(State state,
-			NumericExpression msgSrc, NumericExpression msgDest,
-			SymbolicExpression msgBuffers, NumericExpression patternIndex) {
-		SymbolicExpression msgBuffer, msgChannel;
-		BooleanExpression claim;
-
-		msgBuffer = universe.arrayRead(msgBuffers, patternIndex);
-		msgChannel = universe.arrayRead(universe.arrayRead(msgBuffer, msgSrc),
-				msgDest);
-		claim = universe.equals(universe.tupleRead(msgChannel, zeroObject),
-				zero);
-		return claim;
 	}
 
 	/**
@@ -642,30 +271,40 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 	private Evaluation evaluateMPIRegion(State state, int pid, String process,
 			MPIContractExpression expression)
 			throws UnsatisfiablePathConditionException {
-		Expression buf = expression.arguments()[0];
-		Expression count = expression.arguments()[1];
-		Expression datatype = expression.arguments()[2];
-		SymbolicExpression bufVal, countVal, datatypeVal, data;
-		int datatypeCode;
+		Expression ptrExpr = expression.arguments()[0];
+		Expression countExpr = expression.arguments()[1];
+		Expression datatypeExpr = expression.arguments()[2];
+		SymbolicExpression buf;
+		NumericExpression count, realCount, datatype;
 		Evaluation eval;
 
-		eval = evaluator.evaluate(state, pid, buf);
+		eval = evaluator.evaluate(state, pid, ptrExpr);
 		state = eval.state;
-		bufVal = eval.value;
-		eval = evaluator.evaluate(state, pid, count);
+		buf = eval.value;
+		eval = evaluator.evaluate(state, pid, countExpr);
 		state = eval.state;
-		countVal = eval.value;
-		eval = evaluator.evaluate(state, pid, datatype);
+		count = (NumericExpression) eval.value;
+		eval = evaluator.evaluate(state, pid, datatypeExpr);
 		state = eval.state;
-		datatypeVal = eval.value;
+		datatype = (NumericExpression) eval.value;
 
-		// TODO: report error for non-concrete datatype
-		datatypeCode = ((IntegerNumber) universe
-				.extractNumber((NumericExpression) datatypeVal)).intValue();
-		eval = getDataFrom(state, pid, process, buf, bufVal,
-				(NumericExpression) countVal, true, false,
-				expression.getSource());
-		// TODO: check type consistency
+		Pair<SymbolicExpression, NumericExpression> mpiPtr_datatypeSize;
+		SymbolicExpression mpiPtr;
+
+		mpiPtr_datatypeSize = processMPIPointer(state, pid, process, ptrExpr,
+				buf, datatypeExpr, datatype, expression.getSource());
+		realCount = universe.multiply(count, mpiPtr_datatypeSize.right);
+		mpiPtr = mpiPtr_datatypeSize.left;
+		eval = getDataFrom(state, pid, process, ptrExpr, mpiPtr, realCount,
+				false, false, expression.getSource());
+		state = eval.state;
+		// getDataFrom always return a sequence of objects (i.e. an array of
+		// objects), but here if the count is equal to one, the receiver is
+		// expecting a single object:
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+
+		if (reasoner.isValid(universe.equals(one, universe.length(eval.value))))
+			eval.value = universe.arrayRead(eval.value, zero);
 		return eval;
 	}
 
@@ -687,17 +326,17 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation evaluateMPIEqualsExpression(State state, int pid,
-			String process, MPIContractExpression expression)
+	private Evaluation evaluateMPIEquals(State state, int pid, String process,
+			MPIContractExpression expression)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression values[] = new SymbolicExpression[4];
+		SymbolicExpression ptr0, ptr1;
+		NumericExpression count, mpiDatatype;
 		Evaluation eval;
-		SymbolicExpression result0, result1;
+		SymbolicExpression data0, data1;
 		BooleanExpression result;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		int count;
-		Number countNum;
-		CIVLSource source = expression.getSource();
+		Pair<SymbolicExpression, NumericExpression> mpiPtr_datatypeSize0,
+				mpiPtr_datatypeSize1;
 
 		// \mpi_equals() takes 4 arguments: pointer0, count, datatype, pointer1:
 		for (int i = 0; i < 4; i++) {
@@ -705,161 +344,299 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 			state = eval.state;
 			values[i] = eval.value;
 		}
-		countNum = reasoner.extractNumber((NumericExpression) values[1]);
-		if (countNum == null)
-			throw new CIVLInternalException(
-					"Value of expression: " + expression.arguments()[2]
-							+ "are expecting to be elaborated to concrete",
-					expression.arguments()[2].getSource());
-		count = ((IntegerNumber) countNum).intValue();
-		// Offset = 0:
-		eval = evaluator.dereference(source, state, process,
-				expression.arguments()[0], values[0], false);
-		result0 = eval.value;
-		eval = evaluator.dereference(source, state, process,
-				expression.arguments()[3], values[3], false);
-		result1 = eval.value;
-		result = universe.equals(result0, result1);
-		// Offset > 0:
-		for (int i = 1; i < count; i++) {
-			eval = evaluator.evaluatePointerAdd(state, process, values[0],
-					universe.integer(i), false, source).left;
-			eval = evaluator.dereference(expression.getSource(), state, process,
-					expression.arguments()[0], eval.value, false);
-			result0 = eval.value;
-			eval = evaluator.evaluatePointerAdd(state, process, values[3],
-					universe.integer(i), false, source).left;
-			eval = evaluator.dereference(expression.getSource(), state, process,
-					expression.arguments()[3], eval.value, false);
-			result1 = eval.value;
-			result = universe.and(result, universe.equals(result0, result1));
-		}
-		return new Evaluation(state, result);
+		count = (NumericExpression) values[1];
+		mpiDatatype = (NumericExpression) values[2];
+		mpiPtr_datatypeSize0 = processMPIPointer(state, pid, process,
+				expression.arguments()[0], values[0], expression.arguments()[2],
+				mpiDatatype, expression.getSource());
+		mpiPtr_datatypeSize1 = processMPIPointer(state, pid, process,
+				expression.arguments()[3], values[3], expression.arguments()[2],
+				mpiDatatype, expression.getSource());
+		ptr0 = mpiPtr_datatypeSize0.left;
+		ptr1 = mpiPtr_datatypeSize1.left;
+
+		NumericExpression realCount = universe.multiply(count,
+				mpiPtr_datatypeSize0.right);
+
+		eval = getDataFrom(state, pid, process, expression.arguments()[0], ptr0,
+				realCount, false, false, expression.getSource());
+		state = eval.state;
+		data0 = eval.value;
+		eval = getDataFrom(state, pid, process, expression.arguments()[3], ptr1,
+				realCount, false, false, expression.getSource());
+		state = eval.state;
+		data1 = eval.value;
+
+		result = universe.equals(data0, data1);
+		eval.value = result;
+		return eval;
+		// countNum = reasoner.extractNumber((NumericExpression) values[1]);
+		// if (countNum == null)
+		// throw new CIVLInternalException(
+		// "Value of expression: " + expression.arguments()[2]
+		// + "are expecting to be elaborated to concrete",
+		// expression.arguments()[2].getSource());
+		// count = ((IntegerNumber) countNum).intValue();
+		// // Offset = 0:
+		// eval = evaluator.dereference(source, state, process,
+		// expression.arguments()[0], values[0], false);
+		// result0 = eval.value;
+		// eval = evaluator.dereference(source, state, process,
+		// expression.arguments()[3], values[3], false);
+		// result1 = eval.value;
+		// result = universe.equals(result0, result1);
+		// // Offset > 0:
+		// for (int i = 1; i < count; i++) {
+		// eval = evaluator.evaluatePointerAdd(state, process, values[0],
+		// universe.integer(i), false, source).left;
+		// eval = evaluator.dereference(expression.getSource(), state, process,
+		// expression.arguments()[0], eval.value, false);
+		// result0 = eval.value;
+		// eval = evaluator.evaluatePointerAdd(state, process, values[3],
+		// universe.integer(i), false, source).left;
+		// eval = evaluator.dereference(expression.getSource(), state, process,
+		// expression.arguments()[3], eval.value, false);
+		// result1 = eval.value;
+		// result = universe.and(result, universe.equals(result0, result1));
+		// }
+		// return new Evaluation(state, result);
 	}
 
 	/**
 	 * <p>
-	 * <b>Summary: </b> Helper method. Returns a union bit set of all waiting
-	 * MPI processes specified by a {@link MPICollectiveBehavior}. If a set of
-	 * waiting processes are specified under an unsatisfiable
-	 * {@link NamedFunctionBehavior}, they will not be unioned.
+	 * An MPI_Valid expression will evaluates to true if and only if the given
+	 * pointer points to a sequence of objects that satisfiy the given type
+	 * signiture.
 	 * </p>
 	 * 
-	 * @param colBehav
-	 *            The {@link MPICollectiveBehavior}
 	 * @param state
-	 *            The current state
+	 *            The program state when this expression evaluates
 	 * @param pid
-	 *            The PID of the process
+	 *            The PID of the calling process
+	 * @param process
+	 *            The String identifier of the calling process
+	 * @param expression
+	 *            The {@link MPIContractExpression} which represents an
+	 *            MPI_Valid expression.
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private BitSet getWaitsforPlacesIn(MPICollectiveBehavior colBehav,
-			State state, int pid) throws UnsatisfiablePathConditionException {
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		BitSet wfSet = new BitSet();
+	private Evaluation evaluateMPIValid(State state, int pid, String process,
+			MPIContractExpression expression)
+			throws UnsatisfiablePathConditionException {
+		Expression ptrExpr = expression.arguments()[0];
+		Expression countExpr = expression.arguments()[1];
+		Expression datatypeExpr = expression.arguments()[2];
+		SymbolicExpression ptr;
+		NumericExpression count, datatype, realCount;
+		BooleanExpression result;
 		Evaluation eval;
 
-		if (!colBehav.getWaitsforList().isEmpty())
-			for (Expression wfSetExpr : colBehav.getWaitsforList()) {
-				eval = evaluator.evaluate(state, pid, wfSetExpr);
-				state = eval.state;
-				wfSet.or(symbolicUtil.range2BitSet(eval.value, reasoner));
-			}
-		for (NamedFunctionBehavior namedBehav : colBehav.namedBehaviors()) {
-			BooleanExpression assumptionsVal;
+		eval = evaluator.evaluate(state, pid, ptrExpr);
+		state = eval.state;
+		ptr = eval.value;
+		eval = evaluator.evaluate(state, pid, countExpr);
+		state = eval.state;
+		count = (NumericExpression) eval.value;
+		eval = evaluator.evaluate(state, pid, datatypeExpr);
+		state = eval.state;
+		datatype = (NumericExpression) eval.value;
 
-			eval = evaluator.evaluate(state, pid, namedBehav.assumptions());
-			state = eval.state;
-			assumptionsVal = (BooleanExpression) eval.value;
-			if (reasoner.isValid(assumptionsVal))
-				if (!namedBehav.getWaitsforList().isEmpty()) {
-					for (Expression wfSetExpr : namedBehav.getWaitsforList()) {
-						eval = evaluator.evaluate(state, pid, wfSetExpr);
-						state = eval.state;
-						wfSet.or(symbolicUtil.range2BitSet(eval.value,
-								reasoner));
-					}
-				}
-		}
-		return wfSet;
+		// Currently the valid checking is done by this:
+		// 1. The object type pointed by the given pointer must be consistent
+		// with the given datatype;
+		// 2. The given pointer is dereferable;
+		// 3. The given pointer added with (count * \mpi_extent(datatype)) is
+		// dereferable.
+		Pair<SymbolicExpression, NumericExpression> mpiPtr_datatypeSize;
+
+		mpiPtr_datatypeSize = processMPIPointer(state, pid, process, ptrExpr,
+				ptr, datatypeExpr, datatype, expression.getSource());
+		realCount = universe.multiply(count, mpiPtr_datatypeSize.right);
+		eval = evaluator.evaluatePointerAdd(state, process,
+				mpiPtr_datatypeSize.left, realCount, false,
+				expression.getSource()).left;
+		state = eval.state;
+		result = symbolicAnalyzer.isDerefablePointer(state,
+				mpiPtr_datatypeSize.left).left;
+		result = universe.and(result,
+				symbolicAnalyzer.isDerefablePointer(state, eval.value).left);
+		eval.value = result;
+		return eval;
 	}
 
 	/**
 	 * <p>
-	 * <b>Summary:</b> A helper function: Returns the place field and the
-	 * message buffer field by accessing through a $comm handle.
+	 * An MPI_Extent(datatype) expression will evaluates to the size of an given
+	 * MPI_Datatype in number of bytes.
 	 * </p>
 	 * 
 	 * @param state
-	 *            The current state
+	 *            The program state when this expression evaluates
 	 * @param pid
-	 *            The PID of the process
+	 *            The PID of the calling process
+	 * @param process
+	 *            The String identifier of the calling process
+	 * @param expression
+	 *            The {@link MPIContractExpression} which represents an
+	 *            MPI_Extent expression.
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation evaluateMPIExtent(State state, int pid, String process,
+			MPIContractExpression expression)
+			throws UnsatisfiablePathConditionException {
+		Expression datatypeExpr = expression.arguments()[0];
+		NumericExpression datatype; // Enumerator
+		Evaluation eval;
+
+		eval = evaluator.evaluate(state, pid, datatypeExpr);
+		state = eval.state;
+		datatype = (NumericExpression) eval.value;
+
+		Number datatypeEnumNumber = universe
+				.extractNumber((NumericExpression) datatype);
+		Pair<CIVLPrimitiveType, NumericExpression> mpiTypeTranslation;
+		int datatypeEnum;
+
+		if (datatypeEnumNumber == null)
+			throw new CIVLInternalException(
+					"MPI_Datatype is a concrete enumerator",
+					datatypeExpr.getSource());
+		datatypeEnum = ((IntegerNumber) datatypeEnumNumber).intValue();
+		mpiTypeTranslation = LibmpiEvaluator.mpiTypeToCIVLType(universe,
+				typeFactory, datatypeEnum, datatypeExpr.getSource());
+		eval = evaluator.evaluateSizeofType(expression.getSource(), state, pid,
+				mpiTypeTranslation.left);
+		eval.value = universe.multiply((NumericExpression) eval.value,
+				mpiTypeTranslation.right);
+		return eval;
+	}
+
+	/**
+	 * <p>
+	 * The MPI_Offset(ptr, count, datatype) expression semantically menas:
+	 * <code> (char *)ptr + count * \mpi_extent(datatype) </code>
+	 * </p>
+	 * 
+	 * @param state
+	 *            The program state when this expression evaluates
+	 * @param pid
+	 *            The PID of the calling process
+	 * @param process
+	 *            The String identifier of the calling process
+	 * @param expression
+	 *            The {@link MPIContractExpression} which represents an
+	 *            MPI_Offset expression.
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation evaluateMPIOffset(State state, int pid, String process,
+			MPIContractExpression expression)
+			throws UnsatisfiablePathConditionException {
+		Expression ptrExpr = expression.arguments()[0];
+		Expression countExpr = expression.arguments()[1];
+		Expression datatypeExpr = expression.arguments()[2];
+		SymbolicExpression ptr;
+		NumericExpression count, datatype;
+		Evaluation eval;
+
+		eval = evaluator.evaluate(state, pid, ptrExpr);
+		state = eval.state;
+		ptr = eval.value;
+		eval = evaluator.evaluate(state, pid, countExpr);
+		state = eval.state;
+		count = (NumericExpression) eval.value;
+		eval = evaluator.evaluate(state, pid, datatypeExpr);
+		state = eval.state;
+		datatype = (NumericExpression) eval.value;
+
+		Pair<SymbolicExpression, NumericExpression> mpiPtr_datatypeSize;
+
+		mpiPtr_datatypeSize = processMPIPointer(state, pid, process, ptrExpr,
+				ptr, datatypeExpr, datatype, expression.getSource());
+		return evaluator.evaluatePointerAdd(state, process,
+				mpiPtr_datatypeSize.left,
+				universe.multiply(count, mpiPtr_datatypeSize.right), false,
+				expression.getSource()).left;
+	}
+
+	/**
+	 * <p>
+	 * Checks if the type of the leaf node pointed by the given pointer 'ptr' on
+	 * the pointed object is consistnt with the given MPI_Datatype
+	 * 'mpiDatatype'.
+	 * 
+	 * Returns a pair of objects:
+	 * <ul>
+	 * <li><b>left</b>A new pointer which is obtained by replace the reference
+	 * expression of the given pointer with a new reference to the leaf node of
+	 * the pointed object. (e.g. int a[0]; &a is casted to &a[0])</li>
+	 * <li><b>right</b>The number of primitive types which compose the given
+	 * MPI_Datatype. (e.g. MPI_2INT is composed of 2 primitive types)</li>
+	 * </ul>
+	 * </p>
+	 * 
+	 * @param state
+	 *            The program state when this method is called
+	 * @param pid
+	 *            The PID of the calling process
 	 * @param process
 	 *            The String identifier of the process
-	 * @param MPIComm
-	 *            The Expression of the MPI communicator handle
-	 * @param MPICommVal
-	 *            The Symbolic Expression of the MPI communicator handle
-	 * @param source
-	 * @return
+	 * @param ptrExpr
+	 *            The {@link Expression} of the given pointer
+	 * @param ptr
+	 *            The value of the given pointer
+	 * @param mpiDatatypeExpr
+	 *            The {@link Expression} of MPI_Datatype
+	 * @param mpiDatatype
+	 *            The value of the MPI_Datatype.
+	 * @return a pair of objects:
+	 *         <ul>
+	 *         <li><b>left</b>A new pointer which is obtained by replace the
+	 *         reference expression of the given pointer with a new reference to
+	 *         the leaf node of the pointed object. (e.g. int a[0]; &a is casted
+	 *         to &a[0])</li>
+	 *         <li><b>right</b>The number of primitive types which compose the
+	 *         given MPI_Datatype. (e.g. MPI_2INT is composed of 2 primitive
+	 *         types)</li>
+	 *         </ul>
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Pair<NumericExpression, NumericExpression> getPlaceAndQueueIDFromMPIComm(
-			State state, int pid, String process, Expression MPIComm,
-			SymbolicExpression MPICommVal, CIVLSource source)
+	private Pair<SymbolicExpression, NumericExpression> processMPIPointer(
+			State state, int pid, String process, Expression ptrExpr,
+			SymbolicExpression ptr, Expression mpiDatatypeExpr,
+			NumericExpression mpiDatatype, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		Evaluation eval;
-		SymbolicExpression p2pComm, p2pCommHandle;
-		NumericExpression place, queueID;
+		ReferenceExpression baseRef = symbolicAnalyzer
+				.getMemBaseReference(state, ptr, source);
+		SymbolicExpression basePtr = symbolicUtil.makePointer(ptr, baseRef);
+		CIVLType leafNodeType = symbolicAnalyzer.typeOfObjByPointer(source,
+				state, basePtr);
+		Number mpiDatatype2Number;
+		int mpiDatatype2Concrete;
+		Pair<CIVLPrimitiveType, NumericExpression> mpiDatatypeTranslation;
 
-		queueID = (NumericExpression) universe.tupleRead(MPICommVal,
-				queueIDField);
-		p2pCommHandle = universe.tupleRead(MPICommVal, zeroObject);
-		eval = evaluator.dereference(source, state, process, MPIComm,
-				p2pCommHandle, false);
-		state = eval.state;
-		p2pComm = eval.value;
-		place = (NumericExpression) universe.tupleRead(p2pComm, zeroObject);
-		return new Pair<>(place, queueID);
-	}
+		mpiDatatype2Number = universe.extractNumber(mpiDatatype);
+		if (mpiDatatype2Number == null)
+			throw new CIVLInternalException(
+					"MPI_Datatype is a concrete enumerator", source);
+		mpiDatatype2Concrete = ((IntegerNumber) mpiDatatype2Number).intValue();
+		mpiDatatypeTranslation = LibmpiEvaluator.mpiTypeToCIVLType(universe,
+				typeFactory, mpiDatatype2Concrete, source);
+		if (!mpiDatatypeTranslation.left.equals(leafNodeType)) {
+			String ptrStr = symbolicAnalyzer.expressionEvaluation(state, pid,
+					ptrExpr, true).right;
+			String datatypeStr = symbolicAnalyzer.expressionEvaluation(state,
+					pid, mpiDatatypeExpr, true).right;
 
-	/**
-	 * <p>
-	 * <b>Summary: </b> A helper method, returns a symbolic process array and
-	 * the array length. The process array can be seen as a place-to-pid look up
-	 * table.
-	 * </p>
-	 * 
-	 * @param state
-	 * @param pid
-	 * @param process
-	 * @param MPIComm
-	 * @param MPICommVal
-	 * @param source
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Pair<SymbolicExpression, Integer> getProcArrayFromMPIComm(
-			State state, int pid, String process, Expression MPIComm,
-			SymbolicExpression MPICommVal, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
-		Evaluation eval;
-		SymbolicExpression p2pComm, p2pCommHandle, gcomm;
-		NumericExpression nprocs;
-		int nprocsInt;
-
-		p2pCommHandle = universe.tupleRead(MPICommVal, zeroObject);
-		eval = evaluator.dereference(source, state, process, MPIComm,
-				p2pCommHandle, false);
-		state = eval.state;
-		p2pComm = eval.value;
-		eval = evaluator.dereference(source, state, process, MPIComm,
-				universe.tupleRead(p2pComm, oneObject), false);
-		state = eval.state;
-		gcomm = eval.value;
-		nprocs = (NumericExpression) universe.tupleRead(gcomm, zeroObject);
-		nprocsInt = ((IntegerNumber) universe.extractNumber(nprocs)).intValue();
-		return new Pair<>(universe.tupleRead(gcomm, oneObject), nprocsInt);
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.MPI_ERROR,
+					"Objects pointed by " + ptrStr
+							+ " is inconsistent with the given MPI_Datatype: "
+							+ datatypeStr);
+		}
+		return new Pair<>(basePtr, mpiDatatypeTranslation.right);
 	}
 }

@@ -15,9 +15,6 @@ import edu.udel.cis.vsl.civl.semantics.common.CommonNoopTransition;
 import edu.udel.cis.vsl.civl.semantics.common.CommonSymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.common.CommonTransition;
 import edu.udel.cis.vsl.civl.semantics.common.CommonTransitionSequence;
-import edu.udel.cis.vsl.civl.semantics.contract.CommonContractConditionGenerator;
-import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
-import edu.udel.cis.vsl.civl.semantics.contract.ContractExecutor;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
@@ -78,40 +75,8 @@ public class Semantics {
 			StateFactory stateFactory, LibraryExecutorLoader loader,
 			Evaluator evaluator, SymbolicAnalyzer symbolicAnalyzer,
 			CIVLErrorLogger errLogger, CIVLConfiguration civlConfig) {
-		return new CommonExecutor(modelFactory, stateFactory, loader,
-				evaluator, symbolicAnalyzer, errLogger, civlConfig);
-	}
-
-	/**
-	 * Creates a new instance of CIVL {@link ContractExecutor}.
-	 * 
-	 * @param modelFactory
-	 *            The model factory of the system.
-	 * @param stateFactory
-	 *            The state factory of the system.
-	 * @param log
-	 *            The error logger of the system.
-	 * @param loader
-	 *            The library executor loader for executing system functions.
-	 * @param evaluator
-	 *            The CIVL evaluator for evaluating expressions.
-	 * @param symbolicAnalyzer
-	 *            The symbolic analyzer used in the system.
-	 * @param errLogger
-	 *            The error logger for reporting execution errors.
-	 * @param civlConfig
-	 *            The CIVL configuration.
-	 * @return The new CIVL executor.
-	 */
-	public static ContractExecutor newContractExecutor(
-			ModelFactory modelFactory, StateFactory stateFactory,
-			LibraryExecutorLoader loader, ContractEvaluator evaluator,
-			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errLogger,
-			CIVLConfiguration civlConfig,
-			ContractConditionGenerator conditionGenerator) {
-		return new ContractExecutor(modelFactory, stateFactory, loader,
-				evaluator, symbolicAnalyzer, errLogger, civlConfig,
-				conditionGenerator);
+		return new CommonExecutor(modelFactory, stateFactory, loader, evaluator,
+				symbolicAnalyzer, errLogger, civlConfig);
 	}
 
 	/**
@@ -136,73 +101,11 @@ public class Semantics {
 	public static Evaluator newEvaluator(ModelFactory modelFactory,
 			StateFactory stateFactory, LibraryEvaluatorLoader loader,
 			LibraryExecutorLoader loaderExec, SymbolicUtility symbolicUtil,
-			SymbolicAnalyzer symbolicAnalyzer,
-			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errLogger,
-			CIVLConfiguration config) {
+			SymbolicAnalyzer symbolicAnalyzer, MemoryUnitFactory memUnitFactory,
+			CIVLErrorLogger errLogger, CIVLConfiguration config) {
 		return new CommonEvaluator(modelFactory, stateFactory, loader,
 				loaderExec, symbolicUtil, symbolicAnalyzer, memUnitFactory,
 				errLogger, config);
-	}
-
-	/**
-	 * Creates a new instance of CIVL {@link ContractEvaluator}.
-	 * 
-	 * @param modelFactory
-	 *            The model factory of the system.
-	 * @param stateFactory
-	 *            The state factory of the system.
-	 * @param loader
-	 *            The library evaluator loader for evaluating the guards of
-	 *            system functions.
-	 * @param symbolicUtil
-	 *            The symbolic utility for manipulations of symbolic
-	 *            expressions.
-	 * @param symbolicAnalyzer
-	 *            The symbolic analyzer used in the system.
-	 * @param errLogger
-	 *            The error logger for reporting execution errors.
-	 * @return The new CIVL evaluator.
-	 */
-	public static Evaluator newContractEvaluator(ModelFactory modelFactory,
-			StateFactory stateFactory, LibraryEvaluatorLoader loader,
-			LibraryExecutorLoader loaderExec, SymbolicUtility symbolicUtil,
-			SymbolicAnalyzer symbolicAnalyzer,
-			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errLogger,
-			CIVLConfiguration config) {
-		return new ContractEvaluator(modelFactory, stateFactory, loader,
-				loaderExec, symbolicUtil, symbolicAnalyzer, memUnitFactory,
-				errLogger, config);
-	}
-
-	/**
-	 * Creates a new instance of CIVL {@link ContractConditionGenerator}.
-	 * 
-	 * @param modelFactory
-	 *            The model factory of the system.
-	 * @param stateFactory
-	 *            The state factory of the system.
-	 * @param loader
-	 *            The library evaluator loader for evaluating the guards of
-	 *            system functions.
-	 * @param symbolicUtil
-	 *            The symbolic utility for manipulations of symbolic
-	 *            expressions.
-	 * @param symbolicAnalyzer
-	 *            The symbolic analyzer used in the system.
-	 * @param errLogger
-	 *            The error logger for reporting execution errors.
-	 * @return The new CIVL evaluator.
-	 * @return The ContractConditionGenerator
-	 */
-	public static ContractConditionGenerator newContractConditionGenerator(
-			ModelFactory modelFactory, StateFactory stateFactory,
-			LibraryEvaluatorLoader loader, LibraryExecutorLoader loaderExec,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
-			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errLogger,
-			CIVLConfiguration config) {
-		return new CommonContractConditionGenerator(modelFactory, stateFactory,
-				symbolicUtil, symbolicAnalyzer, loader, loaderExec,
-				memUnitFactory, errLogger, config);
 	}
 
 	/**

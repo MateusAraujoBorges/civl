@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.model.common.expression;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -10,8 +11,9 @@ import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
-public class CommonMPIContractExpression extends CommonExpression implements
-		MPIContractExpression {
+public class CommonMPIContractExpression extends CommonExpression
+		implements
+			MPIContractExpression {
 	private MPI_CONTRACT_EXPRESSION_KIND mpiContractKind;
 
 	private Expression[] arguments;
@@ -38,19 +40,31 @@ public class CommonMPIContractExpression extends CommonExpression implements
 
 	@Override
 	public Set<Variable> variableAddressedOf(Scope scope) {
-		Set<Variable> set = communicator.variableAddressedOf(scope);
+		Set<Variable> set = arguments[0].variableAddressedOf(scope);
 
-		for (int i = 0; i < arguments.length; i++)
-			set.addAll(arguments[i].variableAddressedOf(scope));
+		if (set == null)
+			set = new HashSet<>();
+		for (int i = 1; i < arguments.length; i++) {
+			Set<Variable> tmp = arguments[i].variableAddressedOf(scope);
+
+			if (tmp != null)
+				set.addAll(tmp);
+		}
 		return set;
 	}
 
 	@Override
 	public Set<Variable> variableAddressedOf() {
-		Set<Variable> set = communicator.variableAddressedOf();
+		Set<Variable> set = arguments[0].variableAddressedOf();
 
-		for (int i = 0; i < arguments.length; i++)
-			set.addAll(arguments[i].variableAddressedOf());
+		if (set == null)
+			set = new HashSet<>();
+		for (int i = 1; i < arguments.length; i++) {
+			Set<Variable> tmp = arguments[i].variableAddressedOf();
+
+			if (tmp != null)
+				set.addAll(tmp);
+		}
 		return set;
 	}
 

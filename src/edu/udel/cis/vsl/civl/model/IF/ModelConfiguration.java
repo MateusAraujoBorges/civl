@@ -26,7 +26,7 @@ public final class ModelConfiguration {
 	public final static int NULL_POINTER_VID = -1;
 
 	/* Transformer names */
-	
+
 	public final static String FILESYSTEM = "_io_filesystem";
 
 	public final static String GENERAL_ROOT = GeneralTransformer.PREFIX
@@ -37,7 +37,7 @@ public final class ModelConfiguration {
 	/**
 	 * The array of prefixes for symbolic constants.
 	 */
-	public static final String[] SYMBOL_PREFIXES = { "X", "Y", "H" };
+	public static final String[] SYMBOL_PREFIXES = {"X", "Y", "H"};
 
 	/**
 	 * The prefix of symbolic constants representing input variables.
@@ -68,8 +68,8 @@ public final class ModelConfiguration {
 	/**
 	 * the set of reserved names for symbolic constants
 	 */
-	public static Set<String> RESERVE_NAMES = new HashSet<>(Arrays.asList(
-			UNDEFINED, INVALID));
+	public static Set<String> RESERVE_NAMES = new HashSet<>(
+			Arrays.asList(UNDEFINED, INVALID));
 
 	/**
 	 * add new name to the reserved name set
@@ -316,17 +316,17 @@ public final class ModelConfiguration {
 	 * The "\result" constant used in ACSL contracts which stands for the
 	 * returned value.
 	 */
-	public static final String ContractResultName = "\\result";
+	public static final String ContractResultName = "$result";
 
 	/**
 	 * The extended "\mpi_comm_rank" constant used in CIVL-ACSL contracts which
 	 * stands for the rank in a specific communicator of an MPI process.
 	 */
-	public static final String ContractMPICommRankName = "\\mpi_comm_rank";
+	public static final String ContractMPICommRankName = "$mpi_comm_rank";
 
 	/**
 	 * The extended "\mpi_comm_size" constant used in CIVL-ACSL contracts which
 	 * stands for the number of MPI processes in a specific communicator.
 	 */
-	public static final String ContractMPICommSizeName = "\\mpi_comm_size";
+	public static final String ContractMPICommSizeName = "$mpi_comm_size";
 }

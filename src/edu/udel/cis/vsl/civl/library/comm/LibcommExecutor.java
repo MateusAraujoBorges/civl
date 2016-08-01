@@ -19,7 +19,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
-import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
@@ -29,6 +28,7 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
@@ -36,71 +36,96 @@ import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
-public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecutor {
+public class LibcommExecutor extends BaseLibraryExecutor
+		implements
+			LibraryExecutor {
 	private LibcommEvaluator libEvaluator;
 	/* **************************** Constructors *************************** */
 
-	public LibcommExecutor(String name, Executor primaryExecutor, ModelFactory modelFactory,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
-			LibraryExecutorLoader libExecutorLoader, LibraryEvaluatorLoader libEvaluatorLoader) {
-		super(name, primaryExecutor, modelFactory, symbolicUtil, symbolicAnalyzer, civlConfig, libExecutorLoader,
+	public LibcommExecutor(String name, Executor primaryExecutor,
+			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
+			LibraryExecutorLoader libExecutorLoader,
+			LibraryEvaluatorLoader libEvaluatorLoader) {
+		super(name, primaryExecutor, modelFactory, symbolicUtil,
+				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
-		this.libEvaluator = new LibcommEvaluator(name, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer,
-				civlConfig, libEvaluatorLoader);
+		this.libEvaluator = new LibcommEvaluator(name, evaluator, modelFactory,
+				symbolicUtil, symbolicAnalyzer, civlConfig, libEvaluatorLoader);
 	}
 
 	/* ******************** Methods from LibraryExecutor ******************* */
 
 	@Override
-	protected Evaluation executeValue(State state, int pid, String process, CIVLSource source, String functionName,
-			Expression[] arguments, SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		// case "$comm_create":
-		// callEval = this.executeCommCreate(state, pid, process, arguments,
-		// argumentValues);
-		// break;
-		case "$comm_defined":
-			callEval = this.executeGcommOrCommDefined(state, pid, process, arguments, argumentValues);
-			break;
-		case "$comm_dequeue":
-			callEval = executeCommDequeue(state, pid, process, arguments, argumentValues);
-			break;
-		case "$comm_dequeue_work":
-			callEval = executeCommDequeue(state, pid, process, arguments, argumentValues);
-			break;
-		case "$comm_enqueue":
-			callEval = executeCommEnqueue(state, pid, process, arguments, argumentValues);
-			break;
-		case "$comm_seek":
-			callEval = this.executeCommSeek(state, pid, process, arguments, argumentValues);
-			break;
-		case "$comm_probe":
-			callEval = this.executeCommProbe(state, pid, process, source, arguments, argumentValues);
-			break;
-		case "$comm_size":
-			callEval = this.executeCommSize(state, pid, process, arguments, argumentValues);
-			break;
-		// case "$gcomm_dup":
-		// callEval = this.executeGcommDup(state, pid, process, arguments,
-		// argumentValues, source);
-		// break;
-		// case "$comm_destroy":
-		// callEval = executeFree(state, pid, process, arguments,
-		// argumentValues, source);
-		// break;
-		// case "$gcomm_destroy":
-		// callEval = this.executeGcommDestroy(state, pid, process, arguments,
-		// argumentValues, source);
-		// break;
-		// case "$gcomm_create":
-		// callEval = executeGcommCreate(state, pid, process, arguments,
-		// argumentValues, source);
-		// break;
-		case "$gcomm_defined":
-			callEval = this.executeGcommOrCommDefined(state, pid, process, arguments, argumentValues);
-			break;
+			// case "$comm_create":
+			// callEval = this.executeCommCreate(state, pid, process, arguments,
+			// argumentValues);
+			// break;
+			case "$comm_defined" :
+				callEval = this.executeGcommOrCommDefined(state, pid, process,
+						arguments, argumentValues);
+				break;
+			case "$comm_dequeue" :
+				callEval = executeCommDequeue(state, pid, process, arguments,
+						argumentValues);
+				break;
+			case "$comm_dequeue_work" :
+				callEval = executeCommDequeue(state, pid, process, arguments,
+						argumentValues);
+				break;
+			case "$comm_empty_in" :
+				callEval = executeCommEmpty(state, pid, process, arguments,
+						argumentValues, true);
+				break;
+			case "$comm_empty_out" :
+				callEval = executeCommEmpty(state, pid, process, arguments,
+						argumentValues, false);
+				break;
+			case "$comm_enqueue" :
+				callEval = executeCommEnqueue(state, pid, process, arguments,
+						argumentValues);
+				break;
+			case "$comm_seek" :
+				callEval = this.executeCommSeek(state, pid, process, arguments,
+						argumentValues);
+				break;
+			case "$comm_probe" :
+				callEval = this.executeCommProbe(state, pid, process, source,
+						arguments, argumentValues);
+				break;
+			case "$comm_size" :
+				callEval = this.executeCommSize(state, pid, process, arguments,
+						argumentValues);
+				break;
+			// case "$gcomm_dup":
+			// callEval = this.executeGcommDup(state, pid, process,
+			// arguments,
+			// argumentValues, source);
+			// break;
+			// case "$comm_destroy":
+			// callEval = executeFree(state, pid, process, arguments,
+			// argumentValues, source);
+			// break;
+			// case "$gcomm_destroy":
+			// callEval = this.executeGcommDestroy(state, pid, process,
+			// arguments,
+			// argumentValues, source);
+			// break;
+			// case "$gcomm_create":
+			// callEval = executeGcommCreate(state, pid, process, arguments,
+			// argumentValues, source);
+			// break;
+			case "$gcomm_defined" :
+				callEval = this.executeGcommOrCommDefined(state, pid, process,
+						arguments, argumentValues);
+				break;
 		}
 		return callEval;
 	}
@@ -211,16 +236,22 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeGcommOrCommDefined(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
-		Pair<BooleanExpression, ResultType> result = symbolicAnalyzer.isDerefablePointer(state, argumentValues[0]);
+	private Evaluation executeGcommOrCommDefined(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		Pair<BooleanExpression, ResultType> result = symbolicAnalyzer
+				.isDerefablePointer(state, argumentValues[0]);
 
 		if (result.right != ResultType.YES)
-			state = this.errorLogger.logError(arguments[0].getSource(), state, process,
-					this.symbolicAnalyzer.stateInformation(state), result.left, result.right, ErrorKind.DEREFERENCE,
+			state = this.errorLogger.logError(arguments[0].getSource(), state,
+					process, this.symbolicAnalyzer.stateInformation(state),
+					result.left, result.right, ErrorKind.DEREFERENCE,
 					"attempt to access a memory location that can't be dereferenced: "
-							+ symbolicAnalyzer.symbolicExpressionToString(arguments[0].getSource(), state,
-									arguments[0].getExpressionType(), argumentValues[0]));
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									arguments[0].getSource(), state,
+									arguments[0].getExpressionType(),
+									argumentValues[0]));
 		return new Evaluation(state, result.left);
 	}
 
@@ -247,9 +278,11 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeCommDequeue(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
-		CIVLSource civlsource = state.getProcessState(pid).getLocation().getSource();
+	private Evaluation executeCommDequeue(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		CIVLSource civlsource = state.getProcessState(pid).getLocation()
+				.getSource();
 		SymbolicExpression message = null;
 		SymbolicExpression commHandle = argumentValues[0];
 		SymbolicExpression comm;
@@ -262,20 +295,24 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		Evaluation eval;
 		Pair<SymbolicExpression, SymbolicExpression> msg_buf;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0], commHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+				commHandle, false);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null, gcommHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, null,
+				gcommHandle, false);
 		state = eval.state;
 		gcomm = eval.value;
 		buf = universe.tupleRead(gcomm, threeObject);
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
-		msg_buf = getMsgOutofChannel(state, pid, process, buf, source, dest, tag, civlsource);
+		msg_buf = getMsgOutofChannel(state, pid, process, buf, source, dest,
+				tag, civlsource);
 		message = msg_buf.left;
 		buf = msg_buf.right;
 		gcomm = universe.tupleWrite(gcomm, threeObject, buf);
-		state = this.primaryExecutor.assign(civlsource, state, process, gcommHandle, gcomm);
+		state = this.primaryExecutor.assign(civlsource, state, process,
+				gcommHandle, gcomm);
 		return new Evaluation(state, message);
 	}
 
@@ -299,8 +336,9 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeCommEnqueue(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
+	private Evaluation executeCommEnqueue(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
 		CIVLSource civlsource = arguments[0].getSource();
 		SymbolicExpression commHandle = argumentValues[0];
 		SymbolicExpression newMessage = argumentValues[1];
@@ -310,18 +348,21 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		SymbolicExpression buf;
 		Evaluation eval;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0], commHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+				commHandle, false);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null, gcommHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, null,
+				gcommHandle, false);
 		state = eval.state;
 		gcomm = eval.value;
 		buf = universe.tupleRead(gcomm, threeObject);
 		buf = putMsgInChannel(buf, newMessage, civlsource);
 		// TODO checks if source is equal to the place of comm.
 		gcomm = universe.tupleWrite(gcomm, threeObject, buf);
-		state = this.primaryExecutor.assign(civlsource, state, process, gcommHandle, gcomm);
+		state = this.primaryExecutor.assign(civlsource, state, process,
+				gcommHandle, gcomm);
 		return new Evaluation(state, null);
 	}
 
@@ -349,9 +390,12 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeCommProbe(State state, int pid, String process, CIVLSource civlsource,
-			Expression[] arguments, SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
-		SymbolicExpression commHandle = argumentValues[0], comm, gcomm, gcommHandle;
+	private Evaluation executeCommProbe(State state, int pid, String process,
+			CIVLSource civlsource, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		SymbolicExpression commHandle = argumentValues[0], comm, gcomm,
+				gcommHandle;
 		NumericExpression source = (NumericExpression) argumentValues[1];
 		NumericExpression tag = (NumericExpression) argumentValues[2];
 		NumericExpression dest;
@@ -361,11 +405,13 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		Reasoner reasoner;
 		Number number;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0], commHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+				commHandle, false);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null, gcommHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, null,
+				gcommHandle, false);
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
@@ -374,19 +420,20 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		if (number != null)
 			srcInt = ((IntegerNumber) number).intValue();
 		else
-			throw new CIVLInternalException("The second argument of $comm_probe must be concrete ",
+			throw new CIVLInternalException(
+					"The second argument of $comm_probe must be concrete ",
 					arguments[1].getSource());
 		number = reasoner.extractNumber(dest);
 		if (number != null)
 			destInt = ((IntegerNumber) number).intValue();
 		else
-			throw new CIVLInternalException("The place of a process in $comm must be concrete",
+			throw new CIVLInternalException(
+					"The place of a process in $comm must be concrete",
 					arguments[2].getSource());
 		if (reasoner.isValid(universe.equals(tag, universe.integer(-2))))
 			isWildcardTag = true;
-		isFind = !(libEvaluator
-				.getAllPossibleSources(state, reasoner, gcomm, srcInt, destInt, tag, isWildcardTag, civlsource)
-				.isEmpty());
+		isFind = !(libEvaluator.getAllPossibleSources(state, reasoner, gcomm,
+				srcInt, destInt, tag, isWildcardTag, civlsource).isEmpty());
 		return new Evaluation(state, universe.bool(isFind));
 	}
 
@@ -414,8 +461,9 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeCommSeek(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
+	private Evaluation executeCommSeek(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression commHandle = argumentValues[0];
 		SymbolicExpression comm;
 		SymbolicExpression gcommHandle;
@@ -424,22 +472,30 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		NumericExpression dest;
 		SymbolicExpression tag = argumentValues[2];
 		SymbolicExpression message, messages, queue, queueLength;
-		CIVLSource civlsource = state.getProcessState(pid).getLocation().getSource();
+		CIVLSource civlsource = state.getProcessState(pid).getLocation()
+				.getSource();
 		Evaluation eval;
 		int msgIdx = -1;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0], commHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+				commHandle, false);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null, gcommHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, null,
+				gcommHandle, false);
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
-		queue = universe.arrayRead(universe.arrayRead(universe.tupleRead(gcomm, threeObject), source), dest);
+		queue = universe
+				.arrayRead(
+						universe.arrayRead(
+								universe.tupleRead(gcomm, threeObject), source),
+						dest);
 		queueLength = universe.tupleRead(queue, zeroObject);
 		messages = universe.tupleRead(queue, oneObject);
-		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages, queueLength, tag, civlsource);
+		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages,
+				queueLength, tag, civlsource);
 		if (msgIdx == -1)
 			message = this.getEmptyMessage(state);
 		else
@@ -470,8 +526,9 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeCommSize(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
+	private Evaluation executeCommSize(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression commHandle = argumentValues[0];
 		SymbolicExpression comm;
 		SymbolicExpression gcommHandle;
@@ -480,11 +537,13 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		CIVLSource civlsource = arguments[0].getSource();
 		Evaluation eval;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0], commHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+				commHandle, false);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null, gcommHandle, false);
+		eval = evaluator.dereference(civlsource, state, process, null,
+				gcommHandle, false);
 		state = eval.state;
 		gcomm = eval.value;
 		nprocs = universe.tupleRead(gcomm, zeroObject);
@@ -566,17 +625,21 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 *            The NumericExpression of the number of processes
 	 * @return
 	 */
-	public static SymbolicExpression newGcommBuffer(SymbolicUniverse universe, Model model,
-			SymbolicUtility symbolicUtil, BooleanExpression context, NumericExpression nprocs) {
+	public static SymbolicExpression newGcommBuffer(SymbolicUniverse universe,
+			Model model, SymbolicUtility symbolicUtil,
+			BooleanExpression context, NumericExpression nprocs) {
 		SymbolicExpression queueLength = universe.integer(0);
 		CIVLType messageType = model.mesageType();
 		CIVLType queueType = model.queueType();
 		SymbolicType dynamicQueueType = queueType.getDynamicType(universe);
 		SymbolicType dynamicMessageType = messageType.getDynamicType(universe);
-		SymbolicExpression emptyMessages = universe.array(dynamicMessageType, new LinkedList<SymbolicExpression>());
-		SymbolicExpression emptyQueue = universe.tuple((SymbolicTupleType) dynamicQueueType,
+		SymbolicExpression emptyMessages = universe.array(dynamicMessageType,
+				new LinkedList<SymbolicExpression>());
+		SymbolicExpression emptyQueue = universe.tuple(
+				(SymbolicTupleType) dynamicQueueType,
 				Arrays.asList(queueLength, emptyMessages));
-		SymbolicExpression bufRow = symbolicUtil.newArray(context, emptyQueue.type(), nprocs, emptyQueue);
+		SymbolicExpression bufRow = symbolicUtil.newArray(context,
+				emptyQueue.type(), nprocs, emptyQueue);
 
 		return symbolicUtil.newArray(context, bufRow.type(), nprocs, bufRow);
 	}
@@ -604,8 +667,9 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	@SuppressWarnings("unused")
-	private Evaluation executeGcommDestroy(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeGcommDestroy(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		Expression nprocExpr;
 		Expression gcommHandleExpr = arguments[0];
 		Expression gcommExpr;
@@ -621,12 +685,15 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		LinkedList<SymbolicExpression> remainMsgs = new LinkedList<>();
 
 		gcommHandle = argumentValues[0];
-		eval = evaluator.dereference(arguments[0].getSource(), state, process, gcommHandleExpr, gcommHandle, false);
+		eval = evaluator.dereference(arguments[0].getSource(), state, process,
+				gcommHandleExpr, gcommHandle, false);
 		state = eval.state;
 		gcomm = eval.value;
 		nprocs = (NumericExpression) universe.tupleRead(gcomm, zeroObject);
-		gcommExpr = modelFactory.dereferenceExpression(gcommHandleExpr.getSource(), gcommHandleExpr);
-		nprocExpr = modelFactory.dotExpression(gcommExpr.getSource(), gcommExpr, 0);
+		gcommExpr = modelFactory.dereferenceExpression(
+				gcommHandleExpr.getSource(), gcommHandleExpr);
+		nprocExpr = modelFactory.dotExpression(gcommExpr.getSource(), gcommExpr,
+				0);
 		nprocs_int = symbolicUtil.extractInt(nprocExpr.getSource(), nprocs);
 		buf = universe.tupleRead(gcomm, threeObject);
 		for (int i = 0; i < nprocs_int; i++) {
@@ -639,16 +706,21 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 				IntegerNumber concQLength;
 
 				queue = universe.arrayRead(queues, universe.integer(j));
-				queueLength = (NumericExpression) universe.tupleRead(queue, zeroObject);
-				concQLength = ((IntegerNumber) reasoner.extractNumber(queueLength));
+				queueLength = (NumericExpression) universe.tupleRead(queue,
+						zeroObject);
+				concQLength = ((IntegerNumber) reasoner
+						.extractNumber(queueLength));
 				if (concQLength == null) {
 					throw new CIVLInternalException(
-							"The length of a message queue in a CIVL-C communicator is not concrete", source);
+							"The length of a message queue in a CIVL-C communicator is not concrete",
+							source);
 				} else {
-					SymbolicExpression msgArray = universe.tupleRead(queue, oneObject);
+					SymbolicExpression msgArray = universe.tupleRead(queue,
+							oneObject);
 
 					for (int k = 0; k < concQLength.intValue(); k++)
-						remainMsgs.add(universe.arrayRead(msgArray, universe.integer(k)));
+						remainMsgs.add(universe.arrayRead(msgArray,
+								universe.integer(k)));
 				}
 			}
 		}
@@ -656,50 +728,16 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		// pointer to a civl-c $seq)
 		if (!remainMsgs.isEmpty() && !junkMsgPtr.isNull()) {
 			SymbolicType msgType = model.mesageType().getDynamicType(universe);
-			SymbolicExpression junkMsgArray = universe.array(msgType, remainMsgs);
+			SymbolicExpression junkMsgArray = universe.array(msgType,
+					remainMsgs);
 
-			state = primaryExecutor.assign(arguments[1].getSource(), state, process, junkMsgPtr, junkMsgArray);
+			state = primaryExecutor.assign(arguments[1].getSource(), state,
+					process, junkMsgPtr, junkMsgArray);
 		}
 		// Return the number of remaining messages (junk messages):
-		state = this.executeFree(state, pid, process, arguments, argumentValues, source).state;
+		state = this.executeFree(state, pid, process, arguments, argumentValues,
+				source).state;
 		return new Evaluation(state, universe.integer(remainMsgs.size()));
-	}
-
-	@SuppressWarnings("unused")
-	private Evaluation executeGcommDup(State state, int pid, String process, Expression arguments[],
-			SymbolicExpression argumentValues[], CIVLSource source) throws UnsatisfiablePathConditionException {
-		SymbolicExpression newcomm, gcomm, newgcomm;
-		Expression commHandleExpr = arguments[0];
-		Expression newcommHandleExpr = arguments[1];
-		LibcommEvaluator libevaluator;
-		Evaluation eval;
-		SymbolicExpression procArray;
-		SymbolicExpression initArray;
-		SymbolicExpression buf;
-
-		try {
-			libevaluator = (LibcommEvaluator) this.libEvaluatorLoader.getLibraryEvaluator(this.name, evaluator,
-					modelFactory, symbolicUtil, symbolicAnalyzer);
-		} catch (LibraryLoaderException e) {
-			throw new CIVLInternalException("Loading LibcommEvaluator failed", source);
-		}
-		eval = libevaluator.getCommByCommHandleExpr(state, pid, process, commHandleExpr);
-		eval = libevaluator.getGcommByComm(eval.state, pid, process, eval.value, commHandleExpr.getSource());
-		state = eval.state;
-		gcomm = eval.value;
-		eval = libevaluator.getCommByCommHandleExpr(state, pid, process, newcommHandleExpr);
-		newcomm = eval.value;
-		eval = libevaluator.getGcommByComm(eval.state, pid, process, eval.value, newcommHandleExpr.getSource());
-		newgcomm = eval.value;
-		state = eval.state;
-		procArray = universe.tupleRead(gcomm, oneObject);
-		initArray = universe.tupleRead(gcomm, twoObject);
-		buf = universe.tupleRead(gcomm, threeObject);
-		newgcomm = universe.tupleWrite(newgcomm, oneObject, procArray);
-		newgcomm = universe.tupleWrite(newgcomm, twoObject, initArray);
-		newgcomm = universe.tupleWrite(newgcomm, threeObject, buf);
-		state = this.primaryExecutor.assign(source, state, process, universe.tupleRead(newcomm, oneObject), newgcomm);
-		return new Evaluation(state, null);
 	}
 
 	/**
@@ -726,37 +764,44 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 * @return The index of a matched message in the given array
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private int getMatchedMsgIdx(State state, int pid, String process, SymbolicExpression messagesArray,
-			SymbolicExpression queueLength, SymbolicExpression tag, CIVLSource civlsource)
+	private int getMatchedMsgIdx(State state, int pid, String process,
+			SymbolicExpression messagesArray, SymbolicExpression queueLength,
+			SymbolicExpression tag, CIVLSource civlsource)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression message = null;
 		NumericExpression numericQueueLength = (NumericExpression) queueLength;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 		BooleanExpression isAnyTag = universe.equals(universe.integer(-2), tag);
-		BooleanExpression isSpecTag = universe.lessThanEquals(zero, (NumericExpression) tag);
+		BooleanExpression isSpecTag = universe.lessThanEquals(zero,
+				(NumericExpression) tag);
 		int msgIndex = -1;
 
 		// specific tag
 		if (reasoner.isValid(isSpecTag)) {
 			NumericExpression iter = zero;
-			BooleanExpression iterQueueLengthClaim = universe.lessThan(iter, (NumericExpression) queueLength);
+			BooleanExpression iterQueueLengthClaim = universe.lessThan(iter,
+					(NumericExpression) queueLength);
 
 			while (reasoner.isValid(iterQueueLengthClaim)) {
 				BooleanExpression isTagMatched;
 
 				message = universe.arrayRead(messagesArray, iter);
-				isTagMatched = universe.equals(universe.tupleRead(message, universe.intObject(2)), tag);
+				isTagMatched = universe.equals(
+						universe.tupleRead(message, universe.intObject(2)),
+						tag);
 				if (reasoner.isValid(isTagMatched)) {
 					msgIndex = symbolicUtil.extractInt(null, iter);
 					break;
 				}
 				iter = universe.add(iter, one);
-				iterQueueLengthClaim = universe.lessThan(iter, numericQueueLength);
+				iterQueueLengthClaim = universe.lessThan(iter,
+						numericQueueLength);
 			}
 		}
 		// wild card tag
 		else if (reasoner.isValid(isAnyTag)) {
-			BooleanExpression queueGTzeroClaim = universe.lessThan(zero, numericQueueLength);
+			BooleanExpression queueGTzeroClaim = universe.lessThan(zero,
+					numericQueueLength);
 
 			if (reasoner.isValid(queueGTzeroClaim))
 				msgIndex = 0;
@@ -765,7 +810,8 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		// Exception
 		else {
 			// tag != -2 && tag < 0
-			errorLogger.logSimpleError(civlsource, state, process, symbolicAnalyzer.stateToString(state),
+			errorLogger.logSimpleError(civlsource, state, process,
+					symbolicAnalyzer.stateToString(state),
 					ErrorKind.COMMUNICATION, "Illegal message tag:" + tag);
 			throw new UnsatisfiablePathConditionException();
 		}
@@ -788,13 +834,16 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		SymbolicExpression bundle;
 
 		name = universe.stringObject("X_s" + -1 + "v" + -1);
-		bundle = universe.symbolicConstant(name, bundleType.getDynamicType(universe));
+		bundle = universe.symbolicConstant(name,
+				bundleType.getDynamicType(universe));
 		emptyMessageComponents.add(universe.integer(-1));
 		emptyMessageComponents.add(universe.integer(-1));
 		emptyMessageComponents.add(universe.integer(-1));
 		emptyMessageComponents.add(bundle);
 		emptyMessageComponents.add(universe.integer(-1));
-		message = this.universe.tuple((SymbolicTupleType) messageType.getDynamicType(universe), emptyMessageComponents);
+		message = this.universe.tuple(
+				(SymbolicTupleType) messageType.getDynamicType(universe),
+				emptyMessageComponents);
 		return message;
 	}
 
@@ -815,8 +864,8 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 *            The CIVLSource of this action
 	 * @return
 	 */
-	public SymbolicExpression putMsgInChannel(SymbolicExpression messageBuffer, SymbolicExpression message,
-			CIVLSource civlsource) {
+	public SymbolicExpression putMsgInChannel(SymbolicExpression messageBuffer,
+			SymbolicExpression message, CIVLSource civlsource) {
 		SymbolicExpression buf = messageBuffer;
 		SymbolicExpression bufRow, queue, messages;
 		NumericExpression queueLength, source, dest;
@@ -861,8 +910,10 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 	 * @return The received message and the updated message buffer.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public Pair<SymbolicExpression, SymbolicExpression> getMsgOutofChannel(State state, int pid, String process,
-			SymbolicExpression messageBuffer, NumericExpression source, NumericExpression dest, NumericExpression tag,
+	public Pair<SymbolicExpression, SymbolicExpression> getMsgOutofChannel(
+			State state, int pid, String process,
+			SymbolicExpression messageBuffer, NumericExpression source,
+			NumericExpression dest, NumericExpression tag,
 			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
 		SymbolicExpression bufRow, queue, messages;
 		SymbolicExpression message, buf;
@@ -874,12 +925,17 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		queue = universe.arrayRead(bufRow, dest);
 		queueLength = (NumericExpression) universe.tupleRead(queue, zeroObject);
 		messages = universe.tupleRead(queue, oneObject);
-		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages, queueLength, tag, civlsource);
+		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages,
+				queueLength, tag, civlsource);
 		if (msgIdx == -1) {
-			state = errorLogger.logError(civlsource, state, state.getProcessState(pid).name(),
-					symbolicAnalyzer.stateInformation(state), universe.trueExpression(), ResultType.NO,
-					ErrorKind.COMMUNICATION, "There is no matched message [source:" + source + ", destication:" + dest
-							+ ", tag:" + tag + " ] in the message buffer.");
+			state = errorLogger.logError(civlsource, state,
+					state.getProcessState(pid).name(),
+					symbolicAnalyzer.stateInformation(state),
+					universe.trueExpression(), ResultType.NO,
+					ErrorKind.COMMUNICATION,
+					"There is no matched message [source:" + source
+							+ ", destication:" + dest + ", tag:" + tag
+							+ " ] in the message buffer.");
 		}
 		message = universe.arrayRead(messages, universe.integer(msgIdx));
 		messages = universe.removeElementAt(messages, msgIdx);
@@ -889,5 +945,70 @@ public class LibcommExecutor extends BaseLibraryExecutor implements LibraryExecu
 		bufRow = universe.arrayWrite(bufRow, dest, queue);
 		buf = universe.arrayWrite(buf, source, bufRow);
 		return new Pair<>(message, buf);
+	}
+
+	/**
+	 * This method represents executions of two system functions:
+	 * <ul>
+	 * <li>$comm_empty_in:</li> A state pure function which returns a predicate
+	 * that all message channels TO the calling process are empty.
+	 * <li>$comm_empty_out:</li> A state pure function which returns a predicate
+	 * that all message channels FROM the calling process are empty.
+	 * </ul>
+	 * 
+	 * @param state
+	 *            The program state when calling either of the two functions
+	 * @param pid
+	 *            The PID of the calling process
+	 * @param process
+	 *            The String identifier of the calling process
+	 * @param arguments
+	 *            An array of {@link Expression}s which represents function
+	 *            parameters
+	 * @param values
+	 *            An array of {@link SymbolicExpression}s which represents
+	 *            values of function parameters
+	 * @param isCommEmptyIn
+	 *            True iff the execution is for $comm_empty_in, false iff for
+	 *            $comm_empty_out
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeCommEmpty(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression values[],
+			boolean isCommEmptyIn) throws UnsatisfiablePathConditionException {
+		SymbolicExpression commHandle = values[0];
+		SymbolicExpression gcommHandle, messageBuffer, queue;
+		NumericExpression place, nprocs;
+		Evaluation eval;
+
+		eval = evaluator.dereference(arguments[0].getSource(), state, process,
+				arguments[0], commHandle, false);
+		state = eval.state;
+		gcommHandle = universe.tupleRead(eval.value, oneObject);
+		place = (NumericExpression) universe.tupleRead(eval.value, zeroObject);
+		eval = evaluator.dereference(arguments[0].getSource(), state, process,
+				arguments[0], gcommHandle, false);
+		state = eval.state;
+		messageBuffer = universe.tupleRead(eval.value, threeObject);
+		nprocs = (NumericExpression) universe.tupleRead(eval.value, zeroObject);
+
+		BooleanExpression pred;
+		NumericSymbolicConstant i = (NumericSymbolicConstant) universe
+				.symbolicConstant(universe.stringObject("i"),
+						universe.integerType());
+		NumericExpression queueLength;
+
+		if (isCommEmptyIn)
+			queue = universe.arrayRead(universe.arrayRead(messageBuffer, i),
+					place);
+		else
+			queue = universe.arrayRead(universe.arrayRead(messageBuffer, place),
+					i);
+		queueLength = (NumericExpression) universe.tupleRead(queue, zeroObject);
+		pred = universe.forallInt(i, zero, nprocs,
+				universe.equals(queueLength, zero));
+		eval.value = pred;
+		return eval;
 	}
 }

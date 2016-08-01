@@ -805,8 +805,8 @@ public class ContractTransformerWorker extends BaseWorker {
 					mpiCommRankSource, mpiCommSizeSource));
 
 		// Transform step 6: Inserts $mpi_contract_enters(MPI_Comm ):
-		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
-			bodyItems.add(createMPIContractEnters(mpiBlock.mpiComm));
+//		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+//			bodyItems.add(createMPIContractEnters(mpiBlock.mpiComm));
 
 		// Transform step 7: T $result = f( ... );:
 		ExpressionNode targetCall;
@@ -821,12 +821,13 @@ public class ContractTransformerWorker extends BaseWorker {
 				funcDefi.getTypeNode().getReturnType().copy(), targetCall));
 
 		// Transform step 8: Inserts "$mpi_contract_entered"s:
-		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
-			for (Pair<ExpressionNode, List<ExpressionNode>> condWaitsforArgs : mpiBlock
-					.getConditionalWaitsfors())
-				bodyItems.add(checkWaitsfors(condWaitsforArgs.left,
-						condWaitsforArgs.right, mpiBlock.mpiComm,
-						mpiBlock.source));
+		// for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+		// for (Pair<ExpressionNode, List<ExpressionNode>> condWaitsforArgs :
+		// mpiBlock
+		// .getConditionalWaitsfors())
+		// bodyItems.add(checkWaitsfors(condWaitsforArgs.left,
+		// condWaitsforArgs.right, mpiBlock.mpiComm,
+		// mpiBlock.source));
 
 		// Transform step 9: Insert sequential assertions:
 		if (localBlock != null)

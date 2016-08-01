@@ -30,6 +30,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
@@ -532,28 +533,30 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			NumericExpression index = arrayEleRef.getIndex();
 
 			switch (parentResult.first) {
-			case 0:
-				throw new CIVLInternalException("Unreachable", source);
-			case 1:
-				result.append(parentResult.third);
-				result.append(index);
-				result.append(']');
-				return new Triple<>(2, parentResult.second, result.toString());
-			case 2:
-				result.append(parentResult.third);
-				result.append('[');
-				result.append(index);
-				result.append(']');
-				return new Triple<>(-1, parentResult.second, result.toString());
-			default:
-				CIVLType arrayEleType = ((CIVLArrayType) parentResult.second)
-						.elementType();
+				case 0 :
+					throw new CIVLInternalException("Unreachable", source);
+				case 1 :
+					result.append(parentResult.third);
+					result.append(index);
+					result.append(']');
+					return new Triple<>(2, parentResult.second,
+							result.toString());
+				case 2 :
+					result.append(parentResult.third);
+					result.append('[');
+					result.append(index);
+					result.append(']');
+					return new Triple<>(-1, parentResult.second,
+							result.toString());
+				default :
+					CIVLType arrayEleType = ((CIVLArrayType) parentResult.second)
+							.elementType();
 
-				result.append(parentResult.third);
-				result.append('[');
-				result.append(index);
-				result.append(']');
-				return new Triple<>(-1, arrayEleType, result.toString());
+					result.append(parentResult.third);
+					result.append('[');
+					result.append(index);
+					result.append(']');
+					return new Triple<>(-1, arrayEleType, result.toString());
 			}
 		} else {
 			ReferenceExpression parent;
@@ -575,28 +578,28 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					parent);
 
 			switch (parentResult.first) {
-			case 0:
-				CIVLHeapType heapType = (CIVLHeapType) parentResult.second;
-				int indexId = index.getInt();
-				CIVLType heapObjType = heapType.getMalloc(indexId)
-						.getStaticElementType();
+				case 0 :
+					CIVLHeapType heapType = (CIVLHeapType) parentResult.second;
+					int indexId = index.getInt();
+					CIVLType heapObjType = heapType.getMalloc(indexId)
+							.getStaticElementType();
 
-				result.append(parentResult.third);
-				result.append(index.getInt());
-				result.append('[');
-				return new Triple<>(1, heapObjType, result.toString());
-			case 1:
-			case 2:
-				throw new CIVLInternalException("Unreachable", source);
-			default:
-				CIVLStructOrUnionType structOrUnionType = (CIVLStructOrUnionType) parentResult.second;
-				StructOrUnionField field = structOrUnionType
-						.getField(index.getInt());
+					result.append(parentResult.third);
+					result.append(index.getInt());
+					result.append('[');
+					return new Triple<>(1, heapObjType, result.toString());
+				case 1 :
+				case 2 :
+					throw new CIVLInternalException("Unreachable", source);
+				default :
+					CIVLStructOrUnionType structOrUnionType = (CIVLStructOrUnionType) parentResult.second;
+					StructOrUnionField field = structOrUnionType
+							.getField(index.getInt());
 
-				result.append(parentResult.third);
-				result.append('.');
-				result.append(field.name());
-				return new Triple<>(-1, field.type(), result.toString());
+					result.append(parentResult.third);
+					result.append('.');
+					result.append(field.name());
+					return new Triple<>(-1, field.type(), result.toString());
 			}
 		}
 	}
@@ -1094,402 +1097,427 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				// // }
 				// }
 				switch (operator) {
-				case ADD:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "+", false, atomize);
-					break;
-				case AND:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "&&", true, atomize);
-					break;
-				case APPLY: {
-					String function = symbolicExpression.argument(0)
-							.toStringBuffer(true).toString();
+					case ADD :
+						processFlexibleBinaryNew(source, state,
+								symbolicExpression, result, "+", false,
+								atomize);
+						break;
+					case AND :
+						processFlexibleBinaryNew(source, state,
+								symbolicExpression, result, "&&", true,
+								atomize);
+						break;
+					case APPLY : {
+						String function = symbolicExpression.argument(0)
+								.toStringBuffer(true).toString();
 
-					result.append(function);
-					result.append("(");
-					accumulate(source, state, result, ",",
-							(SymbolicSequence<?>) symbolicExpression
-									.argument(1));
-					result.append(")");
-					break;
-				}
-				case ARRAY_LAMBDA:
-					if (type != null) {
+						result.append(function);
 						result.append("(");
-						result.append(type);
-						result.append(") ");
+						accumulate(source, state, result, ",",
+								(SymbolicSequence<?>) symbolicExpression
+										.argument(1));
+						result.append(")");
+						break;
 					}
-					result.append(symbolicExpressionToString(source, state,
-							civlType,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							true, prefix, separator));
-					break;
-				case ARRAY_READ: {
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
-					result.append("[");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
-					result.append("]");
-					break;
-				}
-				case ARRAY_WRITE: {
-					boolean needNewLine = !civlType.areSubtypesScalar()
-							&& !separator.isEmpty();
-					String padding = "\n" + prefix + separator;
-					String newPrefix = needNewLine ? prefix + separator
-							: prefix;
-
-					if (symbolicExpression
-							.argument(0) instanceof SymbolicExpression) {
-						result.append("(");
-						result.append(this.symbolicExpressionToString(source,
-								state, civlType,
-								(SymbolicExpression) symbolicExpression
-										.argument(0),
-								false, prefix, separator));
-						result.append(")");
-					} else
-						result.append(symbolicExpression.argument(0)
-								.toStringBuffer(true));
-					result.append("{");
-					if (needNewLine)
-						result.append(padding);
-					result.append("[");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
-					result.append("]=");
-					result.append(this.symbolicExpressionToString(source, state,
-							((CIVLArrayType) civlType).elementType(),
-							(SymbolicExpression) symbolicExpression.argument(2),
-							true, newPrefix, separator));
-					result.append("}");
-					break;
-				}
-				case CAST:
-					result.append('(');
-					result.append(type.toStringBuffer(false));
-					result.append(')');
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							true, "", ""));
-					break;
-				case COND:
-					result.append(this.symbolicExpressionToString(source, state,
-							this.typeFactory.booleanType(),
-							(SymbolicExpression) symbolicExpression.argument(0),
-							true, "", ""));
-					result.append(" ? ");
-					result.append(this.symbolicExpressionToString(source, state,
-							civlType,
-							(SymbolicExpression) symbolicExpression.argument(1),
-							true, "", ""));
-					result.append(" : ");
-					result.append(this.symbolicExpressionToString(source, state,
-							civlType,
-							(SymbolicExpression) symbolicExpression.argument(2),
-							true, "", ""));
-					if (atomize)
-						atomize(result);
-					break;
-				case DENSE_ARRAY_WRITE: {
-					int count = 0;
-					boolean first = true;
-					boolean needNewLine = !separator.isEmpty()
-							&& civlType != null ? !civlType.areSubtypesScalar()
-									: false;
-					String padding = "\n" + prefix + separator;
-					String newPrefix = needNewLine ? prefix + separator
-							: prefix;
-
-					if (symbolicExpression
-							.argument(0) instanceof SymbolicExpression) {
-						result.append("(");
-						result.append(this.symbolicExpressionToString(source,
-								state, civlType,
-								(SymbolicExpression) symbolicExpression
-										.argument(0),
-								atomize, prefix, separator));
-						result.append(")");
-					} else
-						result.append(symbolicExpression.argument(0)
-								.toStringBuffer(true));
-					result.append("{");
-					for (SymbolicExpression value : (SymbolicSequence<?>) symbolicExpression
-							.argument(1)) {
-						if (!value.isNull()) {
-							if (first)
-								first = false;
-							else
-								result.append(", ");
-							if (needNewLine)
-								result.append(padding);
-							result.append("[" + count + "]" + "=");
-							result.append(symbolicExpressionToString(source,
-									state, this.subType(civlType, count).right,
-									value, false, newPrefix, separator));
-							// result.append(value.toStringBuffer(false));
+					case ARRAY_LAMBDA :
+						if (type != null) {
+							result.append("(");
+							result.append(type);
+							result.append(") ");
 						}
-						count++;
+						result.append(
+								symbolicExpressionToString(source, state,
+										civlType,
+										(SymbolicExpression) symbolicExpression
+												.argument(0),
+										true, prefix, separator));
+						break;
+					case ARRAY_READ : {
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(true));
+						result.append("[");
+						result.append(symbolicExpression.argument(1)
+								.toStringBuffer(false));
+						result.append("]");
+						break;
 					}
-					result.append("}");
-					break;
-				}
-				case DENSE_TUPLE_WRITE: {
-					boolean first = true;
-					int eleIndex = 0;
-					boolean allSubtypesScalar = civlType.areSubtypesScalar();
-					boolean needNewLine = !separator.isEmpty()
-							&& !allSubtypesScalar;
-					String padding = "\n" + prefix + separator;
-					String newPrefix = needNewLine ? prefix + separator
-							: prefix;
-					SymbolicSequence<?> elements = (SymbolicSequence<?>) symbolicExpression
-							.argument(1);
-					boolean needBrackets = allSubtypesScalar
-							|| elements.size() == 0;
+					case ARRAY_WRITE : {
+						boolean needNewLine = !civlType.areSubtypesScalar()
+								&& !separator.isEmpty();
+						String padding = "\n" + prefix + separator;
+						String newPrefix = needNewLine
+								? prefix + separator
+								: prefix;
 
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
-					if (needBrackets)
+						if (symbolicExpression
+								.argument(0) instanceof SymbolicExpression) {
+							result.append("(");
+							result.append(this.symbolicExpressionToString(
+									source, state, civlType,
+									(SymbolicExpression) symbolicExpression
+											.argument(0),
+									false, prefix, separator));
+							result.append(")");
+						} else
+							result.append(symbolicExpression.argument(0)
+									.toStringBuffer(true));
 						result.append("{");
-					for (SymbolicExpression value : elements) {
-						if (!value.isNull()) {
-							Pair<String, CIVLType> eleNameAndType = this
-									.subType(civlType, eleIndex);
-
-							if (first)
-								first = false;
-							else
-								result.append(", ");
-							if (needNewLine)
-								result.append(padding);
-							result.append("." + eleNameAndType.left + "=");
-							result.append(symbolicExpressionToString(source,
-									state, eleNameAndType.right, value, false,
-									newPrefix, separator));
-						}
-						eleIndex++;
-					}
-					if (needBrackets)
+						if (needNewLine)
+							result.append(padding);
+						result.append("[");
+						result.append(symbolicExpression.argument(1)
+								.toStringBuffer(false));
+						result.append("]=");
+						result.append(this.symbolicExpressionToString(source,
+								state, ((CIVLArrayType) civlType).elementType(),
+								(SymbolicExpression) symbolicExpression
+										.argument(2),
+								true, newPrefix, separator));
 						result.append("}");
-					break;
-				}
-				case DIVIDE:
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
-					result.append("/");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(true));
-					if (atomize)
-						atomize(result);
-					break;
-				case EQUALS:
-					processFlexibleBinary(source, state, symbolicExpression,
-							result, "==", true, atomize);
-					break; // if (arguments[0] instanceof
-							// SymbolicExpression)
-				// result.append(this.symbolicExpressionToString(source,
-				// state, null, (SymbolicExpression) arguments[0]));
-				// else
-				// result.append(arguments[0].toStringBuffer(false));
-				// result.append("==");
-				// if (arguments[1] instanceof SymbolicExpression)
-				// result.append(this.symbolicExpressionToString(source,
-				// state, null, (SymbolicExpression) arguments[1]));
-				// else
-				// result.append(arguments[1].toStringBuffer(false));
-				// if (atomize)
-				// atomize(result);
-				// return result.toString();
-				case EXISTS:
-					result.append("exists ");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
-					result.append(" : ");
-					result.append(((SymbolicExpression) symbolicExpression
-							.argument(0)).type().toStringBuffer(false));
-					result.append(" . ");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(true));
-					if (atomize)
-						atomize(result);
-					break;
-				case FORALL:
-					result.append("forall ");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
-					result.append(" : ");
-					result.append(((SymbolicExpression) symbolicExpression
-							.argument(0)).type().toStringBuffer(false));
-					result.append(" . ");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(true));
-					if (atomize)
-						atomize(result);
-					break;
-				case INT_DIVIDE: {
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
-					// result.append("\u00F7");
-					result.append("/");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(true));
-					if (atomize)
-						atomize(result);
-					break;
-				}
-				case LAMBDA:
-					result.append("lambda ");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
-					result.append(" : ");
-					result.append(((SymbolicExpression) symbolicExpression
-							.argument(0)).type().toStringBuffer(false));
-					result.append(". ");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(1),
-							true, prefix, separator));
-					if (atomize)
-						atomize(result);
-					break;
-				case LENGTH:
-					result.append("length(");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							"", ""));
-					result.append(")");
-					break;
-				case LESS_THAN:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "<", true, atomize);
-					break;
-				case LESS_THAN_EQUALS:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "<=", true, atomize);
-					break;
-				case MODULO:
-					processFlexibleBinary(source, state, symbolicExpression,
-							result, "%", true, atomize);
-					break;
-				case MULTIPLY:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "*", true, atomize);
-					break;
-				case NEGATIVE:
-					result.append("-");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							"", ""));
-					atomize(result);
-					break;
-				case NEQ:
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							"", ""));
-					result.append("!=");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(1),
-							true, "", ""));
-					if (atomize)
-						atomize(result);
-					break;
-				case NOT:
-					result.append("!");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							true, "", ""));
-					if (atomize)
-						atomize(result);
-					break;
-				case NULL:
-					result.append("NULL");
-					break;
-				case OR:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "||", false, atomize);
-					break;
-				case POWER:
-					processFlexibleBinary(source, state, symbolicExpression,
-							result, "^", false, atomize);
-					break;
-				case SUBTRACT:
-					processFlexibleBinary(source, state, symbolicExpression,
-							result, "-", false, atomize);
-					break;
-				case SYMBOLIC_CONSTANT:
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
-					break;
-				case TUPLE_READ:
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
-					result.append(".");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
-					if (atomize)
-						atomize(result);
-					break;
-				case TUPLE_WRITE: {
-					boolean needNewLine = !separator.isEmpty()
-							&& !civlType.areSubtypesScalar();
-					String padding = "\n" + prefix + separator;
-					String newPrefix = needNewLine ? prefix + separator
-							: prefix;
-					int fieldIndex = ((IntObject) symbolicExpression
-							.argument(1)).getInt();
-					StructOrUnionField field = ((CIVLStructOrUnionType) civlType)
-							.getField(fieldIndex);
+						break;
+					}
+					case CAST :
+						result.append('(');
+						result.append(type.toStringBuffer(false));
+						result.append(')');
+						result.append(this.symbolicExpressionToString(source,
+								state, null,
+								(SymbolicExpression) symbolicExpression
+										.argument(0),
+								true, "", ""));
+						break;
+					case COND :
+						result.append(this.symbolicExpressionToString(source,
+								state, this.typeFactory.booleanType(),
+								(SymbolicExpression) symbolicExpression
+										.argument(0),
+								true, "", ""));
+						result.append(" ? ");
+						result.append(this.symbolicExpressionToString(source,
+								state, civlType,
+								(SymbolicExpression) symbolicExpression
+										.argument(1),
+								true, "", ""));
+						result.append(" : ");
+						result.append(this.symbolicExpressionToString(source,
+								state, civlType,
+								(SymbolicExpression) symbolicExpression
+										.argument(2),
+								true, "", ""));
+						if (atomize)
+							atomize(result);
+						break;
+					case DENSE_ARRAY_WRITE : {
+						int count = 0;
+						boolean first = true;
+						boolean needNewLine = !separator.isEmpty()
+								&& civlType != null
+										? !civlType.areSubtypesScalar()
+										: false;
+						String padding = "\n" + prefix + separator;
+						String newPrefix = needNewLine
+								? prefix + separator
+								: prefix;
 
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
-					result.append("{");
-					if (needNewLine)
-						result.append(padding);
-					result.append(".");
-					result.append(field.name().name());
-					result.append(":=");
-					result.append(this.symbolicExpressionToString(source, state,
-							field.type(), symbolicExpression, newPrefix,
-							separator));
-					result.append("}");
-					break;
-				}
-				case UNION_EXTRACT:
-					result.append("extract(");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
-					result.append(",");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
-					result.append(")");
-					break;
-				case UNION_INJECT: {
-					result.append(this.symbolicExpressionToString(source, state,
-							civlType,
-							(SymbolicExpression) symbolicExpression.argument(1),
-							false, prefix, separator));
-					break;
-				}
-				case UNION_TEST:
-					result.append("test(");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
-					result.append(",");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
-					result.append(")");
-					break;
-				default:
-					result.append(symbolicExpression.toStringBufferLong());
+						if (symbolicExpression
+								.argument(0) instanceof SymbolicExpression) {
+							result.append("(");
+							result.append(this.symbolicExpressionToString(
+									source, state, civlType,
+									(SymbolicExpression) symbolicExpression
+											.argument(0),
+									atomize, prefix, separator));
+							result.append(")");
+						} else
+							result.append(symbolicExpression.argument(0)
+									.toStringBuffer(true));
+						result.append("{");
+						for (SymbolicExpression value : (SymbolicSequence<?>) symbolicExpression
+								.argument(1)) {
+							if (!value.isNull()) {
+								if (first)
+									first = false;
+								else
+									result.append(", ");
+								if (needNewLine)
+									result.append(padding);
+								result.append("[" + count + "]" + "=");
+								result.append(symbolicExpressionToString(source,
+										state,
+										this.subType(civlType, count).right,
+										value, false, newPrefix, separator));
+								// result.append(value.toStringBuffer(false));
+							}
+							count++;
+						}
+						result.append("}");
+						break;
+					}
+					case DENSE_TUPLE_WRITE : {
+						boolean first = true;
+						int eleIndex = 0;
+						boolean allSubtypesScalar = civlType
+								.areSubtypesScalar();
+						boolean needNewLine = !separator.isEmpty()
+								&& !allSubtypesScalar;
+						String padding = "\n" + prefix + separator;
+						String newPrefix = needNewLine
+								? prefix + separator
+								: prefix;
+						SymbolicSequence<?> elements = (SymbolicSequence<?>) symbolicExpression
+								.argument(1);
+						boolean needBrackets = allSubtypesScalar
+								|| elements.size() == 0;
+
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(true));
+						if (needBrackets)
+							result.append("{");
+						for (SymbolicExpression value : elements) {
+							if (!value.isNull()) {
+								Pair<String, CIVLType> eleNameAndType = this
+										.subType(civlType, eleIndex);
+
+								if (first)
+									first = false;
+								else
+									result.append(", ");
+								if (needNewLine)
+									result.append(padding);
+								result.append("." + eleNameAndType.left + "=");
+								result.append(symbolicExpressionToString(source,
+										state, eleNameAndType.right, value,
+										false, newPrefix, separator));
+							}
+							eleIndex++;
+						}
+						if (needBrackets)
+							result.append("}");
+						break;
+					}
+					case DIVIDE :
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(true));
+						result.append("/");
+						result.append(symbolicExpression.argument(1)
+								.toStringBuffer(true));
+						if (atomize)
+							atomize(result);
+						break;
+					case EQUALS :
+						processFlexibleBinary(source, state, symbolicExpression,
+								result, "==", true, atomize);
+						break; // if (arguments[0] instanceof
+								// SymbolicExpression)
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[0]));
+					// else
+					// result.append(arguments[0].toStringBuffer(false));
+					// result.append("==");
+					// if (arguments[1] instanceof SymbolicExpression)
+					// result.append(this.symbolicExpressionToString(source,
+					// state, null, (SymbolicExpression) arguments[1]));
+					// else
+					// result.append(arguments[1].toStringBuffer(false));
+					// if (atomize)
+					// atomize(result);
+					// return result.toString();
+					case EXISTS :
+						result.append("exists ");
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(false));
+						result.append(" : ");
+						result.append(((SymbolicExpression) symbolicExpression
+								.argument(0)).type().toStringBuffer(false));
+						result.append(" . ");
+						result.append(symbolicExpression.argument(1)
+								.toStringBuffer(true));
+						if (atomize)
+							atomize(result);
+						break;
+					case FORALL :
+						result.append("forall ");
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(false));
+						result.append(" : ");
+						result.append(((SymbolicExpression) symbolicExpression
+								.argument(0)).type().toStringBuffer(false));
+						result.append(" . ");
+						result.append(symbolicExpression.argument(1)
+								.toStringBuffer(true));
+						if (atomize)
+							atomize(result);
+						break;
+					case INT_DIVIDE : {
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(true));
+						// result.append("\u00F7");
+						result.append("/");
+						result.append(symbolicExpression.argument(1)
+								.toStringBuffer(true));
+						if (atomize)
+							atomize(result);
+						break;
+					}
+					case LAMBDA :
+						result.append("lambda ");
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(false));
+						result.append(" : ");
+						result.append(((SymbolicExpression) symbolicExpression
+								.argument(0)).type().toStringBuffer(false));
+						result.append(". ");
+						result.append(this
+								.symbolicExpressionToString(source, state, null,
+										(SymbolicExpression) symbolicExpression
+												.argument(1),
+										true, prefix, separator));
+						if (atomize)
+							atomize(result);
+						break;
+					case LENGTH :
+						result.append("length(");
+						result.append(this.symbolicExpressionToString(source,
+								state, null,
+								(SymbolicExpression) symbolicExpression
+										.argument(0),
+								"", ""));
+						result.append(")");
+						break;
+					case LESS_THAN :
+						processFlexibleBinaryNew(source, state,
+								symbolicExpression, result, "<", true, atomize);
+						break;
+					case LESS_THAN_EQUALS :
+						processFlexibleBinaryNew(source, state,
+								symbolicExpression, result, "<=", true,
+								atomize);
+						break;
+					case MODULO :
+						processFlexibleBinary(source, state, symbolicExpression,
+								result, "%", true, atomize);
+						break;
+					case MULTIPLY :
+						processFlexibleBinaryNew(source, state,
+								symbolicExpression, result, "*", true, atomize);
+						break;
+					case NEGATIVE :
+						result.append("-");
+						result.append(this.symbolicExpressionToString(source,
+								state, null,
+								(SymbolicExpression) symbolicExpression
+										.argument(0),
+								"", ""));
+						atomize(result);
+						break;
+					case NEQ :
+						result.append(this.symbolicExpressionToString(source,
+								state, null,
+								(SymbolicExpression) symbolicExpression
+										.argument(0),
+								"", ""));
+						result.append("!=");
+						result.append(this.symbolicExpressionToString(source,
+								state, null,
+								(SymbolicExpression) symbolicExpression
+										.argument(1),
+								true, "", ""));
+						if (atomize)
+							atomize(result);
+						break;
+					case NOT :
+						result.append("!");
+						result.append(this.symbolicExpressionToString(source,
+								state, null,
+								(SymbolicExpression) symbolicExpression
+										.argument(0),
+								true, "", ""));
+						if (atomize)
+							atomize(result);
+						break;
+					case NULL :
+						result.append("NULL");
+						break;
+					case OR :
+						processFlexibleBinaryNew(source, state,
+								symbolicExpression, result, "||", false,
+								atomize);
+						break;
+					case POWER :
+						processFlexibleBinary(source, state, symbolicExpression,
+								result, "^", false, atomize);
+						break;
+					case SUBTRACT :
+						processFlexibleBinary(source, state, symbolicExpression,
+								result, "-", false, atomize);
+						break;
+					case SYMBOLIC_CONSTANT :
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(true));
+						break;
+					case TUPLE_READ :
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(true));
+						result.append(".");
+						result.append(symbolicExpression.argument(1)
+								.toStringBuffer(false));
+						if (atomize)
+							atomize(result);
+						break;
+					case TUPLE_WRITE : {
+						boolean needNewLine = !separator.isEmpty()
+								&& !civlType.areSubtypesScalar();
+						String padding = "\n" + prefix + separator;
+						String newPrefix = needNewLine
+								? prefix + separator
+								: prefix;
+						int fieldIndex = ((IntObject) symbolicExpression
+								.argument(1)).getInt();
+						StructOrUnionField field = ((CIVLStructOrUnionType) civlType)
+								.getField(fieldIndex);
+
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(true));
+						result.append("{");
+						if (needNewLine)
+							result.append(padding);
+						result.append(".");
+						result.append(field.name().name());
+						result.append(":=");
+						result.append(this.symbolicExpressionToString(source,
+								state, field.type(), symbolicExpression,
+								newPrefix, separator));
+						result.append("}");
+						break;
+					}
+					case UNION_EXTRACT :
+						result.append("extract(");
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(false));
+						result.append(",");
+						result.append(symbolicExpression.argument(1)
+								.toStringBuffer(false));
+						result.append(")");
+						break;
+					case UNION_INJECT : {
+						result.append(this.symbolicExpressionToString(source,
+								state, civlType,
+								(SymbolicExpression) symbolicExpression
+										.argument(1),
+								false, prefix, separator));
+						break;
+					}
+					case UNION_TEST :
+						result.append("test(");
+						result.append(symbolicExpression.argument(0)
+								.toStringBuffer(false));
+						result.append(",");
+						result.append(symbolicExpression.argument(1)
+								.toStringBuffer(false));
+						result.append(")");
+						break;
+					default :
+						result.append(symbolicExpression.toStringBufferLong());
 				}
 			}
 		}
@@ -1502,7 +1530,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		StringBuffer result = new StringBuffer();
 		// int elementIndex = 0;
 		boolean allSubtypesScalar = civlType != null
-				? civlType.areSubtypesScalar() : false;
+				? civlType.areSubtypesScalar()
+				: false;
 		boolean needNewLine = !separator.isEmpty() && !allSubtypesScalar;
 		String padding = "\n" + prefix + separator;
 		String newPrefix = needNewLine ? prefix + separator : prefix;
@@ -1517,7 +1546,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					i);
 			CIVLType eleType = elementNameAndType.right;
 			boolean subtypesOfEleScalar = eleType != null
-					? eleType.areSubtypesScalar() : false;
+					? eleType.areSubtypesScalar()
+					: false;
 			boolean eleEmpty = false;
 			SymbolicExpression symbolicElement = (SymbolicExpression) tuppleOrArray
 					.argument(i);
@@ -1551,7 +1581,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		StringBuffer result = new StringBuffer();
 		int elementIndex = 0;
 		boolean allSubtypesScalar = civlType != null
-				? civlType.areSubtypesScalar() : false;
+				? civlType.areSubtypesScalar()
+				: false;
 		boolean needNewLine = !separator.isEmpty() && !allSubtypesScalar;
 		String padding = "\n" + prefix + separator;
 		String newPrefix = needNewLine ? prefix + separator : prefix;
@@ -1566,7 +1597,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					elementIndex);
 			CIVLType eleType = elementNameAndType.right;
 			boolean subtypesOfEleScalar = eleType != null
-					? eleType.areSubtypesScalar() : false;
+					? eleType.areSubtypesScalar()
+					: false;
 			boolean eleEmpty = false;
 
 			if (symbolicElement.argument(0) instanceof SymbolicSequence) {
@@ -1797,50 +1829,52 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		StringBuffer result = new StringBuffer();
 
 		switch (kind) {
-		case DEREFERENCE: {
-			result.append("*(");
-			result.append(this.expressionEvaluation(state, pid,
-					((DereferenceExpression) lhs).pointer()).right);
-			result.append(")");
-			break;
-		}
-		case DOT: {
-			DotExpression dot = (DotExpression) lhs;
-			Expression structOrUnion = dot.structOrUnion();
-
-			result.append("(");
-			if (structOrUnion instanceof LHSExpression)
-				result.append(this.evaluateLHSExpression(state, pid,
-						(LHSExpression) structOrUnion));
-			else
+			case DEREFERENCE : {
+				result.append("*(");
 				result.append(this.expressionEvaluation(state, pid,
-						structOrUnion).right);
-			result.append(").");
-			assert structOrUnion
-					.getExpressionType() instanceof CIVLStructOrUnionType;
-			result.append(
-					((CIVLStructOrUnionType) structOrUnion.getExpressionType())
-							.getField(dot.fieldIndex()).name().name());
-			break;
-		}
-		case SUBSCRIPT: {
-			SubscriptExpression subscript = (SubscriptExpression) lhs;
+						((DereferenceExpression) lhs).pointer()).right);
+				result.append(")");
+				break;
+			}
+			case DOT : {
+				DotExpression dot = (DotExpression) lhs;
+				Expression structOrUnion = dot.structOrUnion();
 
-			result.append(
-					this.evaluateLHSExpression(state, pid, subscript.array()));
-			result.append("[");
-			result.append(this.expressionEvaluationFinalResult(state, pid,
-					subscript.index()).right);
-			result.append("]");
-			break;
-		}
-		case VARIABLE:
-			result.append(((VariableExpression) lhs).variable().name().name());
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"evaluating left-hand-side expression of " + kind + " kind",
-					lhs.getSource());
+				result.append("(");
+				if (structOrUnion instanceof LHSExpression)
+					result.append(this.evaluateLHSExpression(state, pid,
+							(LHSExpression) structOrUnion));
+				else
+					result.append(this.expressionEvaluation(state, pid,
+							structOrUnion).right);
+				result.append(").");
+				assert structOrUnion
+						.getExpressionType() instanceof CIVLStructOrUnionType;
+				result.append(((CIVLStructOrUnionType) structOrUnion
+						.getExpressionType()).getField(dot.fieldIndex()).name()
+								.name());
+				break;
+			}
+			case SUBSCRIPT : {
+				SubscriptExpression subscript = (SubscriptExpression) lhs;
+
+				result.append(this.evaluateLHSExpression(state, pid,
+						subscript.array()));
+				result.append("[");
+				result.append(this.expressionEvaluationFinalResult(state, pid,
+						subscript.index()).right);
+				result.append("]");
+				break;
+			}
+			case VARIABLE :
+				result.append(
+						((VariableExpression) lhs).variable().name().name());
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"evaluating left-hand-side expression of " + kind
+								+ " kind",
+						lhs.getSource());
 		}
 		return result;
 	}
@@ -1855,287 +1889,289 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		Pair<State, String> tmp;
 
 		switch (kind) {
-		case ASSIGN: {
-			if (statement instanceof AtomicLockAssignStatement) {
-				AtomicLockAssignStatement atomicLockStmt = (AtomicLockAssignStatement) statement;
-				String process = state.getProcessState(pid).name();
-				int previousAtomicCount = state.getProcessState(pid)
-						.atomicCount();
+			case ASSIGN : {
+				if (statement instanceof AtomicLockAssignStatement) {
+					AtomicLockAssignStatement atomicLockStmt = (AtomicLockAssignStatement) statement;
+					String process = state.getProcessState(pid).name();
+					int previousAtomicCount = state.getProcessState(pid)
+							.atomicCount();
 
-				if (atomicLockStmt.enterAtomic()) {
-					result.append("ENTER_ATOMIC [");
-					if (previousAtomicCount < 1)
-						result.append(
-								ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX
-										+ ":=" + process + ", ");
-					result.append(process + ".atomicCount:="
-							+ (previousAtomicCount + 1));
-					result.append("]");
+					if (atomicLockStmt.enterAtomic()) {
+						result.append("ENTER_ATOMIC [");
+						if (previousAtomicCount < 1)
+							result.append(
+									ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX
+											+ ":=" + process + ", ");
+						result.append(process + ".atomicCount:="
+								+ (previousAtomicCount + 1));
+						result.append("]");
+					} else {
+						result.append("LEAVE_ATOMIC [");
+
+						if (previousAtomicCount == 1)
+							result.append(
+									ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX
+											+ ":=$proc_null, ");
+						result.append(process + ".atomicCount:=0");
+						result.append("]");
+					}
 				} else {
-					result.append("LEAVE_ATOMIC [");
+					AssignStatement assign = (AssignStatement) statement;
+					LHSExpression lhs = assign.getLhs();
+					Expression rhs = assign.rhs();
+					StringBuffer lhsString = this.evaluateLHSExpression(state,
+							pid, lhs);
+					String rhsString = this.expressionEvaluation(state, pid,
+							rhs).right.toString();
+					String newRhsString = this.expressionEvaluationFinalResult(
+							state, pid, rhs).right;
 
-					if (previousAtomicCount == 1)
-						result.append(
-								ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX
-										+ ":=$proc_null, ");
-					result.append(process + ".atomicCount:=0");
-					result.append("]");
-				}
-			} else {
-				AssignStatement assign = (AssignStatement) statement;
-				LHSExpression lhs = assign.getLhs();
-				Expression rhs = assign.rhs();
-				StringBuffer lhsString = this.evaluateLHSExpression(state, pid,
-						lhs);
-				String rhsString = this.expressionEvaluation(state, pid,
-						rhs).right.toString();
-				String newRhsString = this
-						.expressionEvaluationFinalResult(state, pid, rhs).right;
-
-				result.append(lhsString);
-				result.append("=");
-				result.append(rhsString);
-				if (!rhsString.equals(newRhsString)) {
-					result.append(" ");
-					result.append(SEF_START);
 					result.append(lhsString);
-					result.append(SEF);
-					result.append(newRhsString);
-					result.append(SEF_END);
-				}
-			}
-			break;
-		}
-		case CALL_OR_SPAWN: {
-			CallOrSpawnStatement callOrSpawn = (CallOrSpawnStatement) statement;
-			CIVLFunction function = callOrSpawn.function();
-			List<Expression> args = callOrSpawn.arguments();
-			int numArgs = args.size();
-			LHSExpression lhs = callOrSpawn.lhs();
-			StringBuffer lhsString = null;
-
-			if (lhs != null) {
-				lhsString = this.evaluateLHSExpression(state, pid, lhs);
-				result.append(lhsString);
-				result.append("=");
-			}
-			if (callOrSpawn.isSpawn())
-				result.append("$spawn ");
-			if (function == null) {
-				function = this.evaluator.evaluateFunctionIdentifier(state, pid,
-						callOrSpawn.functionExpression(),
-						callOrSpawn.getSource()).second;
-				assert function != null;
-			}
-			result.append(function.name().name());
-			result.append("(");
-			for (int i = 0; i < numArgs; i++) {
-				Expression arg = args.get(i);
-
-				if (i != 0)
-					result.append(", ");
-				tmp = this.expressionEvaluation(state, pid, arg);
-				result.append(tmp.right);
-			}
-			result.append(")");
-			if (lhs != null
-					&& (callOrSpawn.isSpawn() || callOrSpawn.isSystemCall())) {
-				String newLhsValue = this.expressionEvaluationFinalResult(
-						postState, pid, lhs).right;
-
-				if (newLhsValue != null) {
-					result.append(" ");
-					result.append(SEF_START);
-					result.append(lhsString);
-					result.append(SEF);
-					result.append(this.expressionEvaluationFinalResult(
-							postState, pid, lhs).right);
-					result.append(SEF_END);
-				}
-			}
-			break;
-		}
-		case CONTRACT_VERIFY: {
-			ContractVerifyStatement conVeri = (ContractVerifyStatement) statement;
-			Iterator<Expression> argIter = conVeri.arguments().iterator();
-
-			result.append("$contractVerify");
-			if (conVeri.isWorker())
-				result.append("_worker");
-			result.append(" " + conVeri.functionExpression() + "(");
-			result.append(argIter.hasNext() ? argIter.next() : " ");
-			while (argIter.hasNext())
-				result.append(", " + argIter.next());
-			result.append(");");
-			break;
-		}
-		case DOMAIN_ITERATOR: {
-			DomainIteratorStatement civlForEnter = (DomainIteratorStatement) statement;
-			List<Variable> loopVars = civlForEnter.loopVariables();
-			int dim = loopVars.size();
-
-			result.append("NEXT of (");
-			for (int i = 0; i < dim; i++) {
-				Variable loopVar = loopVars.get(i);
-
-				if (i != 0)
-					result.append(", ");
-				result.append(this.symbolicExpressionToString(
-						loopVar.getSource(), state, loopVar.type(),
-						state.valueOf(pid, loopVar), "", ""));
-			}
-			result.append(") in ");
-			tmp = this.expressionEvaluation(state, pid, civlForEnter.domain());
-			result.append(tmp.right);
-			result.append(" [");
-			for (int i = 0; i < dim; i++) {
-				Variable loopVar = loopVars.get(i);
-
-				if (i != 0)
-					result.append(", ");
-				result.append(loopVar.name().name());
-				result.append(":=");
-				result.append(this.symbolicExpressionToString(
-						loopVar.getSource(), postState, loopVar.type(),
-						postState.valueOf(pid, loopVar), "", ""));
-			}
-			result.append("]");
-			break;
-		}
-		case CIVL_PAR_FOR_ENTER: {
-			// $parfor(i0, i1, i2: dom) $spawn function(i0, i1, i2);
-			CivlParForSpawnStatement parForEnter = (CivlParForSpawnStatement) statement;
-			StringBuffer arguments = new StringBuffer();
-
-			for (int i = 0; i < parForEnter.dimension(); i++) {
-				if (i != 0)
-					arguments.append(",");
-				arguments.append("i");
-				arguments.append(i);
-			}
-			result.append("$parfor(");
-			result.append(arguments);
-			result.append(": ");
-			result.append(this.expressionEvaluation(state, pid,
-					parForEnter.domain()).right);
-			result.append(")");
-			result.append(" $spawn ");
-			result.append(parForEnter.parProcFunction().name().name());
-			result.append("(");
-			result.append(arguments);
-			result.append(")");
-			break;
-		}
-		case MALLOC: {
-			MallocStatement malloc = (MallocStatement) statement;
-			LHSExpression lhs = malloc.getLHS();
-			StringBuffer lhsString = null;
-			String newLhsString;
-
-			if (lhs != null) {
-				lhsString = this.evaluateLHSExpression(state, pid, lhs);
-				result.append(lhsString);
-				result.append("=");
-			}
-			result.append("(");
-			result.append(malloc.getStaticElementType());
-			result.append("*)");
-			result.append("$malloc(");
-			result.append(this.expressionEvaluation(state, pid,
-					malloc.getScopeExpression()).right);
-			result.append(", ");
-			result.append(this.expressionEvaluation(state, pid,
-					malloc.getSizeExpression()).right);
-			result.append(") ");
-			newLhsString = this.expressionEvaluationFinalResult(postState, pid,
-					lhs).right;
-			if (newLhsString != null) {
-				result.append(SEF_START);
-				result.append(lhsString);
-				result.append(SEF);
-				result.append(newLhsString);
-				result.append(SEF_END);
-			}
-			break;
-		}
-		case NOOP: {
-			Expression guard = statement.guard();
-
-			result.append(statement.toString());
-			result.append(" (guard: ");
-			result.append(
-					this.expressionEvaluation(state, pid, guard, false).right);
-			result.append(")");
-			break;
-		}
-		case RETURN: {
-			// return expression (assigning to...)
-			// ProcessState procState=state.getProcessState(pid);
-			CIVLFunction function = state.getProcessState(pid).peekStack()
-					.location().function();
-			// String functionName;
-			Expression expression = ((ReturnStatement) statement).expression();
-			StackEntry callerStack = state.getProcessState(pid)
-					.peekSecondLastStack();
-			CallOrSpawnStatement caller = null;
-
-			if (callerStack != null) {
-				Statement stmt = callerStack.location().getSoleOutgoing();
-				if (stmt.statementKind() == StatementKind.CALL_OR_SPAWN)
-					caller = (CallOrSpawnStatement) callerStack.location()
-							.getSoleOutgoing();
-			}
-			assert function != null;
-			result.append(function.name().name());
-			result.append("(...) return");
-			if (expression != null) {
-				result.append(" ");
-				result.append(this.expressionEvaluation(state, pid,
-						expression).right);
-				if (caller != null) {
-					LHSExpression lhs = caller.lhs();
-
-					if (lhs != null) {
+					result.append("=");
+					result.append(rhsString);
+					if (!rhsString.equals(newRhsString)) {
 						result.append(" ");
 						result.append(SEF_START);
-						result.append(
-								this.evaluateLHSExpression(state, pid, lhs));
+						result.append(lhsString);
 						result.append(SEF);
-						result.append(this.expressionEvaluationFinalResult(
-								state, pid, expression).right);
+						result.append(newRhsString);
 						result.append(SEF_END);
 					}
 				}
+				break;
 			}
-			break;
-		}
-		case UPDATE: {
-			UpdateStatement update = (UpdateStatement) statement;
+			case CALL_OR_SPAWN : {
+				CallOrSpawnStatement callOrSpawn = (CallOrSpawnStatement) statement;
+				CIVLFunction function = callOrSpawn.function();
+				List<Expression> args = callOrSpawn.arguments();
+				int numArgs = args.size();
+				LHSExpression lhs = callOrSpawn.lhs();
+				StringBuffer lhsString = null;
 
-			result.append("$update (");
-			result.append(this.expressionEvaluation(state, pid,
-					update.collator()).right);
-			result.append(") ");
-			result.append(this.statementEvaluation(state, postState, pid,
-					update.call()));
-			break;
-		}
-		case WITH: {
-			WithStatement with = (WithStatement) statement;
+				if (lhs != null) {
+					lhsString = this.evaluateLHSExpression(state, pid, lhs);
+					result.append(lhsString);
+					result.append("=");
+				}
+				if (callOrSpawn.isSpawn())
+					result.append("$spawn ");
+				if (function == null) {
+					function = this.evaluator.evaluateFunctionIdentifier(state,
+							pid, callOrSpawn.functionExpression(),
+							callOrSpawn.getSource()).second;
+					assert function != null;
+				}
+				result.append(function.name().name());
+				result.append("(");
+				for (int i = 0; i < numArgs; i++) {
+					Expression arg = args.get(i);
 
-			if (with.isEnter())
-				result.append("WITH_ENTER (");
-			else
-				result.append("WITH_EXIT (");
-			result.append(this.expressionEvaluation(state, pid,
-					with.collateState()).right);
-			result.append(")");
-			break;
-		}
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"pretty-printing statement of " + kind + " kind",
-					statement.getSource());
+					if (i != 0)
+						result.append(", ");
+					tmp = this.expressionEvaluation(state, pid, arg);
+					result.append(tmp.right);
+				}
+				result.append(")");
+				if (lhs != null && (callOrSpawn.isSpawn()
+						|| callOrSpawn.isSystemCall())) {
+					String newLhsValue = this.expressionEvaluationFinalResult(
+							postState, pid, lhs).right;
+
+					if (newLhsValue != null) {
+						result.append(" ");
+						result.append(SEF_START);
+						result.append(lhsString);
+						result.append(SEF);
+						result.append(this.expressionEvaluationFinalResult(
+								postState, pid, lhs).right);
+						result.append(SEF_END);
+					}
+				}
+				break;
+			}
+			case CONTRACT_VERIFY : {
+				ContractVerifyStatement conVeri = (ContractVerifyStatement) statement;
+				Iterator<Expression> argIter = conVeri.arguments().iterator();
+
+				result.append("$contractVerify");
+				if (conVeri.isWorker())
+					result.append("_worker");
+				result.append(" " + conVeri.functionExpression() + "(");
+				result.append(argIter.hasNext() ? argIter.next() : " ");
+				while (argIter.hasNext())
+					result.append(", " + argIter.next());
+				result.append(");");
+				break;
+			}
+			case DOMAIN_ITERATOR : {
+				DomainIteratorStatement civlForEnter = (DomainIteratorStatement) statement;
+				List<Variable> loopVars = civlForEnter.loopVariables();
+				int dim = loopVars.size();
+
+				result.append("NEXT of (");
+				for (int i = 0; i < dim; i++) {
+					Variable loopVar = loopVars.get(i);
+
+					if (i != 0)
+						result.append(", ");
+					result.append(this.symbolicExpressionToString(
+							loopVar.getSource(), state, loopVar.type(),
+							state.valueOf(pid, loopVar), "", ""));
+				}
+				result.append(") in ");
+				tmp = this.expressionEvaluation(state, pid,
+						civlForEnter.domain());
+				result.append(tmp.right);
+				result.append(" [");
+				for (int i = 0; i < dim; i++) {
+					Variable loopVar = loopVars.get(i);
+
+					if (i != 0)
+						result.append(", ");
+					result.append(loopVar.name().name());
+					result.append(":=");
+					result.append(this.symbolicExpressionToString(
+							loopVar.getSource(), postState, loopVar.type(),
+							postState.valueOf(pid, loopVar), "", ""));
+				}
+				result.append("]");
+				break;
+			}
+			case CIVL_PAR_FOR_ENTER : {
+				// $parfor(i0, i1, i2: dom) $spawn function(i0, i1, i2);
+				CivlParForSpawnStatement parForEnter = (CivlParForSpawnStatement) statement;
+				StringBuffer arguments = new StringBuffer();
+
+				for (int i = 0; i < parForEnter.dimension(); i++) {
+					if (i != 0)
+						arguments.append(",");
+					arguments.append("i");
+					arguments.append(i);
+				}
+				result.append("$parfor(");
+				result.append(arguments);
+				result.append(": ");
+				result.append(this.expressionEvaluation(state, pid,
+						parForEnter.domain()).right);
+				result.append(")");
+				result.append(" $spawn ");
+				result.append(parForEnter.parProcFunction().name().name());
+				result.append("(");
+				result.append(arguments);
+				result.append(")");
+				break;
+			}
+			case MALLOC : {
+				MallocStatement malloc = (MallocStatement) statement;
+				LHSExpression lhs = malloc.getLHS();
+				StringBuffer lhsString = null;
+				String newLhsString;
+
+				if (lhs != null) {
+					lhsString = this.evaluateLHSExpression(state, pid, lhs);
+					result.append(lhsString);
+					result.append("=");
+				}
+				result.append("(");
+				result.append(malloc.getStaticElementType());
+				result.append("*)");
+				result.append("$malloc(");
+				result.append(this.expressionEvaluation(state, pid,
+						malloc.getScopeExpression()).right);
+				result.append(", ");
+				result.append(this.expressionEvaluation(state, pid,
+						malloc.getSizeExpression()).right);
+				result.append(") ");
+				newLhsString = this.expressionEvaluationFinalResult(postState,
+						pid, lhs).right;
+				if (newLhsString != null) {
+					result.append(SEF_START);
+					result.append(lhsString);
+					result.append(SEF);
+					result.append(newLhsString);
+					result.append(SEF_END);
+				}
+				break;
+			}
+			case NOOP : {
+				Expression guard = statement.guard();
+
+				result.append(statement.toString());
+				result.append(" (guard: ");
+				result.append(this.expressionEvaluation(state, pid, guard,
+						false).right);
+				result.append(")");
+				break;
+			}
+			case RETURN : {
+				// return expression (assigning to...)
+				// ProcessState procState=state.getProcessState(pid);
+				CIVLFunction function = state.getProcessState(pid).peekStack()
+						.location().function();
+				// String functionName;
+				Expression expression = ((ReturnStatement) statement)
+						.expression();
+				StackEntry callerStack = state.getProcessState(pid)
+						.peekSecondLastStack();
+				CallOrSpawnStatement caller = null;
+
+				if (callerStack != null) {
+					Statement stmt = callerStack.location().getSoleOutgoing();
+					if (stmt.statementKind() == StatementKind.CALL_OR_SPAWN)
+						caller = (CallOrSpawnStatement) callerStack.location()
+								.getSoleOutgoing();
+				}
+				assert function != null;
+				result.append(function.name().name());
+				result.append("(...) return");
+				if (expression != null) {
+					result.append(" ");
+					result.append(this.expressionEvaluation(state, pid,
+							expression).right);
+					if (caller != null) {
+						LHSExpression lhs = caller.lhs();
+
+						if (lhs != null) {
+							result.append(" ");
+							result.append(SEF_START);
+							result.append(this.evaluateLHSExpression(state, pid,
+									lhs));
+							result.append(SEF);
+							result.append(this.expressionEvaluationFinalResult(
+									state, pid, expression).right);
+							result.append(SEF_END);
+						}
+					}
+				}
+				break;
+			}
+			case UPDATE : {
+				UpdateStatement update = (UpdateStatement) statement;
+
+				result.append("$update (");
+				result.append(this.expressionEvaluation(state, pid,
+						update.collator()).right);
+				result.append(") ");
+				result.append(this.statementEvaluation(state, postState, pid,
+						update.call()));
+				break;
+			}
+			case WITH : {
+				WithStatement with = (WithStatement) statement;
+
+				if (with.isEnter())
+					result.append("WITH_ENTER (");
+				else
+					result.append("WITH_EXIT (");
+				result.append(this.expressionEvaluation(state, pid,
+						with.collateState()).right);
+				result.append(")");
+				break;
+			}
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"pretty-printing statement of " + kind + " kind",
+						statement.getSource());
 		}
 		return result;
 
@@ -2163,175 +2199,194 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							state, exprType, eval.value, !isTopLevel, "", ""));
 		} else {
 			switch (kind) {
-			case ABSTRACT_FUNCTION_CALL: {
-				AbstractFunctionCallExpression abstractFuncCall = (AbstractFunctionCallExpression) expression;
-				int i = 0;
-				result.append(abstractFuncCall.function().name().name());
-				result.append("(");
-				for (Expression argument : abstractFuncCall.arguments()) {
-					if (i != 0)
-						result.append(", ");
-					i++;
-					temp = expressionEvaluationWorker(state, pid, argument,
-							resultOnly, false);
-					result.append(temp.right);
-					state = temp.left;
-				}
-				result.append(")");
-				break;
-			}
-			case BINARY: {
-				BinaryExpression binary = (BinaryExpression) expression;
-
-				if (!isTopLevel)
+				case ABSTRACT_FUNCTION_CALL : {
+					AbstractFunctionCallExpression abstractFuncCall = (AbstractFunctionCallExpression) expression;
+					int i = 0;
+					result.append(abstractFuncCall.function().name().name());
 					result.append("(");
-				temp = this.expressionEvaluationWorker(state, pid,
-						binary.left(), resultOnly, false);
-				state = temp.left;
-				result.append(temp.right);
-				result.append(binary.operatorToString());
-				temp = this.expressionEvaluationWorker(state, pid,
-						binary.right(), resultOnly, false);
-				state = temp.left;
-				result.append(temp.right);
-				if (!isTopLevel)
+					for (Expression argument : abstractFuncCall.arguments()) {
+						if (i != 0)
+							result.append(", ");
+						i++;
+						temp = expressionEvaluationWorker(state, pid, argument,
+								resultOnly, false);
+						result.append(temp.right);
+						state = temp.left;
+					}
 					result.append(")");
-				break;
-			}
-			case CAST: {
-				CastExpression cast = (CastExpression) expression;
-
-				result.append("(");
-				result.append(cast.getCastType().toString());
-				result.append(")");
-				temp = this.expressionEvaluationWorker(state, pid,
-						cast.getExpression(), resultOnly, false);
-				state = temp.left;
-				result.append(temp.right);
-				break;
-			}
-			case COND: {
-				throw new CIVLInternalException(
-						"Conditional expression is unreachable because it should"
-								+ " have been traslated away by the model builder.",
-						expression.getSource());
-			}
-			case DEREFERENCE: {
-				DereferenceExpression dereference = (DereferenceExpression) expression;
-
-				result.append("*");
-				temp = this.expressionEvaluationWorker(state, pid,
-						dereference.pointer(), resultOnly, false);
-				state = temp.left;
-				result.append(temp.right);
-				break;
-			}
-			case DOMAIN_GUARD: {
-				DomainGuardExpression domGuard = (DomainGuardExpression) expression;
-				int dim = domGuard.dimension();
-
-				temp = this.expressionEvaluationWorker(state, pid,
-						domGuard.domain(), resultOnly, false);
-				state = temp.left;
-				result.append(temp.right);
-				result.append(" has next for (");
-				for (int i = 0; i < dim; i++) {
-					Variable var = domGuard.variableAt(i);
-
-					if (i != 0)
-						result.append(", ");
-					result.append(this.symbolicExpressionToString(
-							var.getSource(), state, var.type(),
-							state.getVariableValue(
-									state.getDyscope(pid, var.scope()),
-									var.vid())));
+					break;
 				}
-				result.append(")");
-				break;
-			}
-			case FUNCTION_IDENTIFIER: {
-				FunctionIdentifierExpression functionID = (FunctionIdentifierExpression) expression;
-				Triple<State, CIVLFunction, Integer> functionResult = this.evaluator
-						.evaluateFunctionIdentifier(state, pid, functionID,
-								expression.getSource());
+				case BINARY : {
+					BinaryExpression binary = (BinaryExpression) expression;
 
-				state = functionResult.first;
-				result.append(functionResult.second.name().name());
-				break;
-			}
-			case QUANTIFIER: {
-				result.append(expression.toString());
-				break;
-			}
-			case UNARY: {
-				UnaryExpression unary = (UnaryExpression) expression;
+					if (!isTopLevel)
+						result.append("(");
+					temp = this.expressionEvaluationWorker(state, pid,
+							binary.left(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					result.append(binary.operatorToString());
+					temp = this.expressionEvaluationWorker(state, pid,
+							binary.right(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					if (!isTopLevel)
+						result.append(")");
+					break;
+				}
+				case CAST : {
+					CastExpression cast = (CastExpression) expression;
 
-				result.append(unary.operatorToString());
-				temp = this.expressionEvaluationWorker(state, pid,
-						unary.operand(), resultOnly, false);
-				state = temp.left;
-				result.append(temp.right);
-				break;
-			}
-			case INITIAL_VALUE: {
-				result.append(expression.toString());
-				break;
-			}
-			case FUNC_CALL: {
-				CallOrSpawnStatement call = ((FunctionCallExpression) expression)
-						.callStatement();
+					result.append("(");
+					result.append(cast.getCastType().toString());
+					result.append(")");
+					temp = this.expressionEvaluationWorker(state, pid,
+							cast.getExpression(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					break;
+				}
+				case COND : {
+					throw new CIVLInternalException(
+							"Conditional expression is unreachable because it should"
+									+ " have been traslated away by the model builder.",
+							expression.getSource());
+				}
+				case DEREFERENCE : {
+					DereferenceExpression dereference = (DereferenceExpression) expression;
 
-				result.append(this.statementEvaluation(state, null, pid, call));
-				break;
-			}
-			case ADDRESS_OF:
-			case ARRAY_LITERAL:
-			case BOOLEAN_LITERAL:
-			case CHAR_LITERAL:
-			case DOT:
-			case DYNAMIC_TYPE_OF:
-			case HERE_OR_ROOT:
-			case INTEGER_LITERAL:
-			case MEMORY_UNIT:
-			case NULL_LITERAL:
-			case REAL_LITERAL:
-			case REGULAR_RANGE:
-			case SIZEOF_TYPE:
-			case SIZEOF_EXPRESSION:
-			case STRING_LITERAL:
-			case STRUCT_OR_UNION_LITERAL:
-			case SUBSCRIPT:
-			case VARIABLE:
-			case ARRAY_LAMBDA:
-			case REC_DOMAIN_LITERAL: {
-				Evaluation eval = this.evaluator.evaluate(state, pid,
-						expression);
+					result.append("*");
+					temp = this.expressionEvaluationWorker(state, pid,
+							dereference.pointer(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					break;
+				}
+				case DOMAIN_GUARD : {
+					DomainGuardExpression domGuard = (DomainGuardExpression) expression;
+					int dim = domGuard.dimension();
 
-				state = eval.state;
-				result.append(
-						this.symbolicExpressionToString(expression.getSource(),
-								state, exprType, eval.value, "", ""));
-				break;
-			}
-			case BOUND_VARIABLE:
-			case DERIVATIVE:
-			case FUNCTION_GUARD:
-			case RESULT:
-			case SCOPEOF:
-			case SELF:
-			case SYSTEM_GUARD:
-			case UNDEFINED_PROC:
-			case PROC_NULL:
-				result.append(expression.toString());
-				break;
-			case STATE_NULL:
-				result.append(expression.toString());
-				break;
-			default:
-				throw new CIVLUnimplementedFeatureException(
-						"printing the evaluation of expression of " + kind
-								+ " kind",
-						expression.getSource());
+					temp = this.expressionEvaluationWorker(state, pid,
+							domGuard.domain(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					result.append(" has next for (");
+					for (int i = 0; i < dim; i++) {
+						Variable var = domGuard.variableAt(i);
+
+						if (i != 0)
+							result.append(", ");
+						result.append(
+								this.symbolicExpressionToString(var.getSource(),
+										state, var.type(),
+										state.getVariableValue(
+												state.getDyscope(pid,
+														var.scope()),
+												var.vid())));
+					}
+					result.append(")");
+					break;
+				}
+				case FUNCTION_IDENTIFIER : {
+					FunctionIdentifierExpression functionID = (FunctionIdentifierExpression) expression;
+					Triple<State, CIVLFunction, Integer> functionResult = this.evaluator
+							.evaluateFunctionIdentifier(state, pid, functionID,
+									expression.getSource());
+
+					state = functionResult.first;
+					result.append(functionResult.second.name().name());
+					break;
+				}
+				case MPI_CONTRACT_EXPRESSION : {
+					MPIContractExpression mpiExpr = (MPIContractExpression) expression;
+
+					temp = expressionEvaluationWorker(state, pid,
+							mpiExpr.arguments()[0], resultOnly, false);
+					state = temp.left;
+					result.append(mpiExpr.expressionKind() + "(" + temp.right);
+					for (int i = 1; i < mpiExpr.arguments().length; i++) {
+						temp = expressionEvaluationWorker(state, pid,
+								mpiExpr.arguments()[i], resultOnly, false);
+						state = temp.left;
+						result.append(", " + temp.right);
+					}
+					result.append(")");
+					break;
+				}
+				case QUANTIFIER : {
+					result.append(expression.toString());
+					break;
+				}
+				case UNARY : {
+					UnaryExpression unary = (UnaryExpression) expression;
+
+					result.append(unary.operatorToString());
+					temp = this.expressionEvaluationWorker(state, pid,
+							unary.operand(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					break;
+				}
+				case INITIAL_VALUE : {
+					result.append(expression.toString());
+					break;
+				}
+				case FUNC_CALL : {
+					CallOrSpawnStatement call = ((FunctionCallExpression) expression)
+							.callStatement();
+
+					result.append(
+							this.statementEvaluation(state, null, pid, call));
+					break;
+				}
+				case ADDRESS_OF :
+				case ARRAY_LITERAL :
+				case BOOLEAN_LITERAL :
+				case CHAR_LITERAL :
+				case DOT :
+				case DYNAMIC_TYPE_OF :
+				case HERE_OR_ROOT :
+				case INTEGER_LITERAL :
+				case MEMORY_UNIT :
+				case NULL_LITERAL :
+				case REAL_LITERAL :
+				case REGULAR_RANGE :
+				case SIZEOF_TYPE :
+				case SIZEOF_EXPRESSION :
+				case STRING_LITERAL :
+				case STRUCT_OR_UNION_LITERAL :
+				case SUBSCRIPT :
+				case VARIABLE :
+				case ARRAY_LAMBDA :
+				case REC_DOMAIN_LITERAL : {
+					Evaluation eval = this.evaluator.evaluate(state, pid,
+							expression);
+
+					state = eval.state;
+					result.append(this.symbolicExpressionToString(
+							expression.getSource(), state, exprType, eval.value,
+							"", ""));
+					break;
+				}
+				case BOUND_VARIABLE :
+				case DERIVATIVE :
+				case FUNCTION_GUARD :
+				case RESULT :
+				case SCOPEOF :
+				case SELF :
+				case SYSTEM_GUARD :
+				case UNDEFINED_PROC :
+				case PROC_NULL :
+					result.append(expression.toString());
+					break;
+				case STATE_NULL :
+					result.append(expression.toString());
+					break;
+				default :
+					throw new CIVLUnimplementedFeatureException(
+							"printing the evaluation of expression of " + kind
+									+ " kind",
+							expression.getSource());
 			}
 		}
 		return new Pair<>(state, result.toString());
@@ -2503,9 +2558,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						claim = reasoner.simplify(claim);
 						if (result == ResultType.YES) {
-							if (!derefable && reasoner
-									.valid(universe.equals(length, index))
-									.getResultType() != ResultType.NO) {
+							if (!derefable
+									&& reasoner
+											.valid(universe.equals(length,
+													index))
+											.getResultType() != ResultType.NO) {
 								return new Triple<>(null, claim, result);
 							} else {
 								return new Triple<>(

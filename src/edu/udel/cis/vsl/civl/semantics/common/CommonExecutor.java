@@ -811,7 +811,7 @@ public class CommonExecutor implements Executor {
 						dyscopeID);
 
 				colState = stateFactory.getStateByReference(colStateID);
-				colState = stateFactory.combineStates(colState, mystate,
+				colState = stateFactory.addInternalProcess(colState, mystate,
 						placeID);
 				colState = executeSystemFunctionCallWithValues(colState,
 						placeID, call, (SystemFunction) call.function(),

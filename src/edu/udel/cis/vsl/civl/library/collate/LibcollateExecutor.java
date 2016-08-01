@@ -259,7 +259,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 			coState = stateFactory.getStateByReference(stateRef);
 			assert coState != null;
 		}
-		resultState = stateFactory.combineStates(coState, mono, place);
+		resultState = stateFactory.addInternalProcess(coState, mono, place);
 		resultRef = stateFactory.saveState(resultState, pid);
 		if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
 				|| civlConfig.showSavedStates()) {

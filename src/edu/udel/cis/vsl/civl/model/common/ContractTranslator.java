@@ -175,200 +175,213 @@ public class ContractTranslator extends FunctionTranslator {
 			NamedFunctionBehavior behavior) {
 		CIVLSource source = modelFactory.sourceOf(contractNode);
 		Scope scope = function.outerScope();
-		FunctionBehavior targetBehavior = behavior != null ? behavior
-				: collectiveBehavior != null ? collectiveBehavior
+		FunctionBehavior targetBehavior = behavior != null
+				? behavior
+				: collectiveBehavior != null
+						? collectiveBehavior
 						: functionContract.defaultBehavior();
 
 		switch (contractNode.contractKind()) {
-		case ASSIGNS_READS: {
-			AssignsOrReadsNode assignsOrReads = (AssignsOrReadsNode) contractNode;
-			boolean isAssigns = assignsOrReads.isAssigns();
-			SequenceNode<ExpressionNode> muNodes = assignsOrReads
-					.getMemoryList();
+			case ASSIGNS_READS : {
+				AssignsOrReadsNode assignsOrReads = (AssignsOrReadsNode) contractNode;
+				boolean isAssigns = assignsOrReads.isAssigns();
+				SequenceNode<ExpressionNode> muNodes = assignsOrReads
+						.getMemoryList();
 
-			for (ExpressionNode muNode : muNodes) {
-				Expression mu = this.translateExpressionNode(muNode, scope,
-						true);
+				for (ExpressionNode muNode : muNodes) {
+					Expression mu = this.translateExpressionNode(muNode, scope,
+							true);
 
-				if (mu instanceof Nothing) {
-					if (isAssigns) {
-						if (targetBehavior.numAssignsMemoryUnits() == 0)
-							targetBehavior.setAssingsNothing();
-						else
-							throw new CIVLSyntaxException(
-									"assigns \\nothing conflicts with previous assigns clause",
-									source);
+					if (mu instanceof Nothing) {
+						if (isAssigns) {
+							if (targetBehavior.numAssignsMemoryUnits() == 0)
+								targetBehavior.setAssingsNothing();
+							else
+								throw new CIVLSyntaxException(
+										"assigns \\nothing conflicts with previous assigns clause",
+										source);
+						} else {
+							if (targetBehavior.numReadsMemoryUnits() == 0)
+								targetBehavior.setReadsNothing();
+							else
+								throw new CIVLSyntaxException(
+										"reads \\nothing conflicts with previous reads clause",
+										source);
+						}
 					} else {
-						if (targetBehavior.numReadsMemoryUnits() == 0)
-							targetBehavior.setReadsNothing();
-						else
-							throw new CIVLSyntaxException(
-									"reads \\nothing conflicts with previous reads clause",
-									source);
-					}
-				} else {
-					if (isAssigns) {
-						if (targetBehavior.assignsNothing())
-							throw new CIVLSyntaxException(
-									"assigns clause conflicts with previous assigns \\nothing",
-									source);
-						targetBehavior.addAssignsMemoryUnit(mu);
-					} else {
-						if (targetBehavior.readsNothing())
-							throw new CIVLSyntaxException(
-									"reads clause conflicts with previous reads \\nothing",
-									source);
-						targetBehavior.addReadsMemoryUnit(mu);
+						if (isAssigns) {
+							if (targetBehavior.assignsNothing())
+								throw new CIVLSyntaxException(
+										"assigns clause conflicts with previous assigns \\nothing",
+										source);
+							targetBehavior.addAssignsMemoryUnit(mu);
+						} else {
+							if (targetBehavior.readsNothing())
+								throw new CIVLSyntaxException(
+										"reads clause conflicts with previous reads \\nothing",
+										source);
+							targetBehavior.addReadsMemoryUnit(mu);
+						}
 					}
 				}
-			}
-			break;
-		}
-		case ASSUMES: {
-			assert targetBehavior instanceof NamedFunctionBehavior;
-			Expression expression = translateExpressionNode(
-					((AssumesNode) contractNode).getPredicate(), scope, true);
-			Expression existedAssumptions;
-
-			if ((existedAssumptions = behavior.assumptions()) != null) {
-				CIVLSource spanedSource = modelFactory.sourceOfSpan(
-						existedAssumptions.getSource(), expression.getSource());
-
-				expression = modelFactory.binaryExpression(spanedSource,
-						BINARY_OPERATOR.AND, existedAssumptions, expression);
-			}
-			behavior.setAssumption(expression);
-			break;
-		}
-		case BEHAVIOR: {
-			assert behavior == null;
-			BehaviorNode behaviorNode = (BehaviorNode) contractNode;
-			NamedFunctionBehavior namedBehavior = this.contractFactory
-					.newNamedFunctionBehavior(source,
-							behaviorNode.getName().name());
-			SequenceNode<ContractNode> body = behaviorNode.getBody();
-
-			for (ContractNode item : body) {
-				this.translateContractNodeWork(item, functionContract,
-						collectiveBehavior, namedBehavior);
-			}
-			if (collectiveBehavior != null)
-				collectiveBehavior.addNamedBehaviors(namedBehavior);
-			else
-				functionContract.addNamedBehavior(namedBehavior);
-			break;
-		}
-
-		case DEPENDS: {
-			DependsNode dependsNode = (DependsNode) contractNode;
-			SequenceNode<DependsEventNode> eventNodes = dependsNode
-					.getEventList();
-
-			for (DependsEventNode eventNode : eventNodes) {
-				DependsEvent event = this.translateDependsEvent(eventNode,
-						scope);
-
-				if (event.dependsEventKind() == DependsEventKind.NOACT) {
-					if (targetBehavior.numDependsEvents() > 0)
-						throw new CIVLSyntaxException(
-								"depends \\noact conflicts with previous depends clause",
-								source);
-					targetBehavior.setDependsNoact();
-				} else if (event
-						.dependsEventKind() == DependsEventKind.ANYACT) {
-					if (targetBehavior.dependsNoact())
-						throw new CIVLSyntaxException(
-								"depends \\anyact conflicts with previous depends \\noact clause",
-								source);
-					targetBehavior.setDependsAnyact();
-				} else
-					targetBehavior.addDependsEvent(event);
-			}
-			if (targetBehavior.dependsAnyact())
-				targetBehavior.clearDependsEvents();
-			break;
-		}
-		case ENSURES: {
-			currentContractKind = ContractKind.ENSURES;
-			Expression expression = translateExpressionNode(
-					((EnsuresNode) contractNode).getExpression(), scope, true);
-			targetBehavior.addPostcondition(expression);
-			currentContractKind = null;
-			break;
-		}
-		case REQUIRES: {
-			currentContractKind = ContractKind.REQUIRES;
-			Expression expression = translateExpressionNode(
-					((RequiresNode) contractNode).getExpression(), scope, true);
-			targetBehavior.addPrecondition(expression);
-			currentContractKind = null;
-			break;
-		}
-		case GUARDS: {
-			Expression guard = this.translateExpressionNode(
-					((GuardsNode) contractNode).getExpression(), scope, true);
-
-			functionContract.setGuard(modelFactory.booleanExpression(guard));
-			break;
-		}
-		case MPI_COLLECTIVE:
-			MPICollectiveBehavior newCollectiveBehavior;
-			Variable[] agreedVariablesCopy;
-			MPICollectiveBlockNode collectiveBlockNode = (MPICollectiveBlockNode) contractNode;
-
-			currentMPICollectiveTitle.left = translateExpressionNode(
-					collectiveBlockNode.getMPIComm(), scope, true);
-			switch (collectiveBlockNode.getCollectiveKind()) {
-			case P2P:
-				currentMPICollectiveTitle.right = MPICommunicationPattern.P2P;
 				break;
-			case COL:
-				currentMPICollectiveTitle.right = MPICommunicationPattern.COL;
+			}
+			case ASSUMES : {
+				assert targetBehavior instanceof NamedFunctionBehavior;
+				Expression expression = translateExpressionNode(
+						((AssumesNode) contractNode).getPredicate(), scope,
+						true);
+				Expression existedAssumptions;
+
+				if ((existedAssumptions = behavior.assumptions()) != null) {
+					CIVLSource spanedSource = modelFactory.sourceOfSpan(
+							existedAssumptions.getSource(),
+							expression.getSource());
+
+					expression = modelFactory.binaryExpression(spanedSource,
+							BINARY_OPERATOR.AND, existedAssumptions,
+							expression);
+				}
+				behavior.setAssumption(expression);
 				break;
-			default:
-				throw new CIVLSyntaxException(
-						"Unknown MPICommunicationPattern: "
-								+ collectiveBlockNode.getCollectiveKind());
 			}
-			// Since MPI_Collective behavior cannot be nested, such a global
-			// collection will be correct, other wise, it will be over written:
-			agreedVaraibles = new LinkedList<>();
-			newCollectiveBehavior = translateMPICollectiveBehavior(
-					(MPICollectiveBlockNode) contractNode, scope,
-					functionContract);
-			agreedVariablesCopy = new Variable[agreedVaraibles.size()];
-			agreedVaraibles.toArray(agreedVariablesCopy);
-			newCollectiveBehavior.setAgreedVariables(agreedVariablesCopy);
-			currentMPICollectiveTitle.left = null;
-			currentMPICollectiveTitle.right = null;
-			agreedVaraibles = null;
-			functionContract.addMPICollectiveBehavior(newCollectiveBehavior);
-			break;
-		case WAITSFOR:
-			WaitsforNode waitsforNode = (WaitsforNode) contractNode;
-			List<Expression> arguments = new LinkedList<>();
+			case BEHAVIOR : {
+				assert behavior == null;
+				BehaviorNode behaviorNode = (BehaviorNode) contractNode;
+				NamedFunctionBehavior namedBehavior = this.contractFactory
+						.newNamedFunctionBehavior(source,
+								behaviorNode.getName().name());
+				SequenceNode<ContractNode> body = behaviorNode.getBody();
 
-			for (ExpressionNode arg : waitsforNode.getArguments()) {
-				Expression argExpr = translateExpressionNode(arg, scope, true);
+				for (ContractNode item : body) {
+					this.translateContractNodeWork(item, functionContract,
+							collectiveBehavior, namedBehavior);
+				}
+				if (collectiveBehavior != null)
+					collectiveBehavior.addNamedBehaviors(namedBehavior);
+				else
+					functionContract.addNamedBehavior(namedBehavior);
+				break;
+			}
 
-				if (!argExpr.getExpressionType().isIntegerType())
-					if (argExpr
-							.expressionKind() != Expression.ExpressionKind.REGULAR_RANGE)
+			case DEPENDS : {
+				DependsNode dependsNode = (DependsNode) contractNode;
+				SequenceNode<DependsEventNode> eventNodes = dependsNode
+						.getEventList();
+
+				for (DependsEventNode eventNode : eventNodes) {
+					DependsEvent event = this.translateDependsEvent(eventNode,
+							scope);
+
+					if (event.dependsEventKind() == DependsEventKind.NOACT) {
+						if (targetBehavior.numDependsEvents() > 0)
+							throw new CIVLSyntaxException(
+									"depends \\noact conflicts with previous depends clause",
+									source);
+						targetBehavior.setDependsNoact();
+					} else if (event
+							.dependsEventKind() == DependsEventKind.ANYACT) {
+						if (targetBehavior.dependsNoact())
+							throw new CIVLSyntaxException(
+									"depends \\anyact conflicts with previous depends \\noact clause",
+									source);
+						targetBehavior.setDependsAnyact();
+					} else
+						targetBehavior.addDependsEvent(event);
+				}
+				if (targetBehavior.dependsAnyact())
+					targetBehavior.clearDependsEvents();
+				break;
+			}
+			case ENSURES : {
+				currentContractKind = ContractKind.ENSURES;
+				Expression expression = translateExpressionNode(
+						((EnsuresNode) contractNode).getExpression(), scope,
+						true);
+				targetBehavior.addPostcondition(expression);
+				currentContractKind = null;
+				break;
+			}
+			case REQUIRES : {
+				currentContractKind = ContractKind.REQUIRES;
+				Expression expression = translateExpressionNode(
+						((RequiresNode) contractNode).getExpression(), scope,
+						true);
+				targetBehavior.addPrecondition(expression);
+				currentContractKind = null;
+				break;
+			}
+			case GUARDS : {
+				Expression guard = this.translateExpressionNode(
+						((GuardsNode) contractNode).getExpression(), scope,
+						true);
+
+				functionContract
+						.setGuard(modelFactory.booleanExpression(guard));
+				break;
+			}
+			case MPI_COLLECTIVE :
+				MPICollectiveBehavior newCollectiveBehavior;
+				Variable[] agreedVariablesCopy;
+				MPICollectiveBlockNode collectiveBlockNode = (MPICollectiveBlockNode) contractNode;
+
+				currentMPICollectiveTitle.left = translateExpressionNode(
+						collectiveBlockNode.getMPIComm(), scope, true);
+				switch (collectiveBlockNode.getCollectiveKind()) {
+					case P2P :
+						currentMPICollectiveTitle.right = MPICommunicationPattern.P2P;
+						break;
+					case COL :
+						currentMPICollectiveTitle.right = MPICommunicationPattern.COL;
+						break;
+					default :
 						throw new CIVLSyntaxException(
-								"waitsfor clause only accepts arguments of integer type or regualr range type");
-				arguments.add(argExpr);
-			}
-			targetBehavior.setWaitsforList(arguments);
-			functionContract.setHasMPIWaitsfor(true);
-			break;
-		case PURE:
-			functionContract.setPure(true);
-			break;
-		case COMPLETENESS:
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"Translate Procedure ContractNode with "
-							+ contractNode.contractKind());
+								"Unknown MPICommunicationPattern: "
+										+ collectiveBlockNode
+												.getCollectiveKind());
+				}
+				// Since MPI_Collective behavior cannot be nested, such a global
+				// collection will be correct, other wise, it will be over
+				// written:
+				agreedVaraibles = new LinkedList<>();
+				newCollectiveBehavior = translateMPICollectiveBehavior(
+						(MPICollectiveBlockNode) contractNode, scope,
+						functionContract);
+				agreedVariablesCopy = new Variable[agreedVaraibles.size()];
+				agreedVaraibles.toArray(agreedVariablesCopy);
+				newCollectiveBehavior.setAgreedVariables(agreedVariablesCopy);
+				currentMPICollectiveTitle.left = null;
+				currentMPICollectiveTitle.right = null;
+				agreedVaraibles = null;
+				functionContract
+						.addMPICollectiveBehavior(newCollectiveBehavior);
+				break;
+			case WAITSFOR :
+				WaitsforNode waitsforNode = (WaitsforNode) contractNode;
+				List<Expression> arguments = new LinkedList<>();
+
+				for (ExpressionNode arg : waitsforNode.getArguments()) {
+					Expression argExpr = translateExpressionNode(arg, scope,
+							true);
+
+					if (!argExpr.getExpressionType().isIntegerType())
+						if (argExpr
+								.expressionKind() != Expression.ExpressionKind.REGULAR_RANGE)
+							throw new CIVLSyntaxException(
+									"waitsfor clause only accepts arguments of integer type or regualr range type");
+					arguments.add(argExpr);
+				}
+				targetBehavior.setWaitsforList(arguments);
+				functionContract.setHasMPIWaitsfor(true);
+				break;
+			case PURE :
+				functionContract.setPure(true);
+				break;
+			case COMPLETENESS :
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"Translate Procedure ContractNode with "
+								+ contractNode.contractKind());
 		}
 	}
 
@@ -378,81 +391,84 @@ public class ContractTranslator extends FunctionTranslator {
 		CIVLSource source = this.modelFactory.sourceOf(eventNode);
 
 		switch (kind) {
-		case MEMORY: {
-			MemoryEventNode readWriteEvent = (MemoryEventNode) eventNode;
-			Set<Expression> muSet = new HashSet<>();
-			SequenceNode<ExpressionNode> muNodeSet = readWriteEvent
-					.getMemoryList();
-			DependsEventKind memoryKind;
+			case MEMORY : {
+				MemoryEventNode readWriteEvent = (MemoryEventNode) eventNode;
+				Set<Expression> muSet = new HashSet<>();
+				SequenceNode<ExpressionNode> muNodeSet = readWriteEvent
+						.getMemoryList();
+				DependsEventKind memoryKind;
 
-			for (ExpressionNode muNode : muNodeSet) {
-				muSet.add(this.translateExpressionNode(muNode, scope, true));
+				for (ExpressionNode muNode : muNodeSet) {
+					muSet.add(
+							this.translateExpressionNode(muNode, scope, true));
+				}
+				switch (readWriteEvent.memoryEventKind()) {
+					case READ :
+						memoryKind = DependsEventKind.READ;
+						break;
+					case WRITE :
+						memoryKind = DependsEventKind.WRITE;
+						break;
+					default :// REACH
+						memoryKind = DependsEventKind.REACH;
+				}
+				return this.contractFactory.newMemoryEvent(source, memoryKind,
+						muSet);
 			}
-			switch (readWriteEvent.memoryEventKind()) {
-			case READ:
-				memoryKind = DependsEventKind.READ;
-				break;
-			case WRITE:
-				memoryKind = DependsEventKind.WRITE;
-				break;
-			default:// REACH
-				memoryKind = DependsEventKind.REACH;
-			}
-			return this.contractFactory.newMemoryEvent(source, memoryKind,
-					muSet);
-		}
-		case CALL: {
-			CallEventNode callEvent = (CallEventNode) eventNode;
-			Pair<Function, CIVLFunction> functionPair = this
-					.getFunction(callEvent.getFunction());
-			SequenceNode<ExpressionNode> argumentNodes = callEvent.arguments();
-			List<Expression> arguments = new ArrayList<>();
-			CallEvent call;
+			case CALL : {
+				CallEventNode callEvent = (CallEventNode) eventNode;
+				Pair<Function, CIVLFunction> functionPair = this
+						.getFunction(callEvent.getFunction());
+				SequenceNode<ExpressionNode> argumentNodes = callEvent
+						.arguments();
+				List<Expression> arguments = new ArrayList<>();
+				CallEvent call;
 
-			for (ExpressionNode argNode : argumentNodes) {
-				arguments.add(
-						this.translateExpressionNode(argNode, scope, true));
+				for (ExpressionNode argNode : argumentNodes) {
+					arguments.add(
+							this.translateExpressionNode(argNode, scope, true));
+				}
+				call = this.contractFactory.newCallEvent(source,
+						functionPair.right, arguments);
+				if (functionPair.right == null)
+					this.modelBuilder.callEvents.put(call, functionPair.left);
+				return call;
 			}
-			call = this.contractFactory.newCallEvent(source, functionPair.right,
-					arguments);
-			if (functionPair.right == null)
-				this.modelBuilder.callEvents.put(call, functionPair.left);
-			return call;
-		}
-		case COMPOSITE: {
-			CompositeEventNode compositeEvent = (CompositeEventNode) eventNode;
-			CompositeEventOperator operator;
-			DependsEvent left, right;
+			case COMPOSITE : {
+				CompositeEventNode compositeEvent = (CompositeEventNode) eventNode;
+				CompositeEventOperator operator;
+				DependsEvent left, right;
 
-			switch (compositeEvent.eventOperator()) {
-			case UNION:
-				operator = CompositeEventOperator.UNION;
-				break;
-			case DIFFERENCE:
-				operator = CompositeEventOperator.DIFFERENCE;
-				break;
-			case INTERSECT:
-				operator = CompositeEventOperator.INTERSECT;
-				break;
-			default:
+				switch (compositeEvent.eventOperator()) {
+					case UNION :
+						operator = CompositeEventOperator.UNION;
+						break;
+					case DIFFERENCE :
+						operator = CompositeEventOperator.DIFFERENCE;
+						break;
+					case INTERSECT :
+						operator = CompositeEventOperator.INTERSECT;
+						break;
+					default :
+						throw new CIVLUnimplementedFeatureException(
+								"unknown kind of composite event operatore: "
+										+ compositeEvent.eventOperator(),
+								source);
+				}
+				left = this.translateDependsEvent(compositeEvent.getLeft(),
+						scope);
+				right = this.translateDependsEvent(compositeEvent.getRight(),
+						scope);
+				return this.contractFactory.newCompositeEvent(source, operator,
+						left, right);
+			}
+			case ANYACT :
+				return this.contractFactory.newAnyactEvent(source);
+			case NOACT :
+				return this.contractFactory.newNoactEvent(source);
+			default :
 				throw new CIVLUnimplementedFeatureException(
-						"unknown kind of composite event operatore: "
-								+ compositeEvent.eventOperator(),
-						source);
-			}
-			left = this.translateDependsEvent(compositeEvent.getLeft(), scope);
-			right = this.translateDependsEvent(compositeEvent.getRight(),
-					scope);
-			return this.contractFactory.newCompositeEvent(source, operator,
-					left, right);
-		}
-		case ANYACT:
-			return this.contractFactory.newAnyactEvent(source);
-		case NOACT:
-			return this.contractFactory.newNoactEvent(source);
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"unknown kind of depends event: " + kind, source);
+						"unknown kind of depends event: " + kind, source);
 		}
 
 	}
@@ -464,26 +480,26 @@ public class ContractTranslator extends FunctionTranslator {
 		CIVLSource source = this.modelFactory.sourceOf(expressionNode);
 
 		switch (kind) {
-		case MPI_CONTRACT_EXPRESSION:
-			return translateMPIContractExpression(
-					(MPIContractExpressionNode) expressionNode, scope);
-		case NOTHING: {
-			return this.modelFactory.nothing(source);
-		}
-		case WILDCARD: {
-			return this.modelFactory.wildcardExpression(source,
-					this.translateABCType(source, scope,
-							expressionNode.getConvertedType()));
-		}
-		case REMOTE_REFERENCE:
-			return translateRemoteReferenceNode(
-					(RemoteOnExpressionNode) expressionNode, scope);
-		case QUANTIFIED_EXPRESSION:
-			return translateQuantifiedExpressionNode(
-					(QuantifiedExpressionNode) expressionNode, scope);
-		default:
-			return super.translateExpressionNode(expressionNode, scope,
-					translateConversions);
+			case MPI_CONTRACT_EXPRESSION :
+				return translateMPIContractExpression(
+						(MPIContractExpressionNode) expressionNode, scope);
+			case NOTHING : {
+				return this.modelFactory.nothing(source);
+			}
+			case WILDCARD : {
+				return this.modelFactory.wildcardExpression(source,
+						this.translateABCType(source, scope,
+								expressionNode.getConvertedType()));
+			}
+			case REMOTE_REFERENCE :
+				return translateRemoteReferenceNode(
+						(RemoteOnExpressionNode) expressionNode, scope);
+			case QUANTIFIED_EXPRESSION :
+				return translateQuantifiedExpressionNode(
+						(QuantifiedExpressionNode) expressionNode, scope);
+			default :
+				return super.translateExpressionNode(expressionNode, scope,
+						translateConversions);
 		}
 	}
 
@@ -504,31 +520,36 @@ public class ContractTranslator extends FunctionTranslator {
 		int numArgs = 0;
 
 		switch (kind) {
-		case MPI_INTEGER_CONSTANT:
-			return translateMPIIntegerConstantNode((CommonMPIConstantNode) node,
-					scope);
-		case MPI_EMPTY_IN:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_IN;
-			numArgs = 1;
-			break;
-		case MPI_EMPTY_OUT:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EMPTY_OUT;
-			numArgs = 1;
-			break;
-		case MPI_EQUALS:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EQUALS;
-			numArgs = 4;
-			break;
-		case MPI_REGION:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_REGION;
-			numArgs = 3;
-			break;
-		case MPI_AGREE:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE;
-			numArgs = 1;
-			break;
-		default:
-			throw new CIVLInternalException("Unreachable", node.getSource());
+			case MPI_INTEGER_CONSTANT :
+				return translateMPIIntegerConstantNode(
+						(CommonMPIConstantNode) node, scope);
+			case MPI_EQUALS :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EQUALS;
+				numArgs = 4;
+				break;
+			case MPI_REGION :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_REGION;
+				numArgs = 3;
+				break;
+			case MPI_AGREE :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE;
+				numArgs = 1;
+				break;
+			case MPI_EXTENT :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EXTENT;
+				numArgs = 1;
+				break;
+			case MPI_OFFSET :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_OFFSET;
+				numArgs = 3;
+				break;
+			case MPI_VALID :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_VALID;
+				numArgs = 3;
+				break;
+			default :
+				throw new CIVLInternalException("Unreachable",
+						node.getSource());
 		}
 		// if (currentMPICollectiveTitle.left == null
 		// || currentMPICollectiveTitle.right == null) {
@@ -544,15 +565,15 @@ public class ContractTranslator extends FunctionTranslator {
 			arguments[i] = translateExpressionNode(node.getArgument(i), scope,
 					true);
 		// Saving \mpi_agree variables:
-//		if (civlMpiContractKind == MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE)
+		// if (civlMpiContractKind == MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE)
 		// if (currentContractKind == ContractKind.REQUIRES) {
 		// if (currentContractKind == ContractKind.REQUIRES)
 		// agreedVaraibles.add(
 		// ((VariableExpression) arguments[0]).variable());
-//			} else
-//				throw new CIVLSyntaxException(
-//						"\\mpi_agree currently can only be used in requirements.",
-//						modelFactory.sourceOf(node));
+		// } else
+		// throw new CIVLSyntaxException(
+		// "\\mpi_agree currently can only be used in requirements.",
+		// modelFactory.sourceOf(node));
 		return modelFactory.mpiContractExpression(modelFactory.sourceOf(node),
 				scope, currentMPICollectiveTitle.left, arguments,
 				civlMpiContractKind, currentMPICollectiveTitle.right);
@@ -574,16 +595,17 @@ public class ContractTranslator extends FunctionTranslator {
 		Variable result;
 
 		switch (kind) {
-		case MPI_COMM_RANK:
-			variableIdent = modelFactory.identifier(source,
-					ModelConfiguration.ContractMPICommRankName);
-			break;
-		case MPI_COMM_SIZE:
-			variableIdent = modelFactory.identifier(source,
-					ModelConfiguration.ContractMPICommSizeName);
-			break;
-		default:
-			throw new CIVLInternalException("Unreachable", (CIVLSource) null);
+			case MPI_COMM_RANK :
+				variableIdent = modelFactory.identifier(source,
+						ModelConfiguration.ContractMPICommRankName);
+				break;
+			case MPI_COMM_SIZE :
+				variableIdent = modelFactory.identifier(source,
+						ModelConfiguration.ContractMPICommSizeName);
+				break;
+			default :
+				throw new CIVLInternalException("Unreachable",
+						(CIVLSource) null);
 		}
 		result = scope.variable(variableIdent);
 		return modelFactory.variableExpression(source, result);
@@ -629,27 +651,28 @@ public class ContractTranslator extends FunctionTranslator {
 		Operator op = operatorNode.getOperator();
 
 		switch (op) {
-		case VALID:
-			Expression arg = translateExpressionNode(
-					operatorNode.getArgument(0), scope, true);
-			return translateValidOperator(modelFactory.sourceOf(operatorNode),
-					arg, scope);
-		case PLUS:
-			ExpressionNode arg0, arg1;
+			case VALID :
+				Expression arg = translateExpressionNode(
+						operatorNode.getArgument(0), scope, true);
+				return translateValidOperator(
+						modelFactory.sourceOf(operatorNode), arg, scope);
+			case PLUS :
+				ExpressionNode arg0, arg1;
 
-			arg0 = operatorNode.getArgument(0);
-			arg1 = operatorNode.getArgument(1);
-			if (arg0.expressionKind().equals(ExpressionKind.REGULAR_RANGE)
-					|| arg1.expressionKind()
-							.equals(ExpressionKind.REGULAR_RANGE))
-				return translatePointerSet(modelFactory.sourceOf(operatorNode),
-						this.translateExpressionNode(arg0, scope, true),
-						this.translateExpressionNode(arg1, scope, true),
-						BINARY_OPERATOR.PLUS, scope);
-			else
+				arg0 = operatorNode.getArgument(0);
+				arg1 = operatorNode.getArgument(1);
+				if (arg0.expressionKind().equals(ExpressionKind.REGULAR_RANGE)
+						|| arg1.expressionKind()
+								.equals(ExpressionKind.REGULAR_RANGE))
+					return translatePointerSet(
+							modelFactory.sourceOf(operatorNode),
+							this.translateExpressionNode(arg0, scope, true),
+							this.translateExpressionNode(arg1, scope, true),
+							BINARY_OPERATOR.PLUS, scope);
+				else
+					return super.translateOperatorNode(operatorNode, scope);
+			default :
 				return super.translateOperatorNode(operatorNode, scope);
-		default:
-			return super.translateOperatorNode(operatorNode, scope);
 		}
 	}
 
@@ -750,17 +773,18 @@ public class ContractTranslator extends FunctionTranslator {
 				scope, true);
 
 		switch (node.getCollectiveKind()) {
-		case P2P:
-			result = contractFactory.newMPICollectiveBehavior(source,
-					communicator, MPICommunicationPattern.P2P);
-			break;
-		case COL:
-			result = contractFactory.newMPICollectiveBehavior(source,
-					communicator, MPICommunicationPattern.COL);
-			break;
-		default:
-			throw new CIVLSyntaxException("Unsupported MPI Collective kind: "
-					+ node.getCollectiveKind());
+			case P2P :
+				result = contractFactory.newMPICollectiveBehavior(source,
+						communicator, MPICommunicationPattern.P2P);
+				break;
+			case COL :
+				result = contractFactory.newMPICollectiveBehavior(source,
+						communicator, MPICommunicationPattern.COL);
+				break;
+			default :
+				throw new CIVLSyntaxException(
+						"Unsupported MPI Collective kind: "
+								+ node.getCollectiveKind());
 		}
 		while (bodyNodesIter.hasNext())
 			translateContractNodeWork(bodyNodesIter.next(), functionContract,

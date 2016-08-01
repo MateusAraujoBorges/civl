@@ -20,7 +20,7 @@ int bcast(int * x) {
 int target() {
   int rank;
 
-  MPI_Comm_rank(comm, &rank);
+  $havoc(&rank);
   bcast(&rank);
   return rank;
 }

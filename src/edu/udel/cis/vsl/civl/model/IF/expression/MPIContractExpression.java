@@ -19,7 +19,7 @@ import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunic
  */
 public interface MPIContractExpression extends Expression {
 	static public enum MPI_CONTRACT_EXPRESSION_KIND {
-		MPI_EMPTY_IN, MPI_EMPTY_OUT, MPI_AGREE, MPI_EQUALS, MPI_REGION
+		MPI_AGREE, MPI_EQUALS, MPI_REGION, MPI_VALID, MPI_EXTENT, MPI_OFFSET
 	}
 
 	/**

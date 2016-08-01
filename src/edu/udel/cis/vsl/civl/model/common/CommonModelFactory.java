@@ -175,7 +175,6 @@ import edu.udel.cis.vsl.civl.model.common.statement.CommonSwitchBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonUpdateStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonWithStatement;
 import edu.udel.cis.vsl.civl.model.common.variable.CommonVariable;
-import edu.udel.cis.vsl.civl.semantics.contract.ContractEvaluator;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
@@ -2339,8 +2338,6 @@ public class CommonModelFactory implements ModelFactory {
 			lowestScope = getLower(arguments[i].lowestScope(), lowestScope);
 		switch (kind) {
 			case MPI_EQUALS :
-			case MPI_EMPTY_IN :
-			case MPI_EMPTY_OUT :
 				type = typeFactory.booleanType;
 				break;
 			case MPI_AGREE :
@@ -2348,6 +2345,9 @@ public class CommonModelFactory implements ModelFactory {
 				break;
 			case MPI_REGION : // location type or $mem type in fact
 				type = typeFactory.voidType;
+				break;
+			case MPI_OFFSET :
+				type = typeFactory.pointerType(typeFactory.voidType);
 				break;
 			default :
 				throw new CIVLInternalException("unreachable", source);
