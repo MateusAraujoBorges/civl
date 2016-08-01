@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -18,12 +19,13 @@ import edu.udel.cis.vsl.gmc.TraceStepIF;
 public class ColStateManager extends CommonStateManager
 		implements StateManager {
 
-	private Set<State> finalColState;
+	private Set<State> finalColStates;
 
 	public ColStateManager(Enabler enabler, Executor executor,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errorLogger,
 			CIVLConfiguration config) {
 		super(enabler, executor, symbolicAnalyzer, errorLogger, config);
+		finalColStates = new HashSet<>();
 	}
 
 	// @Override
@@ -63,7 +65,7 @@ public class ColStateManager extends CommonStateManager
 		State resultState = result.getFinalState();
 
 		if (isFinalCollateState(resultState))
-			this.finalColState.add(resultState);
+			this.finalColStates.add(resultState);
 		return result;
 	}
 
@@ -73,14 +75,15 @@ public class ColStateManager extends CommonStateManager
 		for (int i = 0; i < numProcs; i++) {
 			ProcessState proc = state.getProcessState(i);
 
-			if (proc != null && !proc.getLocation().isSleep())
+			if (proc != null && !proc.hasEmptyStack()
+					&& !proc.getLocation().isSleep())
 				return false;
 		}
 		return true;
 	}
 
 	public Collection<State> getFinalCollateStates() {
-		return this.finalColState;
+		return this.finalColStates;
 	}
 
 }

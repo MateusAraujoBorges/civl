@@ -44,6 +44,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.LoopBranchStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement.NoopKind;
+import edu.udel.cis.vsl.civl.model.IF.statement.ParallelAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
@@ -238,6 +239,21 @@ public class CommonExecutor implements Executor {
 					eval.value, statement.isInitialization());
 		state = stateFactory.setLocation(state, pid, statement.target(), true);
 		return state;
+	}
+
+	private State executeParallelAssign(State state, int pid, String process,
+			ParallelAssignStatement statement)
+			throws UnsatisfiablePathConditionException {
+		Evaluation eval;
+		List<Pair<LHSExpression, Expression>> assignPairs = statement
+				.assignments();
+
+		for (Pair<LHSExpression, Expression> assign : assignPairs) {
+			eval = evaluator.evaluate(state, pid, assign.right);
+			state = assign(eval.state, pid, process, assign.left, eval.value,
+					false);
+		}
+		return stateFactory.setLocation(state, pid, statement.target());
 	}
 
 	/**
@@ -645,53 +661,56 @@ public class CommonExecutor implements Executor {
 
 		numSteps++;
 		switch (kind) {
-			case ASSIGN :
-				return executeAssign(state, pid, process,
-						(AssignStatement) statement);
-			case CALL_OR_SPAWN :
-				CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
+		case ASSIGN:
+			return executeAssign(state, pid, process,
+					(AssignStatement) statement);
+		case CALL_OR_SPAWN:
+			CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
 
-				if (call.isCall())
-					return executeCall(state, pid, call);
-				else
-					return executeSpawn(state, pid, process, call);
-			case MALLOC :
-				return executeMalloc(state, pid, process,
-						(MallocStatement) statement);
-			case NOOP : {
-				NoopStatement noop = (NoopStatement) statement;
-				Expression expression = noop.expression();
+			if (call.isCall())
+				return executeCall(state, pid, call);
+			else
+				return executeSpawn(state, pid, process, call);
+		case MALLOC:
+			return executeMalloc(state, pid, process,
+					(MallocStatement) statement);
+		case NOOP: {
+			NoopStatement noop = (NoopStatement) statement;
+			Expression expression = noop.expression();
 
-				if (expression != null) {
-					Evaluation eval = this.evaluator.evaluate(state, pid,
-							expression);
+			if (expression != null) {
+				Evaluation eval = this.evaluator.evaluate(state, pid,
+						expression);
 
-					state = eval.state;
-				}
-				state = stateFactory.setLocation(state, pid,
-						statement.target());
-				if (noop.noopKind() == NoopKind.LOOP) {
-					LoopBranchStatement loopBranch = (LoopBranchStatement) noop;
-
-					if (!loopBranch.isEnter())
-						state = this.stateFactory.simplify(state);
-				}
-				return state;
+				state = eval.state;
 			}
-			case RETURN :
-				return executeReturn(state, pid, process,
-						(ReturnStatement) statement);
-			case DOMAIN_ITERATOR :
-				return executeNextInDomain(state, pid,
-						(DomainIteratorStatement) statement);
-			case CIVL_PAR_FOR_ENTER :
-				return executeCivlParFor(state, pid,
-						(CivlParForSpawnStatement) statement);
-			case UPDATE :
-				return executeUpdate(state, pid, (UpdateStatement) statement);
-			default :
-				throw new CIVLInternalException(
-						"Unknown statement kind: " + kind, statement);
+			state = stateFactory.setLocation(state, pid, statement.target());
+			if (noop.noopKind() == NoopKind.LOOP) {
+				LoopBranchStatement loopBranch = (LoopBranchStatement) noop;
+
+				if (!loopBranch.isEnter())
+					state = this.stateFactory.simplify(state);
+			}
+			return state;
+		}
+		case RETURN:
+			return executeReturn(state, pid, process,
+					(ReturnStatement) statement);
+		case DOMAIN_ITERATOR:
+			return executeNextInDomain(state, pid,
+					(DomainIteratorStatement) statement);
+		case CIVL_PAR_FOR_ENTER:
+			return executeCivlParFor(state, pid,
+					(CivlParForSpawnStatement) statement);
+		case PARALLEL_ASSIGN:
+			return executeParallelAssign(state, pid, process,
+					(ParallelAssignStatement) statement);
+		case WITH:
+		case UPDATE:
+			throw new CIVLInternalException("unreachable", statement);
+		default:
+			throw new CIVLInternalException("Unknown statement kind: " + kind,
+					statement);
 		}
 	}
 
@@ -708,6 +727,7 @@ public class CommonExecutor implements Executor {
 	 * @return the new state after executing the <code>$update</code> statement
 	 * @throws UnsatisfiablePathConditionException
 	 */
+	@SuppressWarnings("unused")
 	private State executeUpdate(State state, int pid, UpdateStatement update)
 			throws UnsatisfiablePathConditionException {
 		CIVLSource source = update.getSource();
@@ -822,10 +842,9 @@ public class CommonExecutor implements Executor {
 				if (this.civlConfig.debugOrVerbose()
 						|| this.civlConfig.showStates()
 						|| civlConfig.showSavedStates()) {
-					civlConfig.out()
-							.println(this.symbolicAnalyzer
-									.stateToString(stateFactory
-											.getStateByReference(colStateID)));
+					civlConfig.out().println(
+							this.symbolicAnalyzer.stateToString(stateFactory
+									.getStateByReference(colStateID)));
 				}
 				gstate = universe.tupleWrite(gstate, oneObj, newColStateRef);
 				state = this.assign(source, state, process, gstateHandle,
@@ -1286,84 +1305,81 @@ public class CommonExecutor implements Executor {
 				}
 				// length modifier
 				switch (current) {
-					case 'h' :
-					case 'l' :
-						stringBuffer.append(current);
-						if (i + 1 >= count)
-							throw new CIVLSyntaxException("The format "
-									+ stringBuffer + " is not allowed.",
-									source);
-						else {
-							Character next = formatBuffer.charAt(i + 1);
+				case 'h':
+				case 'l':
+					stringBuffer.append(current);
+					if (i + 1 >= count)
+						throw new CIVLSyntaxException("The format "
+								+ stringBuffer + " is not allowed.", source);
+					else {
+						Character next = formatBuffer.charAt(i + 1);
 
-							if (next.equals(current)) {
-								i++;
-								stringBuffer.append(next);
-							}
-							current = formatBuffer.charAt(++i);
+						if (next.equals(current)) {
+							i++;
+							stringBuffer.append(next);
 						}
-						break;
-					case 'j' :
-					case 'z' :
-					case 't' :
-					case 'L' :
-						stringBuffer.append(current);
-						i++;
-						if (i >= count)
-							throw new CIVLSyntaxException("Invalid format \"%"
-									+ current + "\" for fprintf/printf",
-									source);
-						current = formatBuffer.charAt(i);
-						break;
-					default :
+						current = formatBuffer.charAt(++i);
+					}
+					break;
+				case 'j':
+				case 'z':
+				case 't':
+				case 'L':
+					stringBuffer.append(current);
+					i++;
+					if (i >= count)
+						throw new CIVLSyntaxException("Invalid format \"%"
+								+ current + "\" for fprintf/printf", source);
+					current = formatBuffer.charAt(i);
+					break;
+				default:
 				}
 				// conversion specifier
 				switch (current) {
-					case 'c' :
-					case 'p' :
-					case 'n' :
-						if (hasFieldWidth || hasPrecision) {
-							throw new CIVLSyntaxException(
-									"Invalid precision for the format \"%"
-											+ current + "\"...",
-									source);
-						}
-					default :
+				case 'c':
+				case 'p':
+				case 'n':
+					if (hasFieldWidth || hasPrecision) {
+						throw new CIVLSyntaxException(
+								"Invalid precision for the format \"%" + current
+										+ "\"...",
+								source);
+					}
+				default:
 				}
 				switch (current) {
-					case 'c' :
-						type = ConversionType.CHAR;
-						break;
-					case 'p' :
-					case 'n' :
-						type = ConversionType.POINTER;
-						break;
-					case 'd' :
-					case 'i' :
-					case 'o' :
-					case 'u' :
-					case 'x' :
-					case 'X' :
-						type = ConversionType.INT;
-						break;
-					case 'a' :
-					case 'A' :
-					case 'e' :
-					case 'E' :
-					case 'f' :
-					case 'F' :
-					case 'g' :
-					case 'G' :
-						type = ConversionType.DOUBLE;
-						break;
-					case 's' :
-						type = ConversionType.STRING;
-						break;
-					default :
-						stringBuffer.append(current);
-						throw new CIVLSyntaxException("The format %"
-								+ stringBuffer + " is not allowed in fprintf",
-								source);
+				case 'c':
+					type = ConversionType.CHAR;
+					break;
+				case 'p':
+				case 'n':
+					type = ConversionType.POINTER;
+					break;
+				case 'd':
+				case 'i':
+				case 'o':
+				case 'u':
+				case 'x':
+				case 'X':
+					type = ConversionType.INT;
+					break;
+				case 'a':
+				case 'A':
+				case 'e':
+				case 'E':
+				case 'f':
+				case 'F':
+				case 'g':
+				case 'G':
+					type = ConversionType.DOUBLE;
+					break;
+				case 's':
+					type = ConversionType.STRING;
+					break;
+				default:
+					stringBuffer.append(current);
+					throw new CIVLSyntaxException("The format %" + stringBuffer
+							+ " is not allowed in fprintf", source);
 				}
 				stringBuffer.append(current);
 				result.add(new Format(stringBuffer, type));
@@ -1391,12 +1407,12 @@ public class CommonExecutor implements Executor {
 			String formatString = format.toString();
 
 			switch (format.type) {
-				case VOID :
-					printStream.print(formatString);
-					break;
-				default :
-					assert argIndex < numArguments;
-					printStream.printf("%s", arguments.get(argIndex++));
+			case VOID:
+				printStream.print(formatString);
+				break;
+			default:
+				assert argIndex < numArguments;
+				printStream.printf("%s", arguments.get(argIndex++));
 			}
 		}
 
@@ -1611,8 +1627,7 @@ public class CommonExecutor implements Executor {
 		int mallocId = typeFactory.getHeapFieldId(objectType);
 		int dyscopeID;
 		SymbolicExpression heapObject;
-		CIVLSource scopeSource = scopeExpression == null
-				? source
+		CIVLSource scopeSource = scopeExpression == null ? source
 				: scopeExpression.getSource();
 		Pair<State, SymbolicExpression> result;
 
@@ -1634,35 +1649,34 @@ public class CommonExecutor implements Executor {
 		AtomicLockAction atomicLockAction = transition.atomicLockAction();
 
 		switch (atomicLockAction) {
-			case GRAB :
-				state = stateFactory.getAtomicLock(state, pid);
-				break;
-			case RELEASE :
-				state = stateFactory.releaseAtomicLock(state);
-				break;
-			case NONE :
-				break;
-			default :
-				throw new CIVLUnimplementedFeatureException(
-						"Executing a transition with the atomic lock action "
-								+ atomicLockAction.toString(),
-						transition.statement().getSource());
+		case GRAB:
+			state = stateFactory.getAtomicLock(state, pid);
+			break;
+		case RELEASE:
+			state = stateFactory.releaseAtomicLock(state);
+			break;
+		case NONE:
+			break;
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"Executing a transition with the atomic lock action "
+							+ atomicLockAction.toString(),
+					transition.statement().getSource());
 		}
 		state = state.setPathCondition(transition.pathCondition());
 		switch (transition.transitionKind()) {
-			case NORMAL :
-				state = this.executeStatement(state, pid,
-						transition.statement());
-				break;
-			case NOOP :
-				state = this.stateFactory.setLocation(state, pid,
-						((NoopTransition) transition).statement().target());
-				break;
-			default :
-				throw new CIVLUnimplementedFeatureException(
-						"Executing a transition of kind "
-								+ transition.transitionKind(),
-						transition.statement().getSource());
+		case NORMAL:
+			state = this.executeStatement(state, pid, transition.statement());
+			break;
+		case NOOP:
+			state = this.stateFactory.setLocation(state, pid,
+					((NoopTransition) transition).statement().target());
+			break;
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"Executing a transition of kind "
+							+ transition.transitionKind(),
+					transition.statement().getSource());
 
 		}
 		if (transition.simpifyState())

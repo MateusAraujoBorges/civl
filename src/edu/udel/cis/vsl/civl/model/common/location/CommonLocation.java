@@ -157,6 +157,7 @@ public class CommonLocation extends CommonSourceable implements Location {
 	public CommonLocation(CIVLSource source, boolean isSleep) {
 		super(source);
 		this.isSleep = isSleep;
+		this.id = -1;
 	}
 
 	/**

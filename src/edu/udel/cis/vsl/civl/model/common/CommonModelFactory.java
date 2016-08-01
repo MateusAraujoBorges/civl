@@ -101,6 +101,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement.
 import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ParallelAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
@@ -172,6 +173,7 @@ import edu.udel.cis.vsl.civl.model.common.statement.CommonIfElseBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonLoopBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonMallocStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonNoopStatement;
+import edu.udel.cis.vsl.civl.model.common.statement.CommonParallelAssignStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonReturnStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonSwitchBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonUpdateStatement;
@@ -2526,5 +2528,12 @@ public class CommonModelFactory implements ModelFactory {
 			int id) {
 		return new CommonStateExpression(source, scope,
 				this.typeFactory.stateType, id);
+	}
+
+	@Override
+	public ParallelAssignStatement parallelAssignStatement(CIVLSource source,
+			List<Pair<LHSExpression, Expression>> assignPairs) {
+		return new CommonParallelAssignStatement(source, null,
+				this.trueExpression(source), assignPairs);
 	}
 }

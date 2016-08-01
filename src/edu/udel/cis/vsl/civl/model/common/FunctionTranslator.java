@@ -555,41 +555,6 @@ public class FunctionTranslator {
 		return result;
 	}
 
-	// private FunctionCallNode isFunctionCall(StatementNode block) {
-	// StatementNode statement = block;
-	//
-	// if (block.statementKind() == StatementKind.COMPOUND) {
-	// CompoundStatementNode compound = (CompoundStatementNode) block;
-	//
-	// if (compound.numChildren() > 1)
-	// return null;
-	// statement = (StatementNode) compound.getSequenceChild(0);
-	// }
-	// if (statement.statementKind() == StatementKind.EXPRESSION) {
-	// ExpressionNode expr = ((ExpressionStatementNode) statement)
-	// .getExpression();
-	//
-	// if (expr.expressionKind() == ExpressionKind.FUNCTION_CALL)
-	// return (FunctionCallNode) expr;
-	// }
-	// return null;
-	// }
-
-	private Fragment translateUpdateNode(Scope scope, UpdateNode updateNode) {
-		CIVLSource source = modelFactory.sourceOf(updateNode);
-		Location location = modelFactory.location(source, scope);
-		Expression collator = this
-				.translateExpressionNode(updateNode.getCollator(), scope, true);
-		CallOrSpawnStatement call = (CallOrSpawnStatement) this
-				.translateFunctionCallNode(scope, updateNode.getFunctionCall(),
-						modelFactory.sourceOf(updateNode.getFunctionCall()))
-				.uniqueFinalStatement();
-		UpdateStatement statement = this.modelFactory.updateStatement(source,
-				location, null, collator, call);
-
-		return new CommonFragment(statement);
-	}
-
 	private Fragment translateUpdateNodeNew(Scope scope, UpdateNode update) {
 		CIVLSource source = modelFactory.sourceOf(update);
 		Expression collator = this.translateExpressionNode(update.getCollator(),
@@ -678,7 +643,31 @@ public class FunctionTranslator {
 	}
 
 	/**
+	 * translating a $with block, which has the format:
 	 * 
+	 * <pre>
+	 * $with (cs) {
+	 *   s1;
+	 *   s2;
+	 *   ...
+	 * }
+	 * </pre>
+	 * 
+	 * into
+	 * 
+	 * <pre>
+	 * void _with_func(){
+	 * 	s1;
+	 * 	s2;
+	 * 	...
+	 * }
+	 * $with (cs) 
+	 * 	_with_func();
+	 * </pre>
+	 * 
+	 * @param scope
+	 * @param statementNode
+	 * @return
 	 */
 	private Fragment translateWithNodeNew(Scope scope, WithNode with) {
 		CIVLSource source = modelFactory.sourceOf(with);
@@ -708,52 +697,6 @@ public class FunctionTranslator {
 								with.getStateReference(), scope, true),
 						withFunc);
 		return new CommonFragment(withStatement);
-	}
-
-	/**
-	 * translating a $with block, which has the format:
-	 * 
-	 * <pre>
-	 * $with (cs) {
-	 *   s1;
-	 *   s2;
-	 *   ...
-	 * }
-	 * </pre>
-	 * 
-	 * into
-	 * 
-	 * <pre>
-	 * $atom{
-	 * ENTER_WITH(cs);
-	 * s1;
-	 * s2;
-	 * ..
-	 * EXIT_WITH(cs);
-	 * }
-	 * </pre>
-	 * 
-	 * @param scope
-	 * @param statementNode
-	 * @return
-	 */
-	private Fragment translateWithNode(Scope scope, WithNode with) {
-		CIVLSource sourceStart = modelFactory.sourceOfBeginning(with),
-				sourceEnd = modelFactory.sourceOfEnd(with);
-		Location start = modelFactory.location(sourceStart, scope);
-		Location end = modelFactory.location(sourceEnd, scope);
-		Expression colStateExpr = this
-				.translateExpressionNode(with.getStateReference(), scope, true);
-		Fragment result = new CommonFragment(this.modelFactory.withStatement(
-				sourceStart, modelFactory.location(sourceStart, scope),
-				(LHSExpression) colStateExpr, true));
-		Fragment body = this.translateStatementNode(scope, with.getBodyNode());
-
-		result = result.combineWith(body);
-		result.addNewStatement(this.modelFactory.withStatement(sourceEnd,
-				modelFactory.location(sourceEnd, scope),
-				(LHSExpression) colStateExpr, false));
-		return modelFactory.atomicFragment(true, result, start, end);
 	}
 
 	private Fragment translateParForNode(Scope scope, CivlForNode civlForNode) {

@@ -54,6 +54,8 @@ public interface Statement extends Sourceable {
 		UPDATE,
 		/** $with statement */
 		WITH,
+		/** multiple assignments at a time */
+		PARALLEL_ASSIGN
 	}
 
 	/* **************************** Public Methods ************************* */

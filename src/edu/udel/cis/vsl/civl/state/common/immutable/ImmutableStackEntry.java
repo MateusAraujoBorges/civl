@@ -76,7 +76,9 @@ public class ImmutableStackEntry implements StackEntry {
 		return dyscopeId;
 	}
 
-	/* ************************* Methods from Object ************************* */
+	/*
+	 * ************************* Methods from Object *************************
+	 */
 
 	@Override
 	public boolean equals(Object obj) {
@@ -110,10 +112,12 @@ public class ImmutableStackEntry implements StackEntry {
 	@Override
 	public String toString() {
 		CIVLSource source = location.getSource();
-		String locationString = source == null ? "" : ", "
-				+ source.getSummary();
+		String locationString = source == null ? ""
+				: ", " + source.getSummary();
+		String functionString = location.function() == null ? "null"
+				: location.function().name().name();
 
-		return "Frame[function=" + location.function().name() + ", location="
+		return "Frame[function=" + functionString + ", location="
 				+ location.id() + locationString + ", dyscope=d" + dyscopeId
 				+ "]";
 	}

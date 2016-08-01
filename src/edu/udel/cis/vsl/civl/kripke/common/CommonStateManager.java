@@ -20,8 +20,6 @@ import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
-import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
-import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.NoopTransition;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
@@ -193,16 +191,7 @@ public class CommonStateManager implements StateManager {
 		firstTransition = (Transition) transition;
 		if (state.getProcessState(pid).getLocation().enterAtom())
 			atomCount = 1;
-		if (firstTransition.statement().statementKind() == StatementKind.WITH) {
-			Pair<State, Integer> colstateAndPlace = executor
-					.executeWithStatement(state, pid,
-							(WithStatement) firstTransition.statement());
-
-			state = colstateAndPlace.left;
-			pid = colstateAndPlace.right;
-		} else {
-			state = executor.execute(state, pid, firstTransition);
-		}
+		state = executor.execute(state, pid, firstTransition);
 		if (printTransitions) {
 			if (this.printSavedStates)
 				config.out().println();
@@ -222,20 +211,19 @@ public class CommonStateManager implements StateManager {
 				config.out().print(this.symbolicAnalyzer.stateToString(state,
 						startStateId, sequenceId++));
 			}
-			if (stateStatus.enabledTransition.statement()
-					.statementKind() == StatementKind.WITH) {
-				Pair<State, Integer> colstateAndPlace = executor
-						.executeWithStatement(state, pid,
-								(WithStatement) stateStatus.enabledTransition
-										.statement());
-
-				state = colstateAndPlace.left;
-				pid = colstateAndPlace.right;
-			} else {
-				state = executor.execute(state,
-						stateStatus.enabledTransition.pid(),
-						stateStatus.enabledTransition);
-			}
+			// if (stateStatus.enabledTransition.statement()
+			// .statementKind() == StatementKind.WITH) {
+			// Pair<State, Integer> colstateAndPlace = executor
+			// .executeWithStatement(state, pid,
+			// (WithStatement) stateStatus.enabledTransition
+			// .statement());
+			//
+			// state = colstateAndPlace.left;
+			// pid = colstateAndPlace.right;
+			// } else {
+			state = executor.execute(state, stateStatus.enabledTransition.pid(),
+					stateStatus.enabledTransition);
+			// }
 			numStatesExplored++;
 			if (printTransitions) {
 				if (this.printAllStates)

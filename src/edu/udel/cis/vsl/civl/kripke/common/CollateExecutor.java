@@ -1,8 +1,6 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
@@ -27,11 +25,8 @@ public class CollateExecutor {
 	}
 
 	Collection<State> run2Completion(State initState) {
-		Set<State> result = new HashSet<>();
-
 		while (searcher.search(initState))
 			;
-		colStateManager.getFinalCollateStates();
-		return result;
+		return colStateManager.getFinalCollateStates();
 	}
 }

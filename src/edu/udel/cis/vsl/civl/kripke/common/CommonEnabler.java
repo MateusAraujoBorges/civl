@@ -1,6 +1,8 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.io.PrintStream;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -12,6 +14,7 @@ import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnabler;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
@@ -41,6 +44,7 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.EnablerIF;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -136,6 +140,8 @@ public abstract class CommonEnabler implements Enabler {
 	 * CIVL configuration file, which is associated with the given command line.
 	 */
 	protected CIVLConfiguration civlConfig;
+
+	// private CollateExecutor collateExecutor;
 
 	/* ***************************** Constructor *************************** */
 
@@ -586,10 +592,12 @@ public abstract class CommonEnabler implements Enabler {
 				}
 				break;
 			}
-			case WITH: {
+			case WITH:
 				return enabledTransitionsOfWithStatement(state, pid,
 						(WithStatement) statement, atomicLockAction);
-			}
+			case UPDATE:
+				return enabledTransitionsOfUpdateStatement(state, pid,
+						(UpdateStatement) statement, atomicLockAction);
 			default:
 			}
 			localTransitions.add(Semantics.newTransition(pathCondition, pid,
@@ -624,16 +632,12 @@ public abstract class CommonEnabler implements Enabler {
 		SymbolicExpression colStateComp, gstateHandle;
 		int place, colStateID;
 		SymbolicUtility symbolicUtil = evaluator.symbolicUtility();
-		List<Transition> result = new LinkedList<>();
 		State colState;
 		Collection<State> newColStates;
-		CollateExecutor collateExecutor = new CollateExecutor(this, executor,
-				errorLogger, civlConfig);
 		LHSExpression colStateRef = modelFactory.dotExpression(csSource,
 				modelFactory.dereferenceExpression(csSource,
 						modelFactory.dotExpression(csSource, colStateExpr, 1)),
 				1);
-		AssignStatement assign;
 		BooleanExpression oldPC = state.getPathCondition();
 
 		eval = this.evaluator.evaluate(state, pid, colStateExpr);
@@ -651,15 +655,35 @@ public abstract class CommonEnabler implements Enabler {
 		colState = stateFactory.addExternalProcess(colState, state, pid, place,
 				with.function(), new SymbolicExpression[0]);
 		System.out.println(this.symbolicAnalyzer.stateToString(colState));
+
+		CollateExecutor collateExecutor = new CollateExecutor(this,
+				this.executor, errorLogger, civlConfig);
+
 		newColStates = collateExecutor.run2Completion(colState);
-		for (State newColState : newColStates) {
+		return getCollateStateUpdateTransitions(oldPC, pid, colStateRef,
+				newColStates, atomicLockAction, with.target());
+	}
+
+	private List<Transition> getCollateStateUpdateTransitions(
+			BooleanExpression oldPC, int pid, LHSExpression colStateRef,
+			Collection<State> colStates, AtomicLockAction atomicLockAction,
+			Location target) {
+		List<Transition> result = new LinkedList<>();
+		AssignStatement assign;
+		CIVLSource csSource = colStateRef.getSource();
+
+		for (State newColState : colStates) {
 			int newStateID = stateFactory.saveState(newColState, pid);
+
+			System.out.println(this.symbolicAnalyzer.stateToString(
+					stateFactory.getStateByReference(newStateID)));
 
 			assign = modelFactory
 					.assignStatement(csSource, null, colStateRef,
 							modelFactory.stateExpression(csSource,
-									colStateExpr.expressionScope(), newStateID),
+									colStateRef.expressionScope(), newStateID),
 							false);
+			assign.setTargetTemp(target);
 			result.add(Semantics.newTransition(
 					universe.and(oldPC, newColState.getPathCondition()), pid,
 					assign, atomicLockAction));
@@ -669,10 +693,179 @@ public abstract class CommonEnabler implements Enabler {
 
 	// TODO
 	private List<Transition> enabledTransitionsOfUpdateStatement(State state,
-			int pid, UpdateStatement udpate, AtomicLockAction atomicLockAction)
+			int pid, UpdateStatement update, AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
-		return null;
+		CIVLSource source = update.getSource();
+		Expression collator = update.collator();
+		CIVLFunction updateFunction = update.function();
+		Expression[] arguments = update.arguments();
+		int numArgs = arguments.length;
+		Evaluation eval;
+		NumericExpression place, gqueueLength;
+		SymbolicExpression collatorHandle, collatorComp, gcollatorHandle,
+				gcollatorComp, gstateQueue;
+		int qLength, placeID;
+		String process = state.getProcessState(pid).name();
+		SymbolicExpression[] argumentValues = new SymbolicExpression[numArgs];
+		SymbolicUtility symbolicUtil = evaluator.symbolicUtility();
 
+		eval = this.evaluator.evaluate(state, pid, collator);
+		collatorHandle = eval.value;
+		state = eval.state;
+		for (int i = 0; i < numArgs; i++) {
+			eval = evaluator.evaluate(state, pid, arguments[i]);
+			argumentValues[i] = eval.value;
+			state = eval.state;
+		}
+		eval = this.evaluator.dereference(collator.getSource(), state, process,
+				collator, collatorHandle, false);
+		collatorComp = eval.value;
+		state = eval.state;
+		place = (NumericExpression) universe.tupleRead(collatorComp,
+				universe.intObject(0));
+		placeID = symbolicUtil.extractInt(source, place);
+		gcollatorHandle = universe.tupleRead(collatorComp,
+				universe.intObject(1));
+		eval = this.evaluator.dereference(collator.getSource(), state, process,
+				collator, gcollatorHandle, false);
+		gcollatorComp = eval.value;
+		state = eval.state;
+		gqueueLength = (NumericExpression) universe.tupleRead(gcollatorComp,
+				universe.intObject(2));
+		gstateQueue = universe.tupleRead(gcollatorComp, universe.intObject(3));
+		qLength = symbolicUtil.extractInt(collator.getSource(), gqueueLength);
+
+		List<Pair<LHSExpression, List<Expression>>> colStateRefAssignPairs = executeFunctionAtCollateState(
+				source, state, pid, process, gstateQueue, qLength, place,
+				placeID, collator, updateFunction, argumentValues);
+
+		return assignPairs2Transitions(state, pid, source,
+				colStateRefAssignPairs, atomicLockAction, update.target());
+	}
+
+	private List<Transition> assignPairs2Transitions(State state, int pid,
+			CIVLSource source,
+			List<Pair<LHSExpression, List<Expression>>> colStateRefAssignPairs,
+			AtomicLockAction atomicLockAction, Location target) {
+		List<Transition> result = new LinkedList<>();
+		BooleanExpression pc = state.getPathCondition();
+		List<List<Pair<LHSExpression, Expression>>> assignPairs = perumtations(
+				colStateRefAssignPairs, colStateRefAssignPairs.size() - 1);
+		Statement assign;
+
+		for (List<Pair<LHSExpression, Expression>> assignPairList : assignPairs) {
+			assign = modelFactory.parallelAssignStatement(source,
+					assignPairList);
+			assign.setTargetTemp(target);
+			result.add(
+					Semantics.newTransition(pc, pid, assign, atomicLockAction));
+		}
+		return result;
+	}
+
+	private List<List<Pair<LHSExpression, Expression>>> perumtations(
+			List<Pair<LHSExpression, List<Expression>>> colStateRefAssignPairs,
+			int start) {
+		List<List<Pair<LHSExpression, Expression>>> result = new ArrayList<>();
+		Pair<LHSExpression, List<Expression>> myPair = colStateRefAssignPairs
+				.get(start);
+
+		if (start == 0) {
+			for (Expression rhs : myPair.right) {
+				List<Pair<LHSExpression, Expression>> pairList = new ArrayList<>();
+
+				pairList.add(new Pair<>(myPair.left, rhs));
+				result.add(pairList);
+			}
+		} else {
+			List<List<Pair<LHSExpression, Expression>>> previousResult = perumtations(
+					colStateRefAssignPairs, start - 1);
+
+			for (Expression rhs : myPair.right) {
+				for (List<Pair<LHSExpression, Expression>> list : previousResult) {
+					List<Pair<LHSExpression, Expression>> newList = new ArrayList<>(
+							list);
+
+					newList.add(new Pair<>(myPair.left, rhs));
+					result.add(newList);
+				}
+			}
+		}
+		return result;
+	}
+
+	private List<Pair<LHSExpression, List<Expression>>> executeFunctionAtCollateState(
+			CIVLSource source, State state, int pid, String process,
+			SymbolicExpression gstateQueue, int qLength,
+			NumericExpression place, int placeID, Expression collator,
+			CIVLFunction function, SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		final int IDLE = 0;
+		Evaluation eval;
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		NumericExpression idle = universe.integer(IDLE);
+		List<Pair<LHSExpression, List<Expression>>> colStateRefAssignPairs = new ArrayList<>();
+		LHSExpression stateQueueExpr = modelFactory.dotExpression(source,
+				modelFactory.dereferenceExpression(source,
+						modelFactory.dotExpression(source, modelFactory
+								.dereferenceExpression(source, collator), 1)),
+				3);// collator->gcollator->queue
+
+		for (int i = 0; i < qLength; i++) {
+			NumericExpression queueIndex = universe.integer(i);
+			SymbolicExpression gstateHandle = universe.arrayRead(gstateQueue,
+					queueIndex), gstate;
+			SymbolicExpression mystatus;
+			BooleanExpression isIdleState;
+			ResultType result;
+
+			eval = this.evaluator.dereference(source, state, process, collator,
+					gstateHandle, false);
+			gstate = eval.value;
+			state = eval.state;
+			mystatus = universe.arrayRead(
+					universe.tupleRead(gstate, universe.intObject(0)), place);
+			isIdleState = universe.equals(mystatus, idle);
+			result = reasoner.valid(isIdleState).getResultType();
+			if (result == ResultType.YES) {
+				int colStateID = modelFactory.getStateRef(source,
+						universe.tupleRead(gstate, universe.intObject(1)));
+				State colState = stateFactory.getStateByReference(colStateID);
+				Collection<State> newColStates;
+				LHSExpression colStateRefExpr = modelFactory
+						.subscriptExpression(source, stateQueueExpr,
+								modelFactory.integerLiteralExpression(source,
+										BigInteger.valueOf(i)));
+
+				colState = stateFactory.addExternalProcess(colState, state, pid,
+						placeID, function, argumentValues);
+
+				CollateExecutor collateExecutor = new CollateExecutor(this,
+						this.executor, errorLogger, civlConfig);
+
+				newColStates = collateExecutor.run2Completion(colState);
+
+				Pair<LHSExpression, List<Expression>> myColStateUpdatePair = this
+						.getCollateStateUpdateExpressions(pid, colStateRefExpr,
+								newColStates);
+
+				colStateRefAssignPairs.add(myColStateUpdatePair);
+			}
+		}
+		return colStateRefAssignPairs;
+	}
+
+	private Pair<LHSExpression, List<Expression>> getCollateStateUpdateExpressions(
+			int pid, LHSExpression colStateRef, Collection<State> colStates) {
+		List<Expression> stateExpressions = new ArrayList<>();
+		CIVLSource csSource = colStateRef.getSource();
+
+		for (State colState : colStates) {
+			stateExpressions.add(modelFactory.stateExpression(csSource,
+					colStateRef.expressionScope(),
+					stateFactory.saveState(colState, pid)));
+		}
+		return new Pair<>(colStateRef, stateExpressions);
 	}
 
 	/* ************************ Package-private Methods ******************** */

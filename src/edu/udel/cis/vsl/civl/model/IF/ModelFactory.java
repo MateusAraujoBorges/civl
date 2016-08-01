@@ -75,6 +75,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement.CONTRACTED_FUNCTION_CALL_KIND;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ParallelAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
@@ -1870,4 +1871,7 @@ public interface ModelFactory {
 	 */
 	WithStatement withStatement(CIVLSource source, Location srcLoc,
 			Expression colStateExpr, CIVLFunction function);
+
+	ParallelAssignStatement parallelAssignStatement(CIVLSource source,
+			List<Pair<LHSExpression, Expression>> assignPairs);
 }
