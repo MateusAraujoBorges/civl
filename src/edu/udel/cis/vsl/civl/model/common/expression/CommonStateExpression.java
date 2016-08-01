@@ -48,4 +48,9 @@ public class CommonStateExpression extends CommonExpression
 		return this.id;
 	}
 
+	@Override
+	public String toString() {
+		return "STATE(" + id + ")";
+	}
+
 }
