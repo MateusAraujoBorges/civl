@@ -1861,7 +1861,7 @@ public class ImmutableStateFactory implements StateFactory {
 						.updateSymbolicConstants(canonicRenamer);
 			savedState = ImmutableState.newState(savedState,
 					savedState.copyProcessStates(), savedDyscopes, savedPC);
-			savedCanonicStates.put(savedState.getCanonicId(), savedState);
+			savedCanonicStates.put(id, savedState);
 		}
 		return theState;
 	}
