@@ -924,7 +924,7 @@ public interface StateFactory {
 	 */
 	State addExternalProcess(State colState, State realState, int pid,
 			int place, CIVLFunction withOrUpdate,
-			SymbolicExpression[] argumentValues[]);
+			SymbolicExpression[] argumentValues);
 
 	/**
 	 * Creates an empty state which contains no dyscopes but an array of process

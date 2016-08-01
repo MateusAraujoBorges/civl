@@ -2429,7 +2429,7 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public ImmutableState addExternalProcess(State colState, State realState,
 			int pid, int place, CIVLFunction withOrUpdate,
-			SymbolicExpression[] argumentValues[]) {
+			SymbolicExpression[] argumentValues) {
 		ImmutableState theColState = (ImmutableState) colState;
 		ImmutableState theRealState = (ImmutableState) getStateSnapshot(
 				realState, pid,
@@ -2468,11 +2468,14 @@ public class ImmutableStateFactory implements StateFactory {
 
 		ImmutableProcessState processes[] = theColState
 				.copyAndExpandProcesses();
+		ImmutableState result;
+		int newPid = processes.length - 1;
 
-		processes[processes.length - 1] = external;
+		processes[newPid] = external;
 		setReachablesForProc(dyscopes, external);
-		return ImmutableState.newState(theColState, processes, dyscopes,
+		result = ImmutableState.newState(theColState, processes, dyscopes,
 				newRealPC);
+		return pushCallStack(result, newPid, withOrUpdate, argumentValues);
 	}
 
 	@Override
