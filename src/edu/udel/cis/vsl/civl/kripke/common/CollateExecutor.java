@@ -5,6 +5,7 @@ import java.util.Collection;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
+import edu.udel.cis.vsl.civl.predicate.IF.CIVLStatePredicate;
 import edu.udel.cis.vsl.civl.predicate.IF.Predicates;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
@@ -13,18 +14,26 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.DfsSearcher;
 
 public class CollateExecutor {
-	private DfsSearcher<State, Transition, TransitionSequence> searcher;
-	private ColStateManager colStateManager;
+	private Enabler enabler;
+	private Executor executor;
+	private CIVLErrorLogger errorLogger;
+	private CIVLConfiguration config;
+	private CIVLStatePredicate predicate = Predicates.newTrivialPredicate();
 
 	public CollateExecutor(Enabler enabler, Executor executor,
 			CIVLErrorLogger errorLogger, CIVLConfiguration config) {
-		colStateManager = new ColStateManager(enabler, executor,
-				executor.evaluator().symbolicAnalyzer(), errorLogger, config);
-		searcher = new DfsSearcher<State, Transition, TransitionSequence>(
-				enabler, colStateManager, Predicates.newTrivialPredicate());
+		this.enabler = enabler;
+		this.executor = executor;
+		this.errorLogger = errorLogger;
+		this.config = config;
 	}
 
 	Collection<State> run2Completion(State initState) {
+		ColStateManager colStateManager = new ColStateManager(enabler, executor,
+				executor.evaluator().symbolicAnalyzer(), errorLogger, config);
+		DfsSearcher<State, Transition, TransitionSequence> searcher = new DfsSearcher<State, Transition, TransitionSequence>(
+				enabler, colStateManager, predicate);
+
 		while (searcher.search(initState))
 			;
 		return colStateManager.getFinalCollateStates();

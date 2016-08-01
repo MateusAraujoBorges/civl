@@ -48,8 +48,6 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ParallelAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
-import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
@@ -147,8 +145,6 @@ public class CommonExecutor implements Executor {
 
 	private IntObject twoObj;
 
-	private IntObject threeObj;
-
 	/**
 	 * The set of characters that are used to construct a number in a format
 	 * string.
@@ -196,7 +192,6 @@ public class CommonExecutor implements Executor {
 		this.zeroObj = (IntObject) universe.canonic(universe.intObject(0));
 		this.oneObj = (IntObject) universe.canonic(universe.intObject(1));
 		this.twoObj = (IntObject) universe.canonic(universe.intObject(2));
-		this.threeObj = (IntObject) universe.canonic(universe.intObject(3));
 		numbers = new HashSet<Character>(10);
 		for (int i = 0; i < 10; i++) {
 			numbers.add(Character.forDigit(i, 10));
@@ -661,229 +656,56 @@ public class CommonExecutor implements Executor {
 
 		numSteps++;
 		switch (kind) {
-			case ASSIGN :
-				return executeAssign(state, pid, process,
-						(AssignStatement) statement);
-			case CALL_OR_SPAWN :
-				CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
+		case ASSIGN:
+			return executeAssign(state, pid, process,
+					(AssignStatement) statement);
+		case CALL_OR_SPAWN:
+			CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
 
-				if (call.isCall())
-					return executeCall(state, pid, call);
-				else
-					return executeSpawn(state, pid, process, call);
-			case MALLOC :
-				return executeMalloc(state, pid, process,
-						(MallocStatement) statement);
-			case NOOP : {
-				NoopStatement noop = (NoopStatement) statement;
-				Expression expression = noop.expression();
+			if (call.isCall())
+				return executeCall(state, pid, call);
+			else
+				return executeSpawn(state, pid, process, call);
+		case MALLOC:
+			return executeMalloc(state, pid, process,
+					(MallocStatement) statement);
+		case NOOP: {
+			NoopStatement noop = (NoopStatement) statement;
+			Expression expression = noop.expression();
 
-				if (expression != null) {
-					Evaluation eval = this.evaluator.evaluate(state, pid,
-							expression);
+			if (expression != null) {
+				Evaluation eval = this.evaluator.evaluate(state, pid,
+						expression);
 
-					state = eval.state;
-				}
-				state = stateFactory.setLocation(state, pid,
-						statement.target());
-				if (noop.noopKind() == NoopKind.LOOP) {
-					LoopBranchStatement loopBranch = (LoopBranchStatement) noop;
-
-					if (!loopBranch.isEnter())
-						state = this.stateFactory.simplify(state);
-				}
-				return state;
+				state = eval.state;
 			}
-			case RETURN :
-				return executeReturn(state, pid, process,
-						(ReturnStatement) statement);
-			case DOMAIN_ITERATOR :
-				return executeNextInDomain(state, pid,
-						(DomainIteratorStatement) statement);
-			case CIVL_PAR_FOR_ENTER :
-				return executeCivlParFor(state, pid,
-						(CivlParForSpawnStatement) statement);
-			case PARALLEL_ASSIGN :
-				return executeParallelAssign(state, pid, process,
-						(ParallelAssignStatement) statement);
-			case WITH :
-			case UPDATE :
-				throw new CIVLInternalException("unreachable", statement);
-			default :
-				throw new CIVLInternalException(
-						"Unknown statement kind: " + kind, statement);
-		}
-	}
+			state = stateFactory.setLocation(state, pid, statement.target());
+			if (noop.noopKind() == NoopKind.LOOP) {
+				LoopBranchStatement loopBranch = (LoopBranchStatement) noop;
 
-	/**
-	 * executes an <code> $update </code> statement, which takes an collator,
-	 * and runs a system function on the IDLE collate-state of that collator.
-	 * 
-	 * @param state
-	 *            the current state where the execution is to happen
-	 * @param pid
-	 *            the PID of the process that runs <code>$update</code>
-	 * @param update
-	 *            the update statement
-	 * @return the new state after executing the <code>$update</code> statement
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	@SuppressWarnings("unused")
-	private State executeUpdate(State state, int pid, UpdateStatement update)
-			throws UnsatisfiablePathConditionException {
-		CIVLSource source = update.getSource();
-		Expression collator = update.collator();
-		CallOrSpawnStatement call = update.call();
-		List<Expression> arguments = call.arguments();
-		int numArgs = arguments.size();
-		Evaluation eval;
-		NumericExpression place, gqueueLength;
-		SymbolicExpression collatorHandle, collatorComp, gcollatorHandle,
-				gcollatorComp, gstateQueue;
-		int qLength, placeID;
-		String process = state.getProcessState(pid).name();
-		SymbolicExpression[] argumentValues = new SymbolicExpression[numArgs];
-
-		eval = this.evaluator.evaluate(state, pid, collator);
-		collatorHandle = eval.value;
-		state = eval.state;
-		for (int i = 0; i < numArgs; i++) {
-			eval = evaluator.evaluate(state, pid, arguments.get(i));
-			argumentValues[i] = eval.value;
-			state = eval.state;
-		}
-		eval = this.evaluator.dereference(collator.getSource(), state, process,
-				collator, collatorHandle, false);
-		collatorComp = eval.value;
-		state = eval.state;
-		place = (NumericExpression) universe.tupleRead(collatorComp, zeroObj);
-		placeID = this.symbolicUtil.extractInt(source, place);
-		gcollatorHandle = universe.tupleRead(collatorComp, this.oneObj);
-		eval = this.evaluator.dereference(collator.getSource(), state, process,
-				collator, gcollatorHandle, false);
-		gcollatorComp = eval.value;
-		state = eval.state;
-		gqueueLength = (NumericExpression) universe.tupleRead(gcollatorComp,
-				this.twoObj);
-		gstateQueue = universe.tupleRead(gcollatorComp, this.threeObj);
-		qLength = this.symbolicUtil.extractInt(collator.getSource(),
-				gqueueLength);
-		assert call.isSystemCall();
-		executeFunctionAtCollateState(source, state, pid, process, gstateQueue,
-				qLength, place, placeID, collator, call, argumentValues);
-		state = stateFactory.setLocation(state, pid, update.target(), true);
-		return state;
-	}
-
-	/**
-	 * executes function call at all IDLE collate states of a queue, with a list
-	 * of given argument values
-	 * 
-	 * @param source
-	 * @param state
-	 * @param pid
-	 * @param process
-	 * @param gstateQueue
-	 * @param qLength
-	 * @param place
-	 * @param placeID
-	 * @param collator
-	 * @param call
-	 * @param argumentValues
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private State executeFunctionAtCollateState(CIVLSource source, State state,
-			int pid, String process, SymbolicExpression gstateQueue,
-			int qLength, NumericExpression place, int placeID,
-			Expression collator, CallOrSpawnStatement call,
-			SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
-		final int IDLE = 0;
-		Evaluation eval;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		NumericExpression idle = universe.integer(IDLE);
-		int dyscopeID = state.getProcessState(pid).peekStack().scope();
-
-		for (int i = 0; i < qLength; i++) {
-			NumericExpression queueIndex = universe.integer(i);
-			SymbolicExpression gstateHandle = universe.arrayRead(gstateQueue,
-					queueIndex), gstate;
-			SymbolicExpression mystatus;
-			BooleanExpression isIdleState;
-			ResultType result;
-
-			eval = this.evaluator.dereference(source, state, process, collator,
-					gstateHandle, false);
-			gstate = eval.value;
-			state = eval.state;
-			mystatus = universe.arrayRead(universe.tupleRead(gstate, zeroObj),
-					place);
-			isIdleState = universe.equals(mystatus, idle);
-			result = reasoner.valid(isIdleState).getResultType();
-			if (result == ResultType.YES) {
-				NumericExpression colStateRef = (NumericExpression) universe
-						.tupleRead(universe.tupleRead(gstate, oneObj), zeroObj);
-				SymbolicExpression newColStateRef;
-				int colStateID = this.symbolicUtil.extractInt(source,
-						colStateRef);
-				State colState = stateFactory.getStateByReference(colStateID);
-				State mystate = stateFactory.getStateSnapshot(state, pid,
-						dyscopeID);
-
-				colState = stateFactory.getStateByReference(colStateID);
-				colState = stateFactory.addInternalProcess(colState, mystate,
-						placeID);
-				colState = executeSystemFunctionCallWithValues(colState,
-						placeID, call, (SystemFunction) call.function(),
-						argumentValues);
-				colState = stateFactory.terminateProcess(colState, placeID);
-				colStateID = stateFactory.saveState(colState, pid);
-				newColStateRef = modelFactory.stateValue(colStateID);
-				if (this.civlConfig.debugOrVerbose()
-						|| this.civlConfig.showStates()
-						|| civlConfig.showSavedStates()) {
-					civlConfig.out()
-							.println(this.symbolicAnalyzer
-									.stateToString(stateFactory
-											.getStateByReference(colStateID)));
-				}
-				gstate = universe.tupleWrite(gstate, oneObj, newColStateRef);
-				state = this.assign(source, state, process, gstateHandle,
-						gstate);
+				if (!loopBranch.isEnter())
+					state = this.stateFactory.simplify(state);
 			}
-		}
-		return state;
-	}
-
-	private State executeSystemFunctionCallWithValues(State state, int pid,
-			CallOrSpawnStatement call, SystemFunction function,
-			SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
-		String libraryName = function.getLibrary();
-		String funcName = function.name().name();
-
-		try {
-			LibraryExecutor executor = loader.getLibraryExecutor(libraryName,
-					this, this.modelFactory, this.symbolicUtil,
-					symbolicAnalyzer);
-
-			return executor.executeWithValue(state, pid, call, funcName,
-					argumentValues);
-		} catch (LibraryLoaderException exception) {
-			String process = state.getProcessState(pid).name() + "(id=" + pid
-					+ ")";
-
-			errorLogger.logSimpleError(call.getSource(), state, process,
-					symbolicAnalyzer.stateInformation(state), ErrorKind.LIBRARY,
-					"unable to load the library executor for the library "
-							+ libraryName + " to execute the function "
-							+ funcName);
-			if (call.lhs() != null)
-				state = this.assign(state, pid, process, call.lhs(),
-						universe.nullExpression());
-			state = this.stateFactory.setLocation(state, pid, call.target());
 			return state;
+		}
+		case RETURN:
+			return executeReturn(state, pid, process,
+					(ReturnStatement) statement);
+		case DOMAIN_ITERATOR:
+			return executeNextInDomain(state, pid,
+					(DomainIteratorStatement) statement);
+		case CIVL_PAR_FOR_ENTER:
+			return executeCivlParFor(state, pid,
+					(CivlParForSpawnStatement) statement);
+		case PARALLEL_ASSIGN:
+			return executeParallelAssign(state, pid, process,
+					(ParallelAssignStatement) statement);
+		case WITH:
+		case UPDATE:
+			throw new CIVLInternalException("unreachable", statement);
+		default:
+			throw new CIVLInternalException("Unknown statement kind: " + kind,
+					statement);
 		}
 	}
 
@@ -1307,84 +1129,81 @@ public class CommonExecutor implements Executor {
 				}
 				// length modifier
 				switch (current) {
-					case 'h' :
-					case 'l' :
-						stringBuffer.append(current);
-						if (i + 1 >= count)
-							throw new CIVLSyntaxException("The format "
-									+ stringBuffer + " is not allowed.",
-									source);
-						else {
-							Character next = formatBuffer.charAt(i + 1);
+				case 'h':
+				case 'l':
+					stringBuffer.append(current);
+					if (i + 1 >= count)
+						throw new CIVLSyntaxException("The format "
+								+ stringBuffer + " is not allowed.", source);
+					else {
+						Character next = formatBuffer.charAt(i + 1);
 
-							if (next.equals(current)) {
-								i++;
-								stringBuffer.append(next);
-							}
-							current = formatBuffer.charAt(++i);
+						if (next.equals(current)) {
+							i++;
+							stringBuffer.append(next);
 						}
-						break;
-					case 'j' :
-					case 'z' :
-					case 't' :
-					case 'L' :
-						stringBuffer.append(current);
-						i++;
-						if (i >= count)
-							throw new CIVLSyntaxException("Invalid format \"%"
-									+ current + "\" for fprintf/printf",
-									source);
-						current = formatBuffer.charAt(i);
-						break;
-					default :
+						current = formatBuffer.charAt(++i);
+					}
+					break;
+				case 'j':
+				case 'z':
+				case 't':
+				case 'L':
+					stringBuffer.append(current);
+					i++;
+					if (i >= count)
+						throw new CIVLSyntaxException("Invalid format \"%"
+								+ current + "\" for fprintf/printf", source);
+					current = formatBuffer.charAt(i);
+					break;
+				default:
 				}
 				// conversion specifier
 				switch (current) {
-					case 'c' :
-					case 'p' :
-					case 'n' :
-						if (hasFieldWidth || hasPrecision) {
-							throw new CIVLSyntaxException(
-									"Invalid precision for the format \"%"
-											+ current + "\"...",
-									source);
-						}
-					default :
+				case 'c':
+				case 'p':
+				case 'n':
+					if (hasFieldWidth || hasPrecision) {
+						throw new CIVLSyntaxException(
+								"Invalid precision for the format \"%" + current
+										+ "\"...",
+								source);
+					}
+				default:
 				}
 				switch (current) {
-					case 'c' :
-						type = ConversionType.CHAR;
-						break;
-					case 'p' :
-					case 'n' :
-						type = ConversionType.POINTER;
-						break;
-					case 'd' :
-					case 'i' :
-					case 'o' :
-					case 'u' :
-					case 'x' :
-					case 'X' :
-						type = ConversionType.INT;
-						break;
-					case 'a' :
-					case 'A' :
-					case 'e' :
-					case 'E' :
-					case 'f' :
-					case 'F' :
-					case 'g' :
-					case 'G' :
-						type = ConversionType.DOUBLE;
-						break;
-					case 's' :
-						type = ConversionType.STRING;
-						break;
-					default :
-						stringBuffer.append(current);
-						throw new CIVLSyntaxException("The format %"
-								+ stringBuffer + " is not allowed in fprintf",
-								source);
+				case 'c':
+					type = ConversionType.CHAR;
+					break;
+				case 'p':
+				case 'n':
+					type = ConversionType.POINTER;
+					break;
+				case 'd':
+				case 'i':
+				case 'o':
+				case 'u':
+				case 'x':
+				case 'X':
+					type = ConversionType.INT;
+					break;
+				case 'a':
+				case 'A':
+				case 'e':
+				case 'E':
+				case 'f':
+				case 'F':
+				case 'g':
+				case 'G':
+					type = ConversionType.DOUBLE;
+					break;
+				case 's':
+					type = ConversionType.STRING;
+					break;
+				default:
+					stringBuffer.append(current);
+					throw new CIVLSyntaxException("The format %" + stringBuffer
+							+ " is not allowed in fprintf", source);
 				}
 				stringBuffer.append(current);
 				result.add(new Format(stringBuffer, type));
@@ -1412,12 +1231,12 @@ public class CommonExecutor implements Executor {
 			String formatString = format.toString();
 
 			switch (format.type) {
-				case VOID :
-					printStream.print(formatString);
-					break;
-				default :
-					assert argIndex < numArguments;
-					printStream.printf("%s", arguments.get(argIndex++));
+			case VOID:
+				printStream.print(formatString);
+				break;
+			default:
+				assert argIndex < numArguments;
+				printStream.printf("%s", arguments.get(argIndex++));
 			}
 		}
 
@@ -1632,8 +1451,7 @@ public class CommonExecutor implements Executor {
 		int mallocId = typeFactory.getHeapFieldId(objectType);
 		int dyscopeID;
 		SymbolicExpression heapObject;
-		CIVLSource scopeSource = scopeExpression == null
-				? source
+		CIVLSource scopeSource = scopeExpression == null ? source
 				: scopeExpression.getSource();
 		Pair<State, SymbolicExpression> result;
 
@@ -1655,35 +1473,34 @@ public class CommonExecutor implements Executor {
 		AtomicLockAction atomicLockAction = transition.atomicLockAction();
 
 		switch (atomicLockAction) {
-			case GRAB :
-				state = stateFactory.getAtomicLock(state, pid);
-				break;
-			case RELEASE :
-				state = stateFactory.releaseAtomicLock(state);
-				break;
-			case NONE :
-				break;
-			default :
-				throw new CIVLUnimplementedFeatureException(
-						"Executing a transition with the atomic lock action "
-								+ atomicLockAction.toString(),
-						transition.statement().getSource());
+		case GRAB:
+			state = stateFactory.getAtomicLock(state, pid);
+			break;
+		case RELEASE:
+			state = stateFactory.releaseAtomicLock(state);
+			break;
+		case NONE:
+			break;
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"Executing a transition with the atomic lock action "
+							+ atomicLockAction.toString(),
+					transition.statement().getSource());
 		}
 		state = state.setPathCondition(transition.pathCondition());
 		switch (transition.transitionKind()) {
-			case NORMAL :
-				state = this.executeStatement(state, pid,
-						transition.statement());
-				break;
-			case NOOP :
-				state = this.stateFactory.setLocation(state, pid,
-						((NoopTransition) transition).statement().target());
-				break;
-			default :
-				throw new CIVLUnimplementedFeatureException(
-						"Executing a transition of kind "
-								+ transition.transitionKind(),
-						transition.statement().getSource());
+		case NORMAL:
+			state = this.executeStatement(state, pid, transition.statement());
+			break;
+		case NOOP:
+			state = this.stateFactory.setLocation(state, pid,
+					((NoopTransition) transition).statement().target());
+			break;
+		default:
+			throw new CIVLUnimplementedFeatureException(
+					"Executing a transition of kind "
+							+ transition.transitionKind(),
+					transition.statement().getSource());
 
 		}
 		if (transition.simpifyState())
@@ -1719,90 +1536,5 @@ public class CommonExecutor implements Executor {
 		return errorLogger.logError(source, state, process,
 				symbolicAnalyzer.stateInformation(state), assertValue,
 				resultType, errorKind, format);
-	}
-
-	@Override
-	public Pair<State, Integer> executeWithStatement(State state, int pid,
-			WithStatement with) throws UnsatisfiablePathConditionException {
-		LHSExpression collateStateExpr = (LHSExpression) with.collateState();
-		CIVLSource csSource = collateStateExpr.getSource();
-		String process = state.getProcessState(pid).name();
-
-		if (with.isEnter()) {
-			Evaluation eval;
-			SymbolicExpression colStateComp, gstateHandle, gstate, colStateVal;
-			int colStateID, realStateID, place;
-			State colState = null;
-			SymbolicExpression realStateRef;
-
-			realStateID = stateFactory.saveState(state, pid);
-			realStateRef = modelFactory.stateValue(realStateID);
-			eval = this.evaluator.evaluate(state, pid, collateStateExpr);
-			state = eval.state;
-			colStateComp = eval.value;
-			place = this.symbolicUtil.extractInt(csSource,
-					(NumericExpression) universe.tupleRead(colStateComp,
-							zeroObj));
-			gstateHandle = universe.tupleRead(colStateComp, oneObj);
-			eval = this.evaluator.dereference(csSource, state, process,
-					collateStateExpr, gstateHandle, false);
-			state = eval.state;
-			gstate = eval.value;
-			colStateVal = universe.tupleRead(gstate, oneObj);
-			colStateID = this.modelFactory.getStateRef(csSource, colStateVal);
-			colState = stateFactory.getStateByReference(colStateID);
-			if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
-					|| civlConfig.showSavedStates()) {
-				civlConfig.out().println(this.symbolicAnalyzer.stateToString(
-						stateFactory.getStateByReference(realStateID)));
-			}
-			colStateComp = universe.tupleWrite(colStateComp, twoObj,
-					realStateRef);
-			colStateComp = universe.tupleWrite(colStateComp, threeObj,
-					universe.integer(pid));
-			colState = this.assign(colState, place, process, collateStateExpr,
-					colStateComp);
-			colState = stateFactory.setLocation(colState, place, with.target());
-			return new Pair<>(colState, place);
-		} else {
-			SymbolicExpression colStateComp;
-			Evaluation eval;
-			SymbolicExpression rsVal, newColStateRef;
-			int rsID, newColStateID, realPid;
-			State realState = null;
-			SymbolicExpression ghandle, ghandleStatePointer;
-
-			eval = this.evaluator.evaluate(state, pid, collateStateExpr);
-			state = eval.state;
-			colStateComp = eval.value;
-			realPid = symbolicUtil.extractInt(csSource,
-					(NumericExpression) universe.tupleRead(colStateComp,
-							threeObj));
-			rsVal = universe.tupleRead(colStateComp, twoObj);
-			rsID = this.modelFactory.getStateRef(csSource, rsVal);
-			realState = stateFactory.getStateByReference(rsID);
-			eval = this.evaluator.evaluate(realState, realPid,
-					collateStateExpr);
-			realState = eval.state;
-			colStateComp = eval.value;
-			ghandle = universe.tupleRead(colStateComp, oneObj);
-			newColStateID = stateFactory.saveState(state, pid);
-			if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
-					|| civlConfig.showSavedStates()) {
-				civlConfig.out().println(this.symbolicAnalyzer.stateToString(
-						stateFactory.getStateByReference(newColStateID)));
-			}
-			newColStateRef = this.modelFactory.stateValue(newColStateID);
-			ghandleStatePointer = symbolicUtil.extendPointer(ghandle,
-					universe.tupleComponentReference(
-							universe.identityReference(), oneObj));
-			realState = this.assign(csSource, realState, process,
-					ghandleStatePointer, newColStateRef);
-			realState = realState.setPathCondition(universe.and(
-					realState.getPathCondition(), state.getPathCondition()));
-			realState = stateFactory.setLocation(realState, realPid,
-					with.target());
-			return new Pair<>(realState, realPid);
-		}
 	}
 }

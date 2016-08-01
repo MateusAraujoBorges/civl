@@ -16,11 +16,36 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.gmc.TraceStepIF;
 
+/**
+ * A collate state has n processes, where n>=1, 1 process has non-empty call
+ * stack and is active (also called external process), and the remaining (n-1)
+ * processes (also called internal processes) either have empty call stack or
+ * are at the SLEEP location. The collate state manager is responsible for
+ * producing the transitions executed by the active external process, and also
+ * collect the final collate states. When the external process has an empty call
+ * stack, the state becomes a FINAL collate state, i.e., the resulting state
+ * after the external process finish its execution.
+ * 
+ * @author Manchun Zheng
+ *
+ */
 public class ColStateManager extends CommonStateManager
 		implements StateManager {
 
+	/**
+	 * The set of FINAL collate states.
+	 */
 	private Set<State> finalColStates;
 
+	/**
+	 * Creates a new instance of collate state manager.
+	 * 
+	 * @param enabler
+	 * @param executor
+	 * @param symbolicAnalyzer
+	 * @param errorLogger
+	 * @param config
+	 */
 	public ColStateManager(Enabler enabler, Executor executor,
 			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errorLogger,
 			CIVLConfiguration config) {
@@ -51,6 +76,8 @@ public class ColStateManager extends CommonStateManager
 		TraceStepIF<Transition, State> result;
 
 		try {
+			// reuse the general method, since only one process (the external
+			// process) is enabled
 			result = nextStateWork(state, transition);
 		} catch (UnsatisfiablePathConditionException e) {
 			// problem is the interface requires an actual State

@@ -52,5 +52,4 @@ public class CommonStateExpression extends CommonExpression
 	public String toString() {
 		return "STATE(" + id + ")";
 	}
-
 }

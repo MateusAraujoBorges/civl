@@ -141,7 +141,7 @@ public abstract class CommonEnabler implements Enabler {
 	 */
 	protected CIVLConfiguration civlConfig;
 
-	// private CollateExecutor collateExecutor;
+	private CollateExecutor collateExecutor;
 
 	/* ***************************** Constructor *************************** */
 
@@ -184,6 +184,8 @@ public abstract class CommonEnabler implements Enabler {
 		this.showMemoryUnits = civlConfig.showMemoryUnits();
 		this.procBound = civlConfig.getProcBound();
 		this.civlConfig = civlConfig;
+		collateExecutor = new CollateExecutor(this, this.executor, errorLogger,
+				civlConfig);
 	}
 
 	/* ************************ Methods from EnablerIF ********************* */
@@ -655,10 +657,6 @@ public abstract class CommonEnabler implements Enabler {
 		colState = stateFactory.addExternalProcess(colState, state, pid, place,
 				with.function(), new SymbolicExpression[0]);
 		System.out.println(this.symbolicAnalyzer.stateToString(colState));
-
-		CollateExecutor collateExecutor = new CollateExecutor(this,
-				this.executor, errorLogger, civlConfig);
-
 		newColStates = collateExecutor.run2Completion(colState);
 		return getCollateStateUpdateTransitions(oldPC, pid, colStateRef,
 				newColStates, atomicLockAction, with.target());
@@ -673,16 +671,16 @@ public abstract class CommonEnabler implements Enabler {
 		CIVLSource csSource = colStateRef.getSource();
 
 		for (State newColState : colStates) {
-			int newStateID = stateFactory.saveState(newColState, pid);
+			Pair<Integer, State> newStateAndID = stateFactory
+					.saveState(newColState, pid);
 
-			System.out.println(this.symbolicAnalyzer.stateToString(
-					stateFactory.getStateByReference(newStateID)));
+			System.out.println(
+					this.symbolicAnalyzer.stateToString(newStateAndID.right));
 
-			assign = modelFactory
-					.assignStatement(csSource, null, colStateRef,
-							modelFactory.stateExpression(csSource,
-									colStateRef.expressionScope(), newStateID),
-							false);
+			assign = modelFactory.assignStatement(csSource, null, colStateRef,
+					modelFactory.stateExpression(csSource,
+							colStateRef.expressionScope(), newStateAndID.left),
+					false);
 			assign.setTargetTemp(target);
 			result.add(Semantics.newTransition(
 					universe.and(oldPC, newColState.getPathCondition()), pid,
@@ -839,10 +837,6 @@ public abstract class CommonEnabler implements Enabler {
 
 				colState = stateFactory.addExternalProcess(colState, state, pid,
 						placeID, function, argumentValues);
-
-				CollateExecutor collateExecutor = new CollateExecutor(this,
-						this.executor, errorLogger, civlConfig);
-
 				newColStates = collateExecutor.run2Completion(colState);
 
 				Pair<LHSExpression, List<Expression>> myColStateUpdatePair = this
@@ -863,7 +857,7 @@ public abstract class CommonEnabler implements Enabler {
 		for (State colState : colStates) {
 			stateExpressions.add(modelFactory.stateExpression(csSource,
 					colStateRef.expressionScope(),
-					stateFactory.saveState(colState, pid)));
+					stateFactory.saveState(colState, pid).left));
 		}
 		return new Pair<>(colStateRef, stateExpressions);
 	}
