@@ -2490,7 +2490,7 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public int saveState(State state, int pid) {
+	public Pair<Integer, State> saveState(State state, int pid) {
 		ImmutableState result;
 
 		if (state.getCanonicId() < 0)
@@ -2504,7 +2504,7 @@ public class ImmutableStateFactory implements StateFactory {
 		else
 			result = (ImmutableState) state;
 		savedCanonicStates.put(result.getCanonicId(), result);
-		return result.getCanonicId();
+		return new Pair<>(result.getCanonicId(), result);
 	}
 
 	@Override
