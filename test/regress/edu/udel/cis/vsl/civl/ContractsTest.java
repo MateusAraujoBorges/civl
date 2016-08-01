@@ -28,7 +28,7 @@ public class ContractsTest {
 	@Test
 	public void with() {
 		assertTrue(ui.run(
-				"verify -showModel=false -showTransitions=false -showSavedStates=false",
+				"verify -showModel=false -showTransitions=true -showSavedStates=false",
 				// QUIET,
 				filename("with.cvl")));
 	}
@@ -44,8 +44,15 @@ public class ContractsTest {
 	@Test
 	public void update() {
 		assertTrue(
-				ui.run("show -showModel=false -showProgram=false -showTransitions=true -showSavedStates=true -quiet=false",
+				ui.run("verify -showModel=false -showProgram=false -showTransitions=true -showSavedStates=true -quiet=false",
 						QUIET, filename("update.cvl")));
+	}
+
+	@Test
+	public void update2() {
+		assertTrue(
+				ui.run("verify -showModel=false -showProgram=false -showTransitions=true -showSavedStates=true -quiet=false",
+						QUIET, filename("update2.cvl")));
 	}
 
 	@Test
