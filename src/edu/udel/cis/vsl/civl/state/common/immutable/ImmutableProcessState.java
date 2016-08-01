@@ -153,7 +153,8 @@ public class ImmutableProcessState implements ProcessState {
 	 *            The flag indicates weather the process is self-destructable,
 	 *            see {@link #isSelfDestructable()}
 	 */
-	ImmutableProcessState(int pid, StackEntry[] stack, int atomicCount, boolean selfDestructable) {
+	ImmutableProcessState(int pid, StackEntry[] stack, int atomicCount,
+			boolean selfDestructable) {
 		this.pid = pid;
 		this.callStack = stack;
 		this.atomicCount = atomicCount;
@@ -197,10 +198,12 @@ public class ImmutableProcessState implements ProcessState {
 	 * @return new process state will top frame removed from stack
 	 */
 	ImmutableProcessState pop() {
-		ImmutableStackEntry[] newStack = new ImmutableStackEntry[callStack.length - 1];
+		ImmutableStackEntry[] newStack = new ImmutableStackEntry[callStack.length
+				- 1];
 
 		System.arraycopy(callStack, 1, newStack, 0, callStack.length - 1);
-		return new ImmutableProcessState(pid, newStack, this.atomicCount, selfDestructable);
+		return new ImmutableProcessState(pid, newStack, this.atomicCount,
+				selfDestructable);
 	}
 
 	/**
@@ -213,11 +216,13 @@ public class ImmutableProcessState implements ProcessState {
 	 * @return new process state obtained by pushing entry onto stack
 	 */
 	ImmutableProcessState push(ImmutableStackEntry newStackEntry) {
-		ImmutableStackEntry[] newStack = new ImmutableStackEntry[callStack.length + 1];
+		ImmutableStackEntry[] newStack = new ImmutableStackEntry[callStack.length
+				+ 1];
 
 		System.arraycopy(callStack, 0, newStack, 1, callStack.length);
 		newStack[0] = newStackEntry;
-		return new ImmutableProcessState(pid, newStack, this.atomicCount, selfDestructable);
+		return new ImmutableProcessState(pid, newStack, this.atomicCount,
+				selfDestructable);
 	}
 
 	/**
@@ -238,7 +243,8 @@ public class ImmutableProcessState implements ProcessState {
 
 		System.arraycopy(callStack, 1, newStack, 1, length - 1);
 		newStack[0] = newStackEntry;
-		return new ImmutableProcessState(pid, newStack, this.atomicCount, selfDestructable);
+		return new ImmutableProcessState(pid, newStack, this.atomicCount,
+				selfDestructable);
 	}
 
 	/**
@@ -270,7 +276,8 @@ public class ImmutableProcessState implements ProcessState {
 	 * @return A new instance of process state with only the PID being changed.
 	 */
 	ImmutableProcessState setPid(int pid) {
-		return new ImmutableProcessState(pid, callStack, this.atomicCount, selfDestructable);
+		return new ImmutableProcessState(pid, callStack, this.atomicCount,
+				selfDestructable);
 	}
 
 	/**
@@ -282,7 +289,8 @@ public class ImmutableProcessState implements ProcessState {
 	 *         changed.
 	 */
 	ProcessState setStackEntries(StackEntry[] frames) {
-		return new ImmutableProcessState(pid, frames, this.atomicCount, selfDestructable);
+		return new ImmutableProcessState(pid, frames, this.atomicCount,
+				selfDestructable);
 	}
 
 	/**
@@ -301,7 +309,8 @@ public class ImmutableProcessState implements ProcessState {
 
 		System.arraycopy(callStack, 0, newStack, 0, n);
 		newStack[index] = frame;
-		return new ImmutableProcessState(pid, newStack, this.atomicCount, selfDestructable);
+		return new ImmutableProcessState(pid, newStack, this.atomicCount,
+				selfDestructable);
 	}
 
 	/**
@@ -329,10 +338,14 @@ public class ImmutableProcessState implements ProcessState {
 				newStack[j] = oldFrame;
 			} else {
 				stackChange = true;
-				newStack[j] = new ImmutableStackEntry(oldFrame.location(), newScope);
+				newStack[j] = new ImmutableStackEntry(oldFrame.location(),
+						newScope);
 			}
 		}
-		return stackChange ? new ImmutableProcessState(pid, newStack, atomicCount, selfDestructable) : this;
+		return stackChange
+				? new ImmutableProcessState(pid, newStack, atomicCount,
+						selfDestructable)
+				: this;
 	}
 
 	/* ********************* Methods from ProcessState ********************* */
@@ -349,7 +362,8 @@ public class ImmutableProcessState implements ProcessState {
 
 	@Override
 	public ProcessState decrementAtomicCount() {
-		return new ImmutableProcessState(this.pid, this.callStack, this.atomicCount - 1, selfDestructable);
+		return new ImmutableProcessState(this.pid, this.callStack,
+				this.atomicCount - 1, selfDestructable);
 	}
 
 	@Override
@@ -388,7 +402,8 @@ public class ImmutableProcessState implements ProcessState {
 
 	@Override
 	public ProcessState incrementAtomicCount() {
-		return new ImmutableProcessState(this.pid, this.callStack, this.atomicCount + 1, selfDestructable);
+		return new ImmutableProcessState(this.pid, this.callStack,
+				this.atomicCount + 1, selfDestructable);
 	}
 
 	/**
@@ -443,8 +458,12 @@ public class ImmutableProcessState implements ProcessState {
 				StackEntry frame = callStack[i];
 				Location location = frame.location();
 				CIVLSource source = location.getSource();
-				String locationString = source == null ? "" : " at " + source.getSummary();
-				String frameString = location.function().name() + locationString;
+				String locationString = source == null
+						? ""
+						: " at " + source.getSummary();
+				String frameString = (location.function() == null)
+						? "null "
+						: location.function().name() + locationString;
 
 				if (i != 0)
 					result.append(" called from\n");
@@ -495,7 +514,8 @@ public class ImmutableProcessState implements ProcessState {
 	@Override
 	public int hashCode() {
 		if (!hashed) {
-			hashCode = Arrays.hashCode(callStack) ^ (48729 * (pid ^ (31 * this.atomicCount)));
+			hashCode = Arrays.hashCode(callStack)
+					^ (48729 * (pid ^ (31 * this.atomicCount)));
 			hashed = true;
 		}
 		return hashCode;
@@ -503,7 +523,8 @@ public class ImmutableProcessState implements ProcessState {
 
 	@Override
 	public String toString() {
-		return "State of process " + pid + " (call stack length = " + callStack.length + ")";
+		return "State of process " + pid + " (call stack length = "
+				+ callStack.length + ")";
 	}
 
 	@Override
