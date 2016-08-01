@@ -2459,9 +2459,15 @@ public class ImmutableStateFactory implements StateFactory {
 		while (oldDyscopeId >= 0) {
 			ImmutableDynamicScope oldDyscope = theRealState
 					.getDyscope(oldDyscopeId);
-			int newDid = theColState.getDyscope(place,
-					oldDyscope.lexicalScope());
+			int newDid;
 
+			// If the process of the 'place' hasn't arrived the collate state
+			// yet:
+			if (theColState.getProcessState(place).hasEmptyStack())
+				newDid = -1;
+			else
+				newDid = theColState.getDyscope(place,
+						oldDyscope.lexicalScope());
 			old2New[oldDyscopeId] = newDid >= 0 ? newDid : counter++;
 			oldDyscopeId = oldDyscope.getParent();
 		}
