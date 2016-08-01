@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
@@ -26,13 +25,20 @@ public class ContractsTest {
 	}
 
 	/* **************************** Test Methods *************************** */
-	@Ignore
 	@Test
 	public void with() {
 		assertTrue(ui.run(
 				"verify -showModel=false -showTransitions=false -showSavedStates=false",
 				// QUIET,
 				filename("with.cvl")));
+	}
+
+	@Test
+	public void with2() {
+		assertTrue(ui.run(
+				"verify -showModel=false -showTransitions=false -showSavedStates=false",
+				// QUIET,
+				filename("with2.cvl")));
 	}
 
 	@Test

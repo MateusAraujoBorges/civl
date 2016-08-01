@@ -2421,6 +2421,14 @@ public class ImmutableStateFactory implements StateFactory {
 		for (ImmutableProcessState proc : processes)
 			if (!proc.hasEmptyStack())
 				setReachablesForProc(dyscopes, proc);
+
+		// Add sleep location:
+		StackEntry top = processes[newPid].peekStack();
+		processes[newPid] = processes[newPid].pop();
+		top = new ImmutableStackEntry(modelFactory.model().sleepLocation(),
+				top.scope());
+		processes[newPid] = processes[newPid].push((ImmutableStackEntry) top);
+
 		theResult = ImmutableState.newState(theState, processes, dyscopes,
 				universe.and(newMonoPC, theState.getPathCondition()));
 		return theResult;
@@ -2431,51 +2439,43 @@ public class ImmutableStateFactory implements StateFactory {
 			int pid, int place, CIVLFunction withOrUpdate,
 			SymbolicExpression[] argumentValues) {
 		ImmutableState theColState = (ImmutableState) colState;
-		ImmutableState theRealState = (ImmutableState) getStateSnapshot(
-				realState, pid,
-				realState.getProcessState(pid).peekStack().scope());
-		ImmutableProcessState internal = theColState.getProcessState(place);
-		ImmutableProcessState external = theRealState.getProcessState(0);
+		ImmutableState theRealState = pushCallStack(realState, pid,
+				withOrUpdate, argumentValues);
 		ImmutableDynamicScope dyscopes[];
-		int exStackSize = external.stackSize();
-		int old2new[] = new int[theRealState.numDyscopes()];
+		ImmutableProcessState external = theRealState.getProcessState(pid);
+		int newPid = theColState.numProcs();
 		int counter = theColState.numDyscopes();
+		int old2New[] = new int[theRealState.numDyscopes()];
 		BooleanExpression newRealPC;
+		int oldDyscopeId = external.peekStack().scope();
 
-		assert !internal.hasEmptyStack() && !external.hasEmptyStack();
-		for (int i = 0; i < exStackSize; i++) {
-			StackEntry frame = external.getStackEntry(i);
-			int exDyscopeId = frame.scope();
+		Arrays.fill(old2New, -1);
+		while (oldDyscopeId >= 0) {
+			ImmutableDynamicScope oldDyscope = theRealState
+					.getDyscope(oldDyscopeId);
+			int newDid = theColState.getDyscope(place,
+					oldDyscope.lexicalScope());
 
-			while (exDyscopeId >= 0) {
-				ImmutableDynamicScope exDyscope = theRealState
-						.getDyscope(exDyscopeId);
-				int inDyscopeId = theColState.getDyscope(place,
-						exDyscope.lexicalScope());
-
-				old2new[exDyscopeId] = inDyscopeId >= 0
-						? inDyscopeId
-						: counter++;
-				exDyscopeId = exDyscope.getParent();
-			}
+			old2New[oldDyscopeId] = newDid >= 0 ? newDid : counter++;
+			oldDyscopeId = oldDyscope.getParent();
 		}
 		dyscopes = new ImmutableDynamicScope[counter];
+		newRealPC = renumberDyscopes(theRealState.copyScopes(), old2New,
+				dyscopes, theRealState.getPathCondition());
 		System.arraycopy(theColState.copyScopes(), 0, dyscopes, 0,
 				theColState.numDyscopes());
-		newRealPC = renumberDyscopes(theRealState.copyScopes(), old2new,
-				dyscopes, theRealState.getPathCondition());
-		external = external.updateDyscopes(old2new);
 
 		ImmutableProcessState processes[] = theColState
 				.copyAndExpandProcesses();
-		ImmutableState result;
-		int newPid = processes.length - 1;
+		StackEntry[] newStack = new StackEntry[1];
 
-		processes[newPid] = external;
-		setReachablesForProc(dyscopes, external);
-		result = ImmutableState.newState(theColState, processes, dyscopes,
-				newRealPC);
-		return pushCallStack(result, newPid, withOrUpdate, argumentValues);
+		newStack[0] = external.peekStack();
+		processes[newPid] = new ImmutableProcessState(newPid, newStack,
+				external.atomicCount(), true);
+		processes[newPid] = processes[newPid].updateDyscopes(old2New);
+		setReachablesForProc(dyscopes, processes[newPid]);
+		return ImmutableState.newState(theColState, processes, dyscopes,
+				universe.and(newRealPC, theColState.getPathCondition()));
 	}
 
 	@Override
