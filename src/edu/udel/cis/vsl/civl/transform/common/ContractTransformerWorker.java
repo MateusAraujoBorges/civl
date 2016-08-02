@@ -33,6 +33,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
@@ -110,6 +111,11 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * A CIVL-MPI function identifier:
 	 */
 	private final static String MPI_SNAPSHOT = "$mpi_snapshot";
+
+	/**
+	 * A CIVL-MPI function identifier:
+	 */
+	private final static String MPI_UNSNAPSHOT = "$mpi_unsnapshot";
 
 	/**
 	 * A CIVL-MPI function identifier:
@@ -722,6 +728,14 @@ public class ContractTransformerWorker extends BaseWorker {
 		// MPI-collective block:
 		for (ParsedContractBlock block : parsedContractBlocks)
 			bodyItems.addAll(transformCoEnsurances4NT(block));
+		// Unsnapshots for pre-:
+		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+			bodyItems.add(nodeFactory.newExpressionStatementNode(
+					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
+		// Unsnapshots for post-:
+		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+			bodyItems.add(nodeFactory.newExpressionStatementNode(
+					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
 		bodyItems.add(nodeFactory.newReturnNode(
 				newSource(RETURN_RESULT, CivlcTokenConstant.RETURN),
 				identifierExpression(RESULT)));
@@ -805,8 +819,8 @@ public class ContractTransformerWorker extends BaseWorker {
 					mpiCommRankSource, mpiCommSizeSource));
 
 		// Transform step 6: Inserts $mpi_contract_enters(MPI_Comm ):
-//		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
-//			bodyItems.add(createMPIContractEnters(mpiBlock.mpiComm));
+		// for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+		// bodyItems.add(createMPIContractEnters(mpiBlock.mpiComm));
 
 		// Transform step 7: T $result = f( ... );:
 		ExpressionNode targetCall;
@@ -841,6 +855,14 @@ public class ContractTransformerWorker extends BaseWorker {
 		// ensures of each MPI-collective block:
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.addAll(transformCollectiveEnsures4Target(mpiBlock));
+		// Unsnapshots for pre-:
+		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+			bodyItems.add(nodeFactory.newExpressionStatementNode(
+					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
+		// Unsnapshots for post-:
+		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+			bodyItems.add(nodeFactory.newExpressionStatementNode(
+					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
 		body = nodeFactory.newCompoundStatementNode(driverSource, bodyItems);
 		funcTypeNode = nodeFactory.newFunctionTypeNode(funcTypeNode.getSource(),
 				funcTypeNode.getReturnType().copy(),
@@ -1233,6 +1255,31 @@ public class ContractTransformerWorker extends BaseWorker {
 	/*
 	 * ************************* Utility methods ****************************
 	 */
+	/**
+	 * Replace all appearances of {@link ResultNode} with an identifier
+	 * expression "$result" for the given expression;
+	 * 
+	 * @param expression
+	 * @return
+	 */
+	private ExpressionNode replaceResultNode2Identifier(
+			ExpressionNode expression) {
+		ExpressionNode newExpr = expression.copy();
+		ASTNode child = newExpr;
+
+		while (child != null) {
+			if (child instanceof ResultNode) {
+				ASTNode parent = child.parent();
+				int childIndex = child.childIndex();
+
+				child.remove();
+				child = identifierExpression(RESULT);
+				parent.setChild(childIndex, child);
+			}
+			child = child.nextDFS();
+		}
+		return newExpr;
+	}
 
 	/**
 	 * <p>
@@ -1249,10 +1296,12 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return A created assert call statement node;
 	 */
 	private StatementNode createAssertion(ExpressionNode predicate) {
+		ExpressionNode noResultNodePredicate = replaceResultNode2Identifier(
+				predicate);
 		ExpressionNode assertIdentifier = identifierExpression(ASSERT);
 		FunctionCallNode assertCall = nodeFactory.newFunctionCallNode(
 				predicate.getSource(), assertIdentifier,
-				Arrays.asList(predicate.copy()), null);
+				Arrays.asList(noResultNodePredicate), null);
 		return nodeFactory.newExpressionStatementNode(assertCall);
 	}
 
@@ -1271,10 +1320,12 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return A created assumption call statement node;
 	 */
 	private StatementNode createAssumption(ExpressionNode predicate) {
+		ExpressionNode noResultNodePredicate = replaceResultNode2Identifier(
+				predicate);
 		ExpressionNode assumeIdentifier = identifierExpression(ASSUME);
 		FunctionCallNode assumeCall = nodeFactory.newFunctionCallNode(
 				predicate.getSource(), assumeIdentifier,
-				Arrays.asList(predicate.copy()), null);
+				Arrays.asList(noResultNodePredicate), null);
 		return nodeFactory.newExpressionStatementNode(assumeCall);
 	}
 
@@ -1335,13 +1386,11 @@ public class ContractTransformerWorker extends BaseWorker {
 	/**
 	 * <p>
 	 * <b>Summary: </b> Creates an $mpi_snapshot function call:<code>
-	 * $mpi_snapshot(mpiComm);</code>
+	 * $mpi_snapshot(mpiComm, $scope);</code>
 	 * </p>
 	 * 
 	 * @param mpiComm
 	 *            An {@link ExpressionNode} representing an MPI communicator.
-	 * @param source
-	 *            The {@link Source} of the created call statement;
 	 * @return The created $mpi_snapshot call statement node.
 	 */
 	private ExpressionNode createMPISnapshotCall(ExpressionNode mpiComm) {
@@ -1351,6 +1400,25 @@ public class ContractTransformerWorker extends BaseWorker {
 		ExpressionNode hereNode = nodeFactory.newHereNode(hereSource);
 		FunctionCallNode call = nodeFactory.newFunctionCallNode(source,
 				callIdentifier, Arrays.asList(mpiComm.copy(), hereNode), null);
+
+		return call;
+	}
+
+	/**
+	 * <p>
+	 * <b>Summary: </b> Creates an $mpi_unsnapshot function call:<code>
+	 * $mpi_unsnapshot(mpiComm);</code>
+	 * </p>
+	 * 
+	 * @param mpiComm
+	 *            An {@link ExpressionNode} representing an MPI communicator.
+	 * @return The created $mpi_unsnapshot call statement node.
+	 */
+	private ExpressionNode createMPIUnsnapshotCall(ExpressionNode mpiComm) {
+		Source source = newSource(MPI_UNSNAPSHOT, CivlcTokenConstant.CALL);
+		ExpressionNode callIdentifier = identifierExpression(MPI_UNSNAPSHOT);
+		FunctionCallNode call = nodeFactory.newFunctionCallNode(source,
+				callIdentifier, Arrays.asList(mpiComm.copy()), null);
 
 		return call;
 	}

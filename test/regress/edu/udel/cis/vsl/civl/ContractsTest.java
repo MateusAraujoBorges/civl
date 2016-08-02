@@ -69,7 +69,7 @@ public class ContractsTest {
 
 	@Test
 	public void mpiRegion() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract",
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
 				filename("contractsMPI/simpleMpiRegion.c")));
 	}
 
