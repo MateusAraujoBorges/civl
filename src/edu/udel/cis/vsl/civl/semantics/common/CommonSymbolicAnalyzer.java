@@ -41,6 +41,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.ParallelAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
@@ -138,8 +139,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 	/* ***************************** Constructors ************************** */
 
-	public CommonSymbolicAnalyzer(CIVLConfiguration config,
-			SymbolicUniverse universe, ModelFactory modelFactory,
+	public CommonSymbolicAnalyzer(CIVLConfiguration config, SymbolicUniverse universe, ModelFactory modelFactory,
 			SymbolicUtility symbolicUtil) {
 		this.universe = universe;
 		this.modelFactory = modelFactory;
@@ -165,8 +165,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public ReferenceExpression getMemBaseReference(State state,
-			SymbolicExpression pointer, CIVLSource source) {
+	public ReferenceExpression getMemBaseReference(State state, SymbolicExpression pointer, CIVLSource source) {
 		CIVLType objType;
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
 		int vid;
@@ -187,9 +186,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public SymbolicExpression getSubArray(SymbolicExpression array,
-			NumericExpression startIndex, NumericExpression endIndex,
-			State state, String process, CIVLSource source)
+	public SymbolicExpression getSubArray(SymbolicExpression array, NumericExpression startIndex,
+			NumericExpression endIndex, State state, String process, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		// if startIndex is zero and endIndex is length, return array
 		// verify startIndex >=0 and endIndex<= Length
@@ -202,16 +200,14 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		SymbolicArrayType arrayType = (SymbolicArrayType) array.type();
 		SymbolicType elementType = arrayType.elementType();
 
-		if (reasoner.isValid(universe.equals(zero, startIndex))
-				&& reasoner.isValid(universe.equals(length, endIndex)))
+		if (reasoner.isValid(universe.equals(zero, startIndex)) && reasoner.isValid(universe.equals(length, endIndex)))
 			return array;
 		else {
 			BooleanExpression claim = universe.lessThanEquals(zero, startIndex);
 			ResultType valid = reasoner.valid(claim).getResultType();
 
 			if (valid != ResultType.YES) {
-				state = errorLogger.logError(source, state, process,
-						this.stateInformation(state), claim, valid,
+				state = errorLogger.logError(source, state, process, this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS, "negative start index");
 				pathCondition = state.getPathCondition();
 				reasoner = universe.reasoner(pathCondition);
@@ -219,30 +215,24 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			claim = universe.lessThanEquals(endIndex, length);
 			valid = reasoner.valid(claim).getResultType();
 			if (valid != ResultType.YES) {
-				state = errorLogger.logError(source, state, process,
-						this.stateInformation(state), claim, valid,
-						ErrorKind.OUT_OF_BOUNDS,
-						"end index exceeds length of array");
+				state = errorLogger.logError(source, state, process, this.stateInformation(state), claim, valid,
+						ErrorKind.OUT_OF_BOUNDS, "end index exceeds length of array");
 				pathCondition = state.getPathCondition();
 				reasoner = universe.reasoner(pathCondition);
 			}
 			claim = universe.lessThanEquals(startIndex, endIndex);
 			valid = reasoner.valid(claim).getResultType();
 			if (valid != ResultType.YES) {
-				state = errorLogger.logError(source, state, process,
-						this.stateInformation(state), claim, valid,
-						ErrorKind.OUT_OF_BOUNDS,
-						"start index greater than end index");
+				state = errorLogger.logError(source, state, process, this.stateInformation(state), claim, valid,
+						ErrorKind.OUT_OF_BOUNDS, "start index greater than end index");
 				pathCondition = state.getPathCondition();
 				reasoner = universe.reasoner(pathCondition);
 			}
 			if (reasoner.isValid(universe.equals(startIndex, endIndex))) {
 				return universe.emptyArray(elementType);
 			} else {
-				IntegerNumber concreteStart = (IntegerNumber) reasoner
-						.extractNumber(startIndex);
-				IntegerNumber concreteEnd = (IntegerNumber) reasoner
-						.extractNumber(endIndex);
+				IntegerNumber concreteStart = (IntegerNumber) reasoner.extractNumber(startIndex);
+				IntegerNumber concreteEnd = (IntegerNumber) reasoner.extractNumber(endIndex);
 
 				if (concreteStart != null && concreteEnd != null) {
 					int startInt = concreteStart.intValue();
@@ -250,20 +240,15 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					LinkedList<SymbolicExpression> valueList = new LinkedList<SymbolicExpression>();
 
 					for (int i = startInt; i < endInt; i++)
-						valueList.add(
-								universe.arrayRead(array, universe.integer(i)));
+						valueList.add(universe.arrayRead(array, universe.integer(i)));
 					return universe.array(elementType, valueList);
 				} else {
-					NumericExpression subLength = universe.subtract(endIndex,
-							startIndex);
-					SymbolicCompleteArrayType subArrayType = universe
-							.arrayType(elementType, subLength);
+					NumericExpression subLength = universe.subtract(endIndex, startIndex);
+					SymbolicCompleteArrayType subArrayType = universe.arrayType(elementType, subLength);
 					NumericSymbolicConstant index = (NumericSymbolicConstant) universe
-							.symbolicConstant(universe.stringObject("i"),
-									universe.integerType());
+							.symbolicConstant(universe.stringObject("i"), universe.integerType());
 					SymbolicExpression subArrayFunction = universe.lambda(index,
-							universe.arrayRead(array,
-									universe.add(startIndex, index)));
+							universe.arrayRead(array, universe.add(startIndex, index)));
 
 					return universe.arrayLambda(subArrayType, subArrayFunction);
 
@@ -278,8 +263,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public StringBuffer stateToString(State state, int lastSavedState,
-			int sequenceId) {
+	public StringBuffer stateToString(State state, int lastSavedState, int sequenceId) {
 		int numScopes = state.numDyscopes();
 		int numProcs = state.numProcs();
 		StringBuffer result = new StringBuffer();
@@ -294,22 +278,19 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			result.append(state.identifier());
 		result.append("\n");
 		result.append("| Path condition");
-		result.append(this.pathconditionToString(null, state, "| | ",
-				state.getPathCondition()));
+		result.append(this.pathconditionToString(null, state, "| | ", state.getPathCondition()));
 		// result.append("| | "
 		// + this.symbolicExpressionToString(null, state, null,
 		// state.getPathCondition()));
 		result.append("\n");
 		result.append("| Dynamic scopes\n");
 		for (int i = 0; i < numScopes; i++) {
-			ImmutableDynamicScope dyscope = (ImmutableDynamicScope) state
-					.getDyscope(i);
+			ImmutableDynamicScope dyscope = (ImmutableDynamicScope) state.getDyscope(i);
 
 			if (dyscope == null)
 				result.append("| | dyscope - (id=" + i + "): null\n");
 			else
-				result.append(
-						dynamicScopeToString(state, dyscope, "" + i, "| | "));
+				result.append(dynamicScopeToString(state, dyscope, "" + i, "| | "));
 		}
 		result.append("| Process states\n");
 		for (int pid = 0; pid < numProcs; pid++) {
@@ -324,15 +305,13 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public String symbolicExpressionToString(CIVLSource source, State state,
-			CIVLType type, SymbolicExpression symbolicExpression) {
-		return this.symbolicExpressionToString(source, state, type,
-				symbolicExpression, "", "| ").toString();
+	public String symbolicExpressionToString(CIVLSource source, State state, CIVLType type,
+			SymbolicExpression symbolicExpression) {
+		return this.symbolicExpressionToString(source, state, type, symbolicExpression, "", "| ").toString();
 	}
 
 	@Override
-	public CIVLType typeOfObjByPointer(CIVLSource soruce, State state,
-			SymbolicExpression pointer) {
+	public CIVLType typeOfObjByPointer(CIVLSource soruce, State state, SymbolicExpression pointer) {
 		ReferenceExpression reference = this.symbolicUtil.getSymRef(pointer);
 		int dyscopeId = symbolicUtil.getDyscopeId(soruce, pointer);
 		int vid = symbolicUtil.getVariableId(soruce, pointer);
@@ -348,8 +327,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public CIVLType getArrayBaseType(State state, CIVLSource source,
-			SymbolicExpression arrayPtr) {
+	public CIVLType getArrayBaseType(State state, CIVLSource source, SymbolicExpression arrayPtr) {
 		CIVLType type = this.typeOfObjByPointer(source, state, arrayPtr);
 
 		while (type instanceof CIVLArrayType)
@@ -370,8 +348,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @param operands
 	 *            collection of Symbolic Objects
 	 */
-	private void accumulate(CIVLSource source, State state, StringBuffer buffer,
-			String opString, SymbolicSequence<?> operands) {
+	private void accumulate(CIVLSource source, State state, StringBuffer buffer, String opString,
+			SymbolicSequence<?> operands) {
 		boolean first = true;
 
 		for (SymbolicExpression arg : operands) {
@@ -379,8 +357,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				first = false;
 			else
 				buffer.append(opString);
-			buffer.append(symbolicExpressionToString(source, state, null, arg,
-					true, "", ""));
+			buffer.append(symbolicExpressionToString(source, state, null, arg, true, "", ""));
 		}
 	}
 
@@ -409,8 +386,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @param prefix
 	 *            The prefix for printing.
 	 */
-	private StringBuffer dynamicScopeToString(State state, DynamicScope dyscope,
-			String id, String prefix) {
+	private StringBuffer dynamicScopeToString(State state, DynamicScope dyscope, String id, String prefix) {
 		Scope lexicalScope = dyscope.lexicalScope();
 		int numVars = lexicalScope.numVariables();
 		// BitSet reachers = dyscope.getReachers();
@@ -424,8 +400,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			parentString = "NULL";
 		else
 			parentString = "d" + dyscope.getParent();
-		result.append(prefix + "dyscope d" + id + " (parent=" + parentString
-				+ ", static=" + lexicalScope.id() + ")\n");
+		result.append(prefix + "dyscope d" + id + " (parent=" + parentString + ", static=" + lexicalScope.id() + ")\n");
 		result.append(prefix + "| variables\n");
 		for (int i = 0; i < numVars; i++) {
 			Variable variable = lexicalScope.variable(i);
@@ -436,18 +411,15 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				continue;
 			} else if (varName.equals(ModelConfiguration.TIME_COUNT_VARIABLE)) {
 				continue;
-			} else if (varName
-					.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX)
-					&& (value.isNull() || !modelFactory.isPocessIdDefined(
-							modelFactory.getProcessId(variable.getSource(),
-									value)))) {
+			} else if (varName.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX) && (value.isNull()
+					|| !modelFactory.isPocessIdDefined(modelFactory.getProcessId(variable.getSource(), value)))) {
 				continue;
 			}
 			result.append(prefix + "| | " + variable.name());
 			// if (variable.type().areSubtypesScalar())
 			result.append(" = ");
-			result.append(symbolicExpressionToString(variable.getSource(),
-					state, variable.type(), value, prefix + "| | ", "| "));
+			result.append(symbolicExpressionToString(variable.getSource(), state, variable.type(), value,
+					prefix + "| | ", "| "));
 			result.append("\n");
 		}
 		return result;
@@ -466,12 +438,10 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @return the string representation of a symbolic expression which is a
 	 *         pointer
 	 */
-	private StringBuffer functionPointerValueToString(CIVLSource source,
-			State state, SymbolicExpression pointer) {
+	private StringBuffer functionPointerValueToString(CIVLSource source, State state, SymbolicExpression pointer) {
 		StringBuffer result = new StringBuffer();
 
-		if (pointer.operator() == SymbolicOperator.NULL
-				|| pointer.operator() != SymbolicOperator.TUPLE)
+		if (pointer.operator() == SymbolicOperator.NULL || pointer.operator() != SymbolicOperator.TUPLE)
 			return result.append(pointer);
 		else {
 			int dyscopeId = this.symbolicUtil.getDyscopeId(source, pointer);
@@ -480,8 +450,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				result.append("UNDEFINED");
 			else {
 				DynamicScope dyScope = state.getDyscope(dyscopeId);
-				NumericExpression funcIdExpr = (NumericExpression) universe
-						.tupleRead(pointer, oneObj);
+				NumericExpression funcIdExpr = (NumericExpression) universe.tupleRead(pointer, oneObj);
 				int fid = symbolicUtil.extractInt(source, funcIdExpr);
 				CIVLFunction function = dyScope.lexicalScope().getFunction(fid);
 
@@ -515,9 +484,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @return the string representation of a reference to a heap object or part
 	 *         of a heap object.
 	 */
-	private Triple<Integer, CIVLType, String> heapObjectReferenceToString(
-			CIVLSource source, int dyscopeId, CIVLType type,
-			ReferenceExpression reference) {
+	private Triple<Integer, CIVLType, String> heapObjectReferenceToString(CIVLSource source, int dyscopeId,
+			CIVLType type, ReferenceExpression reference) {
 		StringBuffer result = new StringBuffer();
 
 		if (reference.isIdentityReference()) {
@@ -528,8 +496,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			return new Triple<>(0, type, result.toString());
 		} else if (reference.isArrayElementReference()) {
 			ArrayElementReference arrayEleRef = (ArrayElementReference) reference;
-			Triple<Integer, CIVLType, String> parentResult = heapObjectReferenceToString(
-					source, dyscopeId, type, arrayEleRef.getParent());
+			Triple<Integer, CIVLType, String> parentResult = heapObjectReferenceToString(source, dyscopeId, type,
+					arrayEleRef.getParent());
 			NumericExpression index = arrayEleRef.getIndex();
 
 			switch (parentResult.first) {
@@ -547,8 +515,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				result.append(']');
 				return new Triple<>(-1, parentResult.second, result.toString());
 			default:
-				CIVLType arrayEleType = ((CIVLArrayType) parentResult.second)
-						.elementType();
+				CIVLType arrayEleType = ((CIVLArrayType) parentResult.second).elementType();
 
 				result.append(parentResult.third);
 				result.append('[');
@@ -572,15 +539,13 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				parent = unionMemRef.getParent();
 				index = unionMemRef.getIndex();
 			}
-			parentResult = heapObjectReferenceToString(source, dyscopeId, type,
-					parent);
+			parentResult = heapObjectReferenceToString(source, dyscopeId, type, parent);
 
 			switch (parentResult.first) {
 			case 0:
 				CIVLHeapType heapType = (CIVLHeapType) parentResult.second;
 				int indexId = index.getInt();
-				CIVLType heapObjType = heapType.getMalloc(indexId)
-						.getStaticElementType();
+				CIVLType heapObjType = heapType.getMalloc(indexId).getStaticElementType();
 
 				result.append(parentResult.third);
 				result.append(index.getInt());
@@ -591,8 +556,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				throw new CIVLInternalException("Unreachable", source);
 			default:
 				CIVLStructOrUnionType structOrUnionType = (CIVLStructOrUnionType) parentResult.second;
-				StructOrUnionField field = structOrUnionType
-						.getField(index.getInt());
+				StructOrUnionField field = structOrUnionType.getField(index.getInt());
 
 				result.append(parentResult.third);
 				result.append('.');
@@ -616,9 +580,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @param atomizeResult
 	 *            should the final result be atomized?
 	 */
-	private void processFlexibleBinaryNew(CIVLSource source, State state,
-			SymbolicExpression symbolicExpression, StringBuffer buffer,
-			String opString, boolean atomizeArgs, boolean atomizeResult) {
+	private void processFlexibleBinaryNew(CIVLSource source, State state, SymbolicExpression symbolicExpression,
+			StringBuffer buffer, String opString, boolean atomizeArgs, boolean atomizeResult) {
 		int numArgs = symbolicExpression.numArguments();
 		boolean first = true;
 
@@ -627,15 +590,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			String argString;
 
 			if (arg instanceof SymbolicExpression)
-				argString = this
-						.symbolicExpressionToString(source, state, null,
-								(SymbolicExpression) arg, true, "", "")
+				argString = this.symbolicExpressionToString(source, state, null, (SymbolicExpression) arg, true, "", "")
 						.toString();
 			else
-				argString = symbolicExpression.argument(i)
-						.toStringBuffer(atomizeArgs).toString();
-			if (!first
-					&& (!opString.equals("+") || !argString.startsWith("-"))) {
+				argString = symbolicExpression.argument(i).toStringBuffer(atomizeArgs).toString();
+			if (!first && (!opString.equals("+") || !argString.startsWith("-"))) {
 				buffer.append(opString);
 			}
 			buffer.append(argString);
@@ -663,8 +622,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 *            should each argument be atomized (surrounded by parens if
 	 *            necessary)?
 	 */
-	private void processBinary(StringBuffer buffer, String opString,
-			SymbolicObject arg0, SymbolicObject arg1, boolean atomizeArgs) {
+	private void processBinary(StringBuffer buffer, String opString, SymbolicObject arg0, SymbolicObject arg1,
+			boolean atomizeArgs) {
 		buffer.append(arg0.toStringBuffer(atomizeArgs));
 		buffer.append(opString);
 		buffer.append(arg1.toStringBuffer(atomizeArgs));
@@ -684,17 +643,14 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @param atomizeResult
 	 *            should the final result be atomized?
 	 */
-	private void processFlexibleBinary(CIVLSource source, State state,
-			SymbolicExpression symbolicExpression, StringBuffer buffer,
-			String opString, boolean atomizeArgs, boolean atomizeResult) {
+	private void processFlexibleBinary(CIVLSource source, State state, SymbolicExpression symbolicExpression,
+			StringBuffer buffer, String opString, boolean atomizeArgs, boolean atomizeResult) {
 		int numArgs = symbolicExpression.numArguments();
 
 		if (numArgs == 1)
-			accumulate(source, state, buffer, opString,
-					(SymbolicSequence<?>) symbolicExpression.argument(0));
+			accumulate(source, state, buffer, opString, (SymbolicSequence<?>) symbolicExpression.argument(0));
 		else
-			processBinary(buffer, opString, symbolicExpression.argument(0),
-					symbolicExpression.argument(1), true);
+			processBinary(buffer, opString, symbolicExpression.argument(0), symbolicExpression.argument(1), true);
 		if (atomizeResult) {
 			buffer.insert(0, '(');
 			buffer.append(')');
@@ -714,19 +670,16 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @return The type of the remaining part, and the string representation of
 	 *         the given reference expression.
 	 */
-	private Pair<CIVLType, String> referenceToString(CIVLSource source,
-			CIVLType type, ReferenceExpression reference) {
+	private Pair<CIVLType, String> referenceToString(CIVLSource source, CIVLType type, ReferenceExpression reference) {
 		StringBuffer result = new StringBuffer();
 
 		if (reference.isIdentityReference())
 			return new Pair<>(type, result.toString());
 		if (reference.isArrayElementReference()) {
 			ArrayElementReference arrayEleRef = (ArrayElementReference) reference;
-			Pair<CIVLType, String> parentResult = this.referenceToString(source,
-					type, arrayEleRef.getParent());
+			Pair<CIVLType, String> parentResult = this.referenceToString(source, type, arrayEleRef.getParent());
 			String parent = parentResult.right;
-			CIVLType arrayEleType = ((CIVLArrayType) parentResult.left)
-					.elementType();
+			CIVLType arrayEleType = ((CIVLArrayType) parentResult.left).elementType();
 			NumericExpression index = arrayEleRef.getIndex();
 
 			result.append(parent);
@@ -737,16 +690,14 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		} else if (reference.isTupleComponentReference()) {
 			TupleComponentReference tupleComponentRef = (TupleComponentReference) reference;
 			IntObject index = tupleComponentRef.getIndex();
-			Pair<CIVLType, String> parentResult = this.referenceToString(source,
-					type, tupleComponentRef.getParent());
+			Pair<CIVLType, String> parentResult = this.referenceToString(source, type, tupleComponentRef.getParent());
 			String parent = parentResult.right;
 
 			if (!parentResult.left.isStructType())
 				return parentResult;
 
 			CIVLStructOrUnionType structOrUnionType = (CIVLStructOrUnionType) parentResult.left;
-			StructOrUnionField field = structOrUnionType
-					.getField(index.getInt());
+			StructOrUnionField field = structOrUnionType.getField(index.getInt());
 
 			result.append(parent);
 			result.append('.');
@@ -755,15 +706,13 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		} else if (reference.isOffsetReference()) {
 			OffsetReference offsetRef = (OffsetReference) reference;
 			NumericExpression offset = offsetRef.getOffset();
-			Pair<CIVLType, String> parentResult = this.referenceToString(source,
-					type, offsetRef.getParent());
+			Pair<CIVLType, String> parentResult = this.referenceToString(source, type, offsetRef.getParent());
 			String parent = parentResult.right;
 
 			result.append(parent);
 			result.append('+');
 			result.append(offset.atomString());
-			return new Pair<CIVLType, String>(parentResult.left,
-					result.toString());
+			return new Pair<CIVLType, String>(parentResult.left, result.toString());
 		} else {
 			throw new CIVLInternalException("Unreachable", source);
 		}
@@ -782,40 +731,32 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @return the string representation of a symbolic expression which is a
 	 *         pointer
 	 */
-	private StringBuffer pointerValueToString(CIVLSource source, State state,
-			SymbolicExpression pointer) {
+	private StringBuffer pointerValueToString(CIVLSource source, State state, SymbolicExpression pointer) {
 		StringBuffer result = new StringBuffer();
 
-		if (pointer.operator() == SymbolicOperator.NULL
-				|| pointer.operator() != SymbolicOperator.TUPLE)
+		if (pointer.operator() == SymbolicOperator.NULL || pointer.operator() != SymbolicOperator.TUPLE)
 			result.append(pointer);
 		else {
 			SymbolicTupleType pointerType = (SymbolicTupleType) pointer.type();
 
 			if (!pointerType.equals(this.pointerType)) {
-				return this.symbolicExpressionToString(source, state, null,
-						pointer, "", "");
+				return this.symbolicExpressionToString(source, state, null, pointer, "", "");
 			}
-			return this.variableReferenceToString(state, source, false,
-					this.symbolicUtil.getDyscopeId(source, pointer),
-					symbolicUtil.getVariableId(source, pointer),
-					symbolicUtil.getSymRef(pointer));
+			return this.variableReferenceToString(state, source, false, this.symbolicUtil.getDyscopeId(source, pointer),
+					symbolicUtil.getVariableId(source, pointer), symbolicUtil.getSymRef(pointer));
 		}
 		return result;
 	}
 
-	private StringBuffer variableReferenceToString(State state,
-			CIVLSource source, boolean isMu, int dyscopeId, int vid,
+	private StringBuffer variableReferenceToString(State state, CIVLSource source, boolean isMu, int dyscopeId, int vid,
 			ReferenceExpression reference) {
 		StringBuffer result = new StringBuffer();
 
-		if (dyscopeId == ModelConfiguration.NULL_POINTER_DYSCOPE
-				&& vid == ModelConfiguration.NULL_POINTER_VID) {
+		if (dyscopeId == ModelConfiguration.NULL_POINTER_DYSCOPE && vid == ModelConfiguration.NULL_POINTER_VID) {
 			result.append("(void*)0");
 		} else if (dyscopeId == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE) {
 			result.append(this.stringLiteralToString(source,
-					this.modelFactory.model().staticConstantScope()
-							.variable(vid).constantValue()));
+					this.modelFactory.model().staticConstantScope().variable(vid).constantValue()));
 		} else if (dyscopeId < 0)
 			result.append("UNDEFINED");
 		else {
@@ -823,22 +764,17 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			Variable variable = dyscope.lexicalScope().variable(vid);
 
 			if (variable.type().equals(this.heapType)) {
-				result.append(heapObjectReferenceToString(source, dyscopeId,
-						this.heapType, reference).third);
+				result.append(heapObjectReferenceToString(source, dyscopeId, this.heapType, reference).third);
 			} else {
-				if (variable.name().name().startsWith(
-						ModelConfiguration.ANONYMOUS_VARIABLE_PREFIX)) {
+				if (variable.name().name().startsWith(ModelConfiguration.ANONYMOUS_VARIABLE_PREFIX)) {
 					// this is an array literal
-					SymbolicExpression objectValue = state
-							.getVariableValue(dyscopeId, vid);
+					SymbolicExpression objectValue = state.getVariableValue(dyscopeId, vid);
 					CIVLArrayType arrayType = (CIVLArrayType) variable.type();
 
 					if (arrayType.elementType().isCharType()) {
-						result.append(
-								stringLiteralToString(source, objectValue));
+						result.append(stringLiteralToString(source, objectValue));
 					} else {
-						result.append(symbolicExpressionToString(source, state,
-								arrayType, objectValue, false, "", ""));
+						result.append(symbolicExpressionToString(source, state, arrayType, objectValue, false, "", ""));
 					}
 				} else {
 					if (!isMu)
@@ -847,30 +783,25 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append("d" + dyscopeId);
 					result.append('>');
 					result.append(variable.name());
-					result.append(referenceToString(source, variable.type(),
-							reference).right);
+					result.append(referenceToString(source, variable.type(), reference).right);
 				}
 			}
 		}
 		return result;
 	}
 
-	private StringBuffer stringLiteralToString(CIVLSource source,
-			SymbolicExpression array) {
+	private StringBuffer stringLiteralToString(CIVLSource source, SymbolicExpression array) {
 		StringBuffer result = new StringBuffer();
 
 		result.append("\"");
-		result.append(
-				this.symbolicUtil.charArrayToString(source, array, 0, true));
+		result.append(this.symbolicUtil.charArrayToString(source, array, 0, true));
 		result.append("\"");
 		return result;
 	}
 
-	private StringBuffer symbolicExpressionToString(CIVLSource source,
-			State state, CIVLType type, SymbolicExpression symbolicExpression,
-			String prefix, String separate) {
-		return this.symbolicExpressionToString(source, state, type,
-				symbolicExpression, false, prefix, separate);
+	private StringBuffer symbolicExpressionToString(CIVLSource source, State state, CIVLType type,
+			SymbolicExpression symbolicExpression, String prefix, String separate) {
+		return this.symbolicExpressionToString(source, state, type, symbolicExpression, false, prefix, separate);
 	}
 
 	/**
@@ -930,10 +861,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	@SuppressWarnings("unchecked")
-	private StringBuffer symbolicExpressionToString(CIVLSource source,
-			State state, CIVLType civlType,
-			SymbolicExpression symbolicExpression, boolean atomize,
-			String prefix, String separator) {
+	private StringBuffer symbolicExpressionToString(CIVLSource source, State state, CIVLType civlType,
+			SymbolicExpression symbolicExpression, boolean atomize, String prefix, String separator) {
 		StringBuffer result = new StringBuffer();
 		SymbolicType type = symbolicExpression.type();
 		SymbolicType charType = typeFactory.charType().getDynamicType(universe);
@@ -945,19 +874,15 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			return pointerValueToString(source, state, symbolicExpression);
 		} else if (type.equals(this.functionPointerType)) {
 			// function pointer
-			return functionPointerValueToString(source, state,
-					symbolicExpression);
+			return functionPointerValueToString(source, state, symbolicExpression);
 		} else if (type.equals(this.dynamicHeapType)) {
 			// heap
-			return heapValueToString(source, state, symbolicExpression, prefix,
-					separator);
-		} else if (symbolicExpression.operator() == SymbolicOperator.ARRAY
-				&& type instanceof SymbolicArrayType
+			return heapValueToString(source, state, symbolicExpression, prefix, separator);
+		} else if (symbolicExpression.operator() == SymbolicOperator.ARRAY && type instanceof SymbolicArrayType
 				&& ((SymbolicArrayType) type).elementType().equals(charType)) {
 			// string literal
 			result.append("\"");
-			result.append(this.symbolicUtil.charArrayToString(source,
-					symbolicExpression, 0, true));
+			result.append(this.symbolicUtil.charArrayToString(source, symbolicExpression, 0, true));
 			result.append("\"");
 		} else if (type.equals(procType)) {
 			// $proc's
@@ -986,8 +911,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			if (symbolicExpression.operator() != SymbolicOperator.TUPLE)
 				result.append(symbolicExpression);
 			else {
-				int scopeId = modelFactory.getScopeId(source,
-						symbolicExpression);
+				int scopeId = modelFactory.getScopeId(source, symbolicExpression);
 
 				if (!modelFactory.isScopeIdDefined(scopeId))
 					result.append("UNDEFINED");
@@ -1002,20 +926,16 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			// This code must be updated accordingly.
 			if (operator == SymbolicOperator.TUPLE) {
 				if (type.toString().equals("$domain")) {
-					SymbolicExpression dimension = (SymbolicExpression) symbolicExpression
-							.argument(0);
-					String unionKind = symbolicExpression.argument(1)
-							.toStringBuffer(false).toString();
-					SymbolicExpression value = (SymbolicExpression) symbolicExpression
-							.argument(2);
+					SymbolicExpression dimension = (SymbolicExpression) symbolicExpression.argument(0);
+					String unionKind = symbolicExpression.argument(1).toStringBuffer(false).toString();
+					SymbolicExpression value = (SymbolicExpression) symbolicExpression.argument(2);
 
 					if (unionKind.equals("0")) {
 						result.append("($domain(");
 						result.append(dimension.toStringBuffer(false));
 						result.append("))");
 					}
-					result.append(this.symbolicExpressionToString(source, state,
-							null, value, false, "", ""));
+					result.append(this.symbolicExpressionToString(source, state, null, value, false, "", ""));
 				} else if (type.toString().equals("$regular_range")) {
 					int numArgs = symbolicExpression.numArguments();
 
@@ -1026,21 +946,18 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						else if (i == 2) {
 							result.append("#");
 						}
-						result.append(this
-								.symbolicExpressionToString(source, state, null,
-										(SymbolicExpression) symbolicExpression
-												.argument(i),
-										prefix, separator));
+						result.append(this.symbolicExpressionToString(source, state, null,
+								(SymbolicExpression) symbolicExpression.argument(i), prefix, separator));
 					}
 					result.append(")");
 				} else {
-					result.append(symbolicTupleOrArrayToString(source, state,
-							symbolicExpression, civlType, separator, prefix));
+					result.append(symbolicTupleOrArrayToString(source, state, symbolicExpression, civlType, separator,
+							prefix));
 				}
 				return result;
 			} else if (operator == SymbolicOperator.ARRAY) {
-				result.append(symbolicTupleOrArrayToString(source, state,
-						symbolicExpression, civlType, separator, prefix));
+				result.append(
+						symbolicTupleOrArrayToString(source, state, symbolicExpression, civlType, separator, prefix));
 				return result;
 			} else if (operator == SymbolicOperator.CONCRETE) {
 				SymbolicTypeKind tk = type.typeKind();
@@ -1054,28 +971,20 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				// }
 				if (tk == SymbolicTypeKind.CHAR) {
 					result.append("'");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(0).toStringBuffer(false));
 					result.append("'");
 				} else {
-					if (symbolicExpression.type()
-							.equals(symbolicUtil.dynamicType())) {
-						result.append(this.symbolicUtil
-								.getStaticTypeOfDynamicType(symbolicExpression)
-								.toString());
+					if (symbolicExpression.type().equals(symbolicUtil.dynamicType())) {
+						result.append(this.symbolicUtil.getStaticTypeOfDynamicType(symbolicExpression).toString());
 					} else {
-						SymbolicObjectKind objectKind = symbolicExpression
-								.argument(0).symbolicObjectKind();
+						SymbolicObjectKind objectKind = symbolicExpression.argument(0).symbolicObjectKind();
 
 						if (objectKind == SymbolicObjectKind.SEQUENCE) {
-							result.append(
-									symbolicSequenceToString(source, state,
-											(SymbolicSequence<? extends SymbolicExpression>) symbolicExpression
-													.argument(0),
-											civlType, separator, prefix));
+							result.append(symbolicSequenceToString(source, state,
+									(SymbolicSequence<? extends SymbolicExpression>) symbolicExpression.argument(0),
+									civlType, separator, prefix));
 						} else {
-							result.append(symbolicExpression.argument(0)
-									.toStringBuffer(true));
+							result.append(symbolicExpression.argument(0).toStringBuffer(true));
 						}
 						if (type.isHerbrand())
 							result.append('h');
@@ -1096,22 +1005,17 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				// }
 				switch (operator) {
 				case ADD:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "+", false, atomize);
+					processFlexibleBinaryNew(source, state, symbolicExpression, result, "+", false, atomize);
 					break;
 				case AND:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "&&", true, atomize);
+					processFlexibleBinaryNew(source, state, symbolicExpression, result, "&&", true, atomize);
 					break;
 				case APPLY: {
-					String function = symbolicExpression.argument(0)
-							.toStringBuffer(true).toString();
+					String function = symbolicExpression.argument(0).toStringBuffer(true).toString();
 
 					result.append(function);
 					result.append("(");
-					accumulate(source, state, result, ",",
-							(SymbolicSequence<?>) symbolicExpression
-									.argument(1));
+					accumulate(source, state, result, ",", (SymbolicSequence<?>) symbolicExpression.argument(1));
 					result.append(")");
 					break;
 				}
@@ -1121,50 +1025,37 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						result.append(type);
 						result.append(") ");
 					}
-					result.append(symbolicExpressionToString(source, state,
-							civlType,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							true, prefix, separator));
+					result.append(symbolicExpressionToString(source, state, civlType,
+							(SymbolicExpression) symbolicExpression.argument(0), true, prefix, separator));
 					break;
 				case ARRAY_READ: {
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(0).toStringBuffer(true));
 					result.append("[");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(1).toStringBuffer(false));
 					result.append("]");
 					break;
 				}
 				case ARRAY_WRITE: {
-					boolean needNewLine = !civlType.areSubtypesScalar()
-							&& !separator.isEmpty();
+					boolean needNewLine = !civlType.areSubtypesScalar() && !separator.isEmpty();
 					String padding = "\n" + prefix + separator;
-					String newPrefix = needNewLine ? prefix + separator
-							: prefix;
+					String newPrefix = needNewLine ? prefix + separator : prefix;
 
-					if (symbolicExpression
-							.argument(0) instanceof SymbolicExpression) {
+					if (symbolicExpression.argument(0) instanceof SymbolicExpression) {
 						result.append("(");
-						result.append(this.symbolicExpressionToString(source,
-								state, civlType,
-								(SymbolicExpression) symbolicExpression
-										.argument(0),
-								false, prefix, separator));
+						result.append(this.symbolicExpressionToString(source, state, civlType,
+								(SymbolicExpression) symbolicExpression.argument(0), false, prefix, separator));
 						result.append(")");
 					} else
-						result.append(symbolicExpression.argument(0)
-								.toStringBuffer(true));
+						result.append(symbolicExpression.argument(0).toStringBuffer(true));
 					result.append("{");
 					if (needNewLine)
 						result.append(padding);
 					result.append("[");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(1).toStringBuffer(false));
 					result.append("]=");
-					result.append(this.symbolicExpressionToString(source, state,
-							((CIVLArrayType) civlType).elementType(),
-							(SymbolicExpression) symbolicExpression.argument(2),
-							true, newPrefix, separator));
+					result.append(
+							this.symbolicExpressionToString(source, state, ((CIVLArrayType) civlType).elementType(),
+									(SymbolicExpression) symbolicExpression.argument(2), true, newPrefix, separator));
 					result.append("}");
 					break;
 				}
@@ -1172,54 +1063,38 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append('(');
 					result.append(type.toStringBuffer(false));
 					result.append(')');
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							true, "", ""));
+					result.append(this.symbolicExpressionToString(source, state, null,
+							(SymbolicExpression) symbolicExpression.argument(0), true, "", ""));
 					break;
 				case COND:
-					result.append(this.symbolicExpressionToString(source, state,
-							this.typeFactory.booleanType(),
-							(SymbolicExpression) symbolicExpression.argument(0),
-							true, "", ""));
+					result.append(this.symbolicExpressionToString(source, state, this.typeFactory.booleanType(),
+							(SymbolicExpression) symbolicExpression.argument(0), true, "", ""));
 					result.append(" ? ");
-					result.append(this.symbolicExpressionToString(source, state,
-							civlType,
-							(SymbolicExpression) symbolicExpression.argument(1),
-							true, "", ""));
+					result.append(this.symbolicExpressionToString(source, state, civlType,
+							(SymbolicExpression) symbolicExpression.argument(1), true, "", ""));
 					result.append(" : ");
-					result.append(this.symbolicExpressionToString(source, state,
-							civlType,
-							(SymbolicExpression) symbolicExpression.argument(2),
-							true, "", ""));
+					result.append(this.symbolicExpressionToString(source, state, civlType,
+							(SymbolicExpression) symbolicExpression.argument(2), true, "", ""));
 					if (atomize)
 						atomize(result);
 					break;
 				case DENSE_ARRAY_WRITE: {
 					int count = 0;
 					boolean first = true;
-					boolean needNewLine = !separator.isEmpty()
-							&& civlType != null ? !civlType.areSubtypesScalar()
-									: false;
+					boolean needNewLine = !separator.isEmpty() && civlType != null ? !civlType.areSubtypesScalar()
+							: false;
 					String padding = "\n" + prefix + separator;
-					String newPrefix = needNewLine ? prefix + separator
-							: prefix;
+					String newPrefix = needNewLine ? prefix + separator : prefix;
 
-					if (symbolicExpression
-							.argument(0) instanceof SymbolicExpression) {
+					if (symbolicExpression.argument(0) instanceof SymbolicExpression) {
 						result.append("(");
-						result.append(this.symbolicExpressionToString(source,
-								state, civlType,
-								(SymbolicExpression) symbolicExpression
-										.argument(0),
-								atomize, prefix, separator));
+						result.append(this.symbolicExpressionToString(source, state, civlType,
+								(SymbolicExpression) symbolicExpression.argument(0), atomize, prefix, separator));
 						result.append(")");
 					} else
-						result.append(symbolicExpression.argument(0)
-								.toStringBuffer(true));
+						result.append(symbolicExpression.argument(0).toStringBuffer(true));
 					result.append("{");
-					for (SymbolicExpression value : (SymbolicSequence<?>) symbolicExpression
-							.argument(1)) {
+					for (SymbolicExpression value : (SymbolicSequence<?>) symbolicExpression.argument(1)) {
 						if (!value.isNull()) {
 							if (first)
 								first = false;
@@ -1228,8 +1103,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							if (needNewLine)
 								result.append(padding);
 							result.append("[" + count + "]" + "=");
-							result.append(symbolicExpressionToString(source,
-									state, this.subType(civlType, count).right,
+							result.append(symbolicExpressionToString(source, state, this.subType(civlType, count).right,
 									value, false, newPrefix, separator));
 							// result.append(value.toStringBuffer(false));
 						}
@@ -1242,24 +1116,18 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					boolean first = true;
 					int eleIndex = 0;
 					boolean allSubtypesScalar = civlType.areSubtypesScalar();
-					boolean needNewLine = !separator.isEmpty()
-							&& !allSubtypesScalar;
+					boolean needNewLine = !separator.isEmpty() && !allSubtypesScalar;
 					String padding = "\n" + prefix + separator;
-					String newPrefix = needNewLine ? prefix + separator
-							: prefix;
-					SymbolicSequence<?> elements = (SymbolicSequence<?>) symbolicExpression
-							.argument(1);
-					boolean needBrackets = allSubtypesScalar
-							|| elements.size() == 0;
+					String newPrefix = needNewLine ? prefix + separator : prefix;
+					SymbolicSequence<?> elements = (SymbolicSequence<?>) symbolicExpression.argument(1);
+					boolean needBrackets = allSubtypesScalar || elements.size() == 0;
 
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(0).toStringBuffer(true));
 					if (needBrackets)
 						result.append("{");
 					for (SymbolicExpression value : elements) {
 						if (!value.isNull()) {
-							Pair<String, CIVLType> eleNameAndType = this
-									.subType(civlType, eleIndex);
+							Pair<String, CIVLType> eleNameAndType = this.subType(civlType, eleIndex);
 
 							if (first)
 								first = false;
@@ -1268,8 +1136,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 							if (needNewLine)
 								result.append(padding);
 							result.append("." + eleNameAndType.left + "=");
-							result.append(symbolicExpressionToString(source,
-									state, eleNameAndType.right, value, false,
+							result.append(symbolicExpressionToString(source, state, eleNameAndType.right, value, false,
 									newPrefix, separator));
 						}
 						eleIndex++;
@@ -1279,17 +1146,14 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					break;
 				}
 				case DIVIDE:
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(0).toStringBuffer(true));
 					result.append("/");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(1).toStringBuffer(true));
 					if (atomize)
 						atomize(result);
 					break;
 				case EQUALS:
-					processFlexibleBinary(source, state, symbolicExpression,
-							result, "==", true, atomize);
+					processFlexibleBinary(source, state, symbolicExpression, result, "==", true, atomize);
 					break; // if (arguments[0] instanceof
 							// SymbolicExpression)
 				// result.append(this.symbolicExpressionToString(source,
@@ -1307,107 +1171,81 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				// return result.toString();
 				case EXISTS:
 					result.append("exists ");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(0).toStringBuffer(false));
 					result.append(" : ");
-					result.append(((SymbolicExpression) symbolicExpression
-							.argument(0)).type().toStringBuffer(false));
+					result.append(((SymbolicExpression) symbolicExpression.argument(0)).type().toStringBuffer(false));
 					result.append(" . ");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(1).toStringBuffer(true));
 					if (atomize)
 						atomize(result);
 					break;
 				case FORALL:
 					result.append("forall ");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(0).toStringBuffer(false));
 					result.append(" : ");
-					result.append(((SymbolicExpression) symbolicExpression
-							.argument(0)).type().toStringBuffer(false));
+					result.append(((SymbolicExpression) symbolicExpression.argument(0)).type().toStringBuffer(false));
 					result.append(" . ");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(1).toStringBuffer(true));
 					if (atomize)
 						atomize(result);
 					break;
 				case INT_DIVIDE: {
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(0).toStringBuffer(true));
 					// result.append("\u00F7");
 					result.append("/");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(1).toStringBuffer(true));
 					if (atomize)
 						atomize(result);
 					break;
 				}
 				case LAMBDA:
 					result.append("lambda ");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(0).toStringBuffer(false));
 					result.append(" : ");
-					result.append(((SymbolicExpression) symbolicExpression
-							.argument(0)).type().toStringBuffer(false));
+					result.append(((SymbolicExpression) symbolicExpression.argument(0)).type().toStringBuffer(false));
 					result.append(". ");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(1),
-							true, prefix, separator));
+					result.append(this.symbolicExpressionToString(source, state, null,
+							(SymbolicExpression) symbolicExpression.argument(1), true, prefix, separator));
 					if (atomize)
 						atomize(result);
 					break;
 				case LENGTH:
 					result.append("length(");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							"", ""));
+					result.append(this.symbolicExpressionToString(source, state, null,
+							(SymbolicExpression) symbolicExpression.argument(0), "", ""));
 					result.append(")");
 					break;
 				case LESS_THAN:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "<", true, atomize);
+					processFlexibleBinaryNew(source, state, symbolicExpression, result, "<", true, atomize);
 					break;
 				case LESS_THAN_EQUALS:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "<=", true, atomize);
+					processFlexibleBinaryNew(source, state, symbolicExpression, result, "<=", true, atomize);
 					break;
 				case MODULO:
-					processFlexibleBinary(source, state, symbolicExpression,
-							result, "%", true, atomize);
+					processFlexibleBinary(source, state, symbolicExpression, result, "%", true, atomize);
 					break;
 				case MULTIPLY:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "*", true, atomize);
+					processFlexibleBinaryNew(source, state, symbolicExpression, result, "*", true, atomize);
 					break;
 				case NEGATIVE:
 					result.append("-");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							"", ""));
+					result.append(this.symbolicExpressionToString(source, state, null,
+							(SymbolicExpression) symbolicExpression.argument(0), "", ""));
 					atomize(result);
 					break;
 				case NEQ:
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							"", ""));
+					result.append(this.symbolicExpressionToString(source, state, null,
+							(SymbolicExpression) symbolicExpression.argument(0), "", ""));
 					result.append("!=");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(1),
-							true, "", ""));
+					result.append(this.symbolicExpressionToString(source, state, null,
+							(SymbolicExpression) symbolicExpression.argument(1), true, "", ""));
 					if (atomize)
 						atomize(result);
 					break;
 				case NOT:
 					result.append("!");
-					result.append(this.symbolicExpressionToString(source, state,
-							null,
-							(SymbolicExpression) symbolicExpression.argument(0),
-							true, "", ""));
+					result.append(this.symbolicExpressionToString(source, state, null,
+							(SymbolicExpression) symbolicExpression.argument(0), true, "", ""));
 					if (atomize)
 						atomize(result);
 					break;
@@ -1415,78 +1253,60 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append("NULL");
 					break;
 				case OR:
-					processFlexibleBinaryNew(source, state, symbolicExpression,
-							result, "||", false, atomize);
+					processFlexibleBinaryNew(source, state, symbolicExpression, result, "||", false, atomize);
 					break;
 				case POWER:
-					processFlexibleBinary(source, state, symbolicExpression,
-							result, "^", false, atomize);
+					processFlexibleBinary(source, state, symbolicExpression, result, "^", false, atomize);
 					break;
 				case SUBTRACT:
-					processFlexibleBinary(source, state, symbolicExpression,
-							result, "-", false, atomize);
+					processFlexibleBinary(source, state, symbolicExpression, result, "-", false, atomize);
 					break;
 				case SYMBOLIC_CONSTANT:
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(0).toStringBuffer(true));
 					break;
 				case TUPLE_READ:
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(0).toStringBuffer(true));
 					result.append(".");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(1).toStringBuffer(false));
 					if (atomize)
 						atomize(result);
 					break;
 				case TUPLE_WRITE: {
-					boolean needNewLine = !separator.isEmpty()
-							&& !civlType.areSubtypesScalar();
+					boolean needNewLine = !separator.isEmpty() && !civlType.areSubtypesScalar();
 					String padding = "\n" + prefix + separator;
-					String newPrefix = needNewLine ? prefix + separator
-							: prefix;
-					int fieldIndex = ((IntObject) symbolicExpression
-							.argument(1)).getInt();
-					StructOrUnionField field = ((CIVLStructOrUnionType) civlType)
-							.getField(fieldIndex);
+					String newPrefix = needNewLine ? prefix + separator : prefix;
+					int fieldIndex = ((IntObject) symbolicExpression.argument(1)).getInt();
+					StructOrUnionField field = ((CIVLStructOrUnionType) civlType).getField(fieldIndex);
 
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(true));
+					result.append(symbolicExpression.argument(0).toStringBuffer(true));
 					result.append("{");
 					if (needNewLine)
 						result.append(padding);
 					result.append(".");
 					result.append(field.name().name());
 					result.append(":=");
-					result.append(this.symbolicExpressionToString(source, state,
-							field.type(), symbolicExpression, newPrefix,
-							separator));
+					result.append(this.symbolicExpressionToString(source, state, field.type(), symbolicExpression,
+							newPrefix, separator));
 					result.append("}");
 					break;
 				}
 				case UNION_EXTRACT:
 					result.append("extract(");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(0).toStringBuffer(false));
 					result.append(",");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(1).toStringBuffer(false));
 					result.append(")");
 					break;
 				case UNION_INJECT: {
-					result.append(this.symbolicExpressionToString(source, state,
-							civlType,
-							(SymbolicExpression) symbolicExpression.argument(1),
-							false, prefix, separator));
+					result.append(this.symbolicExpressionToString(source, state, civlType,
+							(SymbolicExpression) symbolicExpression.argument(1), false, prefix, separator));
 					break;
 				}
 				case UNION_TEST:
 					result.append("test(");
-					result.append(symbolicExpression.argument(0)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(0).toStringBuffer(false));
 					result.append(",");
-					result.append(symbolicExpression.argument(1)
-							.toStringBuffer(false));
+					result.append(symbolicExpression.argument(1).toStringBuffer(false));
 					result.append(")");
 					break;
 				default:
@@ -1497,13 +1317,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		return result;
 	}
 
-	private StringBuffer symbolicTupleOrArrayToString(CIVLSource source,
-			State state, SymbolicExpression tuppleOrArray, CIVLType civlType,
-			String separator, String prefix) {
+	private StringBuffer symbolicTupleOrArrayToString(CIVLSource source, State state, SymbolicExpression tuppleOrArray,
+			CIVLType civlType, String separator, String prefix) {
 		StringBuffer result = new StringBuffer();
 		// int elementIndex = 0;
-		boolean allSubtypesScalar = civlType != null
-				? civlType.areSubtypesScalar() : false;
+		boolean allSubtypesScalar = civlType != null ? civlType.areSubtypesScalar() : false;
 		boolean needNewLine = !separator.isEmpty() && !allSubtypesScalar;
 		String padding = "\n" + prefix + separator;
 		String newPrefix = needNewLine ? prefix + separator : prefix;
@@ -1514,14 +1332,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		if (needBrackets)
 			result.append("{");
 		for (int i = 0; i < numArgs; i++) {
-			Pair<String, CIVLType> elementNameAndType = this.subType(civlType,
-					i);
+			Pair<String, CIVLType> elementNameAndType = this.subType(civlType, i);
 			CIVLType eleType = elementNameAndType.right;
-			boolean subtypesOfEleScalar = eleType != null
-					? eleType.areSubtypesScalar() : false;
+			boolean subtypesOfEleScalar = eleType != null ? eleType.areSubtypesScalar() : false;
 			boolean eleEmpty = false;
-			SymbolicExpression symbolicElement = (SymbolicExpression) tuppleOrArray
-					.argument(i);
+			SymbolicExpression symbolicElement = (SymbolicExpression) tuppleOrArray.argument(i);
 
 			eleEmpty = symbolicElement.numArguments() == 0;
 			if (i != 0 && !needNewLine)
@@ -1536,38 +1351,32 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				result.append("=");
 			else if (eleType != null)
 				result.append(": " + eleType);
-			result.append(symbolicExpressionToString(source, state,
-					elementNameAndType.right, symbolicElement, false, newPrefix,
-					separator));
+			result.append(symbolicExpressionToString(source, state, elementNameAndType.right, symbolicElement, false,
+					newPrefix, separator));
 		}
 		if (needBrackets)
 			result.append("}");
 		return result;
 	}
 
-	private StringBuffer symbolicSequenceToString(CIVLSource source,
-			State state,
-			SymbolicSequence<? extends SymbolicExpression> symbolicCollection,
-			CIVLType civlType, String separator, String prefix) {
+	private StringBuffer symbolicSequenceToString(CIVLSource source, State state,
+			SymbolicSequence<? extends SymbolicExpression> symbolicCollection, CIVLType civlType, String separator,
+			String prefix) {
 		StringBuffer result = new StringBuffer();
 		int elementIndex = 0;
-		boolean allSubtypesScalar = civlType != null
-				? civlType.areSubtypesScalar() : false;
+		boolean allSubtypesScalar = civlType != null ? civlType.areSubtypesScalar() : false;
 		boolean needNewLine = !separator.isEmpty() && !allSubtypesScalar;
 		String padding = "\n" + prefix + separator;
 		String newPrefix = needNewLine ? prefix + separator : prefix;
-		boolean needBrackets = allSubtypesScalar
-				|| symbolicCollection.size() == 0;
+		boolean needBrackets = allSubtypesScalar || symbolicCollection.size() == 0;
 		boolean isArray = civlType != null ? civlType.isArrayType() : false;
 
 		if (needBrackets)
 			result.append("{");
 		for (SymbolicExpression symbolicElement : symbolicCollection) {
-			Pair<String, CIVLType> elementNameAndType = this.subType(civlType,
-					elementIndex);
+			Pair<String, CIVLType> elementNameAndType = this.subType(civlType, elementIndex);
 			CIVLType eleType = elementNameAndType.right;
-			boolean subtypesOfEleScalar = eleType != null
-					? eleType.areSubtypesScalar() : false;
+			boolean subtypesOfEleScalar = eleType != null ? eleType.areSubtypesScalar() : false;
 			boolean eleEmpty = false;
 
 			if (symbolicElement.argument(0) instanceof SymbolicSequence) {
@@ -1590,9 +1399,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			else if (eleType != null)
 				result.append(": " + eleType);
 			elementIndex++;
-			result.append(symbolicExpressionToString(source, state,
-					elementNameAndType.right, symbolicElement, false, newPrefix,
-					separator));
+			result.append(symbolicExpressionToString(source, state, elementNameAndType.right, symbolicElement, false,
+					newPrefix, separator));
 		}
 		if (needBrackets)
 			result.append("}");
@@ -1662,8 +1470,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 *            The separate string for sub-components of the heap.
 	 * @return The pretty presentation of a heap for printing.
 	 */
-	private StringBuffer heapValueToString(CIVLSource source, State state,
-			SymbolicExpression heapValue, String prefix, String separate) {
+	private StringBuffer heapValueToString(CIVLSource source, State state, SymbolicExpression heapValue, String prefix,
+			String separate) {
 		StringBuffer result = new StringBuffer();
 		int numFields = typeFactory.heapType().getNumMallocs();
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
@@ -1674,13 +1482,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			result.append("NULL");
 		}
 		for (int i = 0; i < numFields; i++) {
-			SymbolicExpression heapField = universe.tupleRead(heapValue,
-					universe.intObject(i));
+			SymbolicExpression heapField = universe.tupleRead(heapValue, universe.intObject(i));
 			NumericExpression fieldLength = universe.length(heapField);
 			int length;
 			CIVLSource mallocSource;
-			CIVLType fieldTypeElement = heapType.getMalloc(i)
-					.getStaticElementType();
+			CIVLType fieldTypeElement = heapType.getMalloc(i).getStaticElementType();
 
 			if (fieldLength.isZero())
 				continue;
@@ -1695,36 +1501,26 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				result.append(mallocSource.getSummary());
 			}
 			// result.append(":");
-			length = ((IntegerNumber) reasoner.extractNumber(fieldLength))
-					.intValue();
+			length = ((IntegerNumber) reasoner.extractNumber(fieldLength)).intValue();
 			for (int j = 0; j < length; j++) {
-				SymbolicExpression heapObject = universe.arrayRead(heapField,
-						universe.integer(j));
-				IntegerNumber heapObjLenNumber = ((IntegerNumber) reasoner
-						.extractNumber(universe.length(heapObject)));
+				SymbolicExpression heapObject = universe.arrayRead(heapField, universe.integer(j));
+				IntegerNumber heapObjLenNumber = ((IntegerNumber) reasoner.extractNumber(universe.length(heapObject)));
 				CIVLType heapObjType = null;
 
 				if (heapObjLenNumber != null) {
-					int heapObjSize = ((IntegerNumber) reasoner
-							.extractNumber(universe.length(heapObject)))
-									.intValue();
+					int heapObjSize = ((IntegerNumber) reasoner.extractNumber(universe.length(heapObject))).intValue();
 
-					heapObjType = this.typeFactory.completeArrayType(
-							fieldTypeElement,
-							this.modelFactory.integerLiteralExpression(
-									mallocSource,
-									BigInteger.valueOf(heapObjSize)));
+					heapObjType = this.typeFactory.completeArrayType(fieldTypeElement,
+							this.modelFactory.integerLiteralExpression(mallocSource, BigInteger.valueOf(heapObjSize)));
 				} else
-					heapObjType = this.typeFactory
-							.incompleteArrayType(fieldTypeElement);
+					heapObjType = this.typeFactory.incompleteArrayType(fieldTypeElement);
 				result.append("\n");
 				result.append(objectPrefix);
 				result.append(j);
 				result.append(": ");
 				result.append(heapObjType);
-				result.append(this.symbolicExpressionToString(source, state,
-						heapObjType, heapObject, false, objectPrefix,
-						separate));
+				result.append(this.symbolicExpressionToString(source, state, heapObjType, heapObject, false,
+						objectPrefix, separate));
 			}
 		}
 		if (result.length() == 0)
@@ -1762,8 +1558,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			parentType = typeOfObjByRef(type, parent);
 			if (parentType.isHeapType()) {
 				CIVLArrayType heapTupleType = typeFactory
-						.incompleteArrayType(((CIVLHeapType) parentType)
-								.getMalloc(index).getStaticElementType());
+						.incompleteArrayType(((CIVLHeapType) parentType).getMalloc(index).getStaticElementType());
 
 				heapTupleType = typeFactory.incompleteArrayType(heapTupleType);
 				return heapTupleType;
@@ -1773,35 +1568,30 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public Pair<State, String> expressionEvaluation(State state, int pid,
-			Expression expression, boolean resultOnly)
+	public Pair<State, String> expressionEvaluation(State state, int pid, Expression expression, boolean resultOnly)
 			throws UnsatisfiablePathConditionException {
-		return this.expressionEvaluationWorker(state, pid, expression,
-				resultOnly, true);
+		return this.expressionEvaluationWorker(state, pid, expression, resultOnly, true);
 	}
 
-	private Pair<State, String> expressionEvaluation(State state, int pid,
-			Expression expression) throws UnsatisfiablePathConditionException {
+	private Pair<State, String> expressionEvaluation(State state, int pid, Expression expression)
+			throws UnsatisfiablePathConditionException {
 		return this.expressionEvaluation(state, pid, expression, false);
 	}
 
-	private Pair<State, String> expressionEvaluationFinalResult(State state,
-			int pid, Expression expression)
+	private Pair<State, String> expressionEvaluationFinalResult(State state, int pid, Expression expression)
 			throws UnsatisfiablePathConditionException {
-		return this.expressionEvaluationWorker(state, pid, expression, true,
-				false);
+		return this.expressionEvaluationWorker(state, pid, expression, true, false);
 	}
 
-	private StringBuffer evaluateLHSExpression(State state, int pid,
-			LHSExpression lhs) throws UnsatisfiablePathConditionException {
+	private StringBuffer evaluateLHSExpression(State state, int pid, LHSExpression lhs)
+			throws UnsatisfiablePathConditionException {
 		LHSExpressionKind kind = lhs.lhsExpressionKind();
 		StringBuffer result = new StringBuffer();
 
 		switch (kind) {
 		case DEREFERENCE: {
 			result.append("*(");
-			result.append(this.expressionEvaluation(state, pid,
-					((DereferenceExpression) lhs).pointer()).right);
+			result.append(this.expressionEvaluation(state, pid, ((DereferenceExpression) lhs).pointer()).right);
 			result.append(")");
 			break;
 		}
@@ -1811,27 +1601,21 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 			result.append("(");
 			if (structOrUnion instanceof LHSExpression)
-				result.append(this.evaluateLHSExpression(state, pid,
-						(LHSExpression) structOrUnion));
+				result.append(this.evaluateLHSExpression(state, pid, (LHSExpression) structOrUnion));
 			else
-				result.append(this.expressionEvaluation(state, pid,
-						structOrUnion).right);
+				result.append(this.expressionEvaluation(state, pid, structOrUnion).right);
 			result.append(").");
-			assert structOrUnion
-					.getExpressionType() instanceof CIVLStructOrUnionType;
-			result.append(
-					((CIVLStructOrUnionType) structOrUnion.getExpressionType())
-							.getField(dot.fieldIndex()).name().name());
+			assert structOrUnion.getExpressionType() instanceof CIVLStructOrUnionType;
+			result.append(((CIVLStructOrUnionType) structOrUnion.getExpressionType()).getField(dot.fieldIndex()).name()
+					.name());
 			break;
 		}
 		case SUBSCRIPT: {
 			SubscriptExpression subscript = (SubscriptExpression) lhs;
 
-			result.append(
-					this.evaluateLHSExpression(state, pid, subscript.array()));
+			result.append(this.evaluateLHSExpression(state, pid, subscript.array()));
 			result.append("[");
-			result.append(this.expressionEvaluationFinalResult(state, pid,
-					subscript.index()).right);
+			result.append(this.expressionEvaluationFinalResult(state, pid, subscript.index()).right);
 			result.append("]");
 			break;
 		}
@@ -1839,8 +1623,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			result.append(((VariableExpression) lhs).variable().name().name());
 			break;
 		default:
-			throw new CIVLUnimplementedFeatureException(
-					"evaluating left-hand-side expression of " + kind + " kind",
+			throw new CIVLUnimplementedFeatureException("evaluating left-hand-side expression of " + kind + " kind",
 					lhs.getSource());
 		}
 		return result;
@@ -1848,8 +1631,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 	// TODO: why this is called evaluation ?
 	@Override
-	public StringBuffer statementEvaluation(State state, State postState,
-			int pid, Statement statement)
+	public StringBuffer statementEvaluation(State state, State postState, int pid, Statement statement)
 			throws UnsatisfiablePathConditionException {
 		StatementKind kind = statement.statementKind();
 		StringBuffer result = new StringBuffer();
@@ -1860,25 +1642,19 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			if (statement instanceof AtomicLockAssignStatement) {
 				AtomicLockAssignStatement atomicLockStmt = (AtomicLockAssignStatement) statement;
 				String process = state.getProcessState(pid).name();
-				int previousAtomicCount = state.getProcessState(pid)
-						.atomicCount();
+				int previousAtomicCount = state.getProcessState(pid).atomicCount();
 
 				if (atomicLockStmt.enterAtomic()) {
 					result.append("ENTER_ATOMIC [");
 					if (previousAtomicCount < 1)
-						result.append(
-								ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX
-										+ ":=" + process + ", ");
-					result.append(process + ".atomicCount:="
-							+ (previousAtomicCount + 1));
+						result.append(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX + ":=" + process + ", ");
+					result.append(process + ".atomicCount:=" + (previousAtomicCount + 1));
 					result.append("]");
 				} else {
 					result.append("LEAVE_ATOMIC [");
 
 					if (previousAtomicCount == 1)
-						result.append(
-								ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX
-										+ ":=$proc_null, ");
+						result.append(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX + ":=$proc_null, ");
 					result.append(process + ".atomicCount:=0");
 					result.append("]");
 				}
@@ -1886,13 +1662,40 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				AssignStatement assign = (AssignStatement) statement;
 				LHSExpression lhs = assign.getLhs();
 				Expression rhs = assign.rhs();
-				StringBuffer lhsString = this.evaluateLHSExpression(state, pid,
-						lhs);
-				String rhsString = this.expressionEvaluation(state, pid,
-						rhs).right.toString();
-				String newRhsString = this
-						.expressionEvaluationFinalResult(state, pid, rhs).right;
+				StringBuffer lhsString = this.evaluateLHSExpression(state, pid, lhs);
+				String rhsString = this.expressionEvaluation(state, pid, rhs).right.toString();
+				String newRhsString = this.expressionEvaluationFinalResult(state, pid, rhs).right;
 
+				result.append(lhsString);
+				result.append("=");
+				result.append(rhsString);
+				if (!rhsString.equals(newRhsString)) {
+					result.append(" ");
+					result.append(SEF_START);
+					result.append(lhsString);
+					result.append(SEF);
+					result.append(newRhsString);
+					result.append(SEF_END);
+				}
+			}
+			break;
+		}
+		case PARALLEL_ASSIGN: {
+			ParallelAssignStatement paraAssign = (ParallelAssignStatement) statement;
+			List<Pair<LHSExpression, Expression>> assigns = paraAssign.assignments();
+			boolean isFirst = true;
+
+			for (Pair<LHSExpression, Expression> assign : assigns) {
+				LHSExpression lhs = assign.left;
+				Expression rhs = assign.right;
+				StringBuffer lhsString = this.evaluateLHSExpression(state, pid, lhs);
+				String rhsString = this.expressionEvaluation(state, pid, rhs).right.toString();
+				String newRhsString = this.expressionEvaluationFinalResult(state, pid, rhs).right;
+
+				if (isFirst)
+					isFirst = false;
+				else
+					result.append("; ");
 				result.append(lhsString);
 				result.append("=");
 				result.append(rhsString);
@@ -1923,8 +1726,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			if (callOrSpawn.isSpawn())
 				result.append("$spawn ");
 			if (function == null) {
-				function = this.evaluator.evaluateFunctionIdentifier(state, pid,
-						callOrSpawn.functionExpression(),
+				function = this.evaluator.evaluateFunctionIdentifier(state, pid, callOrSpawn.functionExpression(),
 						callOrSpawn.getSource()).second;
 				assert function != null;
 			}
@@ -1939,18 +1741,15 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				result.append(tmp.right);
 			}
 			result.append(")");
-			if (lhs != null
-					&& (callOrSpawn.isSpawn() || callOrSpawn.isSystemCall())) {
-				String newLhsValue = this.expressionEvaluationFinalResult(
-						postState, pid, lhs).right;
+			if (lhs != null && (callOrSpawn.isSpawn() || callOrSpawn.isSystemCall())) {
+				String newLhsValue = this.expressionEvaluationFinalResult(postState, pid, lhs).right;
 
 				if (newLhsValue != null) {
 					result.append(" ");
 					result.append(SEF_START);
 					result.append(lhsString);
 					result.append(SEF);
-					result.append(this.expressionEvaluationFinalResult(
-							postState, pid, lhs).right);
+					result.append(this.expressionEvaluationFinalResult(postState, pid, lhs).right);
 					result.append(SEF_END);
 				}
 			}
@@ -1981,8 +1780,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 				if (i != 0)
 					result.append(", ");
-				result.append(this.symbolicExpressionToString(
-						loopVar.getSource(), state, loopVar.type(),
+				result.append(this.symbolicExpressionToString(loopVar.getSource(), state, loopVar.type(),
 						state.valueOf(pid, loopVar), "", ""));
 			}
 			result.append(") in ");
@@ -1996,8 +1794,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append(", ");
 				result.append(loopVar.name().name());
 				result.append(":=");
-				result.append(this.symbolicExpressionToString(
-						loopVar.getSource(), postState, loopVar.type(),
+				result.append(this.symbolicExpressionToString(loopVar.getSource(), postState, loopVar.type(),
 						postState.valueOf(pid, loopVar), "", ""));
 			}
 			result.append("]");
@@ -2017,8 +1814,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			result.append("$parfor(");
 			result.append(arguments);
 			result.append(": ");
-			result.append(this.expressionEvaluation(state, pid,
-					parForEnter.domain()).right);
+			result.append(this.expressionEvaluation(state, pid, parForEnter.domain()).right);
 			result.append(")");
 			result.append(" $spawn ");
 			result.append(parForEnter.parProcFunction().name().name());
@@ -2042,14 +1838,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			result.append(malloc.getStaticElementType());
 			result.append("*)");
 			result.append("$malloc(");
-			result.append(this.expressionEvaluation(state, pid,
-					malloc.getScopeExpression()).right);
+			result.append(this.expressionEvaluation(state, pid, malloc.getScopeExpression()).right);
 			result.append(", ");
-			result.append(this.expressionEvaluation(state, pid,
-					malloc.getSizeExpression()).right);
+			result.append(this.expressionEvaluation(state, pid, malloc.getSizeExpression()).right);
 			result.append(") ");
-			newLhsString = this.expressionEvaluationFinalResult(postState, pid,
-					lhs).right;
+			newLhsString = this.expressionEvaluationFinalResult(postState, pid, lhs).right;
 			if (newLhsString != null) {
 				result.append(SEF_START);
 				result.append(lhsString);
@@ -2064,46 +1857,39 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 			result.append(statement.toString());
 			result.append(" (guard: ");
-			result.append(
-					this.expressionEvaluation(state, pid, guard, false).right);
+			result.append(this.expressionEvaluation(state, pid, guard, false).right);
 			result.append(")");
 			break;
 		}
 		case RETURN: {
 			// return expression (assigning to...)
 			// ProcessState procState=state.getProcessState(pid);
-			CIVLFunction function = state.getProcessState(pid).peekStack()
-					.location().function();
+			CIVLFunction function = state.getProcessState(pid).peekStack().location().function();
 			// String functionName;
 			Expression expression = ((ReturnStatement) statement).expression();
-			StackEntry callerStack = state.getProcessState(pid)
-					.peekSecondLastStack();
+			StackEntry callerStack = state.getProcessState(pid).peekSecondLastStack();
 			CallOrSpawnStatement caller = null;
 
 			if (callerStack != null) {
 				Statement stmt = callerStack.location().getSoleOutgoing();
 				if (stmt.statementKind() == StatementKind.CALL_OR_SPAWN)
-					caller = (CallOrSpawnStatement) callerStack.location()
-							.getSoleOutgoing();
+					caller = (CallOrSpawnStatement) callerStack.location().getSoleOutgoing();
 			}
 			assert function != null;
 			result.append(function.name().name());
 			result.append("(...) return");
 			if (expression != null) {
 				result.append(" ");
-				result.append(this.expressionEvaluation(state, pid,
-						expression).right);
+				result.append(this.expressionEvaluation(state, pid, expression).right);
 				if (caller != null) {
 					LHSExpression lhs = caller.lhs();
 
 					if (lhs != null) {
 						result.append(" ");
 						result.append(SEF_START);
-						result.append(
-								this.evaluateLHSExpression(state, pid, lhs));
+						result.append(this.evaluateLHSExpression(state, pid, lhs));
 						result.append(SEF);
-						result.append(this.expressionEvaluationFinalResult(
-								state, pid, expression).right);
+						result.append(this.expressionEvaluationFinalResult(state, pid, expression).right);
 						result.append(SEF_END);
 					}
 				}
@@ -2114,11 +1900,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			UpdateStatement update = (UpdateStatement) statement;
 
 			result.append("$update (");
-			result.append(this.expressionEvaluation(state, pid,
-					update.collator()).right);
+			result.append(this.expressionEvaluation(state, pid, update.collator()).right);
 			result.append(") ");
-			result.append(this.statementEvaluation(state, postState, pid,
-					update.call()));
+			result.append(this.statementEvaluation(state, postState, pid, update.call()));
 			break;
 		}
 		case WITH: {
@@ -2128,23 +1912,20 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				result.append("WITH_ENTER (");
 			else
 				result.append("WITH_EXIT (");
-			result.append(this.expressionEvaluation(state, pid,
-					with.collateState()).right);
+			result.append(this.expressionEvaluation(state, pid, with.collateState()).right);
 			result.append(")");
 			break;
 		}
 		default:
-			throw new CIVLUnimplementedFeatureException(
-					"pretty-printing statement of " + kind + " kind",
+			throw new CIVLUnimplementedFeatureException("pretty-printing statement of " + kind + " kind",
 					statement.getSource());
 		}
 		return result;
 
 	}
 
-	private Pair<State, String> expressionEvaluationWorker(State state, int pid,
-			Expression expression, boolean resultOnly, boolean isTopLevel)
-			throws UnsatisfiablePathConditionException {
+	private Pair<State, String> expressionEvaluationWorker(State state, int pid, Expression expression,
+			boolean resultOnly, boolean isTopLevel) throws UnsatisfiablePathConditionException {
 		ExpressionKind kind = expression.expressionKind();
 		StringBuilder result = new StringBuilder();
 		Pair<State, String> temp;
@@ -2159,9 +1940,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				return new Pair<>(state, (String) null);
 			}
 			state = eval.state;
-			result.append(
-					this.symbolicExpressionToString(expression.getSource(),
-							state, exprType, eval.value, !isTopLevel, "", ""));
+			result.append(this.symbolicExpressionToString(expression.getSource(), state, exprType, eval.value,
+					!isTopLevel, "", ""));
 		} else {
 			switch (kind) {
 			case ABSTRACT_FUNCTION_CALL: {
@@ -2173,8 +1953,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					if (i != 0)
 						result.append(", ");
 					i++;
-					temp = expressionEvaluationWorker(state, pid, argument,
-							resultOnly, false);
+					temp = expressionEvaluationWorker(state, pid, argument, resultOnly, false);
 					result.append(temp.right);
 					state = temp.left;
 				}
@@ -2186,13 +1965,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 				if (!isTopLevel)
 					result.append("(");
-				temp = this.expressionEvaluationWorker(state, pid,
-						binary.left(), resultOnly, false);
+				temp = this.expressionEvaluationWorker(state, pid, binary.left(), resultOnly, false);
 				state = temp.left;
 				result.append(temp.right);
 				result.append(binary.operatorToString());
-				temp = this.expressionEvaluationWorker(state, pid,
-						binary.right(), resultOnly, false);
+				temp = this.expressionEvaluationWorker(state, pid, binary.right(), resultOnly, false);
 				state = temp.left;
 				result.append(temp.right);
 				if (!isTopLevel)
@@ -2205,24 +1982,20 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				result.append("(");
 				result.append(cast.getCastType().toString());
 				result.append(")");
-				temp = this.expressionEvaluationWorker(state, pid,
-						cast.getExpression(), resultOnly, false);
+				temp = this.expressionEvaluationWorker(state, pid, cast.getExpression(), resultOnly, false);
 				state = temp.left;
 				result.append(temp.right);
 				break;
 			}
 			case COND: {
-				throw new CIVLInternalException(
-						"Conditional expression is unreachable because it should"
-								+ " have been traslated away by the model builder.",
-						expression.getSource());
+				throw new CIVLInternalException("Conditional expression is unreachable because it should"
+						+ " have been traslated away by the model builder.", expression.getSource());
 			}
 			case DEREFERENCE: {
 				DereferenceExpression dereference = (DereferenceExpression) expression;
 
 				result.append("*");
-				temp = this.expressionEvaluationWorker(state, pid,
-						dereference.pointer(), resultOnly, false);
+				temp = this.expressionEvaluationWorker(state, pid, dereference.pointer(), resultOnly, false);
 				state = temp.left;
 				result.append(temp.right);
 				break;
@@ -2231,8 +2004,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				DomainGuardExpression domGuard = (DomainGuardExpression) expression;
 				int dim = domGuard.dimension();
 
-				temp = this.expressionEvaluationWorker(state, pid,
-						domGuard.domain(), resultOnly, false);
+				temp = this.expressionEvaluationWorker(state, pid, domGuard.domain(), resultOnly, false);
 				state = temp.left;
 				result.append(temp.right);
 				result.append(" has next for (");
@@ -2241,20 +2013,16 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 					if (i != 0)
 						result.append(", ");
-					result.append(this.symbolicExpressionToString(
-							var.getSource(), state, var.type(),
-							state.getVariableValue(
-									state.getDyscope(pid, var.scope()),
-									var.vid())));
+					result.append(this.symbolicExpressionToString(var.getSource(), state, var.type(),
+							state.getVariableValue(state.getDyscope(pid, var.scope()), var.vid())));
 				}
 				result.append(")");
 				break;
 			}
 			case FUNCTION_IDENTIFIER: {
 				FunctionIdentifierExpression functionID = (FunctionIdentifierExpression) expression;
-				Triple<State, CIVLFunction, Integer> functionResult = this.evaluator
-						.evaluateFunctionIdentifier(state, pid, functionID,
-								expression.getSource());
+				Triple<State, CIVLFunction, Integer> functionResult = this.evaluator.evaluateFunctionIdentifier(state,
+						pid, functionID, expression.getSource());
 
 				state = functionResult.first;
 				result.append(functionResult.second.name().name());
@@ -2263,13 +2031,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			case MPI_CONTRACT_EXPRESSION: {
 				MPIContractExpression mpiExpr = (MPIContractExpression) expression;
 
-				temp = expressionEvaluationWorker(state, pid,
-						mpiExpr.arguments()[0], resultOnly, false);
+				temp = expressionEvaluationWorker(state, pid, mpiExpr.arguments()[0], resultOnly, false);
 				state = temp.left;
 				result.append(mpiExpr.expressionKind() + "(" + temp.right);
 				for (int i = 1; i < mpiExpr.arguments().length; i++) {
-					temp = expressionEvaluationWorker(state, pid,
-							mpiExpr.arguments()[i], resultOnly, false);
+					temp = expressionEvaluationWorker(state, pid, mpiExpr.arguments()[i], resultOnly, false);
 					state = temp.left;
 					result.append(", " + temp.right);
 				}
@@ -2284,8 +2050,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				UnaryExpression unary = (UnaryExpression) expression;
 
 				result.append(unary.operatorToString());
-				temp = this.expressionEvaluationWorker(state, pid,
-						unary.operand(), resultOnly, false);
+				temp = this.expressionEvaluationWorker(state, pid, unary.operand(), resultOnly, false);
 				state = temp.left;
 				result.append(temp.right);
 				break;
@@ -2295,8 +2060,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				break;
 			}
 			case FUNC_CALL: {
-				CallOrSpawnStatement call = ((FunctionCallExpression) expression)
-						.callStatement();
+				CallOrSpawnStatement call = ((FunctionCallExpression) expression).callStatement();
 
 				result.append(this.statementEvaluation(state, null, pid, call));
 				break;
@@ -2321,13 +2085,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			case VARIABLE:
 			case ARRAY_LAMBDA:
 			case REC_DOMAIN_LITERAL: {
-				Evaluation eval = this.evaluator.evaluate(state, pid,
-						expression);
+				Evaluation eval = this.evaluator.evaluate(state, pid, expression);
 
 				state = eval.state;
 				result.append(
-						this.symbolicExpressionToString(expression.getSource(),
-								state, exprType, eval.value, "", ""));
+						this.symbolicExpressionToString(expression.getSource(), state, exprType, eval.value, "", ""));
 				break;
 			}
 			case BOUND_VARIABLE:
@@ -2345,9 +2107,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				break;
 			default:
 				throw new CIVLUnimplementedFeatureException(
-						"printing the evaluation of expression of " + kind
-								+ " kind",
-						expression.getSource());
+						"printing the evaluation of expression of " + kind + " kind", expression.getSource());
 			}
 		}
 		return new Pair<>(state, result.toString());
@@ -2363,27 +2123,23 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 		result.append(this.inputVariablesToStringBuffer(state));
 		result.append("\nContext:");
-		result.append(this.pathconditionToString(null, state, "  ",
-				state.getPathCondition()));
+		result.append(this.pathconditionToString(null, state, "  ", state.getPathCondition()));
 		result.append(state.callStackToString());
 		return result;
 	}
 
 	@Override
 	public StringBuffer inputVariablesToStringBuffer(State state) {
-		Map<Variable, SymbolicExpression> inputVariableValues = evaluator
-				.stateFactory().inputVariableValueMap(state);
+		Map<Variable, SymbolicExpression> inputVariableValues = evaluator.stateFactory().inputVariableValueMap(state);
 		StringBuffer result = new StringBuffer("");
 
 		if (!inputVariableValues.isEmpty())
 			result.append("\nInput:");
-		for (Map.Entry<Variable, SymbolicExpression> entry : inputVariableValues
-				.entrySet()) {
+		for (Map.Entry<Variable, SymbolicExpression> entry : inputVariableValues.entrySet()) {
 			result.append("\n  ");
 			result.append(entry.getKey().name().name());
 			result.append("=");
-			result.append(this.symbolicExpressionToString(
-					entry.getKey().getSource(), state, entry.getKey().type(),
+			result.append(this.symbolicExpressionToString(entry.getKey().getSource(), state, entry.getKey().type(),
 					entry.getValue(), "", ""));
 		}
 		return result;
@@ -2418,9 +2174,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @return
 	 */
 	@Override
-	public SymbolicExpression pointerArithmetics(CIVLSource source, State state,
-			boolean isSubtract, SymbolicExpression pointer,
-			SymbolicExpression offset) {
+	public SymbolicExpression pointerArithmetics(CIVLSource source, State state, boolean isSubtract,
+			SymbolicExpression pointer, SymbolicExpression offset) {
 		SymbolicExpression result = null;
 
 		if (isSubtract) {
@@ -2428,8 +2183,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			assert this.symbolicUtil.getVariableId(source, offset) == -1;
 
 			ReferenceExpression offsetRef = symbolicUtil.getSymRef(offset);
-			return symbolicUtil.setSymRef(pointer,
-					this.subtract(symbolicUtil.getSymRef(pointer), offsetRef));
+			return symbolicUtil.setSymRef(pointer, this.subtract(symbolicUtil.getSymRef(pointer), offsetRef));
 		}
 		return result;
 	}
@@ -2444,16 +2198,14 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @param right
 	 * @return
 	 */
-	private ReferenceExpression subtract(ReferenceExpression left,
-			ReferenceExpression right) {
+	private ReferenceExpression subtract(ReferenceExpression left, ReferenceExpression right) {
 		if (universe.equals(left, right).isTrue())
 			return universe.identityReference();
 		return null;
 	}
 
 	@Override
-	public Pair<BooleanExpression, ResultType> isDerefablePointer(State state,
-			SymbolicExpression pointer) {
+	public Pair<BooleanExpression, ResultType> isDerefablePointer(State state, SymbolicExpression pointer) {
 		if (this.symbolicUtil.isNullPointer(pointer) || pointer.isNull())
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
 
@@ -2467,9 +2219,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 		if (value == null)
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
-		return this.checkReference(true,
-				universe.reasoner(state.getPathCondition()),
-				symbolicUtil.getSymRef(pointer), value);
+		return this.checkReference(true, universe.reasoner(state.getPathCondition()), symbolicUtil.getSymRef(pointer),
+				value);
 	}
 
 	/**
@@ -2482,19 +2233,16 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @return True iff the given reference is applicable to the specified
 	 *         symbolic expression
 	 */
-	private Triple<SymbolicExpression, BooleanExpression, ResultType> isValidRefOfValue(
-			Reasoner reasoner, boolean derefable, ReferenceExpression ref,
-			SymbolicExpression value) {
+	private Triple<SymbolicExpression, BooleanExpression, ResultType> isValidRefOfValue(Reasoner reasoner,
+			boolean derefable, ReferenceExpression ref, SymbolicExpression value) {
 		BooleanExpression predicate = universe.falseExpression();
 
 		if (ref.isIdentityReference())
-			return new Triple<>(value, universe.trueExpression(),
-					ResultType.YES);
+			return new Triple<>(value, universe.trueExpression(), ResultType.YES);
 		else {
-			ReferenceExpression parent = ((NTReferenceExpression) ref)
-					.getParent();
-			Triple<SymbolicExpression, BooleanExpression, ResultType> parentTest = isValidRefOfValue(
-					reasoner, derefable, parent, value);
+			ReferenceExpression parent = ((NTReferenceExpression) ref).getParent();
+			Triple<SymbolicExpression, BooleanExpression, ResultType> parentTest = isValidRefOfValue(reasoner,
+					derefable, parent, value);
 			SymbolicExpression targetValue;
 
 			if (parentTest.third != ResultType.YES)
@@ -2509,32 +2257,25 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					NumericExpression index = arrayEleRef.getIndex();
 					NumericExpression length = universe.length(targetValue);
 
-					if (targetValue
-							.type() instanceof SymbolicCompleteArrayType) {
-						BooleanExpression claim = derefable
-								? universe.lessThan(index, length)
+					if (targetValue.type() instanceof SymbolicCompleteArrayType) {
+						BooleanExpression claim = derefable ? universe.lessThan(index, length)
 								: universe.lessThanEquals(index, length);
-						ResultType result = reasoner.valid(claim)
-								.getResultType();
+						ResultType result = reasoner.valid(claim).getResultType();
 
 						claim = reasoner.simplify(claim);
 						if (result == ResultType.YES) {
-							if (!derefable && reasoner
-									.valid(universe.equals(length, index))
+							if (!derefable && reasoner.valid(universe.equals(length, index))
 									.getResultType() != ResultType.NO) {
 								return new Triple<>(null, claim, result);
 							} else {
-								return new Triple<>(
-										universe.arrayRead(targetValue, index),
-										claim, result);
+								return new Triple<>(universe.arrayRead(targetValue, index), claim, result);
 							}
 						} else if (result == ResultType.MAYBE)
 							return new Triple<>(null, claim, result);
 						predicate = claim;
 					} else {
-						return new Triple<>(
-								universe.arrayRead(targetValue, index),
-								universe.trueExpression(), ResultType.YES);
+						return new Triple<>(universe.arrayRead(targetValue, index), universe.trueExpression(),
+								ResultType.YES);
 					}
 				}
 			} else if (ref.isTupleComponentReference()) {
@@ -2542,31 +2283,26 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 				if (targetValue.type() instanceof SymbolicTupleType) {
 					IntObject index = tupleCompRef.getIndex();
-					int length = ((SymbolicTupleType) targetValue.type())
-							.sequence().numTypes();
+					int length = ((SymbolicTupleType) targetValue.type()).sequence().numTypes();
 
 					if (index.getInt() < length)
-						return new Triple<>(
-								universe.tupleRead(targetValue, index),
-								universe.trueExpression(), ResultType.YES);
+						return new Triple<>(universe.tupleRead(targetValue, index), universe.trueExpression(),
+								ResultType.YES);
 				}
 			} else if (ref instanceof UnionMemberReference) {
 				UnionMemberReference unionMemRef = (UnionMemberReference) ref;
 				IntObject index = unionMemRef.getIndex();
 
 				if (targetValue.type() instanceof SymbolicUnionType) {
-					int length = ((SymbolicUnionType) targetValue.type())
-							.sequence().numTypes();
+					int length = ((SymbolicUnionType) targetValue.type()).sequence().numTypes();
 
 					if (index.getInt() < length)
-						return new Triple<>(
-								universe.unionExtract(index, targetValue),
-								universe.trueExpression(), ResultType.YES);
+						return new Triple<>(universe.unionExtract(index, targetValue), universe.trueExpression(),
+								ResultType.YES);
 				}
 			} else {
 				// offset reference
-				return new Triple<>(null, universe.trueExpression(),
-						ResultType.YES);
+				return new Triple<>(null, universe.trueExpression(), ResultType.YES);
 			}
 		}
 		return new Triple<>(null, predicate, ResultType.NO);
@@ -2582,35 +2318,30 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * @param object
 	 * @return
 	 */
-	private Pair<BooleanExpression, ResultType> checkReference(
-			boolean derefable, Reasoner reasoner, ReferenceExpression reference,
-			SymbolicExpression object) {
-		Triple<SymbolicExpression, BooleanExpression, ResultType> result = isValidRefOfValue(
-				reasoner, derefable, reference, object);
+	private Pair<BooleanExpression, ResultType> checkReference(boolean derefable, Reasoner reasoner,
+			ReferenceExpression reference, SymbolicExpression object) {
+		Triple<SymbolicExpression, BooleanExpression, ResultType> result = isValidRefOfValue(reasoner, derefable,
+				reference, object);
 
 		return new Pair<>(result.second, result.third);
 	}
 
 	@Override
-	public StringBuffer pathconditionToString(CIVLSource source, State state,
-			String prefix, BooleanExpression pc) {
-		BooleanExpression[] clauses = this.symbolicUtil
-				.getConjunctiveClauses(pc);
+	public StringBuffer pathconditionToString(CIVLSource source, State state, String prefix, BooleanExpression pc) {
+		BooleanExpression[] clauses = this.symbolicUtil.getConjunctiveClauses(pc);
 		StringBuffer result = new StringBuffer();
 		int length = clauses.length;
 
 		for (int i = 0; i < length; i++) {
 			result.append("\n");
 			result.append(prefix);
-			result.append(this.symbolicExpressionToString(source, state, null,
-					clauses[i]));
+			result.append(this.symbolicExpressionToString(source, state, null, clauses[i]));
 		}
 		return result;
 	}
 
 	@Override
-	public Pair<BooleanExpression, ResultType> isDefinedPointer(State state,
-			SymbolicExpression pointer) {
+	public Pair<BooleanExpression, ResultType> isDefinedPointer(State state, SymbolicExpression pointer) {
 		if (this.symbolicUtil.isNullPointer(pointer))
 			return new Pair<>(universe.trueExpression(), ResultType.YES);
 		if (pointer.isNull())
@@ -2628,14 +2359,12 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 		if (value == null)
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
-		return this.checkReference(false,
-				universe.reasoner(state.getPathCondition()),
-				symbolicUtil.getSymRef(pointer), value);
+		return this.checkReference(false, universe.reasoner(state.getPathCondition()), symbolicUtil.getSymRef(pointer),
+				value);
 	}
 
 	@Override
 	public StringBuffer memoryUnitToString(State state, MemoryUnit mu) {
-		return this.variableReferenceToString(state, null, true, mu.dyscopeID(),
-				mu.varID(), mu.reference());
+		return this.variableReferenceToString(state, null, true, mu.dyscopeID(), mu.varID(), mu.reference());
 	}
 }

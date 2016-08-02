@@ -757,8 +757,12 @@ public abstract class CommonEnabler implements Enabler {
 				int colStateID = modelFactory.getStateRef(source, universe.tupleRead(gstate, universe.intObject(1)));
 				State colState = stateFactory.getStateByReference(colStateID);
 				Collection<State> newColStates;
-				LHSExpression colStateRefExpr = modelFactory.subscriptExpression(source, stateQueueExpr,
-						modelFactory.integerLiteralExpression(source, BigInteger.valueOf(i)));
+				LHSExpression colStateRefExpr = modelFactory
+						.dotExpression(source,
+								modelFactory.dereferenceExpression(source,
+										modelFactory.subscriptExpression(source, stateQueueExpr,
+												modelFactory.integerLiteralExpression(source, BigInteger.valueOf(i)))),
+								1);// (*queue[i]).state
 
 				colState = stateFactory.addExternalProcess(colState, state, pid, placeID, function, argumentValues);
 				newColStates = collateExecutor.run2Completion(colState);
