@@ -25,7 +25,10 @@ public class CollateExecutor {
 		this.enabler = enabler;
 		this.executor = executor;
 		this.errorLogger = errorLogger;
-		this.config = config;
+		this.config = new CIVLConfiguration(config);
+		this.config.setCollectHeaps(false);
+		this.config.setCollectScopes(false);
+		this.config.setCollectProcesses(false);
 	}
 
 	Collection<State> run2Completion(State initState) {
@@ -34,8 +37,17 @@ public class CollateExecutor {
 		DfsSearcher<State, Transition, TransitionSequence> searcher = new DfsSearcher<State, Transition, TransitionSequence>(
 				enabler, colStateManager, predicate);
 
+		if (this.config.showTransitions() || this.config.showStates()
+				|| config.showSavedStates() || config.debugOrVerbose())
+			config.out()
+					.println("Start executing sub-program on collate states.");
 		while (searcher.search(initState))
 			;
+		if (this.config.showTransitions() || this.config.showStates()
+				|| config.showSavedStates() || config.debugOrVerbose())
+			config.out()
+					.println("Finish executing sub-program on collate states.");
+
 		return colStateManager.getFinalCollateStates();
 	}
 }

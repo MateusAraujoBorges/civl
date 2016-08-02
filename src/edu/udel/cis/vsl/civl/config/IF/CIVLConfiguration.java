@@ -266,7 +266,8 @@ public class CIVLConfiguration {
 			default:
 				throw new CIVLInternalException(
 						"invalid OpenMP loop decomposition strategy "
-								+ deadlockString, (CIVLSource) null);
+								+ deadlockString,
+						(CIVLSource) null);
 			}
 		}
 		if (deadlockString != null)
@@ -281,8 +282,9 @@ public class CIVLConfiguration {
 				this.deadlock = DeadlockKind.NONE;
 				break;
 			default:
-				throw new CIVLInternalException("invalid deadlock kind "
-						+ deadlockString, (CIVLSource) null);
+				throw new CIVLInternalException(
+						"invalid deadlock kind " + deadlockString,
+						(CIVLSource) null);
 			}
 		if (errorStateEquivString != null)
 			switch (errorStateEquivString) {
@@ -298,7 +300,8 @@ public class CIVLConfiguration {
 			default:
 				throw new CIVLInternalException(
 						"invalid error state equivalence"
-								+ errorStateEquivString, (CIVLSource) null);
+								+ errorStateEquivString,
+						(CIVLSource) null);
 			}
 		this.setShowMemoryUnits(config.isTrue(CIVLConstants.showMemoryUnitsO));
 		this.debug = config.isTrue(CIVLConstants.debugO);
@@ -334,8 +337,8 @@ public class CIVLConfiguration {
 		this.setInputVariables(config.getMapValue(CIVLConstants.inputO));
 		this.collectOutputs = config.isTrue(CIVLConstants.collectOutputO);
 		this.setEnableMpiContract(config.isTrue(CIVLConstants.mpiContractO));
-		this.setCheckDivisionByZero(config
-				.isTrue(CIVLConstants.checkDivisionByZeroO));
+		this.setCheckDivisionByZero(
+				config.isTrue(CIVLConstants.checkDivisionByZeroO));
 		this.checkMemoryLeak = config.isTrue(CIVLConstants.checkMemoryLeakO);
 		this.setTimeout((int) config.getValueOrDefault(CIVLConstants.timeoutO));
 		this.quiet = config.isTrue(CIVLConstants.quietO);
@@ -353,6 +356,47 @@ public class CIVLConfiguration {
 			if (config.getValue(CIVLConstants.procBoundO) == null)
 				this.procBound = 6;
 		}
+	}
+
+	public CIVLConfiguration(CIVLConfiguration config) {
+		this.checkDivisionByZero = config.checkDivisionByZero;
+		this.checkMemoryLeak = config.checkMemoryLeak;
+		this.absAnalysis = config.absAnalysis;
+		this.collectHeaps = config.collectHeaps;
+		this.collectOutputs = config.collectOutputs;
+		this.collectProcesses = config.collectProcesses;
+		this.collectScopes = config.collectScopes;
+		this.deadlock = config.deadlock;
+		this.debug = config.debug;
+		this.err = config.err;
+		this.enablePrintf = config.enablePrintf;
+		this.errorStateEquiv = config.errorStateEquiv;
+		this.isReplay = config.isReplay;
+		this.mpiContract = config.mpiContract;
+		this.ompLoopDecomp = config.ompLoopDecomp;
+		this.ompNoSimplify = config.ompNoSimplify;
+		this.out = config.out;
+		this.procBound = config.procBound;
+		this.quiet = config.quiet;
+		this.saveStates = config.saveStates;
+		this.showAmpleSet = config.showAmpleSet;
+		this.showAmpleSetWtStates = config.showAmpleSetWtStates;
+		this.showAST = config.showAST;
+		this.showInputVars = config.showInputVars;
+		this.showMemoryUnits = config.showMemoryUnits;
+		this.showPathConditon = config.showPathConditon;
+		this.showPreproc = config.showPreproc;
+		this.showProgram = config.showProgram;
+		this.showSavedStates = config.showSavedStates;
+		this.showStates = config.showStates;
+		this.showTime = config.showTime;
+		this.showTransitions = config.showTransitions;
+		this.simplify = config.simplify;
+		this.timeout = config.timeout;
+		this.unpreproc = config.unpreproc;
+		this.verbose = config.verbose;
+		this.web = config.web;
+		this.witness = config.witness;
 	}
 
 	public CIVLConfiguration() {

@@ -656,7 +656,7 @@ public abstract class CommonEnabler implements Enabler {
 		colState = stateFactory.getStateByReference(colStateID);
 		colState = stateFactory.addExternalProcess(colState, state, pid, place,
 				with.function(), new SymbolicExpression[0]);
-		System.out.println(this.symbolicAnalyzer.stateToString(colState));
+		// System.out.println(this.symbolicAnalyzer.stateToString(colState));
 		newColStates = collateExecutor.run2Completion(colState);
 		return getCollateStateUpdateTransitions(oldPC, pid, colStateRef,
 				newColStates, atomicLockAction, with.target());
@@ -674,9 +674,8 @@ public abstract class CommonEnabler implements Enabler {
 			Pair<Integer, State> newStateAndID = stateFactory
 					.saveState(newColState, pid);
 
-			System.out.println(
-					this.symbolicAnalyzer.stateToString(newStateAndID.right));
-
+			// System.out.println(
+			// this.symbolicAnalyzer.stateToString(newStateAndID.right));
 			assign = modelFactory.assignStatement(csSource, null, colStateRef,
 					modelFactory.stateExpression(csSource,
 							colStateRef.expressionScope(), newStateAndID.left),
