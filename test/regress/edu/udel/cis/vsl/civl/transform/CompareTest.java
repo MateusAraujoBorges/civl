@@ -42,7 +42,7 @@ public class CompareTest {
 
 	@Test
 	public void adder() {
-		assertTrue(ui.run(COMPARE, QUIET, NO_PRINTF,
+		assertTrue(ui.run(COMPARE, NO_PRINTF,
 				"-showProgram=false -input_mpi_nprocs_hi=2", "-inputNB=4", IMPL,
 				filename("adder", "adder_par.c"), SPEC,
 				filename("adder", "adder_spec.c")));

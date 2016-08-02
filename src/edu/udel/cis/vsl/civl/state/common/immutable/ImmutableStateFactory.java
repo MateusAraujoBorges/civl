@@ -1849,7 +1849,7 @@ public class ImmutableStateFactory implements StateFactory {
 					ModelConfiguration.HAVOC_PREFIX_INDEX,
 					canonicRenamer.getNumNewNames());
 		}
-		// Applying renamer on all saved states
+
 		for (int id : savedCanonicStates.keySet()) {
 			ImmutableState savedState = savedCanonicStates.get(id);
 			BooleanExpression savedPC = savedState.getPathCondition();
@@ -1861,9 +1861,44 @@ public class ImmutableStateFactory implements StateFactory {
 						.updateSymbolicConstants(canonicRenamer);
 			savedState = ImmutableState.newState(savedState,
 					savedState.copyProcessStates(), savedDyscopes, savedPC);
-			savedCanonicStates.put(id, savedState);
+			savedState = flyweight(savedState);
+			theState = updateStateReferencesInDyscopes(theState, id,
+					savedState.getCanonicId());
+			savedCanonicStates.put(savedState.getCanonicId(), savedState);
 		}
+		theState = flyweight(theState);
 		return theState;
+	}
+
+	/**
+	 * 
+	 * @param state
+	 * @param oldStateRef
+	 * @param newStateRef
+	 * @return
+	 */
+	private ImmutableState updateStateReferencesInDyscopes(ImmutableState state,
+			int oldStateRef, int newStateRef) {
+		SymbolicExpression var = modelFactory.stateValue(oldStateRef);
+		SymbolicExpression value = modelFactory.stateValue(newStateRef);
+		Map<SymbolicExpression, SymbolicExpression> subMap = new HashMap<>();
+		UnaryOperator<SymbolicExpression> substituter;
+		ImmutableDynamicScope[] dyscopes = state.copyScopes();
+
+		subMap.put(var, value);
+		substituter = universe.mapSubstituter(subMap);
+		for (int i = 0; i < dyscopes.length; i++) {
+			ImmutableDynamicScope dyscope = dyscopes[i];
+			SymbolicExpression[] values = dyscope.copyValues();
+
+			for (int j = 0; j < values.length; j++)
+				values[j] = substituter.apply(values[j]);
+
+			dyscopes[i] = new ImmutableDynamicScope(dyscope.lexicalScope(),
+					dyscope.getParent(), values, dyscope.getReachers());
+		}
+		return ImmutableState.newState(state, state.copyProcessStates(),
+				dyscopes, state.getPathCondition());
 	}
 
 	@Override
@@ -2421,6 +2456,14 @@ public class ImmutableStateFactory implements StateFactory {
 		dyscopes = new ImmutableDynamicScope[counter];
 		newMonoPC = renumberDyscopes(monoDyscopes, dyscopeOld2New, dyscopes,
 				theMono.getPathCondition());
+		// Clear reacher for the monoDyscopes:
+		for (int i = 0; i < counter; i++)
+			if (dyscopes[i] != null) {
+				BitSet reachers = dyscopes[i].getReachers();
+
+				reachers.clear();
+				dyscopes[i] = dyscopes[i].setReachers(reachers);
+			}
 		System.arraycopy(theState.copyScopes(), 0, dyscopes, 0,
 				theState.numDyscopes());
 		processes[newPid] = monoProcess.updateDyscopes(dyscopeOld2New);
