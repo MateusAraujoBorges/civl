@@ -1848,6 +1848,11 @@ public class CommonEvaluator implements Evaluator {
 		} else {
 			State s1 = eval.state.setPathCondition(
 					universe.and(assumption, universe.not(p)));
+
+			// IMMPORTANT for performance: simplify the state so that the new
+			// path condition could be simplified
+			s1 = this.stateFactory.simplify(s1);
+
 			Evaluation eval1 = evaluate(s1, pid, expression.right());
 			BooleanExpression pc = universe.or(eval1.state.getPathCondition(),
 					universe.and(assumption, p));

@@ -2556,18 +2556,10 @@ public class FunctionTranslator {
 				result = modelFactory.systemFunction(nodeSource,
 						functionIdentifier, parameterScope, parameters,
 						returnType, scope, libName);
-			} else {
-				// functions with $abstract specifier, or functions without
-				// definition
-				// both considered as abstract function
-				// TODO we may also report an error if the function without
-				// definition is not $abstract
-				int continuity = 0;
+			} else if (node instanceof AbstractFunctionDefinitionNode) {
+				int continuity = ((AbstractFunctionDefinitionNode) node)
+						.continuity();
 
-				if (node instanceof AbstractFunctionDefinitionNode) {
-					continuity = ((AbstractFunctionDefinitionNode) node)
-							.continuity();
-				}
 				if (parameters.isEmpty())
 					throw new CIVLSyntaxException(
 							"$abstract functions must have at least one input.\n"
@@ -2578,6 +2570,10 @@ public class FunctionTranslator {
 				result = modelFactory.abstractFunction(nodeSource,
 						functionIdentifier, parameterScope, parameters,
 						returnType, scope, continuity, modelFactory);
+			} else {
+				throw new CIVLSyntaxException(
+						"missing the definition of function " + functionName,
+						node.getSource());
 			}
 			result.setStateFunction(node.hasStatefFunctionSpecifier());
 			result.setPureFunction(node.hasPureFunctionSpecifier());

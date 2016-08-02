@@ -27,27 +27,28 @@ public class Svcomp17Test {
 	@Test
 	public void linux() {
 		ui.run("verify -svcomp16 -errorBound=10 -errorStateEquiv=FULL",
-				filename("linux-stable-af3071a-1-130_7a-drivers--hwmon--s3c-hwmon.ko-entry_point_false-unreach-call.cil.out.c"));
+				filename(
+						"linux-stable-af3071a-1-130_7a-drivers--hwmon--s3c-hwmon.ko-entry_point_false-unreach-call.cil.out.c"));
 	}
 
 	@Test
 	public void parport_false() {
-		assertFalse(ui
-				.run("verify -svcomp16 -showTransitions -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
+		assertFalse(
+				ui.run("verify -svcomp16 -showTransitions -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
 						filename("parport_false-unreach-call.i.cil.c")));
 	}
 
 	@Test
 	public void floppy_false() {
-		assertFalse(ui
-				.run("verify -svcomp16",
-						filename("floppy_simpl4_false-unreach-call_true-termination.cil.c")));
+		assertFalse(ui.run("verify -svcomp16", filename(
+				"floppy_simpl4_false-unreach-call_true-termination.cil.c")));
 	}
 
 	@Test
 	public void base_name() {
-		assertFalse(ui.run("verify -showModel=false -svcomp16 -errorBound=10 "
-				+ "-errorStateEquiv=FULL",
+		assertFalse(ui.run(
+				"verify -showModel=false -svcomp16 -errorBound=10 "
+						+ "-errorStateEquiv=FULL",
 				filename("basename_false-unreach-call.c")));
 	}
 
@@ -59,15 +60,15 @@ public class Svcomp17Test {
 
 	@Test
 	public void Problem01() {
-		assertFalse(ui
-				.run("verify -svcomp16 -unpreproc -errorBound=1000 -errorStateEquiv=FULL",
+		assertFalse(
+				ui.run("verify -svcomp16 -unpreproc -errorBound=1000 -errorStateEquiv=FULL",
 						filename("Problem01_label15_false-unreach-call.c")));
 	}
 
 	@Test
 	public void uniqueLoop() {
-		assertFalse(ui
-				.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
+		assertFalse(
+				ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
 						filename("unique_loop.c")));
 	}
 
@@ -79,5 +80,17 @@ public class Svcomp17Test {
 	@Test
 	public void svcompHeader() {
 		ui.run("show -showProgram -svcomp16", filename("svcompHeader.i"));
+	}
+
+	@Test
+	public void assumeTest() {
+		ui.run("verify -showTransitions -svcomp16",
+				filename("assume_with_disjuncts.c"));
+	}
+	
+	@Test
+	public void lorBug() {
+		ui.run("verify -showTransitions ",
+				filename("lorBug.cvl"));
 	}
 }
