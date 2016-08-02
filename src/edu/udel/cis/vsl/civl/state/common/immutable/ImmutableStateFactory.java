@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1850,23 +1851,37 @@ public class ImmutableStateFactory implements StateFactory {
 					canonicRenamer.getNumNewNames());
 		}
 
-		for (int id : savedCanonicStates.keySet()) {
-			ImmutableState savedState = savedCanonicStates.get(id);
-			BooleanExpression savedPC = savedState.getPathCondition();
-			ImmutableDynamicScope savedDyscopes[] = savedState.copyScopes();
+		if (!savedCanonicStates.isEmpty()) {
+			List<ImmutableState> newSavedStates = new LinkedList<>();
+			Map<SymbolicExpression, SymbolicExpression> stateRefOld2New = new HashMap<>();
 
-			savedPC = (BooleanExpression) canonicRenamer.apply(savedPC);
-			for (int i = 0; i < savedDyscopes.length; i++)
-				savedDyscopes[i] = savedDyscopes[i]
-						.updateSymbolicConstants(canonicRenamer);
-			savedState = ImmutableState.newState(savedState,
-					savedState.copyProcessStates(), savedDyscopes, savedPC);
-			savedState = flyweight(savedState);
-			theState = updateStateReferencesInDyscopes(theState, id,
-					savedState.getCanonicId());
-			savedCanonicStates.put(savedState.getCanonicId(), savedState);
+			for (int id : savedCanonicStates.keySet()) {
+				ImmutableState savedState = savedCanonicStates.get(id);
+				BooleanExpression savedPC = savedState.getPathCondition();
+				ImmutableDynamicScope savedDyscopes[] = savedState.copyScopes();
+
+				savedPC = (BooleanExpression) canonicRenamer.apply(savedPC);
+				for (int i = 0; i < savedDyscopes.length; i++)
+					savedDyscopes[i] = savedDyscopes[i]
+							.updateSymbolicConstants(canonicRenamer);
+				savedState = ImmutableState.newState(savedState,
+						savedState.copyProcessStates(), savedDyscopes, savedPC);
+				savedState = flyweight(savedState);
+				if (savedState.getCanonicId() != id) {
+					newSavedStates.add(savedState);
+					stateRefOld2New.put(modelFactory.stateValue(id),
+							modelFactory.stateValue(savedState.getCanonicId()));
+				}
+			}
+			if (!newSavedStates.isEmpty()) {
+				for (ImmutableState newSavedState : newSavedStates)
+					savedCanonicStates.put(newSavedState.getCanonicId(),
+							newSavedState);
+				theState = updateStateReferencesInDyscopes(theState,
+						stateRefOld2New);
+				theState = flyweight(theState);
+			}
 		}
-		theState = flyweight(theState);
 		return theState;
 	}
 
@@ -1878,14 +1893,10 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @return
 	 */
 	private ImmutableState updateStateReferencesInDyscopes(ImmutableState state,
-			int oldStateRef, int newStateRef) {
-		SymbolicExpression var = modelFactory.stateValue(oldStateRef);
-		SymbolicExpression value = modelFactory.stateValue(newStateRef);
-		Map<SymbolicExpression, SymbolicExpression> subMap = new HashMap<>();
+			Map<SymbolicExpression, SymbolicExpression> subMap) {
 		UnaryOperator<SymbolicExpression> substituter;
 		ImmutableDynamicScope[] dyscopes = state.copyScopes();
 
-		subMap.put(var, value);
 		substituter = universe.mapSubstituter(subMap);
 		for (int i = 0; i < dyscopes.length; i++) {
 			ImmutableDynamicScope dyscope = dyscopes[i];
