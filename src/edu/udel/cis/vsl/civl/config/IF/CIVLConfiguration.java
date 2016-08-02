@@ -245,12 +245,9 @@ public class CIVLConfiguration {
 	 *            The command line configuration.
 	 */
 	public CIVLConfiguration(GMCSection config) {
-		String deadlockString = (String) config
-				.getValue(CIVLConstants.deadlockO);
-		String ompLoopDecompString = (String) config
-				.getValue(CIVLConstants.ompLoopDecompO);
-		String errorStateEquivString = (String) config
-				.getValue(CIVLConstants.errorStateEquivO);
+		String deadlockString = (String) config.getValue(CIVLConstants.deadlockO);
+		String ompLoopDecompString = (String) config.getValue(CIVLConstants.ompLoopDecompO);
+		String errorStateEquivString = (String) config.getValue(CIVLConstants.errorStateEquivO);
 
 		if (ompLoopDecompString != null) {
 			switch (ompLoopDecompString) {
@@ -264,9 +261,7 @@ public class CIVLConfiguration {
 				this.setOmpLoopDecomp(ModelConfiguration.DECOMP_RANDOM);
 				break;
 			default:
-				throw new CIVLInternalException(
-						"invalid OpenMP loop decomposition strategy "
-								+ deadlockString,
+				throw new CIVLInternalException("invalid OpenMP loop decomposition strategy " + deadlockString,
 						(CIVLSource) null);
 			}
 		}
@@ -282,9 +277,7 @@ public class CIVLConfiguration {
 				this.deadlock = DeadlockKind.NONE;
 				break;
 			default:
-				throw new CIVLInternalException(
-						"invalid deadlock kind " + deadlockString,
-						(CIVLSource) null);
+				throw new CIVLInternalException("invalid deadlock kind " + deadlockString, (CIVLSource) null);
 			}
 		if (errorStateEquivString != null)
 			switch (errorStateEquivString) {
@@ -298,9 +291,7 @@ public class CIVLConfiguration {
 				this.errorStateEquiv = ErrorStateEquivalence.FULL;
 				break;
 			default:
-				throw new CIVLInternalException(
-						"invalid error state equivalence"
-								+ errorStateEquivString,
+				throw new CIVLInternalException("invalid error state equivalence" + errorStateEquivString,
 						(CIVLSource) null);
 			}
 		this.setShowMemoryUnits(config.isTrue(CIVLConstants.showMemoryUnitsO));
@@ -308,8 +299,7 @@ public class CIVLConfiguration {
 		this.enablePrintf = config.isTrue(CIVLConstants.enablePrintfO);
 		this.saveStates = config.isTrue(CIVLConstants.saveStatesO);
 		this.showAmpleSet = config.isTrue(CIVLConstants.showAmpleSetO);
-		this.showAmpleSetWtStates = config
-				.isTrue(CIVLConstants.showAmpleSetWtStatesO);
+		this.showAmpleSetWtStates = config.isTrue(CIVLConstants.showAmpleSetWtStatesO);
 		this.showSavedStates = config.isTrue(CIVLConstants.showSavedStatesO);
 		this.showStates = config.isTrue(CIVLConstants.showStatesO);
 		this.showTransitions = config.isTrue(CIVLConstants.showTransitionsO);
@@ -332,13 +322,11 @@ public class CIVLConfiguration {
 		this.showInputVars = config.isTrue(CIVLConstants.showInputVarsO);
 		this.setUnpreproc(config.isTrue(CIVLConstants.unpreprocO));
 		this.showTime = config.isTrue(CIVLConstants.showTimeO);
-		this.procBound = (Integer) config
-				.getValueOrDefault(CIVLConstants.procBoundO);
+		this.procBound = (Integer) config.getValueOrDefault(CIVLConstants.procBoundO);
 		this.setInputVariables(config.getMapValue(CIVLConstants.inputO));
 		this.collectOutputs = config.isTrue(CIVLConstants.collectOutputO);
 		this.setEnableMpiContract(config.isTrue(CIVLConstants.mpiContractO));
-		this.setCheckDivisionByZero(
-				config.isTrue(CIVLConstants.checkDivisionByZeroO));
+		this.setCheckDivisionByZero(config.isTrue(CIVLConstants.checkDivisionByZeroO));
 		this.checkMemoryLeak = config.isTrue(CIVLConstants.checkMemoryLeakO);
 		this.setTimeout((int) config.getValueOrDefault(CIVLConstants.timeoutO));
 		this.quiet = config.isTrue(CIVLConstants.quietO);
@@ -773,6 +761,10 @@ public class CIVLConfiguration {
 
 	public boolean checkMemoryLeak() {
 		return this.checkMemoryLeak;
+	}
+
+	public void setCheckMemoryLeak(boolean value) {
+		this.checkMemoryLeak = value;
 	}
 
 	/**

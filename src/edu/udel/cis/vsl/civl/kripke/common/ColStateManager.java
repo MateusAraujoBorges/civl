@@ -14,6 +14,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
+import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
 import edu.udel.cis.vsl.gmc.TraceStepIF;
 
 /**
@@ -51,6 +52,9 @@ public class ColStateManager extends CommonStateManager
 			CIVLConfiguration config) {
 		super(enabler, executor, symbolicAnalyzer, errorLogger, config);
 		finalColStates = new HashSet<>();
+		ignoredHeapErrors=new HashSet<>(2);
+		ignoredHeapErrors.add(HeapErrorKind.NONEMPTY);
+		ignoredHeapErrors.add(HeapErrorKind.UNREACHABLE);
 	}
 
 	// @Override

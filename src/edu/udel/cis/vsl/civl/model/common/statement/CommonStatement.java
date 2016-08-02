@@ -24,8 +24,7 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public abstract class CommonStatement extends CommonSourceable implements
-		Statement {
+public abstract class CommonStatement extends CommonSourceable implements Statement {
 
 	private Location source;
 	private Location target;
@@ -56,8 +55,7 @@ public abstract class CommonStatement extends CommonSourceable implements
 	 * @param source
 	 *            The location that is the source of this statement.
 	 */
-	public CommonStatement(CIVLSource civlSource, Scope hscope, Scope lscope,
-			Location source, Expression guard) {
+	public CommonStatement(CIVLSource civlSource, Scope hscope, Scope lscope, Location source, Expression guard) {
 		super(civlSource);
 		this.source = source;
 		this.guard = guard;
@@ -133,6 +131,11 @@ public abstract class CommonStatement extends CommonSourceable implements
 			this.target().removeIncoming(this);
 		}
 		this.target = target;
+	}
+
+	@Override
+	public void setSourceTemp(Location source) {
+		this.source = source;
 	}
 
 	@Override
@@ -233,8 +236,7 @@ public abstract class CommonStatement extends CommonSourceable implements
 	}
 
 	@Override
-	public void replaceWith(ConditionalExpression oldExpression,
-			VariableExpression newExpression) {
+	public void replaceWith(ConditionalExpression oldExpression, VariableExpression newExpression) {
 		this.guard.replaceWith(oldExpression, newExpression);
 	}
 
@@ -249,16 +251,14 @@ public abstract class CommonStatement extends CommonSourceable implements
 	 * @return Null if guard doesn't contain the given conditional expression,
 	 *         otherwise return the new guard
 	 */
-	protected Expression guardReplaceWith(ConditionalExpression oldExpression,
-			Expression newExpression) {
+	protected Expression guardReplaceWith(ConditionalExpression oldExpression, Expression newExpression) {
 		Expression newGuard = guard.replaceWith(oldExpression, newExpression);
 
 		return newGuard;
 	}
 
 	@Override
-	public String toStepString(AtomicKind atomicKind, int atomCount,
-			boolean atomicLockVarChanged) {
+	public String toStepString(AtomicKind atomicKind, int atomCount, boolean atomicLockVarChanged) {
 		String result = "  " + this.locationStepString();
 
 		result += ": ";

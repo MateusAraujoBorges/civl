@@ -93,10 +93,22 @@ public interface Statement extends Sourceable {
 	void setTarget(Location target);
 
 	/**
+	 * updates the target location of this statement, but never add this
+	 * statement to the incoming set of the target location
+	 * 
 	 * @param target
 	 *            the target to set
 	 */
 	void setTargetTemp(Location target);
+
+	/**
+	 * updates the source location of this statement, but never add this
+	 * statement to the outgoing set of the source location
+	 * 
+	 * @param source
+	 *            the source to set
+	 */
+	void setSourceTemp(Location source);
 
 	/**
 	 * @param guard
@@ -164,8 +176,7 @@ public interface Statement extends Sourceable {
 	 *            The variable expression of the temporal variable for the
 	 *            conditional expression.
 	 */
-	void replaceWith(ConditionalExpression oldExpression,
-			VariableExpression newExpression);
+	void replaceWith(ConditionalExpression oldExpression, VariableExpression newExpression);
 
 	/**
 	 * Return a new statement by copying this statement and modifying it as well
@@ -187,8 +198,7 @@ public interface Statement extends Sourceable {
 	 *            the conditional expression.
 	 * @return A new statement without the conditional expression
 	 */
-	Statement replaceWith(ConditionalExpression oldExpression,
-			Expression newExpression);
+	Statement replaceWith(ConditionalExpression oldExpression, Expression newExpression);
 
 	/**
 	 * Obtain the set of variables visible from a certain scope that are
@@ -214,8 +224,7 @@ public interface Statement extends Sourceable {
 	 */
 	StatementKind statementKind();
 
-	String toStepString(AtomicKind atomicKind, int atomCount,
-			boolean atomicLockVarChanged);
+	String toStepString(AtomicKind atomicKind, int atomCount, boolean atomicLockVarChanged);
 
 	/**
 	 * Get the string representation in the form of: source location id -&gt;
