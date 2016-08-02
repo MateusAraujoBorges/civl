@@ -60,6 +60,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private final static String ABORT = "abort";
 
+	private final static String PRINTF = "printf";
+
 	private final static String STDLIB_HEADER = "stdlib.h";
 
 	private boolean needsPthreadHeader = false;
@@ -97,8 +99,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 		this.completeSources(rootNode);
 		ast = astFactory.newAST(rootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// ast.prettyPrint(System.out, false);
 		ast = this.addHeaders(ast);
+		// ast.prettyPrint(System.out, false);
 		return ast;
 	}
 
@@ -111,8 +113,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 					this.basicType(BasicTypeKind.INT));
 
 			scale_bound.getTypeNode().setInputQualified(true);
-			newItems.add(this.assumeFunctionDeclaration(this.newSource(
-					"$assume", CivlcTokenConstant.DECLARATION)));
+			newItems.add(this.assumeFunctionDeclaration(
+					this.newSource("$assume", CivlcTokenConstant.DECLARATION)));
 			newItems.add(scale_bound);
 			for (VariableDeclarationNode varNode : scalerVariableMap.values()) {
 				newItems.add(varNode);
@@ -168,9 +170,10 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 					if (value != null && (value instanceof IntegerValue)) {
 						ExpressionNode newExpression = this
-								.getDownScaledExpression(operatorNode
-										.getSource(), ((IntegerValue) value)
-										.getIntegerValue().intValue());
+								.getDownScaledExpression(
+										operatorNode.getSource(),
+										((IntegerValue) value).getIntegerValue()
+												.intValue());
 
 						if (newExpression != null) {
 							transformed = true;
@@ -229,24 +232,22 @@ public class SvcompUnPPWorker extends BaseWorker {
 		}
 	}
 
-	private ExpressionNode getDownScaledExpression(Source source, int upperValue)
-			throws SyntaxException {
+	private ExpressionNode getDownScaledExpression(Source source,
+			int upperValue) throws SyntaxException {
 		// int upperValue = ((IntegerConstantNode) constant).getConstantValue()
 		// .getIntegerValue().intValue();
 		if (scalerVariableMap.containsKey(upperValue)) {
-			return this.identifierExpression(scalerVariableMap.get(upperValue)
-					.getName());
+			return this.identifierExpression(
+					scalerVariableMap.get(upperValue).getName());
 		} else if (scalerVariableMap.containsKey(upperValue - 1)) {
-			ExpressionNode variableIdentifier = this
-					.identifierExpression(scalerVariableMap.get(upperValue - 1)
-							.getName());
+			ExpressionNode variableIdentifier = this.identifierExpression(
+					scalerVariableMap.get(upperValue - 1).getName());
 
 			return this.nodeFactory.newOperatorNode(source, Operator.PLUS,
 					variableIdentifier, this.integerConstant(1));
 		} else if (scalerVariableMap.containsKey(upperValue + 1)) {
-			ExpressionNode variableIdentifier = this
-					.identifierExpression(scalerVariableMap.get(upperValue + 1)
-							.getName());
+			ExpressionNode variableIdentifier = this.identifierExpression(
+					scalerVariableMap.get(upperValue + 1).getName());
 
 			this.nodeFactory.newOperatorNode(source, Operator.MINUS,
 					variableIdentifier, this.integerConstant(1));
@@ -256,23 +257,22 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private AST addHeaders(AST ast) throws SyntaxException {
 		if (needsStdlibHeader) {
-			AST stdlibHeaderAST = this.parseSystemLibrary(new File(
-					CPreprocessor.ABC_INCLUDE_PATH, STDLIB_HEADER),
+			AST stdlibHeaderAST = this.parseSystemLibrary(
+					new File(CPreprocessor.ABC_INCLUDE_PATH, STDLIB_HEADER),
 					EMPTY_MACRO_MAP);
 
 			ast = this.combineASTs(stdlibHeaderAST, ast);
 		}
 		if (needsIoHeader) {
-			AST ioHeaderAST = this
-					.parseSystemLibrary(new File(
-							CPreprocessor.ABC_INCLUDE_PATH, IO_HEADER),
-							EMPTY_MACRO_MAP);
+			AST ioHeaderAST = this.parseSystemLibrary(
+					new File(CPreprocessor.ABC_INCLUDE_PATH, IO_HEADER),
+					EMPTY_MACRO_MAP);
 
 			ast = this.combineASTs(ioHeaderAST, ast);
 		}
 		if (needsPthreadHeader) {
-			AST pthreadHeaderAST = this.parseSystemLibrary(new File(
-					CPreprocessor.ABC_INCLUDE_PATH, PTHREAD_HEADER),
+			AST pthreadHeaderAST = this.parseSystemLibrary(
+					new File(CPreprocessor.ABC_INCLUDE_PATH, PTHREAD_HEADER),
 					EMPTY_MACRO_MAP);
 
 			ast = this.combineASTs(pthreadHeaderAST, ast);
@@ -332,20 +332,21 @@ public class SvcompUnPPWorker extends BaseWorker {
 						String name = varDecl.getName();
 
 						if (initValue > UPPER_BOUND) {
-							this.variableNamesIntializedBig
-									.put(name, initValue);
+							this.variableNamesIntializedBig.put(name,
+									initValue);
 							this.variablesIntializedBig.put(name, varDecl);
 						}
 					}
 				}
 			} else if (item instanceof FunctionDefinitionNode) {
-				this.checkBigLoopBound(((FunctionDefinitionNode) item)
-						.getBody());
+				this.checkBigLoopBound(
+						((FunctionDefinitionNode) item).getBody());
 			}
 		}
 	}
 
-	private ExpressionNode factorNewInputVariable(int intValue, boolean isStatic) {
+	private ExpressionNode factorNewInputVariable(int intValue,
+			boolean isStatic) {
 		// int intValue =
 		// intConst.getConstantValue().getIntegerValue().intValue();
 		if (intValue > UPPER_BOUND) {
@@ -383,7 +384,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 				if (operator == Operator.LT || operator == Operator.LTE) {
 					upper = operatorNode.getArgument(1);
 					argIndex = 1;
-				} else if (operator == Operator.GT || operator == Operator.GTE) {
+				} else if (operator == Operator.GT
+						|| operator == Operator.GTE) {
 					upper = operatorNode.getArgument(0);
 					argIndex = 0;
 				}
@@ -393,7 +395,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 					if (newUpper != null)
 						operatorNode.setArgument(argIndex, newUpper);
 				}
-				IdentifierExpressionNode array = findArrayReference(operatorNode);
+				IdentifierExpressionNode array = findArrayReference(
+						operatorNode);
 
 				if (array != null) {
 					Variable arrayVariable = (Variable) array.getIdentifier()
@@ -436,7 +439,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 				ASTNode child = operatorNode.child(i);
 
 				if (child instanceof OperatorNode) {
-					IdentifierExpressionNode result = findArrayReference((OperatorNode) child);
+					IdentifierExpressionNode result = findArrayReference(
+							(OperatorNode) child);
 
 					if (result != null)
 						return result;
@@ -449,10 +453,9 @@ public class SvcompUnPPWorker extends BaseWorker {
 	private ExpressionNode transformBigValueNode(ExpressionNode bigValueNode)
 			throws SyntaxException {
 		if (bigValueNode instanceof IntegerConstantNode) {
-			ExpressionNode newArg = this
-					.factorNewInputVariable(this
-							.getIntValue((IntegerConstantNode) bigValueNode),
-							false);
+			ExpressionNode newArg = this.factorNewInputVariable(
+					this.getIntValue((IntegerConstantNode) bigValueNode),
+					false);
 
 			return newArg;
 		} else if (bigValueNode instanceof OperatorNode) {
@@ -480,14 +483,14 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 				// update the declaration of N to be: int
 				// N=_svcomp_unppk_scale;
-				newInit = this.getDownScaledExpression(
-						bigValueNode.getSource(), value);
+				newInit = this.getDownScaledExpression(bigValueNode.getSource(),
+						value);
 				if (newInit == null) {
 					// create new scale variable for N
 					newInit = this.factorNewInputVariable(value, false);
 				}
-				this.variablesIntializedBig.get(identifer).setInitializer(
-						newInit);
+				this.variablesIntializedBig.get(identifer)
+						.setInitializer(newInit);
 				variableNamesIntializedBig.remove(identifer);
 				variablesIntializedBig.remove(identifer);
 			}
@@ -526,10 +529,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 	 * Removed any node in the root scope that satisfies at least one of the
 	 * following:
 	 * <ul>
-	 * <li>
-	 * struct definition in the form: <code>struct _IO_...</code>;</li>
-	 * <li>
-	 * variable declaration of the type <code>struct (_IO_...)*</code></li>
+	 * <li>struct definition in the form: <code>struct _IO_...</code>;</li>
+	 * <li>variable declaration of the type <code>struct (_IO_...)*</code></li>
 	 * </ul>
 	 * 
 	 * 
@@ -542,17 +543,20 @@ public class SvcompUnPPWorker extends BaseWorker {
 		boolean toRemove = false;
 
 		if (node instanceof TypedefDeclarationNode) {
-			toRemove = isStructOrUnionOfIO(((TypedefDeclarationNode) node)
-					.getTypeNode());
+			toRemove = isStructOrUnionOfIO(
+					((TypedefDeclarationNode) node).getTypeNode());
 		} else if (node instanceof StructureOrUnionTypeNode) {
 			toRemove = isStructOrUnionOfIO((StructureOrUnionTypeNode) node);
 		} else if (node instanceof VariableDeclarationNode) {
 			TypeNode type = ((VariableDeclarationNode) node).getTypeNode();
 
 			if (type instanceof PointerTypeNode) {
-				toRemove = this.isStructOrUnionOfIO(((PointerTypeNode) type)
-						.referencedType());
+				toRemove = this.isStructOrUnionOfIO(
+						((PointerTypeNode) type).referencedType());
 			}
+		} else if (node instanceof FunctionDeclarationNode) {
+			if (((FunctionDeclarationNode) node).getName().equals(PRINTF))
+				toRemove = true;
 		}
 		if (toRemove) {
 			this.needsIoHeader = true;
