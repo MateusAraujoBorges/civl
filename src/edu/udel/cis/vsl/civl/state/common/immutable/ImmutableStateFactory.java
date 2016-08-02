@@ -2419,10 +2419,10 @@ public class ImmutableStateFactory implements StateFactory {
 				}
 			}
 		dyscopes = new ImmutableDynamicScope[counter];
-		System.arraycopy(theState.copyScopes(), 0, dyscopes, 0,
-				theState.numDyscopes());
 		newMonoPC = renumberDyscopes(monoDyscopes, dyscopeOld2New, dyscopes,
 				theMono.getPathCondition());
+		System.arraycopy(theState.copyScopes(), 0, dyscopes, 0,
+				theState.numDyscopes());
 		processes[newPid] = monoProcess.updateDyscopes(dyscopeOld2New);
 		for (ImmutableProcessState proc : processes)
 			if (!proc.hasEmptyStack())

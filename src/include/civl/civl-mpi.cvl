@@ -26,6 +26,9 @@ typedef struct MPI_Comm {
   $collator collator;
   $barrier barrier;
   int gcommIndex; //the index of the corresponding global communicator.
+#ifdef _MPI_CONTRACT
+  _Bool * _contractTargetEntered;
+#endif
 }MPI_Comm;
 
 /* Definition of CMPI_Gcomm (CMPI_Gcomm has a type of __CMPI_Gcomm) 
@@ -35,6 +38,9 @@ struct $mpi_gcomm {
   $gcomm col; // collective communication
   $gcollator gcollator;
   $gbarrier gbarrier;
+#ifdef _MPI_CONTRACT
+  _Bool _contractTargetEntered[];
+#endif
 };
 
 /****************************** Helper Functions **********************************/
@@ -703,6 +709,8 @@ void $mpi_diff_coroutine_entries($bundle specEntry, $bundle mineEntry, int rank)
 $collate_state $mpi_snapshot(MPI_Comm comm, $scope scope) {
   return $collate_arrives(comm.collator, scope);
 }
+
+
 
 /********************* Private helper functions *********************/
 /* Returns the string literal of MPI collective routine names by

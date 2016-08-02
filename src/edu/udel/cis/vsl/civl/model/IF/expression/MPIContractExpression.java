@@ -19,7 +19,36 @@ import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunic
  */
 public interface MPIContractExpression extends Expression {
 	static public enum MPI_CONTRACT_EXPRESSION_KIND {
-		MPI_AGREE, MPI_EQUALS, MPI_REGION, MPI_VALID, MPI_EXTENT, MPI_OFFSET
+		/**
+		 * The expression in CIVL model representing the \mpi_agree expression
+		 * in ACSL annotations:
+		 */
+		MPI_AGREE,
+		/**
+		 * The expression in CIVL model representing the \mpi_equals expression
+		 * in ACSL annotations:
+		 */
+		MPI_EQUALS,
+		/**
+		 * The expression in CIVL model representing the \mpi_extent expression
+		 * in ACSL annotations:
+		 */
+		MPI_EXTENT,
+		/**
+		 * The expression in CIVL model representing the \mpi_offset expression
+		 * in ACSL annotations:
+		 */
+		MPI_OFFSET,
+		/**
+		 * The expression in CIVL model representing the \mpi_region expression
+		 * in ACSL annotations:
+		 */
+		MPI_REGION,
+		/**
+		 * The expression in CIVL model representing the \mpi_valid expression
+		 * in ACSL annotations:
+		 */
+		MPI_VALID
 	}
 
 	/**
