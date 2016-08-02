@@ -704,6 +704,10 @@ $collate_state $mpi_snapshot(MPI_Comm comm, $scope scope) {
   return $collate_arrives(comm.collator, scope);
 }
 
+void $mpi_unsnapshot(MPI_Comm comm) {
+     $collate_departs(comm.collator);
+}
+
 
 
 /********************* Private helper functions *********************/
