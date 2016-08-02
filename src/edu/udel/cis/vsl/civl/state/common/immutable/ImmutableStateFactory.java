@@ -2528,6 +2528,15 @@ public class ImmutableStateFactory implements StateFactory {
 		dyscopes = new ImmutableDynamicScope[counter];
 		newRealPC = renumberDyscopes(theRealState.copyScopes(), old2New,
 				dyscopes, theRealState.getPathCondition());
+		// Clear reachers for those new dyscopes:
+		for (int i = 0; i < counter; i++) {
+			if (dyscopes[i] != null) {
+				BitSet reachers = dyscopes[i].getReachers();
+
+				reachers.clear();
+				dyscopes[i] = dyscopes[i].setReachers(reachers);
+			}
+		}
 		System.arraycopy(theColState.copyScopes(), 0, dyscopes, 0,
 				theColState.numDyscopes());
 
