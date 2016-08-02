@@ -12,12 +12,12 @@
 #define UNCHECKED  3
 #define CHECKED    4
 // The $gcollate_state whose state field is significant:
-#define _STATE_USED(gstate, i)  ((gstate)->status[(i)] >= NONARRIVED || (gstate)->status[(i)] <= DEPARTED)
-#define _ARRIVED(gstate, i)     ((gstate)->status[(i)] == ARRIVED || (gstate)->status[(i)] == DEPARTED)
-#define _DEPARTED(gstate, i)    ((gstate)->status[(i)] == DEPARTED)
+#define _STATE_USED(gstate, place)  ((gstate)->status[(place)] >= NONARRIVED && (gstate)->status[(place)] <= DEPARTED)
+#define _ARRIVED(gstate, place)     ((gstate)->status[(place)] == ARRIVED || (gstate)->status[(place)] == DEPARTED)
+#define _DEPARTED(gstate, place)    ((gstate)->status[(place)] == DEPARTED)
 // The $gcollate_state whose attribute field is significant:
-#define _ATTR_USED(gstate, i)   ((gstate)->status[(i)] >= UNCHECKED || (gstate)->status[(i)] <= CHECKED)
-#define _CHECKED(gstate, i)     ((gstate)->status[(i)] == CHECKED)
+#define _ATTR_USED(gstate, place)   ((gstate)->status[(place)] >= UNCHECKED && (gstate)->status[(place)] <= CHECKED)
+#define _CHECKED(gstate, place)     ((gstate)->status[(place)] == CHECKED)
 
 /******************* Definition of datatypes: *******************/
 struct _gcollator {
@@ -39,7 +39,7 @@ struct _collator {
   $gcollator gcollator;
 };
 
-// TODO: maybe changes two arrays to an array of a new enumerator
+// TODO: don't use one queue for collate states and collective attributes
 struct _gcollate_state {
   // An array of markers for whether a process has already arrived
   // this entry or departed:
@@ -58,10 +58,6 @@ struct _collate_state {
   int place;
   // A reference to a _gcollate_state:
   $gcollate_state gstate;
-  // Reference to the real state
-  $state real;
-  // The pid at the real state
-  int pid;
 };
 
 /******************* Function definitions ***************************/
@@ -75,7 +71,7 @@ $gcollator $gcollator_create($scope scope, int nprocs) {
   $gcollator gcollator = ($gcollator)$malloc(scope, sizeof(struct _gcollator));
 
   gcollator->nprocs = nprocs;
-  gcollator->procs = (($proc[nprocs])$lambda(int i) $proc_null);
+  gcollator->procs = ($proc[nprocs])$lambda(int i) $proc_null;
   gcollator->queue_length = 0;
   $seq_init(&(gcollator->queue), 0, NULL);
   return gcollator;
@@ -127,14 +123,13 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
     $scope root = $scopeof(*c->gcollator);
 
     gcollate_state = ($gcollate_state)$malloc(root, sizeof(struct _gcollate_state));    
-    gcollate_state->status = ((int[nprocs])$lambda(int i)NONARRIVED);
+    gcollate_state->status = (int[nprocs])$lambda(int i) NONARRIVED;
     gcollate_state->state = $state_null;
     $seq_append(&c->gcollator->queue, &gcollate_state, 1);
     c->gcollator->queue_length++;
   }  
   result.place = place;
   result.gstate = gcollate_state;
-  result.real=$state_null;
   $collate_snapshot(result, nprocs, scope);
   gcollate_state->status[place] = ARRIVED;
   return result;
@@ -178,25 +173,6 @@ $atomic_f void $collate_departs($collator c) {
     c->gcollator->queue_length--;
   }
 }
-
-
-/*$atomic_f _Bool $collate_complete($collate_state cp) {
-  int nprocs = $seq_length(&cp.gstate->status);
-
-  for (int i = 0; i < nprocs; i++)
-    if (!_ARRIVED(cp.gstate, i)) return $false;
-  return $true;
-}*/
-
-
-/*$atomic_f _Bool $collate_arrived($collate_state cp, $range range) { 
-  int nprocs = $seq_length(&cp.gstate->status);
-
-  $for (int i : range)
-    if (!_ARRIVED(cp.gstate, i)) return $false;
-  return $true; 
-}*/
-
 
 $bundle $collate_check($collator c, $bundle bundle) {
   int nprocs, queue_size, place, index;

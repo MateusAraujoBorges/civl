@@ -259,7 +259,7 @@ public class ModelTranslator {
 
 		ABCExecutor executor = new ABCExecutor(task);
 
-		task.setDynamicTask(new ParseSystemLibrary(executor));
+		task.setDynamicTask(new ParseSystemLibrary(executor, macros));
 		frontEnd = executor.getFrontEnd();
 		this.transformerFactory = Transforms
 				.newTransformerFactory(frontEnd.getASTFactory());
@@ -284,7 +284,8 @@ public class ModelTranslator {
 				transformerFactory.getSvcompTransformerRecord(config));
 		if (config.isEnableMpiContract())
 			task.addTransformRecord(
-					transformerFactory.getContractTransformerRecord(config.mpiContractFunction()));
+					transformerFactory.getContractTransformerRecord(
+							config.mpiContractFunction()));
 		task.addTransformRecord(
 				transformerFactory.getGeneralTransformerRecord());
 		task.addTransformRecord(transformerFactory.getIOTransformerRecord());

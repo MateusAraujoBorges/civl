@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
@@ -17,9 +18,11 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 public class ParseSystemLibrary implements DynamicTask {
 
 	private ABCExecutor executor;
+	private Map<String, String> macros;
 
-	public ParseSystemLibrary(ABCExecutor executor) {
+	public ParseSystemLibrary(ABCExecutor executor, Map<String, String> macros) {
 		this.executor = executor;
+		this.macros=macros;
 	}
 
 	private Set<String> getExistingFiles() {
@@ -63,7 +66,10 @@ public class ParseSystemLibrary implements DynamicTask {
 
 					if (!existingFiles.contains(systemFilename)
 							&& processedFiles.add(systemFilename)) {
-						result.add(new UnitTask(new File[] { systemFile }));
+						UnitTask newTask=new UnitTask(new File[] { systemFile });
+						
+						newTask.setMacros(macros);
+						result.add(newTask);
 					}
 				}
 			}
