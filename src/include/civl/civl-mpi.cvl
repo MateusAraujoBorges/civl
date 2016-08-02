@@ -26,9 +26,6 @@ typedef struct MPI_Comm {
   $collator collator;
   $barrier barrier;
   int gcommIndex; //the index of the corresponding global communicator.
-#ifdef _MPI_CONTRACT
-  _Bool * _contractTargetEntered;
-#endif
 }MPI_Comm;
 
 /* Definition of CMPI_Gcomm (CMPI_Gcomm has a type of __CMPI_Gcomm) 
@@ -38,9 +35,6 @@ struct $mpi_gcomm {
   $gcomm col; // collective communication
   $gcollator gcollator;
   $gbarrier gbarrier;
-#ifdef _MPI_CONTRACT
-  _Bool _contractTargetEntered[];
-#endif
 };
 
 /****************************** Helper Functions **********************************/

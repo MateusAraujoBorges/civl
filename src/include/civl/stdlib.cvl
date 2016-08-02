@@ -50,6 +50,10 @@ $atomic_f int abs(int x){
   return (-x);
 }
 
+int atoi(const char *nptr){
+  return 0;
+}
+
 #ifdef _LINUX
 $atomic_f int rand_r(unsigned int *seedp){
   int tmp;
