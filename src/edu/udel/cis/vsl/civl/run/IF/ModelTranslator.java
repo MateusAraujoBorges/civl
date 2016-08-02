@@ -284,7 +284,7 @@ public class ModelTranslator {
 				transformerFactory.getSvcompTransformerRecord(config));
 		if (config.isEnableMpiContract())
 			task.addTransformRecord(
-					transformerFactory.getContractTransformerRecord());
+					transformerFactory.getContractTransformerRecord(config.mpiContractFunction()));
 		task.addTransformRecord(
 				transformerFactory.getGeneralTransformerRecord());
 		task.addTransformRecord(transformerFactory.getIOTransformerRecord());
@@ -321,7 +321,7 @@ public class ModelTranslator {
 
 		if (this.cmdSection.isTrue(CIVLConstants.CIVLMacroO))
 			macroDefs.put(CIVL_MACRO, "");
-		if (this.cmdSection.isTrue(CIVLConstants.mpiContractO))
+		if (this.config.isEnableMpiContract())
 			macroDefs.put(MPI_CONTRACT_MACRO, "");
 		if (macroDefMap != null) {
 			for (String name : macroDefMap.keySet()) {

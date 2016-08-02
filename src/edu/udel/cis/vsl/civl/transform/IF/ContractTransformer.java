@@ -23,13 +23,16 @@ public class ContractTransformer extends BaseTransformer {
 	 */
 	public final static String SHORT_DESCRIPTION = "transforms C/MPI program to a set of programs each of which verifies a single function";
 
-	public ContractTransformer(ASTFactory astFactory) {
+	private String targetFunction;
+
+	public ContractTransformer(ASTFactory astFactory, String targetFunction) {
 		super(CODE, LONG_NAME, SHORT_DESCRIPTION, astFactory);
+		this.targetFunction = targetFunction;
 	}
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		return new ContractTransformerWorker(astFactory, "target")
+		return new ContractTransformerWorker(astFactory, targetFunction)
 				.transform(ast);
 	}
 }

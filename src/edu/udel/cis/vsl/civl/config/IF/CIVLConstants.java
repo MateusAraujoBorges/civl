@@ -250,8 +250,13 @@ public class CIVLConstants {
 	public final static Option minO = Option.newScalarOption(MIN, BOOLEAN,
 			"search for minimal counterexample", false);
 
+	/**
+	 * MPI contract mode? Disable by default.
+	 */
 	public final static Option mpiContractO = Option.newScalarOption(
-			MPI_CONTRACT, BOOLEAN, "enable contracts for MPI mode", false);
+			MPI_CONTRACT, STRING,
+			"MPI contract mode, specify the name of the function to be verified",
+			null);
 
 	/**
 	 * The bound on number of live processes (no bound if negative). No bound by

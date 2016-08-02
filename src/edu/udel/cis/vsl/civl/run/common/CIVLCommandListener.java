@@ -20,8 +20,8 @@ import edu.udel.cis.vsl.gmc.GMCSection;
 import edu.udel.cis.vsl.gmc.Option;
 import edu.udel.cis.vsl.gmc.Option.OptionType;
 
-public class CIVLCommandListener extends CommandBaseListener implements
-		CommandListener {
+public class CIVLCommandListener extends CommandBaseListener
+		implements CommandListener {
 
 	// Instance fields...
 
@@ -45,14 +45,15 @@ public class CIVLCommandListener extends CommandBaseListener implements
 	 */
 	private Map<String, Option> mapOptionMap = new LinkedHashMap<>();
 
-	public CIVLCommandListener(String commandString, Collection<Option> options) {
+	public CIVLCommandListener(String commandString,
+			Collection<Option> options) {
 		this.commandString = commandString;
 		for (Option option : options) {
 			String name = option.name();
 
 			if (optionMap.put(name, option) != null)
-				throw new IllegalArgumentException("Saw two options named "
-						+ name);
+				throw new IllegalArgumentException(
+						"Saw two options named " + name);
 			if (option.type() == OptionType.MAP)
 				mapOptionMap.put(name, option);
 		}
@@ -90,8 +91,8 @@ public class CIVLCommandListener extends CommandBaseListener implements
 				helpCmd.setArg(commandArg);
 				break;
 			default:
-				throw new RuntimeCommandException("invalid argument for help: "
-						+ commandArg);
+				throw new RuntimeCommandException(
+						"invalid argument for help: " + commandArg);
 			}
 		}
 		normalCmd = helpCmd;
@@ -144,32 +145,37 @@ public class CIVLCommandListener extends CommandBaseListener implements
 	}
 
 	@Override
-	public void enterSpecCommand(@NotNull CommandParser.SpecCommandContext ctx) {
+	public void enterSpecCommand(
+			@NotNull CommandParser.SpecCommandContext ctx) {
 		this.normalCmd = new NormalCommandLine();
 		this.cmdSection = new GMCSection(CompareCommandLine.SPEC);
 		this.gmcConfig.addSection(cmdSection);
 	}
 
 	@Override
-	public void enterImplCommand(@NotNull CommandParser.ImplCommandContext ctx) {
+	public void enterImplCommand(
+			@NotNull CommandParser.ImplCommandContext ctx) {
 		this.normalCmd = new NormalCommandLine();
 		this.cmdSection = new GMCSection(CompareCommandLine.IMPL);
 		this.gmcConfig.addSection(cmdSection);
 	}
 
 	@Override
-	public void enterCommonOption(@NotNull CommandParser.CommonOptionContext ctx) {
+	public void enterCommonOption(
+			@NotNull CommandParser.CommonOptionContext ctx) {
 		this.cmdSection = new GMCSection(GMCConfiguration.ANONYMOUS_SECTION);
 		this.gmcConfig.setAnonymousSection(cmdSection);
 	}
 
 	@Override
-	public void enterCommandBody(@NotNull CommandParser.CommandBodyContext ctx) {
+	public void enterCommandBody(
+			@NotNull CommandParser.CommandBodyContext ctx) {
 		this.files = new LinkedList<>();
 	}
 
 	@Override
-	public void enterNormalOption(@NotNull CommandParser.NormalOptionContext ctx) {
+	public void enterNormalOption(
+			@NotNull CommandParser.NormalOptionContext ctx) {
 		String optionName = ctx.OPTION_NAME().getText().substring(1);
 		Option option = optionMap.get(optionName);
 
@@ -180,6 +186,10 @@ public class CIVLCommandListener extends CommandBaseListener implements
 				cmdSection.setScalarValue(option, value);
 			} else if (option.type() == OptionType.BOOLEAN)
 				cmdSection.setScalarValue(option, true);
+			else if (optionName.equals(CIVLConstants.MPI_CONTRACT)) {
+				throw new IllegalArgumentException(
+						"Option " + option.name() + " requires a STRING value");
+			}
 		} catch (IllegalArgumentException illegalArg) {
 			throw new RuntimeCommandException(illegalArg.getMessage());
 		}
@@ -215,7 +225,8 @@ public class CIVLCommandListener extends CommandBaseListener implements
 	}
 
 	@Override
-	public void enterInputOption(@NotNull CommandParser.InputOptionContext ctx) {
+	public void enterInputOption(
+			@NotNull CommandParser.InputOptionContext ctx) {
 		Option option = mapOptionMap.get(CIVLConstants.INPUT);
 		String key = ctx.VAR().getText();
 		Object value = this.translateValue(option, ctx.value());
@@ -224,7 +235,8 @@ public class CIVLCommandListener extends CommandBaseListener implements
 	}
 
 	@Override
-	public void enterMacroOption(@NotNull CommandParser.MacroOptionContext ctx) {
+	public void enterMacroOption(
+			@NotNull CommandParser.MacroOptionContext ctx) {
 		Option option = mapOptionMap.get(CIVLConstants.MACRO);
 		String name = ctx.VAR().getText();
 		String value = ctx.value() != null ? ctx.value().getText() : "";

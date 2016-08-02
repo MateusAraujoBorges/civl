@@ -72,14 +72,15 @@ public class TransformerFactory {
 		};
 	}
 
-	public TransformRecord getContractTransformerRecord() {
+	public TransformRecord getContractTransformerRecord(String targetFunction) {
 		return new TransformRecord(ContractTransformer.CODE,
 				ContractTransformer.LONG_NAME,
 				ContractTransformer.SHORT_DESCRIPTION) {
 			@Override
 			public Transformer create(ASTFactory astFactory) {
 				if (contractTransformer == null)
-					contractTransformer = new ContractTransformer(astFactory);
+					contractTransformer = new ContractTransformer(astFactory,
+							targetFunction);
 				return contractTransformer;
 			}
 		};
@@ -87,7 +88,8 @@ public class TransformerFactory {
 
 	public TransformRecord getMacroTransformerRecord(CIVLConfiguration config) {
 		return new TransformRecord(MacroTransformer.CODE,
-				MacroTransformer.LONG_NAME, MacroTransformer.SHORT_DESCRIPTION) {
+				MacroTransformer.LONG_NAME,
+				MacroTransformer.SHORT_DESCRIPTION) {
 			@Override
 			public Transformer create(ASTFactory astFactory) {
 				return new MacroTransformer(astFactory, config);
@@ -109,7 +111,8 @@ public class TransformerFactory {
 
 	public TransformRecord getOpenMPSimplifierRecord(CIVLConfiguration config) {
 		return new TransformRecord(OpenMPSimplifier.CODE,
-				OpenMPSimplifier.LONG_NAME, OpenMPSimplifier.SHORT_DESCRIPTION) {
+				OpenMPSimplifier.LONG_NAME,
+				OpenMPSimplifier.SHORT_DESCRIPTION) {
 			@Override
 			public Transformer create(ASTFactory astFactory) {
 				return new OpenMPSimplifier(astFactory, config);
@@ -200,7 +203,8 @@ public class TransformerFactory {
 		};
 	}
 
-	public TransformRecord getSvcompTransformerRecord(CIVLConfiguration config) {
+	public TransformRecord getSvcompTransformerRecord(
+			CIVLConfiguration config) {
 		return new TransformRecord(SvcompTransformer.CODE,
 				SvcompTransformer.LONG_NAME,
 				SvcompTransformer.SHORT_DESCRIPTION) {
@@ -211,7 +215,8 @@ public class TransformerFactory {
 		};
 	}
 
-	public TransformRecord getIntDivTransformerRecord(Map<String, String> macros) {
+	public TransformRecord getIntDivTransformerRecord(
+			Map<String, String> macros) {
 		return new TransformRecord(IntDivisionTransformer.CODE,
 				IntDivisionTransformer.LONG_NAME,
 				IntDivisionTransformer.SHORT_DESCRIPTION) {
@@ -248,7 +253,8 @@ public class TransformerFactory {
 		if (node instanceof FunctionCallNode) {
 			FunctionCallNode functionCall = (FunctionCallNode) node;
 
-			if (functionCall.getFunction().expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
+			if (functionCall.getFunction()
+					.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
 				IdentifierExpressionNode functionExpression = (IdentifierExpressionNode) functionCall
 						.getFunction();
 				String functionName = functionExpression.getIdentifier().name();
