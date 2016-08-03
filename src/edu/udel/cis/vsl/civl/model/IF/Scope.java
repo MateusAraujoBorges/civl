@@ -135,6 +135,15 @@ public interface Scope extends Sourceable {
 	Collection<Variable> variablesWithProcrefs();
 
 	/**
+	 * A variables has a "$state" type, if it is of type $state, if it is an
+	 * array with element of type $state, or if it is a struct with fields of
+	 * type $state.
+	 * 
+	 * @return A collection of the variables in this scope with a type $state.
+	 */
+	Collection<Variable> variablesWithStaterefs();
+
+	/**
 	 * A variables has a "scopeRefType" if it is of type Scope, if it is an
 	 * array with element of scopeRefType, if it is a struct with fields of
 	 * scopeRefType, or if it contains a pointer.

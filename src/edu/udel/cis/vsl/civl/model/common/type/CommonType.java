@@ -57,6 +57,11 @@ public abstract class CommonType implements CIVLType {
 	}
 
 	@Override
+	public boolean isStateType() {
+		return false;
+	}
+
+	@Override
 	public boolean isScopeType() {
 		return false;
 	}

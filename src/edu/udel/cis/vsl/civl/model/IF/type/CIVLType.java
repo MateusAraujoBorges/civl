@@ -105,6 +105,12 @@ public interface CIVLType {
 
 	/**
 	 * 
+	 * @return true iff this type is $state type
+	 */
+	boolean isStateType();
+
+	/**
+	 * 
 	 * @return true iff this type is scope type
 	 */
 	boolean isScopeType();

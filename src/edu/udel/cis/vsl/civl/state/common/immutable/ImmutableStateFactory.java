@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1851,36 +1850,46 @@ public class ImmutableStateFactory implements StateFactory {
 					canonicRenamer.getNumNewNames());
 		}
 
-		if (!savedCanonicStates.isEmpty()) {
-			List<ImmutableState> newSavedStates = new LinkedList<>();
-			Map<SymbolicExpression, SymbolicExpression> stateRefOld2New = new HashMap<>();
-
-			for (int id : savedCanonicStates.keySet()) {
-				ImmutableState savedState = savedCanonicStates.get(id);
-				BooleanExpression savedPC = savedState.getPathCondition();
-				ImmutableDynamicScope savedDyscopes[] = savedState.copyScopes();
-
-				savedPC = (BooleanExpression) canonicRenamer.apply(savedPC);
-				for (int i = 0; i < savedDyscopes.length; i++)
-					savedDyscopes[i] = savedDyscopes[i]
-							.updateSymbolicConstants(canonicRenamer);
-				savedState = ImmutableState.newState(savedState,
-						savedState.copyProcessStates(), savedDyscopes, savedPC);
-				savedState = flyweight(savedState);
-				if (savedState.getCanonicId() != id) {
-					newSavedStates.add(savedState);
-					stateRefOld2New.put(modelFactory.stateValue(id),
-							modelFactory.stateValue(savedState.getCanonicId()));
-				}
-			}
-			if (!newSavedStates.isEmpty()) {
-				for (ImmutableState newSavedState : newSavedStates)
-					savedCanonicStates.put(newSavedState.getCanonicId(),
-							newSavedState);
-				theState = updateStateReferencesInDyscopes(theState,
-						stateRefOld2New);
-				theState = flyweight(theState);
-			}
+		if (config.isEnableMpiContract()) {
+			// ImmutableDynamicScope dyscopes[] = theState.copyScopes();
+			// List<SymbolicExpression> stateRefs = new LinkedList<>();
+			// SymbolicType stateRefType = typeFactory.stateSymbolicType();
+			//
+			// for (int i = 0; i < dyscopes.length; i++) {
+			// Scope scope = dyscopes[i].lexicalScope();
+			//
+			// for (Variable var : scope.variablesWithStaterefs()) {
+			// SymbolicExpression val = dyscopes[i].getValue(var.vid());
+			//
+			// ((CommonSymbolicUtility) symbolicUtil)
+			// .digStateRefValueFrom(val);
+			// }
+			// }
+			//
+			// Map<SymbolicExpression, SymbolicExpression> stateRefOld2New = new
+			// HashMap<>();
+			//
+			// for (SymbolicExpression stateRef : stateRefs) {
+			// int ref = modelFactory.getStateRef(null, stateRef);
+			// ImmutableState savedState = savedCanonicStates.get(ref);
+			// BooleanExpression savedPC = savedState.getPathCondition();
+			// ImmutableDynamicScope savedDyscopes[] = savedState.copyScopes();
+			//
+			// savedPC = (BooleanExpression) canonicRenamer.apply(savedPC);
+			// for (int i = 0; i < savedDyscopes.length; i++)
+			// savedDyscopes[i] = savedDyscopes[i]
+			// .updateSymbolicConstants(canonicRenamer);
+			// savedState = ImmutableState.newState(savedState,
+			// savedState.copyProcessStates(), savedDyscopes, savedPC);
+			// savedState = flyweight(savedState);
+			// savedCanonicStates.put(savedState.getCanonicId(), savedState);
+			// stateRefOld2New.put(stateRef,
+			// modelFactory.stateValue(savedState.getCanonicId()));
+			// }
+			// if (!stateRefOld2New.isEmpty())
+			// theState = this.updateStateReferencesInDyscopes(theState,
+			// stateRefOld2New);
+			// theState = flyweight(theState);
 		}
 		return theState;
 	}

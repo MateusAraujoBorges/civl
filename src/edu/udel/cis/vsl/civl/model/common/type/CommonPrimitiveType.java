@@ -121,6 +121,11 @@ public class CommonPrimitiveType extends CommonType
 	}
 
 	@Override
+	public boolean isStateType() {
+		return kind == PrimitiveTypeKind.STATE;
+	}
+
+	@Override
 	public boolean isScopeType() {
 		return kind == PrimitiveTypeKind.SCOPE;
 	}
