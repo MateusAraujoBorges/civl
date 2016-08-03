@@ -263,7 +263,8 @@ public class ImmutableStateFactory implements StateFactory {
 		if (collectHeaps)
 			theState = collectHeaps(theState, toBeIgnored);
 		// theState = collectSymbolicConstants(theState, collectHeaps);
-		theState = collectHavocVariables(theState);
+		if (config.collectSymbolicNames())
+			theState = collectHavocVariables(theState);
 		if (simplify) {
 			ImmutableState simplifiedState = theState.simplifiedState;
 
@@ -1169,7 +1170,7 @@ public class ImmutableStateFactory implements StateFactory {
 	 */
 	private Scope[] joinSequence(Scope scope1, Scope scope2) {
 		if (scope1 == scope2)
-			return new Scope[]{scope2};
+			return new Scope[] { scope2 };
 		for (Scope scope1a = scope1; scope1a != null; scope1a = scope1a
 				.parent())
 			for (Scope scope2a = scope2; scope2a != null; scope2a = scope2a
@@ -1612,32 +1613,31 @@ public class ImmutableStateFactory implements StateFactory {
 				SymbolicObjectKind kind = arg.symbolicObjectKind();
 
 				switch (kind) {
-					case BOOLEAN :
-					case INT :
-					case NUMBER :
-					case STRING :
-					case CHAR :
-					case TYPE :
-					case TYPE_SEQUENCE :
+				case BOOLEAN:
+				case INT:
+				case NUMBER:
+				case STRING:
+				case CHAR:
+				case TYPE:
+				case TYPE_SEQUENCE:
+					break;
+				default:
+					switch (kind) {
+					case EXPRESSION:
+						reachableHeapObjectsOfValue(state,
+								(SymbolicExpression) arg, reachable);
 						break;
-					default :
-						switch (kind) {
-							case EXPRESSION :
-								reachableHeapObjectsOfValue(state,
-										(SymbolicExpression) arg, reachable);
-								break;
-							case SEQUENCE : {
-								Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg)
-										.iterator();
+					case SEQUENCE: {
+						Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg)
+								.iterator();
 
-								while (iter.hasNext()) {
-									SymbolicExpression expr = iter.next();
+						while (iter.hasNext()) {
+							SymbolicExpression expr = iter.next();
 
-									reachableHeapObjectsOfValue(state, expr,
-											reachable);
-								}
-							}
+							reachableHeapObjectsOfValue(state, expr, reachable);
 						}
+					}
+					}
 				}
 			}
 		} else if (value.operator() != SymbolicOperator.TUPLE) {
@@ -1737,32 +1737,32 @@ public class ImmutableStateFactory implements StateFactory {
 				SymbolicObjectKind kind = arg.symbolicObjectKind();
 
 				switch (kind) {
-					case BOOLEAN :
-					case INT :
-					case NUMBER :
-					case STRING :
-					case CHAR :
-					case TYPE :
-					case TYPE_SEQUENCE :
+				case BOOLEAN:
+				case INT:
+				case NUMBER:
+				case STRING:
+				case CHAR:
+				case TYPE:
+				case TYPE_SEQUENCE:
+					break;
+				default:
+					switch (kind) {
+					case EXPRESSION:
+						computeNewHeapPointer((SymbolicExpression) arg,
+								heapMemUnitsMap, oldToNewHeapPointers);
 						break;
-					default :
-						switch (kind) {
-							case EXPRESSION :
-								computeNewHeapPointer((SymbolicExpression) arg,
-										heapMemUnitsMap, oldToNewHeapPointers);
-								break;
-							case SEQUENCE : {
-								Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg)
-										.iterator();
+					case SEQUENCE: {
+						Iterator<? extends SymbolicExpression> iter = ((SymbolicSequence<?>) arg)
+								.iterator();
 
-								while (iter.hasNext()) {
-									SymbolicExpression expr = iter.next();
+						while (iter.hasNext()) {
+							SymbolicExpression expr = iter.next();
 
-									computeNewHeapPointer(expr, heapMemUnitsMap,
-											oldToNewHeapPointers);
-								}
-							}
+							computeNewHeapPointer(expr, heapMemUnitsMap,
+									oldToNewHeapPointers);
 						}
+					}
+					}
 				}
 			}
 		} else if (symbolicUtil.isHeapPointer(value)) {
@@ -1913,7 +1913,6 @@ public class ImmutableStateFactory implements StateFactory {
 
 			for (int j = 0; j < values.length; j++)
 				values[j] = substituter.apply(values[j]);
-
 			dyscopes[i] = new ImmutableDynamicScope(dyscope.lexicalScope(),
 					dyscope.getParent(), values, dyscope.getReachers());
 		}
@@ -2096,7 +2095,8 @@ public class ImmutableStateFactory implements StateFactory {
 		ImmutableState immuState = (ImmutableState) state;
 		ImmutableCollectiveSnapshotsEntry[] queue = immuState
 				.getSnapshots(queueID);
-		ImmutableCollectiveSnapshotsEntry entry;;
+		ImmutableCollectiveSnapshotsEntry entry;
+		;
 
 		assert queue != null && queue.length > 0 : "Peeks on an empty queue";
 		entry = queue[0];

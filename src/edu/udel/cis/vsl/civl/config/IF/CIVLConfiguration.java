@@ -148,6 +148,8 @@ public class CIVLConfiguration {
 	 */
 	private boolean collectScopes = true;
 
+	private boolean collectSymbolicNames = true;
+
 	/**
 	 * Should CIVL collect heap objects?
 	 */
@@ -338,6 +340,8 @@ public class CIVLConfiguration {
 		this.collectOutputs = config.isTrue(CIVLConstants.collectOutputO);
 		this.setMpiContractFunction(
 				(String) config.getValueOrDefault(CIVLConstants.mpiContractO));
+		if (this.mpiContractFunction != null)
+			this.collectSymbolicNames = false;
 		this.setCheckDivisionByZero(
 				config.isTrue(CIVLConstants.checkDivisionByZeroO));
 		this.checkMemoryLeak = config.isTrue(CIVLConstants.checkMemoryLeakO);
@@ -367,6 +371,7 @@ public class CIVLConfiguration {
 		this.collectOutputs = config.collectOutputs;
 		this.collectProcesses = config.collectProcesses;
 		this.collectScopes = config.collectScopes;
+		this.collectSymbolicNames = config.collectSymbolicNames;
 		this.deadlock = config.deadlock;
 		this.debug = config.debug;
 		this.err = config.err;
@@ -805,5 +810,20 @@ public class CIVLConfiguration {
 
 	public String mpiContractFunction() {
 		return this.mpiContractFunction;
+	}
+
+	/**
+	 * @return the collectSymbolicNames
+	 */
+	public boolean collectSymbolicNames() {
+		return collectSymbolicNames;
+	}
+
+	/**
+	 * @param collectSymbolicNames
+	 *            the collectSymbolicNames to set
+	 */
+	public void setCollectSymbolicNames(boolean collectSymbolicNames) {
+		this.collectSymbolicNames = collectSymbolicNames;
 	}
 }
