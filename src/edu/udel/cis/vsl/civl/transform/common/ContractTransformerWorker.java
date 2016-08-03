@@ -128,6 +128,11 @@ public class ContractTransformerWorker extends BaseWorker {
 	private final static String MPI_CONTRACT_ENTERED = "$mpi_contract_entered";
 
 	/**
+	 * A CIVL-MPI function identifier:
+	 */
+	private final static String MPI_VALID = "$mpi_valid";
+
+	/**
 	 * A comm-library function identifier:
 	 */
 	private final static String COMM_EMPTY_IN = "$comm_empty_in";
@@ -951,6 +956,12 @@ public class ContractTransformerWorker extends BaseWorker {
 		List<BlockItemNode> bodyItems = new LinkedList<>();
 
 		bodyItems.addAll(mpiConstantsInitialization(mpiComm));
+		// Add $mpi_valid() calls for \mpi_valid annotations:
+		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
+			for (ExpressionNode requires : condClauses.getRequires(nodeFactory))
+				bodyItems.addAll(createConditionalMPIValidCalls(
+						condClauses.condition, requires));
+		// take snapshot after do $mpi_valid which elaborates "datatype"s:
 		bodyItems.add(collateStateDecl);
 		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
 			for (ExpressionNode requires : condClauses.getRequires(nodeFactory))
@@ -1159,7 +1170,6 @@ public class ContractTransformerWorker extends BaseWorker {
 				? createAssumption(preds)
 				: createAssertion(preds);
 
-		getMPIAgreeExpressionNodes(preds);
 		// If the condition is null, it doesn't need a
 		// branch:
 		if (cond != null)
@@ -2100,10 +2110,73 @@ public class ContractTransformerWorker extends BaseWorker {
 		return null;
 	}
 
-	// TODO: doc
-	private List<MPIContractExpressionNode> getMPIAgreeExpressionNodes(
+	/**
+	 * Creates a set of <code>$mpi_valid</code> calls with the given if
+	 * conditions for all <code>\mpi_valid</code> expressions in the given
+	 * predicate. If there is no any such expression, no call will be created.
+	 * If the given if conditions is null, then there is no if branch.
+	 * 
+	 * @param cond
+	 *            The conditional expression
+	 * @param predicate
+	 *            Thd predication which may contains any <code>\mpi_valid</code>
+	 * @return
+	 */
+	private List<BlockItemNode> createConditionalMPIValidCalls(
+			ExpressionNode conditions, ExpressionNode predicate) {
+		List<BlockItemNode> stmts = createMPIValidCalls(predicate);
+		List<BlockItemNode> result = new LinkedList<>();
+
+		if (!stmts.isEmpty()) {
+			if (conditions != null) {
+				StatementNode stmt = nodeFactory.newCompoundStatementNode(
+						stmts.get(0).getSource(), stmts);
+
+				result.add(nodeFactory.newIfNode(conditions.getSource(),
+						conditions.copy(), stmt));
+			} else
+				return stmts;
+		}
+		return result;
+	}
+
+	/**
+	 * Creates a set of <code>$mpi_valid</code> calls for all
+	 * <code>\mpi_valid</code> expressions in the given expression
+	 * 
+	 * @param expression
+	 * @return
+	 */
+	private List<BlockItemNode> createMPIValidCalls(ExpressionNode expression) {
+		// TODO: duplicate \mpi_valid expressions will have problems
+		List<MPIContractExpressionNode> mpiValids = getMPIValidExpressionNodes(
+				expression);
+		List<BlockItemNode> stmts = new LinkedList<>();
+
+		for (MPIContractExpressionNode mpiValid : mpiValids) {
+			ExpressionNode call = nodeFactory.newFunctionCallNode(
+					mpiValid.getSource(), identifierExpression(MPI_VALID),
+					Arrays.asList(mpiValid.getArgument(1).copy(),
+							mpiValid.getArgument(2).copy()),
+					null);
+			ExpressionNode lhsCall = nodeFactory.newOperatorNode(
+					mpiValid.getSource(), Operator.ASSIGN,
+					mpiValid.getArgument(0).copy(), call);
+
+			stmts.add(nodeFactory.newExpressionStatementNode(lhsCall));
+		}
+		return stmts;
+	}
+
+	/**
+	 * Find out all <code>\mpi_valid</code> expressions in the given expression
+	 * 
+	 * @param expression
+	 * @return
+	 */
+	private List<MPIContractExpressionNode> getMPIValidExpressionNodes(
 			ExpressionNode expression) {
-		ASTNode astNode = expression;
+		ASTNode astNode = expression.copy();
 		List<MPIContractExpressionNode> results = new LinkedList<>();
 
 		do {
@@ -2111,10 +2184,11 @@ public class ContractTransformerWorker extends BaseWorker {
 				MPIContractExpressionNode mpiCtatExpr = (MPIContractExpressionNode) astNode;
 
 				if (mpiCtatExpr
-						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_AGREE)
+						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_VALID)
 					results.add(mpiCtatExpr);
 			}
 		} while ((astNode = astNode.nextDFS()) != null);
 		return results;
 	}
+
 }

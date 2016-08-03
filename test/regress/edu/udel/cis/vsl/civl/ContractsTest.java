@@ -79,6 +79,12 @@ public class ContractsTest {
 				filename("contractsMPI/simpleMpiOffset.c")));
 	}
 
+	@Test
+	public void mpiValid() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
+				filename("contractsMPI/simpleMpiValid.c")));
+	}
+
 	// @Test
 	// public void seq_sum() {
 	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
