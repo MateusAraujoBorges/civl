@@ -113,14 +113,14 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 			case 3 : // short
 			case 4 : // int
 			case 5 : // long
-			case 9 : // long long int
-			case 10 : // unsigned long long
-			case 11 : // long long
+			case 6 : // long long int
+			case 7 : // unsigned long long
+			case 8 : // long long
 				primitiveType = typeFactory.integerType();
 				break;
-			case 6 : // float
-			case 7 : // double
-			case 8 : // long double
+			case 9 : // float
+			case 10 : // double
+			case 11 : // long double
 				primitiveType = typeFactory.realType();
 				break;
 			case 12 : // 2int
