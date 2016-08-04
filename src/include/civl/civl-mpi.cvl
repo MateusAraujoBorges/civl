@@ -710,42 +710,15 @@ void $mpi_unsnapshot(MPI_Comm comm) {
 }
 
 void * $mpi_valid(int count, MPI_Datatype datatype) {
-  $assume(datatype == MPI_INT || datatype == MPI_2INT
-	  /*	  datatype == MPI_FLOAT || datatype == MPI_DOUBLE
-	  datatype == MPI_CHAR  || datatype == MPI_BYTE ||
-	  datatype == MPI_SHORT || datatype == MPI_LONG ||
-	  datatype == MPI_LONG_LONG_INT ||
-	  datatype == MPI_LONG_DOUBLE || 
-	  datatype == MPI_LONG_LONG ||
-	  datatype == MPI_UNSIGNED_LONG_LONG*/
-	  );
-  switch (datatype) {
-  case MPI_INT:
-    return (int *)malloc(sizeof(int) * count );
-  case MPI_2INT:
-    return (int *)malloc(sizeof(int)*2 * count );
-  case MPI_FLOAT:
-    return (float *)malloc(sizeof(float) * count );
-  case MPI_DOUBLE:
-    return (double *)malloc(sizeof(double) * count );
-  case MPI_CHAR:
-  case MPI_BYTE:
-    return (char *)malloc(sizeof(char) * count ); // char is always one byte ?
-  case MPI_SHORT:
-    return (short *)malloc(sizeof(short) * count );
-  case MPI_LONG:
-    return (long *)malloc(sizeof(long) * count );
-  case MPI_LONG_DOUBLE:
-    return (long double *)malloc(sizeof(long double) * count );
-  case MPI_LONG_LONG_INT:
-    return (long long int *)malloc(sizeof(long long int) * count );
-  case MPI_LONG_LONG:
-    return (long long *)malloc(sizeof(long long) * count );
-  case MPI_UNSIGNED_LONG_LONG:
-    return (unsigned long long *)malloc(sizeof(unsigned long long) * count );
-  default:
-    return (char *)malloc(sizeof(char) * count );//$assert(0, "Unreachable");
-  }
+  $assume(0 <= datatype && datatype <= 12);
+  if (datatype <= 2) {
+    return (char *)malloc(count * sizeof(char));
+  } else if (datatype <= 8) {
+    return (int *)malloc(count * sizeof(int));
+  } else if (datatype <= 11) {
+    return ($real *)malloc(count * sizeof($real));
+  } else 
+    return (int *)malloc(count * sizeof(int) * 2);
 }
 
 

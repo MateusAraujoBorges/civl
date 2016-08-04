@@ -2184,8 +2184,9 @@ public class ContractTransformerWorker extends BaseWorker {
 				MPIContractExpressionNode mpiCtatExpr = (MPIContractExpressionNode) astNode;
 
 				if (mpiCtatExpr
-						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_VALID)
+						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_VALID) {
 					results.add(mpiCtatExpr);
+				}
 			}
 		} while ((astNode = astNode.nextDFS()) != null);
 		return results;
