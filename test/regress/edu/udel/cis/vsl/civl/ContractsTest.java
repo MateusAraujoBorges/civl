@@ -27,68 +27,58 @@ public class ContractsTest {
 	/* **************************** Test Methods *************************** */
 	@Test
 	public void with() {
-		assertTrue(ui.run(
-				"verify -showModel=false -showTransitions=true -showSavedStates=false",
-				// QUIET,
-				filename("with.cvl")));
+		assertTrue(ui.run("verify", QUIET, filename("with.cvl")));
 	}
 
 	@Test
 	public void with2() {
-		assertTrue(ui.run(
-				"verify -showModel=false -showTransitions=false -showSavedStates=false",
-				// QUIET,
-				filename("with2.cvl")));
+		assertTrue(ui.run("verify", QUIET, filename("with2.cvl")));
 	}
 
 	@Test
 	public void update() {
-		assertTrue(
-				ui.run("verify -showModel=false -showProgram=false -showTransitions=true -showSavedStates=true -quiet=false",
-						QUIET, filename("update.cvl")));
+		assertTrue(ui.run("verify", QUIET, filename("update.cvl")));
 	}
 
 	@Test
 	public void update2() {
-		assertTrue(
-				ui.run("verify -showModel=false -showProgram=false -showTransitions=true -showSavedStates=true -quiet=false",
-						QUIET, filename("update2.cvl")));
+		assertTrue(ui.run("verify", QUIET, filename("update2.cvl")));
 	}
 
 	@Test
 	public void guardSE() {
-		assertTrue(ui.run("verify -showProgram", // QUIET,
+		assertTrue(ui.run("verify", QUIET,
 				filename("contractsMPI/simpleGuard.c")));
 	}
 
 	@Test
 	public void mpiAgree() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract",
-				filename("contractsMPI/simpleMpiAgree.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
+				QUIET, filename("contractsMPI/simpleMpiAgree.c")));
 	}
 
 	@Test
 	public void mpiRegion() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
-				filename("contractsMPI/simpleMpiRegion.c")));
+				QUIET, filename("contractsMPI/simpleMpiRegion.c")));
 	}
 
 	@Test
 	public void mpiOffset() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract",
-				filename("contractsMPI/simpleMpiOffset.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
+				QUIET, filename("contractsMPI/simpleMpiOffset.c")));
 	}
 
 	@Test
 	public void mpiValid() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
-				filename("contractsMPI/simpleMpiValid.c")));
+				QUIET, filename("contractsMPI/simpleMpiValid.c")));
 	}
 
 	@Test
 	public void mpiValid2() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=5 -mpiContract=target",
-				filename("contractsMPI/simpleMpiValid2.c")));
+				QUIET, filename("contractsMPI/simpleMpiValid2.c")));
 	}
 
 	// @Test
