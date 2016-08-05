@@ -507,7 +507,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		newAst.prettyPrint(System.out, false);
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -904,12 +904,12 @@ public class ContractTransformerWorker extends BaseWorker {
 			ContractKind kind = contract.contractKind();
 
 			switch (kind) {
-				case REQUIRES :
-				case ENSURES :
-				case MPI_COLLECTIVE :
-					return true;
-				default :
-					continue;
+			case REQUIRES:
+			case ENSURES:
+			case MPI_COLLECTIVE:
+				return true;
+			default:
+				continue;
 			}
 		}
 		return false;
@@ -1166,8 +1166,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private StatementNode translateConditionalPredicates(boolean isAssume,
 			ExpressionNode cond, ExpressionNode preds) {
-		StatementNode stmt = isAssume
-				? createAssumption(preds)
+		StatementNode stmt = isAssume ? createAssumption(preds)
 				: createAssertion(preds);
 
 		// If the condition is null, it doesn't need a
@@ -1793,13 +1792,12 @@ public class ContractTransformerWorker extends BaseWorker {
 				nodeFactory.newVoidTypeNode(voidSource));
 		TypeNode ptr2intNode = nodeFactory.newPointerTypeNode(ptr2intSource,
 				intTypeNode);
-		TypeNode ptr2ptr2ptr2charNode = nodeFactory
-				.newPointerTypeNode(ptr2charSource,
+		TypeNode ptr2ptr2ptr2charNode = nodeFactory.newPointerTypeNode(
+				ptr2charSource,
+				nodeFactory.newPointerTypeNode(ptr2charSource,
 						nodeFactory.newPointerTypeNode(ptr2charSource,
-								nodeFactory.newPointerTypeNode(ptr2charSource,
-										nodeFactory.newBasicTypeNode(
-												ptr2charSource,
-												BasicTypeKind.CHAR))));
+								nodeFactory.newBasicTypeNode(ptr2charSource,
+										BasicTypeKind.CHAR))));
 
 		// MPI_Comm_rank:
 		formals = Arrays.asList(mpiCommTypeNode, ptr2intNode);
@@ -2044,8 +2042,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				ExpressionNode assumes = ((AssumesNode) contract)
 						.getPredicate();
 
-				assumptions = assumptions == null
-						? assumes
+				assumptions = assumptions == null ? assumes
 						: nodeFactory.newOperatorNode(assumes.getSource(),
 								Operator.LAND, assumptions, assumes);
 			}
@@ -2057,20 +2054,20 @@ public class ContractTransformerWorker extends BaseWorker {
 			ContractKind kind = contract.contractKind();
 
 			switch (kind) {
-				case REQUIRES :
-					condClauses.addRequires(
-							((RequiresNode) contract).getExpression());
-					break;
-				case ENSURES :
-					condClauses.addEnsures(
-							((EnsuresNode) contract).getExpression());
-					break;
-				case WAITSFOR :
-					condClauses.addWaitsfor(
-							((WaitsforNode) contract).getArguments());
-					break;
-				default :
-					// do nothing.
+			case REQUIRES:
+				condClauses
+						.addRequires(((RequiresNode) contract).getExpression());
+				break;
+			case ENSURES:
+				condClauses
+						.addEnsures(((EnsuresNode) contract).getExpression());
+				break;
+			case WAITSFOR:
+				condClauses
+						.addWaitsfor(((WaitsforNode) contract).getArguments());
+				break;
+			default:
+				// do nothing.
 			}
 		}
 		currentBlock.addConditionalClauses(condClauses);
