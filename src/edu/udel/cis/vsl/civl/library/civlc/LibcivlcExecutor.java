@@ -23,6 +23,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
+import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -43,7 +44,8 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
  * 
  */
 public class LibcivlcExecutor extends BaseLibraryExecutor
-		implements LibraryExecutor {
+		implements
+			LibraryExecutor {
 
 	/* **************************** Constructors *************************** */
 
@@ -83,95 +85,96 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$assert":
-			state = this.executeAssert(state, pid, process, arguments,
-					argumentValues, source);
-			callEval = new Evaluation(state, null);
-			break;
-		case "$assume":
-			callEval = this.executeAssume(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$choose_int_work":
-			callEval = new Evaluation(state, argumentValues[0]);
-			break;
-		case "$defined":
-			callEval = executeDefined(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$exit":// return immediately since no transitions needed after an
-			// exit, because the process no longer exists.
-			callEval = executeExit(state, pid);
-			break;
-		case "$free":
-		case "$int_iter_destroy":
-			callEval = executeFree(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$havoc":
-			callEval = executeHavoc(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$int_iter_create":
-			callEval = this.executeIntIterCreate(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$int_iter_hasNext":
-			callEval = this.executeIntIterHasNext(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$int_iter_next":
-			callEval = this.executeIntIterNext(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$is_concrete_int":
-			callEval = this.executeIsConcreteInt(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$is_derefable":
-			callEval = this.executeIsDerefable(state, pid, process, arguments,
-					argumentValues);
-			break;
-		case "$is_terminated":
-			callEval = this.executeIsTerminated(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$pathCondition":
-			callEval = this.executePathCondition(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$pow":
-		case "$powr":
-			callEval = this.executePow(state, pid, process, arguments,
-					argumentValues);
-			break;
-		case "$proc_defined":
-			callEval = this.executeProcDefined(state, pid, process, arguments,
-					argumentValues);
-			break;
-		case "$scope_defined":
-			callEval = this.executeScopeDefined(state, pid, process, arguments,
-					argumentValues);
-			break;
-		case "$wait":
-			callEval = executeWait(state, pid, arguments, argumentValues,
-					source);
-			break;
-		case "$waitall":
-			callEval = executeWaitAll(state, pid, arguments, argumentValues,
-					source);
-			break;
-		case "$variable_reference":
-			callEval = executeVariableReference(state, pid, process, arguments,
-					argumentValues);
-			break;
-		case "$next_time_count":
-			callEval = this.executeNextTimeCount(state, pid, process, arguments,
-					argumentValues);
-			break;
-		default:
-			throw new CIVLInternalException("Unknown civlc function: " + name,
-					source);
+			case "$assert" :
+				state = this.executeAssert(state, pid, process, arguments,
+						argumentValues, source);
+				callEval = new Evaluation(state, null);
+				break;
+			case "$assume" :
+				callEval = this.executeAssume(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$choose_int_work" :
+				callEval = new Evaluation(state, argumentValues[0]);
+				break;
+			case "$defined" :
+				callEval = executeDefined(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$exit" :// return immediately since no transitions needed
+							// after an
+				// exit, because the process no longer exists.
+				callEval = executeExit(state, pid);
+				break;
+			case "$free" :
+			case "$int_iter_destroy" :
+				callEval = executeFree(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$havoc" :
+				callEval = executeHavoc(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$int_iter_create" :
+				callEval = this.executeIntIterCreate(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$int_iter_hasNext" :
+				callEval = this.executeIntIterHasNext(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$int_iter_next" :
+				callEval = this.executeIntIterNext(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$is_concrete_int" :
+				callEval = this.executeIsConcreteInt(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$is_derefable" :
+				callEval = this.executeIsDerefable(state, pid, process,
+						arguments, argumentValues);
+				break;
+			case "$is_terminated" :
+				callEval = this.executeIsTerminated(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$pathCondition" :
+				callEval = this.executePathCondition(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$pow" :
+			case "$powr" :
+				callEval = this.executePow(state, pid, process, arguments,
+						argumentValues);
+				break;
+			case "$proc_defined" :
+				callEval = this.executeProcDefined(state, pid, process,
+						arguments, argumentValues);
+				break;
+			case "$scope_defined" :
+				callEval = this.executeScopeDefined(state, pid, process,
+						arguments, argumentValues);
+				break;
+			case "$wait" :
+				callEval = executeWait(state, pid, arguments, argumentValues,
+						source);
+				break;
+			case "$waitall" :
+				callEval = executeWaitAll(state, pid, arguments, argumentValues,
+						source);
+				break;
+			case "$variable_reference" :
+				callEval = executeVariableReference(state, pid, process,
+						arguments, argumentValues);
+				break;
+			case "$next_time_count" :
+				callEval = this.executeNextTimeCount(state, pid, process,
+						arguments, argumentValues);
+				break;
+			default :
+				throw new CIVLInternalException(
+						"Unknown civlc function: " + name, source);
 		}
 		return callEval;
 	}
@@ -218,9 +221,11 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 									source, state, null, pointer));
 
 		Evaluation havocEval;
+		TypeEvaluation teval;
 
 		type = this.symbolicAnalyzer.typeOfObjByPointer(source, state, pointer);
-		havocEval = this.evaluator.havoc(state, type.getDynamicType(universe));
+		teval = evaluator.getDynamicType(state, pid, type, source, false);
+		havocEval = this.evaluator.havoc(teval.state, teval.type);
 		state = this.primaryExecutor.assign(source, havocEval.state, process,
 				pointer, havocEval.value);
 		return new Evaluation(state, null);
@@ -250,7 +255,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression value = argumentValues[0];
 		BooleanExpression result = value.operator() == SymbolicOperator.CONCRETE
-				? this.trueValue : this.falseValue;
+				? this.trueValue
+				: this.falseValue;
 
 		return new Evaluation(state, result);
 	}
@@ -518,7 +524,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		int procValue = modelFactory.getProcessId(arguments[0].getSource(),
 				argumentValues[0]);
 		SymbolicExpression result = modelFactory.isPocessIdDefined(procValue)
-				? trueValue : falseValue;
+				? trueValue
+				: falseValue;
 
 		return new Evaluation(state, result);
 	}
@@ -545,7 +552,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		int scopeValue = modelFactory.getScopeId(arguments[0].getSource(),
 				argumentValues[0]);
 		SymbolicExpression result = modelFactory.isScopeIdDefined(scopeValue)
-				? trueValue : falseValue;
+				? trueValue
+				: falseValue;
 
 		return new Evaluation(state, result);
 	}
