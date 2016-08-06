@@ -29,7 +29,8 @@ struct _gcollator {
   int queue_length;
   // The queue of collation states. Note that elements in this queue
   // are references to collate state objects:
-  $gcollate_state queue[]; 
+  $gcollate_state queue[];
+  _Bool entered[];
 };
 
 struct _collator {
@@ -74,6 +75,7 @@ $gcollator $gcollator_create($scope scope, int nprocs) {
   gcollator->procs = ($proc[nprocs])$lambda(int i) $proc_null;
   gcollator->queue_length = 0;
   $seq_init(&(gcollator->queue), 0, NULL);
+  gcollator->entered=(_Bool[nprocs])$lambda(int i) $false;
   return gcollator;
 }
 
@@ -97,6 +99,20 @@ $collator $collator_create($gcollator gcollator, $scope scope, int place) {
   return collator;
 }
 
+$atomic_f void $collator_enters($collator collator){
+  collator->gcollator->entered[collator->place] = $true;
+}
+
+$atomic_f _Bool $collator_has_entered($collator collator, $range range){
+  $domain(1) dom=($domain(1)){range};
+  _Bool *entered=collator->gcollator->entered;
+  
+  $for(int i: dom){
+    if(!entered[i])
+      return $false;
+  }
+  return $true;
+}
 
 $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   int place = c->place;
