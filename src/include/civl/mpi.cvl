@@ -78,7 +78,6 @@ int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest,
 	     int tag, MPI_Comm comm) {
 #ifdef _MPI_CONTRACT
   $elaborate(dest);
-  $elaborate(count);
 #else
   $assert(_mpi_state == _MPI_INIT, "MPI_Send() cannot be invoked "
     "without MPI_Init() being called before.\n");
@@ -91,7 +90,6 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source,
 	     int tag, MPI_Comm comm, MPI_Status *status) {
 #ifdef _MPI_CONTRACT
   $elaborate(source);
-  $elaborate(count);
 #else
   $assert(_mpi_state == _MPI_INIT, "MPI_Recv() cannot be invoked "
     "without MPI_Init() being called before.\n");

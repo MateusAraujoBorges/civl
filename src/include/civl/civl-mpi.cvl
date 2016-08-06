@@ -40,6 +40,9 @@ struct $mpi_gcomm {
 
 /****************************** Helper Functions **********************************/
 int sizeofDatatype(MPI_Datatype datatype) {
+#ifdef  _MPI_CONTRACT
+  return $mpi_sizeof(datatype) * sizeof(char);
+#endif
   switch (datatype) {
   case MPI_INT:
     return sizeof(int);
@@ -191,8 +194,6 @@ int $mpi_recv(void *buf, int count, MPI_Datatype datatype, int source,
     $atomic{
       in = $comm_dequeue(comm.p2p, source, deterministicTag);
       int nonWildsrc = $message_source(in);
-
-      //$mpi_p2pRecvShot(comm.gcommIndex, nonWildsrc, place, deterministicTag);
     }
 #else
     in = $comm_dequeue(comm.p2p, source, deterministicTag);
@@ -709,16 +710,20 @@ void $mpi_unsnapshot(MPI_Comm comm) {
      $collate_departs(comm.collator);
 }
 
-void * $mpi_valid(int count, MPI_Datatype datatype) {
-  $assume(0 <= datatype && datatype <= 12);
-  if (datatype <= 2) {
-    return (char *)malloc(count * sizeof(char));
-  } else if (datatype <= 8) {
-    return (int *)malloc(count * sizeof(int));
-  } else if (datatype <= 11) {
-    return ($real *)malloc(count * sizeof($real));
-  } else 
-    return (int *)malloc(count * sizeof(int) * 2);
+size_t $mpi_sizeof(MPI_Datatype datatype) {
+  $abstract size_t $mpi_extent(MPI_Datatype datatype);  
+  size_t result = $mpi_extent(datatype);
+
+  $assume(result > 0);
+  return result;
+}
+
+void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
+  size_t realCount = count * $mpi_sizeof(datatype);
+  char newValues[realCount];
+
+  $havoc(&newValues);
+  memcpy(buf, newValues, realCount * sizeof(char));
 }
 
 
