@@ -13,6 +13,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.AssignsOrReadsNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.AssumesNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.BehaviorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
@@ -30,8 +31,10 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
@@ -47,6 +50,7 @@ import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.util.IF.Pair;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.transform.IF.ContractTransformer;
 
 /**
@@ -120,6 +124,10 @@ public class ContractTransformerWorker extends BaseWorker {
 	/**
 	 * A CIVL-MPI function identifier:
 	 */
+	private final static String MPI_SIZEOF = "$mpi_sizeof";
+	/**
+	 * A CIVL-MPI function identifier:
+	 */
 	private final static String MPI_CONTRACT_ENTERS = "$mpi_contract_enters";
 
 	/**
@@ -130,7 +138,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	/**
 	 * A CIVL-MPI function identifier:
 	 */
-	private final static String MPI_VALID = "$mpi_valid";
+	private final static String MPI_ASSIGNS = "$mpi_assigns";
 
 	/**
 	 * A comm-library function identifier:
@@ -220,11 +228,14 @@ public class ContractTransformerWorker extends BaseWorker {
 
 		private List<ExpressionNode> waitsforSet;
 
+		private List<ExpressionNode> assignsSet;
+
 		ConditionalClauses(ExpressionNode condition) {
 			this.condition = condition;
 			requiresSet = new LinkedList<>();
 			ensuresSet = new LinkedList<>();
 			waitsforSet = new LinkedList<>();
+			assignsSet = new LinkedList<>();
 		}
 
 		/**
@@ -253,6 +264,16 @@ public class ContractTransformerWorker extends BaseWorker {
 		private void addWaitsfor(SequenceNode<ExpressionNode> waitsforArgs) {
 			for (ExpressionNode arg : waitsforArgs)
 				waitsforSet.add(arg);
+		}
+
+		/**
+		 * Add a set of arguments of a "assigns" clause.
+		 * 
+		 * @param assignsArgs
+		 */
+		private void addAssigns(SequenceNode<ExpressionNode> assignsArgs) {
+			for (ExpressionNode arg : assignsArgs)
+				assignsSet.add(arg);
 		}
 
 		/**
@@ -306,6 +327,15 @@ public class ContractTransformerWorker extends BaseWorker {
 		 */
 		private List<ExpressionNode> getWaitsfors() {
 			return waitsforSet;
+		}
+
+		/**
+		 * Return a list of assigns arguments.
+		 * 
+		 * @return
+		 */
+		private List<ExpressionNode> getAssignsArgs() {
+			return assignsSet;
 		}
 	}
 
@@ -502,8 +532,10 @@ public class ContractTransformerWorker extends BaseWorker {
 		// externalList.addAll(createDeclarationsForUsedFunctions());
 		externalList.addAll(processedSourceFiles.right);
 		externalList.add(mainFunction(processedSourceFiles.left, hasMPI));
-		newRootNode = nodeFactory.newSequenceNode(null, "TranslationUnit",
-				externalList);
+		newRootNode = nodeFactory.newSequenceNode(
+				newSource("TranslationUnit",
+						CivlcTokenConstant.TRANSLATION_UNIT),
+				"TranslationUnit", externalList);
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
@@ -578,9 +610,10 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @param sourceFileNodes
 	 * @return A pair of a {@link FunctionDefinitionNode} which represents thet
 	 *         target function and a list of processed source file contents.
+	 * @throws SyntaxException
 	 */
 	private Pair<FunctionDefinitionNode, List<BlockItemNode>> processSourceFileNodes(
-			List<BlockItemNode> sourceFileNodes) {
+			List<BlockItemNode> sourceFileNodes) throws SyntaxException {
 		List<BlockItemNode> newSourceFileNodes = new LinkedList<>();
 		FunctionDefinitionNode target = null;
 
@@ -717,9 +750,16 @@ public class ContractTransformerWorker extends BaseWorker {
 		bodyItems.add(nodeFactory.newVariableDeclarationNode(contractSource,
 				identifier(RESULT),
 				funcDecl.getTypeNode().getReturnType().copy()));
-		bodyItems.add(createHavocCall(identifierExpression(RESULT)));
+		bodyItems.add(nodeFactory.newExpressionStatementNode(
+				createHavocCall(identifierExpression(RESULT))));
 
-		// Transform step 5: Insert assumes for sequential ensurances:
+		// Transform step 5: Translate assigns clauses:
+		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+			for (ConditionalClauses condClause : mpiBlock.behaviors)
+				bodyItems.addAll(processConditionalAssignsArgumentNode(
+						condClause.condition, condClause.getAssignsArgs()));
+
+		// Transform step 6: Insert assumes for sequential ensurances:
 		if (localBlock != null) {
 			for (ConditionalClauses condClauses : localBlock
 					.getConditionalClauses())
@@ -729,7 +769,7 @@ public class ContractTransformerWorker extends BaseWorker {
 							condClauses.condition, ensures));
 		}
 
-		// Transform step 6: Insert assumes for ensurances of each
+		// Transform step 7: Insert assumes for ensurances of each
 		// MPI-collective block:
 		for (ParsedContractBlock block : parsedContractBlocks)
 			bodyItems.addAll(transformCoEnsurances4NT(block));
@@ -777,9 +817,10 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @param funcDefi
 	 *            The definition of the target function
 	 * @return A new driver function for the target function.
+	 * @throws SyntaxException
 	 */
 	private FunctionDefinitionNode transformTargetFunction(
-			FunctionDefinitionNode funcDefi) {
+			FunctionDefinitionNode funcDefi) throws SyntaxException {
 		CompoundStatementNode body;
 		ExpressionNode funcIdentifier = identifierExpression(
 				funcDefi.getName());
@@ -838,7 +879,6 @@ public class ContractTransformerWorker extends BaseWorker {
 		bodyItems.add(nodeFactory.newVariableDeclarationNode(contractSource,
 				identifier(RESULT),
 				funcDefi.getTypeNode().getReturnType().copy(), targetCall));
-
 		// Transform step 8: Inserts "$mpi_contract_entered"s:
 		// for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 		// for (Pair<ExpressionNode, List<ExpressionNode>> condWaitsforArgs :
@@ -868,6 +908,17 @@ public class ContractTransformerWorker extends BaseWorker {
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
 					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
+		// Free for $mpi_valid() calls at requirements:
+		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+			for (ConditionalClauses condClauses : mpiBlock
+					.getConditionalClauses())
+				for (ExpressionNode requires : condClauses
+						.getRequires(nodeFactory)) {
+					List<MPIContractExpressionNode> mpiValids = getMPIValidExpressionNodes(
+							requires);
+					bodyItems.addAll(createConditionalFreeCalls(
+							condClauses.condition, mpiValids));
+				}
 		body = nodeFactory.newCompoundStatementNode(driverSource, bodyItems);
 		funcTypeNode = nodeFactory.newFunctionTypeNode(funcTypeNode.getSource(),
 				funcTypeNode.getReturnType().copy(),
@@ -904,12 +955,12 @@ public class ContractTransformerWorker extends BaseWorker {
 			ContractKind kind = contract.contractKind();
 
 			switch (kind) {
-			case REQUIRES:
-			case ENSURES:
-			case MPI_COLLECTIVE:
-				return true;
-			default:
-				continue;
+				case REQUIRES :
+				case ENSURES :
+				case MPI_COLLECTIVE :
+					return true;
+				default :
+					continue;
 			}
 		}
 		return false;
@@ -944,10 +995,11 @@ public class ContractTransformerWorker extends BaseWorker {
 	 *            The {@link Source} of the $mpi_comm_size
 	 * @return A list of {@link BlockItemNode} representing all the transformed
 	 *         statements
+	 * @throws SyntaxException
 	 */
 	private List<BlockItemNode> transformCoRequirements4Target(
 			ParsedContractBlock mpiBlock, Source mpiCommRankSource,
-			Source mpiCommSizeSource) {
+			Source mpiCommSizeSource) throws SyntaxException {
 		ExpressionNode mpiComm = mpiBlock.mpiComm;
 		VariableDeclarationNode collateStateDecl = createCollateStateDeclaration(
 				COLLATE_STATE_VAR_PRE, mpiComm);
@@ -958,9 +1010,20 @@ public class ContractTransformerWorker extends BaseWorker {
 		bodyItems.addAll(mpiConstantsInitialization(mpiComm));
 		// Add $mpi_valid() calls for \mpi_valid annotations:
 		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
-			for (ExpressionNode requires : condClauses.getRequires(nodeFactory))
-				bodyItems.addAll(createConditionalMPIValidCalls(
-						condClauses.condition, requires));
+			for (ExpressionNode requires : condClauses
+					.getRequires(nodeFactory)) {
+				List<MPIContractExpressionNode> mpiValids = getMPIValidExpressionNodes(
+						requires);
+				for (MPIContractExpressionNode mpiValid : mpiValids) {
+					// List<BlockItemNode> mpiValidCalls =
+					// createMallocStatementSequenceForMPIValid(
+					// mpiValid);
+					bodyItems.add(
+							createMallocStatementSequenceForMPIValid(mpiValid));
+
+					// bodyItems.addAll(mpiValidCalls);
+				}
+			}
 		// take snapshot after do $mpi_valid which elaborates "datatype"s:
 		bodyItems.add(collateStateDecl);
 		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
@@ -1166,7 +1229,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private StatementNode translateConditionalPredicates(boolean isAssume,
 			ExpressionNode cond, ExpressionNode preds) {
-		StatementNode stmt = isAssume ? createAssumption(preds)
+		StatementNode stmt = isAssume
+				? createAssumption(preds)
 				: createAssertion(preds);
 
 		// If the condition is null, it doesn't need a
@@ -1552,9 +1616,9 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * 
 	 * @param var
 	 *            An {@link ExpressionNode} representing an variable.
-	 * @return The created $havoc call statement node.
+	 * @return The created $havoc call expression node.
 	 */
-	private StatementNode createHavocCall(ExpressionNode var) {
+	private ExpressionNode createHavocCall(ExpressionNode var) {
 		Source source = newSource(
 				HAVOC + "(" + var.prettyRepresentation() + ");",
 				CivlcTokenConstant.CALL);
@@ -1564,7 +1628,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		FunctionCallNode call = nodeFactory.newFunctionCallNode(source,
 				callIdentifier, Arrays.asList(addressOfVar), null);
 
-		return nodeFactory.newExpressionStatementNode(call);
+		return call;
 	}
 
 	/**
@@ -1750,115 +1814,6 @@ public class ContractTransformerWorker extends BaseWorker {
 	}
 
 	/**
-	 * Clumsy declaration creation. Create declaration nodes for :
-	 * <ul>
-	 * <li>MPI_Comm_size();</li>
-	 * <li>MPI_Comm_rank();</li>
-	 * <li>MPI_Init();</li>
-	 * <li>MPI_Finalize();</li>
-	 * <li>$havoc();</li>
-	 * <li>$mpi_snapshot();</li>
-	 * <li>$mpi_contract_enters();</li>
-	 * <li>$mpi_contract_entered();</li>
-	 * <li>$collate_complete();</li>
-	 * <li>$collate_arrived();</li>
-	 * </ul>
-	 * 
-	 * @return
-	 */
-	private List<FunctionDeclarationNode> createDeclarationsForUsedFunctions() {
-		List<FunctionDeclarationNode> results = new LinkedList<>();
-		List<TypeNode> formals;
-		FunctionDeclarationNode decl;
-		Source intTypeSource = newSource("int ", CivlcTokenConstant.TYPE);
-		Source boolTypeSource = newSource("_Bool ", CivlcTokenConstant.TYPE);
-		Source rangeTypeSource = newSource("$range ", CivlcTokenConstant.TYPE);
-		Source voidSource = newSource("void ", CivlcTokenConstant.TYPE);
-		Source ptr2voidSource = newSource("void *", CivlcTokenConstant.TYPE);
-		Source ptr2intSource = newSource("int *", CivlcTokenConstant.TYPE);
-		Source ptr2charSource = newSource("char *..", CivlcTokenConstant.TYPE);
-		TypeNode intTypeNode = nodeFactory.newBasicTypeNode(intTypeSource,
-				BasicTypeKind.INT);
-		TypeNode boolTypeNode = nodeFactory.newBasicTypeNode(boolTypeSource,
-				BasicTypeKind.BOOL);
-		TypeNode mpiCommTypeNode = nodeFactory
-				.newTypedefNameNode(identifier(MPI_COMM_TYPE), null);
-		TypeNode collateStateTypeNode = nodeFactory
-				.newTypedefNameNode(identifier(COLLATE_STATE), null);
-		// TypeNode rangeTypeNode =
-		// nodeFactory.newRangeTypeNode(rangeTypeSource);
-		TypeNode rangeTypeNode = nodeFactory.newRangeTypeNode(rangeTypeSource);
-		TypeNode ptr2voidNode = nodeFactory.newPointerTypeNode(ptr2voidSource,
-				nodeFactory.newVoidTypeNode(voidSource));
-		TypeNode ptr2intNode = nodeFactory.newPointerTypeNode(ptr2intSource,
-				intTypeNode);
-		TypeNode ptr2ptr2ptr2charNode = nodeFactory.newPointerTypeNode(
-				ptr2charSource,
-				nodeFactory.newPointerTypeNode(ptr2charSource,
-						nodeFactory.newPointerTypeNode(ptr2charSource,
-								nodeFactory.newBasicTypeNode(ptr2charSource,
-										BasicTypeKind.CHAR))));
-
-		// MPI_Comm_rank:
-		formals = Arrays.asList(mpiCommTypeNode, ptr2intNode);
-		results.add(functionDeclarationMaker(MPI_COMM_RANK_CALL, formals,
-				intTypeNode.copy(), false,
-				"int MPI_Comm_rank(MPI_Comm, int *)"));
-		// MPI_Comm_size:
-		formals = Arrays.asList(mpiCommTypeNode.copy(), ptr2intNode.copy());
-		results.add(functionDeclarationMaker(MPI_COMM_SIZE_CALL, formals,
-				intTypeNode.copy(), false,
-				"int MPI_Comm_size(MPI_Comm, int *)"));
-		// MPI_Init:
-		formals = Arrays.asList(ptr2intNode.copy(), ptr2ptr2ptr2charNode);
-		results.add(functionDeclarationMaker(MPI_INIT_CALL, formals,
-				intTypeNode.copy(), false, "int MPI_Init(int *, char ***)"));
-		// MPI_Finalize:
-		formals = Arrays.asList();
-		results.add(functionDeclarationMaker(MPI_FINALIZE_CALL, formals,
-				intTypeNode.copy(), false, "int MPI_Finalize()"));
-		// $havoc:
-		formals = Arrays.asList(ptr2voidNode.copy());
-		decl = functionDeclarationMaker(HAVOC, formals,
-				nodeFactory.newVoidTypeNode(voidSource), false,
-				"void $havoc(void *)");
-		decl.setSystemFunctionSpecifier(true);
-		results.add(decl);
-		// $mpi_snapshot:
-		formals = Arrays.asList(mpiCommTypeNode.copy());
-		results.add(functionDeclarationMaker(MPI_SNAPSHOT, formals,
-				collateStateTypeNode, false,
-				"$collate_state $mpi_snapshot(MPI_Comm )"));
-		// $mpi_contract_enters:
-		formals = Arrays.asList(mpiCommTypeNode.copy());
-		results.add(functionDeclarationMaker(MPI_CONTRACT_ENTERS, formals,
-				intTypeNode.copy(), false,
-				"int $mpi_contract_enters(MPI_Comm )"));
-		// $mpi_contract_entered:
-		formals = Arrays.asList(mpiCommTypeNode.copy(), rangeTypeNode);
-		results.add(functionDeclarationMaker(MPI_CONTRACT_ENTERED, formals,
-				intTypeNode.copy(), true,
-				"int $mpi_contract_entered(MPI_Comm, $range)"));
-		// $collate_complete:
-		formals = Arrays.asList(collateStateTypeNode.copy());
-		decl = functionDeclarationMaker(COLLATE_COMPLETE, formals, boolTypeNode,
-				false, "_Bool $collate_complete($collate_state)");
-		decl.setSystemFunctionSpecifier(true);
-		// decl.setPureFunctionSpecifier(true);
-		results.add(decl);
-		// $collate_arrived:
-		formals = Arrays.asList(collateStateTypeNode.copy(),
-				rangeTypeNode.copy());
-		decl = functionDeclarationMaker(COLLATE_ARRIVED, formals,
-				boolTypeNode.copy(), false,
-				"_Bool $collate_arrived($collate_state, $range)");
-		decl.setSystemFunctionSpecifier(true);
-		// decl.setPureFunctionSpecifier(true);
-		results.add(decl);
-		return results;
-	}
-
-	/**
 	 * <p>
 	 * <b>Summary: </b> Transform the parameters of the target function into a
 	 * sequence of variable declarations. All of them will be initialized with
@@ -1902,53 +1857,11 @@ public class ContractTransformerWorker extends BaseWorker {
 
 			results.add(actualDecl);
 			// $havoc for the actual parameter declaration:
-			havoc = createHavocCall(identifierExpression(actualDecl.getName()));
+			havoc = nodeFactory.newExpressionStatementNode(createHavocCall(
+					identifierExpression(actualDecl.getName())));
 			results.add(havoc);
 		}
 		return results;
-	}
-
-	/**
-	 * <p>
-	 * <b>Summary:</b> A helper method for create function declaration nodes.
-	 * </p>
-	 * 
-	 * @param functionName
-	 *            The Name of the function that will be declared
-	 * @param formalTypes
-	 *            A list of types of formal parameters
-	 * @param returnType
-	 *            The return type of the declared function
-	 * @param hasVariableArguments
-	 *            True for set the function to have variant arguments
-	 * @param source
-	 *            The {@link Source} attahced with the created node
-	 * @return
-	 */
-	private FunctionDeclarationNode functionDeclarationMaker(
-			String functionName, List<TypeNode> formalTypes,
-			TypeNode returnType, boolean hasVariableArguments, String source) {
-		int idcounter = 0;
-		String commPrefix = "decl";
-		List<VariableDeclarationNode> varDecl = new LinkedList<>();
-		SequenceNode<VariableDeclarationNode> varDeclSeq;
-		FunctionTypeNode funcType;
-
-		for (TypeNode formalType : formalTypes) {
-			varDecl.add(nodeFactory.newVariableDeclarationNode(
-					newSource("type id", CivlcTokenConstant.DECLARATION),
-					identifier(commPrefix + (idcounter++)), formalType));
-		}
-		varDeclSeq = nodeFactory.newSequenceNode(
-				newSource("formal types", CivlcTokenConstant.SEQUENCE),
-				"formal_types", varDecl);
-		funcType = nodeFactory.newFunctionTypeNode(
-				newSource(source, CivlcTokenConstant.TYPE), returnType,
-				varDeclSeq, false);
-		funcType.setVariableArgs(hasVariableArguments);
-		return nodeFactory.newFunctionDeclarationNode(
-				newSource(source, CivlcTokenConstant.DECLARATION),
-				identifier(functionName), funcType, null);
 	}
 
 	/* ********************* Processing contract nodes ********************** */
@@ -2042,7 +1955,8 @@ public class ContractTransformerWorker extends BaseWorker {
 				ExpressionNode assumes = ((AssumesNode) contract)
 						.getPredicate();
 
-				assumptions = assumptions == null ? assumes
+				assumptions = assumptions == null
+						? assumes
 						: nodeFactory.newOperatorNode(assumes.getSource(),
 								Operator.LAND, assumptions, assumes);
 			}
@@ -2054,20 +1968,28 @@ public class ContractTransformerWorker extends BaseWorker {
 			ContractKind kind = contract.contractKind();
 
 			switch (kind) {
-			case REQUIRES:
-				condClauses
-						.addRequires(((RequiresNode) contract).getExpression());
-				break;
-			case ENSURES:
-				condClauses
-						.addEnsures(((EnsuresNode) contract).getExpression());
-				break;
-			case WAITSFOR:
-				condClauses
-						.addWaitsfor(((WaitsforNode) contract).getArguments());
-				break;
-			default:
-				// do nothing.
+				case REQUIRES :
+					condClauses.addRequires(
+							((RequiresNode) contract).getExpression());
+					break;
+				case ENSURES :
+					condClauses.addEnsures(
+							((EnsuresNode) contract).getExpression());
+					break;
+				case WAITSFOR :
+					condClauses.addWaitsfor(
+							((WaitsforNode) contract).getArguments());
+					break;
+				case ASSIGNS_READS : {
+					AssignsOrReadsNode assigns = (AssignsOrReadsNode) contract;
+
+					if (!assigns.isAssigns())
+						break;
+					condClauses.addAssigns(assigns.getMemoryList());
+					break;
+				}
+				default :
+					// do nothing.
 			}
 		}
 		currentBlock.addConditionalClauses(condClauses);
@@ -2108,61 +2030,52 @@ public class ContractTransformerWorker extends BaseWorker {
 	}
 
 	/**
-	 * Creates a set of <code>$mpi_valid</code> calls with the given if
-	 * conditions for all <code>\mpi_valid</code> expressions in the given
-	 * predicate. If there is no any such expression, no call will be created.
-	 * If the given if conditions is null, then there is no if branch.
+	 * Create a (conditional for behavior assumptions) $free call for the given
+	 * MPI_Valid expression.
 	 * 
-	 * @param cond
-	 *            The conditional expression
-	 * @param predicate
-	 *            Thd predication which may contains any <code>\mpi_valid</code>
+	 * @param conditions
+	 * @param mpiValidCalls
 	 * @return
 	 */
-	private List<BlockItemNode> createConditionalMPIValidCalls(
-			ExpressionNode conditions, ExpressionNode predicate) {
-		List<BlockItemNode> stmts = createMPIValidCalls(predicate);
+	private List<BlockItemNode> createConditionalFreeCalls(
+			ExpressionNode conditions,
+			List<MPIContractExpressionNode> mpiValids) {
 		List<BlockItemNode> result = new LinkedList<>();
 
-		if (!stmts.isEmpty()) {
-			if (conditions != null) {
-				StatementNode stmt = nodeFactory.newCompoundStatementNode(
-						stmts.get(0).getSource(), stmts);
+		for (MPIContractExpressionNode mpiValid : mpiValids) {
+			ExpressionNode ptr = mpiValid.getArgument(0).copy();
+			ExpressionNode freeCall = nodeFactory.newFunctionCallNode(
+					ptr.getSource(), this.identifierExpression("$free"),
+					Arrays.asList(ptr.copy()), null);
+			StatementNode stmt = nodeFactory
+					.newExpressionStatementNode(freeCall);
 
-				result.add(nodeFactory.newIfNode(conditions.getSource(),
-						conditions.copy(), stmt));
-			} else
-				return stmts;
+			if (conditions != null)
+				stmt = nodeFactory.newIfNode(stmt.getSource(),
+						conditions.copy(), stmt);
+			result.add(stmt);
 		}
 		return result;
 	}
 
 	/**
-	 * Creates a set of <code>$mpi_valid</code> calls for all
-	 * <code>\mpi_valid</code> expressions in the given expression
+	 * Creates a set of <code>$mpi_assigns</code> calls for the given
+	 * <code>\mpi_region</code> expressions
 	 * 
 	 * @param expression
 	 * @return
 	 */
-	private List<BlockItemNode> createMPIValidCalls(ExpressionNode expression) {
-		// TODO: duplicate \mpi_valid expressions will have problems
-		List<MPIContractExpressionNode> mpiValids = getMPIValidExpressionNodes(
-				expression);
-		List<BlockItemNode> stmts = new LinkedList<>();
+	private ExpressionNode createMPIAssignsCalls(
+			MPIContractExpressionNode mpiRegion) {
+		ExpressionNode call = nodeFactory.newFunctionCallNode(
+				mpiRegion.getSource(), identifierExpression(MPI_ASSIGNS),
+				Arrays.asList(mpiRegion.getArgument(0).copy(),
+						mpiRegion.getArgument(1).copy(),
+						mpiRegion.getArgument(2).copy()),
+				null);
 
-		for (MPIContractExpressionNode mpiValid : mpiValids) {
-			ExpressionNode call = nodeFactory.newFunctionCallNode(
-					mpiValid.getSource(), identifierExpression(MPI_VALID),
-					Arrays.asList(mpiValid.getArgument(1).copy(),
-							mpiValid.getArgument(2).copy()),
-					null);
-			ExpressionNode lhsCall = nodeFactory.newOperatorNode(
-					mpiValid.getSource(), Operator.ASSIGN,
-					mpiValid.getArgument(0).copy(), call);
+		return call;
 
-			stmts.add(nodeFactory.newExpressionStatementNode(lhsCall));
-		}
-		return stmts;
 	}
 
 	/**
@@ -2189,4 +2102,136 @@ public class ContractTransformerWorker extends BaseWorker {
 		return results;
 	}
 
+	/**
+	 * <code>
+	 * 
+	 * void * buf = (char *)malloc(count * $mpi_sizeof(datatype) * sizeof(char));
+	 * 
+	 * </code>
+	 * 
+	 * @param mpiValid
+	 * @return
+	 */
+	private BlockItemNode createMallocStatementSequenceForMPIValid(
+			MPIContractExpressionNode mpiValid) {
+		ExpressionNode buf = mpiValid.getArgument(0);
+		ExpressionNode count = mpiValid.getArgument(1);
+		ExpressionNode datatype = mpiValid.getArgument(2);
+		ExpressionNode countTimesMPISizeof = nodeFactory.newOperatorNode(
+				mpiValid.getSource(), Operator.TIMES, Arrays.asList(
+						count.copy(), createMPISizeofCall(datatype.copy())));
+
+		return createMallocStatementWorker(buf.copy(), countTimesMPISizeof,
+				nodeFactory.newBasicTypeNode(datatype.getSource(),
+						BasicTypeKind.CHAR),
+				mpiValid.getSource());
+	}
+
+	/**
+	 * <code>$mpi_sizeof(datatype)</code>
+	 */
+	private ExpressionNode createMPISizeofCall(ExpressionNode datatype) {
+		return nodeFactory.newFunctionCallNode(datatype.getSource(),
+				identifierExpression(MPI_SIZEOF), Arrays.asList(datatype),
+				null);
+	}
+
+	/**
+	 * Worker which creates malloc statements for
+	 * {@link #createIfMallocStatementWorker(IntegerConstantNode, ExpressionNode, ExpressionNode, ExpressionNode, TypeNode, StatementNode, Source)}
+	 * 
+	 * @param ptr
+	 * @param count
+	 * @param type
+	 * @param source
+	 * @return
+	 */
+	private StatementNode createMallocStatementWorker(ExpressionNode ptr,
+			ExpressionNode count, TypeNode type, Source source) {
+		Source typeSigSource = newSource(
+				count.prettyRepresentation() + " * " + "sizeof("
+						+ type.prettyRepresentation() + ")",
+				CivlcTokenConstant.OPERATOR);
+		Source mallocSource = newSource("malloc", CivlcTokenConstant.CALL);
+		Source assignSource = newSource(
+				ptr.prettyRepresentation() + "= (T *)malloc( ... )",
+				CivlcTokenConstant.RETURN);
+		ExpressionNode typeSig = nodeFactory.newOperatorNode(typeSigSource,
+				Operator.TIMES, count,
+				nodeFactory.newSizeofNode(type.getSource(), type));
+		ExpressionNode malloc = nodeFactory.newFunctionCallNode(mallocSource,
+				identifierExpression("malloc"), Arrays.asList(typeSig), null);
+		ExpressionNode castedMalloc = nodeFactory.newCastNode(
+				malloc.getSource(),
+				nodeFactory.newPointerTypeNode(type.getSource(), type.copy()),
+				malloc);
+		ExpressionNode assignExpr = nodeFactory.newOperatorNode(assignSource,
+				Operator.ASSIGN, ptr.copy(), castedMalloc);
+
+		return nodeFactory.newExpressionStatementNode(assignExpr);
+	}
+
+	private List<BlockItemNode> processConditionalAssignsArgumentNode(
+			ExpressionNode condition, List<ExpressionNode> assignsArgs) {
+		List<BlockItemNode> results = new LinkedList<>();
+		Source source = newSource("assigns ...", CivlcTokenConstant.CONTRACT);
+
+		for (ExpressionNode assignsArg : assignsArgs) {
+			StatementNode stmt = nodeFactory.newExpressionStatementNode(
+					processAssignsArgumentNodeWorker(assignsArg));
+
+			results.add(stmt);
+		}
+		if (condition == null)
+			return results;
+		else {
+			StatementNode stmt = nodeFactory.newCompoundStatementNode(source,
+					results);
+
+			return Arrays.asList(
+					nodeFactory.newIfNode(source, condition.copy(), stmt));
+		}
+	}
+
+	private ExpressionNode processAssignsArgumentNodeWorker(
+			ExpressionNode arg) {
+		ExpressionKind kind = arg.expressionKind();
+
+		switch (kind) {
+			case OPERATOR : {
+				OperatorNode derefNode = (OperatorNode) arg;
+				Operator op = derefNode.getOperator();
+
+				if (op == Operator.DEREFERENCE) {
+					// For any kind of arguments with the form *(ptr-expr), the
+					// assigns clause should be translated as $havoc(ptr-expr):
+					return createHavocCall(derefNode.getArgument(0).copy());
+				}
+				if (op == Operator.SUBSCRIPT) {
+					// For any kind of arguments with the form
+					// ptr-expr[index], the assign clause should be
+					// translated as $havoc(&ptr-expr[index]):
+					// TODO: currently not support range:
+					ExpressionNode addrDerefNode = nodeFactory.newOperatorNode(
+							derefNode.getSource(), Operator.ADDRESSOF,
+							derefNode.copy());
+
+					return createHavocCall(addrDerefNode);
+				}
+				break;
+			}
+			case MPI_CONTRACT_EXPRESSION : {
+				MPIContractExpressionNode mpiConcExpr = (MPIContractExpressionNode) arg;
+
+				assert mpiConcExpr
+						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_REGION;
+				return createMPIAssignsCalls(mpiConcExpr);
+			}
+			default :
+				// TODO: do nothing or report an error , what about MemSetNode ?
+		}
+		throw new CIVLUnimplementedFeatureException(
+				"assigns clause with an argument: "
+						+ arg.prettyRepresentation());
+	}
 }
