@@ -1040,12 +1040,8 @@ public abstract class LibraryComponent {
 
 			claim = universe.and(universe.equals(dataSize, count),
 					universe.equals(dataSize, arraySize));
-			if (reasoner.isValid(claim)) {
-				if (array.type().typeKind().equals(SymbolicTypeKind.ARRAY))
-					dataSequence = arrayCasting(state, process, dataSequence,
-							(SymbolicCompleteArrayType) array.type(), source);
+			if (reasoner.isValid(claim))
 				return new Evaluation(state, dataSequence);
-			}
 		} // TODO: what if the length of dataSize is non-concrete and cannot be
 			// decided by reasoner?
 		flattenArray = arrayFlatten(state, process, array, source);
