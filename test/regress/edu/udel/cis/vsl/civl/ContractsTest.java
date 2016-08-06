@@ -81,6 +81,18 @@ public class ContractsTest {
 				QUIET, filename("contractsMPI/simpleMpiValid2.c")));
 	}
 
+	@Test
+	public void bcast() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=broadcast",
+				filename("contractsMPI/broadcast.c")));
+	}
+
+	@Test
+	public void gather() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
+				filename("contractsMPI/gather.c")));
+	}
+
 	// @Test
 	// public void seq_sum() {
 	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
