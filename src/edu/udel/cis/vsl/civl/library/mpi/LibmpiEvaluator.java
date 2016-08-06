@@ -1,5 +1,7 @@
 package edu.udel.cis.vsl.civl.library.mpi;
 
+import java.util.Arrays;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
@@ -27,10 +29,12 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
  * <p>
@@ -88,6 +92,7 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 	public final IntObject queueIDField = universe.intObject(4);
 	public final NumericExpression p2pCommIndexValue = zero;
 	public final NumericExpression colCommIndexValue = one;
+	public final static String mpiExtentName = "_uf_$mpi_extent";
 
 	public LibmpiEvaluator(String name, Evaluator evaluator,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -95,7 +100,6 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 			LibraryEvaluatorLoader libEvaluatorLoader) {
 		super(name, evaluator, modelFactory, symbolicUtil, symbolicAnalyzer,
 				civlConfig, libEvaluatorLoader);
-
 	}
 
 	public static Pair<CIVLPrimitiveType, NumericExpression> mpiTypeToCIVLType(
@@ -150,34 +154,25 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		 */
 	}
 
-	public Pair<CIVLPrimitiveType, NumericExpression> nonConcreateMpiTypeToCIVLType(
-			State state, SymbolicUniverse universe, CIVLTypeFactory typeFactory,
-			NumericExpression MPI_TYPE, CIVLSource source) {
-		BooleanExpression pred;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		NumericExpression count = universe.oneInt();
+	/**
+	 * For non-concrete MPI_Datatypes, the corresponding CIVLType is always
+	 * "char" type and the extent of the MPI_Datatype is always an abstract
+	 * function: "size_t _uf_$mpi_extent(datatype)".
+	 * 
+	 * @param MPI_TYPE
+	 * @return
+	 */
+	public static Pair<CIVLPrimitiveType, NumericExpression> nonConcreateMpiTypeToCIVLType(
+			SymbolicUniverse universe, CIVLTypeFactory typeFactory,
+			NumericExpression MPI_TYPE) {
+		SymbolicType mpiExtentType = universe.functionType(
+				Arrays.asList(universe.integerType()), universe.integerType());
+		SymbolicConstant MPI_EXTENT = universe.symbolicConstant(
+				universe.stringObject(mpiExtentName), mpiExtentType);
+		NumericExpression mpiExtent = (NumericExpression) universe
+				.apply(MPI_EXTENT, Arrays.asList(MPI_TYPE));
 
-		pred = universe.lessThanEquals(MPI_TYPE, two);
-		if (reasoner.isValid(pred)) {
-			return new Pair<>(typeFactory.charType(), count);
-		}
-		pred = universe.lessThanEquals(MPI_TYPE, universe.integer(8));
-		if (reasoner.isValid(pred)) {
-			return new Pair<>(typeFactory.integerType(), count);
-		}
-		pred = universe.lessThanEquals(MPI_TYPE, universe.integer(11));
-		if (reasoner.isValid(pred)) {
-			return new Pair<>(typeFactory.realType(), count);
-		}
-		pred = universe.lessThanEquals(MPI_TYPE, universe.integer(12));
-		if (reasoner.isValid(pred)) {
-			return new Pair<>(typeFactory.integerType(),
-					universe.multiply(count, two));
-		}
-		throw new CIVLInternalException(
-				"Unable to resolve the given MPI_Datatype value: " + MPI_TYPE,
-				source);
-
+		return new Pair<>(typeFactory.charType(), mpiExtent);
 	}
 
 	/**************************** Contract section ****************************/
@@ -525,10 +520,11 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		Pair<CIVLPrimitiveType, NumericExpression> mpiTypeTranslation;
 		int datatypeEnum;
 
-		if (datatypeEnumNumber == null)
-			throw new CIVLInternalException(
-					"MPI_Datatype is a concrete enumerator",
-					datatypeExpr.getSource());
+		if (datatypeEnumNumber == null) {
+			eval.value = nonConcreateMpiTypeToCIVLType(universe, typeFactory,
+					datatype).right;
+			return eval;
+		}
 		datatypeEnum = ((IntegerNumber) datatypeEnumNumber).intValue();
 		mpiTypeTranslation = LibmpiEvaluator.mpiTypeToCIVLType(universe,
 				typeFactory, datatypeEnum, datatypeExpr.getSource());
@@ -639,19 +635,28 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		SymbolicExpression basePtr = symbolicUtil.makePointer(ptr, baseRef);
 		CIVLType leafNodeType = symbolicAnalyzer.typeOfObjByPointer(source,
 				state, basePtr);
-		Number mpiDatatype2Number;
-		int mpiDatatype2Concrete;
 		Pair<CIVLPrimitiveType, NumericExpression> mpiDatatypeTranslation;
 
-		mpiDatatype2Number = universe.extractNumber(mpiDatatype);
-		if (mpiDatatype2Number == null) {
-			mpiDatatypeTranslation = nonConcreateMpiTypeToCIVLType(state,
-					universe, typeFactory, mpiDatatype, source);
+		// char type represents both the char type and a generic type:
+		if (leafNodeType.isCharType()) {
+			mpiDatatypeTranslation = nonConcreateMpiTypeToCIVLType(universe,
+					typeFactory, mpiDatatype);
 		} else {
-			mpiDatatype2Concrete = ((IntegerNumber) mpiDatatype2Number)
-					.intValue();
-			mpiDatatypeTranslation = LibmpiEvaluator.mpiTypeToCIVLType(universe,
-					typeFactory, mpiDatatype2Concrete, source);
+			Reasoner reasoner = universe.reasoner(state.getPathCondition());
+			Number datatypeNum = reasoner.extractNumber(mpiDatatype);
+			int datatypeVal;
+
+			if (datatypeNum != null) {
+				datatypeVal = ((IntegerNumber) datatypeNum).intValue();
+				mpiDatatypeTranslation = mpiTypeToCIVLType(universe,
+						typeFactory, datatypeVal, source);
+			} else {
+				// If the MPI datatype is not conrete but the pointed object has
+				// a non-generic type (not char), process the datatype as
+				// generic then report error below:
+				mpiDatatypeTranslation = nonConcreateMpiTypeToCIVLType(universe,
+						typeFactory, mpiDatatype);
+			}
 		}
 		if (!mpiDatatypeTranslation.left.equals(leafNodeType)) {
 			String ptrStr = symbolicAnalyzer.expressionEvaluation(state, pid,
