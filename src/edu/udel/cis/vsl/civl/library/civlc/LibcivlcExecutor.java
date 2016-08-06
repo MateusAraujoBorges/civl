@@ -42,8 +42,8 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
  * @author Manchun Zheng (zmanchun)
  * 
  */
-public class LibcivlcExecutor extends BaseLibraryExecutor implements
-		LibraryExecutor {
+public class LibcivlcExecutor extends BaseLibraryExecutor
+		implements LibraryExecutor {
 
 	/* **************************** Constructors *************************** */
 
@@ -71,7 +71,9 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 				libEvaluatorLoader);
 	}
 
-	/* ******************** Methods from BaseLibraryExecutor ******************* */
+	/*
+	 * ******************** Methods from BaseLibraryExecutor *******************
+	 */
 
 	@Override
 	protected Evaluation executeValue(State state, int pid, String process,
@@ -111,8 +113,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 					argumentValues, source);
 			break;
 		case "$int_iter_create":
-			callEval = this.executeIntIterCreate(state, pid, process,
-					arguments, argumentValues, source);
+			callEval = this.executeIntIterCreate(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$int_iter_hasNext":
 			callEval = this.executeIntIterHasNext(state, pid, process,
@@ -123,16 +125,20 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 					argumentValues, source);
 			break;
 		case "$is_concrete_int":
-			callEval = this.executeIsConcreteInt(state, pid, process,
-					arguments, argumentValues, source);
+			callEval = this.executeIsConcreteInt(state, pid, process, arguments,
+					argumentValues, source);
+			break;
+		case "$is_derefable":
+			callEval = this.executeIsDerefable(state, pid, process, arguments,
+					argumentValues);
 			break;
 		case "$is_terminated":
 			callEval = this.executeIsTerminated(state, pid, process, arguments,
 					argumentValues, source);
 			break;
 		case "$pathCondition":
-			callEval = this.executePathCondition(state, pid, process,
-					arguments, argumentValues, source);
+			callEval = this.executePathCondition(state, pid, process, arguments,
+					argumentValues, source);
 			break;
 		case "$pow":
 		case "$powr":
@@ -160,8 +166,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 					argumentValues);
 			break;
 		case "$next_time_count":
-			callEval = this.executeNextTimeCount(state, pid, process,
-					arguments, argumentValues);
+			callEval = this.executeNextTimeCount(state, pid, process, arguments,
+					argumentValues);
 			break;
 		default:
 			throw new CIVLInternalException("Unknown civlc function: " + name,
@@ -172,9 +178,17 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 
 	/* ************************** Private Methods ************************** */
 
-	private Evaluation executeIsTerminated(State state, int pid,
-			String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) {
+	private Evaluation executeIsDerefable(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues) {
+		SymbolicExpression result = this.symbolicAnalyzer
+				.isDerefablePointer(state, argumentValues[0]).left;
+
+		return new Evaluation(state, result);
+	}
+
+	private Evaluation executeIsTerminated(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) {
 		SymbolicExpression proc = argumentValues[0];
 		int processID = this.modelFactory.getProcessId(source, proc);
 		SymbolicExpression result = this.trueValue;
@@ -195,13 +209,9 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 				.isDerefablePointer(state, pointer);
 
 		if (checkPointer.right != ResultType.YES)
-			state = this.errorLogger.logError(
-					source,
-					state,
-					process,
+			state = this.errorLogger.logError(source, state, process,
 					this.symbolicAnalyzer.stateInformation(state),
-					checkPointer.left,
-					checkPointer.right,
+					checkPointer.left, checkPointer.right,
 					ErrorKind.MEMORY_MANAGE,
 					"can't apply $havoc to a pointer that can't be dereferenced.\npointer: "
 							+ this.symbolicAnalyzer.symbolicExpressionToString(
@@ -239,8 +249,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression value = argumentValues[0];
-		BooleanExpression result = value.operator() == SymbolicOperator.CONCRETE ? this.trueValue
-				: this.falseValue;
+		BooleanExpression result = value.operator() == SymbolicOperator.CONCRETE
+				? this.trueValue : this.falseValue;
 
 		return new Evaluation(state, result);
 	}
@@ -250,10 +260,9 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		if (this.civlConfig.enablePrintf())
-			this.civlConfig.out().println(
-					"path condition: "
-							+ this.symbolicAnalyzer.symbolicExpressionToString(
-									source, state, null,
+			this.civlConfig.out()
+					.println("path condition: " + this.symbolicAnalyzer
+							.symbolicExpressionToString(source, state, null,
 									state.getPathCondition()));
 		return new Evaluation(state, null);
 	}
@@ -279,8 +288,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 		BooleanExpression oldPathCondition, newPathCondition;
 
 		oldPathCondition = state.getPathCondition();
-		newPathCondition = (BooleanExpression) universe.canonic(universe.and(
-				oldPathCondition, assumeValue));
+		newPathCondition = (BooleanExpression) universe
+				.canonic(universe.and(oldPathCondition, assumeValue));
 		state = state.setPathCondition(newPathCondition);
 		return new Evaluation(state, null);
 	}
@@ -290,8 +299,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		Variable timeCountVar = this.modelFactory.timeCountVariable();
-		NumericExpression timeCountValue = (NumericExpression) state.valueOf(
-				pid, timeCountVar);
+		NumericExpression timeCountValue = (NumericExpression) state
+				.valueOf(pid, timeCountVar);
 
 		state = stateFactory.setVariable(state, timeCountVar, pid,
 				universe.add(timeCountValue, one));
@@ -365,11 +374,10 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 		for (int i = 0; i < int_size; i++) {
 			BinaryExpression pointerAdditionExpression = modelFactory
 					.binaryExpression(arrayPointerExpression.getSource(),
-							BINARY_OPERATOR.POINTER_ADD,
-							arrayPointerExpression, modelFactory
-									.integerLiteralExpression(
-											arrayPointerExpression.getSource(),
-											BigInteger.valueOf(i)));
+							BINARY_OPERATOR.POINTER_ADD, arrayPointerExpression,
+							modelFactory.integerLiteralExpression(
+									arrayPointerExpression.getSource(),
+									BigInteger.valueOf(i)));
 			SymbolicExpression arrayElePointer;
 
 			eval = evaluator.pointerAdd(state, pid, process,
@@ -509,8 +517,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 			throws UnsatisfiablePathConditionException {
 		int procValue = modelFactory.getProcessId(arguments[0].getSource(),
 				argumentValues[0]);
-		SymbolicExpression result = modelFactory.isPocessIdDefined(procValue) ? trueValue
-				: falseValue;
+		SymbolicExpression result = modelFactory.isPocessIdDefined(procValue)
+				? trueValue : falseValue;
 
 		return new Evaluation(state, result);
 	}
@@ -531,14 +539,13 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeScopeDefined(State state, int pid,
-			String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues)
+	private Evaluation executeScopeDefined(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		int scopeValue = modelFactory.getScopeId(arguments[0].getSource(),
 				argumentValues[0]);
-		SymbolicExpression result = modelFactory.isScopeIdDefined(scopeValue) ? trueValue
-				: falseValue;
+		SymbolicExpression result = modelFactory.isScopeIdDefined(scopeValue)
+				? trueValue : falseValue;
 
 		return new Evaluation(state, result);
 	}
@@ -564,9 +571,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor implements
 	 * @return The new state after executing the function call.
 	 * @return
 	 */
-	private Evaluation executeWait(State state, int pid,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) {
+	private Evaluation executeWait(State state, int pid, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source) {
 		SymbolicExpression procVal = argumentValues[0];
 		int joinedPid = modelFactory.getProcessId(arguments[0].getSource(),
 				procVal);

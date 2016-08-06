@@ -18,6 +18,8 @@ import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodePredicate;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
@@ -26,6 +28,8 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.StringLiteralNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
@@ -70,12 +74,15 @@ import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
  */
 public abstract class BaseWorker {
 
-	protected final static Map<String, String> EMPTY_MACRO_MAP = new HashMap<>(0);
+	protected final static Map<String, String> EMPTY_MACRO_MAP = new HashMap<>(
+			0);
 	protected final static String GEN_MAIN = GeneralTransformer.PREFIX + "main";
 	protected final static String MAIN = "main";
 	protected final static String ASSUME = "$assume";
 	protected final static String ASSERT = "$assert";
 	protected final static String ELABORATE = "$elaborate";
+	protected final static String DEREFABLE = "$is_derefable";
+	protected final static String SIZEOF_MPI_DATATYPE = "sizeofDatatype";
 
 	protected String identifierPrefix;
 
@@ -133,8 +140,9 @@ public abstract class BaseWorker {
 
 	protected StatementNode elaborateCallNode(ExpressionNode argument) {
 		FunctionCallNode call = nodeFactory.newFunctionCallNode(
-				this.newSource("$elaborate call", CivlcTokenConstant.CALL), this.identifierExpression(ELABORATE),
-				Arrays.asList(argument), null);
+				this.newSource("$elaborate call", CivlcTokenConstant.CALL),
+				this.identifierExpression(ELABORATE), Arrays.asList(argument),
+				null);
 
 		return nodeFactory.newExpressionStatementNode(call);
 	}
@@ -165,7 +173,8 @@ public abstract class BaseWorker {
 	 *            The predicate that if an AST node holds then it will be
 	 *            considered as the target one.
 	 */
-	protected void reduceDuplicateNode(ASTNode root, NodePredicate nodePredicate) {
+	protected void reduceDuplicateNode(ASTNode root,
+			NodePredicate nodePredicate) {
 		int lastIndex = -1;
 		int numChildren = root.numChildren();
 		// boolean changed = false;
@@ -184,13 +193,18 @@ public abstract class BaseWorker {
 					root.removeChild(lastIndex);
 					// changed = true;
 				} else {
-					ASTNode previousNonNullChild = this.nonNullChildBefore(root, i);
+					ASTNode previousNonNullChild = this.nonNullChildBefore(root,
+							i);
 
-					if (previousNonNullChild != null && (previousNonNullChild instanceof CompoundStatementNode)) {
+					if (previousNonNullChild != null
+							&& (previousNonNullChild instanceof CompoundStatementNode)) {
 						CompoundStatementNode previousCompound = (CompoundStatementNode) previousNonNullChild;
-						ASTNode lastChildOfPrevious = this.getVeryLastItemNodeOfCompoundStatement(previousCompound);
+						ASTNode lastChildOfPrevious = this
+								.getVeryLastItemNodeOfCompoundStatement(
+										previousCompound);
 
-						if (lastChildOfPrevious != null && nodePredicate.holds(lastChildOfPrevious)) {
+						if (lastChildOfPrevious != null
+								&& nodePredicate.holds(lastChildOfPrevious)) {
 							lastChildOfPrevious.remove();
 						}
 					}
@@ -244,7 +258,8 @@ public abstract class BaseWorker {
 		return constant.getConstantValue().getIntegerValue().intValue();
 	}
 
-	protected ASTNode getVeryLastItemNodeOfCompoundStatement(CompoundStatementNode compound) {
+	protected ASTNode getVeryLastItemNodeOfCompoundStatement(
+			CompoundStatementNode compound) {
 		int numChildren = compound.numChildren();
 
 		for (int i = numChildren - 1; i >= 0; i--) {
@@ -252,7 +267,8 @@ public abstract class BaseWorker {
 
 			if (child != null) {
 				if (child instanceof CompoundStatementNode)
-					return this.getVeryLastItemNodeOfCompoundStatement((CompoundStatementNode) child);
+					return this.getVeryLastItemNodeOfCompoundStatement(
+							(CompoundStatementNode) child);
 				else
 					return child;
 			}
@@ -284,19 +300,22 @@ public abstract class BaseWorker {
 
 			for (BlockItemNode item : compound) {
 				if (item != null && (!(item instanceof CompoundStatementNode)
-						|| !this.isEmptyCompoundStatementNode((CompoundStatementNode) item))) {
+						|| !this.isEmptyCompoundStatementNode(
+								(CompoundStatementNode) item))) {
 					item.remove();
 					items.add(item);
 				}
 			}
-			newNode = nodeFactory.newCompoundStatementNode(node.getSource(), items);
+			newNode = nodeFactory.newCompoundStatementNode(node.getSource(),
+					items);
 			if (node.parent() != null)
 				node.parent().setChild(node.childIndex(), newNode);
 		}
 		return newNode;
 	}
 
-	protected boolean isEmptyCompoundStatementNode(CompoundStatementNode compound) {
+	protected boolean isEmptyCompoundStatementNode(
+			CompoundStatementNode compound) {
 		if (compound.numChildren() == 0)
 			return true;
 		for (BlockItemNode child : compound) {
@@ -311,11 +330,13 @@ public abstract class BaseWorker {
 		return true;
 	}
 
-	protected boolean is_callee_name_equals(FunctionCallNode call, String name) {
+	protected boolean is_callee_name_equals(FunctionCallNode call,
+			String name) {
 		ExpressionNode function = call.getFunction();
 
 		if (function instanceof IdentifierExpressionNode) {
-			String callee = ((IdentifierExpressionNode) function).getIdentifier().name();
+			String callee = ((IdentifierExpressionNode) function)
+					.getIdentifier().name();
 
 			if (callee.equals(name))
 				return true;
@@ -356,19 +377,29 @@ public abstract class BaseWorker {
 		FunctionTypeNode mainFuncType;
 		FunctionDefinitionNode newMainFunction;
 
-		callMain = nodeFactory.newFunctionCallNode(this.newSource("new main function", CivlcTokenConstant.CALL),
-				this.identifierExpression(GEN_MAIN), new LinkedList<ExpressionNode>(), null);
+		callMain = nodeFactory.newFunctionCallNode(
+				this.newSource("new main function", CivlcTokenConstant.CALL),
+				this.identifierExpression(GEN_MAIN),
+				new LinkedList<ExpressionNode>(), null);
 		blockItems.add(nodeFactory.newExpressionStatementNode(callMain));
-		mainFuncType = nodeFactory.newFunctionTypeNode(this.newSource("new main function", CivlcTokenConstant.TYPE),
-				nodeFactory.newBasicTypeNode(this.newSource("new main function", CivlcTokenConstant.TYPE),
-						BasicTypeKind.INT),
-				nodeFactory.newSequenceNode(this.newSource("new main function", CivlcTokenConstant.PARAMETER_TYPE_LIST),
-						"formal parameter types", new LinkedList<VariableDeclarationNode>()),
+		mainFuncType = nodeFactory.newFunctionTypeNode(
+				this.newSource("new main function", CivlcTokenConstant.TYPE),
+				nodeFactory.newBasicTypeNode(this.newSource("new main function",
+						CivlcTokenConstant.TYPE), BasicTypeKind.INT),
+				nodeFactory.newSequenceNode(
+						this.newSource("new main function",
+								CivlcTokenConstant.PARAMETER_TYPE_LIST),
+						"formal parameter types",
+						new LinkedList<VariableDeclarationNode>()),
 				false);
 		newMainFunction = nodeFactory.newFunctionDefinitionNode(
-				this.newSource("new main function", CivlcTokenConstant.FUNCTION_DEFINITION), this.identifier(MAIN),
-				mainFuncType, null, nodeFactory.newCompoundStatementNode(
-						this.newSource("new main function", CivlcTokenConstant.BODY), blockItems));
+				this.newSource("new main function",
+						CivlcTokenConstant.FUNCTION_DEFINITION),
+				this.identifier(MAIN), mainFuncType, null,
+				nodeFactory.newCompoundStatementNode(
+						this.newSource("new main function",
+								CivlcTokenConstant.BODY),
+						blockItems));
 		root.addSequenceChild(newMainFunction);
 	}
 
@@ -383,7 +414,8 @@ public abstract class BaseWorker {
 			ExpressionNode function = call.getFunction();
 
 			if (function instanceof IdentifierExpressionNode) {
-				IdentifierNode functionID = ((IdentifierExpressionNode) function).getIdentifier();
+				IdentifierNode functionID = ((IdentifierExpressionNode) function)
+						.getIdentifier();
 
 				if (functionID.name().equals(MAIN))
 					functionID.setName(GEN_MAIN);
@@ -398,22 +430,29 @@ public abstract class BaseWorker {
 
 	protected FunctionDeclarationNode assumeFunctionDeclaration(Source source) {
 		IdentifierNode name = nodeFactory.newIdentifierNode(source, "$assume");
-		FunctionTypeNode funcType = nodeFactory.newFunctionTypeNode(source, nodeFactory.newVoidTypeNode(source),
+		FunctionTypeNode funcType = nodeFactory.newFunctionTypeNode(source,
+				nodeFactory.newVoidTypeNode(source),
 				nodeFactory.newSequenceNode(source, "Formals",
-						Arrays.asList(nodeFactory.newVariableDeclarationNode(source,
-								nodeFactory.newIdentifierNode(source, "expression"),
-								nodeFactory.newBasicTypeNode(source, BasicTypeKind.BOOL))))
+						Arrays.asList(
+								nodeFactory.newVariableDeclarationNode(source,
+										nodeFactory.newIdentifierNode(source,
+												"expression"),
+										nodeFactory.newBasicTypeNode(source,
+												BasicTypeKind.BOOL))))
 
 				, false);
-		FunctionDeclarationNode function = nodeFactory.newFunctionDeclarationNode(source, name, funcType, null);
+		FunctionDeclarationNode function = nodeFactory
+				.newFunctionDeclarationNode(source, name, funcType, null);
 
 		function.setSystemFunctionSpecifier(true);
 		function.setSystemLibrary("civlc");
 		return function;
 	}
 
-	protected FunctionCallNode functionCall(Source source, String name, List<ExpressionNode> arguments) {
-		return nodeFactory.newFunctionCallNode(source, this.identifierExpression(source, name), arguments, null);
+	protected FunctionCallNode functionCall(Source source, String name,
+			List<ExpressionNode> arguments) {
+		return nodeFactory.newFunctionCallNode(source,
+				this.identifierExpression(source, name), arguments, null);
 	}
 
 	/**
@@ -428,9 +467,10 @@ public abstract class BaseWorker {
 	}
 
 	protected StatementNode assumeNode(ExpressionNode expression) {
-		return nodeFactory.newExpressionStatementNode(
-				this.functionCall(this.newSource("assumption", CivlcTokenConstant.EXPRESSION_STATEMENT), ASSUME,
-						Arrays.asList(expression)));
+		return nodeFactory.newExpressionStatementNode(this.functionCall(
+				this.newSource("assumption",
+						CivlcTokenConstant.EXPRESSION_STATEMENT),
+				ASSUME, Arrays.asList(expression)));
 	}
 
 	/**
@@ -457,7 +497,8 @@ public abstract class BaseWorker {
 		task.setLanguage(Language.C);
 		task.setMacros(macros);
 
-		TranslationTask translation = new TranslationTask(new UnitTask[] { task });
+		TranslationTask translation = new TranslationTask(
+				new UnitTask[] { task });
 
 		translation.setStage(TranslationStage.ANALYZE_ASTS);
 
@@ -466,8 +507,8 @@ public abstract class BaseWorker {
 		try {
 			executor.execute();
 		} catch (ABCException e) {
-			throw new CIVLSyntaxException(
-					"unable to parse system library " + file + " while applying " + this.transformerName);
+			throw new CIVLSyntaxException("unable to parse system library "
+					+ file + " while applying " + this.transformerName);
 		}
 		return executor.getAST(0);
 	}
@@ -490,10 +531,12 @@ public abstract class BaseWorker {
 	 * @return the new source object
 	 */
 	protected Source newSource(String method, int tokenType) {
-		Formation formation = tokenFactory.newTransformFormation(transformerName, method);
+		Formation formation = tokenFactory
+				.newTransformFormation(transformerName, method);
 		// "inserted text" is just something temporary for now, and it will be
 		// fixed when complete source is done in the transformer
-		CivlcToken token = tokenFactory.newCivlcToken(tokenType, "inserted text", formation);
+		CivlcToken token = tokenFactory.newCivlcToken(tokenType,
+				"inserted text", formation);
 		Source source = tokenFactory.newSource(token);
 
 		return source;
@@ -527,10 +570,14 @@ public abstract class BaseWorker {
 					if (formation instanceof TransformFormation) {
 						TransformFormation tf = (TransformFormation) formation;
 
-						if (transformerName.equals(tf.getLastFile().getName())) {
-							CivlcToken preToken = preNode == null ? null : preNode.getSource().getLastToken();
-							CivlcToken postToken = postNode == null ? null : postNode.getSource().getFirstToken();
-							String text = node.prettyRepresentation(20).toString();
+						if (transformerName
+								.equals(tf.getLastFile().getName())) {
+							CivlcToken preToken = preNode == null ? null
+									: preNode.getSource().getLastToken();
+							CivlcToken postToken = postNode == null ? null
+									: postNode.getSource().getFirstToken();
+							String text = node.prettyRepresentation(20)
+									.toString();
 
 							tf.setPreToken(preToken);
 							tf.setPostToken(postToken);
@@ -557,7 +604,8 @@ public abstract class BaseWorker {
 	 * @return the new identifier node.
 	 */
 	protected IdentifierNode identifier(String name) {
-		return nodeFactory.newIdentifierNode(this.newSource("identifier " + name, CivlcTokenConstant.IDENTIFIER), name);
+		return nodeFactory.newIdentifierNode(this.newSource(
+				"identifier " + name, CivlcTokenConstant.IDENTIFIER), name);
 	}
 
 	/**
@@ -570,9 +618,11 @@ public abstract class BaseWorker {
 	 * @return the new identifier expression node.
 	 */
 	protected ExpressionNode identifierExpression(String name) {
-		Source source = this.newSource("identifier " + name, CivlcTokenConstant.IDENTIFIER);
+		Source source = this.newSource("identifier " + name,
+				CivlcTokenConstant.IDENTIFIER);
 
-		return nodeFactory.newIdentifierExpressionNode(source, nodeFactory.newIdentifierNode(source, name));
+		return nodeFactory.newIdentifierExpressionNode(source,
+				nodeFactory.newIdentifierNode(source, name));
 	}
 
 	/**
@@ -585,7 +635,8 @@ public abstract class BaseWorker {
 	 * @return the new identifier expression node.
 	 */
 	protected ExpressionNode identifierExpression(Source source, String name) {
-		return nodeFactory.newIdentifierExpressionNode(source, nodeFactory.newIdentifierNode(source, name));
+		return nodeFactory.newIdentifierExpressionNode(source,
+				nodeFactory.newIdentifierNode(source, name));
 	}
 
 	/**
@@ -599,9 +650,11 @@ public abstract class BaseWorker {
 	 *            The type of the variable
 	 * @return the new variable declaration node
 	 */
-	protected VariableDeclarationNode variableDeclaration(String name, TypeNode type) {
+	protected VariableDeclarationNode variableDeclaration(String name,
+			TypeNode type) {
 		return nodeFactory.newVariableDeclarationNode(
-				this.newSource("variable declaration of " + name, CivlcTokenConstant.DECLARATION),
+				this.newSource("variable declaration of " + name,
+						CivlcTokenConstant.DECLARATION),
 				this.identifier(name), type);
 	}
 
@@ -618,12 +671,14 @@ public abstract class BaseWorker {
 	 *            The initializer of the variable
 	 * @return the new variable declaration node.
 	 */
-	protected VariableDeclarationNode variableDeclaration(String name, TypeNode type, ExpressionNode init) {
+	protected VariableDeclarationNode variableDeclaration(String name,
+			TypeNode type, ExpressionNode init) {
 		// String text = type.prettyRepresentation() + " " + name;
 		// if (init != null)
 		// text = text + " = " + init.prettyRepresentation();
 		return nodeFactory.newVariableDeclarationNode(
-				this.newSource("variable declaration of " + name, CivlcTokenConstant.DECLARATION),
+				this.newSource("variable declaration of " + name,
+						CivlcTokenConstant.DECLARATION),
 				this.identifier(name), type, init);
 	}
 
@@ -634,7 +689,8 @@ public abstract class BaseWorker {
 	 * @return the new here node.
 	 */
 	protected ExpressionNode hereNode() {
-		return nodeFactory.newHereNode(this.newSource("constant $here", CivlcTokenConstant.HERE));
+		return nodeFactory.newHereNode(
+				this.newSource("constant $here", CivlcTokenConstant.HERE));
 	}
 
 	/**
@@ -644,7 +700,8 @@ public abstract class BaseWorker {
 	 * @return the new void type node.
 	 */
 	protected TypeNode voidType() {
-		return nodeFactory.newVoidTypeNode(this.newSource("type void", CivlcTokenConstant.VOID));
+		return nodeFactory.newVoidTypeNode(
+				this.newSource("type void", CivlcTokenConstant.VOID));
 	}
 
 	/**
@@ -713,7 +770,8 @@ public abstract class BaseWorker {
 			name = "unsigned short";
 		default:
 		}
-		return this.nodeFactory.newBasicTypeNode(this.newSource("type " + name, CivlcTokenConstant.TYPE), kind);
+		return this.nodeFactory.newBasicTypeNode(
+				this.newSource("type " + name, CivlcTokenConstant.TYPE), kind);
 	}
 
 	/**
@@ -744,24 +802,29 @@ public abstract class BaseWorker {
 		case VOID:
 			return nodeFactory.newVoidTypeNode(source);
 		case BASIC:
-			return nodeFactory.newBasicTypeNode(source, ((StandardBasicType) type).getBasicTypeKind());
+			return nodeFactory.newBasicTypeNode(source,
+					((StandardBasicType) type).getBasicTypeKind());
 		case OTHER_INTEGER:
 			return nodeFactory.newBasicTypeNode(source, BasicTypeKind.INT);
 		case ARRAY:
-			return nodeFactory.newArrayTypeNode(source, this.typeNode(source, ((ArrayType) type).getElementType()),
+			return nodeFactory.newArrayTypeNode(source,
+					this.typeNode(source, ((ArrayType) type).getElementType()),
 					((ArrayType) type).getVariableSize().copy());
 		case POINTER:
-			return nodeFactory.newPointerTypeNode(source, this.typeNode(source, ((PointerType) type).referencedType()));
+			return nodeFactory.newPointerTypeNode(source, this.typeNode(source,
+					((PointerType) type).referencedType()));
 		case STRUCTURE_OR_UNION: {
 			StructureOrUnionType structOrUnionType = (StructureOrUnionType) type;
 
-			return nodeFactory.newStructOrUnionTypeNode(source, structOrUnionType.isStruct(),
+			return nodeFactory.newStructOrUnionTypeNode(source,
+					structOrUnionType.isStruct(),
 					this.identifier(structOrUnionType.getTag()), null);
 		}
 		case ENUMERATION: {
 			EnumerationType enumType = (EnumerationType) type;
 
-			return nodeFactory.newTypedefNameNode(identifier(enumType.getTag()), null);
+			return nodeFactory.newTypedefNameNode(identifier(enumType.getTag()),
+					null);
 		}
 		case SCOPE:
 			return nodeFactory.newScopeTypeNode(source);
@@ -785,7 +848,8 @@ public abstract class BaseWorker {
 		String method = value ? "constant $true" : "constant $false";
 		int tokenType = value ? 1 : 0;
 
-		return nodeFactory.newBooleanConstantNode(this.newSource(method, tokenType), value);
+		return nodeFactory.newBooleanConstantNode(
+				this.newSource(method, tokenType), value);
 	}
 
 	/**
@@ -798,7 +862,9 @@ public abstract class BaseWorker {
 	 */
 	protected ExpressionNode integerConstant(int value) throws SyntaxException {
 		return nodeFactory.newIntegerConstantNode(
-				this.newSource("constant " + value, CivlcTokenConstant.INTEGER_CONSTANT), Integer.toString(value));
+				this.newSource("constant " + value,
+						CivlcTokenConstant.INTEGER_CONSTANT),
+				Integer.toString(value));
 	}
 
 	/**
@@ -812,10 +878,12 @@ public abstract class BaseWorker {
 	 * @throws SyntaxException
 	 */
 	protected AST combineASTs(AST first, AST second) throws SyntaxException {
-		SequenceNode<BlockItemNode> rootNode, firstRoot = first.getRootNode(), secondRoot = second.getRootNode();
+		SequenceNode<BlockItemNode> rootNode, firstRoot = first.getRootNode(),
+				secondRoot = second.getRootNode();
 		List<BlockItemNode> allNodes = new ArrayList<>();
 		List<SourceFile> sourceFiles = new ArrayList<>();
-		boolean isWholeProgram = first.isWholeProgram() || second.isWholeProgram();
+		boolean isWholeProgram = first.isWholeProgram()
+				|| second.isWholeProgram();
 
 		sourceFiles.addAll(first.getSourceFiles());
 		sourceFiles.addAll(second.getSourceFiles());
@@ -833,7 +901,8 @@ public abstract class BaseWorker {
 				allNodes.add(child);
 			}
 		}
-		rootNode = this.nodeFactory.newSequenceNode(secondRoot.getSource(), "Translation Unit", allNodes);
+		rootNode = this.nodeFactory.newSequenceNode(secondRoot.getSource(),
+				"Translation Unit", allNodes);
 		return this.astFactory.newAST(rootNode, sourceFiles, isWholeProgram);
 	}
 
@@ -844,8 +913,8 @@ public abstract class BaseWorker {
 	 * @param node
 	 * @return
 	 */
-	protected CompoundStatementNode insertToCompoundStatement(CompoundStatementNode compoundNode, BlockItemNode node,
-			int index) {
+	protected CompoundStatementNode insertToCompoundStatement(
+			CompoundStatementNode compoundNode, BlockItemNode node, int index) {
 		int numChildren = compoundNode.numChildren();
 		List<BlockItemNode> nodeList = new ArrayList<>(numChildren + 1);
 
@@ -859,7 +928,8 @@ public abstract class BaseWorker {
 		}
 		if (index >= numChildren)
 			nodeList.add(node);
-		return nodeFactory.newCompoundStatementNode(compoundNode.getSource(), nodeList);
+		return nodeFactory.newCompoundStatementNode(compoundNode.getSource(),
+				nodeList);
 	}
 
 	protected void releaseNodes(List<? extends ASTNode> nodes) {
@@ -934,7 +1004,8 @@ public abstract class BaseWorker {
 	 *            A set of {@link String} identifiers.
 	 * @return
 	 */
-	protected boolean isRelatedAssumptionNode(BlockItemNode node, List<String> identifiers) {
+	protected boolean isRelatedAssumptionNode(BlockItemNode node,
+			List<String> identifiers) {
 		StatementNode stmt;
 		ExpressionNode expr, function;
 
@@ -951,14 +1022,16 @@ public abstract class BaseWorker {
 		if (function.expressionKind() != ExpressionKind.IDENTIFIER_EXPRESSION)
 			return false;
 
-		String funcName = ((IdentifierExpressionNode) function).getIdentifier().name();
+		String funcName = ((IdentifierExpressionNode) function).getIdentifier()
+				.name();
 		if (funcName.equals(ASSUME)) {
 			ExpressionNode arg = ((FunctionCallNode) expr).getArgument(0);
 			ASTNode next = arg;
 
 			while (next != null) {
 				if (next instanceof IdentifierExpressionNode) {
-					String nameInArg = ((IdentifierExpressionNode) next).getIdentifier().name();
+					String nameInArg = ((IdentifierExpressionNode) next)
+							.getIdentifier().name();
 
 					for (String identifier : identifiers)
 						if (identifier.equals(nameInArg))
@@ -980,16 +1053,20 @@ public abstract class BaseWorker {
 		return false;
 	}
 
-	protected StringLiteralNode stringLiteral(String string) throws SyntaxException {
+	protected StringLiteralNode stringLiteral(String string)
+			throws SyntaxException {
 
 		string = "\"" + string + "\"";
 
 		TokenFactory tokenFactory = astFactory.getTokenFactory();
-		Formation formation = tokenFactory.newTransformFormation(this.transformerName, "stringLiteral");
-		CivlcToken ctoke = tokenFactory.newCivlcToken(CivlcTokenConstant.STRING_LITERAL, string, formation);
+		Formation formation = tokenFactory
+				.newTransformFormation(this.transformerName, "stringLiteral");
+		CivlcToken ctoke = tokenFactory.newCivlcToken(
+				CivlcTokenConstant.STRING_LITERAL, string, formation);
 		StringToken stringToken = tokenFactory.newStringToken(ctoke);
 
-		return nodeFactory.newStringLiteralNode(tokenFactory.newSource(ctoke), string, stringToken.getStringLiteral());
+		return nodeFactory.newStringLiteralNode(tokenFactory.newSource(ctoke),
+				string, stringToken.getStringLiteral());
 	}
 
 	protected boolean refersInputVariable(ASTNode node) {
@@ -999,7 +1076,9 @@ public abstract class BaseWorker {
 			if (entity.getEntityKind() == EntityKind.VARIABLE) {
 				edu.udel.cis.vsl.abc.ast.entity.IF.Variable variable = (edu.udel.cis.vsl.abc.ast.entity.IF.Variable) entity;
 
-				return ((VariableDeclarationNode) variable.getFirstDeclaration()).getTypeNode().isInputQualified();
+				return ((VariableDeclarationNode) variable
+						.getFirstDeclaration()).getTypeNode()
+								.isInputQualified();
 			}
 		} else {
 			for (ASTNode child : node.children()) {
@@ -1010,5 +1089,127 @@ public abstract class BaseWorker {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * returns a boolean expression for checking errors of an expression like
+	 * index-out-of-bound, division-by-zero, etc. for example, if expr is
+	 * a[i]/b[k] then returns 0<=i && i<N && 0<=k && k<M && b[k]!=0 where N, M
+	 * is the extent of the array a and b, respectively.
+	 * 
+	 * @param expr
+	 *            the target expression
+	 * @return a boolean expression for checking errors of the given expression
+	 * @throws SyntaxException
+	 */
+	protected ExpressionNode condition4ErrorChecking(ExpressionNode expr)
+			throws SyntaxException {
+		ExpressionNode result = null;
+		ExpressionKind kind = expr.expressionKind();
+		ExpressionNode condition = null;
+
+		for (ASTNode child : expr.children()) {
+			if (child != null && child instanceof ExpressionNode) {
+				ExpressionNode subCondition = this
+						.condition4ErrorChecking((ExpressionNode) child);
+
+				if (subCondition != null) {
+					if (result == null)
+						result = subCondition;
+					else
+						result = this.nodeFactory.newOperatorNode(
+								subCondition.getSource(), Operator.LAND,
+								Arrays.asList(result, subCondition));
+				}
+			}
+		}
+		if (kind == ExpressionKind.OPERATOR) {
+			OperatorNode operator = (OperatorNode) expr;
+			Operator op = operator.getOperator();
+
+			if (op == Operator.MOD || op == Operator.DIV || op == Operator.DIVEQ
+					|| op == Operator.MODEQ) {
+				condition = this.nodeFactory.newOperatorNode(expr.getSource(),
+						Operator.NEQ,
+						Arrays.asList(operator.getArgument(1).copy(),
+								this.integerConstant(0)));
+			} else if (op == Operator.SUBSCRIPT) {
+				ExpressionNode array = operator.getArgument(0),
+						index = operator.getArgument(1);
+				Type type = array.getConvertedType();
+
+				if (type instanceof ArrayType) {
+					ArrayType arrayType = (ArrayType) type;
+					ExpressionNode extent = arrayType.getVariableSize();
+
+					if (extent != null) {
+						condition = this.nodeFactory.newOperatorNode(expr
+								.getSource(), Operator.LAND, Arrays.asList(
+										nodeFactory.newOperatorNode(
+												expr.getSource(),
+												Operator.LEQ,
+												Arrays.asList(
+														this.integerConstant(0),
+														index.copy())),
+										nodeFactory.newOperatorNode(
+												expr.getSource(), Operator.LEQ,
+												Arrays.asList(index.copy(),
+														extent.copy()))));
+					}
+				}
+			} else if (op == Operator.DEREFERENCE) {
+				condition = this.functionCall(
+						operator.getArgument(0).getSource(), DEREFABLE,
+						Arrays.asList(operator.getArgument(0).copy()));
+			}
+		} else if (kind == ExpressionKind.MPI_CONTRACT_EXPRESSION) {
+			MPIContractExpressionNode mpiExpr = (MPIContractExpressionNode) expr;
+			MPIContractExpressionKind mpiKind = mpiExpr
+					.MPIContractExpressionKind();
+
+			switch (mpiKind) {
+			case MPI_VALID:
+			case MPI_REGION:
+			case MPI_OFFSET:
+			case MPI_EQUALS:
+				ExpressionNode buf = mpiExpr.getArgument(0),
+						count = mpiExpr.getArgument(1),
+						type = mpiExpr.getArgument(2);
+				ExpressionNode offSet = nodeFactory.newOperatorNode(
+						expr.getSource(), Operator.TIMES,
+						Arrays.asList(count.copy(),
+								this.functionCall(type.getSource(),
+										SIZEOF_MPI_DATATYPE,
+										Arrays.asList(type.copy()))));
+				ExpressionNode pointer = nodeFactory.newOperatorNode(
+						expr.getSource(), Operator.PLUS,
+						Arrays.asList(buf.copy(), offSet));
+
+				condition = this.functionCall(expr.getSource(), DEREFABLE,
+						Arrays.asList(pointer));
+				if (mpiKind == MPIContractExpressionKind.MPI_EQUALS) {
+					ExpressionNode remotePointer = nodeFactory.newOperatorNode(
+							expr.getSource(), Operator.PLUS,
+							Arrays.asList(mpiExpr.getArgument(3).copy(),
+									offSet.copy()));
+
+					condition = this.nodeFactory.newOperatorNode(
+							expr.getSource(), Operator.LAND,
+							Arrays.asList(condition,
+									functionCall(expr.getSource(), DEREFABLE,
+											Arrays.asList(remotePointer))));
+				}
+				break;
+			default:
+			}
+		}
+		if (condition != null) {
+			if (result == null)
+				result = condition;
+			else
+				result = this.nodeFactory.newOperatorNode(condition.getSource(),
+						Operator.LAND, Arrays.asList(result, condition));
+		}
+		return result;
 	}
 }
