@@ -1184,9 +1184,14 @@ public abstract class BaseWorker {
 					ExpressionNode buf = mpiExpr.getArgument(0),
 							count = mpiExpr.getArgument(1),
 							type = mpiExpr.getArgument(2);
+					ExpressionNode countMinusOne = nodeFactory.newOperatorNode(
+							count.getSource(), Operator.MINUS,
+							Arrays.asList(count.copy(),
+									nodeFactory.newIntegerConstantNode(
+											expr.getSource(), "1")));
 					ExpressionNode offSet = nodeFactory.newOperatorNode(
 							expr.getSource(), Operator.TIMES,
-							Arrays.asList(count.copy(),
+							Arrays.asList(countMinusOne.copy(),
 									this.functionCall(type.getSource(),
 											EXTENT_MPI_DATATYPE,
 											Arrays.asList(type.copy()))));
