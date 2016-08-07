@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.semantics.IF;
 import java.io.PrintStream;
 import java.util.List;
 
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -213,4 +214,6 @@ public interface Executor {
 			ResultType resultType, BooleanExpression assertValue,
 			Expression violatedCondition, ErrorKind errorKind,
 			String groupString) throws UnsatisfiablePathConditionException;
+
+	void setConfiguration(CIVLConfiguration config);
 }

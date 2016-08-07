@@ -1,7 +1,5 @@
 package edu.udel.cis.vsl.civl.state.common.immutable;
 
-import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.simplifyO;
-
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -40,7 +38,6 @@ import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.sarl.IF.CanonicalRenamer;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SARLException;
@@ -72,11 +69,6 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 public class ImmutableStateFactory implements StateFactory {
 
 	/* ************************** Instance Fields ************************** */
-
-	/**
-	 * True iff each canonic state is to be simplified using its path condition.
-	 */
-	private boolean simplify;
 
 	/**
 	 * The number of instances of states that have been created.
@@ -188,8 +180,6 @@ public class ImmutableStateFactory implements StateFactory {
 
 	protected Set<HeapErrorKind> fullHeapErrorSet = new HashSet<>();
 
-	protected GMCConfiguration gmcConfig;
-
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -197,20 +187,18 @@ public class ImmutableStateFactory implements StateFactory {
 	 */
 	public ImmutableStateFactory(ModelFactory modelFactory,
 			SymbolicUtility symbolicUtil, MemoryUnitFactory memFactory,
-			GMCConfiguration gmcConfig, CIVLConfiguration config) {
+			CIVLConfiguration config) {
 		this.modelFactory = modelFactory;
 		this.inputVariables = modelFactory.inputVariables();
 		this.typeFactory = modelFactory.typeFactory();
 		this.symbolicUtil = symbolicUtil;
 		this.universe = modelFactory.universe();
 		this.trueReasoner = universe.reasoner(universe.trueExpression());
-		this.simplify = gmcConfig.getAnonymousSection().isTrue(simplifyO);
 		this.memUnitFactory = (ImmutableMemoryUnitFactory) memFactory;
 		this.undefinedProcessValue = modelFactory
 				.undefinedValue(typeFactory.processSymbolicType());
 		isReservedSymbolicConstant = new ReservedConstant();
 		this.config = config;
-		this.gmcConfig = gmcConfig;
 		for (HeapErrorKind kind : HeapErrorKind.class.getEnumConstants())
 			fullHeapErrorSet.add(kind);
 	}
@@ -265,7 +253,7 @@ public class ImmutableStateFactory implements StateFactory {
 		// theState = collectSymbolicConstants(theState, collectHeaps);
 		if (config.collectSymbolicNames())
 			theState = collectHavocVariables(theState);
-		if (simplify) {
+		if (this.config.simplify()) {
 			ImmutableState simplifiedState = theState.simplifiedState;
 
 			if (simplifiedState == null) {
@@ -2602,5 +2590,10 @@ public class ImmutableStateFactory implements StateFactory {
 				universe.trueExpression());
 		result.collectibleCounts = new int[ModelConfiguration.SYMBOL_PREFIXES.length];
 		return result;
+	}
+
+	@Override
+	public void setConfiguration(CIVLConfiguration config) {
+		this.config = config;
 	}
 }

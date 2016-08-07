@@ -683,7 +683,7 @@ public class CommonExecutor implements Executor {
 			if (noop.noopKind() == NoopKind.LOOP) {
 				LoopBranchStatement loopBranch = (LoopBranchStatement) noop;
 
-				if (!loopBranch.isEnter())
+				if (!loopBranch.isEnter() && this.civlConfig.simplify())
 					state = this.stateFactory.simplify(state);
 			}
 			return state;
@@ -1503,7 +1503,7 @@ public class CommonExecutor implements Executor {
 					transition.statement().getSource());
 
 		}
-		if (transition.simpifyState())
+		if (transition.simpifyState() && this.civlConfig.simplify())
 			state = this.stateFactory.simplify(state);
 		return state;
 	}
@@ -1536,5 +1536,10 @@ public class CommonExecutor implements Executor {
 		return errorLogger.logError(source, state, process,
 				symbolicAnalyzer.stateInformation(state), assertValue,
 				resultType, errorKind, format);
+	}
+
+	@Override
+	public void setConfiguration(CIVLConfiguration config) {
+		this.civlConfig = config;
 	}
 }

@@ -6,6 +6,7 @@ package edu.udel.cis.vsl.civl.state.IF;
 import java.util.Map;
 import java.util.Set;
 
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Model;
@@ -973,4 +974,6 @@ public interface StateFactory {
 	 */
 	void unsaveStateByReference(int stateRef);
 	/* ****************** End of Snapshots related method ****************** */
+
+	void setConfiguration(CIVLConfiguration config);
 }

@@ -139,7 +139,7 @@ public abstract class Player {
 		this.memUnitFactory = States.newImmutableMemoryUnitFactory(universe,
 				modelFactory);
 		this.stateFactory = States.newImmutableStateFactory(modelFactory,
-				symbolicUtil, memUnitFactory, gmcConfig, civlConfig);
+				symbolicUtil, memUnitFactory, civlConfig);
 		this.libraryEvaluatorLoader = Semantics
 				.newLibraryEvaluatorLoader(this.civlConfig);
 		this.symbolicAnalyzer = Semantics.newSymbolicAnalyzer(this.civlConfig,
@@ -156,8 +156,9 @@ public abstract class Player {
 		this.executor = Semantics.newExecutor(modelFactory, stateFactory,
 				libraryExecutorLoader, evaluator, symbolicAnalyzer, log,
 				civlConfig);
-		enabler = Kripkes.newEnabler(stateFactory, evaluator, executor,symbolicAnalyzer,
-				memUnitFactory, this.libraryEnablerLoader, log, civlConfig);
+		enabler = Kripkes.newEnabler(stateFactory, evaluator, executor,
+				symbolicAnalyzer, memUnitFactory, this.libraryEnablerLoader,
+				log, civlConfig);
 		this.random = gmcConfig.getAnonymousSection().isTrue(randomO);
 		this.minimize = gmcConfig.getAnonymousSection().isTrue(minO);
 		this.maxdepth = (int) gmcConfig.getAnonymousSection()

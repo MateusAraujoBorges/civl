@@ -1897,7 +1897,8 @@ public class CommonEvaluator implements Evaluator {
 
 			// IMMPORTANT for performance: simplify the state so that the new
 			// path condition could be simplified
-			s1 = this.stateFactory.simplify(s1);
+			if (this.civlConfig.simplify())
+				s1 = this.stateFactory.simplify(s1);
 
 			Evaluation eval1 = evaluate(s1, pid, expression.right());
 			BooleanExpression pc = universe.or(eval1.state.getPathCondition(),
@@ -3205,7 +3206,8 @@ public class CommonEvaluator implements Evaluator {
 		// a sequence of memory space)
 		isOutBound = true;
 		outCondExpr = notOver;
-		if (!this.civlConfig.svcomp() && this.civlConfig.checkExpressionError()) {
+		if (!this.civlConfig.svcomp()
+				&& this.civlConfig.checkExpressionError()) {
 			resultType = reasoner.valid(notOver).getResultType();
 			if (resultType.equals(ResultType.YES)) {
 				// not over

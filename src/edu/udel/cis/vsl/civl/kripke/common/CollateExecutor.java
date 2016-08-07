@@ -33,6 +33,7 @@ public class CollateExecutor {
 		this.config.setCollectProcesses(true);
 		this.config.setCheckMemoryLeak(false);
 		this.config.setCheckExpressionError(false);
+		this.config.setSimplify(false);
 	}
 
 	// public CollateExecutor(Evaluator mainEvaluator, CIVLErrorLogger
@@ -80,7 +81,9 @@ public class CollateExecutor {
 		DfsSearcher<State, Transition, TransitionSequence> searcher = new DfsSearcher<State, Transition, TransitionSequence>(
 				enabler, colStateManager, predicate);
 
+		executor.stateFactory().setConfiguration(this.config);
 		executor.evaluator().setConfiguration(this.config);
+		executor.setConfiguration(this.config);
 		try {
 			initState = executor.stateFactory().canonic(initState, false, false,
 					false, new HashSet<>(0));
@@ -102,6 +105,8 @@ public class CollateExecutor {
 			config.out().println(
 					"Finish executing sub-program on collate states.\n********************************");
 		executor.evaluator().setConfiguration(oldConfig);
+		executor.stateFactory().setConfiguration(oldConfig);
+		executor.setConfiguration(oldConfig);
 		return colStateManager.getFinalCollateStates();
 	}
 }

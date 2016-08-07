@@ -5,7 +5,6 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableMemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableStateFactory;
-import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 /**
@@ -30,10 +29,9 @@ public class States {
 	 */
 	public static StateFactory newImmutableStateFactory(
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
-			MemoryUnitFactory memFactory, GMCConfiguration gmcConfig,
-			CIVLConfiguration config) {
-		return new ImmutableStateFactory(modelFactory, symbolicUtil,
-				memFactory, gmcConfig, config);
+			MemoryUnitFactory memFactory, CIVLConfiguration config) {
+		return new ImmutableStateFactory(modelFactory, symbolicUtil, memFactory,
+				config);
 	}
 
 	public static MemoryUnitFactory newImmutableMemoryUnitFactory(
