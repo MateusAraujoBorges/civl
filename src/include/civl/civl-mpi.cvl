@@ -41,7 +41,7 @@ struct $mpi_gcomm {
 /****************************** Helper Functions **********************************/
 int sizeofDatatype(MPI_Datatype datatype) {
 #ifdef  _MPI_CONTRACT
-  return $mpi_sizeof(datatype) * sizeof(char);
+  return $mpi_extentof(datatype) * sizeof(char);
 #endif
   switch (datatype) {
   case MPI_INT:
@@ -710,7 +710,7 @@ void $mpi_unsnapshot(MPI_Comm comm) {
      $collate_departs(comm.collator);
 }
 
-size_t $mpi_sizeof(MPI_Datatype datatype) {
+size_t $mpi_extentof(MPI_Datatype datatype) {
   $abstract size_t $mpi_extent(MPI_Datatype datatype);  
   size_t result = $mpi_extent(datatype);
 
@@ -719,7 +719,7 @@ size_t $mpi_sizeof(MPI_Datatype datatype) {
 }
 
 void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
-  size_t realCount = count * $mpi_sizeof(datatype);
+  size_t realCount = count * $mpi_extentof(datatype);
   char newValues[realCount];
 
   $havoc(&newValues);

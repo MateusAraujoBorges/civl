@@ -88,6 +88,12 @@ public class ContractsTest {
 	}
 
 	@Test
+	public void bcast_order() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=broadcast",
+				filename("contractsMPI/broadcast_order.c")));
+	}
+
+	@Test
 	public void gather() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
 				filename("contractsMPI/gather.c")));

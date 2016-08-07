@@ -82,7 +82,7 @@ public abstract class BaseWorker {
 	protected final static String ASSERT = "$assert";
 	protected final static String ELABORATE = "$elaborate";
 	protected final static String DEREFABLE = "$is_derefable";
-	protected final static String SIZEOF_MPI_DATATYPE = "sizeofDatatype";
+	protected final static String EXTENT_MPI_DATATYPE = "$mpi_extentof";
 
 	protected String identifierPrefix;
 
@@ -392,14 +392,16 @@ public abstract class BaseWorker {
 						"formal parameter types",
 						new LinkedList<VariableDeclarationNode>()),
 				false);
-		newMainFunction = nodeFactory.newFunctionDefinitionNode(
-				this.newSource("new main function",
-						CivlcTokenConstant.FUNCTION_DEFINITION),
-				this.identifier(MAIN), mainFuncType, null,
-				nodeFactory.newCompoundStatementNode(
+		newMainFunction = nodeFactory
+				.newFunctionDefinitionNode(
 						this.newSource("new main function",
-								CivlcTokenConstant.BODY),
-						blockItems));
+								CivlcTokenConstant.FUNCTION_DEFINITION),
+						this.identifier(MAIN), mainFuncType, null,
+						nodeFactory
+								.newCompoundStatementNode(
+										this.newSource("new main function",
+												CivlcTokenConstant.BODY),
+										blockItems));
 		root.addSequenceChild(newMainFunction);
 	}
 
@@ -492,13 +494,12 @@ public abstract class BaseWorker {
 	 * @throws ABCException
 	 */
 	protected AST parseSystemLibrary(File file, Map<String, String> macros) {
-		UnitTask task = new UnitTask(new File[] { file });
+		UnitTask task = new UnitTask(new File[]{file});
 
 		task.setLanguage(Language.C);
 		task.setMacros(macros);
 
-		TranslationTask translation = new TranslationTask(
-				new UnitTask[] { task });
+		TranslationTask translation = new TranslationTask(new UnitTask[]{task});
 
 		translation.setStage(TranslationStage.ANALYZE_ASTS);
 
@@ -572,9 +573,11 @@ public abstract class BaseWorker {
 
 						if (transformerName
 								.equals(tf.getLastFile().getName())) {
-							CivlcToken preToken = preNode == null ? null
+							CivlcToken preToken = preNode == null
+									? null
 									: preNode.getSource().getLastToken();
-							CivlcToken postToken = postNode == null ? null
+							CivlcToken postToken = postNode == null
+									? null
 									: postNode.getSource().getFirstToken();
 							String text = node.prettyRepresentation(20)
 									.toString();
@@ -716,59 +719,59 @@ public abstract class BaseWorker {
 		String name = "";
 
 		switch (kind) {
-		case BOOL:
-			name = "_Bool";
-			break;
-		case CHAR:
-			name = "char";
-			break;
-		case DOUBLE:
-		case DOUBLE_COMPLEX:
-			name = "double";
-			break;
-		case FLOAT:
-		case FLOAT_COMPLEX:
-			name = "float";
-			break;
-		case INT:
-			name = "int";
-			break;
-		case LONG:
-			name = "long";
-			break;
-		case LONG_DOUBLE:
-			name = "long double";
-			break;
-		case LONG_DOUBLE_COMPLEX:
-			name = "long double";
-			break;
-		case LONG_LONG:
-			name = "long long";
-			break;
-		case REAL:
-			name = "real";
-			break;
-		case SHORT:
-			name = "short";
-			break;
-		case SIGNED_CHAR:
-			name = "signed char";
-			break;
-		case UNSIGNED:
-			name = "unsigned";
-			break;
-		case UNSIGNED_CHAR:
-			name = "unsigned char";
-			break;
-		case UNSIGNED_LONG:
-			name = "unsigned long";
-			break;
-		case UNSIGNED_LONG_LONG:
-			name = "unsigned long long";
-			break;
-		case UNSIGNED_SHORT:
-			name = "unsigned short";
-		default:
+			case BOOL :
+				name = "_Bool";
+				break;
+			case CHAR :
+				name = "char";
+				break;
+			case DOUBLE :
+			case DOUBLE_COMPLEX :
+				name = "double";
+				break;
+			case FLOAT :
+			case FLOAT_COMPLEX :
+				name = "float";
+				break;
+			case INT :
+				name = "int";
+				break;
+			case LONG :
+				name = "long";
+				break;
+			case LONG_DOUBLE :
+				name = "long double";
+				break;
+			case LONG_DOUBLE_COMPLEX :
+				name = "long double";
+				break;
+			case LONG_LONG :
+				name = "long long";
+				break;
+			case REAL :
+				name = "real";
+				break;
+			case SHORT :
+				name = "short";
+				break;
+			case SIGNED_CHAR :
+				name = "signed char";
+				break;
+			case UNSIGNED :
+				name = "unsigned";
+				break;
+			case UNSIGNED_CHAR :
+				name = "unsigned char";
+				break;
+			case UNSIGNED_LONG :
+				name = "unsigned long";
+				break;
+			case UNSIGNED_LONG_LONG :
+				name = "unsigned long long";
+				break;
+			case UNSIGNED_SHORT :
+				name = "unsigned short";
+			default :
 		}
 		return this.nodeFactory.newBasicTypeNode(
 				this.newSource("type " + name, CivlcTokenConstant.TYPE), kind);
@@ -799,38 +802,39 @@ public abstract class BaseWorker {
 	 */
 	protected TypeNode typeNode(Source source, Type type) {
 		switch (type.kind()) {
-		case VOID:
-			return nodeFactory.newVoidTypeNode(source);
-		case BASIC:
-			return nodeFactory.newBasicTypeNode(source,
-					((StandardBasicType) type).getBasicTypeKind());
-		case OTHER_INTEGER:
-			return nodeFactory.newBasicTypeNode(source, BasicTypeKind.INT);
-		case ARRAY:
-			return nodeFactory.newArrayTypeNode(source,
-					this.typeNode(source, ((ArrayType) type).getElementType()),
-					((ArrayType) type).getVariableSize().copy());
-		case POINTER:
-			return nodeFactory.newPointerTypeNode(source, this.typeNode(source,
-					((PointerType) type).referencedType()));
-		case STRUCTURE_OR_UNION: {
-			StructureOrUnionType structOrUnionType = (StructureOrUnionType) type;
+			case VOID :
+				return nodeFactory.newVoidTypeNode(source);
+			case BASIC :
+				return nodeFactory.newBasicTypeNode(source,
+						((StandardBasicType) type).getBasicTypeKind());
+			case OTHER_INTEGER :
+				return nodeFactory.newBasicTypeNode(source, BasicTypeKind.INT);
+			case ARRAY :
+				return nodeFactory.newArrayTypeNode(source,
+						this.typeNode(source,
+								((ArrayType) type).getElementType()),
+						((ArrayType) type).getVariableSize().copy());
+			case POINTER :
+				return nodeFactory.newPointerTypeNode(source, this.typeNode(
+						source, ((PointerType) type).referencedType()));
+			case STRUCTURE_OR_UNION : {
+				StructureOrUnionType structOrUnionType = (StructureOrUnionType) type;
 
-			return nodeFactory.newStructOrUnionTypeNode(source,
-					structOrUnionType.isStruct(),
-					this.identifier(structOrUnionType.getTag()), null);
-		}
-		case ENUMERATION: {
-			EnumerationType enumType = (EnumerationType) type;
+				return nodeFactory.newStructOrUnionTypeNode(source,
+						structOrUnionType.isStruct(),
+						this.identifier(structOrUnionType.getTag()), null);
+			}
+			case ENUMERATION : {
+				EnumerationType enumType = (EnumerationType) type;
 
-			return nodeFactory.newTypedefNameNode(identifier(enumType.getTag()),
-					null);
-		}
-		case SCOPE:
-			return nodeFactory.newScopeTypeNode(source);
-		case STATE:
-			return nodeFactory.newStateTypeNode(source);
-		default:
+				return nodeFactory.newTypedefNameNode(
+						identifier(enumType.getTag()), null);
+			}
+			case SCOPE :
+				return nodeFactory.newScopeTypeNode(source);
+			case STATE :
+				return nodeFactory.newStateTypeNode(source);
+			default :
 		}
 		return null;
 	}
@@ -1143,18 +1147,23 @@ public abstract class BaseWorker {
 					ExpressionNode extent = arrayType.getVariableSize();
 
 					if (extent != null) {
-						condition = this.nodeFactory.newOperatorNode(expr
-								.getSource(), Operator.LAND, Arrays.asList(
-										nodeFactory.newOperatorNode(
-												expr.getSource(),
-												Operator.LEQ,
-												Arrays.asList(
-														this.integerConstant(0),
-														index.copy())),
-										nodeFactory.newOperatorNode(
-												expr.getSource(), Operator.LEQ,
-												Arrays.asList(index.copy(),
-														extent.copy()))));
+						condition = this.nodeFactory
+								.newOperatorNode(expr.getSource(),
+										Operator.LAND,
+										Arrays.asList(
+												nodeFactory.newOperatorNode(
+														expr.getSource(),
+														Operator.LEQ,
+														Arrays.asList(
+																this.integerConstant(
+																		0),
+																index.copy())),
+												nodeFactory.newOperatorNode(
+														expr.getSource(),
+														Operator.LEQ,
+														Arrays.asList(
+																index.copy(),
+																extent.copy()))));
 					}
 				}
 			} else if (op == Operator.DEREFERENCE) {
@@ -1168,39 +1177,42 @@ public abstract class BaseWorker {
 					.MPIContractExpressionKind();
 
 			switch (mpiKind) {
-			case MPI_VALID:
-			case MPI_REGION:
-			case MPI_OFFSET:
-			case MPI_EQUALS:
-				ExpressionNode buf = mpiExpr.getArgument(0),
-						count = mpiExpr.getArgument(1),
-						type = mpiExpr.getArgument(2);
-				ExpressionNode offSet = nodeFactory.newOperatorNode(
-						expr.getSource(), Operator.TIMES,
-						Arrays.asList(count.copy(),
-								this.functionCall(type.getSource(),
-										SIZEOF_MPI_DATATYPE,
-										Arrays.asList(type.copy()))));
-				ExpressionNode pointer = nodeFactory.newOperatorNode(
-						expr.getSource(), Operator.PLUS,
-						Arrays.asList(buf.copy(), offSet));
-
-				condition = this.functionCall(expr.getSource(), DEREFABLE,
-						Arrays.asList(pointer));
-				if (mpiKind == MPIContractExpressionKind.MPI_EQUALS) {
-					ExpressionNode remotePointer = nodeFactory.newOperatorNode(
+				case MPI_VALID :
+				case MPI_REGION :
+				case MPI_OFFSET :
+				case MPI_EQUALS :
+					ExpressionNode buf = mpiExpr.getArgument(0),
+							count = mpiExpr.getArgument(1),
+							type = mpiExpr.getArgument(2);
+					ExpressionNode offSet = nodeFactory.newOperatorNode(
+							expr.getSource(), Operator.TIMES,
+							Arrays.asList(count.copy(),
+									this.functionCall(type.getSource(),
+											EXTENT_MPI_DATATYPE,
+											Arrays.asList(type.copy()))));
+					ExpressionNode pointer = nodeFactory.newOperatorNode(
 							expr.getSource(), Operator.PLUS,
-							Arrays.asList(mpiExpr.getArgument(3).copy(),
-									offSet.copy()));
+							Arrays.asList(buf.copy(), offSet));
 
-					condition = this.nodeFactory.newOperatorNode(
-							expr.getSource(), Operator.LAND,
-							Arrays.asList(condition,
-									functionCall(expr.getSource(), DEREFABLE,
-											Arrays.asList(remotePointer))));
-				}
-				break;
-			default:
+					condition = this.functionCall(expr.getSource(), DEREFABLE,
+							Arrays.asList(pointer));
+					if (mpiKind == MPIContractExpressionKind.MPI_EQUALS) {
+						ExpressionNode remotePointer = nodeFactory
+								.newOperatorNode(expr.getSource(),
+										Operator.PLUS,
+										Arrays.asList(
+												mpiExpr.getArgument(3).copy(),
+												offSet.copy()));
+
+						condition = this.nodeFactory.newOperatorNode(
+								expr.getSource(), Operator.LAND,
+								Arrays.asList(condition,
+										functionCall(expr.getSource(),
+												DEREFABLE,
+												Arrays.asList(remotePointer))));
+					}
+					break;
+				default :
 			}
 		}
 		if (condition != null) {

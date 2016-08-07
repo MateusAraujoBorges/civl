@@ -124,7 +124,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	/**
 	 * A CIVL-MPI function identifier:
 	 */
-	private final static String MPI_SIZEOF = "$mpi_sizeof";
+	private final static String MPI_SIZEOF = "$mpi_extentof";
 	/**
 	 * A CIVL-MPI function identifier:
 	 */
@@ -539,7 +539,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+		newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -707,9 +707,10 @@ public class ContractTransformerWorker extends BaseWorker {
 	 *            The {@link FunctionDeclarationNode} of the transformed
 	 *            function. It's original body will be removed.
 	 * @return
+	 * @throws SyntaxException
 	 */
 	private FunctionDefinitionNode transformContractedFunction(
-			FunctionDeclarationNode funcDecl) {
+			FunctionDeclarationNode funcDecl) throws SyntaxException {
 		CompoundStatementNode body;
 		FunctionTypeNode funcTypeNode = funcDecl.getTypeNode();
 		List<BlockItemNode> bodyItems = new LinkedList<>();
@@ -1079,9 +1080,10 @@ public class ContractTransformerWorker extends BaseWorker {
 	 *            The {@link Source} of the $mpi_comm_size
 	 * @return A list of {@link BlockItemNode} representing all the transformed
 	 *         statements
+	 * @throws SyntaxException
 	 */
 	private List<BlockItemNode> transformCoRequirements4NT(
-			ParsedContractBlock mpiBlock) {
+			ParsedContractBlock mpiBlock) throws SyntaxException {
 		ExpressionNode mpiComm = mpiBlock.mpiComm;
 		VariableDeclarationNode collateStateDecl = createCollateStateDeclaration(
 				COLLATE_STATE_VAR_PRE, mpiComm);
@@ -1127,9 +1129,10 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * 
 	 * @param mpiCommAndClauses
 	 * @return
+	 * @throws SyntaxException
 	 */
 	private List<BlockItemNode> transformCollectiveEnsures4Target(
-			ParsedContractBlock mpiBlock) {
+			ParsedContractBlock mpiBlock) throws SyntaxException {
 		ExpressionNode mpiComm = mpiBlock.mpiComm;
 		VariableDeclarationNode collateStateDecl = createCollateStateDeclaration(
 				COLLATE_STATE_VAR_POST, mpiComm);
@@ -1226,12 +1229,18 @@ public class ContractTransformerWorker extends BaseWorker {
 	 *            conditions and expressions as predicates for either assume or
 	 *            assert.
 	 * @return The translated if-then statement.
+	 * @throws SyntaxException
 	 */
 	private StatementNode translateConditionalPredicates(boolean isAssume,
-			ExpressionNode cond, ExpressionNode preds) {
-		StatementNode stmt = isAssume
-				? createAssumption(preds)
-				: createAssertion(preds);
+			ExpressionNode cond, ExpressionNode preds) throws SyntaxException {
+		List<BlockItemNode> components = new LinkedList<>();
+
+		components.add(
+				isAssume ? createAssumption(preds) : createAssertion(preds));
+		components.add(createAssertion(condition4ErrorChecking(preds)));
+
+		StatementNode stmt = nodeFactory
+				.newCompoundStatementNode(preds.getSource(), components);
 
 		// If the condition is null, it doesn't need a
 		// branch:
