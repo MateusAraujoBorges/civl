@@ -145,12 +145,16 @@ void $mpi_comm_destroy(MPI_Comm comm, $mpi_state mpi_state) {
 }
 
 void * $mpi_pointer_add(const void * ptr, int offset, MPI_Datatype datatype) {
+#ifdef _MPI_CONTRACT
+  int datatypeExtent = $mpi_extentof(datatype);
+
+  $elaborate(offset);
+  return $pointer_add(ptr, offset * datatypeExtent, sizeof(char));
+#else
   int type_size = sizeofDatatype(datatype);
 
-#ifdef _MPI_CONTRACT
-  $elaborate(offset);
-#endif
   return $pointer_add(ptr, offset, type_size);
+#endif
 }
 
 /********************* Lower level MPI routines  *********************/
