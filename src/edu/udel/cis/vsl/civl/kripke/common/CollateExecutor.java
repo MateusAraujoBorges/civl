@@ -22,7 +22,8 @@ public class CollateExecutor {
 	private CIVLConfiguration config;
 	private CIVLStatePredicate predicate = Predicates.newTrivialPredicate();
 
-	public CollateExecutor(Enabler enabler, Executor executor, CIVLErrorLogger errorLogger, CIVLConfiguration config) {
+	public CollateExecutor(Enabler enabler, Executor executor,
+			CIVLErrorLogger errorLogger, CIVLConfiguration config) {
 		this.enabler = enabler;
 		this.executor = executor;
 		this.errorLogger = errorLogger;
@@ -31,30 +32,76 @@ public class CollateExecutor {
 		this.config.setCollectScopes(true);
 		this.config.setCollectProcesses(true);
 		this.config.setCheckMemoryLeak(false);
+		this.config.setCheckExpressionError(false);
 	}
 
-	Collection<State> run2Completion(State initState) {
+	// public CollateExecutor(Evaluator mainEvaluator, CIVLErrorLogger
+	// errorLogger,
+	// CIVLConfiguration config) {
+	// this.config = new CIVLConfiguration(config);
+	// this.config.setCollectHeaps(true);
+	// this.config.setCollectScopes(true);
+	// this.config.setCollectProcesses(true);
+	// this.config.setCheckMemoryLeak(false);
+	// this.config.setCheckExpressionError(false);
+	//
+	// LibraryEvaluatorLoader libraryEvaluatorLoader = Semantics
+	// .newLibraryEvaluatorLoader(this.config);
+	// LibraryExecutorLoader libraryExecutorLoader = Semantics
+	// .newLibraryExecutorLoader(libraryEvaluatorLoader, this.config);
+	// MemoryUnitFactory memoryUnitFactory = States
+	// .newImmutableMemoryUnitFactory(mainEvaluator.universe(),
+	// mainEvaluator.modelFactory());
+	// Evaluator evaluator = Semantics.newEvaluator(
+	// mainEvaluator.modelFactory(), mainEvaluator.stateFactory(),
+	// libraryEvaluatorLoader,
+	// Semantics.newLibraryExecutorLoader(libraryEvaluatorLoader,
+	// this.config),
+	// mainEvaluator.symbolicUtility(),
+	// mainEvaluator.symbolicAnalyzer(), memoryUnitFactory,
+	// errorLogger, this.config);
+	//
+	// this.executor = Semantics.newExecutor(mainEvaluator.modelFactory(),
+	// mainEvaluator.stateFactory(), libraryExecutorLoader, evaluator,
+	// mainEvaluator.symbolicAnalyzer(), errorLogger, this.config);
+	// this.enabler = Kripkes.newEnabler(mainEvaluator.stateFactory(),
+	// evaluator, this.executor, mainEvaluator.symbolicAnalyzer(),
+	// memoryUnitFactory,
+	// Kripkes.newLibraryEnablerLoader(libraryEvaluatorLoader,
+	// this.config),
+	// errorLogger, this.config);
+	// this.errorLogger = errorLogger;
+	// }
+
+	Collection<State> run2Completion(State initState,
+			CIVLConfiguration oldConfig) {
 		ColStateManager colStateManager = new ColStateManager(enabler, executor,
 				executor.evaluator().symbolicAnalyzer(), errorLogger, config);
 		DfsSearcher<State, Transition, TransitionSequence> searcher = new DfsSearcher<State, Transition, TransitionSequence>(
 				enabler, colStateManager, predicate);
 
+		executor.evaluator().setConfiguration(this.config);
 		try {
-			initState = executor.stateFactory().canonic(initState, false, false, false, new HashSet<>(0));
+			initState = executor.stateFactory().canonic(initState, false, false,
+					false, new HashSet<>(0));
 		} catch (CIVLHeapException e) {
 			// ignore
 		}
-		if (this.config.showTransitions() || this.config.showStates() || config.showSavedStates()
+		if (this.config.showTransitions() || this.config.showStates()
+				|| config.showSavedStates() || config.debugOrVerbose())
+			config.out().println(
+					"********************************\nStart executing sub-program on collate states.");
+		if (this.config.showStates() || config.showSavedStates()
 				|| config.debugOrVerbose())
-			config.out().println("********************************\nStart executing sub-program on collate states.");
-		if (this.config.showStates() || config.showSavedStates() || config.debugOrVerbose())
-			config.out().println(executor.evaluator().symbolicAnalyzer().stateToString(initState));
+			config.out().println(executor.evaluator().symbolicAnalyzer()
+					.stateToString(initState));
 		while (searcher.search(initState))
 			;
-		if (this.config.showTransitions() || this.config.showStates() || config.showSavedStates()
-				|| config.debugOrVerbose())
-			config.out().println("Finish executing sub-program on collate states.\n********************************");
-
+		if (this.config.showTransitions() || this.config.showStates()
+				|| config.showSavedStates() || config.debugOrVerbose())
+			config.out().println(
+					"Finish executing sub-program on collate states.\n********************************");
+		executor.evaluator().setConfiguration(oldConfig);
 		return colStateManager.getFinalCollateStates();
 	}
 }

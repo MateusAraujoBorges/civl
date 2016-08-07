@@ -237,6 +237,8 @@ public class CIVLConfiguration {
 
 	private boolean unpreproc = false;
 
+	private boolean checkExpressionError = true;
+
 	// private boolean pthreadOnly = true;
 
 	/**
@@ -825,5 +827,20 @@ public class CIVLConfiguration {
 	 */
 	public void setCollectSymbolicNames(boolean collectSymbolicNames) {
 		this.collectSymbolicNames = collectSymbolicNames;
+	}
+
+	/**
+	 * @return the checkExpressionError
+	 */
+	public boolean checkExpressionError() {
+		return checkExpressionError;
+	}
+
+	/**
+	 * @param checkExpressionError
+	 *            the checkExpressionError to set
+	 */
+	public void setCheckExpressionError(boolean checkExpressionError) {
+		this.checkExpressionError = checkExpressionError;
 	}
 }

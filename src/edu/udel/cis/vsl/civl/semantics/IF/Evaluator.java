@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl.semantics.IF;
 
 import java.util.List;
 
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -116,8 +117,8 @@ public interface Evaluator {
 	 *         of the function that the given function pointer refers to.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Triple<State, CIVLFunction, Integer> evaluateFunctionIdentifier(
-			State state, int pid, Expression functionPointer, CIVLSource source)
+	Triple<State, CIVLFunction, Integer> evaluateFunctionIdentifier(State state,
+			int pid, Expression functionPointer, CIVLSource source)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -337,9 +338,9 @@ public interface Evaluator {
 	 *         pointed by the given pointer which helps saving computing time
 	 *         for caller functions.
 	 */
-	public Pair<Evaluation, NumericExpression[]> evaluatePointerAdd(
-			State state, String process, SymbolicExpression ptr,
-			NumericExpression offset, boolean ifCheckOutput, CIVLSource source)
+	public Pair<Evaluation, NumericExpression[]> evaluatePointerAdd(State state,
+			String process, SymbolicExpression ptr, NumericExpression offset,
+			boolean ifCheckOutput, CIVLSource source)
 			throws UnsatisfiablePathConditionException;
 
 	List<ReferenceExpression> leafNodeReferencesOfType(CIVLSource source,
@@ -399,4 +400,6 @@ public interface Evaluator {
 	TypeEvaluation getDynamicType(State state, int pid, CIVLType type,
 			CIVLSource source, boolean isDefinition)
 			throws UnsatisfiablePathConditionException;
+
+	void setConfiguration(CIVLConfiguration config);
 }
