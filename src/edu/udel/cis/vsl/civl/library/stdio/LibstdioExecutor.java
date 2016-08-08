@@ -62,7 +62,8 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * </li>
  * <li><code>int fclose(FILE *)</code></li>
  * <li><code>int fflush(FILE *)</code></li>
- * <li><code>int fprintf(FILE * restrict, const char * restrict, ...)</code></li>
+ * <li><code>int fprintf(FILE * restrict, const char * restrict, ...)</code>
+ * </li>
  * <li><code>int fscanf(FILE * restrict, const char * restrict, ...)</code></li>
  * <li><code>void $filesystem_copy_output($filesystem, $file *)</code></li>
  * </ul>
@@ -81,8 +82,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * @author Manchun Zheng (zmanchun)
  * 
  */
-public class LibstdioExecutor extends BaseLibraryExecutor implements
-		LibraryExecutor {
+public class LibstdioExecutor extends BaseLibraryExecutor
+		implements
+			LibraryExecutor {
 
 	// the different file modes; see stdio.cvl:
 	public final static int CIVL_FILE_MODE_R = 0;
@@ -237,19 +239,19 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		SymbolicType stringArrayType;
 
 		EOF = universe.canonic(universe.integer(-100));
-		stringSymbolicType = (SymbolicArrayType) universe.canonic(universe
-				.arrayType(universe.characterType()));
-		stringArrayType = (SymbolicArrayType) universe.canonic(universe
-				.arrayType(stringSymbolicType));
-		emptyContents = universe.canonic(universe
-				.emptyArray(stringSymbolicType));
-		initialContentsFunction = (SymbolicConstant) universe.canonic(universe
-				.symbolicConstant(universe.stringObject("contents"), universe
-						.functionType(Arrays.asList(stringSymbolicType),
+		stringSymbolicType = (SymbolicArrayType) universe
+				.canonic(universe.arrayType(universe.characterType()));
+		stringArrayType = (SymbolicArrayType) universe
+				.canonic(universe.arrayType(stringSymbolicType));
+		emptyContents = universe
+				.canonic(universe.emptyArray(stringSymbolicType));
+		initialContentsFunction = (SymbolicConstant) universe.canonic(
+				universe.symbolicConstant(universe.stringObject("contents"),
+						universe.functionType(Arrays.asList(stringSymbolicType),
 								stringArrayType)));
-		fileLengthFunction = (SymbolicConstant) universe.canonic(universe
-				.symbolicConstant(universe.stringObject("fileLength"), universe
-						.functionType(Arrays.asList(stringSymbolicType),
+		fileLengthFunction = (SymbolicConstant) universe.canonic(
+				universe.symbolicConstant(universe.stringObject("fileLength"),
+						universe.functionType(Arrays.asList(stringSymbolicType),
 								universe.integerType())));
 		createStringToDataFunctions();
 		createDataToStringFunctions();
@@ -274,8 +276,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	 * abstract functions to convert a data of a certain type into a string.
 	 */
 	private void createDataToStringFunctions() {
-		intToStringFunction = (SymbolicConstant) universe.canonic(universe
-				.symbolicConstant(universe.stringObject("intToString"),
+		intToStringFunction = (SymbolicConstant) universe.canonic(
+				universe.symbolicConstant(universe.stringObject("intToString"),
 						universe.functionType(
 								Arrays.asList(stringSymbolicType,
 										universe.integerType()),
@@ -286,23 +288,28 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 								Arrays.asList(stringSymbolicType,
 										universe.realType()),
 								stringSymbolicType)));
-		charToStringFunction = (SymbolicConstant) universe.canonic(universe
-				.symbolicConstant(universe.stringObject("charToString"),
+		charToStringFunction = (SymbolicConstant) universe.canonic(
+				universe.symbolicConstant(universe.stringObject("charToString"),
 						universe.functionType(
 								Arrays.asList(stringSymbolicType,
 										universe.characterType()),
 								stringSymbolicType)));
 		stringDataToStringFunction = (SymbolicConstant) universe
-				.canonic(universe.symbolicConstant(universe
-						.stringObject("stringDataToString"), universe
-						.functionType(Arrays.asList(stringSymbolicType,
-								stringSymbolicType), stringSymbolicType)));
-		pointerToStringFunction = (SymbolicConstant) universe.canonic(universe
-				.symbolicConstant(universe.stringObject("pointerToString"),
+				.canonic(universe.symbolicConstant(
+						universe.stringObject("stringDataToString"),
 						universe.functionType(
 								Arrays.asList(stringSymbolicType,
-										typeFactory.pointerSymbolicType()),
+										stringSymbolicType),
 								stringSymbolicType)));
+		pointerToStringFunction = (SymbolicConstant) universe
+				.canonic(
+						universe.symbolicConstant(
+								universe.stringObject("pointerToString"),
+								universe.functionType(
+										Arrays.asList(stringSymbolicType,
+												typeFactory
+														.pointerSymbolicType()),
+										stringSymbolicType)));
 	}
 
 	/**
@@ -310,29 +317,37 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	 * abstract functions to convert a string to a data of certain type.
 	 */
 	private void createStringToDataFunctions() {
-		stringToIntFunction = (SymbolicConstant) universe.canonic(universe
-				.symbolicConstant(universe.stringObject("stringToInt"),
-						universe.functionType(Arrays.asList(stringSymbolicType,
-								stringSymbolicType), universe.integerType())));
+		stringToIntFunction = (SymbolicConstant) universe.canonic(
+				universe.symbolicConstant(universe.stringObject("stringToInt"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								universe.integerType())));
 		stringToDoubleFunction = (SymbolicConstant) universe.canonic(universe
 				.symbolicConstant(universe.stringObject("stringToDouble"),
-						universe.functionType(Arrays.asList(stringSymbolicType,
-								stringSymbolicType), universe.realType())));
-		stringToCharFunction = (SymbolicConstant) universe
-				.canonic(universe.symbolicConstant(universe
-						.stringObject("stringToChar"), universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						universe.characterType())));
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								universe.realType())));
+		stringToCharFunction = (SymbolicConstant) universe.canonic(
+				universe.symbolicConstant(universe.stringObject("stringToChar"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								universe.characterType())));
 		stringToStringDataFunction = (SymbolicConstant) universe
-				.canonic(universe.symbolicConstant(universe
-						.stringObject("stringToStringData"), universe
-						.functionType(Arrays.asList(stringSymbolicType,
-								stringSymbolicType), stringSymbolicType)));
+				.canonic(universe.symbolicConstant(
+						universe.stringObject("stringToStringData"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								stringSymbolicType)));
 		stringToPointerFunction = (SymbolicConstant) universe.canonic(universe
 				.symbolicConstant(universe.stringObject("stringToPointer"),
-						universe.functionType(Arrays.asList(stringSymbolicType,
-								stringSymbolicType), typeFactory
-								.pointerSymbolicType())));
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								typeFactory.pointerSymbolicType())));
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -366,8 +381,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation execute_filesystem_create(CIVLSource source,
-			State state, int pid, String process, Expression[] expressions,
+	private Evaluation execute_filesystem_create(CIVLSource source, State state,
+			int pid, String process, Expression[] expressions,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression scope = argumentValues[0];
@@ -413,10 +428,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression theFile;
 		NumericExpression pos0 = zero, pos1 = zero;
 		boolean isInputFile = false;
-		int filesystemDyscopeId = symbolicUtil.getDyscopeId(
-				expressions[0].getSource(), filesystemPointer);
-		int filesystemVid = symbolicUtil.getVariableId(
-				expressions[0].getSource(), filesystemPointer);
+		int filesystemDyscopeId = symbolicUtil
+				.getDyscopeId(expressions[0].getSource(), filesystemPointer);
+		int filesystemVid = symbolicUtil
+				.getVariableId(expressions[0].getSource(), filesystemPointer);
 		ReferenceExpression fileSystemRef = symbolicUtil
 				.getSymRef(filesystemPointer);
 		state = eval.state;
@@ -446,46 +461,46 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		if (fileIndex == numFiles) {
 			// file not found: create it.
 			switch (mode) {
-			case CIVL_FILE_MODE_R:
-				// assume file exists with unconstrained contents
-				isInput = this.one;
-				isInputFile = true;
-				isOutput = this.zero;
-				isBinary = zero;
-				contents = initialContents(filename);
-				pos0 = pos1 = zero;
-				break;
-			case CIVL_FILE_MODE_W:
-			case CIVL_FILE_MODE_WX:
-				// assume file does not yet exist
-				isInput = zero;
-				isOutput = one;
-				isBinary = zero;
-				contents = emptyContents;
-				pos0 = pos1 = zero;
-				break;
-			case CIVL_FILE_MODE_A:
-				// assume file exists
-				isInput = one;
-				isInputFile = true;
-				isOutput = one;
-				isBinary = zero;
-				contents = initialContents(filename);
-				pos0 = one;
-				pos1 = zero;
-				break;
-			case CIVL_FILE_MODE_RP:
-				// assume file exists
-				isInput = one;
-				isInputFile = true;
-				isOutput = one;
-				isBinary = zero;
-				contents = initialContents(filename);
-				pos0 = pos1 = zero;
-				break;
-			default:
-				throw new CIVLUnimplementedFeatureException(
-						"FILE mode " + mode, modeSource);
+				case CIVL_FILE_MODE_R :
+					// assume file exists with unconstrained contents
+					isInput = this.one;
+					isInputFile = true;
+					isOutput = this.zero;
+					isBinary = zero;
+					contents = initialContents(filename);
+					pos0 = pos1 = zero;
+					break;
+				case CIVL_FILE_MODE_W :
+				case CIVL_FILE_MODE_WX :
+					// assume file does not yet exist
+					isInput = zero;
+					isOutput = one;
+					isBinary = zero;
+					contents = emptyContents;
+					pos0 = pos1 = zero;
+					break;
+				case CIVL_FILE_MODE_A :
+					// assume file exists
+					isInput = one;
+					isInputFile = true;
+					isOutput = one;
+					isBinary = zero;
+					contents = initialContents(filename);
+					pos0 = one;
+					pos1 = zero;
+					break;
+				case CIVL_FILE_MODE_RP :
+					// assume file exists
+					isInput = one;
+					isInputFile = true;
+					isOutput = one;
+					isBinary = zero;
+					contents = initialContents(filename);
+					pos0 = pos1 = zero;
+					break;
+				default :
+					throw new CIVLUnimplementedFeatureException(
+							"FILE mode " + mode, modeSource);
 			}
 			length = this.fileLength(filename);
 			theFile = universe.tuple(fileSymbolicType, Arrays.asList(filename,
@@ -497,8 +512,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 				BooleanExpression positiveLength = universe.lessThan(zero,
 						(NumericExpression) length);
 
-				state = state.setPathCondition(universe.and(
-						state.getPathCondition(), positiveLength));
+				state = state.setPathCondition(
+						universe.and(state.getPathCondition(), positiveLength));
 			}
 			state = primaryExecutor.assign(expressions[1].getSource(), state,
 					process, filesystemPointer, fileSystemStructure);
@@ -512,8 +527,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 			ReferenceExpression ref = universe.arrayElementReference(
 					universe.tupleComponentReference(fileSystemRef, oneObject),
 					universe.integer(fileIndex));
-			SymbolicExpression filePointer = symbolicUtil.makePointer(
-					filesystemDyscopeId, filesystemVid, ref);
+			SymbolicExpression filePointer = symbolicUtil
+					.makePointer(filesystemDyscopeId, filesystemVid, ref);
 			SymbolicExpression fileStream;
 			// SymbolicExpression scope = modelFactory.scopeValue(state
 			// .getProcessState(pid).getDyscopeId());
@@ -535,7 +550,9 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		}
 	}
 
-	/* ******************** Methods from BaseLibraryExecutor ******************* */
+	/*
+	 * ******************** Methods from BaseLibraryExecutor *******************
+	 */
 
 	/**
 	 * Execute a function call statement for a certain process at a given state.
@@ -557,54 +574,55 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$fopen":
-			callEval = execute_fopen(source, state, pid, process, arguments,
-					argumentValues);
-			break;
-		case "$filesystem_create":
-			callEval = execute_filesystem_create(source, state, pid, process,
-					arguments, argumentValues);
-			break;
-		case "$filesystem_destroy":
-			callEval = executeFree(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "fclose":
-			callEval = executeFree(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "fprintf":
-			callEval = execute_fprintf(source, state, pid, process, arguments,
-					argumentValues);
-			break;
-		case "printf":
-			if (civlConfig.enablePrintf())
-				callEval = this.primaryExecutor.execute_printf(source, state,
-						pid, process, arguments, argumentValues);
-			else
-				callEval = new Evaluation(state, null);
-			break;
-		case "fscanf":
-			callEval = execute_fscanf(source, state, pid, process, arguments,
-					argumentValues);
-			break;
-		case "fflush":
-		case "_fflush":
-			break;
-		case "$filesystem_copy_output":
-			callEval = execute_filesystem_copy_output(source, state, pid,
-					process, arguments, argumentValues);
-			break;
-		case "$textFileLength":
-			callEval = execute_text_file_length(source, state, pid, process,
-					arguments, argumentValues);
-			break;
-		case "sprintf":
-			callEval = this.execute_fprintf(source, state, pid, process,
-					arguments, argumentValues);
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(functionName, source);
+			case "$fopen" :
+				callEval = execute_fopen(source, state, pid, process, arguments,
+						argumentValues);
+				break;
+			case "$filesystem_create" :
+				callEval = execute_filesystem_create(source, state, pid,
+						process, arguments, argumentValues);
+				break;
+			case "$filesystem_destroy" :
+				callEval = executeFree(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "fclose" :
+				callEval = executeFree(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "fprintf" :
+				callEval = execute_fprintf(source, state, pid, process,
+						arguments, argumentValues);
+				break;
+			case "printf" :
+				if (civlConfig.enablePrintf())
+					callEval = this.primaryExecutor.execute_printf(source,
+							state, pid, process, arguments, argumentValues);
+				else
+					callEval = new Evaluation(state, null);
+				break;
+			case "fscanf" :
+				callEval = execute_fscanf(source, state, pid, process,
+						arguments, argumentValues);
+				break;
+			case "fflush" :
+			case "_fflush" :
+				break;
+			case "$filesystem_copy_output" :
+				callEval = execute_filesystem_copy_output(source, state, pid,
+						process, arguments, argumentValues);
+				break;
+			case "$textFileLength" :
+				callEval = execute_text_file_length(source, state, pid, process,
+						arguments, argumentValues);
+				break;
+			case "sprintf" :
+				callEval = this.execute_fprintf(source, state, pid, process,
+						arguments, argumentValues);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(functionName,
+						source);
 
 		}
 		return callEval;
@@ -678,9 +696,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 
 			if (!isBinary.equals(this.zero)) {
 				throw new CIVLExecutionException(ErrorKind.OTHER,
-						Certainty.CONCRETE, process, "The file "
-								+ arguments[0].toString()
-								+ " is not a text file.", state, source);
+						Certainty.CONCRETE, process,
+						"The file " + arguments[0].toString()
+								+ " is not a text file.",
+						state, source);
 			}
 			length = universe.tupleRead(theFile, universe.intObject(6));
 		}
@@ -698,8 +717,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		NumericExpression length;
 		int length_int;
 		SymbolicExpression scopeField = universe.tupleRead(arrayPointer,
-				zeroObject), varField = universe.tupleRead(arrayPointer,
-				oneObject);
+				zeroObject),
+				varField = universe.tupleRead(arrayPointer, oneObject);
 		CIVLSource arraySource = arguments[1].getSource();
 		List<SymbolicExpression> files;
 		SymbolicExpression outputArray;
@@ -717,10 +736,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 			files.add(universe.arrayRead(fileArray, fileArrayIndex));
 		}
 		outputArray = universe.array(this.fileSymbolicType, files);
-		arrayPointer = universe.tuple(
-				typeFactory.pointerSymbolicType(),
-				Arrays.asList(scopeField, varField,
-						universe.identityReference()));
+		arrayPointer = universe.tuple(typeFactory.pointerSymbolicType(), Arrays
+				.asList(scopeField, varField, universe.identityReference()));
 		state = primaryExecutor.assign(arraySource, state, process,
 				arrayPointer, outputArray);
 		return new Evaluation(state, null);
@@ -769,8 +786,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 		fileStream = eval.value;
 		state = eval.state;
 		filePointer = universe.tupleRead(fileStream, zeroObject);
-		position = (NumericExpression) universe
-				.tupleRead(fileStream, twoObject);
+		position = (NumericExpression) universe.tupleRead(fileStream,
+				twoObject);
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
 				null, filePointer, false);
 		state = eval.state;
@@ -784,22 +801,22 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 			positionExceedFileLength = universe.lessThanEquals(fileLength,
 					position);
 			reasoner = universe.reasoner(state.getPathCondition());
-			positionExceedFileLengthValid = reasoner.valid(
-					positionExceedFileLength).getResultType();
+			positionExceedFileLengthValid = reasoner
+					.valid(positionExceedFileLength).getResultType();
 
 			if (positionExceedFileLengthValid == ResultType.YES) {
 				return new Evaluation(state, this.EOF);
 			}
 		}
-		formatString = this.evaluator.getString(arguments[1].getSource(),
-				state, process, arguments[1], argumentValues[1]);
+		formatString = this.evaluator.getString(arguments[1].getSource(), state,
+				process, arguments[1], argumentValues[1]);
 		formatBuffer = formatString.second;
 		state = formatString.first;
 		{ // reads the file
 			SymbolicExpression fileContents = universe.tupleRead(fileObject,
 					oneObject);
-			List<Format> formats = this.primaryExecutor.splitFormat(
-					arguments[1].getSource(), formatBuffer);
+			List<Format> formats = this.primaryExecutor
+					.splitFormat(arguments[1].getSource(), formatBuffer);
 			int numOfFormats = formats.size();
 			// index of arguments of the fscanf() function
 			int dataPointerIndex = 2;
@@ -811,30 +828,30 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 			for (int i = 0; i < numOfFormats; i++) {
 				Format currentFormat = formats.get(i);
 				String formatValue = currentFormat.string.toString();
-				SymbolicExpression currentString = universe.arrayRead(
-						fileContents, position);
+				SymbolicExpression currentString = universe
+						.arrayRead(fileContents, position);
 				SymbolicExpression format, data;
 				ConversionType conversion = currentFormat.type;
 				SymbolicConstant conversionFunction = null;
 
 				format = universe.stringExpression(formatValue);
 				switch (conversion) {
-				case INT:
-					conversionFunction = this.stringToIntFunction;
-					break;
-				case DOUBLE:
-					conversionFunction = this.stringToDoubleFunction;
-					break;
-				case POINTER:
-					conversionFunction = this.stringToPointerFunction;
-					break;
-				case CHAR:
-					conversionFunction = this.stringToCharFunction;
-					break;
-				case STRING:
-					conversionFunction = this.stringToStringDataFunction;
-					break;
-				default:
+					case INT :
+						conversionFunction = this.stringToIntFunction;
+						break;
+					case DOUBLE :
+						conversionFunction = this.stringToDoubleFunction;
+						break;
+					case POINTER :
+						conversionFunction = this.stringToPointerFunction;
+						break;
+					case CHAR :
+						conversionFunction = this.stringToCharFunction;
+						break;
+					case STRING :
+						conversionFunction = this.stringToStringDataFunction;
+						break;
+					default :
 				}
 				if (conversionFunction != null) {
 					SymbolicExpression assignedOutputArgPtr, origOutputArgPtr;
@@ -866,15 +883,15 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 							// As long as charsLength > 1, data will be
 							// represented with charsToStringFunction which has
 							// an array of char type.
-							charsToStringFunction = charsToString(charsLengthNumExpr);
+							charsToStringFunction = charsToString(
+									charsLengthNumExpr);
 							data = universe.apply(charsToStringFunction,
 									Arrays.asList(format, currentString));
 							// Special case: Checking if "position + dataLength"
 							// exceeds "file length" or just reaches the end of
 							// the file.
 							positionExceedFileLength = universe.lessThanEquals(
-									fileLength,
-									universe.add(position,
+									fileLength, universe.add(position,
 											universe.integer(dataLength)));
 							if (reasoner.isValid(positionExceedFileLength)) {
 								// If exceeds file length, assigning the current
@@ -891,7 +908,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 								count++;
 								data = symbolicAnalyzer.getSubArray(data, zero,
 										realDataLength, state, process, source);
-								setOutputArgument(state, process, data,
+								setOutputArgument(state, pid, process, data,
 										origOutputArgPtrExpr, origOutputArgPtr,
 										realDataLength, source);
 								state = primaryExecutor.assign(source, state,
@@ -900,9 +917,9 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 								break;
 							} else {
 								eval_and_assignedPtr = setOutputArgument(state,
-										process, data, origOutputArgPtrExpr,
-										origOutputArgPtr, charsLengthNumExpr,
-										source);
+										pid, process, data,
+										origOutputArgPtrExpr, origOutputArgPtr,
+										charsLengthNumExpr, source);
 								eval = eval_and_assignedPtr.left;
 								state = eval.state;
 								data = eval.value;
@@ -1047,25 +1064,24 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 				SymbolicConstant conversionFunction = null;
 
 				switch (conversion) {
-				case INT:
-					conversionFunction = this.intToStringFunction;
-					break;
-				case DOUBLE:
-					conversionFunction = this.doubleToStringFunction;
-					break;
-				case CHAR:
-					conversionFunction = this.charToStringFunction;
-					break;
-				case STRING:
-					conversionFunction = this.stringDataToStringFunction;
-					break;
-				case POINTER:
-					conversionFunction = this.pointerToStringFunction;
-					break;
-				default:// VOID
-					newStringExpression = universe
-							.stringExpression(formatString
-									.replaceAll("%%", "%"));
+					case INT :
+						conversionFunction = this.intToStringFunction;
+						break;
+					case DOUBLE :
+						conversionFunction = this.doubleToStringFunction;
+						break;
+					case CHAR :
+						conversionFunction = this.charToStringFunction;
+						break;
+					case STRING :
+						conversionFunction = this.stringDataToStringFunction;
+						break;
+					case POINTER :
+						conversionFunction = this.pointerToStringFunction;
+						break;
+					default :// VOID
+						newStringExpression = universe.stringExpression(
+								formatString.replaceAll("%%", "%"));
 				}
 				if (conversionFunction != null)
 					newStringExpression = universe.apply(conversionFunction,
@@ -1106,7 +1122,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	private Integer getCharsLengthFromFormat(State state, String process,
 			String formatValue, ConversionType conversion, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		assert (conversion != ConversionType.STRING || conversion != ConversionType.CHAR) : "Cannot return characters when the format isn't expecting a string or char";
+		assert (conversion != ConversionType.STRING
+				|| conversion != ConversionType.CHAR) : "Cannot return characters when the format isn't expecting a string or char";
 		// TODO: what about "%[" ?
 		Pattern charOrStrPattern; // regex used to matching "%c" and "%s"
 		Matcher matcher;
@@ -1146,8 +1163,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 
 	/**
 	 * Similar to the function
-	 * {@link edu.udel.cis.vsl.civl.library.bundle.LibbundleEvaluator#setDataFrom(State, String, SymbolicExpression, NumericExpression, SymbolicExpression, boolean, CIVLSource) 
-	 * }
+	 * {@link edu.udel.cis.vsl.civl.library.bundle.LibbundleEvaluator#setDataFrom(State, String, SymbolicExpression, NumericExpression, SymbolicExpression, boolean, CIVLSource) }
 	 * Set a sequence of data to an object pointed by the given pointer.
 	 * 
 	 * 
@@ -1171,11 +1187,12 @@ public class LibstdioExecutor extends BaseLibraryExecutor implements
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private Pair<Evaluation, SymbolicExpression> setOutputArgument(State state,
-			String process, SymbolicExpression data, Expression argPtrExpr,
-			SymbolicExpression argPtr, NumericExpression offset,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
+			int pid, String process, SymbolicExpression data,
+			Expression argPtrExpr, SymbolicExpression argPtr,
+			NumericExpression offset, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
 		data = this.arrayFlatten(state, process, data, source);
-		return this.setDataFrom(state, process, argPtrExpr, argPtr, offset,
+		return this.setDataFrom(state, pid, process, argPtrExpr, argPtr, offset,
 				data, true, source);
 	}
 

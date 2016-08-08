@@ -617,10 +617,10 @@ public abstract class LibraryComponent {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	public Pair<Evaluation, SymbolicExpression> setDataFrom(State state,
-			String process, Expression ptrExpr, SymbolicExpression pointer,
-			NumericExpression count, SymbolicExpression dataArray,
-			boolean checkOutput, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
+			int pid, String process, Expression ptrExpr,
+			SymbolicExpression pointer, NumericExpression count,
+			SymbolicExpression dataArray, boolean checkOutput,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		NumericExpression[] arraySlicesSizes;
 		NumericExpression startPos;
 		NumericExpression dataSeqLength = universe.length(dataArray);
@@ -647,6 +647,17 @@ public abstract class LibraryComponent {
 
 			return new Pair<>(new Evaluation(state, data), pointer);
 		}
+		// If the type of the object is exact same as the dataArray, then do a
+		// directly assignment:
+		CIVLType typeObj = symbolicAnalyzer
+				.typeOfObjByPointer(ptrExpr.getSource(), state, pointer);
+		TypeEvaluation teval = evaluator.getDynamicType(state, pid, typeObj,
+				source, false);
+
+		state = teval.state;
+		if (dataArray.type().equals(teval.type))
+			return new Pair<>(new Evaluation(state, dataArray), pointer);
+
 		// Else, count greater than one:
 		startPtr = pointer;
 		eval_and_slices = evaluator.evaluatePointerAdd(state, process, startPtr,
