@@ -385,40 +385,9 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 				realCount, false, false, expression.getSource());
 		state = eval.state;
 		data1 = eval.value;
-
 		result = universe.equals(data0, data1);
 		eval.value = result;
 		return eval;
-		// countNum = reasoner.extractNumber((NumericExpression) values[1]);
-		// if (countNum == null)
-		// throw new CIVLInternalException(
-		// "Value of expression: " + expression.arguments()[2]
-		// + "are expecting to be elaborated to concrete",
-		// expression.arguments()[2].getSource());
-		// count = ((IntegerNumber) countNum).intValue();
-		// // Offset = 0:
-		// eval = evaluator.dereference(source, state, process,
-		// expression.arguments()[0], values[0], false);
-		// result0 = eval.value;
-		// eval = evaluator.dereference(source, state, process,
-		// expression.arguments()[3], values[3], false);
-		// result1 = eval.value;
-		// result = universe.equals(result0, result1);
-		// // Offset > 0:
-		// for (int i = 1; i < count; i++) {
-		// eval = evaluator.evaluatePointerAdd(state, process, values[0],
-		// universe.integer(i), false, source).left;
-		// eval = evaluator.dereference(expression.getSource(), state, process,
-		// expression.arguments()[0], eval.value, false);
-		// result0 = eval.value;
-		// eval = evaluator.evaluatePointerAdd(state, process, values[3],
-		// universe.integer(i), false, source).left;
-		// eval = evaluator.dereference(expression.getSource(), state, process,
-		// expression.arguments()[3], eval.value, false);
-		// result1 = eval.value;
-		// result = universe.and(result, universe.equals(result0, result1));
-		// }
-		// return new Evaluation(state, result);
 	}
 
 	/**
