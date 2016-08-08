@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -95,8 +96,28 @@ public class ContractsTest {
 
 	@Test
 	public void gather() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
+		assertFalse(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
 				filename("contractsMPI/gather.c")));
+	}
+
+	@Test
+	public void gatherBad() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
+				filename("contractsMPI/gather_bad.c")));
+	}
+
+	@Test
+	public void scatter() {
+		assertTrue(
+				ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
+						filename("contractsMPI/scatter.c")));
+	}
+	
+	@Test
+	public void reduce_sum() {
+		assertTrue(
+				ui.run("verify -input_mpi_nprocs=2 -mpiContract=reduce_sum",
+						filename("contractsMPI/reduce_sum.c")));
 	}
 
 	// @Test
