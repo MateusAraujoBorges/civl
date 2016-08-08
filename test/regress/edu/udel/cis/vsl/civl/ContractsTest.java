@@ -107,150 +107,80 @@ public class ContractsTest {
 	}
 
 	@Test
-	public void scatter() {
-		assertTrue(
-				ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
-						filename("contractsMPI/scatter.c")));
-	}
-	
-	@Test
-	public void reduce_sum() {
-		assertTrue(
-				ui.run("verify -input_mpi_nprocs=2 -mpiContract=reduce_sum",
-						filename("contractsMPI/reduce_sum.c")));
+	public void allgather() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=allgather",
+				filename("contractsMPI/allgather.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
+				filename("contractsMPI/allgather.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
+				filename("contractsMPI/broadcast.c")));
 	}
 
-	// @Test
-	// public void seq_sum() {
-	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/sum.c")));
-	// }
-	//
-	// @Test
-	// public void pointers() {
-	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/pointers.c")));
-	// }
-	//
-	// @Test
-	// public void pointersBad() {
-	// assertFalse(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/pointersBad.c")));
-	// }
-	//
-	// @Test
-	// public void pointers2() {
-	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/pointers2.c")));
-	// }
-	//
-	// @Test
-	// public void pointers2Bad() {
-	// assertFalse(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/pointers2Bad.c")));
-	// }
-	//
-	// @Test
-	// public void pointers2Bad2() {
-	// assertFalse(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/pointers2Bad2.c")));
-	// }
-	//
-	// @Test
-	// public void pointers3() {
-	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/pointers3.c")));
-	// }
-	//
-	// @Test
-	// public void pointers3Bad() {
-	// assertFalse(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/pointers3Bad.c")));
-	// }
-	//
-	// @Test
-	// public void pointers4() {
-	// assertTrue(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/pointers4.c")));
-	// }
-	//
-	// @Test
-	// public void pointers4Bad() {
-	// assertFalse(ui.run(VERIFY, "-errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/pointers4Bad.c")));
-	// }
-	//
-	// @Ignore
-	// public void castVoidPointers() {
-	// assertTrue(ui.run(VERIFY, " -errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/voidPointers.c")));
-	// }
-	//
-	// @Test
-	// public void globalPointers() {
-	// assertTrue(ui.run(VERIFY, " -errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/globalPointers.c")));
-	// }
-	//
-	// @Test
-	// public void globalPointersBad() {
-	// assertFalse(ui.run(VERIFY, " -errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/globalPointersBad.c")));
-	// }
-	//
-	// @Ignore
-	// public void loopInvariants() {
-	// assertTrue(ui.run(VERIFY, " -errorBound=10", enableContract, QUIET,
-	// filename("contractsSeq/loopInvariants.c")));
-	// }
-	//
-	// /************************ concurrent section ***********************/
-	// @Test
-	// public void dummyMPITest() {
-	// assertTrue(ui.run(VERIFY, " -input_mpi_nprocs=2 -errorBound=10",
-	// enableContract, QUIET, filename("contractsMPI/dummyMpiTest.c")));
-	// }
-	//
-	// @Test
-	// public void simpleMPITest() {
-	// assertTrue(ui
-	// .run(VERIFY, "-input_mpi_nprocs=2 -errorBound=10",
-	// enableContract, QUIET,
-	// filename("contractsMPI/simpleMpiTest.c")));
-	// }
-	//
-	// @Test
-	// public void simpleMPITest3() {
-	// assertTrue(ui.run(VERIFY, "-input_mpi_nprocs=5 -errorBound=10",
-	// enableContract, QUIET,
-	// filename("contractsMPI/simpleMpiTest3.c")));
-	// }
-	//
-	// @Test
-	// public void broadcast() {
-	// assertTrue(ui.run(VERIFY, " -input_mpi_nprocs=2 -errorBound=1",
-	// enableContract, QUIET, filename("contractsMPI/broadcast.c")));
-	// }
-	//
-	// @Test
-	// public void broadcastBad() {
-	// assertFalse(ui
-	// .run(VERIFY, "-input_mpi_nprocs=4 -errorBound=1",
-	// enableContract, QUIET,
-	// filename("contractsMPI/broadcast_bad.c")));
-	// }
-	//
-	// @Test
-	// public void gather() {
-	// assertTrue(ui.run(VERIFY, "-input_mpi_nprocs=2 -errorBound=1",
-	// enableContract, QUIET, filename("contractsMPI/gather.c")));
-	// }
-	//
-	// @Test
-	// public void gatherBad() {
-	// assertFalse(ui.run(VERIFY, "-input_mpi_nprocs=4 -errorBound=1",
-	// enableContract, QUIET, filename("contractsMPI/gather_bad.c")));
-	// }
-	//
-	//
+	@Test
+	public void autoallgather() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
+				filename("contractsMPI/auto_allgather.c")));
+	}
+
+	@Test
+	public void scatter() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
+				filename("contractsMPI/scatter.c")));
+	}
+
+	@Test
+	public void reduce_sum() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=reduce_sum",
+				filename("contractsMPI/reduce_sum.c")));
+	}
+
+	@Test
+	public void wildcardError() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=wildcard",
+				filename("contractsMPI/wildcard-error.c")));
+	}
+
+	@Test
+	public void wildcardGood() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=wildcard",
+				filename("contractsMPI/wildcard-good.c")));
+	}
+
+	@Test
+	public void diffusion1d() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
+				filename("contractsMPI/diffusion1d.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
+				filename("contractsMPI/diffusion1d.c")));
+		assertTrue(
+				ui.run("verify -input_mpi_nprocs=2 -mpiContract=exchange_ghost_cells",
+						filename("contractsMPI/diffusion1d.c")));
+	}
+
+	@Test
+	public void diffusion2d() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff2dIter",
+				filename("contractsMPI/diffusion2d.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
+				filename("contractsMPI/diffusion2d.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=exchange",
+				filename("contractsMPI/diffusion2d.c")));
+	}
+
+	@Test
+	public void gj_elim() {
+		assertTrue(ui.run(
+				"verify -input_mpi_nprocs=2 -mpiContract=backwardReduce",
+				filename("contractsMPI/gaussJordan_elimination_mpi.c")));
+		assertTrue(ui.run(
+				"verify -input_mpi_nprocs=2 -mpiContract=gaussianElimination",
+				filename("contractsMPI/gaussJordan_elimination_mpi.c")));
+	}
+
+	@Test
+	public void madre() {
+		assertTrue(
+				ui.run("verify -input_mpi_nprocs=2 -mpiContract=computeDirectMoves",
+						filename("contractsMPI/madre_computeDirectMoves.c")));
+	}
 }
