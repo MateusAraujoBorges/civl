@@ -42,7 +42,8 @@ struct $mpi_gcomm {
 /****************************** Helper Functions **********************************/
 int sizeofDatatype(MPI_Datatype datatype) {
 #ifdef  _MPI_CONTRACT
-  return $mpi_extentof(datatype) * sizeof(char);
+  if (!$is_concrete_int(datatype))
+      return $mpi_extentof(datatype) * sizeof(char);
 #endif
   switch (datatype) {
   case MPI_INT:
@@ -170,6 +171,7 @@ int $mpi_send(void *buf, int count, MPI_Datatype datatype, int dest,
     int place = $comm_place(comm.p2p);
     $message out;
 
+    $elaborate(dest);
 #ifdef _MPI_CONTRACT
 //    $elaborate($mpi_extentof(datatype));
     $elaborate(count);
@@ -194,14 +196,8 @@ int $mpi_recv(void *buf, int count, MPI_Datatype datatype, int source,
     $assert(tag == -2 || tag >= 0, "Illegal MPI message receive tag %d.\n", tag);
     deterministicTag = tag < 0 ? -2 : tag;
     $elaborate(source);
-#ifdef _MPI_CONTRACT
-    $atomic{
-      in = $comm_dequeue(comm.p2p, source, deterministicTag);
-      int nonWildsrc = $message_source(in);
-    }
-#else
     in = $comm_dequeue(comm.p2p, source, deterministicTag);
-#endif
+
     int size = count*sizeofDatatype(datatype);
 
     $message_unpack(in, buf, size);
@@ -235,20 +231,8 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     
     $choose {
       $when($true){
-	$atomic{
-	  $comm_enqueue(comm.p2p, out);
-#ifdef _MPI_CONTRACT
-	  //$mpi_p2pSendShot(comm.gcommIndex, out, place);
-#endif
-	}
-	$atomic{
-	  in = $comm_dequeue(comm.p2p, source, deterministicRecvTag);
-#ifdef _MPI_CONTRACT
-	  int nonWildSrc = $message_source(in);
-	  
-	  //$mpi_p2pRecvShot(comm.gcommIndex, nonWildSrc, place, deterministicRecvTag);	
-#endif
-	}
+	$comm_enqueue(comm.p2p, out);
+	in = $comm_dequeue(comm.p2p, source, deterministicRecvTag);
       }
       $when($false){
         /* This $choose branch plays a trick which correctly

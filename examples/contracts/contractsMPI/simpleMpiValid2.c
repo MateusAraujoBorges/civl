@@ -20,6 +20,5 @@ int bcast(void * x, MPI_Datatype datatype) {
   @*/
 double target(void * data, MPI_Datatype datatype) {
   bcast(data, datatype);
-  $free(data);
   return 0;
 }

@@ -497,6 +497,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		Pair<FunctionDefinitionNode, List<BlockItemNode>> processedSourceFiles;
 		SequenceNode<BlockItemNode> newRootNode;
 		List<BlockItemNode> sourceFiles = new LinkedList<>();
+		List<BlockItemNode> globalVarHavocs;
 		boolean hasMPI = false;
 		AST newAst;
 		int count;
@@ -528,6 +529,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			if (!hasMPI && sourceFileName.equals("mpi.h"))
 				hasMPI = true;
 		}
+		globalVarHavocs = havocForGlobalVariables(sourceFiles);
 		// process function definitions and declarations in source files:
 		processedSourceFiles = processSourceFileNodes(sourceFiles);
 		// create declarations for all functions that will be used later:
@@ -540,10 +542,10 @@ public class ContractTransformerWorker extends BaseWorker {
 				externalList.add(child);
 			}
 		}
-		// $havoc for all global variables:
-
 		// externalList.addAll(createDeclarationsForUsedFunctions());
 		externalList.addAll(processedSourceFiles.right);
+		// $havoc for all global variables:
+		externalList.addAll(globalVarHavocs);
 		externalList.add(mainFunction(processedSourceFiles.left, hasMPI));
 		newRootNode = nodeFactory.newSequenceNode(
 				newSource("TranslationUnit",
@@ -552,7 +554,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+		newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 

@@ -4,8 +4,9 @@
 
 #define comm MPI_COMM_WORLD
 
-/*@ requires \valid(x);
+/*@ 
   @ \mpi_collective(comm, P2P):
+  @    requires \mpi_valid(x, 1, MPI_INT);
   @    ensures \mpi_agree(*x);
   @*/
 int bcast(int * x) {
