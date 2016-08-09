@@ -52,8 +52,9 @@ import edu.udel.cis.vsl.sarl.IF.number.Number;
  * @author Manchun Zheng (zmanchun)
  * 
  */
-public class LibcivlcEnabler extends BaseLibraryEnabler implements
-		LibraryEnabler {
+public class LibcivlcEnabler extends BaseLibraryEnabler
+		implements
+			LibraryEnabler {
 
 	private final static int ELABORATE_UPPER_BOUND = 100;
 
@@ -71,8 +72,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 	public LibcivlcEnabler(String name, Enabler primaryEnabler,
 			Evaluator evaluator, ModelFactory modelFactory,
 			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
-			CIVLConfiguration civlConfig,
-			LibraryEnablerLoader libEnablerLoader,
+			CIVLConfiguration civlConfig, LibraryEnablerLoader libEnablerLoader,
 			LibraryEvaluatorLoader libEvaluatorLoader) {
 		super(name, primaryEnabler, evaluator, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libEnablerLoader,
@@ -93,8 +93,8 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 
 	@Override
 	public List<Transition> enabledTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, AtomicLockAction atomicLockAction)
+			CallOrSpawnStatement call, BooleanExpression pathCondition, int pid,
+			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		String functionName = call.function().name().name();
 		AssignStatement assignmentCall;
@@ -105,60 +105,60 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 
 		call.arguments().toArray(arguments);
 		switch (functionName) {
-		case "$assume": {
-			localTransitions.add(Semantics.newTransition(pathCondition, pid,
-					call, true, atomicLockAction));
-			return localTransitions;
-		}
-		case "$choose_int":
-			argumentsEval = this.evaluateArguments(state, pid, arguments);
-			state = argumentsEval.left;
-
-			IntegerNumber upperNumber = (IntegerNumber) universe.reasoner(
-					state.getPathCondition()).extractNumber(
-					(NumericExpression) argumentsEval.right[0]);
-			int upper;
-
-			// TODO: can it be solved by symbolic execution?
-			if (upperNumber == null) {
-				this.errorLogger.logSimpleError(arguments[0].getSource(),
-						state, process,
-						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.INTERNAL,
-						"argument to $choose_int not concrete: "
-								+ argumentsEval.right[0]);
-				throw new UnsatisfiablePathConditionException();
+			case "$assume" : {
+				localTransitions.add(Semantics.newTransition(pathCondition, pid,
+						call, true, atomicLockAction));
+				return localTransitions;
 			}
-			upper = upperNumber.intValue();
-			for (int i = 0; i < upper; i++) {
-				Expression singleChoice = modelFactory
-						.integerLiteralExpression(arguments[0].getSource(),
-								BigInteger.valueOf(i));
+			case "$choose_int" :
+				argumentsEval = this.evaluateArguments(state, pid, arguments);
+				state = argumentsEval.left;
 
-				assignmentCall = modelFactory.assignStatement(
-						arguments[0].getSource(), call.source(), call.lhs(),
-						singleChoice,
-						(call.lhs() instanceof InitialValueExpression));
-				assignmentCall.setTargetTemp(call.target());
-				assignmentCall.setTarget(call.target());
-				assignmentCall.source().removeOutgoing(assignmentCall);
-				localTransitions.add(Semantics.newTransition(pathCondition,
-						pid, assignmentCall, atomicLockAction));
-			}
-			return localTransitions;
-		case "$elaborate":
-			argumentsEval = this.evaluateArguments(state, pid, arguments);
-			return this.elaborateIntWorker(argumentsEval.left, pid, call,
-					call.getSource(), arguments, argumentsEval.right,
-					atomicLockAction);
-		case "$elaborate_domain":
-			argumentsEval = this.evaluateArguments(state, pid, arguments);
-			return this.elaborateRectangularDomainWorker(argumentsEval.left,
-					pid, call, call.getSource(), arguments,
-					argumentsEval.right, atomicLockAction);
-		default:
-			return super.enabledTransitions(state, call, pathCondition, pid,
-					atomicLockAction);
+				IntegerNumber upperNumber = (IntegerNumber) universe
+						.reasoner(state.getPathCondition()).extractNumber(
+								(NumericExpression) argumentsEval.right[0]);
+				int upper;
+
+				// TODO: can it be solved by symbolic execution?
+				if (upperNumber == null) {
+					this.errorLogger.logSimpleError(arguments[0].getSource(),
+							state, process,
+							symbolicAnalyzer.stateInformation(state),
+							ErrorKind.INTERNAL,
+							"argument to $choose_int not concrete: "
+									+ argumentsEval.right[0]);
+					throw new UnsatisfiablePathConditionException();
+				}
+				upper = upperNumber.intValue();
+				for (int i = 0; i < upper; i++) {
+					Expression singleChoice = modelFactory
+							.integerLiteralExpression(arguments[0].getSource(),
+									BigInteger.valueOf(i));
+
+					assignmentCall = modelFactory.assignStatement(
+							arguments[0].getSource(), call.source(), call.lhs(),
+							singleChoice,
+							(call.lhs() instanceof InitialValueExpression));
+					assignmentCall.setTargetTemp(call.target());
+					assignmentCall.setTarget(call.target());
+					assignmentCall.source().removeOutgoing(assignmentCall);
+					localTransitions.add(Semantics.newTransition(pathCondition,
+							pid, assignmentCall, atomicLockAction));
+				}
+				return localTransitions;
+			case "$elaborate" :
+				argumentsEval = this.evaluateArguments(state, pid, arguments);
+				return this.elaborateIntWorker(argumentsEval.left, pid, call,
+						call.getSource(), arguments, argumentsEval.right,
+						atomicLockAction);
+			case "$elaborate_domain" :
+				argumentsEval = this.evaluateArguments(state, pid, arguments);
+				return this.elaborateRectangularDomainWorker(argumentsEval.left,
+						pid, call, call.getSource(), arguments,
+						argumentsEval.right, atomicLockAction);
+			default :
+				return super.enabledTransitions(state, call, pathCondition, pid,
+						atomicLockAction);
 		}
 	}
 
@@ -203,12 +203,12 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 		}
 
 		switch (function) {
-		case "$wait":
-			return ampleSetOfWait(state, pid, arguments, argumentValues);
-		case "$waitall":
-			return ampleSetOfWaitall(state, pid, arguments, argumentValues);
-		default:
-			return super.ampleSet(state, pid, call, null, null, null, null);
+			case "$wait" :
+				return ampleSetOfWait(state, pid, arguments, argumentValues);
+			case "$waitall" :
+				return ampleSetOfWaitall(state, pid, arguments, argumentValues);
+			default :
+				return super.ampleSet(state, pid, call, null, null, null, null);
 		}
 	}
 
@@ -219,8 +219,8 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 				joinProc);
 		BitSet ampleSet = new BitSet();
 
-		if (modelFactory.isPocessIdDefined(joinPid)
-				&& !modelFactory.isProcNull(arguments[0].getSource(), joinProc)) {
+		if (modelFactory.isPocessIdDefined(joinPid) && !modelFactory
+				.isProcNull(arguments[0].getSource(), joinProc)) {
 			ampleSet.set(joinPid);
 		}
 		return ampleSet;
@@ -257,11 +257,8 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 
 		if (number_nprocs == null) {
 			this.evaluator.errorLogger().logSimpleError(
-					arguments[1].getSource(),
-					state,
-					process,
-					symbolicAnalyzer.stateInformation(state),
-					ErrorKind.OTHER,
+					arguments[1].getSource(), state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
 					"the number of processes for $waitall "
 							+ "needs a concrete value");
 			throw new UnsatisfiablePathConditionException();
@@ -354,21 +351,14 @@ public class LibcivlcEnabler extends BaseLibraryEnabler implements
 			Interval interval = reasoner
 					.intervalApproximation((NumericExpression) var);
 
-			if (interval == null) {// var is unbounded
-				if (var.type().isInteger()) {
-					bounds.add(new ConstantBound(var, Integer.MIN_VALUE,
-							Integer.MAX_VALUE));
-				}
-			} else if (interval.isIntegral()) {
+			if (interval.isIntegral()) {
 				Number lowerNum = interval.lower(), upperNum = interval.upper();
 				int lower = Integer.MIN_VALUE, upper = Integer.MAX_VALUE;
 
-				if (lowerNum != null) {
-					//assert !interval.strictLower();
+				if (!lowerNum.isInfinite()) {
 					lower = ((IntegerNumber) lowerNum).intValue();
 				}
-				if (upperNum != null) {
-					//assert !interval.strictUpper();
+				if (!upperNum.isInfinite()) {
 					upper = ((IntegerNumber) upperNum).intValue();
 				}
 				bounds.add(new ConstantBound(var, lower, upper));
