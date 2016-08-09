@@ -173,7 +173,6 @@ int $mpi_send(void *buf, int count, MPI_Datatype datatype, int dest,
 
     $elaborate(dest);
 #ifdef _MPI_CONTRACT
-//    $elaborate($mpi_extentof(datatype));
     $elaborate(count);
 #endif
     out = $message_pack(place, dest, tag, buf, size);
