@@ -83,7 +83,9 @@ public class ContractsTest {
 
 	@Test
 	public void bcast() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=broadcast",
+		assertTrue(ui.run(
+				"verify -input_mpi_nprocs=2 -showProgram "
+						+ "-mpiContract=broadcast",
 				filename("contractsMPI/broadcast.c")));
 	}
 
@@ -117,8 +119,8 @@ public class ContractsTest {
 				filename("contractsMPI/allgather.c")));
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
 				filename("contractsMPI/allgather.c")));
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
-				filename("contractsMPI/broadcast.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=broadcast",
+				filename("contractsMPI/allgather.c")));
 	}
 
 	@Test
@@ -187,5 +189,12 @@ public class ContractsTest {
 		assertTrue(
 				ui.run("verify -input_mpi_nprocs=2 -mpiContract=computeDirectMoves",
 						filename("contractsMPI/madre_computeDirectMoves.c")));
+	}
+
+	@Test // extendQuant
+	public void extendQuant() {
+		assertTrue(
+				ui.run("verify -showProgram=false -showTransitions -input_mpi_nprocs=2 -mpiContract=f",
+						filename("extendQuant.c")));
 	}
 }
