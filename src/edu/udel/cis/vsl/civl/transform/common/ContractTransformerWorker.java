@@ -41,6 +41,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
@@ -204,6 +205,16 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * A string source for a return statement:
 	 */
 	private final static String RETURN_RESULT = "return $result;";
+
+	/**
+	 * A string source for a return statement:
+	 */
+	private final static String COPY = "$copy";
+
+	private final static String TMP_HEAP_PREFIX = CONTRACT_VAR_PREFIX
+			+ "_heap_";
+
+	private int tmpHeapCounter = 0;
 
 	/**
 	 * This class represents a contract behavior. Without loss of generality,
@@ -911,16 +922,17 @@ public class ContractTransformerWorker extends BaseWorker {
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
 					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
 		// Free for $mpi_valid() calls at requirements:
-		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
-			for (ConditionalClauses condClauses : mpiBlock
-					.getConditionalClauses())
-				for (ExpressionNode requires : condClauses
-						.getRequires(nodeFactory)) {
-					List<MPIContractExpressionNode> mpiValids = getMPIValidExpressionNodes(
-							requires);
-					bodyItems.addAll(
-							createConditionalFreeCalls(null, mpiValids));
-				}
+		// for (ParsedContractBlock mpiBlock : parsedContractBlocks)
+		// for (ConditionalClauses condClauses : mpiBlock
+		// .getConditionalClauses())
+		// for (ExpressionNode requires : condClauses
+		// .getRequires(nodeFactory)) {
+		// List<MPIContractExpressionNode> mpiValids =
+		// getMPIValidExpressionNodes(
+		// requires);
+		// bodyItems.addAll(
+		// createConditionalFreeCalls(null, mpiValids));
+		// }
 		body = nodeFactory.newCompoundStatementNode(driverSource, bodyItems);
 		funcTypeNode = nodeFactory.newFunctionTypeNode(funcTypeNode.getSource(),
 				funcTypeNode.getReturnType().copy(),
@@ -1020,8 +1032,8 @@ public class ContractTransformerWorker extends BaseWorker {
 					// List<BlockItemNode> mpiValidCalls =
 					// createMallocStatementSequenceForMPIValid(
 					// mpiValid);
-					bodyItems.add(
-							createMallocStatementSequenceForMPIValid(mpiValid));
+					bodyItems.addAll(createMallocStatementSequenceForMPIValid2(
+							mpiValid));
 
 					// bodyItems.addAll(mpiValidCalls);
 				}
@@ -2120,25 +2132,84 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * <code>
 	 * 
 	 * void * buf = (char *)malloc(count * $mpi_sizeof(datatype) * sizeof(char));
-	 * 
+	 * char tmp0[count * $mpi_sizeof(datatype)];
+	 * $copy(buf, tmp0);
 	 * </code>
 	 * 
 	 * @param mpiValid
 	 * @return
+	 * @throws SyntaxException
 	 */
-	private BlockItemNode createMallocStatementSequenceForMPIValid(
-			MPIContractExpressionNode mpiValid) {
+	private List<BlockItemNode> createMallocStatementSequenceForMPIValid(
+			MPIContractExpressionNode mpiValid) throws SyntaxException {
+		Source source = mpiValid.getSource();
 		ExpressionNode buf = mpiValid.getArgument(0);
 		ExpressionNode count = mpiValid.getArgument(1);
 		ExpressionNode datatype = mpiValid.getArgument(2);
-		ExpressionNode countTimesMPISizeof = nodeFactory.newOperatorNode(
-				mpiValid.getSource(), Operator.TIMES, Arrays.asList(
-						count.copy(), createMPISizeofCall(datatype.copy())));
+		ExpressionNode countTimesMPISizeof = nodeFactory.newOperatorNode(source,
+				Operator.TIMES, Arrays.asList(count.copy(),
+						createMPISizeofCall(datatype.copy())));
+		List<BlockItemNode> results = new LinkedList<>();
+		TypeNode charType = nodeFactory.newBasicTypeNode(datatype.getSource(),
+				BasicTypeKind.CHAR);
 
-		return createMallocStatementWorker(buf.copy(), countTimesMPISizeof,
-				nodeFactory.newBasicTypeNode(datatype.getSource(),
-						BasicTypeKind.CHAR),
-				mpiValid.getSource());
+		results.add(createMallocStatementWorker(buf.copy(), countTimesMPISizeof,
+				charType, source));
+
+		// // $havoc for them:
+		ArrayTypeNode arrayTypeNode = nodeFactory.newArrayTypeNode(source,
+				charType.copy(), countTimesMPISizeof.copy());
+		VariableDeclarationNode tmpHeap = nodeFactory
+				.newVariableDeclarationNode(source,
+						identifier(TMP_HEAP_PREFIX + (tmpHeapCounter++)),
+						arrayTypeNode);
+		ExpressionNode copyNode = nodeFactory.newFunctionCallNode(source,
+				identifierExpression(COPY),
+				Arrays.asList(buf.copy(),
+						nodeFactory.newOperatorNode(source, Operator.ADDRESSOF,
+								identifierExpression(tmpHeap.getName()))),
+				null);
+
+		results.add(createAssumption(
+				nodeFactory.newOperatorNode(source, Operator.LT,
+						Arrays.asList(
+								nodeFactory.newIntegerConstantNode(source, "0"),
+								countTimesMPISizeof.copy()))));
+		results.add(tmpHeap);
+		results.add(nodeFactory.newExpressionStatementNode(copyNode));
+		return results;
+	}
+
+	private List<BlockItemNode> createMallocStatementSequenceForMPIValid2(
+			MPIContractExpressionNode mpiValid) throws SyntaxException {
+		Source source = mpiValid.getSource();
+		ExpressionNode buf = mpiValid.getArgument(0);
+		ExpressionNode count = mpiValid.getArgument(1);
+		ExpressionNode datatype = mpiValid.getArgument(2);
+		ExpressionNode countTimesMPISizeof = nodeFactory.newOperatorNode(source,
+				Operator.TIMES, Arrays.asList(count.copy(),
+						createMPISizeofCall(datatype.copy())));
+		List<BlockItemNode> results = new LinkedList<>();
+		TypeNode charType = nodeFactory.newBasicTypeNode(datatype.getSource(),
+				BasicTypeKind.CHAR);
+		ArrayTypeNode arrayTypeNode = nodeFactory.newArrayTypeNode(source,
+				charType.copy(), countTimesMPISizeof.copy());
+		VariableDeclarationNode tmpHeap = nodeFactory
+				.newVariableDeclarationNode(source,
+						identifier(TMP_HEAP_PREFIX + (tmpHeapCounter++)),
+						arrayTypeNode);
+		ExpressionNode assignBuf = nodeFactory.newOperatorNode(buf.getSource(),
+				Operator.ASSIGN, Arrays.asList(buf.copy(),
+						identifierExpression(tmpHeap.getName())));
+
+		results.add(createAssumption(
+				nodeFactory.newOperatorNode(source, Operator.LT,
+						Arrays.asList(
+								nodeFactory.newIntegerConstantNode(source, "0"),
+								countTimesMPISizeof.copy()))));
+		results.add(tmpHeap);
+		results.add(nodeFactory.newExpressionStatementNode(assignBuf));
+		return results;
 	}
 
 	/**

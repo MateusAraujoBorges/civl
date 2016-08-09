@@ -172,7 +172,7 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		NumericExpression mpiExtent = (NumericExpression) universe
 				.apply(MPI_EXTENT, Arrays.asList(MPI_TYPE));
 
-		return new Pair<>(typeFactory.charType(), mpiExtent);
+		return new Pair<>(typeFactory.charType(), MPI_TYPE);
 	}
 
 	/**************************** Contract section ****************************/

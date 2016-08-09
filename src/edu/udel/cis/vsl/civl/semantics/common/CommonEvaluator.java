@@ -795,49 +795,50 @@ public class CommonEvaluator implements Evaluator {
 		BINARY_OPERATOR operator = expression.operator();
 
 		switch (operator) {
-		case AND:
-			return evaluateAnd(state, pid, expression);
-		case OR:
-			return evaluateOr(state, pid, expression);
-		// TODO code review
-		case IMPLIES:
-			return evaluateImplies(state, pid, expression);
-		case BIT_AND:
-			return evaluateBitand(state, pid, expression);
-		case BIT_OR:
-			return evaluateBitor(state, pid, expression);
-		case BIT_XOR:
-			return evaluateBitxor(state, pid, expression);
-		case SHIFTLEFT:
-			return evaluateShiftleft(state, pid, expression);
-		case SHIFTRIGHT:
-			return evaluateShiftright(state, pid, expression);
-		case DIVIDE:
-		case LESS_THAN:
-		case LESS_THAN_EQUAL:
-		case MINUS:
-		case MODULO:
-		case PLUS:
-		case POINTER_ADD:
-		case POINTER_SUBTRACT:
-		case TIMES:
-			// numeric expression like +,-,*,/,%,etc
-			if (expression.left().getExpressionType() != null
-					&& expression.left().getExpressionType()
-							.equals(typeFactory.scopeType())) {
-				return evaluateScopeOperations(state, pid, expression);
-			} else {
+			case AND :
+				return evaluateAnd(state, pid, expression);
+			case OR :
+				return evaluateOr(state, pid, expression);
+			// TODO code review
+			case IMPLIES :
+				return evaluateImplies(state, pid, expression);
+			case BIT_AND :
+				return evaluateBitand(state, pid, expression);
+			case BIT_OR :
+				return evaluateBitor(state, pid, expression);
+			case BIT_XOR :
+				return evaluateBitxor(state, pid, expression);
+			case SHIFTLEFT :
+				return evaluateShiftleft(state, pid, expression);
+			case SHIFTRIGHT :
+				return evaluateShiftright(state, pid, expression);
+			case DIVIDE :
+			case LESS_THAN :
+			case LESS_THAN_EQUAL :
+			case MINUS :
+			case MODULO :
+			case PLUS :
+			case POINTER_ADD :
+			case POINTER_SUBTRACT :
+			case TIMES :
+				// numeric expression like +,-,*,/,%,etc
+				if (expression.left().getExpressionType() != null
+						&& expression.left().getExpressionType()
+								.equals(typeFactory.scopeType())) {
+					return evaluateScopeOperations(state, pid, expression);
+				} else {
+					return evaluateNumericOperations(state, pid, process,
+							expression);
+				}
+			case NOT_EQUAL :
+			case EQUAL :
 				return evaluateNumericOperations(state, pid, process,
 						expression);
-			}
-		case NOT_EQUAL:
-		case EQUAL:
-			return evaluateNumericOperations(state, pid, process, expression);
-		case REMOTE:
-			return evaluateRemoteOperation(state, pid, expression);
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"Evaluating binary operator of " + operator + " kind");
+			case REMOTE :
+				return evaluateRemoteOperation(state, pid, expression);
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"Evaluating binary operator of " + operator + " kind");
 		}
 	}
 
@@ -1458,7 +1459,8 @@ public class CommonEvaluator implements Evaluator {
 
 	private Evaluation evaluateHereOrRootScope(State state, int pid,
 			HereOrRootExpression expression) {
-		int dyScopeID = expression.isRoot() ? state.rootDyscopeID()
+		int dyScopeID = expression.isRoot()
+				? state.rootDyscopeID()
 				: state.getProcessState(pid).getDyscopeId();
 
 		return new Evaluation(state, modelFactory.scopeValue(dyScopeID));
@@ -1721,131 +1723,141 @@ public class CommonEvaluator implements Evaluator {
 		eval = evaluate(eval.state, pid, expression.right());
 		right = eval.value;
 		switch (expression.operator()) {
-		case PLUS:
-			eval.value = universe.add((NumericExpression) left,
-					(NumericExpression) right);
-			break;
-		case MINUS:
-			eval.value = universe.subtract((NumericExpression) left,
-					(NumericExpression) right);
-			break;
-		case TIMES:
-			eval.value = universe.multiply((NumericExpression) left,
-					(NumericExpression) right);
-			break;
-		case DIVIDE: {
-			BooleanExpression assumption = eval.state.getPathCondition();
-			NumericExpression denominator = (NumericExpression) right;
-			SymbolicExpression zero = zeroOf(expression.getSource(),
-					expression.getExpressionType());
+			case PLUS :
+				eval.value = universe.add((NumericExpression) left,
+						(NumericExpression) right);
+				break;
+			case MINUS :
+				eval.value = universe.subtract((NumericExpression) left,
+						(NumericExpression) right);
+				break;
+			case TIMES :
+				eval.value = universe.multiply((NumericExpression) left,
+						(NumericExpression) right);
+				break;
+			case DIVIDE : {
+				BooleanExpression assumption = eval.state.getPathCondition();
+				NumericExpression denominator = (NumericExpression) right;
+				SymbolicExpression zero = zeroOf(expression.getSource(),
+						expression.getExpressionType());
 
-			if (this.civlConfig.checkDivisionByZero()
-					&& !expression.getExpressionType().isIntegerType()) {
-				BooleanExpression claim = universe.neq(zero, denominator);
-				ResultType resultType = universe.reasoner(assumption)
-						.valid(claim).getResultType();
+				if (this.civlConfig.checkDivisionByZero()
+						&& !expression.getExpressionType().isIntegerType()) {
+					BooleanExpression claim = universe.neq(zero, denominator);
+					ResultType resultType = universe.reasoner(assumption)
+							.valid(claim).getResultType();
 
-				if (resultType != ResultType.YES) {
-					Expression divisor = expression.right();
+					if (resultType != ResultType.YES) {
+						Expression divisor = expression.right();
 
-					eval.state = errorLogger.logError(expression.getSource(),
-							eval.state, process,
-							this.symbolicAnalyzer.stateInformation(eval.state),
-							claim, resultType, ErrorKind.DIVISION_BY_ZERO,
-							"division by zero where divisor: "
-									+ expression.right() + "="
-									+ this.symbolicAnalyzer
-											.symbolicExpressionToString(
-													divisor.getSource(), state,
-													divisor.getExpressionType(),
-													right));
+						eval.state = errorLogger.logError(
+								expression.getSource(), eval.state, process,
+								this.symbolicAnalyzer
+										.stateInformation(eval.state),
+								claim, resultType, ErrorKind.DIVISION_BY_ZERO,
+								"division by zero where divisor: "
+										+ expression.right() + "="
+										+ this.symbolicAnalyzer
+												.symbolicExpressionToString(
+														divisor.getSource(),
+														state,
+														divisor.getExpressionType(),
+														right));
+					}
 				}
+				eval.value = universe.divide((NumericExpression) left,
+						denominator);
 			}
-			eval.value = universe.divide((NumericExpression) left, denominator);
-		}
-			break;
-		case LESS_THAN:
-			eval.value = universe.lessThan((NumericExpression) left,
-					(NumericExpression) right);
-			break;
-		case LESS_THAN_EQUAL:
-			eval.value = universe.lessThanEquals((NumericExpression) left,
-					(NumericExpression) right);
-			break;
-		// equal and not_equal operators support scope, process, and pointer
-		// types. If the value of those types is undefined (e.g., process
-		// -1,
-		// scope -1, pointer<-1, ..., ...>), an error should be reported.
-		case EQUAL: {
-			SymbolicType leftType = left.type(), rightType = right.type();
+				break;
+			case LESS_THAN :
+				eval.value = universe.lessThan((NumericExpression) left,
+						(NumericExpression) right);
+				break;
+			case LESS_THAN_EQUAL :
+				eval.value = universe.lessThanEquals((NumericExpression) left,
+						(NumericExpression) right);
+				break;
+			// equal and not_equal operators support scope, process, and pointer
+			// types. If the value of those types is undefined (e.g., process
+			// -1,
+			// scope -1, pointer<-1, ..., ...>), an error should be reported.
+			case EQUAL : {
+				SymbolicType leftType = left.type(), rightType = right.type();
 
-			this.isValueDefined(eval.state, process, expression.left(), left);
-			this.isValueDefined(eval.state, process, expression.right(), right);
-			if (leftType.isBoolean() && rightType.isInteger()) {
-				left = booleanToInteger(left);
-			} else if (leftType.isInteger() && rightType.isBoolean()) {
-				right = booleanToInteger(right);
-			}
-			eval.value = universe.equals(left, right);
-			break;
-		}
-		case NOT_EQUAL: {
-			SymbolicType leftType = left.type(), rightType = right.type();
-
-			this.isValueDefined(eval.state, process, expression.left(), left);
-			this.isValueDefined(eval.state, process, expression.right(), right);
-			if (leftType.isBoolean() && rightType.isInteger()) {
-				left = booleanToInteger(left);
-			} else if (leftType.isInteger() && rightType.isBoolean()) {
-				right = booleanToInteger(right);
-			}
-			eval.value = universe.neq(left, right);
-			break;
-		}
-		case MODULO: {
-			BooleanExpression assumption = eval.state.getPathCondition();
-			NumericExpression denominator = (NumericExpression) right;
-
-			if (!this.civlConfig.svcomp()) {
-				BooleanExpression claim = universe
-						.neq(zeroOf(expression.getSource(),
-								expression.getExpressionType()), denominator);
-				ResultType resultType = universe.reasoner(assumption)
-						.valid(claim).getResultType();
-
-				if (resultType != ResultType.YES) {
-					eval.state = errorLogger.logError(expression.getSource(),
-							eval.state, process,
-							this.symbolicAnalyzer.stateInformation(eval.state),
-							claim, resultType, ErrorKind.DIVISION_BY_ZERO,
-							"Modulus denominator is zero");
+				this.isValueDefined(eval.state, process, expression.left(),
+						left);
+				this.isValueDefined(eval.state, process, expression.right(),
+						right);
+				if (leftType.isBoolean() && rightType.isInteger()) {
+					left = booleanToInteger(left);
+				} else if (leftType.isInteger() && rightType.isBoolean()) {
+					right = booleanToInteger(right);
 				}
+				eval.value = universe.equals(left, right);
+				break;
 			}
-			eval.value = universe.modulo((NumericExpression) left, denominator);
-			break;
-		}
-		case POINTER_ADD:
-			eval = pointerAdd(eval.state, pid, process, expression, left,
-					(NumericExpression) right);
-			break;
-		case POINTER_SUBTRACT: {
-			if (right.isNumeric())
-				eval = this.pointerAdd(state, pid, process, expression, left,
-						universe.minus((NumericExpression) right));
-			else
-				eval = pointerSubtraction(eval.state, pid, process, expression,
-						left, right);
-			break;
+			case NOT_EQUAL : {
+				SymbolicType leftType = left.type(), rightType = right.type();
 
-		}
-		case IMPLIES:
-		case AND:
-		case OR:
-			throw new CIVLInternalException("unreachable", expression);
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"Evaluating numeric operator " + expression.operator(),
-					expression);
+				this.isValueDefined(eval.state, process, expression.left(),
+						left);
+				this.isValueDefined(eval.state, process, expression.right(),
+						right);
+				if (leftType.isBoolean() && rightType.isInteger()) {
+					left = booleanToInteger(left);
+				} else if (leftType.isInteger() && rightType.isBoolean()) {
+					right = booleanToInteger(right);
+				}
+				eval.value = universe.neq(left, right);
+				break;
+			}
+			case MODULO : {
+				BooleanExpression assumption = eval.state.getPathCondition();
+				NumericExpression denominator = (NumericExpression) right;
+
+				if (!this.civlConfig.svcomp()) {
+					BooleanExpression claim = universe.neq(
+							zeroOf(expression.getSource(),
+									expression.getExpressionType()),
+							denominator);
+					ResultType resultType = universe.reasoner(assumption)
+							.valid(claim).getResultType();
+
+					if (resultType != ResultType.YES) {
+						eval.state = errorLogger.logError(
+								expression.getSource(), eval.state, process,
+								this.symbolicAnalyzer
+										.stateInformation(eval.state),
+								claim, resultType, ErrorKind.DIVISION_BY_ZERO,
+								"Modulus denominator is zero");
+					}
+				}
+				eval.value = universe.modulo((NumericExpression) left,
+						denominator);
+				break;
+			}
+			case POINTER_ADD :
+				eval = pointerAdd(eval.state, pid, process, expression, left,
+						(NumericExpression) right);
+				break;
+			case POINTER_SUBTRACT : {
+				if (right.isNumeric())
+					eval = this.pointerAdd(state, pid, process, expression,
+							left, universe.minus((NumericExpression) right));
+				else
+					eval = pointerSubtraction(eval.state, pid, process,
+							expression, left, right);
+				break;
+
+			}
+			case IMPLIES :
+			case AND :
+			case OR :
+				throw new CIVLInternalException("unreachable", expression);
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"Evaluating numeric operator " + expression.operator(),
+						expression);
 		}
 		return eval;
 	}
@@ -2070,11 +2082,11 @@ public class CommonEvaluator implements Evaluator {
 		if (isRestrictionInValid == ResultType.YES) {
 			// invalid range restriction
 			switch (expression.quantifier()) {
-			case EXISTS:
-				result = new Evaluation(state, universe.falseExpression());
-				break;
-			default:// FORALL UNIFORM
-				result = new Evaluation(state, universe.trueExpression());
+				case EXISTS :
+					result = new Evaluation(state, universe.falseExpression());
+					break;
+				default :// FORALL UNIFORM
+					result = new Evaluation(state, universe.trueExpression());
 			}
 		} else {
 			BooleanExpression quantifiedExpressionNew = null;
@@ -2100,42 +2112,42 @@ public class CommonEvaluator implements Evaluator {
 							this.one);
 				}
 				switch (expression.quantifier()) {
-				case EXISTS:
-					if (interval != null)
-						quantifiedExpressionNew = universe.existsInt(
-								(NumericSymbolicConstant) boundVar, lower,
-								upper,
-								(BooleanExpression) quantifiedExpressionNew);
-					else
-						quantifiedExpressionNew = universe.exists(boundVar,
-								universe.and(restriction,
-										quantifiedExpressionNew));
-					break;
-				case FORALL:
-					if (interval != null)
-						quantifiedExpressionNew = universe.forallInt(
-								(NumericSymbolicConstant) boundVar, lower,
-								upper,
-								(BooleanExpression) quantifiedExpressionNew);
-					else
-						quantifiedExpressionNew = universe.forall(boundVar,
-								universe.implies(restriction,
-										quantifiedExpressionNew));
-					break;
-				case UNIFORM:
-					if (interval != null)
-						quantifiedExpressionNew = universe.forallInt(
-								(NumericSymbolicConstant) boundVar, lower,
-								upper,
-								(BooleanExpression) quantifiedExpressionNew);
-					else
-						quantifiedExpressionNew = universe.forall(boundVar,
-								universe.implies(restriction,
-										quantifiedExpressionNew));
-					break;
-				default:
-					throw new CIVLException("Unknown quantifier ",
-							expression.getSource());
+					case EXISTS :
+						if (interval != null)
+							quantifiedExpressionNew = universe.existsInt(
+									(NumericSymbolicConstant) boundVar, lower,
+									upper,
+									(BooleanExpression) quantifiedExpressionNew);
+						else
+							quantifiedExpressionNew = universe.exists(boundVar,
+									universe.and(restriction,
+											quantifiedExpressionNew));
+						break;
+					case FORALL :
+						if (interval != null)
+							quantifiedExpressionNew = universe.forallInt(
+									(NumericSymbolicConstant) boundVar, lower,
+									upper,
+									(BooleanExpression) quantifiedExpressionNew);
+						else
+							quantifiedExpressionNew = universe.forall(boundVar,
+									universe.implies(restriction,
+											quantifiedExpressionNew));
+						break;
+					case UNIFORM :
+						if (interval != null)
+							quantifiedExpressionNew = universe.forallInt(
+									(NumericSymbolicConstant) boundVar, lower,
+									upper,
+									(BooleanExpression) quantifiedExpressionNew);
+						else
+							quantifiedExpressionNew = universe.forall(boundVar,
+									universe.implies(restriction,
+											quantifiedExpressionNew));
+						break;
+					default :
+						throw new CIVLException("Unknown quantifier ",
+								expression.getSource());
 				}
 			}
 			result = new Evaluation(state, quantifiedExpressionNew);
@@ -2389,31 +2401,32 @@ public class CommonEvaluator implements Evaluator {
 		right = modelFactory.getScopeId(expression.right().getSource(),
 				eval.value);
 		switch (expression.operator()) {
-		case PLUS:
-			int lowestCommonAncestor = stateFactory.lowestCommonAncestor(state,
-					left, right);
+			case PLUS :
+				int lowestCommonAncestor = stateFactory
+						.lowestCommonAncestor(state, left, right);
 
-			eval.value = modelFactory.scopeValue(lowestCommonAncestor);
-			break;
-		case LESS_THAN:
-			result = stateFactory.isDescendantOf(state, right, left);
-			eval.value = universe.bool(result);
-			break;
-		case LESS_THAN_EQUAL:
-			result = (left == right) ? true
-					: stateFactory.isDescendantOf(state, right, left);
-			eval.value = universe.bool(result);
-			break;
-		case EQUAL:
-			eval.value = universe.bool(left == right);
-			break;
-		case NOT_EQUAL:
-			eval.value = universe.bool(left != right);
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"evaluting scope operator " + expression.operator(),
-					expression.getSource());
+				eval.value = modelFactory.scopeValue(lowestCommonAncestor);
+				break;
+			case LESS_THAN :
+				result = stateFactory.isDescendantOf(state, right, left);
+				eval.value = universe.bool(result);
+				break;
+			case LESS_THAN_EQUAL :
+				result = (left == right)
+						? true
+						: stateFactory.isDescendantOf(state, right, left);
+				eval.value = universe.bool(result);
+				break;
+			case EQUAL :
+				eval.value = universe.bool(left == right);
+				break;
+			case NOT_EQUAL :
+				eval.value = universe.bool(left != right);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"evaluting scope operator " + expression.operator(),
+						expression.getSource());
 		}
 		return eval;
 	}
@@ -2538,39 +2551,40 @@ public class CommonEvaluator implements Evaluator {
 		Evaluation eval;
 
 		switch (expression.lhsExpressionKind()) {
-		case DEREFERENCE:
-			Expression pointer = ((DereferenceExpression) expression).pointer();
+			case DEREFERENCE :
+				Expression pointer = ((DereferenceExpression) expression)
+						.pointer();
 
-			eval = evaluate(state, pid, pointer);
-			int sid = symbolicUtil.getDyscopeId(pointer.getSource(),
-					eval.value);
-			state = eval.state;
-			if (sid < 0) {
-				errorLogger.logSimpleError(pointer.getSource(), state, process,
-						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.DEREFERENCE,
-						"Attempt to dereference pointer into scope which has been removed from state");
-				throw new UnsatisfiablePathConditionException();
-			}
-			return new Evaluation(state, modelFactory.scopeValue(sid));
-		case DOT:
-			return evaluateScopeofExpressionWorker(state, pid, process,
-					(LHSExpression) (((DotExpression) expression)
-							.structOrUnion()));
-		case SUBSCRIPT:
-			return evaluateScopeofExpressionWorker(state, pid, process,
-					(LHSExpression) (((SubscriptExpression) expression)
-							.array()));
+				eval = evaluate(state, pid, pointer);
+				int sid = symbolicUtil.getDyscopeId(pointer.getSource(),
+						eval.value);
+				state = eval.state;
+				if (sid < 0) {
+					errorLogger.logSimpleError(pointer.getSource(), state,
+							process, symbolicAnalyzer.stateInformation(state),
+							ErrorKind.DEREFERENCE,
+							"Attempt to dereference pointer into scope which has been removed from state");
+					throw new UnsatisfiablePathConditionException();
+				}
+				return new Evaluation(state, modelFactory.scopeValue(sid));
+			case DOT :
+				return evaluateScopeofExpressionWorker(state, pid, process,
+						(LHSExpression) (((DotExpression) expression)
+								.structOrUnion()));
+			case SUBSCRIPT :
+				return evaluateScopeofExpressionWorker(state, pid, process,
+						(LHSExpression) (((SubscriptExpression) expression)
+								.array()));
 
-		case VARIABLE:// VARIABLE
-			int scopeId = state.getDyscopeID(pid,
-					((VariableExpression) expression).variable());
+			case VARIABLE :// VARIABLE
+				int scopeId = state.getDyscopeID(pid,
+						((VariableExpression) expression).variable());
 
-			return new Evaluation(state, modelFactory.scopeValue(scopeId));
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"scope of expression with operand of "
-							+ expression.lhsExpressionKind() + " kind");
+				return new Evaluation(state, modelFactory.scopeValue(scopeId));
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"scope of expression with operand of "
+								+ expression.lhsExpressionKind() + " kind");
 		}
 	}
 
@@ -2664,22 +2678,22 @@ public class CommonEvaluator implements Evaluator {
 		Evaluation eval = evaluate(state, pid, expression.operand());
 
 		switch (expression.operator()) {
-		case NEGATIVE:
-			eval.value = universe.minus((NumericExpression) eval.value);
-			break;
-		case NOT:
-			eval.value = universe.not((BooleanExpression) eval.value);
-			break;
-		case BIG_O:
-			eval.value = universe.apply(bigOFunction,
-					new Singleton<SymbolicExpression>(eval.value));
-			break;
-		case BIT_NOT:
-			return evaluateBitcomplement(state, pid, expression);
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"evaluating unary operator " + expression.operator(),
-					expression);
+			case NEGATIVE :
+				eval.value = universe.minus((NumericExpression) eval.value);
+				break;
+			case NOT :
+				eval.value = universe.not((BooleanExpression) eval.value);
+				break;
+			case BIG_O :
+				eval.value = universe.apply(bigOFunction,
+						new Singleton<SymbolicExpression>(eval.value));
+				break;
+			case BIT_NOT :
+				return evaluateBitcomplement(state, pid, expression);
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"evaluating unary operator " + expression.operator(),
+						expression);
 		}
 		return eval;
 	}
@@ -2912,105 +2926,109 @@ public class CommonEvaluator implements Evaluator {
 		Evaluation eval = null;
 
 		switch (kind) {
-		case ARRAY: {
-			CIVLArrayType arrayType = (CIVLArrayType) type;
-			CIVLType elementType = arrayType.elementType();
+			case ARRAY : {
+				CIVLArrayType arrayType = (CIVLArrayType) type;
+				CIVLType elementType = arrayType.elementType();
 
-			eval = new Evaluation(state,
-					universe.emptyArray(elementType.getDynamicType(universe)));
-			break;
-		}
-		case COMPLETE_ARRAY: {
-			CIVLCompleteArrayType arrayType = (CIVLCompleteArrayType) type;
-			CIVLType elementType = arrayType.elementType();
-			SymbolicExpression elementValue;
-			NumericExpression extent;
-			TypeEvaluation teval;
-
-			eval = initialValueOfType(state, pid, elementType);
-			state = eval.state;
-			elementValue = eval.value;
-			eval = this.evaluate(state, pid, arrayType.extent());
-			state = eval.state;
-			extent = (NumericExpression) eval.value;
-			// using "evaluator.getDynamicType" so that extent info won't be
-			// lost:
-			teval = getDynamicType(state, pid, elementType, null, false);
-			state = teval.state;
-			eval.value = symbolicUtil.newArray(state.getPathCondition(),
-					teval.type, extent, elementValue);
-			break;
-		}
-		case BUNDLE:
-			eval = new Evaluation(state, universe.nullExpression());
-			break;
-		case DOMAIN: {
-			CIVLDomainType domainType = (CIVLDomainType) type;
-			SymbolicExpression initDomainValue;
-			int dim;
-			SymbolicType integerType = universe.integerType();
-			SymbolicTupleType tupleType = universe.tupleType(
-					universe.stringObject("domain"),
-					Arrays.asList(integerType, integerType, universe
-							.arrayType(universe.arrayType(integerType))));
-			List<SymbolicExpression> tupleComponents = new LinkedList<>();
-
-			tupleComponents.add(one);
-			tupleComponents.add(one);
-			tupleComponents
-					.add(universe.emptyArray(universe.arrayType(integerType)));
-			if (domainType.isComplete()) {
-				CIVLCompleteDomainType compDomainType = (CIVLCompleteDomainType) domainType;
-
-				dim = compDomainType.getDimension();
-				tupleComponents.set(0, universe.integer(dim));
-
+				eval = new Evaluation(state, universe
+						.emptyArray(elementType.getDynamicType(universe)));
+				break;
 			}
-			initDomainValue = universe.tuple(tupleType, tupleComponents);
-			eval = new Evaluation(state, initDomainValue);
-			break;
-		}
-		case ENUM: {
-			CIVLEnumType enumType = (CIVLEnumType) type;
+			case COMPLETE_ARRAY : {
+				CIVLCompleteArrayType arrayType = (CIVLCompleteArrayType) type;
+				CIVLType elementType = arrayType.elementType();
+				SymbolicExpression elementValue;
+				NumericExpression extent;
+				TypeEvaluation teval;
 
-			eval = new Evaluation(state,
-					universe.integer(enumType.firstValue()));
-			break;
-		}
-		case POINTER:
-			eval = new Evaluation(state, symbolicUtil.nullPointer());
-			break;
-		case PRIMITIVE: {
-			CIVLPrimitiveType primitiveType = (CIVLPrimitiveType) type;
+				eval = initialValueOfType(state, pid, elementType);
+				state = eval.state;
+				elementValue = eval.value;
+				eval = this.evaluate(state, pid, arrayType.extent());
+				state = eval.state;
+				extent = (NumericExpression) eval.value;
+				// using "evaluator.getDynamicType" so that extent info won't be
+				// lost:
+				teval = getDynamicType(state, pid, elementType, null, false);
+				state = teval.state;
+				eval.value = symbolicUtil.newArray(state.getPathCondition(),
+						teval.type, extent, elementValue);
+				break;
+			}
+			case BUNDLE :
+				eval = new Evaluation(state, universe.nullExpression());
+				break;
+			case DOMAIN : {
+				CIVLDomainType domainType = (CIVLDomainType) type;
+				SymbolicExpression initDomainValue;
+				int dim;
+				SymbolicType integerType = universe.integerType();
+				SymbolicTupleType tupleType = universe.tupleType(
+						universe.stringObject("domain"),
+						Arrays.asList(integerType, integerType, universe
+								.arrayType(universe.arrayType(integerType))));
+				List<SymbolicExpression> tupleComponents = new LinkedList<>();
 
-			eval = new Evaluation(state, primitiveType.initialValue(universe));
-			break;
-		}
-		default:// STRUCT_OR_UNION{ // TODO: don't make this the default!
-		{
-			CIVLStructOrUnionType strOrUnion = (CIVLStructOrUnionType) type;
+				tupleComponents.add(one);
+				tupleComponents.add(one);
+				tupleComponents.add(
+						universe.emptyArray(universe.arrayType(integerType)));
+				if (domainType.isComplete()) {
+					CIVLCompleteDomainType compDomainType = (CIVLCompleteDomainType) domainType;
 
-			if (strOrUnion.isUnionType()) {
-				eval = this.initialValueOfType(state, pid,
-						strOrUnion.getField(0).type());
-				eval.value = universe.unionInject(
-						(SymbolicUnionType) strOrUnion.getDynamicType(universe),
-						this.zeroObj, eval.value);
-			} else {
-				int size = strOrUnion.numFields();
-				List<SymbolicExpression> components = new ArrayList<>(size);
+					dim = compDomainType.getDimension();
+					tupleComponents.set(0, universe.integer(dim));
 
-				for (int i = 0; i < size; i++) {
-					eval = this.initialValueOfType(state, pid,
-							strOrUnion.getField(i).type());
-					state = eval.state;
-					components.add(eval.value);
 				}
-				eval = new Evaluation(state, universe.tuple(
-						(SymbolicTupleType) strOrUnion.getDynamicType(universe),
-						components));
+				initDomainValue = universe.tuple(tupleType, tupleComponents);
+				eval = new Evaluation(state, initDomainValue);
+				break;
 			}
-		}
+			case ENUM : {
+				CIVLEnumType enumType = (CIVLEnumType) type;
+
+				eval = new Evaluation(state,
+						universe.integer(enumType.firstValue()));
+				break;
+			}
+			case POINTER :
+				eval = new Evaluation(state, symbolicUtil.nullPointer());
+				break;
+			case PRIMITIVE : {
+				CIVLPrimitiveType primitiveType = (CIVLPrimitiveType) type;
+
+				eval = new Evaluation(state,
+						primitiveType.initialValue(universe));
+				break;
+			}
+			default :// STRUCT_OR_UNION{ // TODO: don't make this the default!
+			{
+				CIVLStructOrUnionType strOrUnion = (CIVLStructOrUnionType) type;
+
+				if (strOrUnion.isUnionType()) {
+					eval = this.initialValueOfType(state, pid,
+							strOrUnion.getField(0).type());
+					eval.value = universe.unionInject(
+							(SymbolicUnionType) strOrUnion
+									.getDynamicType(universe),
+							this.zeroObj, eval.value);
+				} else {
+					int size = strOrUnion.numFields();
+					List<SymbolicExpression> components = new ArrayList<>(size);
+
+					for (int i = 0; i < size; i++) {
+						eval = this.initialValueOfType(state, pid,
+								strOrUnion.getField(i).type());
+						state = eval.state;
+						components.add(eval.value);
+					}
+					eval = new Evaluation(state,
+							universe.tuple(
+									(SymbolicTupleType) strOrUnion
+											.getDynamicType(universe),
+									components));
+				}
+			}
 		}
 		return eval;
 	}
@@ -3259,180 +3277,182 @@ public class CommonEvaluator implements Evaluator {
 		if (expression.hasConstantValue())
 			return new Evaluation(state, expression.constantValue());
 		switch (kind) {
-		case ABSTRACT_FUNCTION_CALL:
-			result = evaluateAbstractFunctionCall(state, pid,
-					(AbstractFunctionCallExpression) expression);
-			break;
-		case ADDRESS_OF:
-			result = evaluateAddressOf(state, pid,
-					(AddressOfExpression) expression);
-			break;
-		case ARRAY_LAMBDA:
-			result = evaluateArrayLambda(state, pid,
-					(ArrayLambdaExpression) expression);
-			break;
-		case ARRAY_LITERAL:
-			result = evaluateArrayLiteral(state, pid,
-					(ArrayLiteralExpression) expression);
-			break;
-		case BINARY:
-			result = evaluateBinary(state, pid, process,
-					(BinaryExpression) expression);
-			break;
-		case BOOLEAN_LITERAL:
-			result = evaluateBooleanLiteral(state, pid,
-					(BooleanLiteralExpression) expression);
-			break;
-		case BOUND_VARIABLE:
-			result = evaluateBoundVariable(state, pid,
-					(BoundVariableExpression) expression);
-			break;
-		case CAST:
-			result = evaluateCast(state, pid, process,
-					(CastExpression) expression);
-			break;
-		case CHAR_LITERAL:
-			result = evaluateCharLiteral(state, pid,
-					(CharLiteralExpression) expression);
-			break;
-		case COND:
-			throw new CIVLInternalException(
-					"Conditional expressions should "
-							+ "be translated away by CIVL model builder ",
-					expression.getSource());
-		case DEREFERENCE:
-			result = evaluateDereference(state, pid, process,
-					(DereferenceExpression) expression);
-			break;
-		case DERIVATIVE:
-			result = evaluateDerivativeCall(state, pid,
-					(DerivativeCallExpression) expression);
-			break;
-		case DOMAIN_GUARD:
-			result = evaluateDomainGuard(state, pid,
-					(DomainGuardExpression) expression);
-			break;
-		case REC_DOMAIN_LITERAL:
-			result = evaluateRecDomainLiteral(state, pid,
-					(RecDomainLiteralExpression) expression);
-			break;
-		case DOT:
-			result = evaluateDot(state, pid, process,
-					(DotExpression) expression);
-			break;
-		case DYNAMIC_TYPE_OF:
-			result = evaluateDynamicTypeOf(state, pid,
-					(DynamicTypeOfExpression) expression);
-			break;
-		case FUNCTION_IDENTIFIER:
-			result = evaluateFunctionIdentifierExpression(state, pid,
-					(FunctionIdentifierExpression) expression);
-			break;
-		case FUNCTION_GUARD:
-			result = evaluateFunctionGuard(state, pid, process,
-					(FunctionGuardExpression) expression);
-			break;
-		case HERE_OR_ROOT:
-			result = evaluateHereOrRootScope(state, pid,
-					(HereOrRootExpression) expression);
-			break;
-		case INITIAL_VALUE:
-			result = evaluateInitialValue(state, pid,
-					(InitialValueExpression) expression);
-			break;
-		case INTEGER_LITERAL:
-			result = evaluateIntegerLiteral(state, pid,
-					(IntegerLiteralExpression) expression);
-			break;
-		case MPI_CONTRACT_EXPRESSION:
-			result = evaluateMPIContractExpression(state, pid, process,
-					(MPIContractExpression) expression);
-			break;
-		case REAL_LITERAL:
-			result = evaluateRealLiteral(state, pid,
-					(RealLiteralExpression) expression);
-			break;
-		case REGULAR_RANGE:
-			result = evaluateRegularRange(state, pid,
-					(RegularRangeExpression) expression);
-			break;
-		case SCOPEOF:
-			result = evaluateScopeofExpression(state, pid, process,
-					(ScopeofExpression) expression);
-			break;
-		case SELF:
-			result = evaluateSelf(state, pid, (SelfExpression) expression);
-			break;
-		case PROC_NULL:
-			result = this.evaluateProcnull(state, pid,
-					(ProcnullExpression) expression);
-			break;
-		case SIZEOF_TYPE:
-			result = evaluateSizeofTypeExpression(state, pid,
-					(SizeofTypeExpression) expression);
-			break;
-		case SIZEOF_EXPRESSION:
-			result = evaluateSizeofExpressionExpression(state, pid,
-					(SizeofExpression) expression);
-			break;
-		case STRUCT_OR_UNION_LITERAL:
-			result = evaluateStructOrUnionLiteral(state, pid,
-					(StructOrUnionLiteralExpression) expression);
-			break;
-		case SUBSCRIPT:
-			result = evaluateSubscript(state, pid, process,
-					(SubscriptExpression) expression);
-			break;
-		case SYSTEM_GUARD: {
-			SystemGuardExpression systemGuard = (SystemGuardExpression) expression;
-			CIVLFunction function = systemGuard.function();
+			case ABSTRACT_FUNCTION_CALL :
+				result = evaluateAbstractFunctionCall(state, pid,
+						(AbstractFunctionCallExpression) expression);
+				break;
+			case ADDRESS_OF :
+				result = evaluateAddressOf(state, pid,
+						(AddressOfExpression) expression);
+				break;
+			case ARRAY_LAMBDA :
+				result = evaluateArrayLambda(state, pid,
+						(ArrayLambdaExpression) expression);
+				break;
+			case ARRAY_LITERAL :
+				result = evaluateArrayLiteral(state, pid,
+						(ArrayLiteralExpression) expression);
+				break;
+			case BINARY :
+				result = evaluateBinary(state, pid, process,
+						(BinaryExpression) expression);
+				break;
+			case BOOLEAN_LITERAL :
+				result = evaluateBooleanLiteral(state, pid,
+						(BooleanLiteralExpression) expression);
+				break;
+			case BOUND_VARIABLE :
+				result = evaluateBoundVariable(state, pid,
+						(BoundVariableExpression) expression);
+				break;
+			case CAST :
+				result = evaluateCast(state, pid, process,
+						(CastExpression) expression);
+				break;
+			case CHAR_LITERAL :
+				result = evaluateCharLiteral(state, pid,
+						(CharLiteralExpression) expression);
+				break;
+			case COND :
+				throw new CIVLInternalException(
+						"Conditional expressions should "
+								+ "be translated away by CIVL model builder ",
+						expression.getSource());
+			case DEREFERENCE :
+				result = evaluateDereference(state, pid, process,
+						(DereferenceExpression) expression);
+				break;
+			case DERIVATIVE :
+				result = evaluateDerivativeCall(state, pid,
+						(DerivativeCallExpression) expression);
+				break;
+			case DOMAIN_GUARD :
+				result = evaluateDomainGuard(state, pid,
+						(DomainGuardExpression) expression);
+				break;
+			case REC_DOMAIN_LITERAL :
+				result = evaluateRecDomainLiteral(state, pid,
+						(RecDomainLiteralExpression) expression);
+				break;
+			case DOT :
+				result = evaluateDot(state, pid, process,
+						(DotExpression) expression);
+				break;
+			case DYNAMIC_TYPE_OF :
+				result = evaluateDynamicTypeOf(state, pid,
+						(DynamicTypeOfExpression) expression);
+				break;
+			case FUNCTION_IDENTIFIER :
+				result = evaluateFunctionIdentifierExpression(state, pid,
+						(FunctionIdentifierExpression) expression);
+				break;
+			case FUNCTION_GUARD :
+				result = evaluateFunctionGuard(state, pid, process,
+						(FunctionGuardExpression) expression);
+				break;
+			case HERE_OR_ROOT :
+				result = evaluateHereOrRootScope(state, pid,
+						(HereOrRootExpression) expression);
+				break;
+			case INITIAL_VALUE :
+				result = evaluateInitialValue(state, pid,
+						(InitialValueExpression) expression);
+				break;
+			case INTEGER_LITERAL :
+				result = evaluateIntegerLiteral(state, pid,
+						(IntegerLiteralExpression) expression);
+				break;
+			case MPI_CONTRACT_EXPRESSION :
+				result = evaluateMPIContractExpression(state, pid, process,
+						(MPIContractExpression) expression);
+				break;
+			case REAL_LITERAL :
+				result = evaluateRealLiteral(state, pid,
+						(RealLiteralExpression) expression);
+				break;
+			case REGULAR_RANGE :
+				result = evaluateRegularRange(state, pid,
+						(RegularRangeExpression) expression);
+				break;
+			case SCOPEOF :
+				result = evaluateScopeofExpression(state, pid, process,
+						(ScopeofExpression) expression);
+				break;
+			case SELF :
+				result = evaluateSelf(state, pid, (SelfExpression) expression);
+				break;
+			case PROC_NULL :
+				result = this.evaluateProcnull(state, pid,
+						(ProcnullExpression) expression);
+				break;
+			case SIZEOF_TYPE :
+				result = evaluateSizeofTypeExpression(state, pid,
+						(SizeofTypeExpression) expression);
+				break;
+			case SIZEOF_EXPRESSION :
+				result = evaluateSizeofExpressionExpression(state, pid,
+						(SizeofExpression) expression);
+				break;
+			case STRUCT_OR_UNION_LITERAL :
+				result = evaluateStructOrUnionLiteral(state, pid,
+						(StructOrUnionLiteralExpression) expression);
+				break;
+			case SUBSCRIPT :
+				result = evaluateSubscript(state, pid, process,
+						(SubscriptExpression) expression);
+				break;
+			case SYSTEM_GUARD : {
+				SystemGuardExpression systemGuard = (SystemGuardExpression) expression;
+				CIVLFunction function = systemGuard.function();
 
-			if (function.functionContract() != null) {
-				Expression guard = function.functionContract().guard();
+				if (function.functionContract() != null) {
+					Expression guard = function.functionContract().guard();
 
-				if (guard != null)
-					return evaluateGuardofSystemFunction(
-							systemGuard.getSource(), state, pid,
-							systemGuard.library(), function,
-							systemGuard.arguments());
+					if (guard != null)
+						return evaluateGuardofSystemFunction(
+								systemGuard.getSource(), state, pid,
+								systemGuard.library(), function,
+								systemGuard.arguments());
+				}
+				result = getSystemGuard(expression.getSource(), state, pid,
+						systemGuard.library(),
+						systemGuard.function().name().name(),
+						systemGuard.arguments());
+				break;
 			}
-			result = getSystemGuard(expression.getSource(), state, pid,
-					systemGuard.library(), systemGuard.function().name().name(),
-					systemGuard.arguments());
-			break;
-		}
-		case UNARY:
-			result = evaluateUnary(state, pid, (UnaryExpression) expression);
-			break;
-		case UNDEFINED_PROC:
-			result = new Evaluation(state, modelFactory
-					.undefinedValue(typeFactory.processSymbolicType()));
-			break;
-		case VARIABLE:
-			result = evaluateVariable(state, pid, process,
-					(VariableExpression) expression, checkUndefinedValue);
-			break;
-		case QUANTIFIER:
-			result = evaluateQuantifiedExpression(state, pid,
-					(QuantifiedExpression) expression);
-			break;
-		case FUNC_CALL:
-			result = evaluateFunctionCallExpression(state, pid,
-					(FunctionCallExpression) expression);
-			break;
-		case STATE_REF:
-			result = new Evaluation(state, modelFactory
-					.stateValue(((StateExpression) expression).id()));
-			break;
-		case MEMORY_UNIT:
-		case NULL_LITERAL:
-		case STRING_LITERAL:
-			throw new CIVLSyntaxException(
-					"Illegal use of " + kind + " expression: ",
-					expression.getSource());
+			case UNARY :
+				result = evaluateUnary(state, pid,
+						(UnaryExpression) expression);
+				break;
+			case UNDEFINED_PROC :
+				result = new Evaluation(state, modelFactory
+						.undefinedValue(typeFactory.processSymbolicType()));
+				break;
+			case VARIABLE :
+				result = evaluateVariable(state, pid, process,
+						(VariableExpression) expression, checkUndefinedValue);
+				break;
+			case QUANTIFIER :
+				result = evaluateQuantifiedExpression(state, pid,
+						(QuantifiedExpression) expression);
+				break;
+			case FUNC_CALL :
+				result = evaluateFunctionCallExpression(state, pid,
+						(FunctionCallExpression) expression);
+				break;
+			case STATE_REF :
+				result = new Evaluation(state, modelFactory
+						.stateValue(((StateExpression) expression).id()));
+				break;
+			case MEMORY_UNIT :
+			case NULL_LITERAL :
+			case STRING_LITERAL :
+				throw new CIVLSyntaxException(
+						"Illegal use of " + kind + " expression: ",
+						expression.getSource());
 
-		default:
-			throw new CIVLInternalException("unreachable", expression);
+			default :
+				throw new CIVLInternalException("unreachable", expression);
 		}
 		return result;
 	}
@@ -4052,66 +4072,68 @@ public class CommonEvaluator implements Evaluator {
 		TypeKind typeKind = type.typeKind();
 
 		switch (typeKind) {
-		case ARRAY:
-			throw new CIVLUnimplementedFeatureException(
-					"sub-references of incomplete arrays", source);
+			case ARRAY :
+				throw new CIVLUnimplementedFeatureException(
+						"sub-references of incomplete arrays", source);
 
-		case COMPLETE_ARRAY: {
-			CIVLCompleteArrayType arrayType = (CIVLCompleteArrayType) type;
-			Expression extent = arrayType.extent();
-			Evaluation eval = this.evaluate(state, pid, extent);
-			NumericExpression extentValue = (NumericExpression) eval.value;
-			CIVLType eleType = arrayType.elementType();
+			case COMPLETE_ARRAY : {
+				CIVLCompleteArrayType arrayType = (CIVLCompleteArrayType) type;
+				Expression extent = arrayType.extent();
+				Evaluation eval = this.evaluate(state, pid, extent);
+				NumericExpression extentValue = (NumericExpression) eval.value;
+				CIVLType eleType = arrayType.elementType();
 
-			state = eval.state;
+				state = eval.state;
 
-			Reasoner reasoner = universe.reasoner(state.getPathCondition());
-			IntegerNumber length_number = (IntegerNumber) reasoner
-					.extractNumber(extentValue);
+				Reasoner reasoner = universe.reasoner(state.getPathCondition());
+				IntegerNumber length_number = (IntegerNumber) reasoner
+						.extractNumber(extentValue);
 
-			if (length_number != null) {
-				int length_int = length_number.intValue();
+				if (length_number != null) {
+					int length_int = length_number.intValue();
 
-				for (int i = 0; i < length_int; i++) {
-					ArrayElementReference arrayEle = universe
-							.arrayElementReference(parent, universe.integer(i));
+					for (int i = 0; i < length_int; i++) {
+						ArrayElementReference arrayEle = universe
+								.arrayElementReference(parent,
+										universe.integer(i));
+
+						result.addAll(this.leafNodeReferencesOfType(source,
+								state, pid, eleType, arrayEle));
+					}
+				} else
+					throw new CIVLUnimplementedFeatureException(
+							"sub-references of arrays with non-concrete extent",
+							source);
+				break;
+			}
+			case DOMAIN :
+			case ENUM :
+			case POINTER :
+			case BUNDLE :
+			case PRIMITIVE :
+				result.add(parent);
+				break;
+			case STRUCT_OR_UNION : {
+				CIVLStructOrUnionType structOrUnion = (CIVLStructOrUnionType) type;
+				int numFields = structOrUnion.numFields();
+
+				if (structOrUnion.isUnionType())
+					throw new CIVLUnimplementedFeatureException(
+							"sub-references of union type", source);
+				for (int i = 0; i < numFields; i++) {
+					CIVLType filedType = structOrUnion.getField(i).type();
+					TupleComponentReference tupleComp = universe
+							.tupleComponentReference(parent,
+									universe.intObject(i));
 
 					result.addAll(this.leafNodeReferencesOfType(source, state,
-							pid, eleType, arrayEle));
+							pid, filedType, tupleComp));
 				}
-			} else
-				throw new CIVLUnimplementedFeatureException(
-						"sub-references of arrays with non-concrete extent",
-						source);
-			break;
-		}
-		case DOMAIN:
-		case ENUM:
-		case POINTER:
-		case BUNDLE:
-		case PRIMITIVE:
-			result.add(parent);
-			break;
-		case STRUCT_OR_UNION: {
-			CIVLStructOrUnionType structOrUnion = (CIVLStructOrUnionType) type;
-			int numFields = structOrUnion.numFields();
-
-			if (structOrUnion.isUnionType())
-				throw new CIVLUnimplementedFeatureException(
-						"sub-references of union type", source);
-			for (int i = 0; i < numFields; i++) {
-				CIVLType filedType = structOrUnion.getField(i).type();
-				TupleComponentReference tupleComp = universe
-						.tupleComponentReference(parent, universe.intObject(i));
-
-				result.addAll(this.leafNodeReferencesOfType(source, state, pid,
-						filedType, tupleComp));
+				break;
 			}
-			break;
-		}
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"sub-references of " + typeKind, source);
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"sub-references of " + typeKind, source);
 		}
 		return result;
 	}
@@ -4190,7 +4212,8 @@ public class CommonEvaluator implements Evaluator {
 			SymbolicExpression array, SymbolicExpression pointer,
 			SymbolicExpression offset, boolean multiDimensional)
 			throws UnsatisfiablePathConditionException {
-		String msg = (multiDimensional) ? "array object"
+		String msg = (multiDimensional)
+				? "array object"
 				: "a heap-allocated object";
 
 		return errorLogger.logError(source, state, process,

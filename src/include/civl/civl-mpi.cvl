@@ -12,6 +12,7 @@
 #include <pointer.cvh>
 #include <seq.cvh>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 /* Library private helper function declaration */
@@ -148,7 +149,8 @@ void * $mpi_pointer_add(const void * ptr, int offset, MPI_Datatype datatype) {
 #ifdef _MPI_CONTRACT
   int datatypeExtent = $mpi_extentof(datatype);
 
-  $elaborate(offset * datatypeExtent);
+//  $elaborate(datatypeExtent);
+//  $elaborate(offset);
   return $pointer_add(ptr, offset * datatypeExtent, sizeof(char));
 #else
   int type_size = sizeofDatatype(datatype);
@@ -166,16 +168,16 @@ int $mpi_send(void *buf, int count, MPI_Datatype datatype, int dest,
   if (dest >= 0) {
     int size = count*sizeofDatatype(datatype);
     int place = $comm_place(comm.p2p);
-
-    $elaborate(size);
-
-    $message out = $message_pack(place, dest, tag, buf, size);
+    $message out;
 
 #ifdef _MPI_CONTRACT
-    $comm_enqueue(comm.p2p, out);
-#else 
-    $comm_enqueue(comm.p2p, out);   
+//    $elaborate($mpi_extentof(datatype));
+    $pathCondition();
+    $elaborate(count);
+    printf("elaborate: %d, datatype = %d\n", count, datatype);
 #endif
+    out = $message_pack(place, dest, tag, buf, size);
+    $comm_enqueue(comm.p2p, out);   
   }
   return 0;
 }
@@ -715,11 +717,13 @@ void $mpi_unsnapshot(MPI_Comm comm) {
 }
 
 size_t $mpi_extentof(MPI_Datatype datatype) {
-  $abstract size_t $mpi_extent(MPI_Datatype datatype);  
-  size_t result = $mpi_extent(datatype);
+  //  $abstract size_t $mpi_extent(MPI_Datatype datatype);  
+  //size_t result = $mpi_extent(datatype);
 
-  $assume(result > 0);
-  return result;
+  // $assume(result > 0);
+  // return result;
+  $assume(datatype > 0);
+  return datatype;
 }
 
 void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
