@@ -7,8 +7,8 @@
 /*@ 
   @ \mpi_collective(comm, P2P) :
   @   requires \mpi_agree(root) && \mpi_agree(sendcount * \mpi_extent(sendtype));
-  @   requires sendcount > 0 && sendcount < 2;
-  @   requires recvcount > 0 && recvcount < 2;
+  @   requires sendcount * \mpi_extent(sendtype) > 0 && sendcount * \mpi_extent(sendtype) < 2;
+  @   requires recvcount * \mpi_extent(recvtype) > 0 && recvcount * \mpi_extent(recvtype) < 2;
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \mpi_valid(sendbuf, sendcount, sendtype);
   @   behavior imroot:

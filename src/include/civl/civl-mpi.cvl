@@ -148,7 +148,7 @@ void * $mpi_pointer_add(const void * ptr, int offset, MPI_Datatype datatype) {
 #ifdef _MPI_CONTRACT
   int datatypeExtent = $mpi_extentof(datatype);
 
-  $elaborate(offset);
+  $elaborate(offset * datatypeExtent);
   return $pointer_add(ptr, offset * datatypeExtent, sizeof(char));
 #else
   int type_size = sizeofDatatype(datatype);
@@ -166,13 +166,13 @@ int $mpi_send(void *buf, int count, MPI_Datatype datatype, int dest,
   if (dest >= 0) {
     int size = count*sizeofDatatype(datatype);
     int place = $comm_place(comm.p2p);
+
+    $elaborate(size);
+
     $message out = $message_pack(place, dest, tag, buf, size);
 
 #ifdef _MPI_CONTRACT
-    $atomic{
-      $comm_enqueue(comm.p2p, out);
-      //$mpi_p2pSendShot(comm.gcommIndex, out, place);
-    }
+    $comm_enqueue(comm.p2p, out);
 #else 
     $comm_enqueue(comm.p2p, out);   
 #endif

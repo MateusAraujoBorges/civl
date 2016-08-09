@@ -14,7 +14,6 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
-import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -171,8 +170,9 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		this.typeFactory = modelFactory.typeFactory();
 		this.heapAnalyzer = new HeapAnalyzer(universe, this);
 		dynamicType = typeFactory.dynamicSymbolicType();
-		dynamicToIntType = universe.functionType(new Singleton<SymbolicType>(
-				dynamicType), universe.integerType());
+		dynamicToIntType = universe.functionType(
+				new Singleton<SymbolicType>(dynamicType),
+				universe.integerType());
 		sizeofFunction = universe.symbolicConstant(
 				universe.stringObject("SIZEOF"), dynamicToIntType);
 		sizeofFunction = universe.canonic(sizeofFunction);
@@ -181,13 +181,13 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		this.twoObj = (IntObject) universe.canonic(universe.intObject(2));
 		zero = (NumericExpression) universe.canonic(universe.integer(0));
 		one = (NumericExpression) universe.canonic(universe.integer(1));
-		this.falseValue = (BooleanExpression) universe.canonic(universe
-				.falseExpression());
-		this.trueValue = (BooleanExpression) universe.canonic(universe
-				.trueExpression());
+		this.falseValue = (BooleanExpression) universe
+				.canonic(universe.falseExpression());
+		this.trueValue = (BooleanExpression) universe
+				.canonic(universe.trueExpression());
 		this.pointerType = this.typeFactory.pointerSymbolicType();
-		this.nullPointer = universe.canonic(this.makePointer(-1, -1,
-				universe.identityReference()));
+		this.nullPointer = universe.canonic(
+				this.makePointer(-1, -1, universe.identityReference()));
 		this.undefinedPointer = universe.canonic(universe.nullExpression());
 		this.stringType = universe.arrayType(universe.characterType());
 	}
@@ -290,8 +290,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		numAncestors2 = ancestors2.size();
 		minNum = numAncestors1 <= numAncestors2 ? numAncestors1 : numAncestors2;
 		for (int i = 0; i < minNum; i++) {
-			ReferenceExpression ancestor1 = ancestors1.get(i), ancestor2 = ancestors2
-					.get(i);
+			ReferenceExpression ancestor1 = ancestors1.get(i),
+					ancestor2 = ancestors2.get(i);
 
 			if (!ancestor1.equals(ancestor2))
 				return true;
@@ -328,8 +328,9 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 				if (!(targetValue.type() instanceof SymbolicArrayType))
 					return new Pair<>(targetValue, false);
-				return new Pair<>(universe.arrayRead(targetValue,
-						arrayEleRef.getIndex()), true);
+				return new Pair<>(
+						universe.arrayRead(targetValue, arrayEleRef.getIndex()),
+						true);
 			} else if (ref.isTupleComponentReference()) {
 				TupleComponentReference tupleCompRef = (TupleComponentReference) ref;
 
@@ -391,8 +392,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 		if (!ref.isIdentityReference()) {
 			components.add(ref);
-			components.addAll(referenceComponents(((NTReferenceExpression) ref)
-					.getParent()));
+			components.addAll(referenceComponents(
+					((NTReferenceExpression) ref).getParent()));
 		}
 		return components;
 	}
@@ -434,37 +435,40 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 					.argument(j);
 			Character theChar = universe.extractCharacter(charExpr);
 
-			if (theChar == null)
-				throw new CIVLUnimplementedFeatureException(
-						"non-concrete character in string at position " + j,
-						source);
+			if (theChar == null) {
+				result.append(charArray);
+				return result;
+				// throw new CIVLUnimplementedFeatureException(
+				// "non-concrete character in string at position " + j,
+				// source);
+			}
 			// if (theChar != '\0') {
 			if (forPrint) {
 				String theCharToString;
 				switch (theChar) {
-				case '\0':
-					theCharToString = "\0";
-					break;
-				case '\u000C':
-					theCharToString = "\\f";
-					break;
-				case '\u0007':
-					theCharToString = "\\a";
-					break;
-				case '\b':
-					theCharToString = "\\b";
-					break;
-				case '\n':
-					theCharToString = "\\n";
-					break;
-				case '\t':
-					theCharToString = "\\t";
-					break;
-				case '\r':
-					theCharToString = "\\r";
-					break;
-				default:
-					theCharToString = theChar.toString();
+					case '\0' :
+						theCharToString = "\0";
+						break;
+					case '\u000C' :
+						theCharToString = "\\f";
+						break;
+					case '\u0007' :
+						theCharToString = "\\a";
+						break;
+					case '\b' :
+						theCharToString = "\\b";
+						break;
+					case '\n' :
+						theCharToString = "\\n";
+						break;
+					case '\t' :
+						theCharToString = "\\t";
+						break;
+					case '\r' :
+						theCharToString = "\\r";
+						break;
+					default :
+						theCharToString = theChar.toString();
 				}
 				result.append(theCharToString);
 			} else {
@@ -483,10 +487,10 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	@Override
 	public BooleanExpression contains(SymbolicExpression pointer1,
 			SymbolicExpression pointer2) {
-		ReferenceExpression ref1 = (ReferenceExpression) universe.tupleRead(
-				pointer1, twoObj);
-		ReferenceExpression ref2 = (ReferenceExpression) universe.tupleRead(
-				pointer2, twoObj);
+		ReferenceExpression ref1 = (ReferenceExpression) universe
+				.tupleRead(pointer1, twoObj);
+		ReferenceExpression ref2 = (ReferenceExpression) universe
+				.tupleRead(pointer2, twoObj);
 		SymbolicExpression scope1 = universe.tupleRead(pointer1, zeroObj);
 		SymbolicExpression scope2 = universe.tupleRead(pointer2, zeroObj);
 		SymbolicExpression vid1 = universe.tupleRead(pointer1, oneObj);
@@ -497,8 +501,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		BooleanExpression result = this.trueValue;
 
 		if (ref1.isIdentityReference() && ref2.isIdentityReference()) {
-			return (BooleanExpression) universe.canonic(universe.equals(ref1,
-					ref2));
+			return (BooleanExpression) universe
+					.canonic(universe.equals(ref1, ref2));
 		}
 		if (ref2.isIdentityReference() // second contains first
 				|| universe.equals(scope1, scope2).isFalse() // different scope
@@ -531,8 +535,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 				return ((IntegerNumber) ((NumberObject) object).getNumber())
 						.intValue();
 		}
-		throw new CIVLInternalException("Unable to extract concrete int from "
-				+ expression, source);
+		throw new CIVLInternalException(
+				"Unable to extract concrete int from " + expression, source);
 	}
 
 	@Override
@@ -627,10 +631,10 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		if (pointer1.equals(pointer2))
 			return false;
 		{
-			SymbolicExpression scope1 = universe.tupleRead(pointer1, zeroObj), var1 = universe
-					.tupleRead(pointer1, oneObj);
-			SymbolicExpression scope2 = universe.tupleRead(pointer2, zeroObj), var2 = universe
-					.tupleRead(pointer2, oneObj);
+			SymbolicExpression scope1 = universe.tupleRead(pointer1, zeroObj),
+					var1 = universe.tupleRead(pointer1, oneObj);
+			SymbolicExpression scope2 = universe.tupleRead(pointer2, zeroObj),
+					var2 = universe.tupleRead(pointer2, oneObj);
 			ReferenceExpression ref1 = (ReferenceExpression) universe
 					.tupleRead(pointer1, twoObj);
 			ReferenceExpression ref2 = (ReferenceExpression) universe
@@ -652,7 +656,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public boolean isMallocPointer(CIVLSource source, SymbolicExpression pointer) {
+	public boolean isMallocPointer(CIVLSource source,
+			SymbolicExpression pointer) {
 		return heapAnalyzer.isHeapAtomicObjectPointer(source, pointer);
 	}
 
@@ -670,8 +675,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		SymbolicExpression step = universe.tupleRead(range, twoObj);
 		BooleanExpression positiveStep = universe.lessThan(zero,
 				(NumericExpression) step);
-		BooleanExpression negativeStep = universe.lessThan(
-				(NumericExpression) step, zero);
+		BooleanExpression negativeStep = universe
+				.lessThan((NumericExpression) step, zero);
 		// TODO change to andTo
 		BooleanExpression positiveStepResult = universe.and(positiveStep,
 				universe.lessThanEquals((NumericExpression) value,
@@ -715,10 +720,9 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			ReferenceExpression symRef) {
 		SymbolicExpression scopeField = modelFactory.scopeValue(scopeId);
 		SymbolicExpression varField = universe.integer(varId);
-		SymbolicExpression result = universe.tuple(
-				this.pointerType,
-				Arrays.asList(new SymbolicExpression[] { scopeField, varField,
-						symRef }));
+		SymbolicExpression result = universe.tuple(this.pointerType,
+				Arrays.asList(new SymbolicExpression[]{scopeField, varField,
+						symRef}));
 
 		return result;
 	}
@@ -732,15 +736,15 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	@Override
 	public SymbolicExpression extendPointer(SymbolicExpression objectPointer,
 			ReferenceExpression reference) {
-		ReferenceExpression objRef = (ReferenceExpression) universe.tupleRead(
-				objectPointer, twoObj);
+		ReferenceExpression objRef = (ReferenceExpression) universe
+				.tupleRead(objectPointer, twoObj);
 		SymbolicExpression scope = universe.tupleRead(objectPointer, zeroObj);
 		SymbolicExpression vid = universe.tupleRead(objectPointer, oneObj);
 
 		if (!objRef.isIdentityReference())
 			reference = makeParentOf(objRef, reference);
-		return universe
-				.tuple(pointerType, Arrays.asList(scope, vid, reference));
+		return universe.tuple(pointerType,
+				Arrays.asList(scope, vid, reference));
 	}
 
 	@Override
@@ -764,8 +768,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 							universe.integerType());
 			SymbolicExpression arrayEleFunction = universe.lambda(index,
 					eleValue);
-			SymbolicCompleteArrayType arrayValueType = universe.arrayType(
-					elementValueType, length);
+			SymbolicCompleteArrayType arrayValueType = universe
+					.arrayType(elementValueType, length);
 
 			return universe.arrayLambda(arrayValueType, arrayEleFunction);
 		}
@@ -784,14 +788,14 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		if (symRef instanceof NTReferenceExpression)
 			return setSymRef(pointer,
 					((NTReferenceExpression) symRef).getParent());
-		throw new CIVLInternalException("Expected non-trivial pointer: "
-				+ pointer, source);
+		throw new CIVLInternalException(
+				"Expected non-trivial pointer: " + pointer, source);
 	}
 
 	@Override
 	public ReferenceExpression referenceOfPointer(SymbolicExpression pointer) {
-		ReferenceExpression ref = (ReferenceExpression) universe.tupleRead(
-				pointer, twoObj);
+		ReferenceExpression ref = (ReferenceExpression) universe
+				.tupleRead(pointer, twoObj);
 
 		if (this.isHeapPointer(pointer)) {
 			Pair<ReferenceExpression, Integer> refResult = heapAnalyzer
@@ -806,7 +810,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public ReferenceExpression referenceToHeapMemUnit(SymbolicExpression pointer) {
+	public ReferenceExpression referenceToHeapMemUnit(
+			SymbolicExpression pointer) {
 		return this.heapAnalyzer.referenceToHeapMemUnit(pointer);
 	}
 
@@ -866,7 +871,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 	@Override
 	public ReferenceExpression makeArrayElementReference(
-			ReferenceExpression arrayReference, NumericExpression[] newIndices) {
+			ReferenceExpression arrayReference,
+			NumericExpression[] newIndices) {
 		int dimension = newIndices.length;
 		ReferenceExpression newRef;
 
@@ -947,21 +953,23 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		return indices;
 	}
 
-	/* ************************ Domain Operations **************************** */
+	/*
+	 * ************************ Domain Operations ****************************
+	 */
 	@Override
 	public Iterator<List<SymbolicExpression>> getDomainIterator(
 			SymbolicExpression domain) {
 		Iterator<List<SymbolicExpression>> domIterator;
-		SymbolicExpression domainUnionField = universe
-				.tupleRead(domain, twoObj);
+		SymbolicExpression domainUnionField = universe.tupleRead(domain,
+				twoObj);
 		NumericExpression dim = (NumericExpression) universe.tupleRead(domain,
 				zeroObj);
 		final int concreteDim = ((IntegerNumber) universe.extractNumber(dim))
 				.intValue();
 
 		if (isRectangularDomain(domain)) {
-			final SymbolicExpression recDomainField = universe.unionExtract(
-					zeroObj, domainUnionField);
+			final SymbolicExpression recDomainField = universe
+					.unionExtract(zeroObj, domainUnionField);
 			final List<SymbolicExpression> domStartPos = this
 					.getDomainInit(domain);
 
@@ -1026,7 +1034,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 				@Override
 				public boolean hasNext() {
-					return ((literalDomainSize > (currentPos + 1) && (currentPos + 1) >= 0));
+					return ((literalDomainSize > (currentPos + 1)
+							&& (currentPos + 1) >= 0));
 				}
 
 				@Override
@@ -1064,8 +1073,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	public List<SymbolicExpression> getDomainInit(SymbolicExpression domValue) {
 		SymbolicExpression domainUnionField = universe.tupleRead(domValue,
 				twoObj);
-		NumericExpression dim = (NumericExpression) universe.tupleRead(
-				domValue, zeroObj);
+		NumericExpression dim = (NumericExpression) universe.tupleRead(domValue,
+				zeroObj);
 		int concreteDim = ((IntegerNumber) universe.extractNumber(dim))
 				.intValue();
 		List<SymbolicExpression> varValues = new ArrayList<>(concreteDim);
@@ -1084,14 +1093,14 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			}
 			return varValues;
 		} else {
-			SymbolicExpression literalDomainField = universe.unionExtract(
-					oneObj, domainUnionField);
+			SymbolicExpression literalDomainField = universe
+					.unionExtract(oneObj, domainUnionField);
 
 			if (universe.length(literalDomainField).isZero())
 				return null;
 			else {
-				SymbolicExpression firstElement = universe.arrayRead(
-						literalDomainField, zero);
+				SymbolicExpression firstElement = universe
+						.arrayRead(literalDomainField, zero);
 
 				for (int i = 0; i < concreteDim; i++)
 					varValues.add(universe.arrayRead(firstElement,
@@ -1128,8 +1137,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		if (this.isRectangularDomain(domain)) {
 			SymbolicExpression recDomainField; // array of ranges
 			NumericExpression size = universe.oneInt();// Init size
-			NumericExpression dim = (NumericExpression) universe.tupleRead(
-					domain, zeroObj);
+			NumericExpression dim = (NumericExpression) universe
+					.tupleRead(domain, zeroObj);
 			int concreteDim;
 
 			concreteDim = ((IntegerNumber) universe.extractNumber(dim))
@@ -1145,8 +1154,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		} else if (this.isLiteralDomain(domain)) {
 			// literal domain is an array of array of integers. Also can be
 			// explained as array of elements(elements are arrays of integers).
-			SymbolicExpression literalDomainField = universe.unionExtract(
-					oneObj, domainUnionField);
+			SymbolicExpression literalDomainField = universe
+					.unionExtract(oneObj, domainUnionField);
 
 			return universe.length(literalDomainField);
 		} else
@@ -1255,8 +1264,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			else
 				return false;
 		} else if (this.isRectangularDomain(domain)) {
-			SymbolicExpression recDom = universe
-					.unionExtract(zeroObj, domUnion);
+			SymbolicExpression recDom = universe.unionExtract(zeroObj,
+					domUnion);
 
 			for (int i = 0; i < dim; i++) {
 				SymbolicExpression range = universe.arrayRead(recDom,

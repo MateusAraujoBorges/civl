@@ -5,7 +5,7 @@
   @ \mpi_collective(comm, P2P):
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \mpi_agree(root) && \mpi_agree(count * \mpi_extent(datatype));
-  @   requires 0 < count && count < 10;
+  @   requires 0 < count * \mpi_extent(datatype) && count * \mpi_extent(datatype) < 10;
   @   requires \mpi_valid(buf, count, datatype);
   @   ensures \mpi_equals(buf, count, datatype, \on(root, buf));
   @   waitsfor root;

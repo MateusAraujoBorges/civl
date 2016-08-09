@@ -918,8 +918,8 @@ public class ContractTransformerWorker extends BaseWorker {
 						.getRequires(nodeFactory)) {
 					List<MPIContractExpressionNode> mpiValids = getMPIValidExpressionNodes(
 							requires);
-					bodyItems.addAll(createConditionalFreeCalls(
-							condClauses.condition, mpiValids));
+					bodyItems.addAll(
+							createConditionalFreeCalls(null, mpiValids));
 				}
 		body = nodeFactory.newCompoundStatementNode(driverSource, bodyItems);
 		funcTypeNode = nodeFactory.newFunctionTypeNode(funcTypeNode.getSource(),
