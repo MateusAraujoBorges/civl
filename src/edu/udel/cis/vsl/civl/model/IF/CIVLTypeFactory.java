@@ -321,6 +321,8 @@ public interface CIVLTypeFactory {
 	 * @return the symbolic type used to represent scope values
 	 */
 	SymbolicTupleType scopeSymbolicType();
+	
+	SymbolicType voidSymbolicType();
 
 	/*
 	 * ************************************************************************

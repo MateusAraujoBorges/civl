@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode.ExtendedQuantifier;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.mpi.LibmpiEvaluator;
@@ -42,6 +43,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DynamicTypeOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.ExtendedQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
@@ -49,6 +51,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.HereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
@@ -120,6 +123,7 @@ import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
@@ -1922,6 +1926,79 @@ public class CommonEvaluator implements Evaluator {
 		}
 	}
 
+	private Evaluation evaluateLambda(State state, int pid,
+			LambdaExpression arrayLambda)
+			throws UnsatisfiablePathConditionException {
+		List<Pair<List<Variable>, Expression>> boundVariableList = arrayLambda
+				.boundVariableList();
+		Evaluation eval = null;
+		int numBoundVars = 0;
+		TypeEvaluation typeEval = this.getDynamicType(state, pid,
+				(CIVLFunctionType) arrayLambda.getExpressionType(),
+				arrayLambda.getSource(), false);
+		SymbolicFunctionType arrayType = (SymbolicFunctionType) typeEval.type;
+		int numInputs = arrayType.inputTypes().numTypes();
+		NumericSymbolicConstant[] boundVariables = new NumericSymbolicConstant[numInputs];
+		SymbolicExpression restriction;
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+
+		state = typeEval.state;
+		this.boundVariableStack.push(new HashSet<SymbolicConstant>());
+		for (Pair<List<Variable>, Expression> boundVariableSubList : boundVariableList) {
+			if (boundVariableSubList.right != null)
+				throw new CIVLUnimplementedFeatureException(
+						"declaring bound variables within a specific domain in array lambdas",
+						arrayLambda.getSource());
+			for (Variable variable : boundVariableSubList.left) {
+				NumericSymbolicConstant boundVariable;
+
+				assert variable.type().isIntegerType();
+				boundVariable = (NumericSymbolicConstant) universe
+						.symbolicConstant(variable.name().stringObject(),
+								variable.type().getDynamicType(universe));
+				boundVariables[numBoundVars++] = boundVariable;
+				this.boundVariableStack.peek().add(boundVariable);
+			}
+		}
+		assert numInputs == numBoundVars;
+		eval = evaluate(state, pid, arrayLambda.restriction());
+		restriction = eval.value;
+		if (!reasoner.isValid((BooleanExpression) restriction)) {
+			throw new CIVLUnimplementedFeatureException(
+					"non-trivial restriction used in lambda expression",
+					arrayLambda.getSource());
+		}
+		// if (restriction.isFalse())
+		// return new Evaluation(state, universe.nullExpression());
+		// if (!restriction.isTrue())
+		// throw new CIVLUnimplementedFeatureException(
+		// "non-trivial restriction expression in array lambdas",
+		// arrayLambda.getSource());
+		eval = new Evaluation(state, this.lambda(state, pid, boundVariables, 0,
+				arrayType, arrayLambda.expression()));
+		this.boundVariableStack.pop();
+		return eval;
+	}
+
+	private SymbolicExpression lambda(State state, int pid,
+			NumericSymbolicConstant[] boundVariables, int boundIndex,
+			SymbolicFunctionType arrayType, Expression body)
+			throws UnsatisfiablePathConditionException {
+		NumericSymbolicConstant index = boundVariables[boundIndex];
+		SymbolicExpression eleValue;
+		Evaluation eval;
+
+		if (boundIndex == boundVariables.length - 1) {
+			eval = this.evaluate(state, pid, body);
+			eleValue = eval.value;
+			state = eval.state;
+		} else {
+			eleValue = lambda(state, pid, boundVariables, boundIndex + 1,
+					arrayType, body);
+		}
+		return universe.lambda(index, eleValue);
+	}
+
 	private SymbolicExpression arrayLambda(State state, int pid,
 			NumericSymbolicConstant[] boundVariables, int boundIndex,
 			SymbolicCompleteArrayType arrayType, Expression body)
@@ -3362,6 +3439,10 @@ public class CommonEvaluator implements Evaluator {
 				result = evaluateIntegerLiteral(state, pid,
 						(IntegerLiteralExpression) expression);
 				break;
+			case LAMBDA :
+				result = evaluateLambda(state, pid,
+						(LambdaExpression) expression);
+				break;
 			case MPI_CONTRACT_EXPRESSION :
 				result = evaluateMPIContractExpression(state, pid, process,
 						(MPIContractExpression) expression);
@@ -3444,6 +3525,10 @@ public class CommonEvaluator implements Evaluator {
 				result = new Evaluation(state, modelFactory
 						.stateValue(((StateExpression) expression).id()));
 				break;
+			case EXTENDED_QUANTIFIER :
+				result = evaluateExtendedQuantifiedExpression(state, pid,
+						(ExtendedQuantifiedExpression) expression);
+				break;
 			case MEMORY_UNIT :
 			case NULL_LITERAL :
 			case STRING_LITERAL :
@@ -3453,6 +3538,128 @@ public class CommonEvaluator implements Evaluator {
 
 			default :
 				throw new CIVLInternalException("unreachable", expression);
+		}
+		return result;
+	}
+
+	private Evaluation evaluateExtendedQuantifiedExpression(State state,
+			int pid, ExtendedQuantifiedExpression extQuant)
+			throws UnsatisfiablePathConditionException {
+		Evaluation eval;
+		Expression function = extQuant.function();
+		NumericExpression low, high;
+		ExtendedQuantifier quant = extQuant.extendedQuantifier();
+
+		eval = evaluate(state, pid, extQuant.lower());
+		state = eval.state;
+		low = (NumericExpression) eval.value;
+		eval = evaluate(state, pid, extQuant.higher());
+		high = (NumericExpression) eval.value;
+		state = eval.state;
+
+		if (function.expressionKind() == ExpressionKind.LAMBDA) {
+			SymbolicExpression lambda;
+
+			eval = evaluate(state, pid, function);
+			state = eval.state;
+			lambda = eval.value;
+			eval.value = applyLambda4ExtendedQuantfication(state, pid,
+					extQuant.getSource(), quant, lambda, low, high);
+		} else {
+			throw new CIVLUnimplementedFeatureException(
+					"using non-lambda functions in " + quant + " expressions",
+					extQuant);
+		}
+		return eval;
+	}
+
+	private SymbolicExpression applyLambda4ExtendedQuantfication(State state,
+			int pid, CIVLSource source, ExtendedQuantifier quant,
+			SymbolicExpression lambda, NumericExpression low,
+			NumericExpression high) throws UnsatisfiablePathConditionException {
+		BooleanExpression lowLEHigh = universe.lessThanEquals(low, high);
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		ResultType reasonResult = reasoner.valid(lowLEHigh).getResultType();
+		NumericExpression result = null;
+
+		if (reasonResult == ResultType.YES) {
+			// low<=hi, TODO needs to check that (hi-low) is bounded
+			NumericExpression index = low;
+			SymbolicExpression current;
+
+			do {
+				current = universe.apply(lambda, Arrays.asList(index));
+				switch (quant) {
+					case SUM :
+						result = result == null
+								? (NumericExpression) current
+								: universe.add(result,
+										(NumericExpression) current);
+						break;
+					case NUMOF : {
+						if (reasoner.isValid((BooleanExpression) current)) {
+							result = result == null
+									? one
+									: universe.add(result, one);
+						} else if (!reasoner.isValid(
+								universe.not((BooleanExpression) current))) {
+							errorLogger.logSimpleError(source, state,
+									state.getProcessState(pid).name(),
+									symbolicAnalyzer.stateInformation(state),
+									ErrorKind.OTHER,
+									"unable to decide the result of the boolean function in \numof");
+							throw new UnsatisfiablePathConditionException();
+						}
+						break;
+					}
+					case PROD :
+						result = result == null
+								? (NumericExpression) current
+								: universe.multiply(result,
+										(NumericExpression) current);
+						break;
+					default :
+						throw new CIVLUnimplementedFeatureException(
+								"evaluating extended quantification " + quant,
+								source);
+				}
+			} while (true);
+		} else {
+			BooleanExpression lowGtHigh = universe.lessThan(high, low);
+
+			reasonResult = reasoner.valid(lowGtHigh).getResultType();
+			if (reasonResult == ResultType.YES) {
+				// low>hi
+				switch (quant) {
+					case SUM :
+					case NUMOF :
+						result = this.zero;
+						break;
+					case PROD :
+						result = this.one;
+						break;
+					default :
+						errorLogger.logSimpleError(source, state,
+								state.getProcessState(pid).name(),
+								symbolicAnalyzer.stateInformation(state),
+								ErrorKind.OTHER,
+								"undefined input for " + quant);
+						throw new UnsatisfiablePathConditionException();
+				}
+			} else {
+				errorLogger.logSimpleError(source, state,
+						state.getProcessState(pid).name(),
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.OTHER,
+						"unable to decide the LE/GT relation between the lower bound "
+								+ symbolicAnalyzer.symbolicExpressionToString(
+										source, state, null, low)
+								+ " and the upper bound "
+								+ symbolicAnalyzer.symbolicExpressionToString(
+										source, state, null, high)
+								+ quant);
+				throw new UnsatisfiablePathConditionException();
+			}
 		}
 		return result;
 	}

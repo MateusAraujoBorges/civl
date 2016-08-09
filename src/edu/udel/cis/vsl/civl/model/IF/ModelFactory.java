@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode.ExtendedQuantifier;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -32,12 +33,14 @@ import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DynamicTypeOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ExtendedQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.HereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
@@ -80,6 +83,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
@@ -430,6 +434,42 @@ public interface ModelFactory {
 			CIVLArrayType arrayType,
 			List<Pair<List<Variable>, Expression>> boundVariableList,
 			Expression restriction, Expression expression);
+
+	/**
+	 * Creates a new lambda expression.
+	 * 
+	 * @param source
+	 *            the source file information for this expression.
+	 * @param functionType
+	 *            the type of this lambda, which should be some function type
+	 * @param boundVariableList
+	 *            the list of bound variables as long as their domains
+	 *            (optional)
+	 * @param restriction
+	 *            the boolean-valued expression involving the bound variable
+	 *            which is expected to be true
+	 * @param expression
+	 *            the body expression.
+	 * @return the new array lambda expression
+	 */
+	LambdaExpression lambdaExpression(CIVLSource source,
+			CIVLFunctionType functionType,
+			List<Pair<List<Variable>, Expression>> boundVariableList,
+			Expression restriction, Expression expression);
+
+	/**
+	 * 
+	 * @param source
+	 * @param type
+	 * @param quant
+	 * @param lo
+	 * @param hi
+	 * @param function
+	 * @return
+	 */
+	ExtendedQuantifiedExpression extendedQuantifiedExpression(CIVLSource source,
+			CIVLType type, ExtendedQuantifier quant, Expression lo,
+			Expression hi, Expression function);
 
 	/**
 	 * A real literal expression.

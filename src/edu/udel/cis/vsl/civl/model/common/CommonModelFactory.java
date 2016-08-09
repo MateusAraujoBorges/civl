@@ -15,6 +15,7 @@ import java.util.Stack;
 
 import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode.ExtendedQuantifier;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -55,6 +56,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DynamicTypeOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ExtendedQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
@@ -62,6 +64,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.HereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
@@ -106,6 +109,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.UpdateStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.WithStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType.PrimitiveTypeKind;
@@ -128,12 +132,14 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonDerivativeCallExpress
 import edu.udel.cis.vsl.civl.model.common.expression.CommonDomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonDotExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonDynamicTypeOfExpression;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonExtendedQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonFunctionGuardExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonFunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonHereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonInitialValueExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonIntegerLiteralExpression;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonLambdaExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonMPIContractExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonMemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonNothing;
@@ -469,73 +475,73 @@ public class CommonModelFactory implements ModelFactory {
 		Scope lowestScope = getLower(left.lowestScope(), right.lowestScope());
 
 		switch (operator) {
-			case REMOTE :
-				CIVLType processExpr = left.getExpressionType();
+		case REMOTE:
+			CIVLType processExpr = left.getExpressionType();
 
-				if (!processExpr.isIntegerType())
+			if (!processExpr.isIntegerType())
+				throw new CIVLException(
+						"Incompatible types to " + BINARY_OPERATOR.REMOTE
+								+ " operand. The left hand side expression must have a integer type.",
+						source);
+			return new CommonBinaryExpression(source, expressionScope,
+					lowestScope, right.getExpressionType(), operator, left,
+					right);
+		case AND:
+		case EQUAL:
+		case LESS_THAN:
+		case LESS_THAN_EQUAL:
+		case NOT_EQUAL:
+		case OR:
+			return new CommonBinaryExpression(source, expressionScope,
+					lowestScope, typeFactory.booleanType, operator, left,
+					right);
+		case PLUS:
+		case TIMES:
+		case DIVIDE:
+		case MINUS:
+		case MODULO:
+		default:
+			CIVLType leftType = left.getExpressionType();
+			CIVLType rightType = right.getExpressionType();
+			CIVLType resultType;
+
+			// Types should be the same unless we're doing pointer
+			// arithmetic.
+			if (leftType.equals(rightType)) {
+				// ((CommonBinaryExpression)
+				// result).setExpressionType(leftType);
+				resultType = leftType;
+			} else if (leftType instanceof CIVLPointerType
+					&& rightType instanceof CIVLPrimitiveType) {
+				assert ((CIVLPrimitiveType) rightType)
+						.primitiveTypeKind() == PrimitiveTypeKind.INT;
+				// ((CommonBinaryExpression)
+				// result).setExpressionType(leftType);
+				resultType = leftType;
+			} else if (leftType instanceof CIVLPointerType
+					&& rightType instanceof CIVLPrimitiveType) {
+				assert ((CIVLPrimitiveType) rightType)
+						.primitiveTypeKind() == PrimitiveTypeKind.INT;
+				// ((CommonBinaryExpression)
+				// result).setExpressionType(leftType);
+				resultType = leftType;
+			} else if (leftType instanceof CIVLPointerType
+					&& rightType instanceof CIVLPointerType) {
+				// compatibility checking
+				if (((CIVLPointerType) leftType).baseType()
+						.equals(((CIVLPointerType) rightType).baseType()))
+					// ((CommonBinaryExpression) result)
+					// .setExpressionType(integerType());
+					resultType = typeFactory.integerType;
+				else
 					throw new CIVLException(
-							"Incompatible types to " + BINARY_OPERATOR.REMOTE
-									+ " operand. The left hand side expression must have a integer type.",
+							leftType + " and " + rightType
+									+ " are not pointers to compatiable types",
 							source);
-				return new CommonBinaryExpression(source, expressionScope,
-						lowestScope, right.getExpressionType(), operator, left,
-						right);
-			case AND :
-			case EQUAL :
-			case LESS_THAN :
-			case LESS_THAN_EQUAL :
-			case NOT_EQUAL :
-			case OR :
-				return new CommonBinaryExpression(source, expressionScope,
-						lowestScope, typeFactory.booleanType, operator, left,
-						right);
-			case PLUS :
-			case TIMES :
-			case DIVIDE :
-			case MINUS :
-			case MODULO :
-			default :
-				CIVLType leftType = left.getExpressionType();
-				CIVLType rightType = right.getExpressionType();
-				CIVLType resultType;
-
-				// Types should be the same unless we're doing pointer
-				// arithmetic.
-				if (leftType.equals(rightType)) {
-					// ((CommonBinaryExpression)
-					// result).setExpressionType(leftType);
-					resultType = leftType;
-				} else if (leftType instanceof CIVLPointerType
-						&& rightType instanceof CIVLPrimitiveType) {
-					assert ((CIVLPrimitiveType) rightType)
-							.primitiveTypeKind() == PrimitiveTypeKind.INT;
-					// ((CommonBinaryExpression)
-					// result).setExpressionType(leftType);
-					resultType = leftType;
-				} else if (leftType instanceof CIVLPointerType
-						&& rightType instanceof CIVLPrimitiveType) {
-					assert ((CIVLPrimitiveType) rightType)
-							.primitiveTypeKind() == PrimitiveTypeKind.INT;
-					// ((CommonBinaryExpression)
-					// result).setExpressionType(leftType);
-					resultType = leftType;
-				} else if (leftType instanceof CIVLPointerType
-						&& rightType instanceof CIVLPointerType) {
-					// compatibility checking
-					if (((CIVLPointerType) leftType).baseType()
-							.equals(((CIVLPointerType) rightType).baseType()))
-						// ((CommonBinaryExpression) result)
-						// .setExpressionType(integerType());
-						resultType = typeFactory.integerType;
-					else
-						throw new CIVLException(
-								leftType + " and " + rightType
-										+ " are not pointers to compatiable types",
-								source);
-				} else
-					throw new CIVLException("Incompatible types to +", source);
-				return new CommonBinaryExpression(source, expressionScope,
-						lowestScope, resultType, operator, left, right);
+			} else
+				throw new CIVLException("Incompatible types to +", source);
+			return new CommonBinaryExpression(source, expressionScope,
+					lowestScope, resultType, operator, left, right);
 		}
 	}
 
@@ -858,25 +864,25 @@ public class CommonModelFactory implements ModelFactory {
 	public UnaryExpression unaryExpression(CIVLSource source,
 			UNARY_OPERATOR operator, Expression operand) {
 		switch (operator) {
-			case NEGATIVE :
-			case BIG_O :
-				return new CommonUnaryExpression(source,
-						operand.getExpressionType(), operator, operand);
-			case NOT :
-				assert operand.getExpressionType().isBoolType();
-				return new CommonUnaryExpression(source,
-						typeFactory.booleanType, operator, operand);
-			case VALID :
-				assert operand instanceof PointerSetExpression;
-				return new CommonUnaryExpression(source,
-						typeFactory.booleanType, operator, operand);
-			case BIT_NOT :
-				assert operand.getExpressionType().isIntegerType();
-				return new CommonUnaryExpression(source,
-						typeFactory.integerType, operator, operand);
-			default :
-				throw new CIVLInternalException(
-						"Unknown unary operator: " + operator, source);
+		case NEGATIVE:
+		case BIG_O:
+			return new CommonUnaryExpression(source,
+					operand.getExpressionType(), operator, operand);
+		case NOT:
+			assert operand.getExpressionType().isBoolType();
+			return new CommonUnaryExpression(source, typeFactory.booleanType,
+					operator, operand);
+		case VALID:
+			assert operand instanceof PointerSetExpression;
+			return new CommonUnaryExpression(source, typeFactory.booleanType,
+					operator, operand);
+		case BIT_NOT:
+			assert operand.getExpressionType().isIntegerType();
+			return new CommonUnaryExpression(source, typeFactory.integerType,
+					operator, operand);
+		default:
+			throw new CIVLInternalException(
+					"Unknown unary operator: " + operator, source);
 
 		}
 	}
@@ -1566,22 +1572,22 @@ public class CommonModelFactory implements ModelFactory {
 		boolean needsEnabler = false;
 
 		switch (libraryName) {
-			case "bundle" :
-			case "civlc" :
-			case "comm" :
-			case "domain" :
-			case "mpi" :
-			case "pointer" :
-			case "pthread" :
-			case "scope" :
-			case "seq" :
-			case "stdio" :
-			case "stdlib" :
-			case "string" :
-			case "time" :
-				needsEnabler = true;
-				break;
-			default :
+		case "bundle":
+		case "civlc":
+		case "comm":
+		case "domain":
+		case "mpi":
+		case "pointer":
+		case "pthread":
+		case "scope":
+		case "seq":
+		case "stdio":
+		case "stdlib":
+		case "string":
+		case "time":
+			needsEnabler = true;
+			break;
+		default:
 		}
 		return new CommonSystemFunction(source, name, parameterScope,
 				parameters, returnType, containingScope,
@@ -2203,11 +2209,11 @@ public class CommonModelFactory implements ModelFactory {
 		VariableExpression result;
 
 		switch (kind) {
-			case CONDITIONAL :
-				name = CONDITIONAL_VARIABLE_PREFIX
-						+ this.conditionalExpressionCounter++;
-				break;
-			default :
+		case CONDITIONAL:
+			name = CONDITIONAL_VARIABLE_PREFIX
+					+ this.conditionalExpressionCounter++;
+			break;
+		default:
 		}
 		variable = this.variable(source, type, this.identifier(source, name),
 				vid);
@@ -2338,26 +2344,26 @@ public class CommonModelFactory implements ModelFactory {
 		for (int i = 0; i < arguments.length; i++)
 			lowestScope = getLower(arguments[i].lowestScope(), lowestScope);
 		switch (kind) {
-			case MPI_AGREE :
-				type = typeFactory.booleanType;
-				break;
-			case MPI_EQUALS :
-				type = typeFactory.booleanType;
-				break;
-			case MPI_EXTENT :
-				type = typeFactory.integerType;
-				break;
-			case MPI_OFFSET :
-				type = typeFactory.pointerType(typeFactory.voidType);
-				break;
-			case MPI_REGION : // location type or $mem type in fact
-				type = typeFactory.voidType;
-				break;
-			case MPI_VALID :
-				type = typeFactory.booleanType;
-				break;
-			default :
-				throw new CIVLInternalException("unreachable", source);
+		case MPI_AGREE:
+			type = typeFactory.booleanType;
+			break;
+		case MPI_EQUALS:
+			type = typeFactory.booleanType;
+			break;
+		case MPI_EXTENT:
+			type = typeFactory.integerType;
+			break;
+		case MPI_OFFSET:
+			type = typeFactory.pointerType(typeFactory.voidType);
+			break;
+		case MPI_REGION: // location type or $mem type in fact
+			type = typeFactory.voidType;
+			break;
+		case MPI_VALID:
+			type = typeFactory.booleanType;
+			break;
+		default:
+			throw new CIVLInternalException("unreachable", source);
 		}
 		return new CommonMPIContractExpression(source, scope, lowestScope, type,
 				kind, communicator, arguments, pattern);
@@ -2446,12 +2452,10 @@ public class CommonModelFactory implements ModelFactory {
 
 			funcGuard = functionGuardExpression(functionExpression.getSource(),
 					functionExpression, arguments);
-			newGuard = guard != null
-					? binaryExpression(
-							this.sourceOfSpan(funcGuard.getSource(),
-									newGuard.getSource()),
-							BINARY_OPERATOR.AND, funcGuard, newGuard)
-					: funcGuard;
+			newGuard = guard != null ? binaryExpression(
+					this.sourceOfSpan(funcGuard.getSource(),
+							newGuard.getSource()),
+					BINARY_OPERATOR.AND, funcGuard, newGuard) : funcGuard;
 		}
 		return newGuard;
 	}
@@ -2540,5 +2544,22 @@ public class CommonModelFactory implements ModelFactory {
 			List<Pair<LHSExpression, Expression>> assignPairs) {
 		return new CommonParallelAssignStatement(source, null,
 				this.trueExpression(source), assignPairs);
+	}
+
+	@Override
+	public LambdaExpression lambdaExpression(CIVLSource source,
+			CIVLFunctionType functionType,
+			List<Pair<List<Variable>, Expression>> boundVariableList,
+			Expression restriction, Expression expression) {
+		return new CommonLambdaExpression(source, functionType,
+				boundVariableList, restriction, expression);
+	}
+
+	@Override
+	public ExtendedQuantifiedExpression extendedQuantifiedExpression(
+			CIVLSource source, CIVLType type, ExtendedQuantifier quant,
+			Expression lo, Expression hi, Expression function) {
+		return new CommonExtendedQuantifiedExpression(source, type, quant, lo,
+				hi, function);
 	}
 }

@@ -23,7 +23,9 @@ import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.ExtendedQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
@@ -410,6 +412,21 @@ public class MemoryUnitExpressionAnalyzer {
 					arrayLambda.expression(), result, derefCount);
 			break;
 		}
+		case LAMBDA: {
+			LambdaExpression lambda = (LambdaExpression) expression;
+
+			for (Pair<List<Variable>, Expression> variables : lambda
+					.boundVariableList()) {
+				if (variables.right != null)
+					computeImpactMemoryUnitsOfExpression(writableVars,
+							variables.right, result, derefCount);
+			}
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					lambda.restriction(), result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					lambda.expression(), result, derefCount);
+			break;
+		}
 		case ARRAY_LITERAL: {
 			Expression[] elements = ((ArrayLiteralExpression) expression)
 					.elements();
@@ -469,6 +486,17 @@ public class MemoryUnitExpressionAnalyzer {
 			break;
 		case DYNAMIC_TYPE_OF:
 			break;
+		case EXTENDED_QUANTIFIER: {
+			ExtendedQuantifiedExpression extQuant = (ExtendedQuantifiedExpression) expression;
+
+			computeImpactMemoryUnitsOfExpression(writableVars, extQuant.lower(),
+					result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					extQuant.higher(), result, derefCount);
+			computeImpactMemoryUnitsOfExpression(writableVars,
+					extQuant.function(), result, derefCount);
+			break;
+		}
 		case FUNCTION_IDENTIFIER:// TODO clean it up
 			break;
 		case FUNCTION_GUARD:
