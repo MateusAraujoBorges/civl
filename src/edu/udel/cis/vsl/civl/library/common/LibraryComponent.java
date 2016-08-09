@@ -757,9 +757,7 @@ public abstract class LibraryComponent {
 		state = teval.state;
 		// If "count" == 0:
 		if (reasoner.isValid(universe.equals(count, zero))) {
-			SymbolicExpression result = universe.emptyArray(teval.type);
-
-			return new Evaluation(state, result);
+			return new Evaluation(state, universe.nullExpression());
 		}
 		// If "count" == 1:
 		if (reasoner.isValid(universe.equals(count, one))) {

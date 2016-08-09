@@ -3,7 +3,6 @@ package edu.udel.cis.vsl.civl.transform.common;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -541,6 +540,8 @@ public class ContractTransformerWorker extends BaseWorker {
 				externalList.add(child);
 			}
 		}
+		// $havoc for all global variables:
+
 		// externalList.addAll(createDeclarationsForUsedFunctions());
 		externalList.addAll(processedSourceFiles.right);
 		externalList.add(mainFunction(processedSourceFiles.left, hasMPI));
@@ -1920,6 +1921,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			else if (contract.contractKind() == ContractKind.BEHAVIOR)
 				parseClausesInBehavior(((BehaviorNode) contract).getBody(),
 						localMainBlock);
+		if (localMainBlock.complete())
+			completedResults.add(localMainBlock);
 		for (ParsedContractBlock block : results)
 			if (block.complete())
 				completedResults.add(block);
@@ -2042,15 +2045,11 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private ParsedContractBlock factorOutSequentialBlock(
 			List<ParsedContractBlock> body) {
-		Iterator<ParsedContractBlock> iter = body.iterator();
+		ParsedContractBlock first = body.get(0);
 
-		while (iter.hasNext()) {
-			ParsedContractBlock block = iter.next();
-
-			if (block == null) {
-				iter.remove();
-				return block;
-			}
+		if (first.mpiComm == null) {
+			body.remove(0);
+			return first;
 		}
 		return null;
 	}
@@ -2318,5 +2317,26 @@ public class ContractTransformerWorker extends BaseWorker {
 		throw new CIVLUnimplementedFeatureException(
 				"assigns clause with an argument: "
 						+ arg.prettyRepresentation());
+	}
+
+	/**
+	 * Find out variable declarations in the given list of block item nodes, do
+	 * $havoc for them.
+	 * 
+	 * @param root
+	 * @return
+	 */
+	private List<BlockItemNode> havocForGlobalVariables(
+			List<BlockItemNode> root) {
+		List<BlockItemNode> havocs = new LinkedList<>();
+
+		for (BlockItemNode item : root) {
+			if (item.nodeKind() == NodeKind.VARIABLE_DECLARATION) {
+				String name = ((VariableDeclarationNode) item).getName();
+				havocs.add(nodeFactory.newExpressionStatementNode(
+						createHavocCall(identifierExpression(name))));
+			}
+		}
+		return havocs;
 	}
 }

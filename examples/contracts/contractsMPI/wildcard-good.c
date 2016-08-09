@@ -3,14 +3,14 @@
 int size, rank, x;
 int root;
 
-/*@ \mpi_collective[p2p, MPI_COMM_WORLD]:
+/*@ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
   @   requires size == \mpi_comm_size;
   @   requires 0 <= root < \mpi_comm_size;
-  @   ensures \remote(x, root) == size - 1 || 
-  @           (\remote(x, root) == size - 2 && rank == root);     // The ensurance will not hold due to the wildcard.
+  @   ensures \on(root, x) == size - 1 || 
+  @           (\on(root, x) == size - 2 && rank == root);     // The ensurance will not hold due to the wildcard.
   @*/
-void wildcard() {
+int wildcard() {
   if (rank == root) 
     for (int i = 0; i < size; i++)
       if (i != root)

@@ -172,9 +172,7 @@ int $mpi_send(void *buf, int count, MPI_Datatype datatype, int dest,
 
 #ifdef _MPI_CONTRACT
 //    $elaborate($mpi_extentof(datatype));
-    $pathCondition();
     $elaborate(count);
-    printf("elaborate: %d, datatype = %d\n", count, datatype);
 #endif
     out = $message_pack(place, dest, tag, buf, size);
     $comm_enqueue(comm.p2p, out);   
