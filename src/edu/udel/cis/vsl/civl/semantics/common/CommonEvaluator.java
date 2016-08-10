@@ -3586,6 +3586,7 @@ public class CommonEvaluator implements Evaluator {
 			// low<=hi, TODO needs to check that (hi-low) is bounded
 			NumericExpression index = low;
 			SymbolicExpression current;
+			BooleanExpression indexInBound;
 
 			do {
 				current = universe.apply(lambda, Arrays.asList(index));
@@ -3623,6 +3624,10 @@ public class CommonEvaluator implements Evaluator {
 								"evaluating extended quantification " + quant,
 								source);
 				}
+				index = universe.add(index, one);
+				indexInBound = universe.lessThanEquals(index, high);
+				if (reasoner.isValid(universe.not(indexInBound)))
+					break;
 			} while (true);
 		} else {
 			BooleanExpression lowGtHigh = universe.lessThan(high, low);

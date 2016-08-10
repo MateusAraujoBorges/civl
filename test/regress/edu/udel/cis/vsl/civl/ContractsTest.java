@@ -194,7 +194,7 @@ public class ContractsTest {
 	@Test // extendQuant
 	public void extendQuant() {
 		assertTrue(
-				ui.run("verify -showProgram=false -showTransitions -input_mpi_nprocs=2 -mpiContract=f",
-						filename("extendQuant.c")));
+				ui.run("verify -showProgram=false -showTransitions=false -mpiContract=f ",
+						QUIET, filename("extendQuant.c")));
 	}
 }
