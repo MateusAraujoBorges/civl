@@ -19,6 +19,14 @@
 char * $mpi_coroutine_name(int tag);
 
 /**************************** Duplicated Part *************************************/
+
+#ifdef _MPI_CONTRACT
+struct _mpi_data_size{
+  MPI_Datatype type;
+  size_t size;
+};
+#endif
+
 /* Duplicated definition with the same struct in mpi.h.
    The reason of this duplication is to make civlmpi.cvl
    independent with mpi.cvl. */
@@ -38,6 +46,8 @@ struct $mpi_gcomm {
   $gcollator gcollator;
   $gbarrier gbarrier;
 };
+
+$mpi_data_size_t _mpi_size_map[];//=($mpi_data_size_t[0]) $lambda(int i) (($mpi_data_size_t){0, 0});
 
 /****************************** Helper Functions **********************************/
 int sizeofDatatype(MPI_Datatype datatype) {
@@ -697,14 +707,24 @@ void $mpi_unsnapshot(MPI_Comm comm) {
      $collate_departs(comm.collator);
 }
 
-size_t $mpi_extentof(MPI_Datatype datatype) {
-  //  $abstract size_t $mpi_extent(MPI_Datatype datatype);  
-  //size_t result = $mpi_extent(datatype);
+/*@ depends_on \nothing;
+  @ executes_when \true;
+  @*/
+$state_f $atomic_f size_t $mpi_extentof(MPI_Datatype datatype) {
+  int len=$seq_length(&_mpi_size_map);
 
-  // $assume(result > 0);
-  // return result;
-  $assume(datatype > 0);
-  return datatype;
+  for(int i=0; i<len; i++)
+    if(_mpi_size_map[i].type==datatype)
+      return _mpi_size_map[i].size;
+
+  $mpi_data_size_t newSize;
+
+  newSize.type=datatype;
+  $havoc(&newSize.size);
+  $assume(newSize.size>0);
+  $seq_append(&_mpi_size_map, &newSize, 1);
+  printf("size=%d\n", newSize.size);
+  return newSize.size;
 }
 
 void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {

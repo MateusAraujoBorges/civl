@@ -276,6 +276,13 @@ public abstract class BaseWorker {
 		return null;
 	}
 
+	protected ExpressionNode nullPointer() throws SyntaxException {
+		return nodeFactory.newCastNode(newSource("NULL", 0),
+				this.typeNode(nodeFactory.typeFactory()
+						.pointerType(nodeFactory.typeFactory().voidType())),
+				this.integerConstant(0));
+	}
+
 	/**
 	 * For a compound statement node, removes any child node that is null or an
 	 * empty compound statement node.
@@ -392,16 +399,14 @@ public abstract class BaseWorker {
 						"formal parameter types",
 						new LinkedList<VariableDeclarationNode>()),
 				false);
-		newMainFunction = nodeFactory
-				.newFunctionDefinitionNode(
+		newMainFunction = nodeFactory.newFunctionDefinitionNode(
+				this.newSource("new main function",
+						CivlcTokenConstant.FUNCTION_DEFINITION),
+				this.identifier(MAIN), mainFuncType, null,
+				nodeFactory.newCompoundStatementNode(
 						this.newSource("new main function",
-								CivlcTokenConstant.FUNCTION_DEFINITION),
-						this.identifier(MAIN), mainFuncType, null,
-						nodeFactory
-								.newCompoundStatementNode(
-										this.newSource("new main function",
-												CivlcTokenConstant.BODY),
-										blockItems));
+								CivlcTokenConstant.BODY),
+						blockItems));
 		root.addSequenceChild(newMainFunction);
 	}
 
@@ -1147,23 +1152,18 @@ public abstract class BaseWorker {
 					ExpressionNode extent = arrayType.getVariableSize();
 
 					if (extent != null) {
-						condition = this.nodeFactory
-								.newOperatorNode(expr.getSource(),
-										Operator.LAND,
-										Arrays.asList(
-												nodeFactory.newOperatorNode(
-														expr.getSource(),
-														Operator.LEQ,
-														Arrays.asList(
-																this.integerConstant(
-																		0),
-																index.copy())),
-												nodeFactory.newOperatorNode(
-														expr.getSource(),
-														Operator.LEQ,
-														Arrays.asList(
-																index.copy(),
-																extent.copy()))));
+						condition = this.nodeFactory.newOperatorNode(expr
+								.getSource(), Operator.LAND, Arrays.asList(
+										nodeFactory.newOperatorNode(
+												expr.getSource(),
+												Operator.LEQ,
+												Arrays.asList(
+														this.integerConstant(0),
+														index.copy())),
+										nodeFactory.newOperatorNode(
+												expr.getSource(), Operator.LEQ,
+												Arrays.asList(index.copy(),
+														extent.copy()))));
 					}
 				}
 			} else if (op == Operator.DEREFERENCE) {

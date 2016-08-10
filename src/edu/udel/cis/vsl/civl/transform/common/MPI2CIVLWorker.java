@@ -68,6 +68,14 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 * ************************** Private Static Fields **********************
 	 */
 
+	private final static String MPI_DATATYPE = "MPI_Datatype";
+
+	private final static String MPI_DATASIZE_T = "$mpi_data_size_t";
+
+	private final static String MPI_DATASIZE_STRUCT = "_mpi_data_size";
+
+	private final static String MPI_SIZE_MAP = "_mpi_size_map";
+
 	/**
 	 * The file name of the MPI standard header
 	 */
@@ -508,9 +516,10 @@ public class MPI2CIVLWorker extends BaseWorker {
 	 *         main function which will be moved up to the higher scope (i.e.,
 	 *         the file scope of the final AST) and become $input variables of
 	 *         the final AST.
+	 * @throws SyntaxException
 	 */
 	private Pair<FunctionDefinitionNode, List<BlockItemNode>> transformMPIProcess(
-			SequenceNode<BlockItemNode> root) {
+			SequenceNode<BlockItemNode> root) throws SyntaxException {
 		List<BlockItemNode> filescopeList = new LinkedList<>();
 		List<BlockItemNode> processList = new LinkedList<>();
 		int commTypeIndex = -1, mpiInitIndex = -1;
@@ -551,7 +560,19 @@ public class MPI2CIVLWorker extends BaseWorker {
 
 				if (type.isInputQualified() || type.isOutputQualified())
 					filescopeList.add(child);
-				else if (name.equals(MPI_STATE_VAR)) {
+				else if (name.equals(MPI_SIZE_MAP)) {
+					filescopeList.add(variable);
+					filescopeList.add(nodeFactory.newExpressionStatementNode(
+							functionCall(variable.getSource(), SEQ_INIT,
+									Arrays.asList(
+											nodeFactory.newOperatorNode(
+													variable.getSource(),
+													Operator.ADDRESSOF,
+													this.identifierExpression(
+															variable.getName())),
+											this.integerConstant(0),
+											nullPointer()))));
+				} else if (name.equals(MPI_STATE_VAR)) {
 					processList.add(mpiInitIndex - 1, child);
 				} else if (name.equals(COMM_WORLD)) {
 					// ignore original MPI_COMM_WORLD declaration
@@ -614,7 +635,9 @@ public class MPI2CIVLWorker extends BaseWorker {
 				TypedefDeclarationNode typedef = (TypedefDeclarationNode) child;
 				String name = typedef.getName();
 
-				if (name.equals(GCOMM_TYPE)) {
+				if (name.equals(MPI_DATATYPE) || name.equals(MPI_DATASIZE_T))
+					filescopeList.add(child);
+				else if (name.equals(GCOMM_TYPE)) {
 					// gcommStructName
 					StructureOrUnionTypeNode struct = (StructureOrUnionTypeNode) typedef
 							.getTypeNode();
@@ -632,7 +655,8 @@ public class MPI2CIVLWorker extends BaseWorker {
 				StructureOrUnionTypeNode struct = (StructureOrUnionTypeNode) child;
 				String name = struct.getName();
 
-				if (name.equals(gcommStructName))
+				if (name.equals(gcommStructName)
+						|| name.equals(MPI_DATASIZE_STRUCT))
 					filescopeList.add(child);
 				else
 					processList.add(child);
