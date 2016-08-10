@@ -47,7 +47,9 @@ struct $mpi_gcomm {
   $gbarrier gbarrier;
 };
 
+#ifdef _MPI_CONTRACT
 $mpi_data_size_t _mpi_size_map[];//=($mpi_data_size_t[0]) $lambda(int i) (($mpi_data_size_t){0, 0});
+#endif
 
 /****************************** Helper Functions **********************************/
 int sizeofDatatype(MPI_Datatype datatype) {
@@ -707,6 +709,7 @@ void $mpi_unsnapshot(MPI_Comm comm) {
      $collate_departs(comm.collator);
 }
 
+#ifdef _MPI_CONTRACT
 /*@ depends_on \nothing;
   @ executes_when \true;
   @*/
@@ -726,6 +729,7 @@ $state_f $atomic_f size_t $mpi_extentof(MPI_Datatype datatype) {
   printf("size=%d\n", newSize.size);
   return newSize.size;
 }
+#endif
 
 void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
   size_t realCount = count * $mpi_extentof(datatype);
