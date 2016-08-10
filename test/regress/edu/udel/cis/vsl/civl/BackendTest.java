@@ -50,6 +50,11 @@ public class BackendTest {
 	}
 
 	@Test
+	public void symbolicConsts() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("symbolicConstants.cvl")));
+	}
+
+	@Test
 	public void returnNull() throws ABCException {
 		assertFalse(ui.run(VERIFY, errorBound(2), NO_PRINTF, QUIET,
 				filename("returnNull.cvl")));
@@ -84,6 +89,11 @@ public class BackendTest {
 	@Test
 	public void atomicBlocking2() {
 		assertFalse(ui.run(VERIFY, QUIET, filename("atomic2.c")));
+	}
+
+	@Test
+	public void valueAt() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("valueat.cvl")));
 	}
 
 	@AfterClass

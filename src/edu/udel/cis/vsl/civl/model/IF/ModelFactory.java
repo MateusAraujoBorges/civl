@@ -62,6 +62,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
+import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.WildcardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.reference.ArraySliceReference;
@@ -1914,4 +1915,18 @@ public interface ModelFactory {
 
 	ParallelAssignStatement parallelAssignStatement(CIVLSource source,
 			List<Pair<LHSExpression, Expression>> assignPairs);
+
+	/**
+	 * creates a new <code>$value_at</code> expression.
+	 * 
+	 * @param source
+	 *            the source of the <code>$value_at</code> expression.
+	 * @param state
+	 *            the state to be used for evaluation
+	 * @param expression
+	 *            the expression to be evaluated
+	 * @return the new <code>$value_at</code> expression.
+	 */
+	ValueAtExpression valueAtExpression(CIVLSource source, Expression state,
+			Expression expression);
 }

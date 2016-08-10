@@ -1,0 +1,21 @@
+
+
+void foo(){
+  int a;
+
+  $havoc(&a);
+  $assume(a<10);
+}
+
+void goo(){
+  int b, c;
+  $havoc(&b);
+  //$assume(b>0);
+  $havoc(&c);
+  $assert(b<10);
+}
+
+int main(){
+  foo();
+  goo();
+}

@@ -35,6 +35,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.AtomicLockAssignStatement;
@@ -2400,6 +2401,19 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 					result.append(
 							this.statementEvaluation(state, null, pid, call));
+					break;
+				}
+				case VALUE_AT : {
+					ValueAtExpression valueAt = (ValueAtExpression) expression;
+
+					result.append("$value_at(");
+					temp = this.expressionEvaluationWorker(state, pid,
+							valueAt.state(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					result.append(", ");
+					result.append(valueAt.expression());
+					result.append(")");
 					break;
 				}
 				case ADDRESS_OF :

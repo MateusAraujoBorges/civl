@@ -44,7 +44,7 @@ public interface Expression extends Sourceable {
 		/**
 		 * A $state_null constant, instance of {@link StatenullExpression}
 		 */
-		STATE_NULL, STATE_REF, FUNC_CALL, REC_DOMAIN_LITERAL, WILDCARD, NOTHING, ARRAY_LAMBDA, LAMBDA, EXTENDED_QUANTIFIER
+		STATE_NULL, STATE_REF, FUNC_CALL, REC_DOMAIN_LITERAL, WILDCARD, NOTHING, ARRAY_LAMBDA, LAMBDA, EXTENDED_QUANTIFIER, VALUE_AT
 	}
 
 	/**

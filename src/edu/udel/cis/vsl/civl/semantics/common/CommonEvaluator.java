@@ -67,6 +67,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SystemGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
@@ -3529,6 +3530,10 @@ public class CommonEvaluator implements Evaluator {
 				result = evaluateExtendedQuantifiedExpression(state, pid,
 						(ExtendedQuantifiedExpression) expression);
 				break;
+			case VALUE_AT :
+				result = evaluateValueAtExpression(state, pid,
+						(ValueAtExpression) expression);
+				break;
 			case MEMORY_UNIT :
 			case NULL_LITERAL :
 			case STRING_LITERAL :
@@ -3540,6 +3545,31 @@ public class CommonEvaluator implements Evaluator {
 				throw new CIVLInternalException("unreachable", expression);
 		}
 		return result;
+	}
+
+	private Evaluation evaluateValueAtExpression(State state, int pid,
+			ValueAtExpression valueAt)
+			throws UnsatisfiablePathConditionException {
+		Evaluation eval = evaluate(state, pid, valueAt.state());
+		SymbolicExpression colStateVal = eval.value, stateRef;
+		NumericExpression place;
+		CIVLSource source = valueAt.getSource();
+		String process = state.getProcessState(pid).name();
+		State colState;
+
+		state = eval.state;
+		place = (NumericExpression) universe.tupleRead(colStateVal,
+				universe.intObject(0));
+		eval = this.dereference(source, state, process, valueAt.state(),
+				universe.tupleRead(colStateVal, universe.intObject(1)), false);
+		stateRef = universe.tupleRead(eval.value, universe.intObject(1));
+		state = eval.state;
+		colState = this.stateFactory.getStateByReference(
+				modelFactory.getStateRef(source, stateRef));
+		eval = this.evaluate(colState, symbolicUtil.extractInt(source, place),
+				valueAt.expression());
+		eval.state = state;
+		return eval;
 	}
 
 	private Evaluation evaluateExtendedQuantifiedExpression(State state,

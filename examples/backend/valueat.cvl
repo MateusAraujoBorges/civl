@@ -1,0 +1,15 @@
+#include<collate.cvh>
+
+$gcollator gcollator=$gcollator_create($here, 1);
+$collator collator=$collator_create(gcollator, $here, 0);
+
+int main(){
+  int i=0;
+  $collate_state pre=$collate_arrives(collator, $here);
+  
+  i++;
+  $assert($value_at(pre, i) != i);
+  $collate_departs(collator);
+  $free(collator);
+  $free(gcollator);
+}
