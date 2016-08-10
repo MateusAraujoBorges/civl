@@ -1,11 +1,11 @@
 #include<mpi.h>
 int left, right, nxl, nx, rank, nsteps;
-double * u, * u_new;
+double * u, * u_new, k;
 
 /*@ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
   @   requires nxl > 0;
-  @   requires \mpi_valid(u, MPI_DOUBLE, nxl + 2);
+  @   requires \mpi_valid(u, nxl + 2, MPI_DOUBLE);
   @   ensures  \on(left, u[nxl + 1]) == u[1];         //deliver 1
   @   ensures  \on(right, u[0]) == u[nxl];            //deliver 2
   @   ensures  \on(left, u[nxl]) == u[0];             //obtain  1
@@ -39,11 +39,6 @@ void exchange_ghost_cells() {
   @          u[i] == \old(u[i] + k*(u[i+1] + u[i-1] - 2*u[i]));
   @*/
 void update() {
-  /*@
-    @ loop invariants \forall int j; 0< j < i
-    @                  ==> 
-    @                 u_new[j] == u[j] + k*(u[j+1] + u[j-1] - 2*u[j]);
-    @*/
   for (int i = 1; i <= nxl; i++)
     u_new[i] = u[i] + k*(u[i+1] + u[i-1] - 2*u[i]);
   double * tmp = u_new; u_new=u; u=tmp;
@@ -56,7 +51,7 @@ void update() {
   @   requires \mpi_valid(u, nxl + 2, MPI_DOUBLE);
   @   requires \mpi_valid(u_new, nxl + 2, MPI_DOUBLE);
   @   requires  nx == \sum(0, \mpi_comm_size - 1, 
-  @                    (\lambda int k; \remote(nxl, k)));
+  @                    (\lambda int k; \on(k, nxl)));
   @   ensures  \forall int i; 0 < i <= nx
   @             ==>
   @            u[i] == \old(u[i] + k*(u[i+1] + u[i-1] - 2*u[i]));

@@ -46,21 +46,21 @@ void update() {
  * ...         
  */
 
-/*@ \mpi_collective[MPI_COMM_WORLD, P2P]:
-  @   requires \mpi_valid(u_curr[1], MPI_DOUBLE, 0);
+/*@ \mpi_collective(MPI_COMM_WORLD, P2P):
+  @   requires \mpi_valid(u_curr[1], 0, MPI_DOUBLE);
   @             && \mpi_valid(u_curr[nyl], MPI_DOUBLE, 0);
-  @             && \mpi_valid(u_next[1], MPI_DOUBLE, 0);
-  @             && \mpi_valid(u_next[nyl], MPI_DOUBLE, 0);
-  @   requires \mpi_valid(&u_curr[1][1], MPI_DOUBLE, nxl);
-  @   requires \mpi_valid(&u_curr[nyl][1], MPI_DOUBLE, nxl);
-  @   requires \mpi_valid(&u_next[1][1], MPI_DOUBLE, nxl);
-  @   requires \mpi_valid(&u_next[nyl][1], MPI_DOUBLE, nxl);
+  @             && \mpi_valid(u_next[1], 0, MPI_DOUBLE);
+  @             && \mpi_valid(u_next[nyl], 0, MPI_DOUBLE);
+  @   requires \mpi_valid(&u_curr[1][1], nxl, MPI_DOUBLE);
+  @   requires \mpi_valid(&u_curr[nyl][1], nxl, MPI_DOUBLE);
+  @   requires \mpi_valid(&u_next[1][1], nxl, MPI_DOUBLE);
+  @   requires \mpi_valid(&u_next[nyl][1], nxl, MPI_DOUBLE);
   @   requires rank == \mpi_comm_rank;
   @   requires nprocsx * nprocsy == \mpi_comm_size;
   @   ensures  top != MPI_PROC_NULL ==> 
-  @            \mpi_equals(&u_curr[1][1], MPI_DOUBLE, nxl, \remote(&u_curr[nyl+1][1], top));  // obtain
+  @            \mpi_equals(&u_curr[1][1], nxl, MPI_DOUBLE, \on(top, &u_curr[nyl+1][1]));  // obtain
   @   ensures  bottom != MPI_PROC_NULL ==> 
-  @            \mpi_equals(&u_curr[nyl][1], MPI_DOUBLE, nxl, \remote(&u_curr[0][1], bottom)); // obtain
+  @            \mpi_equals(&u_curr[nyl][1], nxl, MPI_DOUBLE, \on(bottom, &u_curr[0][1])); // obtain
   @   ensures  left != MPI_PROC_NULL ==> (\forall int i; 1 <= i <= nyl
   @                                       ==>
   @                                       u_curr[i][1] == \remote(u_curr[i][nxl+1], left);    // obtain
