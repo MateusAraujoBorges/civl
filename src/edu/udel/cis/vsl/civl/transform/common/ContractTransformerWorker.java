@@ -2,7 +2,6 @@ package edu.udel.cis.vsl.civl.transform.common;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -125,7 +124,13 @@ public class ContractTransformerWorker extends BaseWorker {
 	/**
 	 * A CIVL-MPI function identifier:
 	 */
-	private final static String MPI_SIZEOF = "$mpi_extentof";
+	private final static String MPI_EXTENTOF = "$mpi_extentof";
+
+	/**
+	 * A CIVL-MPI function identifier:
+	 */
+	private final static String MPI_SIZEOF = "sizeofDatatype";
+
 	/**
 	 * A CIVL-MPI function identifier:
 	 */
@@ -214,6 +219,11 @@ public class ContractTransformerWorker extends BaseWorker {
 			+ "_heap_";
 
 	private int tmpHeapCounter = 0;
+
+	private final static String TMP_EXTENT_PREFIX = CONTRACT_VAR_PREFIX
+			+ "_extent_";
+
+	private int tmpExtentCounter = 0;
 
 	/**
 	 * This class represents a contract behavior. Without loss of generality,
@@ -747,7 +757,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				for (ExpressionNode requires : condClause
 						.getRequires(nodeFactory))
 					bodyItems.addAll(translateConditionalPredicates(false,
-							condClause.condition, requires));
+							condClause.condition, requires).left);
 
 		// Transform step 2: Inserts $mpi_comm_rank and $mpi_comm_size:
 		intTypeNode = nodeFactory.newBasicTypeNode(
@@ -782,7 +792,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				for (ExpressionNode ensures : condClauses
 						.getEnsures(nodeFactory))
 					bodyItems.addAll(translateConditionalPredicates(true,
-							condClauses.condition, ensures));
+							condClauses.condition, ensures).left);
 		}
 
 		// Transform step 7: Insert assumes for ensurances of each
@@ -863,9 +873,10 @@ public class ContractTransformerWorker extends BaseWorker {
 		if (localBlock != null)
 			for (ConditionalClauses requires : localBlock
 					.getConditionalClauses())
-				for (ExpressionNode pred : requires.getRequires(nodeFactory))
+				for (ExpressionNode pred : requires.getRequires(nodeFactory)) {
 					bodyItems.addAll(translateConditionalPredicates(true,
-							requires.condition, pred));
+							requires.condition, pred).left);
+				}
 
 		// Transform step 2: Add $mpi_comm_rank and $mpi_comm_size variables:
 		intTypeNode = nodeFactory.newBasicTypeNode(
@@ -910,7 +921,7 @@ public class ContractTransformerWorker extends BaseWorker {
 					.getConditionalClauses())
 				for (ExpressionNode pred : ensures.getEnsures(nodeFactory))
 					bodyItems.addAll(translateConditionalPredicates(false,
-							ensures.condition, pred));
+							ensures.condition, pred).left);
 
 		// Transform step 10-11: Inserts snapshot and collective assertions for
 		// ensures of each MPI-collective block:
@@ -1041,12 +1052,17 @@ public class ContractTransformerWorker extends BaseWorker {
 					// bodyItems.addAll(mpiValidCalls);
 				}
 			}
+		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
+			for (ExpressionNode requires : condClauses
+					.getRequires(nodeFactory)) {
+				Pair<List<BlockItemNode>, List<BlockItemNode>> assumesAndTmpVar = translateConditionalPredicates(
+						true, condClauses.condition, requires);
+
+				bodyItems.addAll(assumesAndTmpVar.right);
+				coAssumesComponents.addAll(assumesAndTmpVar.left);
+			}
 		// take snapshot after do $mpi_valid which elaborates "datatype"s:
 		bodyItems.add(collateStateDecl);
-		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
-			for (ExpressionNode requires : condClauses.getRequires(nodeFactory))
-				coAssumesComponents.addAll(translateConditionalPredicates(true,
-						condClauses.condition, requires));
 		if (coAssumesComponents.isEmpty())
 			return bodyItems;
 		// $when ($complete) $with(...) { $assume( ... ) } :
@@ -1108,11 +1124,16 @@ public class ContractTransformerWorker extends BaseWorker {
 		StatementNode stmt;
 
 		bodyItems.addAll(mpiConstantsInitialization(mpiComm));
-		bodyItems.add(collateStateDecl);
 		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
-			for (ExpressionNode requires : condClauses.getRequires(nodeFactory))
-				coAssertsComponents.addAll(translateConditionalPredicates(false,
-						condClauses.condition, requires));
+			for (ExpressionNode requires : condClauses
+					.getRequires(nodeFactory)) {
+				Pair<List<BlockItemNode>, List<BlockItemNode>> assertsAndTmpVars = translateConditionalPredicates(
+						false, condClauses.condition, requires);
+
+				bodyItems.addAll(assertsAndTmpVars.right);
+				coAssertsComponents.addAll(assertsAndTmpVars.left);
+			}
+		bodyItems.add(collateStateDecl);
 		// $comm_empty_in && $comm_empty_out:
 		coAssertsComponents.add(
 				createAssertion(commEmptyInAndOut(mpiComm, mpiBlock.pattern)));
@@ -1154,28 +1175,34 @@ public class ContractTransformerWorker extends BaseWorker {
 				COLLATE_STATE_VAR_POST, mpiComm);
 		StatementNode stmt;
 		List<BlockItemNode> bodyItems = new LinkedList<>();
+		List<BlockItemNode> asserts = new LinkedList<>();
 
-		// $collate_state cp = $collate_snapshot():
-		bodyItems.add(collateStateDecl);
 		// $when($complete(...)) $with(...) { assert }:
 		for (ConditionalClauses condClauses : mpiBlock
 				.getConditionalClauses()) {
 			StatementNode withStmt;
 			List<BlockItemNode> coAssertStmtComponents = new LinkedList<>();
 
-			for (ExpressionNode ensures : condClauses.getEnsures(nodeFactory))
-				coAssertStmtComponents.addAll(translateConditionalPredicates(
-						false, condClauses.condition, ensures));
+			for (ExpressionNode ensures : condClauses.getEnsures(nodeFactory)) {
+				Pair<List<BlockItemNode>, List<BlockItemNode>> assertsAndTmpVar = translateConditionalPredicates(
+						false, condClauses.condition, ensures);
+
+				bodyItems.addAll(assertsAndTmpVar.right);
+				coAssertStmtComponents.addAll(assertsAndTmpVar.left);
+			}
 			if (!coAssertStmtComponents.isEmpty()) {
 				stmt = nodeFactory.newCompoundStatementNode(mpiBlock.source,
 						coAssertStmtComponents);
 				withStmt = nodeFactory.newWithNode(stmt.getSource(),
 						identifierExpression(collateStateDecl.getName()), stmt);
-				bodyItems.add(execAfterComplete(
+				asserts.add(execAfterComplete(
 						identifierExpression(collateStateDecl.getName()),
 						withStmt, withStmt.getSource()));
 			}
 		}
+		// $collate_state cp = $collate_snapshot():
+		bodyItems.add(collateStateDecl);
+		bodyItems.addAll(asserts);
 		stmt = createAssertion(commEmptyInAndOut(mpiComm, mpiBlock.pattern));
 		bodyItems.add(execAfterComplete(
 				identifierExpression(collateStateDecl.getName()), stmt,
@@ -1209,20 +1236,24 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private List<BlockItemNode> transformCoEnsurances4NT(
 			ParsedContractBlock mpiBlock) {
-		StatementNode stmt;
 		List<BlockItemNode> bodyItems = new LinkedList<>();
+		List<BlockItemNode> asserts = new LinkedList<>();
+		List<BlockItemNode> tmpVars = new LinkedList<>();
 		VariableDeclarationNode collateStateDecl = createCollateStateDeclaration(
 				COLLATE_STATE_VAR_POST, mpiBlock.mpiComm);
 
-		bodyItems.add(collateStateDecl);
 		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
 			for (ExpressionNode ensures : condClauses.getEnsures(nodeFactory)) {
-				stmt = translateEnsurance2Inference(
+				Pair<StatementNode, List<BlockItemNode>> assertsAndTempVar = translateEnsurance2Inference(
 						identifierExpression(collateStateDecl.getName()),
 						condClauses.condition, ensures,
 						condClauses.getWaitsfors());
-				bodyItems.add(stmt);
+				asserts.add(assertsAndTempVar.left);
+				tmpVars.addAll(assertsAndTempVar.right);
 			}
+		bodyItems.addAll(tmpVars);
+		bodyItems.add(collateStateDecl);
+		bodyItems.addAll(asserts);
 		return bodyItems;
 	}
 
@@ -1244,16 +1275,20 @@ public class ContractTransformerWorker extends BaseWorker {
 	 *            A {@link ConditionalClausePredicates} which gives branch
 	 *            conditions and expressions as predicates for either assume or
 	 *            assert.
-	 * @return The translated if-then statement.
+	 * @return LEFT: The translated if-then statement; RIGHT tmpVarsDecls which
+	 *         should be added at outside of the with block.
 	 * @throws SyntaxException
 	 */
-	private Collection<BlockItemNode> translateConditionalPredicates(
+	private Pair<List<BlockItemNode>, List<BlockItemNode>> translateConditionalPredicates(
 			boolean isAssume, ExpressionNode cond, ExpressionNode preds)
 			throws SyntaxException {
 		List<BlockItemNode> stmts = new LinkedList<>();
 		ExpressionNode conditionNeedsChecking = null;// =
 														// condition4ErrorChecking(preds);
+		Pair<List<BlockItemNode>, ExpressionNode> replaceDatatype;
 
+		replaceDatatype = transformMPIDatatype2extentofDatatype(preds);
+		preds = replaceDatatype.right;
 		stmts.add(isAssume ? createAssumption(preds) : createAssertion(preds));
 		if (conditionNeedsChecking != null)
 			stmts.add(createAssertion(conditionNeedsChecking));
@@ -1265,9 +1300,9 @@ public class ContractTransformerWorker extends BaseWorker {
 					.newCompoundStatementNode(preds.getSource(), stmts);
 
 			stmt = nodeFactory.newIfNode(cond.getSource(), cond.copy(), stmt);
-			return Arrays.asList(stmt);
+			return new Pair<>(Arrays.asList(stmt), replaceDatatype.left);
 		}
-		return stmts;
+		return new Pair<>(stmts, replaceDatatype.left);
 	}
 
 	/**
@@ -1302,13 +1337,17 @@ public class ContractTransformerWorker extends BaseWorker {
 	 *            The {@link Source} associates with the ensurances.
 	 * @return
 	 */
-	private StatementNode translateEnsurance2Inference(
+	private Pair<StatementNode, List<BlockItemNode>> translateEnsurance2Inference(
 			ExpressionNode collateStateRef, ExpressionNode condition,
 			ExpressionNode ensurance, List<ExpressionNode> waitsforArgs) {
 		assert collateStateRef.parent() == null;
 		boolean hasGuard = !waitsforArgs.isEmpty();
-		StatementNode stmt = createAssumption(ensurance);
+		StatementNode stmt;
+		Pair<List<BlockItemNode>, ExpressionNode> tmpVarDecls_pred = transformMPIDatatype2extentofDatatype(
+				ensurance);
 
+		ensurance = tmpVarDecls_pred.right;
+		stmt = createAssumption(ensurance);
 		stmt = nodeFactory.newWithNode(collateStateRef.getSource(),
 				collateStateRef.copy(), stmt);
 		if (hasGuard) {
@@ -1324,7 +1363,7 @@ public class ContractTransformerWorker extends BaseWorker {
 					condition.copy(), stmt);
 		if (hasGuard)
 			stmt = nodeFactory.newRunNode(stmt.getSource(), stmt);
-		return stmt;
+		return new Pair<>(stmt, tmpVarDecls_pred.left);
 	}
 
 	/**
@@ -2150,7 +2189,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		ExpressionNode datatype = mpiValid.getArgument(2);
 		ExpressionNode countTimesMPISizeof = nodeFactory.newOperatorNode(source,
 				Operator.TIMES, Arrays.asList(count.copy(),
-						createMPISizeofCall(datatype.copy())));
+						createMPIExtentofCall(datatype.copy())));
 		List<BlockItemNode> results = new LinkedList<>();
 		TypeNode charType = nodeFactory.newBasicTypeNode(datatype.getSource(),
 				BasicTypeKind.CHAR);
@@ -2190,7 +2229,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		ExpressionNode datatype = mpiValid.getArgument(2);
 		ExpressionNode countTimesMPISizeof = nodeFactory.newOperatorNode(source,
 				Operator.TIMES, Arrays.asList(count.copy(),
-						createMPISizeofCall(datatype.copy())));
+						createMPIExtentofCall(datatype.copy())));
 		List<BlockItemNode> results = new LinkedList<>();
 		TypeNode charType = nodeFactory.newBasicTypeNode(datatype.getSource(),
 				BasicTypeKind.CHAR);
@@ -2217,7 +2256,16 @@ public class ContractTransformerWorker extends BaseWorker {
 	/**
 	 * <code>$mpi_sizeof(datatype)</code>
 	 */
-	private ExpressionNode createMPISizeofCall(ExpressionNode datatype) {
+	private ExpressionNode createMPIExtentofCall(ExpressionNode datatype) {
+		return nodeFactory.newFunctionCallNode(datatype.getSource(),
+				identifierExpression(MPI_EXTENTOF), Arrays.asList(datatype),
+				null);
+	}
+
+	/**
+	 * <code>sizeofDatatype(datatype)</code>
+	 */
+	private ExpressionNode createSizeofDatatype(ExpressionNode datatype) {
 		return nodeFactory.newFunctionCallNode(datatype.getSource(),
 				identifierExpression(MPI_SIZEOF), Arrays.asList(datatype),
 				null);
@@ -2341,5 +2389,83 @@ public class ContractTransformerWorker extends BaseWorker {
 			}
 		}
 		return havocs;
+	}
+
+	/**
+	 * Transform all "MPI_Datatype datatype" appears in the condition to
+	 * $mpi_extentof(datatype);
+	 * 
+	 * @param condition
+	 * @return
+	 */
+	private Pair<List<BlockItemNode>, ExpressionNode> transformMPIDatatype2extentofDatatype(
+			ExpressionNode condition) {
+		ExpressionNode copy = condition.copy();
+		ASTNode node = copy;
+		ExpressionNode datatype;
+		List<BlockItemNode> results = new LinkedList<>();
+		List<Pair<ExpressionNode, ExpressionNode>> item2datatypeSizeof = new LinkedList<>();
+
+		do {
+			if (node instanceof MPIContractExpressionNode) {
+				MPIContractExpressionNode mpiExpr = (MPIContractExpressionNode) node;
+
+				switch (mpiExpr.MPIContractExpressionKind()) {
+					case MPI_EXTENT : {
+						VariableDeclarationNode varDecl;
+
+						datatype = mpiExpr.getArgument(0);
+						varDecl = createTmpVarForDatatype(datatype.copy(),
+								true);
+						results.add(varDecl);
+						item2datatypeSizeof.add(new Pair<>(mpiExpr,
+								identifierExpression(varDecl.getName())));
+						break;
+					}
+					case MPI_EQUALS :
+					case MPI_OFFSET :
+					case MPI_REGION :
+					case MPI_VALID : {
+						VariableDeclarationNode varDecl;
+
+						datatype = mpiExpr.getArgument(2);
+						varDecl = createTmpVarForDatatype(datatype.copy(),
+								false);
+						results.add(varDecl);
+						item2datatypeSizeof.add(new Pair<>(datatype,
+								identifierExpression(varDecl.getName())));
+						break;
+					}
+					default :
+						// do nothing
+				}
+			}
+			node = node.nextDFS();
+		} while (node != null);
+		for (Pair<ExpressionNode, ExpressionNode> item : item2datatypeSizeof) {
+			ExpressionNode oldOne = item.left;
+			ExpressionNode newOne = item.right;
+			ASTNode parent = oldOne.parent();
+			int childIdx = oldOne.childIndex();
+
+			oldOne.remove();
+			parent.setChild(childIdx, newOne);
+		}
+		return new Pair<>(results, copy);
+	}
+
+	private VariableDeclarationNode createTmpVarForDatatype(
+			ExpressionNode datatype, boolean isMPIExtent) {
+		TypeNode intNode = nodeFactory.newBasicTypeNode(datatype.getSource(),
+				BasicTypeKind.INT);
+
+		if (isMPIExtent)
+			return nodeFactory.newVariableDeclarationNode(datatype.getSource(),
+					identifier(TMP_EXTENT_PREFIX + (tmpExtentCounter++)),
+					intNode, createMPIExtentofCall(datatype));
+		else
+			return nodeFactory.newVariableDeclarationNode(datatype.getSource(),
+					identifier(TMP_EXTENT_PREFIX + (tmpExtentCounter++)),
+					intNode, createSizeofDatatype(datatype));
 	}
 }

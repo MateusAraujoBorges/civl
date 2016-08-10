@@ -276,10 +276,6 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 		if (assertedTypeEnum != null)
 			mpiType2Civl = LibmpiEvaluator.mpiTypeToCIVLType(universe,
 					typeFactory, assertedTypeEnum.intValue(), source);
-		else if (civlConfig.isEnableMpiContract())
-			// In MPI contract mode, an arbitrary MPI_Datatype is allowed:
-			mpiType2Civl = LibmpiEvaluator.nonConcreateMpiTypeToCIVLType(
-					universe, typeFactory, assertedType);
 		else
 			throw new CIVLInternalException(
 					"Executing $mpi_check_buffer(void *, int, MPI_Datatype) with arbitrary MPI_Datatype.",

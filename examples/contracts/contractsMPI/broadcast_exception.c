@@ -8,7 +8,7 @@
   @   requires 0 < count && count < 10;
   @   requires \mpi_valid(buf, count, datatype);
   @   ensures \mpi_valid(buf, count, datatype);
-  @   ensures \mpi_equals(buf, count, datatype, \on(root, buf));
+  @   ensures \mpi_equals(buf, count + 1, datatype, \on(root, buf));
   @   waitsfor root;
   @*/
 int broadcast(void * buf, int count, 
@@ -23,7 +23,7 @@ int broadcast(void * buf, int count,
       if (i != root)
 	MPI_Send(buf, count, datatype, i, tag, comm);
   } else
-    MPI_Recv(buf, count, datatype, 0, tag, comm,
+    MPI_Recv(buf, count, datatype, root, tag, comm,
 	     MPI_STATUS_IGNORE);
   return 0;
 }

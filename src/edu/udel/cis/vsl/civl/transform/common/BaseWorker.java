@@ -73,7 +73,6 @@ import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
  * @author siegel
  */
 public abstract class BaseWorker {
-
 	protected final static Map<String, String> EMPTY_MACRO_MAP = new HashMap<>(
 			0);
 	protected final static String GEN_MAIN = GeneralTransformer.PREFIX + "main";
