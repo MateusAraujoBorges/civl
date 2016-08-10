@@ -554,7 +554,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		newAst.prettyPrint(System.out, false);
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -1251,7 +1251,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			boolean isAssume, ExpressionNode cond, ExpressionNode preds)
 			throws SyntaxException {
 		List<BlockItemNode> stmts = new LinkedList<>();
-		ExpressionNode conditionNeedsChecking = condition4ErrorChecking(preds);
+		ExpressionNode conditionNeedsChecking = null;// =
+														// condition4ErrorChecking(preds);
 
 		stmts.add(isAssume ? createAssumption(preds) : createAssertion(preds));
 		if (conditionNeedsChecking != null)

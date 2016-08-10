@@ -13,9 +13,9 @@
   @   requires \mpi_valid(sendbuf, sendcount, sendtype);
   @   behavior imroot:
   @     assumes  \mpi_comm_rank == root;
-  @     requires \mpi_valid(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @     requires recvcount * \mpi_extent(recvtype) == 
   @              sendcount * \mpi_extent(sendtype);
+  @     requires \mpi_valid(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @     ensures  \mpi_equals(\mpi_offset(recvbuf, root * sendcount, sendtype), sendcount, sendtype, sendbuf);
   @   behavior imnroot:
   @     assumes  \mpi_comm_rank != root;
