@@ -747,6 +747,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		TypeNode intTypeNode;
 		List<ParsedContractBlock> parsedContractBlocks;
 		ParsedContractBlock localBlock = null;
+		boolean returnVoid = false;
 
 		// Transform step 1: Inserts assertions for sequential requirements:
 		parsedContractBlocks = parseFunctionContracts(funcDecl.getContract());
@@ -772,13 +773,16 @@ public class ContractTransformerWorker extends BaseWorker {
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.addAll(transformCoRequirements4NT(mpiBlock));
 
+		returnVoid = isVoidType(
+				funcDecl.getTypeNode().getReturnType().getType());
 		// Transform step 4: Inserts $result declaration:
-		bodyItems.add(nodeFactory.newVariableDeclarationNode(contractSource,
-				identifier(RESULT),
-				funcDecl.getTypeNode().getReturnType().copy()));
-		bodyItems.add(nodeFactory.newExpressionStatementNode(
-				createHavocCall(identifierExpression(RESULT))));
-
+		if (!returnVoid) {
+			bodyItems.add(nodeFactory.newVariableDeclarationNode(contractSource,
+					identifier(RESULT),
+					funcDecl.getTypeNode().getReturnType().copy()));
+			bodyItems.add(nodeFactory.newExpressionStatementNode(
+					createHavocCall(identifierExpression(RESULT))));
+		}
 		// Transform step 5: Translate assigns clauses:
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			for (ConditionalClauses condClause : mpiBlock.behaviors)
@@ -807,9 +811,10 @@ public class ContractTransformerWorker extends BaseWorker {
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
 					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
-		bodyItems.add(nodeFactory.newReturnNode(
-				newSource(RETURN_RESULT, CivlcTokenConstant.RETURN),
-				identifierExpression(RESULT)));
+		if (!returnVoid)
+			bodyItems.add(nodeFactory.newReturnNode(
+					newSource(RETURN_RESULT, CivlcTokenConstant.RETURN),
+					identifierExpression(RESULT)));
 		body = nodeFactory.newCompoundStatementNode(funcDecl.getSource(),
 				bodyItems);
 		return nodeFactory.newFunctionDefinitionNode(funcDecl.getSource(),
@@ -903,9 +908,10 @@ public class ContractTransformerWorker extends BaseWorker {
 					.add(identifierExpression(param.getIdentifier().name()));
 		targetCall = nodeFactory.newFunctionCallNode(driverSource,
 				funcIdentifier.copy(), funcParamIdentfiers, null);
-		bodyItems.add(nodeFactory.newVariableDeclarationNode(contractSource,
-				identifier(RESULT),
-				funcDefi.getTypeNode().getReturnType().copy(), targetCall));
+		if (!isVoidType(funcDefi.getTypeNode().getReturnType().getType()))
+			bodyItems.add(nodeFactory.newVariableDeclarationNode(contractSource,
+					identifier(RESULT),
+					funcDefi.getTypeNode().getReturnType().copy(), targetCall));
 		// Transform step 8: Inserts "$mpi_contract_entered"s:
 		// for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 		// for (Pair<ExpressionNode, List<ExpressionNode>> condWaitsforArgs :

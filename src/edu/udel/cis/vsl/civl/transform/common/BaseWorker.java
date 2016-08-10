@@ -45,6 +45,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
+import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
 import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
@@ -709,6 +710,10 @@ public abstract class BaseWorker {
 	protected TypeNode voidType() {
 		return nodeFactory.newVoidTypeNode(
 				this.newSource("type void", CivlcTokenConstant.VOID));
+	}
+
+	protected boolean isVoidType(Type type) {
+		return type.kind() == TypeKind.VOID;
 	}
 
 	/**
