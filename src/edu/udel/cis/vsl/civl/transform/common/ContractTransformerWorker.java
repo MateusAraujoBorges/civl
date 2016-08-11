@@ -2,8 +2,10 @@ package edu.udel.cis.vsl.civl.transform.common;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
@@ -32,16 +34,20 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.PointerTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
@@ -224,6 +230,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			+ "_extent_";
 
 	private int tmpExtentCounter = 0;
+
+	private Set<VariableDeclarationNode> globalVarDecls = new HashSet<>();
 
 	/**
 	 * This class represents a contract behavior. Without loss of generality,
@@ -879,8 +887,15 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ConditionalClauses requires : localBlock
 					.getConditionalClauses())
 				for (ExpressionNode pred : requires.getRequires(nodeFactory)) {
+					Pair<List<OperatorNode>, ExpressionNode> valids_newPred = getValidExpressionNodes(
+							pred);
+
 					bodyItems.addAll(translateConditionalPredicates(true,
-							requires.condition, pred).left);
+							requires.condition, valids_newPred.right).left);
+
+					for (OperatorNode valid : valids_newPred.left)
+						bodyItems.addAll(createMallocStatementSequenceFoValid(
+								valid, funcDefi));
 				}
 
 		// Transform step 2: Add $mpi_comm_rank and $mpi_comm_size variables:
@@ -2176,6 +2191,39 @@ public class ContractTransformerWorker extends BaseWorker {
 	}
 
 	/**
+	 * Find out all <code>\valid</code> expressions in the given expression
+	 * 
+	 * @param expression
+	 * @return
+	 */
+	private Pair<List<OperatorNode>, ExpressionNode> getValidExpressionNodes(
+			ExpressionNode expression) {
+		ExpressionNode copy = expression.copy();
+		ASTNode astNode = copy;
+		List<OperatorNode> results = new LinkedList<>();
+		OperatorNode opNode;
+		ExpressionNode trueExpr = nodeFactory
+				.newBooleanConstantNode(expression.getSource(), true);
+
+		do {
+			if (astNode instanceof OperatorNode)
+				if ((opNode = (OperatorNode) astNode)
+						.getOperator() == Operator.VALID) {
+					results.add(opNode);
+				}
+		} while ((astNode = astNode.nextDFS()) != null);
+
+		for (ExpressionNode item : results) {
+			ASTNode parent = item.parent();
+			int childIdx = item.childIndex();
+
+			item.remove();
+			parent.setChild(childIdx, trueExpr.copy());
+		}
+		return new Pair<>(results, copy);
+	}
+
+	/**
 	 * <code>
 	 * 
 	 * void * buf = (char *)malloc(count * $mpi_sizeof(datatype) * sizeof(char));
@@ -2227,6 +2275,79 @@ public class ContractTransformerWorker extends BaseWorker {
 		return results;
 	}
 
+	private List<BlockItemNode> createMallocStatementSequenceFoValid(
+			OperatorNode valid, FunctionDeclarationNode funcDecl)
+			throws SyntaxException {
+		Source source = valid.getSource();
+		ExpressionNode argument = valid.getArgument(0);
+		ExpressionNode count;
+		ExpressionNode buf;
+		TypeNode referedType, ptrType = null;
+
+		if (argument.expressionKind() == ExpressionKind.OPERATOR) {
+			OperatorNode ptrSetExpr = (OperatorNode) argument;
+			ExpressionNode range = ptrSetExpr.getArgument(1);
+
+			if (range.expressionKind() == ExpressionKind.REGULAR_RANGE) {
+				RegularRangeNode rangeNode = (RegularRangeNode) range;
+
+				count = rangeNode.getHigh();
+			} else {
+				count = range;
+			}
+			buf = ptrSetExpr.getArgument(0);
+		} else {
+			count = nodeFactory.newIntegerConstantNode(source, "0");
+			buf = argument;
+		}
+
+		if (buf.expressionKind() != ExpressionKind.IDENTIFIER_EXPRESSION)
+			throw new CIVLUnimplementedFeatureException(
+					"ACSL valid pointer must refer to a formal parameter");
+		IdentifierExpressionNode bufId = (IdentifierExpressionNode) buf;
+
+		for (VariableDeclarationNode formal : funcDecl.getTypeNode()
+				.getParameters()) {
+			if (bufId.getIdentifier().name().equals(formal.getName())) {
+				ptrType = formal.getTypeNode();
+				break;
+			}
+		}
+		for (VariableDeclarationNode global : globalVarDecls) {
+			if (bufId.getIdentifier().name().equals(global.getName())) {
+				ptrType = global.getTypeNode();
+				break;
+			}
+		}
+		if (ptrType == null)
+			throw new CIVLUnimplementedFeatureException(
+					"ACSL valid pointer must refer to a formal parameter");
+		assert ptrType.kind() == TypeNodeKind.POINTER;
+		referedType = ((PointerTypeNode) ptrType).referencedType();
+
+		ArrayTypeNode arrayTypeNode;
+
+		arrayTypeNode = nodeFactory.newArrayTypeNode(buf.getSource(),
+				referedType.copy(), count.copy());
+
+		VariableDeclarationNode tmpHeapVar = createTmpHeapVariable(
+				buf.getSource(), arrayTypeNode);
+		List<BlockItemNode> results = new LinkedList<>();
+		ExpressionNode assignExpr = nodeFactory.newOperatorNode(source,
+				Operator.ASSIGN, buf.copy(),
+				identifierExpression(tmpHeapVar.getName()));
+
+		results.add(tmpHeapVar);
+		results.add(nodeFactory.newExpressionStatementNode(assignExpr));
+		return results;
+	}
+
+	private VariableDeclarationNode createTmpHeapVariable(Source source,
+			TypeNode type) {
+		return nodeFactory.newVariableDeclarationNode(source,
+				identifier(TMP_HEAP_PREFIX + (tmpHeapCounter++)), type);
+	}
+
 	private List<BlockItemNode> createMallocStatementSequenceForMPIValid2(
 			MPIContractExpressionNode mpiValid) throws SyntaxException {
 		Source source = mpiValid.getSource();
@@ -2241,10 +2362,8 @@ public class ContractTransformerWorker extends BaseWorker {
 				BasicTypeKind.CHAR);
 		ArrayTypeNode arrayTypeNode = nodeFactory.newArrayTypeNode(source,
 				charType.copy(), countTimesMPISizeof.copy());
-		VariableDeclarationNode tmpHeap = nodeFactory
-				.newVariableDeclarationNode(source,
-						identifier(TMP_HEAP_PREFIX + (tmpHeapCounter++)),
-						arrayTypeNode);
+		VariableDeclarationNode tmpHeap = createTmpHeapVariable(source,
+				arrayTypeNode);
 		ExpressionNode assignBuf = nodeFactory.newOperatorNode(buf.getSource(),
 				Operator.ASSIGN, Arrays.asList(buf.copy(),
 						identifierExpression(tmpHeap.getName())));
@@ -2389,7 +2508,10 @@ public class ContractTransformerWorker extends BaseWorker {
 
 		for (BlockItemNode item : root) {
 			if (item.nodeKind() == NodeKind.VARIABLE_DECLARATION) {
+				VariableDeclarationNode decl = ((VariableDeclarationNode) item);
 				String name = ((VariableDeclarationNode) item).getName();
+
+				globalVarDecls.add(decl);
 				havocs.add(nodeFactory.newExpressionStatementNode(
 						createHavocCall(identifierExpression(name))));
 			}

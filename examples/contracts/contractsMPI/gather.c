@@ -35,6 +35,7 @@ int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
     void *ptr;
     
     ptr = $mpi_pointer_add(recvbuf, root * recvcount, recvtype);
+    $elaborate(recvcount);
     memcpy(ptr, sendbuf, recvcount * sizeofDatatype(recvtype));
   }else
     MPI_Send(sendbuf, sendcount, sendtype, root, tag, comm);

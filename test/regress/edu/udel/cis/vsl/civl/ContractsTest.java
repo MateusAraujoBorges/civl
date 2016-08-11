@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -11,8 +12,6 @@ import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class ContractsTest {
 	/* *************************** Static Fields *************************** */
-
-	private static String enableContract = "-mpiContract";
 
 	private static File rootDir = new File(new File("examples"), "contracts");
 
@@ -90,6 +89,14 @@ public class ContractsTest {
 	}
 
 	@Test
+	public void bcast_bad() {
+		assertFalse(ui.run(
+				"verify -input_mpi_nprocs=2 -showProgram "
+						+ "-mpiContract=broadcast",
+				filename("contractsMPI/broadcast_bad.c")));
+	}
+
+	@Test
 	public void bcast_order() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=broadcast",
 				filename("contractsMPI/broadcast_order.c")));
@@ -124,12 +131,6 @@ public class ContractsTest {
 	}
 
 	@Test
-	public void autoallgather() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
-				filename("contractsMPI/auto_allgather.c")));
-	}
-
-	@Test
 	public void scatter() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
 				filename("contractsMPI/scatter.c")));
@@ -143,7 +144,7 @@ public class ContractsTest {
 
 	@Test
 	public void wildcardError() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=wildcard",
+		assertFalse(ui.run("verify -input_mpi_nprocs=3 -mpiContract=wildcard",
 				filename("contractsMPI/wildcard-error.c")));
 	}
 
