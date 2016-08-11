@@ -587,6 +587,9 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 	 * @return The numeric expression of the sizeof expression.
 	 */
 	private NumericExpression sizeofPrimitiveType(PrimitiveTypeKind kind) {
+		if (kind == PrimitiveTypeKind.CHAR)
+			return universe.oneInt();
+
 		String name = "SIZEOF_" + kind;
 		NumericExpression result = (NumericExpression) universe
 				.symbolicConstant(universe.stringObject(name),

@@ -709,37 +709,6 @@ void $mpi_unsnapshot(MPI_Comm comm) {
      $collate_departs(comm.collator);
 }
 
-#ifdef _MPI_CONTRACT
-$atomic_f void printfDataSizeMap(int len){
-  printf("_mpi_size_map: ");
-  for(int i=0; i<len; i++)
-    printf("<%d,%d>, ", _mpi_size_map[i].type, _mpi_size_map[i].size);
-  printf("\n");
-}
-
-/*@ depends_on \nothing;
-  @ executes_when \true;
-  @*/
-$state_f $atomic_f size_t $mpi_extentof(MPI_Datatype datatype) {
-  int len=$seq_length(&_mpi_size_map);
-
-  for(int i=0; i<len; i++)
-    if(_mpi_size_map[i].type==datatype)
-      return _mpi_size_map[i].size;
-
-  $mpi_data_size_t newSize;
-
-  newSize.type=datatype;
-  $havoc(&newSize.size);
-  $assume(newSize.size>0);
-  $seq_append(&_mpi_size_map, &newSize, 1);
-  printfDataSizeMap(len);
-  printf("$mpi_extentof: datatype=%d, size=%d\n", datatype, newSize.size);
-  return newSize.size;
-}
-
-#endif
-
 void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
   size_t realCount = count * $mpi_extentof(datatype);
   char newValues[realCount];

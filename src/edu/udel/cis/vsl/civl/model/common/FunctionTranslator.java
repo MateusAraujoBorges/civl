@@ -28,6 +28,9 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.AssignsOrReadsNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.InvariantNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractConstantNode.MPIConstantKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundInitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundLiteralObject;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.LiteralObject;
@@ -44,6 +47,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CompoundLiteralNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode.ConstantKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ContractVerifyNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DerivativeExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DotNode;
@@ -58,6 +62,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteOnExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ScopeOfNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.SizeableNode;
@@ -96,6 +101,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
+import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonMPIConstantNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.ArrayType;
 import edu.udel.cis.vsl.abc.ast.type.IF.DomainType;
 import edu.udel.cis.vsl.abc.ast.type.IF.EnumerationType;
@@ -143,8 +149,12 @@ import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LiteralExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
+import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
+import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
@@ -3956,16 +3966,22 @@ public class FunctionTranslator {
 				result = translateResultNode((ResultNode) expressionNode,
 						scope);
 				break;
-			// Translate expressions with ContractTransformer:
-			case REMOTE_REFERENCE :
-			case MPI_CONTRACT_EXPRESSION : {
-				ContractTranslator contractTranslator = new ContractTranslator(
-						modelBuilder, modelFactory, typeFactory, function);
-
-				result = contractTranslator
-						.translateExpressionNode(expressionNode, scope, true);
-				break;
+			case MPI_CONTRACT_EXPRESSION :
+				return translateMPIContractExpression(
+						(MPIContractExpressionNode) expressionNode, scope);
+			case NOTHING :
+				return this.modelFactory
+						.nothing(modelFactory.sourceOf(expressionNode));
+			case WILDCARD : {
+				return this.modelFactory.wildcardExpression(
+						modelFactory.sourceOf(expressionNode),
+						this.translateABCType(
+								modelFactory.sourceOf(expressionNode), scope,
+								expressionNode.getConvertedType()));
 			}
+			case REMOTE_REFERENCE :
+				return translateRemoteReferenceNode(
+						(RemoteOnExpressionNode) expressionNode, scope);
 			case EXTENDED_QUANTIFIED :
 				result = translateExtendedQuantifiedExpression(
 						(ExtendedQuantifiedExpressionNode) expressionNode,
@@ -3985,6 +4001,136 @@ public class FunctionTranslator {
 			result = this.applyConversions(scope, expressionNode, result);
 		}
 		return result;
+	}
+
+	/**
+	 * Translate a {@link RemoteOnExpressionNode} to a {@link BinaryExpression}
+	 * whose operator is {@link BINARY_OPERATOR#REMOTE}.
+	 * 
+	 * @param expressionNode
+	 * @param scope
+	 * @return
+	 */
+	private Expression translateRemoteReferenceNode(
+			RemoteOnExpressionNode expressionNode, Scope scope) {
+		ExpressionNode processNode = expressionNode.getProcessExpression();
+		ExpressionNode foreignExprNode = expressionNode
+				.getForeignExpressionNode();
+		Expression expr;
+		Expression process;
+
+		expr = translateExpressionNode(foreignExprNode, scope, true);
+		process = this.translateExpressionNode(processNode, scope, false);
+		return modelFactory.binaryExpression(
+				modelFactory.sourceOf(expressionNode), BINARY_OPERATOR.REMOTE,
+				process, expr);
+	}
+
+	/**
+	 * Translate a {@link MPIContractExpressionNode} into a
+	 * {@link MPIContractExpression}.
+	 * 
+	 * @param node
+	 *            a {@link MPIContractExpressionNode}
+	 * @param scope
+	 *            the current scope
+	 * @return
+	 */
+	private Expression translateMPIContractExpression(
+			MPIContractExpressionNode node, Scope scope) {
+		MPIContractExpressionKind kind = node.MPIContractExpressionKind();
+		MPI_CONTRACT_EXPRESSION_KIND civlMpiContractKind = null;
+		int numArgs = 0;
+
+		switch (kind) {
+			case MPI_INTEGER_CONSTANT :
+				return translateMPIIntegerConstantNode(
+						(CommonMPIConstantNode) node, scope);
+			case MPI_EQUALS :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EQUALS;
+				numArgs = 4;
+				break;
+			case MPI_REGION :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_REGION;
+				numArgs = 3;
+				break;
+			case MPI_AGREE :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE;
+				numArgs = 1;
+				break;
+			case MPI_EXTENT :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EXTENT;
+				numArgs = 1;
+				break;
+			case MPI_OFFSET :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_OFFSET;
+				numArgs = 3;
+				break;
+			case MPI_VALID :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_VALID;
+				numArgs = 3;
+				break;
+			default :
+				throw new CIVLInternalException("Unreachable",
+						node.getSource());
+		}
+		// if (currentMPICollectiveTitle.left == null
+		// || currentMPICollectiveTitle.right == null) {
+		// throw new CIVLSyntaxException(
+		// "MPI Contract expression: " + civlMpiContractKind
+		// + " can only be used in MPI collective behaviors");
+		// }
+		assert numArgs > 0 && civlMpiContractKind != null;
+
+		Expression[] arguments = new Expression[numArgs];
+
+		for (int i = 0; i < numArgs; i++)
+			arguments[i] = translateExpressionNode(node.getArgument(i), scope,
+					true);
+		// Saving \mpi_agree variables:
+		// if (civlMpiContractKind == MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE)
+		// if (currentContractKind == ContractKind.REQUIRES) {
+		// if (currentContractKind == ContractKind.REQUIRES)
+		// agreedVaraibles.add(
+		// ((VariableExpression) arguments[0]).variable());
+		// } else
+		// throw new CIVLSyntaxException(
+		// "\\mpi_agree currently can only be used in requirements.",
+		// modelFactory.sourceOf(node));
+		return modelFactory.mpiContractExpression(modelFactory.sourceOf(node),
+				scope, null, arguments, civlMpiContractKind, null);
+
+	}
+
+	/**
+	 * Translate a {@link MPIConstantNode} to constant {@link Variable}
+	 * 
+	 * @param node
+	 * @param scope
+	 * @return
+	 */
+	private Expression translateMPIIntegerConstantNode(
+			CommonMPIConstantNode node, Scope scope) {
+		MPIConstantKind kind = node.getMPIConstantKind();
+		CIVLSource source = modelFactory.sourceOf(node);
+		Identifier variableIdent;
+		Variable result;
+
+		switch (kind) {
+			case MPI_COMM_RANK :
+				variableIdent = modelFactory.identifier(source,
+						ModelConfiguration.ContractMPICommRankName);
+				break;
+			case MPI_COMM_SIZE :
+				variableIdent = modelFactory.identifier(source,
+						ModelConfiguration.ContractMPICommSizeName);
+				break;
+			default :
+				throw new CIVLInternalException("Unreachable",
+						(CIVLSource) null);
+		}
+		result = scope.variable(variableIdent);
+		return modelFactory.variableExpression(source, result);
 	}
 
 	private Expression translateValueAtExpression(ValueAtNode valueAt,
@@ -4874,11 +5020,24 @@ public class FunctionTranslator {
 				// }
 			}
 				break;
-			case PLUS :
+			case PLUS :{
+				ExpressionNode arg0, arg1;
+
+				arg0 = operatorNode.getArgument(0);
+				arg1 = operatorNode.getArgument(1);
+				if (arg0.expressionKind().equals(ExpressionKind.REGULAR_RANGE)
+						|| arg1.expressionKind()
+								.equals(ExpressionKind.REGULAR_RANGE))
+					result= translatePointerSet(
+							modelFactory.sourceOf(operatorNode),
+							this.translateExpressionNode(arg0, scope, true),
+							this.translateExpressionNode(arg1, scope, true),
+							BINARY_OPERATOR.PLUS, scope);
+				else
 				result = translatePlusOperation(source,
 						modelFactory.numericExpression(arguments.get(0)),
 						modelFactory.numericExpression(arguments.get(1)));
-				break;
+				break;}
 			case SUBSCRIPT :
 				throw new CIVLInternalException("unreachable", source);
 			case TIMES :
@@ -4895,11 +5054,82 @@ public class FunctionTranslator {
 			case UNARYPLUS :
 				result = modelFactory.numericExpression(arguments.get(0));
 				break;
+			case VALID :
+				Expression arg = translateExpressionNode(
+						operatorNode.getArgument(0), scope, true);
+				return translateValidOperator(
+						modelFactory.sourceOf(operatorNode), arg, scope);
 			default :
 				throw new CIVLUnimplementedFeatureException(
 						"Unsupported operator: " + operatorNode.getOperator()
 								+ " in expression " + operatorNode);
 		}
+		return result;
+	}
+	
+
+	/**
+	 * Translate an operation which is a pointer add a range into an
+	 * {@link MemExpression}
+	 * 
+	 * @param source
+	 *            The CIVLSource of the operation expression
+	 * @param arg0
+	 *            One of the operand
+	 * @param arg1
+	 *            One of the operand
+	 * @param op
+	 *            BINARY_OPERATOR, can be either PLUS or MINUS
+	 * @param scope
+	 * @return
+	 */
+	private Expression translatePointerSet(CIVLSource source, Expression arg0,
+			Expression arg1, BINARY_OPERATOR op, Scope scope) {
+		Expression result, pointer, range;
+
+		if (arg0.getExpressionType().isPointerType()) {
+			pointer = arg0;
+			range = arg1;
+		} else {
+			assert arg1.getExpressionType().isPointerType();
+			pointer = arg1;
+			range = arg0;
+		}
+		// TODO:LHSExpression
+		result = modelFactory.pointerSetExpression(source, scope,
+				(LHSExpression) pointer, range);
+		return result;
+	}
+
+	/**
+	 * Translate an valid operation into an {@link UnaryExpression}
+	 * 
+	 * @param source
+	 *            The CIVLSource of the valid operation
+	 * @param arg
+	 *            The operand of the valid operation
+	 * @param scope
+	 * @return
+	 */
+	private Expression translateValidOperator(CIVLSource source, Expression arg,
+			Scope scope) {
+		PointerSetExpression mem;
+		UnaryExpression result;
+
+		// TODO: check if pointer is LHSExpression:
+		// \valid operator syntactically accepts either [pointer + range] or
+		// [pointer]:
+		if (arg.getExpressionType().isPointerType()) {
+			if (arg instanceof LHSExpression)
+				mem = modelFactory.pointerSetExpression(arg.getSource(), scope,
+						(LHSExpression) arg, null);
+			else
+				throw new CIVLUnimplementedFeatureException(
+						"Singleton pointer set but the element is not a LHSExpression.");
+		} else
+			mem = (PointerSetExpression) arg;
+		result = modelFactory.unaryExpression(source, UNARY_OPERATOR.VALID,
+				mem);
 		return result;
 	}
 

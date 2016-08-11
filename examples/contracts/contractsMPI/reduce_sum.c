@@ -9,13 +9,14 @@
 /*@ \mpi_collective(comm, P2P):
   @   requires count > 0;
   @   requires datatype==MPI_INT;
+  @   requires 0<count && count*\mpi_extent(datatype) < 5;
   @   requires \mpi_valid(sendbuf, count, datatype);
   @   requires \mpi_valid(recvbuf, count, datatype);
   @   requires \mpi_agree(root) && \mpi_agree(count);
   @   requires 0 <= root && root < \mpi_comm_size;
-  @   ensures  \forall integer i; 0<= i <count ==> 
-  @                recvbuf[i] == \sum(0, \mpi_comm_size, 
-  @                \lambda int k; \on(k, (int)sendbuf[i]));
+  @   ensures  \forall integer i; 0<= i && i <count ==> 
+  @                (int)recvbuf[i] == \sum(0, \mpi_comm_size, 
+  @                \lambda int k; \on(k, ((int)sendbuf[i])));
   @   waitsfor root;
   @
   @*/
