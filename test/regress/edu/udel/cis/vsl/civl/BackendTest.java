@@ -93,7 +93,12 @@ public class BackendTest {
 
 	@Test
 	public void valueAt() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("valueat.cvl")));
+		assertTrue(ui.run(VERIFY, filename("valueat.cvl")));
+	}
+
+	@Test
+	public void valueAt_seq() {
+		assertTrue(ui.run(VERIFY, filename("valueat_seq.cvl")));
 	}
 
 	@AfterClass
