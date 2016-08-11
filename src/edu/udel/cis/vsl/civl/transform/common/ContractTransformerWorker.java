@@ -50,6 +50,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
+import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -231,6 +232,10 @@ public class ContractTransformerWorker extends BaseWorker {
 
 	private int tmpExtentCounter = 0;
 
+	private final static String TMP_OLD_PREFIX = CONTRACT_VAR_PREFIX + "_old_";
+
+	private int tmpOldCounter = 0;
+
 	private Set<VariableDeclarationNode> globalVarDecls = new HashSet<>();
 
 	/**
@@ -316,11 +321,14 @@ public class ContractTransformerWorker extends BaseWorker {
 			if (requiresSet.isEmpty())
 				return requiresSet;
 
-			ExpressionNode result = requiresSet.remove(0).copy();
+			ExpressionNode result = requiresSet.remove(0);
 
-			for (ExpressionNode requires : requiresSet)
+			result.remove();
+			for (ExpressionNode requires : requiresSet) {
+				requires.remove();
 				result = nodeFactory.newOperatorNode(requires.getSource(),
-						Operator.LAND, result, requires.copy());
+						Operator.LAND, result, requires);
+			}
 			requiresSet.clear();
 			requiresSet.add(result);
 			return requiresSet;
@@ -337,11 +345,14 @@ public class ContractTransformerWorker extends BaseWorker {
 			if (ensuresSet.isEmpty())
 				return ensuresSet;
 
-			ExpressionNode result = ensuresSet.remove(0).copy();
+			ExpressionNode result = ensuresSet.remove(0);
 
-			for (ExpressionNode ensures : ensuresSet)
+			result.remove();
+			for (ExpressionNode ensures : ensuresSet) {
+				ensures.remove();
 				result = nodeFactory.newOperatorNode(ensures.getSource(),
-						Operator.LAND, result, ensures.copy());
+						Operator.LAND, result, ensures);
+			}
 			ensuresSet.clear();
 			ensuresSet.add(result);
 			return ensuresSet;
@@ -747,6 +758,8 @@ public class ContractTransformerWorker extends BaseWorker {
 		CompoundStatementNode body;
 		FunctionTypeNode funcTypeNode = funcDecl.getTypeNode();
 		List<BlockItemNode> bodyItems = new LinkedList<>();
+		List<BlockItemNode> localAssumes4ensurances = new LinkedList<>();
+		List<BlockItemNode> tmpVars4localOldExprs = new LinkedList<>();
 		Source contractSource = funcDecl.getContract().getSource();
 		Source mpiCommRankSource = newSource("int " + MPI_COMM_RANK_CONST + ";",
 				CivlcTokenConstant.DECLARATION);
@@ -766,7 +779,24 @@ public class ContractTransformerWorker extends BaseWorker {
 				for (ExpressionNode requires : condClause
 						.getRequires(nodeFactory))
 					bodyItems.addAll(translateConditionalPredicates(false,
-							condClause.condition, requires).left);
+							condClause.condition, requires.copy()).left);
+
+		// Transform local ensurances to assumes, add temporary variable
+		// declarations for old expressions:
+		if (localBlock != null) {
+			for (ConditionalClauses condClauses : localBlock
+					.getConditionalClauses())
+				for (ExpressionNode ensures : condClauses
+						.getEnsures(nodeFactory)) {
+					tmpVars4localOldExprs
+							.addAll(replaceOldExpressionNodes4Local(ensures));
+					localAssumes4ensurances
+							.addAll(translateConditionalPredicates(true,
+									condClauses.condition,
+									ensures.copy()).left);
+				}
+		}
+		bodyItems.addAll(tmpVars4localOldExprs);
 
 		// Transform step 2: Inserts $mpi_comm_rank and $mpi_comm_size:
 		intTypeNode = nodeFactory.newBasicTypeNode(
@@ -798,14 +828,7 @@ public class ContractTransformerWorker extends BaseWorker {
 						condClause.condition, condClause.getAssignsArgs()));
 
 		// Transform step 6: Insert assumes for sequential ensurances:
-		if (localBlock != null) {
-			for (ConditionalClauses condClauses : localBlock
-					.getConditionalClauses())
-				for (ExpressionNode ensures : condClauses
-						.getEnsures(nodeFactory))
-					bodyItems.addAll(translateConditionalPredicates(true,
-							condClauses.condition, ensures).left);
-		}
+		bodyItems.addAll(localAssumes4ensurances);
 
 		// Transform step 7: Insert assumes for ensurances of each
 		// MPI-collective block:
@@ -866,6 +889,8 @@ public class ContractTransformerWorker extends BaseWorker {
 		FunctionTypeNode funcTypeNode = funcDefi.getTypeNode();
 		List<ExpressionNode> funcParamIdentfiers = new LinkedList<>();
 		List<BlockItemNode> bodyItems = new LinkedList<>();
+		List<BlockItemNode> tmpVarDecls4OldExprs = new LinkedList<>();
+		List<BlockItemNode> assert4localEnsures = new LinkedList<>();
 		String driverName = DRIVER_PREFIX + funcDefi.getName();
 		Source contractSource = funcDefi.getContract().getSource();
 		Source driverSource = newSource(driverName,
@@ -888,7 +913,7 @@ public class ContractTransformerWorker extends BaseWorker {
 					.getConditionalClauses())
 				for (ExpressionNode pred : requires.getRequires(nodeFactory)) {
 					Pair<List<OperatorNode>, ExpressionNode> valids_newPred = getValidExpressionNodes(
-							pred);
+							pred.copy());
 
 					bodyItems.addAll(translateConditionalPredicates(true,
 							requires.condition, valids_newPred.right).left);
@@ -897,6 +922,20 @@ public class ContractTransformerWorker extends BaseWorker {
 						bodyItems.addAll(createMallocStatementSequenceFoValid(
 								valid, funcDefi));
 				}
+		// Transform sequential ensurances into asserts, add temporary variable
+		// declarations here for old expressions:
+		if (localBlock != null)
+			for (ConditionalClauses ensures : localBlock
+					.getConditionalClauses())
+				for (ExpressionNode pred : ensures.getEnsures(nodeFactory)) {
+					tmpVarDecls4OldExprs
+							.addAll(replaceOldExpressionNodes4Local(pred));
+					assert4localEnsures
+							.addAll(translateConditionalPredicates(false,
+									ensures.condition, pred.copy()).left);
+
+				}
+		bodyItems.addAll(tmpVarDecls4OldExprs);
 
 		// Transform step 2: Add $mpi_comm_rank and $mpi_comm_size variables:
 		intTypeNode = nodeFactory.newBasicTypeNode(
@@ -927,6 +966,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			bodyItems.add(nodeFactory.newVariableDeclarationNode(contractSource,
 					identifier(RESULT),
 					funcDefi.getTypeNode().getReturnType().copy(), targetCall));
+		else
+			bodyItems.add(nodeFactory.newExpressionStatementNode(targetCall));
 		// Transform step 8: Inserts "$mpi_contract_entered"s:
 		// for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 		// for (Pair<ExpressionNode, List<ExpressionNode>> condWaitsforArgs :
@@ -937,12 +978,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		// mpiBlock.source));
 
 		// Transform step 9: Insert sequential assertions:
-		if (localBlock != null)
-			for (ConditionalClauses ensures : localBlock
-					.getConditionalClauses())
-				for (ExpressionNode pred : ensures.getEnsures(nodeFactory))
-					bodyItems.addAll(translateConditionalPredicates(false,
-							ensures.condition, pred).left);
+		bodyItems.addAll(assert4localEnsures);
 
 		// Transform step 10-11: Inserts snapshot and collective assertions for
 		// ensures of each MPI-collective block:
@@ -1062,7 +1098,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ExpressionNode requires : condClauses
 					.getRequires(nodeFactory)) {
 				List<MPIContractExpressionNode> mpiValids = getMPIValidExpressionNodes(
-						requires);
+						requires.copy());
+
 				for (MPIContractExpressionNode mpiValid : mpiValids) {
 					// List<BlockItemNode> mpiValidCalls =
 					// createMallocStatementSequenceForMPIValid(
@@ -1149,7 +1186,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ExpressionNode requires : condClauses
 					.getRequires(nodeFactory)) {
 				Pair<List<BlockItemNode>, List<BlockItemNode>> assertsAndTmpVars = translateConditionalPredicates(
-						false, condClauses.condition, requires);
+						false, condClauses.condition, requires.copy());
 
 				bodyItems.addAll(assertsAndTmpVars.right);
 				coAssertsComponents.addAll(assertsAndTmpVars.left);
@@ -1205,9 +1242,11 @@ public class ContractTransformerWorker extends BaseWorker {
 			List<BlockItemNode> coAssertStmtComponents = new LinkedList<>();
 
 			for (ExpressionNode ensures : condClauses.getEnsures(nodeFactory)) {
-				Pair<List<BlockItemNode>, List<BlockItemNode>> assertsAndTmpVar = translateConditionalPredicates(
-						false, condClauses.condition, ensures);
+				Pair<List<BlockItemNode>, List<BlockItemNode>> assertsAndTmpVar;
 
+				ensures = replaceOldExpressionNodes4collective(ensures.copy());
+				assertsAndTmpVar = translateConditionalPredicates(false,
+						condClauses.condition, ensures);
 				bodyItems.addAll(assertsAndTmpVar.right);
 				coAssertStmtComponents.addAll(assertsAndTmpVar.left);
 			}
@@ -1267,7 +1306,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ExpressionNode ensures : condClauses.getEnsures(nodeFactory)) {
 				Pair<StatementNode, List<BlockItemNode>> assertsAndTempVar = translateEnsurance2Inference(
 						identifierExpression(collateStateDecl.getName()),
-						condClauses.condition, ensures,
+						condClauses.condition, ensures.copy(),
 						condClauses.getWaitsfors());
 				asserts.add(assertsAndTempVar.left);
 				tmpVars.addAll(assertsAndTempVar.right);
@@ -1364,10 +1403,11 @@ public class ContractTransformerWorker extends BaseWorker {
 		assert collateStateRef.parent() == null;
 		boolean hasGuard = !waitsforArgs.isEmpty();
 		StatementNode stmt;
-		Pair<List<BlockItemNode>, ExpressionNode> tmpVarDecls_pred = transformMPIDatatype2extentofDatatype(
-				ensurance);
+		Pair<List<BlockItemNode>, ExpressionNode> tmpVarDecls_pred;
 
+		tmpVarDecls_pred = transformMPIDatatype2extentofDatatype(ensurance);
 		ensurance = tmpVarDecls_pred.right;
+		ensurance = replaceOldExpressionNodes4collective(ensurance);
 		stmt = createAssumption(ensurance);
 		stmt = nodeFactory.newWithNode(collateStateRef.getSource(),
 				collateStateRef.copy(), stmt);
@@ -2224,6 +2264,78 @@ public class ContractTransformerWorker extends BaseWorker {
 	}
 
 	/**
+	 * Find out all <code>\old</code> expressions in the given expression and
+	 * replace them with $value_at expressions:
+	 * 
+	 * @param expression
+	 * @return
+	 */
+	private ExpressionNode replaceOldExpressionNodes4collective(
+			ExpressionNode expression) {
+		ExpressionNode copy = expression.copy();
+		ASTNode astNode = copy;
+		List<OperatorNode> results = new LinkedList<>();
+		OperatorNode opNode;
+		ExpressionNode valueAtNode;
+
+		do {
+			if (astNode instanceof OperatorNode)
+				if ((opNode = (OperatorNode) astNode)
+						.getOperator() == Operator.OLD) {
+					results.add(opNode);
+				}
+		} while ((astNode = astNode.nextDFS()) != null);
+
+		for (OperatorNode item : results) {
+			ASTNode parent = item.parent();
+			int childIdx = item.childIndex();
+
+			item.remove();
+
+			valueAtNode = nodeFactory.newValueAtNode(item.getSource(),
+					identifierExpression(
+							identifierPrefix + COLLATE_STATE_VAR_PRE),
+					item.getArgument(0).copy());
+
+			parent.setChild(childIdx, valueAtNode);
+		}
+		return copy;
+	}
+
+	private List<VariableDeclarationNode> replaceOldExpressionNodes4Local(
+			ExpressionNode expression) {
+		VariableDeclarationNode varDecl;
+		ASTNode astNode = expression;
+		OperatorNode opNode;
+		List<OperatorNode> opNodes = new LinkedList<>();
+		List<VariableDeclarationNode> varDecls = new LinkedList<>();
+
+		// In order to get the type of the expression, it has to search the
+		// whole expression twice:
+		do {
+			if (astNode instanceof OperatorNode)
+				if ((opNode = (OperatorNode) astNode)
+						.getOperator() == Operator.OLD) {
+					opNodes.add(opNode);
+				}
+		} while ((astNode = astNode.nextDFS()) != null);
+		for (OperatorNode item : opNodes) {
+			Type itemType = item.getConvertedType();
+			ASTNode parent = item.parent();
+			int childIdx = item.childIndex();
+			ExpressionNode arg = item.getArgument(0);
+
+			item.remove();
+			item.getArgument(0).remove();
+			varDecl = nodeFactory.newVariableDeclarationNode(item.getSource(),
+					identifier(TMP_OLD_PREFIX + (tmpOldCounter++)),
+					typeNode(itemType), arg);
+			parent.setChild(childIdx, identifierExpression(varDecl.getName()));
+			varDecls.add(varDecl);
+		}
+		return varDecls;
+	}
+	/**
 	 * <code>
 	 * 
 	 * void * buf = (char *)malloc(count * $mpi_sizeof(datatype) * sizeof(char));
@@ -2275,6 +2387,15 @@ public class ContractTransformerWorker extends BaseWorker {
 		return results;
 	}
 
+	/**
+	 * Make an array for a \valid expression as the heap object. The type must
+	 * be obtained from looking up formal parameters and global variables.
+	 * 
+	 * @param valid
+	 * @param funcDecl
+	 * @return
+	 * @throws SyntaxException
+	 */
 	private List<BlockItemNode> createMallocStatementSequenceFoValid(
 			OperatorNode valid, FunctionDeclarationNode funcDecl)
 			throws SyntaxException {
