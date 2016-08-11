@@ -3551,31 +3551,35 @@ public class CommonEvaluator implements Evaluator {
 			ValueAtExpression valueAt)
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, valueAt.state());
-		SymbolicExpression colStateVal = eval.value, targetStateRef;
+		SymbolicExpression stateRef;
 		NumericExpression place;
 		CIVLSource source = valueAt.getSource();
 		String process = state.getProcessState(pid).name();
-		State targetState;
+		State colState;
 		int newPID;
 
 		state = eval.state;
-		targetStateRef = eval.value;
+		stateRef = eval.value;
 		eval = evaluate(state, pid, valueAt.pid());
 		place = (NumericExpression) eval.value;
 		state = eval.state;
 		newPID = symbolicUtil.extractInt(source, place);
 		if (newPID < 0)
 			newPID = pid;
-//		place = (NumericExpression) universe.tupleRead(colStateVal,
-//				universe.intObject(0));
-//		eval = this.dereference(source, state, process, valueAt.state(),
-//				universe.tupleRead(colStateVal, universe.intObject(1)), false);
-//		stateRef = universe.tupleRead(eval.value, universe.intObject(1));
-//		state = eval.state;
-		targetState = this.stateFactory.getStateByReference(
-				modelFactory.getStateRef(source, targetStateRef));
-		eval = this.evaluate(targetState, newPID,
-				valueAt.expression());
+		// place = (NumericExpression) universe.tupleRead(colStateVal,
+		// universe.intObject(0));
+		// eval = this.dereference(source, state, process, valueAt.state(),
+		// universe.tupleRead(colStateVal, universe.intObject(1)), false);
+		// stateRef = universe.tupleRead(eval.value, universe.intObject(1));
+		// state = eval.state;
+		colState = this.stateFactory.getStateByReference(
+				modelFactory.getStateRef(source, stateRef));
+		if (newPID >= colState.numProcs()) {
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+					"invalid process ID");
+		}
+		eval = this.evaluate(colState, newPID, valueAt.expression());
 		eval.state = state;
 		return eval;
 	}
