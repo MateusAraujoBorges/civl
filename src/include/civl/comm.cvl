@@ -46,7 +46,7 @@ struct _comm {
 /* creates a new message, copying data from the specified buffer */
 /*@ depends_on \access(data); */
 $atomic_f $message $message_pack(int source, int dest, int tag,
-    void *data, int size) {
+    const void *data, int size) {
   $message result;
   
   result.source = source;

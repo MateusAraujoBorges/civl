@@ -182,7 +182,7 @@ void * $mpi_pointer_add(const void * ptr, int offset, MPI_Datatype datatype) {
 /* CMPI_Send and CMPI_Recv are a pair of send receives functions that
    help implementing MPI routines. They should never be block which
    means no potential deadlocks related to these functions */
-int $mpi_send(void *buf, int count, MPI_Datatype datatype, int dest,
+int $mpi_send(const void *buf, int count, MPI_Datatype datatype, int dest,
 	      int tag, MPI_Comm comm) {
   if (dest >= 0) {
     int size = count*sizeofDatatype(datatype);
@@ -288,7 +288,7 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
    should throw errors (if encounters any) as if errors are thrown
    from MPI_Allreduce.
 */
-int $mpi_collective_send(void *buf, int count, MPI_Datatype datatype, int dest,
+int $mpi_collective_send(const void *buf, int count, MPI_Datatype datatype, int dest,
 	      int tag, MPI_Comm comm) {
   if (dest >= 0) {
     int size = count*sizeofDatatype(datatype);
