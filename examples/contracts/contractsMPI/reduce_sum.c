@@ -8,20 +8,20 @@
 
 /*@ \mpi_collective(comm, P2P):
   @   requires count > 0;
-  @   requires \mpi_valid(sendbuf, datatype, count);
-  @   requires \mpi_valid(recvbuf, datatype, count);
+  @   requires datatype==MPI_INT;
+  @   requires \mpi_valid(sendbuf, count, datatype);
+  @   requires \mpi_valid(recvbuf, count, datatype);
   @   requires \mpi_agree(root) && \mpi_agree(count);
   @   requires 0 <= root && root < \mpi_comm_size;
   @   ensures  \forall integer i; 0<= i <count ==> 
   @                recvbuf[i] == \sum(0, \mpi_comm_size, 
-  @                \lambda int k; \on(sendbuf[i], k));
+  @                \lambda int k; \on(k, (int)sendbuf[i]));
   @   waitsfor root;
   @
   @*/
 int reduce_sum(const void* sendbuf, void* recvbuf, MPI_Datatype datatype,
 	       int count, int root, MPI_Comm comm) {
   int rank;
-  int REDUCE_TAG = 999;
 
   MPI_Comm_rank(comm, &rank);
   if (rank != root)
@@ -40,7 +40,7 @@ int reduce_sum(const void* sendbuf, void* recvbuf, MPI_Datatype datatype,
 	MPI_Recv(recvbuf, count, datatype, i, REDUCE_TAG, comm, MPI_STATUS_IGNORE);
 
 	for (int i = 0; i < count; i++) 
-	  sum[i] = sum[i] + recvbuf[i];
+	  sum[i] = (int)sum[i] + (int)recvbuf[i];
       }
     }
     memcpy(recvbuf, sum, size);
