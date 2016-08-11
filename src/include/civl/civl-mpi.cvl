@@ -57,34 +57,40 @@ int sizeofDatatype(MPI_Datatype datatype) {
   if (!$is_concrete_int(datatype))
       return $mpi_extentof(datatype) * sizeof(char);
 #endif
+  size_t result;
+
   switch (datatype) {
   case MPI_INT:
-    return sizeof(int);
+    result =  sizeof(int); break;
   case MPI_2INT:
-    return (sizeof(int)*2);
+    result =  (sizeof(int)*2); break;
   case MPI_FLOAT:
-    return sizeof(float);
+    result =  sizeof(float); break;
   case MPI_DOUBLE:
-    return sizeof(double);
+    result =  sizeof(double); break;
   case MPI_CHAR:
-    return sizeof(char);
+    result =  sizeof(char); break;
   case MPI_BYTE:
-    return sizeof(char); // char is always one byte ?
+    result =  sizeof(char); break; // char is always one byte ?
   case MPI_SHORT:
-    return sizeof(short);
+    result =  sizeof(short); break;
   case MPI_LONG:
-    return sizeof(long);
+    result =  sizeof(long); break;
   case MPI_LONG_DOUBLE:
-    return sizeof(long double);
+    result =  sizeof(long double); break;
   case MPI_LONG_LONG_INT:
-    return sizeof(long long int);
+    result =  sizeof(long long int); break;
   case MPI_LONG_LONG:
-    return sizeof(long long);
+    result =  sizeof(long long); break;
   case MPI_UNSIGNED_LONG_LONG:
-    return sizeof(unsigned long long);
+    result =  sizeof(unsigned long long); break;
   default:
     $assert(0, "Unreachable");
   }
+#ifdef  _MPI_CONTRACT
+  $assume(result == $mpi_extentof(datatype) * sizeof(char));
+#endif
+  return result;
 }
 
 /************************** MPI LIB Implementations *******************************/

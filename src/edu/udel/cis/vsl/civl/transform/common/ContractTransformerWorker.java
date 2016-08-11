@@ -48,6 +48,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.PointerTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
+import edu.udel.cis.vsl.abc.ast.type.IF.PointerType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
@@ -583,7 +584,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+		newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -1098,16 +1099,11 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ExpressionNode requires : condClauses
 					.getRequires(nodeFactory)) {
 				List<MPIContractExpressionNode> mpiValids = getMPIValidExpressionNodes(
-						requires.copy());
+						requires);
 
 				for (MPIContractExpressionNode mpiValid : mpiValids) {
-					// List<BlockItemNode> mpiValidCalls =
-					// createMallocStatementSequenceForMPIValid(
-					// mpiValid);
 					bodyItems.addAll(createMallocStatementSequenceForMPIValid2(
 							mpiValid));
-
-					// bodyItems.addAll(mpiValidCalls);
 				}
 			}
 		for (ConditionalClauses condClauses : mpiBlock.getConditionalClauses())
@@ -2214,7 +2210,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private List<MPIContractExpressionNode> getMPIValidExpressionNodes(
 			ExpressionNode expression) {
-		ASTNode astNode = expression.copy();
+		ASTNode astNode = expression;
 		List<MPIContractExpressionNode> results = new LinkedList<>();
 
 		do {
@@ -2479,10 +2475,20 @@ public class ContractTransformerWorker extends BaseWorker {
 				Operator.TIMES, Arrays.asList(count.copy(),
 						createMPIExtentofCall(datatype.copy())));
 		List<BlockItemNode> results = new LinkedList<>();
-		TypeNode charType = nodeFactory.newBasicTypeNode(datatype.getSource(),
-				BasicTypeKind.CHAR);
+
+		assert buf.getConvertedType().kind() == TypeKind.POINTER;
+
+		PointerType ptrType = (PointerType) buf.getConvertedType();
+		TypeNode referedType;
+
+		if (ptrType.referencedType().kind() != TypeKind.VOID)
+			referedType = typeNode(ptrType.referencedType());
+		else
+			referedType = nodeFactory.newBasicTypeNode(buf.getSource(),
+					BasicTypeKind.CHAR);
+
 		ArrayTypeNode arrayTypeNode = nodeFactory.newArrayTypeNode(source,
-				charType.copy(), countTimesMPISizeof.copy());
+				referedType.copy(), countTimesMPISizeof.copy());
 		VariableDeclarationNode tmpHeap = createTmpHeapVariable(source,
 				arrayTypeNode);
 		ExpressionNode assignBuf = nodeFactory.newOperatorNode(buf.getSource(),

@@ -3,7 +3,6 @@ package edu.udel.cis.vsl.civl.library.mpi;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
-import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
@@ -568,21 +567,21 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		// Now the "mpiDatatype" value is the sizeof(datatype) which encodes
 		// SIZE_OF_TYPE symbols:
 		numPrimitives = universe.divide(mpiDatatype, sizeof);
-		typeChecking = universe.divides(sizeof, mpiDatatype);
-		reasoner = universe.reasoner(state.getPathCondition());
-		if (!reasoner.isValid(typeChecking)) {
-			String ptrStr = symbolicAnalyzer.expressionEvaluation(state, pid,
-					ptrExpr, true).right;
-			String datatypeStr = symbolicAnalyzer.expressionEvaluation(state,
-					pid, mpiDatatypeExpr, true).right;
-
-			errorLogger.logSimpleError(source, state, process,
-					symbolicAnalyzer.stateInformation(state),
-					ErrorKind.MPI_ERROR,
-					"Objects pointed by " + ptrStr
-							+ " is inconsistent with the given MPI_Datatype: "
-							+ datatypeStr);
-		}
+		// typeChecking = universe.divides(sizeof, mpiDatatype);
+		// reasoner = universe.reasoner(state.getPathCondition());
+		// if (!reasoner.isValid(typeChecking)) {
+		// String ptrStr = symbolicAnalyzer.expressionEvaluation(state, pid,
+		// ptrExpr, true).right;
+		// String datatypeStr = symbolicAnalyzer.expressionEvaluation(state,
+		// pid, mpiDatatypeExpr, true).right;
+		//
+		// errorLogger.logSimpleError(source, state, process,
+		// symbolicAnalyzer.stateInformation(state),
+		// ErrorKind.MPI_ERROR,
+		// "Objects pointed by " + ptrStr
+		// + " is inconsistent with the given MPI_Datatype: "
+		// + datatypeStr);
+		// }
 		return new Pair<>(basePtr, numPrimitives);
 	}
 }
