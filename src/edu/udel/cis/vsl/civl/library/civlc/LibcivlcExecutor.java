@@ -257,7 +257,13 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		BooleanExpression result = value.operator() == SymbolicOperator.CONCRETE
 				? this.trueValue
 				: this.falseValue;
+		if (result.isTrue()) {
+			Reasoner reasoner = universe.reasoner(state.getPathCondition());
 
+			result = reasoner.extractNumber((NumericExpression) value) != null
+					? trueValue
+					: falseValue;
+		}
 		return new Evaluation(state, result);
 	}
 
