@@ -35,6 +35,11 @@ public class ContractsTest {
 	}
 
 	@Test
+	public void with3() {
+		assertTrue(ui.run("verify", QUIET, filename("with3.cvl")));
+	}
+
+	@Test
 	public void update() {
 		assertTrue(ui.run("verify", QUIET, filename("update.cvl")));
 	}
@@ -104,7 +109,7 @@ public class ContractsTest {
 
 	@Test
 	public void gather() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
+		assertTrue(ui.run("show -input_mpi_nprocs=2 -mpiContract=gather",
 				filename("contractsMPI/gather.c")));
 	}
 
