@@ -106,6 +106,10 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				// exit, because the process no longer exists.
 				callEval = executeExit(state, pid);
 				break;
+			case "$get_state" :
+				callEval = this.executeGetState(state, pid, process, arguments,
+						argumentValues, source);
+				break;
 			case "$free" :
 			case "$int_iter_destroy" :
 				callEval = executeFree(state, pid, process, arguments,
@@ -180,6 +184,14 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 	}
 
 	/* ************************** Private Methods ************************** */
+
+	private Evaluation executeGetState(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) {
+		int stateID = this.stateFactory.saveState(state, pid).left;
+
+		return new Evaluation(state, modelFactory.stateValue(stateID));
+	}
 
 	private Evaluation executeIsDerefable(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues) {

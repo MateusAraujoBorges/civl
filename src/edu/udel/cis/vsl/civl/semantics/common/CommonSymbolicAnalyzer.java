@@ -2412,6 +2412,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					state = temp.left;
 					result.append(temp.right);
 					result.append(", ");
+					temp = this.expressionEvaluationWorker(state, pid,
+							valueAt.pid(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					result.append(", ");
 					result.append(valueAt.expression());
 					result.append(")");
 					break;

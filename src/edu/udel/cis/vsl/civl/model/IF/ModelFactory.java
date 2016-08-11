@@ -1923,10 +1923,12 @@ public interface ModelFactory {
 	 *            the source of the <code>$value_at</code> expression.
 	 * @param state
 	 *            the state to be used for evaluation
+	 * @param pid
+	 *            the PID
 	 * @param expression
 	 *            the expression to be evaluated
 	 * @return the new <code>$value_at</code> expression.
 	 */
 	ValueAtExpression valueAtExpression(CIVLSource source, Expression state,
-			Expression expression);
+			Expression pid, Expression expression);
 }

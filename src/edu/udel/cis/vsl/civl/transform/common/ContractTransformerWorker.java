@@ -74,6 +74,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private final static String CONTRACT_VAR_PREFIX = "_ctat_";
 
+	private final static String COLLATE_GET_STATE = "$colalte_get_state";
+
 	/**
 	 * $havoc system function identifier:
 	 */
@@ -2287,12 +2289,12 @@ public class ContractTransformerWorker extends BaseWorker {
 			int childIdx = item.childIndex();
 
 			item.remove();
-
 			valueAtNode = nodeFactory.newValueAtNode(item.getSource(),
-					identifierExpression(
-							identifierPrefix + COLLATE_STATE_VAR_PRE),
+					this.functionCall(item.getSource(), COLLATE_GET_STATE,
+							Arrays.asList(identifierExpression(
+									identifierPrefix + COLLATE_STATE_VAR_PRE))),
+					this.identifierExpression(MPI_COMM_RANK_CONST),
 					item.getArgument(0).copy());
-
 			parent.setChild(childIdx, valueAtNode);
 		}
 		return copy;

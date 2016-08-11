@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.model.common.expression;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -12,12 +13,14 @@ public class CommonValueAtExpression extends CommonExpression
 		implements
 			ValueAtExpression {
 	private Expression state;
+	private Expression pid;
 	private Expression expression;
 
 	public CommonValueAtExpression(CIVLSource source, Expression state,
-			Expression expression) {
+			Expression pid, Expression expression) {
 		super(source, null, null, expression.getExpressionType());
 		this.state = state;
+		this.pid = pid;
 		this.expression = expression;
 	}
 
@@ -28,12 +31,32 @@ public class CommonValueAtExpression extends CommonExpression
 
 	@Override
 	public Set<Variable> variableAddressedOf(Scope scope) {
-		return state.variableAddressedOf(scope);
+		Set<Variable> result = new HashSet<>(),
+				subResult = state.variableAddressedOf(scope);
+
+		if (subResult != null)
+			result.addAll(subResult);
+		subResult = pid.variableAddressedOf(scope);
+		if (subResult != null)
+			result.addAll(subResult);
+		if (result.isEmpty())
+			return null;
+		return result;
 	}
 
 	@Override
 	public Set<Variable> variableAddressedOf() {
-		return state.variableAddressedOf();
+		Set<Variable> result = new HashSet<>(),
+				subResult = state.variableAddressedOf();
+
+		if (subResult != null)
+			result.addAll(subResult);
+		subResult = pid.variableAddressedOf();
+		if (subResult != null)
+			result.addAll(subResult);
+		if (result.isEmpty())
+			return null;
+		return result;
 	}
 
 	@Override
@@ -55,6 +78,11 @@ public class CommonValueAtExpression extends CommonExpression
 					&& expression.equals(that.expression());
 		}
 		return false;
+	}
+
+	@Override
+	public Expression pid() {
+		return this.pid;
 	}
 
 }

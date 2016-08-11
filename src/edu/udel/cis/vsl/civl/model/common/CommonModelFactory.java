@@ -2569,7 +2569,7 @@ public class CommonModelFactory implements ModelFactory {
 
 	@Override
 	public ValueAtExpression valueAtExpression(CIVLSource source,
-			Expression state, Expression expression) {
-		return new CommonValueAtExpression(source, state, expression);
+			Expression state, Expression pid, Expression expression) {
+		return new CommonValueAtExpression(source, state, pid, expression);
 	}
 }

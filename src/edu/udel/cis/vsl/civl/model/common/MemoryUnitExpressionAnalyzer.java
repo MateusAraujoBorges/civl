@@ -643,6 +643,9 @@ public class MemoryUnitExpressionAnalyzer {
 				this.computeImpactMemoryUnitsOfExpression(writableVars,
 						((ValueAtExpression) expression).state(), result,
 						derefCount);
+				this.computeImpactMemoryUnitsOfExpression(writableVars,
+						((ValueAtExpression) expression).pid(), result,
+						derefCount);
 				break;
 			}
 			default :

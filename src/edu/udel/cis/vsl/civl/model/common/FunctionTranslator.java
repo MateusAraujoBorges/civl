@@ -47,12 +47,12 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CompoundLiteralNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode.ConstantKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ContractVerifyNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DerivativeExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DotNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.EnumerationConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.HereOrRootNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
@@ -4137,6 +4137,7 @@ public class FunctionTranslator {
 			Scope scope) {
 		return modelFactory.valueAtExpression(modelFactory.sourceOf(valueAt),
 				translateExpressionNode(valueAt.stateNode(), scope, true),
+				translateExpressionNode(valueAt.pidNode(), scope, true),
 				translateExpressionNode(valueAt.expressionNode(), scope, true));
 	}
 
@@ -5020,7 +5021,7 @@ public class FunctionTranslator {
 				// }
 			}
 				break;
-			case PLUS :{
+			case PLUS : {
 				ExpressionNode arg0, arg1;
 
 				arg0 = operatorNode.getArgument(0);
@@ -5028,16 +5029,17 @@ public class FunctionTranslator {
 				if (arg0.expressionKind().equals(ExpressionKind.REGULAR_RANGE)
 						|| arg1.expressionKind()
 								.equals(ExpressionKind.REGULAR_RANGE))
-					result= translatePointerSet(
+					result = translatePointerSet(
 							modelFactory.sourceOf(operatorNode),
 							this.translateExpressionNode(arg0, scope, true),
 							this.translateExpressionNode(arg1, scope, true),
 							BINARY_OPERATOR.PLUS, scope);
 				else
-				result = translatePlusOperation(source,
-						modelFactory.numericExpression(arguments.get(0)),
-						modelFactory.numericExpression(arguments.get(1)));
-				break;}
+					result = translatePlusOperation(source,
+							modelFactory.numericExpression(arguments.get(0)),
+							modelFactory.numericExpression(arguments.get(1)));
+				break;
+			}
 			case SUBSCRIPT :
 				throw new CIVLInternalException("unreachable", source);
 			case TIMES :
@@ -5066,7 +5068,6 @@ public class FunctionTranslator {
 		}
 		return result;
 	}
-	
 
 	/**
 	 * Translate an operation which is a pointer add a range into an
