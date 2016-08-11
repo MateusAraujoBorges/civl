@@ -143,8 +143,10 @@ public class ImmutableDynamicScope implements DynamicScope {
 	 * @return new instance same as original but with new parent value
 	 */
 	ImmutableDynamicScope setParent(int parent) { // ,int parentIdentifer) {
-		return parent == this.parent ? this : new ImmutableDynamicScope(
-				lexicalScope, parent, variableValues, reachers);
+		return parent == this.parent
+				? this
+				: new ImmutableDynamicScope(lexicalScope, parent,
+						variableValues, reachers);
 	}
 
 	/**
@@ -217,7 +219,8 @@ public class ImmutableDynamicScope implements DynamicScope {
 	SymbolicExpression[] copyValues() {
 		SymbolicExpression[] newValues = new SymbolicExpression[variableValues.length];
 
-		System.arraycopy(variableValues, 0, newValues, 0, variableValues.length);
+		System.arraycopy(variableValues, 0, newValues, 0,
+				variableValues.length);
 		return newValues;
 	}
 
@@ -330,7 +333,8 @@ public class ImmutableDynamicScope implements DynamicScope {
 				}
 			}
 		}
-		return newValues == null ? setParent(newParentId)
+		return newValues == null
+				? setParent(newParentId)
 				: new ImmutableDynamicScope(lexicalScope, newParentId,
 						newValues, reachers);
 	}
@@ -362,8 +366,10 @@ public class ImmutableDynamicScope implements DynamicScope {
 				}
 			}
 		}
-		return newValues == null ? this : new ImmutableDynamicScope(
-				lexicalScope, this.parent, newValues, reachers);
+		return newValues == null
+				? this
+				: new ImmutableDynamicScope(lexicalScope, this.parent,
+						newValues, reachers);
 	}
 
 	ImmutableDynamicScope updateSymbolicConstants(
@@ -371,9 +377,9 @@ public class ImmutableDynamicScope implements DynamicScope {
 		SymbolicExpression[] newValues = null;
 
 		for (Variable variable : this.lexicalScope.variables()) {
-			if(variable.isConst()||variable.isInput())
+			if (variable.isConst() || variable.isInput())
 				continue;
-			
+
 			int vid = variable.vid();
 			SymbolicExpression oldValue = variableValues[vid];
 
@@ -387,8 +393,10 @@ public class ImmutableDynamicScope implements DynamicScope {
 				}
 			}
 		}
-		return newValues == null ? this : new ImmutableDynamicScope(
-				lexicalScope, this.parent, newValues, reachers);
+		return newValues == null
+				? this
+				: new ImmutableDynamicScope(lexicalScope, this.parent,
+						newValues, reachers);
 	}
 
 	/* ************************* Methods from Object *********************** */
@@ -474,7 +482,7 @@ public class ImmutableDynamicScope implements DynamicScope {
 	}
 
 	@Override
-	public DynamicScope setValue(int vid, SymbolicExpression value) {
+	public ImmutableDynamicScope setValue(int vid, SymbolicExpression value) {
 		int n = numberOfVariables();
 		SymbolicExpression[] newVariableValues = new SymbolicExpression[n];
 

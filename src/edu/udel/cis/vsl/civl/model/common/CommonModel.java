@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -43,6 +44,7 @@ public class CommonModel extends CommonSourceable implements Model {
 	private Scope staticConstantScope;
 	private boolean hasFscanf;
 	private Location sleep = null;
+	private boolean hasStateRef = false;
 
 	/**
 	 * A model of a Chapel program.
@@ -237,6 +239,29 @@ public class CommonModel extends CommonSourceable implements Model {
 	public void complete() {
 		this.rootFunction.outerScope().complete();
 		this.renumberLocations();
+		containsStateReference();
+	}
+
+	private void containsStateReference() {
+		Scope current;
+		Stack<Scope> working = new Stack<>();
+		Set<Integer> visited = new HashSet<>();
+
+		working.push(rootFunction.outerScope());
+		while (!working.isEmpty()) {
+			int id;
+
+			current = working.pop();
+			id = current.id();
+			if (visited.contains(id))
+				continue;
+			visited.add(id);
+			if (!current.variablesWithStaterefs().isEmpty()) {
+				this.hasStateRef = true;
+				return;
+			}
+			working.addAll(current.children());
+		}
 	}
 
 	private void renumberLocations() {
@@ -307,5 +332,10 @@ public class CommonModel extends CommonSourceable implements Model {
 	@Override
 	public Location sleepLocation() {
 		return this.sleep;
+	}
+
+	@Override
+	public boolean hasStateRefVariables() {
+		return this.hasStateRef;
 	}
 }

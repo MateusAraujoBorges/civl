@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.state.common.immutable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -8,6 +9,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +31,6 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
-import edu.udel.cis.vsl.civl.state.IF.CIVLStateException;
 import edu.udel.cis.vsl.civl.state.IF.CollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.state.IF.DynamicScope;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
@@ -225,6 +226,14 @@ public class ImmutableStateFactory implements StateFactory {
 				functionParentDyscope, arguments, callerPid);
 	}
 
+	@Override
+	public ImmutableState canonic(State state, boolean collectProcesses,
+			boolean collectScopes, boolean collectHeaps,
+			Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
+		return canonicWork(state, collectProcesses, collectScopes, collectHeaps,
+				toBeIgnored, true);
+	}
+
 	/**
 	 * <p>
 	 * In this implementation of canonic: process states are collected, heaps
@@ -234,12 +243,12 @@ public class ImmutableStateFactory implements StateFactory {
 	 * </p>
 	 * 
 	 * 
-	 * @throws CIVLStateException
+	 * @throws CIVLHeapException
 	 */
-	@Override
-	public ImmutableState canonic(State state, boolean collectProcesses,
+	public ImmutableState canonicWork(State state, boolean collectProcesses,
 			boolean collectScopes, boolean collectHeaps,
-			Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
+			Set<HeapErrorKind> toBeIgnored, boolean simplifyStateRefs)
+			throws CIVLHeapException {
 		ImmutableState theState = (ImmutableState) state;
 
 		// performance experiment: seems to make no difference
@@ -257,7 +266,7 @@ public class ImmutableStateFactory implements StateFactory {
 			ImmutableState simplifiedState = theState.simplifiedState;
 
 			if (simplifiedState == null) {
-				simplifiedState = simplify(theState);
+				simplifiedState = simplifyWork(theState, simplifyStateRefs);
 				// if (theState != simplifiedState)
 				// simplifiedState = collectSymbolicConstants(simplifiedState,
 				// collectHeaps);
@@ -855,6 +864,10 @@ public class ImmutableStateFactory implements StateFactory {
 
 	@Override
 	public ImmutableState simplify(State state) {
+		return simplifyWork(state, true);
+	}
+
+	public ImmutableState simplifyWork(State state, boolean simplifyStateRefs) {
 		ImmutableState theState = (ImmutableState) state;
 
 		if (theState.simplifiedState != null)
@@ -865,7 +878,17 @@ public class ImmutableStateFactory implements StateFactory {
 		ImmutableDynamicScope[] newDynamicScopes = null;
 		Reasoner reasoner = universe.reasoner(pathCondition);
 		BooleanExpression newPathCondition;
+		boolean hasSimplication = false;
 
+		simplifyStateRefs = simplifyStateRefs
+				&& this.modelFactory.model().hasStateRefVariables();
+		newPathCondition = reasoner.getReducedContext();
+		if (newPathCondition != pathCondition) {
+			if (nsat(newPathCondition))
+				newPathCondition = universe.falseExpression();
+			hasSimplication = true;
+		} else
+			newPathCondition = null;
 		for (int i = 0; i < numScopes; i++) {
 			ImmutableDynamicScope oldScope = theState.getDyscope(i);
 			int numVars = oldScope.numberOfVariables();
@@ -893,15 +916,12 @@ public class ImmutableStateFactory implements StateFactory {
 						? oldScope.setVariableValues(newVariableValues)
 						: oldScope;
 		}
-		newPathCondition = reasoner.getReducedContext();
-		if (newPathCondition != pathCondition) {
-			if (nsat(newPathCondition))
-				newPathCondition = universe.falseExpression();
-		} else
-			newPathCondition = null;
 		if (newDynamicScopes != null || newPathCondition != null) {
 			theState = ImmutableState.newState(theState, null, newDynamicScopes,
 					newPathCondition);
+			if (hasSimplication && simplifyStateRefs)
+				theState = this.simplifyReferencedStates(theState,
+						pathCondition);
 			theState.simplifiedState = theState;
 		}
 		if (config.isEnableMpiContract()) {
@@ -918,6 +938,89 @@ public class ImmutableStateFactory implements StateFactory {
 			theState.simplifiedState = theState;
 		}
 		return theState;
+	}
+
+	private ImmutableState simplifyReferencedStates(ImmutableState state,
+			BooleanExpression context) {
+		int numDyscopes = state.numDyscopes();
+		Map<SymbolicExpression, SymbolicExpression> old2NewStateRefs = new HashMap<>();
+		SymbolicType stateType = modelFactory.typeFactory().stateSymbolicType();
+		Set<SymbolicExpression> seen = new HashSet<>();
+		ImmutableDynamicScope[] newDynamicScopes = new ImmutableDynamicScope[numDyscopes];
+		UnaryOperator<SymbolicExpression> substituter;
+
+		for (int i = 0; i < numDyscopes; i++) {
+			ImmutableDynamicScope dyscope = state.getDyscope(i);
+			Collection<Variable> variablesWithStateRef = dyscope.lexicalScope()
+					.variablesWithStaterefs();
+
+			newDynamicScopes[i] = dyscope;
+			for (Variable var : variablesWithStateRef) {
+				int vid = var.vid();
+				SymbolicExpression value = dyscope.getValue(vid);
+				List<SymbolicExpression> stateRefs = this
+						.getSubExpressionsOfType(stateType, value);
+
+				for (SymbolicExpression stateRef : stateRefs) {
+					if (!seen.contains(stateRef)) {
+						int stateID = modelFactory.getStateRef(null, stateRef),
+								newStateID;
+
+						seen.add(stateRef);
+						if (stateID >= 0) {
+							State refState = this.getStateByReference(stateID);
+
+							refState = refState.setPathCondition(universe
+									.and(context, refState.getPathCondition()));
+							refState = this.simplify(refState);
+							newStateID = this.saveState(refState, 0).left;
+							if (newStateID != stateID) {
+								old2NewStateRefs.put(stateRef,
+										modelFactory.stateValue(newStateID));
+							}
+						}
+					}
+				}
+				substituter = universe.mapSubstituter(old2NewStateRefs);
+				value = substituter.apply(value);
+				newDynamicScopes[i] = newDynamicScopes[i].setValue(vid, value);
+			}
+		}
+		return ImmutableState.newState(state, null, newDynamicScopes, null);
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<SymbolicExpression> getSubExpressionsOfType(SymbolicType type,
+			SymbolicExpression expr) {
+		if (expr.isNull())
+			return new ArrayList<>(0);
+		if (expr.type().equals(type))
+			return Arrays.asList(expr);
+
+		List<SymbolicExpression> result = new LinkedList<>();
+		int numObjects = expr.numArguments();
+
+		for (int i = 0; i < numObjects; i++) {
+			SymbolicObject arg = expr.argument(i);
+
+			if (arg == null)
+				continue;
+			if (arg instanceof SymbolicExpression) {
+				result.addAll(getSubExpressionsOfType(type,
+						(SymbolicExpression) arg));
+			} else if (arg instanceof SymbolicSequence) {
+				SymbolicSequence<SymbolicExpression> sequence = (SymbolicSequence<SymbolicExpression>) arg;
+				int numEle = sequence.size();
+
+				for (int j = 0; j < numEle; j++) {
+					SymbolicExpression ele = sequence.get(j);
+
+					if (ele != null)
+						result.addAll(getSubExpressionsOfType(type, ele));
+				}
+			}
+		}
+		return result;
 	}
 
 	@Override
@@ -2535,7 +2638,8 @@ public class ImmutableStateFactory implements StateFactory {
 
 		if (state.getCanonicId() < 0)
 			try {
-				result = canonic(state, true, true, true, fullHeapErrorSet);
+				result = canonicWork(state, true, true, true, fullHeapErrorSet,
+						false);
 			} catch (CIVLHeapException e) {
 				throw new CIVLInternalException(
 						"Canonicalization with ignorance of all kinds of heap errors still throws an Heap Exception",

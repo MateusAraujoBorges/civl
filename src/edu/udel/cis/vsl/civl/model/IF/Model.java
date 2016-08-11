@@ -203,4 +203,12 @@ public interface Model extends Sourceable {
 	void setSleepLocation(Location sleep);
 
 	Location sleepLocation();
+
+	/**
+	 * does this model contain any variable that involves state references
+	 * ($state type)?
+	 * 
+	 * @return
+	 */
+	boolean hasStateRefVariables();
 }
