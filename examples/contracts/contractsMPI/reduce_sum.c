@@ -1,11 +1,24 @@
 #include<mpi.h>
+#include<civl-mpi.cvh>
 #include<civlc.cvh>
 #include<string.h>
 #include<stdlib.h>
 
 /* A collective sum-reduction operation */
 
-int reduce_sum(void* sendbuf, void* recvbuf, MPI_Datatype datatype,
+/*@ \mpi_collective(comm, P2P):
+  @   requires count > 0;
+  @   requires \mpi_valid(sendbuf, datatype, count);
+  @   requires \mpi_valid(recvbuf, datatype, count);
+  @   requires \mpi_agree(root) && \mpi_agree(count);
+  @   requires 0 <= root && root < \mpi_comm_size;
+  @   ensures  \forall integer i; 0<= i <count ==> 
+  @                recvbuf[i] == \sum(0, \mpi_comm_size, 
+  @                \lambda int k; \on(sendbuf[i], k));
+  @   waitsfor root;
+  @
+  @*/
+int reduce_sum(const void* sendbuf, void* recvbuf, MPI_Datatype datatype,
 	       int count, int root, MPI_Comm comm) {
   int rank;
   int REDUCE_TAG = 999;
