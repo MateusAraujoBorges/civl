@@ -601,7 +601,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		newAst.prettyPrint(System.out, false);
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -2902,7 +2902,7 @@ public class ContractTransformerWorker extends BaseWorker {
 
 				ExpressionNode loopBodyExpr = nodeFactory.newOperatorNode(
 						expr.getSource(), assignOperator,
-						this.identifierExpression(boundVar.getName()),
+						this.identifierExpression(resultVar.getName()),
 						body.copy());
 
 				ExpressionNode domain = nodeFactory.newRegularRangeNode(
@@ -2921,7 +2921,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				list.add(resultVar);
 				list.add(civlForNode);
 				return new ExprTriple(list,
-						this.identifierExpression(boundVar.getName()), null);
+						this.identifierExpression(resultVar.getName()), null);
 			}
 		}
 		return null;
@@ -2936,8 +2936,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		}
 		for (ASTNode child : node.children()) {
 			if (child != null) {
-				boolean hasRemote = this
-						.hasRemoteExpression((ExpressionNode) child);
+				boolean hasRemote = this.hasRemoteExpression(child);
 
 				if (hasRemote)
 					return true;
