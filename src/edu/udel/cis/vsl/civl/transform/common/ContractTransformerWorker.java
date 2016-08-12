@@ -2761,7 +2761,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private Pair<List<BlockItemNode>, ExpressionNode> transformMPIDatatype2extentofDatatype(
 			ExpressionNode condition) {
-		ExpressionNode copy = condition.copy();
+		ExpressionNode copy = condition;
 		ASTNode node = copy;
 		ExpressionNode datatype;
 		List<BlockItemNode> results = new LinkedList<>();
@@ -2906,7 +2906,8 @@ public class ContractTransformerWorker extends BaseWorker {
 						body.copy());
 
 				ExpressionNode domain = nodeFactory.newRegularRangeNode(
-						expr.lower().getSource(), expr.lower(), expr.higher());
+						expr.lower().getSource(), expr.lower().copy(),
+						expr.higher().copy());
 				StatementNode civlForNode = nodeFactory.newCivlForNode(
 						expr.getSource(), false,
 						nodeFactory.newForLoopInitializerNode(
