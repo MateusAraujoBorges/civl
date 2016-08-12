@@ -60,6 +60,7 @@ import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.common.ExprTriple;
+import edu.udel.cis.vsl.abc.transform.common.SETriple;
 import edu.udel.cis.vsl.abc.util.IF.Pair;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
@@ -2805,7 +2806,35 @@ public class ContractTransformerWorker extends BaseWorker {
 					intNode, createSizeofDatatype(datatype));
 	}
 
-	private ExprTriple transformLambdaWtRemoteInExtendedQuantifiedExpression(
+	private SETriple transformLambdaWtRemoteInExtendedQuantifiedExpression(
+			ASTNode expr) throws SyntaxException {
+		if (expr instanceof ExtendedQuantifiedExpressionNode) {
+			return transformLambdaWtRemoteInExtendedQuantifiedExpressionWork(
+					(ExtendedQuantifiedExpressionNode) expr);
+		}
+
+		List<BlockItemNode> before = new LinkedList<>();
+		int numChildren = expr.numChildren();
+
+		for (int i = 0; i < numChildren; i++) {
+			ASTNode child = expr.child(i);
+
+			if (child != null) {
+				SETriple triple = transformLambdaWtRemoteInExtendedQuantifiedExpression(
+						child);
+
+				if (triple != null) {
+					before.addAll(triple.getBefore());
+					expr.setChild(i, triple.getNode());
+				}
+			}
+		}
+		if (!before.isEmpty())
+			return new SETriple(before, expr, null);
+		return null;
+	}
+
+	private ExprTriple transformLambdaWtRemoteInExtendedQuantifiedExpressionWork(
 			ExtendedQuantifiedExpressionNode expr) throws SyntaxException {
 		ExpressionNode function = expr.function();
 
@@ -2864,13 +2893,10 @@ public class ContractTransformerWorker extends BaseWorker {
 						null);
 				List<BlockItemNode> list = new LinkedList<>();
 
-				ExprTriple result = new ExprTriple(expr);
-
 				list.add(resultVar);
 				list.add(civlForNode);
-				result.setBefore(list);
-				result.setNode(this.identifierExpression(boundVar.getName()));
-				return result;
+				return new ExprTriple(list,
+						this.identifierExpression(boundVar.getName()), null);
 			}
 		}
 		return null;
