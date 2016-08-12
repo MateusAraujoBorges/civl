@@ -815,8 +815,6 @@ public class ContractTransformerWorker extends BaseWorker {
 									ensures.copy()).left);
 				}
 		}
-		bodyItems.addAll(tmpVars4localOldExprs);
-
 		// Transform step 2: Inserts $mpi_comm_rank and $mpi_comm_size:
 		intTypeNode = nodeFactory.newBasicTypeNode(
 				newSource("int", CivlcTokenConstant.TYPE), BasicTypeKind.INT);
@@ -824,7 +822,8 @@ public class ContractTransformerWorker extends BaseWorker {
 				identifier(MPI_COMM_RANK_CONST), intTypeNode));
 		bodyItems.add(nodeFactory.newVariableDeclarationNode(mpiCommSizeSource,
 				identifier(MPI_COMM_SIZE_CONST), intTypeNode.copy()));
-
+		// Add temporary variable declarations for old expressions:
+		bodyItems.addAll(tmpVars4localOldExprs);
 		// Transform step 3: Takes a snapshot and inserts assertions for
 		// requirements of each MPI-collective block:
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
@@ -953,10 +952,7 @@ public class ContractTransformerWorker extends BaseWorker {
 					assert4localEnsures
 							.addAll(translateConditionalPredicates(false,
 									ensures.condition, pred.copy()).left);
-
 				}
-		bodyItems.addAll(tmpVarDecls4OldExprs);
-
 		// Transform step 2: Add $mpi_comm_rank and $mpi_comm_size variables:
 		intTypeNode = nodeFactory.newBasicTypeNode(
 				newSource("int", CivlcTokenConstant.TYPE), BasicTypeKind.INT);
@@ -964,6 +960,8 @@ public class ContractTransformerWorker extends BaseWorker {
 				identifier(MPI_COMM_RANK_CONST), intTypeNode));
 		bodyItems.add(nodeFactory.newVariableDeclarationNode(mpiCommSizeSource,
 				identifier(MPI_COMM_SIZE_CONST), intTypeNode.copy()));
+		// Add temporary variable declarations here for old expressions:
+		bodyItems.addAll(tmpVarDecls4OldExprs);
 		// Transform step 3-5: Takes a snapshot and insert assumes for requires
 		// in each MPI-collective block:
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
@@ -2341,14 +2339,14 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return
 	 * @throws SyntaxException
 	 */
-	private List<VariableDeclarationNode> replaceOldExpressionNodes4Local(
+	private List<BlockItemNode> replaceOldExpressionNodes4Local(
 			ExpressionNode expression, boolean hasMpi) throws SyntaxException {
 		Source source = expression.getSource();
 		VariableDeclarationNode varDecl;
 		ASTNode astNode = expression;
 		OperatorNode opNode;
 		List<OperatorNode> opNodes = new LinkedList<>();
-		List<VariableDeclarationNode> varDecls = new LinkedList<>();
+		List<BlockItemNode> results = new LinkedList<>();
 		// Function call getting a $state object:
 		ExpressionNode getStateCall;
 		// Identifiers of $state and process which will be used in $value_at
@@ -2375,9 +2373,17 @@ public class ContractTransformerWorker extends BaseWorker {
 							nodeFactory.newTypedefNameNode(
 									identifier(COLLATE_STATE), null),
 							getStateCall);
+			results.add(varDecl);
 			stateIdentiifer = functionCall(source, COLLATE_GET_STATE,
 					Arrays.asList(identifierExpression(varDecl.getName())));
+			varDecl = nodeFactory.newVariableDeclarationNode(
+					expression.getSource(),
+					identifier(TMP_OLD_PREFIX + (tmpOldCounter++)),
+					nodeFactory.newStateTypeNode(source), stateIdentiifer);
 			procIndentifier = identifierExpression(MPI_COMM_RANK_CONST);
+			results.add(
+					createMPICommRankCall(identifierExpression(MPI_COMM_WORLD),
+							identifierExpression(MPI_COMM_RANK_CONST)));
 		} else {
 			getStateCall = functionCall(expression.getSource(), GET_STATE,
 					Arrays.asList());
@@ -2386,9 +2392,9 @@ public class ContractTransformerWorker extends BaseWorker {
 					identifier(TMP_OLD_PREFIX + (tmpOldCounter++)),
 					nodeFactory.newStateTypeNode(expression.getSource()),
 					getStateCall);
-			stateIdentiifer = identifierExpression(varDecl.getName());
 			procIndentifier = zero;
 		}
+		stateIdentiifer = identifierExpression(varDecl.getName());
 		// replace:
 		for (OperatorNode item : opNodes) {
 			ASTNode parent = item.parent();
@@ -2401,9 +2407,9 @@ public class ContractTransformerWorker extends BaseWorker {
 			valueAt = nodeFactory.newValueAtNode(item.getSource(),
 					stateIdentiifer.copy(), procIndentifier.copy(), arg);
 			parent.setChild(childIdx, valueAt);
-			varDecls.add(varDecl);
+			results.add(varDecl);
 		}
-		return varDecls;
+		return results;
 	}
 
 	/**
