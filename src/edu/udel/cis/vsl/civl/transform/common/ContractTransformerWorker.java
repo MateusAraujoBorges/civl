@@ -1363,6 +1363,14 @@ public class ContractTransformerWorker extends BaseWorker {
 
 		replaceDatatype = transformMPIDatatype2extentofDatatype(preds);
 		preds = replaceDatatype.right;
+
+		SETriple transformRemoteInLambda = this
+				.transformLambdaWtRemoteInExtendedQuantifiedExpression(preds);
+
+		if (transformRemoteInLambda != null) {
+			stmts.addAll(transformRemoteInLambda.getBefore());
+			preds = (ExpressionNode) transformRemoteInLambda.getNode();
+		}
 		stmts.add(isAssume ? createAssumption(preds) : createAssertion(preds));
 		if (conditionNeedsChecking != null)
 			stmts.add(createAssertion(conditionNeedsChecking));
