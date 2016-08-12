@@ -719,8 +719,7 @@ void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
   size_t realCount = count * $mpi_extentof(datatype);
   char newValues[realCount];
 
-  $havoc(&newValues);
-  memcpy(buf, newValues, realCount * sizeof(char));
+  memcpy(buf, newValues, count * sizeofDatatype(datatype));
 }
 
 

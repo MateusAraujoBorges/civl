@@ -78,8 +78,6 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private final static String CONTRACT_VAR_PREFIX = "_ctat_";
 
-	private final static String COLLATE_GET_STATE = "$colalte_get_state";
-
 	/**
 	 * $havoc system function identifier:
 	 */
@@ -194,6 +192,16 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * A collate-library function identifier:
 	 */
 	private final static String COLLATE_STATE = "$collate_state";
+
+	/**
+	 * Collate library system function identifier:
+	 */
+	private final static String COLLATE_GET_STATE = "$collate_get_state";
+
+	/**
+	 * Civl-c library system function identifier:
+	 */
+	private final static String GET_STATE = "$get_state";
 
 	/**
 	 * Within each function (either non-target : )
@@ -569,7 +577,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		}
 		globalVarHavocs = havocForGlobalVariables(sourceFiles);
 		// process function definitions and declarations in source files:
-		processedSourceFiles = processSourceFileNodes(sourceFiles);
+		processedSourceFiles = processSourceFileNodes(sourceFiles, hasMPI);
 		// create declarations for all functions that will be used later:
 		count = root.numChildren();
 		for (int i = 0; i < count; i++) {
@@ -666,7 +674,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @throws SyntaxException
 	 */
 	private Pair<FunctionDefinitionNode, List<BlockItemNode>> processSourceFileNodes(
-			List<BlockItemNode> sourceFileNodes) throws SyntaxException {
+			List<BlockItemNode> sourceFileNodes, boolean hasMpi)
+			throws SyntaxException {
 		List<BlockItemNode> newSourceFileNodes = new LinkedList<>();
 		FunctionDefinitionNode target = null;
 
@@ -686,7 +695,7 @@ public class ContractTransformerWorker extends BaseWorker {
 						// function:
 						newSourceFileNodes.add(funcDefi);
 						newSourceFileNodes
-								.add(transformTargetFunction(funcDefi));
+								.add(transformTargetFunction(funcDefi, hasMpi));
 						// It is not allowed that there are two function
 						// definitions with the same name, so the processing
 						// can
@@ -708,7 +717,7 @@ public class ContractTransformerWorker extends BaseWorker {
 					FunctionDefinitionNode defiOfThis;
 
 					newSourceFileNodes
-							.add(transformContractedFunction(funcDecl));
+							.add(transformContractedFunction(funcDecl, hasMpi));
 					if ((defiOfThis = funcDecl.getEntity()
 							.getDefinition()) != null)
 						defiOfThis.remove();
@@ -763,7 +772,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @throws SyntaxException
 	 */
 	private FunctionDefinitionNode transformContractedFunction(
-			FunctionDeclarationNode funcDecl) throws SyntaxException {
+			FunctionDeclarationNode funcDecl, boolean hasMpi)
+			throws SyntaxException {
 		CompoundStatementNode body;
 		FunctionTypeNode funcTypeNode = funcDecl.getTypeNode();
 		List<BlockItemNode> bodyItems = new LinkedList<>();
@@ -797,8 +807,8 @@ public class ContractTransformerWorker extends BaseWorker {
 					.getConditionalClauses())
 				for (ExpressionNode ensures : condClauses
 						.getEnsures(nodeFactory)) {
-					tmpVars4localOldExprs
-							.addAll(replaceOldExpressionNodes4Local(ensures));
+					tmpVars4localOldExprs.addAll(
+							replaceOldExpressionNodes4Local(ensures, hasMpi));
 					localAssumes4ensurances
 							.addAll(translateConditionalPredicates(true,
 									condClauses.condition,
@@ -891,7 +901,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @throws SyntaxException
 	 */
 	private FunctionDefinitionNode transformTargetFunction(
-			FunctionDefinitionNode funcDefi) throws SyntaxException {
+			FunctionDefinitionNode funcDefi, boolean hasMpi)
+			throws SyntaxException {
 		CompoundStatementNode body;
 		ExpressionNode funcIdentifier = identifierExpression(
 				funcDefi.getName());
@@ -937,8 +948,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ConditionalClauses ensures : localBlock
 					.getConditionalClauses())
 				for (ExpressionNode pred : ensures.getEnsures(nodeFactory)) {
-					tmpVarDecls4OldExprs
-							.addAll(replaceOldExpressionNodes4Local(pred));
+					tmpVarDecls4OldExprs.addAll(
+							replaceOldExpressionNodes4Local(pred, hasMpi));
 					assert4localEnsures
 							.addAll(translateConditionalPredicates(false,
 									ensures.condition, pred.copy()).left);
@@ -1426,8 +1437,8 @@ public class ContractTransformerWorker extends BaseWorker {
 		if (condition != null)
 			stmt = nodeFactory.newIfNode(condition.getSource(),
 					condition.copy(), stmt);
-		if (hasGuard)
-			stmt = nodeFactory.newRunNode(stmt.getSource(), stmt);
+		// if (hasGuard)
+		// stmt = nodeFactory.newRunNode(stmt.getSource(), stmt);
 		return new Pair<>(stmt, tmpVarDecls_pred.left);
 	}
 
@@ -2118,10 +2129,15 @@ public class ContractTransformerWorker extends BaseWorker {
 					break;
 				case ASSIGNS_READS : {
 					AssignsOrReadsNode assigns = (AssignsOrReadsNode) contract;
+					SequenceNode<ExpressionNode> memList;
 
 					if (!assigns.isAssigns())
 						break;
-					condClauses.addAssigns(assigns.getMemoryList());
+					memList = assigns.getMemoryList();
+					if (memList.numChildren() <= 0
+							|| memList.getSequenceChild(0)
+									.expressionKind() != ExpressionKind.NOTHING)
+						condClauses.addAssigns(assigns.getMemoryList());
 					break;
 				}
 				default :
@@ -2306,16 +2322,42 @@ public class ContractTransformerWorker extends BaseWorker {
 		return copy;
 	}
 
+	/**
+	 * <p>
+	 * <b>Summary: </b> Replace \old expressions in local contracts:<br>
+	 * Given a expression e: for sequential programs (hasMpi == false): <code>
+	 * $state state = $get_state();
+	 * 
+	 * e' = e[\old(a) / $value_at(state, 0, a)]; // where a is an expression
+	 * </code> for MPI programs (hasMpi == true): <code>
+	 * $collate_state state = $mpi_snaphot(MPI_COMM_WORLD);
+	 * 
+	 * e' = e[\old(a) / $value_at($collate_get_state(state), $mpi_comm_rank, a)] // where a is an expression
+	 * </code>
+	 * </p>
+	 * 
+	 * @param expression
+	 * @param hasMpi
+	 * @return
+	 * @throws SyntaxException
+	 */
 	private List<VariableDeclarationNode> replaceOldExpressionNodes4Local(
-			ExpressionNode expression) {
+			ExpressionNode expression, boolean hasMpi) throws SyntaxException {
+		Source source = expression.getSource();
 		VariableDeclarationNode varDecl;
 		ASTNode astNode = expression;
 		OperatorNode opNode;
 		List<OperatorNode> opNodes = new LinkedList<>();
 		List<VariableDeclarationNode> varDecls = new LinkedList<>();
+		// Function call getting a $state object:
+		ExpressionNode getStateCall;
+		// Identifiers of $state and process which will be used in $value_at
+		// expression:
+		ExpressionNode stateIdentiifer, procIndentifier;
+		IntegerConstantNode zero = nodeFactory.newIntegerConstantNode(source,
+				"0");
 
-		// In order to get the type of the expression, it has to search the
-		// whole expression twice:
+		// DFSearch old expressions:
 		do {
 			if (astNode instanceof OperatorNode)
 				if ((opNode = (OperatorNode) astNode)
@@ -2323,22 +2365,47 @@ public class ContractTransformerWorker extends BaseWorker {
 					opNodes.add(opNode);
 				}
 		} while ((astNode = astNode.nextDFS()) != null);
+		// create state and process identifiers:
+		if (hasMpi) {
+			getStateCall = createMPISnapshotCall(
+					identifierExpression(MPI_COMM_WORLD));
+			varDecl = nodeFactory
+					.newVariableDeclarationNode(expression.getSource(),
+							identifier(TMP_OLD_PREFIX + (tmpOldCounter++)),
+							nodeFactory.newTypedefNameNode(
+									identifier(COLLATE_STATE), null),
+							getStateCall);
+			stateIdentiifer = functionCall(source, COLLATE_GET_STATE,
+					Arrays.asList(identifierExpression(varDecl.getName())));
+			procIndentifier = identifierExpression(MPI_COMM_RANK_CONST);
+		} else {
+			getStateCall = functionCall(expression.getSource(), GET_STATE,
+					Arrays.asList());
+			varDecl = nodeFactory.newVariableDeclarationNode(
+					expression.getSource(),
+					identifier(TMP_OLD_PREFIX + (tmpOldCounter++)),
+					nodeFactory.newStateTypeNode(expression.getSource()),
+					getStateCall);
+			stateIdentiifer = identifierExpression(varDecl.getName());
+			procIndentifier = zero;
+		}
+		// replace:
 		for (OperatorNode item : opNodes) {
-			Type itemType = item.getConvertedType();
 			ASTNode parent = item.parent();
 			int childIdx = item.childIndex();
 			ExpressionNode arg = item.getArgument(0);
+			ExpressionNode valueAt;
 
 			item.remove();
 			item.getArgument(0).remove();
-			varDecl = nodeFactory.newVariableDeclarationNode(item.getSource(),
-					identifier(TMP_OLD_PREFIX + (tmpOldCounter++)),
-					typeNode(itemType), arg);
-			parent.setChild(childIdx, identifierExpression(varDecl.getName()));
+			valueAt = nodeFactory.newValueAtNode(item.getSource(),
+					stateIdentiifer.copy(), procIndentifier.copy(), arg);
+			parent.setChild(childIdx, valueAt);
 			varDecls.add(varDecl);
 		}
 		return varDecls;
 	}
+
 	/**
 	 * <code>
 	 * 

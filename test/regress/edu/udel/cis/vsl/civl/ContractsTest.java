@@ -114,14 +114,8 @@ public class ContractsTest {
 	}
 
 	@Test
-	public void allgather2() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=allgather",
-				filename("contractsMPI/allgather2.c")));
-	}
-
-	@Test
 	public void gatherBad() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
+		assertFalse(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
 				filename("contractsMPI/gather_bad.c")));
 	}
 

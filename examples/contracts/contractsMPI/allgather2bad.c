@@ -95,8 +95,8 @@ int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
 
 /*@ \mpi_collective(comm, P2P):
   @   requires \mpi_agree(sendcount * \mpi_extent(sendtype));
-  @   requires sendcount >= 0 && sendcount * \mpi_extent(sendtype) * \mpi_comm_size < 5;
-  @   requires recvcount >= 0 && recvcount * \mpi_extent(recvtype) * \mpi_comm_size < 5;
+  @   requires sendcount >= 0 && sendcount * \mpi_extent(sendtype) < 10;
+  @   requires recvcount >= 0 && recvcount * \mpi_extent(recvtype) < 10;
   @   requires \mpi_valid(sendbuf, sendcount, sendtype);
   @   requires \mpi_valid(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @   requires \mpi_extent(recvtype) * recvcount == \mpi_extent(sendtype) * sendcount;

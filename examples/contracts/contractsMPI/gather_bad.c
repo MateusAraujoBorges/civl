@@ -7,20 +7,22 @@
 /*@ 
   @ \mpi_collective(comm, P2P) :
   @   requires \mpi_agree(root) && \mpi_agree(sendcount * \mpi_extent(sendtype));
-  @   requires sendcount * \mpi_extent(sendtype) > 0 && sendcount * \mpi_extent(sendtype) < 2;
-  @   requires recvcount * \mpi_extent(recvtype) > 0 && recvcount * \mpi_extent(recvtype) < 2;
+  @   requires sendcount >= 0 && sendcount * \mpi_extent(sendtype) < 10;
+  @   requires recvcount >= 0 && recvcount * \mpi_extent(recvtype) < 10;
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \mpi_valid(sendbuf, sendcount, sendtype);
   @   behavior imroot:
   @     assumes  \mpi_comm_rank == root;
+  @     assigns  \mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @     requires \mpi_valid(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @     requires recvcount * \mpi_extent(recvtype) == 
   @              sendcount * \mpi_extent(sendtype);
-  @     ensures  \mpi_equals((recvbuf + root * sendcount), sendcount, sendtype, sendbuf);
+  @     ensures  \mpi_equals(\mpi_offset(recvbuf, root * sendcount, sendtype), sendcount, sendtype, sendbuf);
+  @     waitsfor (0 .. \mpi_comm_size-1);
   @   behavior imnroot:
   @     assumes  \mpi_comm_rank != root;
   @     ensures \mpi_equals(sendbuf, sendcount, sendtype, 
-  @              (\on(root, recvbuf) + \mpi_comm_rank * sendcount));
+  @              \mpi_offset(\on(root, recvbuf), \mpi_comm_rank * sendcount, sendtype));
   @*/
 int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype, 
 	   void* recvbuf, int recvcount, MPI_Datatype recvtype,

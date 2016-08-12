@@ -1034,7 +1034,7 @@ public abstract class LibraryComponent {
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression flattenArray;
 		NumericExpression dataSize;
-		NumericExpression i, j;
+		NumericExpression i;
 		BooleanExpression claim;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 
@@ -1055,17 +1055,21 @@ public abstract class LibraryComponent {
 			// decided by reasoner?
 		flattenArray = arrayFlatten(state, process, array, source);
 		i = startPos;
-		j = zero;
-		claim = universe.lessThan(j, dataSize);
-		while (reasoner.isValid(claim)) {
-			SymbolicExpression elementInDataArray = null;
 
-			elementInDataArray = universe.arrayRead(dataSequence, j);
+		Number dataSizeConcrete = reasoner.extractNumber(dataSize);
+
+		if (dataSizeConcrete == null)
+			throw new CIVLInternalException(
+					"Array write with a non-concrete length", source);
+		int dataSizeInt = ((IntegerNumber) dataSizeConcrete).intValue();
+		for (int j = 0; j < dataSizeInt; j++) {
+			SymbolicExpression elementInDataArray = null;
+			NumericExpression jVal = universe.integer(j);
+
+			elementInDataArray = universe.arrayRead(dataSequence, jVal);
 			flattenArray = universe.arrayWrite(flattenArray, i,
 					elementInDataArray);
 			i = universe.add(i, one);
-			j = universe.add(j, one);
-			claim = universe.lessThan(j, dataSize);
 		}
 		flattenArray = arrayCasting(state, process, flattenArray,
 				(SymbolicCompleteArrayType) array.type(), source);
