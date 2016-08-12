@@ -20,6 +20,8 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.BehaviorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode.ContractKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode.ExtendedQuantifier;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICollectiveKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
@@ -36,6 +38,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.LambdaNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
@@ -56,6 +59,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.abc.transform.common.ExprTriple;
 import edu.udel.cis.vsl.abc.util.IF.Pair;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
@@ -238,6 +242,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	private final static String TMP_OLD_PREFIX = CONTRACT_VAR_PREFIX + "_old_";
 
 	private int tmpOldCounter = 0;
+
+	private int tmpRemoteInLambdaCounter = 0;
 
 	private Set<VariableDeclarationNode> globalVarDecls = new HashSet<>();
 
@@ -2725,4 +2731,95 @@ public class ContractTransformerWorker extends BaseWorker {
 					identifier(TMP_EXTENT_PREFIX + (tmpExtentCounter++)),
 					intNode, createSizeofDatatype(datatype));
 	}
+
+	private ExprTriple transformLambdaWtRemoteInExtendedQuantifiedExpression(
+			ExtendedQuantifiedExpressionNode expr) throws SyntaxException {
+		ExpressionNode function = expr.function();
+
+		if (function instanceof LambdaNode) {
+			LambdaNode lambda = (LambdaNode) function;
+			ExpressionNode body = lambda.expression();
+
+			if (hasRemoteExpression(body)) {
+				// this is an extended quantified expression on a lambda
+				// expression with remote expressions
+				// e.g., \sum(0, 5, \lambda int i; \on(i, myCount))
+				Type outputType = body.getConvertedType();
+				ExpressionNode init;
+				VariableDeclarationNode resultVar;
+				ExtendedQuantifier quant = expr.extQuantifier();
+				VariableDeclarationNode boundVar = lambda.boundVariableList()
+						.getSequenceChild(0).getLeft().getSequenceChild(0);
+				Operator assignOperator;
+
+				switch (quant) {
+					case SUM :
+						init = this.integerConstant(0);
+						assignOperator = Operator.PLUSEQ;
+						break;
+					case PROD :
+						init = this.integerConstant(1);
+						assignOperator = Operator.TIMESEQ;
+						break;
+					case NUMOF :
+					case MAX :
+					case MIN :
+					default :
+						throw new CIVLUnimplementedFeatureException(
+								"extended quantifier " + quant,
+								expr.getSource());
+				}
+				resultVar = this.variableDeclaration(
+						CONTRACT_VAR_PREFIX + "exquant"
+								+ tmpRemoteInLambdaCounter,
+						this.typeNode(outputType), init);
+
+				ExpressionNode loopBodyExpr = nodeFactory.newOperatorNode(
+						expr.getSource(), assignOperator,
+						this.identifierExpression(boundVar.getName()),
+						body.copy());
+
+				ExpressionNode domain = nodeFactory.newRegularRangeNode(
+						expr.lower().getSource(), expr.lower(), expr.higher());
+				StatementNode civlForNode = nodeFactory.newCivlForNode(
+						expr.getSource(), false,
+						nodeFactory.newForLoopInitializerNode(
+								boundVar.getSource(),
+								Arrays.asList(boundVar.copy())),
+						domain,
+						nodeFactory.newExpressionStatementNode(loopBodyExpr),
+						null);
+				List<BlockItemNode> list = new LinkedList<>();
+
+				ExprTriple result = new ExprTriple(expr);
+
+				list.add(resultVar);
+				list.add(civlForNode);
+				result.setBefore(list);
+				result.setNode(this.identifierExpression(boundVar.getName()));
+				return result;
+			}
+		}
+		return null;
+	}
+
+	private boolean hasRemoteExpression(ASTNode node) {
+		if (node instanceof ExpressionNode) {
+			ExpressionNode expr = (ExpressionNode) node;
+
+			if (expr.expressionKind() == ExpressionKind.REMOTE_REFERENCE)
+				return true;
+		}
+		for (ASTNode child : node.children()) {
+			if (child != null) {
+				boolean hasRemote = this
+						.hasRemoteExpression((ExpressionNode) child);
+
+				if (hasRemote)
+					return true;
+			}
+		}
+		return false;
+	}
+
 }
