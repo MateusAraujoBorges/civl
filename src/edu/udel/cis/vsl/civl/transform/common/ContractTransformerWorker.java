@@ -2823,7 +2823,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		if (isMPIExtent)
 			return nodeFactory.newVariableDeclarationNode(datatype.getSource(),
 					identifier(TMP_EXTENT_PREFIX + (tmpExtentCounter++)),
-					intNode, createMPIExtentofCall(datatype));
+					intNode, createSizeofDatatype(datatype));
 		else
 			return nodeFactory.newVariableDeclarationNode(datatype.getSource(),
 					identifier(TMP_EXTENT_PREFIX + (tmpExtentCounter++)),
