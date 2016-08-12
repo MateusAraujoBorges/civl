@@ -122,6 +122,8 @@ import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.number.NumberFactory;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
@@ -173,7 +175,6 @@ public class CommonEvaluator implements Evaluator {
 	 * (possibly nested) quantified expressions. LinkedList is used instead of
 	 * Stack because of its more intuitive iteration order.
 	 */
-	protected LinkedList<SymbolicConstant> boundVariables = new LinkedList<>();
 	protected Stack<Set<SymbolicConstant>> boundVariableStack = new Stack<>();
 
 	/**
@@ -3566,12 +3567,6 @@ public class CommonEvaluator implements Evaluator {
 		newPID = symbolicUtil.extractInt(source, place);
 		if (newPID < 0)
 			newPID = pid;
-		// place = (NumericExpression) universe.tupleRead(colStateVal,
-		// universe.intObject(0));
-		// eval = this.dereference(source, state, process, valueAt.state(),
-		// universe.tupleRead(colStateVal, universe.intObject(1)), false);
-		// stateRef = universe.tupleRead(eval.value, universe.intObject(1));
-		// state = eval.state;
 		colState = this.stateFactory.getStateByReference(
 				modelFactory.getStateRef(source, stateRef));
 		if (newPID >= colState.numProcs()) {
@@ -3579,9 +3574,59 @@ public class CommonEvaluator implements Evaluator {
 					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
 					"invalid process ID");
 		}
+		colState = colState
+				.setPathCondition(universe.and(colState.getPathCondition(),
+						getPredicateOnBoundVariables(state)));
 		eval = this.evaluate(colState, newPID, valueAt.expression());
 		eval.state = state;
 		return eval;
+	}
+
+	private BooleanExpression getPredicateOnBoundVariables(State state) {
+		BooleanExpression pc = state.getPathCondition();
+		BooleanExpression context = universe.trueExpression();
+		BooleanExpression[] clauses = symbolicUtil.getConjunctiveClauses(pc);
+
+		if (!this.boundVariableStack.isEmpty()) {
+			for (Set<SymbolicConstant> varSet : boundVariableStack) {
+				for (SymbolicConstant var : varSet) {
+					for (BooleanExpression clause : clauses) {
+						if (containsSymbolicConstant(clause, var))
+							context = universe.and(context, clause);
+					}
+				}
+			}
+		}
+		return context;
+	}
+
+	@SuppressWarnings("unchecked")
+	private boolean containsSymbolicConstant(SymbolicExpression expr,
+			SymbolicConstant symbol) {
+		if (expr instanceof SymbolicConstant)
+			return expr.equals(symbol);
+
+		int numArgs = expr.numArguments();
+
+		for (int i = 0; i < numArgs; i++) {
+			SymbolicObject arg = expr.argument(i);
+
+			if (arg instanceof SymbolicExpression) {
+				if (containsSymbolicConstant((SymbolicExpression) arg, symbol))
+					return true;
+			} else if (arg instanceof SymbolicSequence) {
+				SymbolicSequence<SymbolicExpression> sequence = (SymbolicSequence<SymbolicExpression>) arg;
+				int numEles = sequence.size();
+
+				for (int j = 0; j < numEles; j++) {
+					SymbolicExpression ele = sequence.get(j);
+
+					if (containsSymbolicConstant(ele, symbol))
+						return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private Evaluation evaluateExtendedQuantifiedExpression(State state,
