@@ -1248,19 +1248,28 @@ public class ContractTransformerWorker extends BaseWorker {
 		StatementNode stmt;
 		List<BlockItemNode> bodyItems = new LinkedList<>();
 		List<BlockItemNode> asserts = new LinkedList<>();
+		VariableDeclarationNode stateVar4OldDecl;
+		// Temporary variable which stores a $state for old expressions:
+		ExpressionNode getStateCall = functionCall(mpiBlock.source,
+				COLLATE_GET_STATE, Arrays.asList(identifierExpression(
+						identifierPrefix + COLLATE_STATE_VAR_PRE)));
 
+		stateVar4OldDecl = declareTmpStateVar4OldExpr(mpiBlock.source,
+				nodeFactory.newStateTypeNode(mpiBlock.source), getStateCall);
 		// $when($complete(...)) $with(...) { assert }:
 		for (ConditionalClauses condClauses : mpiBlock
 				.getConditionalClauses()) {
 			StatementNode withStmt;
 			List<BlockItemNode> coAssertStmtComponents = new LinkedList<>();
+			ExpressionNode newEnsure;
 
 			for (ExpressionNode ensures : condClauses.getEnsures(nodeFactory)) {
 				Pair<List<BlockItemNode>, List<BlockItemNode>> assertsAndTmpVar;
 
-				ensures = replaceOldExpressionNodes4collective(ensures.copy());
+				newEnsure = replaceOldExpressionNodes4collective(ensures,
+						identifierExpression(stateVar4OldDecl.getName()));
 				assertsAndTmpVar = translateConditionalPredicates(false,
-						condClauses.condition, ensures);
+						condClauses.condition, newEnsure);
 				bodyItems.addAll(assertsAndTmpVar.right);
 				coAssertStmtComponents.addAll(assertsAndTmpVar.left);
 			}
@@ -1275,6 +1284,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			}
 		}
 		// $collate_state cp = $collate_snapshot():
+		bodyItems.add(stateVar4OldDecl);
 		bodyItems.add(collateStateDecl);
 		bodyItems.addAll(asserts);
 		stmt = createAssertion(commEmptyInAndOut(mpiComm, mpiBlock.pattern));
@@ -1426,11 +1436,21 @@ public class ContractTransformerWorker extends BaseWorker {
 		boolean hasGuard = !waitsforArgs.isEmpty();
 		StatementNode stmt;
 		Pair<List<BlockItemNode>, ExpressionNode> tmpVarDecls_pred;
+		VariableDeclarationNode tmpStateVar4OldDecl;
+		ExpressionNode getStateCall = functionCall(ensurance.getSource(),
+				COLLATE_GET_STATE, Arrays.asList(identifierExpression(
+						identifierPrefix + COLLATE_STATE_VAR_PRE)));
+		ExpressionNode newEnsurance;
 
 		tmpVarDecls_pred = transformMPIDatatype2extentofDatatype(ensurance);
 		ensurance = tmpVarDecls_pred.right;
-		ensurance = replaceOldExpressionNodes4collective(ensurance);
-		stmt = createAssumption(ensurance);
+		tmpStateVar4OldDecl = declareTmpStateVar4OldExpr(ensurance.getSource(),
+				nodeFactory.newStateTypeNode(ensurance.getSource()),
+				getStateCall);
+		newEnsurance = replaceOldExpressionNodes4collective(ensurance,
+				identifierExpression(tmpStateVar4OldDecl.getName()));
+		tmpVarDecls_pred.left.add(tmpStateVar4OldDecl);
+		stmt = createAssumption(newEnsurance);
 		stmt = nodeFactory.newWithNode(collateStateRef.getSource(),
 				collateStateRef.copy(), stmt);
 		if (hasGuard) {
@@ -2298,8 +2318,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return
 	 */
 	private ExpressionNode replaceOldExpressionNodes4collective(
-			ExpressionNode expression) {
-		ExpressionNode copy = expression.copy();
+			ExpressionNode expression, ExpressionNode pre_state_state) {
+		ExpressionNode copy = expression;
 		ASTNode astNode = copy;
 		List<OperatorNode> results = new LinkedList<>();
 		OperatorNode opNode;
@@ -2319,14 +2339,19 @@ public class ContractTransformerWorker extends BaseWorker {
 
 			item.remove();
 			valueAtNode = nodeFactory.newValueAtNode(item.getSource(),
-					this.functionCall(item.getSource(), COLLATE_GET_STATE,
-							Arrays.asList(identifierExpression(
-									identifierPrefix + COLLATE_STATE_VAR_PRE))),
-					this.identifierExpression(MPI_COMM_RANK_CONST),
+					pre_state_state.copy(),
+					identifierExpression(MPI_COMM_RANK_CONST),
 					item.getArgument(0).copy());
 			parent.setChild(childIdx, valueAtNode);
 		}
 		return copy;
+	}
+
+	private VariableDeclarationNode declareTmpStateVar4OldExpr(Source source,
+			TypeNode type, ExpressionNode initializer) {
+		return nodeFactory.newVariableDeclarationNode(source,
+				identifier(TMP_OLD_PREFIX + (tmpOldCounter++)), type,
+				initializer);
 	}
 
 	/**
@@ -2376,18 +2401,13 @@ public class ContractTransformerWorker extends BaseWorker {
 		if (hasMpi) {
 			getStateCall = createMPISnapshotCall(
 					identifierExpression(MPI_COMM_WORLD));
-			varDecl = nodeFactory
-					.newVariableDeclarationNode(expression.getSource(),
-							identifier(TMP_OLD_PREFIX + (tmpOldCounter++)),
-							nodeFactory.newTypedefNameNode(
-									identifier(COLLATE_STATE), null),
-							getStateCall);
+			varDecl = declareTmpStateVar4OldExpr(source, nodeFactory
+					.newTypedefNameNode(identifier(COLLATE_STATE), null),
+					getStateCall);
 			results.add(varDecl);
 			stateIdentiifer = functionCall(source, COLLATE_GET_STATE,
 					Arrays.asList(identifierExpression(varDecl.getName())));
-			varDecl = nodeFactory.newVariableDeclarationNode(
-					expression.getSource(),
-					identifier(TMP_OLD_PREFIX + (tmpOldCounter++)),
+			varDecl = declareTmpStateVar4OldExpr(source,
 					nodeFactory.newStateTypeNode(source), stateIdentiifer);
 			procIndentifier = identifierExpression(MPI_COMM_RANK_CONST);
 			results.add(
@@ -2396,11 +2416,8 @@ public class ContractTransformerWorker extends BaseWorker {
 		} else {
 			getStateCall = functionCall(expression.getSource(), GET_STATE,
 					Arrays.asList());
-			varDecl = nodeFactory.newVariableDeclarationNode(
-					expression.getSource(),
-					identifier(TMP_OLD_PREFIX + (tmpOldCounter++)),
-					nodeFactory.newStateTypeNode(expression.getSource()),
-					getStateCall);
+			varDecl = declareTmpStateVar4OldExpr(source,
+					nodeFactory.newStateTypeNode(source), getStateCall);
 			procIndentifier = zero;
 		}
 		stateIdentiifer = identifierExpression(varDecl.getName());
