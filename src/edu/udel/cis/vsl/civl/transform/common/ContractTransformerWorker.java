@@ -799,7 +799,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				for (ExpressionNode requires : condClause
 						.getRequires(nodeFactory))
 					bodyItems.addAll(translateConditionalPredicates(false,
-							condClause.condition, requires.copy()).left);
+							condClause.condition, requires).left);
 
 		// Transform local ensurances to assumes, add temporary variable
 		// declarations for old expressions:
@@ -812,8 +812,7 @@ public class ContractTransformerWorker extends BaseWorker {
 							replaceOldExpressionNodes4Local(ensures, hasMpi));
 					localAssumes4ensurances
 							.addAll(translateConditionalPredicates(true,
-									condClauses.condition,
-									ensures.copy()).left);
+									condClauses.condition, ensures).left);
 				}
 		}
 		// Transform step 2: Inserts $mpi_comm_rank and $mpi_comm_size:
@@ -952,7 +951,7 @@ public class ContractTransformerWorker extends BaseWorker {
 							replaceOldExpressionNodes4Local(pred, hasMpi));
 					assert4localEnsures
 							.addAll(translateConditionalPredicates(false,
-									ensures.condition, pred.copy()).left);
+									ensures.condition, pred).left);
 				}
 		// Transform step 2: Add $mpi_comm_rank and $mpi_comm_size variables:
 		intTypeNode = nodeFactory.newBasicTypeNode(
@@ -1200,7 +1199,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ExpressionNode requires : condClauses
 					.getRequires(nodeFactory)) {
 				Pair<List<BlockItemNode>, List<BlockItemNode>> assertsAndTmpVars = translateConditionalPredicates(
-						false, condClauses.condition, requires.copy());
+						false, condClauses.condition, requires);
 
 				bodyItems.addAll(assertsAndTmpVars.right);
 				coAssertsComponents.addAll(assertsAndTmpVars.left);
