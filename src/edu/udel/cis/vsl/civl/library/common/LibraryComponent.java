@@ -1058,9 +1058,26 @@ public abstract class LibraryComponent {
 
 		Number dataSizeConcrete = reasoner.extractNumber(dataSize);
 
-		if (dataSizeConcrete == null)
-			throw new CIVLInternalException(
-					"Array write with a non-concrete length", source);
+		if (dataSizeConcrete == null) {
+			// TODO: only if flattenArray has dimension 1:
+			NumericSymbolicConstant idx = (NumericSymbolicConstant) universe
+					.symbolicConstant(universe.stringObject("i"),
+							universe.integerType());
+			BooleanExpression condition = universe.and(
+					universe.lessThanEquals(startPos, idx),
+					universe.lessThan(idx, universe.add(startPos, dataSize)));
+			SymbolicExpression function = universe.cond(condition,
+					universe.arrayRead(dataSequence,
+							universe.subtract(idx, startPos)),
+					universe.arrayRead(flattenArray, idx));
+
+			flattenArray = universe.arrayLambda(
+					(SymbolicCompleteArrayType) flattenArray.type(),
+					universe.lambda(idx, function));
+			return new Evaluation(state, flattenArray);
+			// throw new CIVLInternalException(
+			// "Array write with a non-concrete length", source);
+		}
 		int dataSizeInt = ((IntegerNumber) dataSizeConcrete).intValue();
 		for (int j = 0; j < dataSizeInt; j++) {
 			SymbolicExpression elementInDataArray = null;

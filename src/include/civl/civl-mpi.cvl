@@ -54,8 +54,11 @@ $mpi_data_size_t _mpi_size_map[];//=($mpi_data_size_t[0]) $lambda(int i) (($mpi_
 /****************************** Helper Functions **********************************/
 int sizeofDatatype(MPI_Datatype datatype) {
 #ifdef  _MPI_CONTRACT
-  if (!$is_concrete_int(datatype))
-      return $mpi_extentof(datatype) * sizeof(char);
+  if (!$is_concrete_int(datatype)) {
+    size_t extent = $mpi_extentof(datatype);
+
+    return extent * sizeof(char);
+  }
 #endif
   size_t result;
 

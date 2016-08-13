@@ -7,8 +7,8 @@
 /*@ 
   @ \mpi_collective(comm, P2P) :
   @   requires \mpi_agree(root) && \mpi_agree(sendcount * \mpi_extent(sendtype));
-  @   requires sendcount >= 0 && sendcount * \mpi_extent(sendtype) < 10;
-  @   requires recvcount >= 0 && recvcount * \mpi_extent(recvtype) < 10;
+  @   requires sendcount * \mpi_extent(sendtype) >= 0 && sendcount * \mpi_extent(sendtype) < 5;
+  @   requires recvcount * \mpi_extent(recvtype) >= 0 && recvcount * \mpi_extent(recvtype) < 5;
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \mpi_valid(sendbuf, sendcount, sendtype);
   @   behavior imroot:
@@ -37,7 +37,6 @@ int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
     void *ptr;
     
     ptr = $mpi_pointer_add(recvbuf, root * recvcount, recvtype);
-    $elaborate(recvcount);
     memcpy(ptr, sendbuf, recvcount * sizeofDatatype(recvtype));
   }else
     MPI_Send(sendbuf, sendcount, sendtype, root, tag, comm);

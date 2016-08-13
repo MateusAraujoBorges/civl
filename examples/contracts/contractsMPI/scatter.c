@@ -6,8 +6,7 @@
 
 /*@ \mpi_collective(comm, P2P):
   @   requires recvcount > 0;
-  @   requires \mpi_agree(root) && \mpi_agree(recvcount)
-  @            && \mpi_agree(recvtype);
+  @   requires \mpi_agree(root) && \mpi_agree(recvcount * \mpi_extent(recvtype));
   @   requires \mpi_valid(recvbuf, recvcount, recvtype);
   @   requires 0 <= root && root < \mpi_comm_size;
   @   behavior imroot:
