@@ -137,7 +137,7 @@ public class ContractsTest {
 
 	@Test
 	public void scatter_bad() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
+		assertFalse(ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
 				filename("contractsMPI/scatter_bad.c")));
 	}
 
