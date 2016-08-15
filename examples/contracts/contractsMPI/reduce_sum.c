@@ -14,8 +14,8 @@
   @   requires \mpi_agree(root) && \mpi_agree(count * datatype);
   @   requires 0 <= root && root < \mpi_comm_size;
   @   ensures  \forall integer i; 0<= i && i <count ==> 
-  @                (int)recvbuf[i] == \sum(0, \mpi_comm_size, 
-  @                \lambda int k; \on(k, ((int)sendbuf[i])));
+  @                recvbuf[i] == \sum(0, \mpi_comm_size-1, 
+  @                \lambda int k; \on(k, sendbuf)[i]);
   @   waitsfor root;
   @
   @*/

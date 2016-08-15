@@ -13,6 +13,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
+import edu.udel.cis.vsl.abc.ast.node.IF.PairNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.AssignsOrReadsNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.AssumesNode;
@@ -41,6 +42,8 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.LambdaNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode.Quantifier;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
@@ -627,7 +630,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		newAst.prettyPrint(System.out, false);
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -1400,7 +1403,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		preds = replaceDatatype.right;
 
 		SETriple transformRemoteInLambda = this
-				.transformLambdaWtRemoteInExtendedQuantifiedExpression(preds);
+				.transformRemoteWtBoundVariable(preds);
 
 		if (transformRemoteInLambda != null) {
 			stmts.addAll(transformRemoteInLambda.getBefore());
@@ -2853,6 +2856,261 @@ public class ContractTransformerWorker extends BaseWorker {
 			return nodeFactory.newVariableDeclarationNode(datatype.getSource(),
 					identifier(TMP_EXTENT_PREFIX + (tmpExtentCounter++)),
 					intNode, createSizeofDatatype(datatype));
+	}
+
+	private SETriple transformRemoteWtBoundVariable(ExpressionNode expr)
+			throws SyntaxException {
+		if (!this.hasRemoteExpression(expr))
+			return null;
+
+		SETriple result = transformRemoteInQuantifiedExpression(expr);
+
+		if (result == null)
+			result = this.transformLambdaWtRemoteInExtendedQuantifiedExpression(
+					expr);
+		return result;
+	}
+
+	private SETriple transformRemoteInQuantifiedExpression(ASTNode node)
+			throws SyntaxException {
+		if (node instanceof QuantifiedExpressionNode)
+			return transformRemoteInQuantifiedExpressionWork(
+					(QuantifiedExpressionNode) node);
+
+		List<BlockItemNode> before = new LinkedList<>();
+		int numChildren = node.numChildren();
+
+		for (int i = 0; i < numChildren; i++) {
+			ASTNode child = node.child(i);
+
+			if (child != null) {
+				SETriple triple = transformRemoteInQuantifiedExpression(child);
+
+				if (triple != null) {
+					before.addAll(triple.getBefore());
+					node.setChild(i, triple.getNode());
+				}
+			}
+		}
+		if (!before.isEmpty())
+			return new SETriple(before, node, null);
+		return null;
+
+	}
+
+	private SETriple transformRemoteInQuantifiedExpressionWork(
+			QuantifiedExpressionNode quantified) throws SyntaxException {
+		Quantifier quantifier = quantified.quantifier();
+		ExpressionNode body = quantified.expression();
+
+		if (!this.hasRemoteExpression(body))
+			return null;
+		if (quantifier != Quantifier.EXISTS && quantifier != Quantifier.FORALL)
+			return null;
+
+		SequenceNode<PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode>> boundVarsList = quantified
+				.boundVariableList();
+
+		if (boundVarsList.numChildren() > 1)
+			return null;
+		if (boundVarsList.getSequenceChild(0).getLeft().numChildren() > 1)
+			return null;
+
+		VariableDeclarationNode boundVariable = boundVarsList
+				.getSequenceChild(0).getLeft().getSequenceChild(0);
+		ExpressionNode restrict = quantified.restriction();
+		Pair<IdentifierExpressionNode, ExpressionNode> range = condition2Range(
+				restrict);
+
+		if (range == null)
+			return null;
+		if (!range.left.getIdentifier().name().equals(boundVariable.getName()))
+			return null;
+
+		List<BlockItemNode> before = new LinkedList<>();
+		ExpressionNode initValue = quantifier == Quantifier.FORALL
+				? this.integerConstant(1)
+				: this.integerConstant(0);
+		VariableDeclarationNode tmpResult = this.variableDeclaration(
+				this.newUniqueIdentifier("quant"),
+				this.typeNode(this.nodeFactory.typeFactory()
+						.basicType(BasicTypeKind.BOOL)),
+				initValue);
+		Source source = body.getSource();
+		SETriple bodyTriple = this.transformRemoteInQuantifiedExpression(body);
+
+		if (bodyTriple == null)
+			bodyTriple = this
+					.transformLambdaWtRemoteInExtendedQuantifiedExpression(
+							body);
+
+		body = bodyTriple != null
+				? (ExpressionNode) bodyTriple.getNode()
+				: body.copy();
+
+		ExpressionNode assignResult = this.nodeFactory.newOperatorNode(source,
+				Operator.ASSIGN, this.identifierExpression(tmpResult.getName()),
+				quantifier == Quantifier.FORALL
+						? this.integerConstant(0)
+						: this.integerConstant(1));
+		List<BlockItemNode> ifBodyList = new LinkedList<>(),
+				loopBody = new LinkedList<>();
+
+		if (bodyTriple != null)
+			loopBody.addAll(bodyTriple.getBefore());
+		ifBodyList.add(nodeFactory.newExpressionStatementNode(assignResult));
+		ifBodyList.add(nodeFactory.newBreakNode(source));
+
+		StatementNode ifStmt = nodeFactory
+				.newIfNode(source,
+						quantifier == Quantifier.FORALL
+								? nodeFactory.newOperatorNode(source,
+										Operator.NOT, body.copy())
+								: body.copy(),
+						nodeFactory.newCompoundStatementNode(source,
+								ifBodyList));
+
+		loopBody.add(ifStmt);
+		before.add(tmpResult);
+		before.add(this.nodeFactory.newCivlForNode(source, false,
+				this.nodeFactory.newForLoopInitializerNode(source,
+						Arrays.asList(boundVariable.copy())),
+				range.right,
+				nodeFactory.newCompoundStatementNode(source, loopBody), null));
+		return new SETriple(before,
+				this.identifierExpression(tmpResult.getName()), null);
+	}
+
+	/**
+	 * translate a condition like 0<=i && i<N to a range (0..N-1)
+	 * 
+	 * @param condition
+	 * @return
+	 * @throws SyntaxException
+	 */
+	private Pair<IdentifierExpressionNode, ExpressionNode> condition2Range(
+			ExpressionNode condition) throws SyntaxException {
+		Type type = condition.getConvertedType();
+
+		if (!type.compatibleWith(
+				this.nodeFactory.typeFactory().basicType(BasicTypeKind.INT)))
+			return null;
+
+		if (condition instanceof OperatorNode) {
+			OperatorNode condOperator = (OperatorNode) condition;
+
+			if (condOperator.getNumberOfArguments() == 2) {
+				ExpressionNode arg0 = condOperator.getArgument(0),
+						arg1 = condOperator.getArgument(1);
+
+				if (arg0 instanceof OperatorNode
+						&& arg1 instanceof OperatorNode) {
+					OperatorNode clause0 = (OperatorNode) arg0,
+							clause1 = (OperatorNode) arg1;
+					ExpressionNode low0, up0, low1, up1;
+					Operator op0 = clause0.getOperator(),
+							op1 = clause1.getOperator();
+					boolean strict0 = false, strict1 = false;
+					IdentifierExpressionNode bound = null;
+					ExpressionNode lower = null, upper = null;
+
+					if (this.isLGTEOperator(op0) && this.isLGTEOperator(op1)) {
+						switch (op0) {
+							case LT :
+							case LTE :
+								low0 = clause0.getArgument(0);
+								up0 = clause0.getArgument(1);
+								strict0 = (op0 == Operator.LT);
+								break;
+							case GT :
+							case GTE :
+								low0 = clause0.getArgument(1);
+								up0 = clause0.getArgument(0);
+								strict0 = (op0 == Operator.GT);
+								break;
+							default :
+								return null;
+						}
+						switch (op1) {
+							case LT :
+							case LTE :
+								low1 = clause1.getArgument(0);
+								up1 = clause1.getArgument(1);
+								strict1 = (op1 == Operator.LT);
+								break;
+							case GT :
+							case GTE :
+								low1 = clause1.getArgument(1);
+								up1 = clause1.getArgument(0);
+								strict1 = (op1 == Operator.GT);
+								break;
+							default :
+								return null;
+						}
+						if (up0 instanceof IdentifierExpressionNode
+								&& low1 instanceof IdentifierExpressionNode
+								&& ((IdentifierExpressionNode) up0)
+										.getIdentifier().name()
+										.equals(((IdentifierExpressionNode) low1)
+												.getIdentifier().name())) {
+							// this is low0 </<= up0=low1 </<= up1
+							if (strict0)
+								lower = nodeFactory.newOperatorNode(
+										low0.getSource(), Operator.PLUS,
+										low0.copy(), this.integerConstant(1));
+							else
+								lower = low0.copy();
+							if (strict1)
+								upper = nodeFactory.newOperatorNode(
+										up1.getSource(), Operator.MINUS,
+										up1.copy(), this.integerConstant(1));
+							else
+								upper = up1.copy();
+							bound = (IdentifierExpressionNode) up0;
+						} else if (up1 instanceof IdentifierExpressionNode
+								&& low0 instanceof IdentifierExpressionNode
+								&& ((IdentifierExpressionNode) up1)
+										.getIdentifier().name()
+										.equals(((IdentifierExpressionNode) low0)
+												.getIdentifier().name())) {
+							// this is low0 </<= up0=low1 </<= up1
+							if (strict1)
+								lower = nodeFactory.newOperatorNode(
+										low1.getSource(), Operator.PLUS,
+										low1.copy(), this.integerConstant(1));
+							else
+								lower = low1.copy();
+							if (strict0)
+								upper = nodeFactory.newOperatorNode(
+										up0.getSource(), Operator.MINUS,
+										up0.copy(), this.integerConstant(1));
+							else
+								upper = up0.copy();
+							bound = (IdentifierExpressionNode) up1.copy();
+						}
+						if (bound != null) {
+							return new Pair<>(bound,
+									this.nodeFactory.newRegularRangeNode(
+											condition.getSource(), lower,
+											upper));
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	private boolean isLGTEOperator(Operator op) {
+		switch (op) {
+			case LT :
+			case LTE :
+			case GT :
+			case GTE :
+				return true;
+			default :
+				return false;
+		}
 	}
 
 	private SETriple transformLambdaWtRemoteInExtendedQuantifiedExpression(
