@@ -1,0 +1,17 @@
+#include<string.h>
+
+int main() {
+  int N;
+
+  $havoc(&N);
+  $assume(N > 0 && N <= 2);
+
+  int a[2 * N];
+  int b[N];
+
+  memcpy(a, b, sizeof(int) * N);
+  $elaborate(N);
+  $assert(a);
+  $assert(b);
+  return 0;
+}

@@ -93,12 +93,22 @@ public class BackendTest {
 
 	@Test
 	public void valueAt() {
-		assertTrue(ui.run(VERIFY, filename("valueat.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("valueat.cvl")));
 	}
 
 	@Test
 	public void valueAt_seq() {
-		assertTrue(ui.run(VERIFY, filename("valueat_seq.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("valueat_seq.cvl")));
+	}
+
+	@Test
+	public void arrayLambda() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("arrayLambda.cvl")));
+	}
+
+	@Test
+	public void sizeof() {
+		ui.run(VERIFY, QUIET, filename("sizeof.cvl"));
 	}
 
 	@AfterClass

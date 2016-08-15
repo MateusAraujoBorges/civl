@@ -1,0 +1,8 @@
+
+int main(){
+  int a=4;
+
+  $assume(sizeof(int)==a);
+
+  $assert(sizeof(int)==a);  
+}
