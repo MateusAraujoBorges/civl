@@ -65,6 +65,7 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.common.ExprTriple;
 import edu.udel.cis.vsl.abc.transform.common.SETriple;
 import edu.udel.cis.vsl.abc.util.IF.Pair;
+import edu.udel.cis.vsl.abc.util.IF.Triple;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.transform.IF.ContractTransformer;
@@ -826,9 +827,11 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ConditionalClauses condClause : localBlock
 					.getConditionalClauses())
 				for (ExpressionNode requires : condClause
-						.getRequires(nodeFactory))
+						.getRequires(nodeFactory)) {
+					requires = getValidAndReplaceValidExprNodes(requires).right;
 					bodyItems.addAll(translateConditionalPredicates(false,
 							condClause.condition, requires).left);
+				}
 
 		// Transform local ensurances to assumes, add temporary variable
 		// declarations for old expressions:
@@ -839,6 +842,7 @@ public class ContractTransformerWorker extends BaseWorker {
 						.getEnsures(nodeFactory)) {
 					tmpVars4localOldExprs.addAll(
 							replaceOldExpressionNodes4Local(ensures, hasMpi));
+					ensures = getValidAndReplaceValidExprNodes(ensures).right;
 					localAssumes4ensurances
 							.addAll(translateConditionalPredicates(true,
 									condClauses.condition, ensures).left);
@@ -960,14 +964,14 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ConditionalClauses requires : localBlock
 					.getConditionalClauses())
 				for (ExpressionNode pred : requires.getRequires(nodeFactory)) {
-					Pair<List<OperatorNode>, ExpressionNode> valids_newPred = getValidExpressionNodes(
-							pred.copy());
+					Pair<List<OperatorNode>, ExpressionNode> valids_newPred = getValidAndReplaceValidExprNodes(
+							pred);
 
 					bodyItems.addAll(translateConditionalPredicates(true,
 							requires.condition, valids_newPred.right).left);
 
 					for (OperatorNode valid : valids_newPred.left)
-						bodyItems.addAll(createMallocStatementSequenceFoValid(
+						bodyItems.addAll(createMallocStatementSequenceForValid(
 								valid, funcDefi));
 				}
 		// Transform sequential ensurances into asserts, add temporary variable
@@ -978,6 +982,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				for (ExpressionNode pred : ensures.getEnsures(nodeFactory)) {
 					tmpVarDecls4OldExprs.addAll(
 							replaceOldExpressionNodes4Local(pred, hasMpi));
+					pred = getValidAndReplaceValidExprNodes(pred).right;
 					assert4localEnsures
 							.addAll(translateConditionalPredicates(false,
 									ensures.condition, pred).left);
@@ -2338,15 +2343,15 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * 
 	 * @param expression
 	 * @return
+	 * @throws SyntaxException
 	 */
-	private Pair<List<OperatorNode>, ExpressionNode> getValidExpressionNodes(
-			ExpressionNode expression) {
-		ExpressionNode copy = expression.copy();
+	private Pair<List<OperatorNode>, ExpressionNode> getValidAndReplaceValidExprNodes(
+			ExpressionNode expression) throws SyntaxException {
+		ExpressionNode copy = expression;
 		ASTNode astNode = copy;
 		List<OperatorNode> results = new LinkedList<>();
 		OperatorNode opNode;
-		ExpressionNode trueExpr = nodeFactory
-				.newBooleanConstantNode(expression.getSource(), true);
+		ExpressionNode isDereferablePtr;
 
 		do {
 			if (astNode instanceof OperatorNode)
@@ -2356,14 +2361,65 @@ public class ContractTransformerWorker extends BaseWorker {
 				}
 		} while ((astNode = astNode.nextDFS()) != null);
 
-		for (ExpressionNode item : results) {
+		for (OperatorNode item : results) {
 			ASTNode parent = item.parent();
 			int childIdx = item.childIndex();
+			Triple<ExpressionNode, Operator, ExpressionNode> ptr_range = parseValidArgument(
+					item.getArgument(0));
 
 			item.remove();
-			parent.setChild(childIdx, trueExpr.copy());
+			if (ptr_range.right != null) {
+				VariableDeclarationNode boundOffsetVar = nodeFactory
+						.newVariableDeclarationNode(item.getSource(),
+								identifier("i"), nodeFactory.newBasicTypeNode(
+										item.getSource(), BasicTypeKind.INT));
+				OperatorNode ptrPLUSboundVar = nodeFactory.newOperatorNode(
+						item.getSource(), ptr_range.middle,
+						ptr_range.left.copy(),
+						identifierExpression(boundOffsetVar.getName()));
+				List<PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode>> boundVars = new LinkedList<>();
+
+				boundVars.add(nodeFactory.newPairNode(item.getSource(),
+						nodeFactory.newSequenceNode(item.getSource(),
+								"bound var declaration list",
+								Arrays.asList(boundOffsetVar)),
+						ptr_range.right.copy()));
+				isDereferablePtr = nodeFactory.newFunctionCallNode(
+						item.getSource(), identifierExpression(DEREFABLE),
+						Arrays.asList(ptrPLUSboundVar), null);
+				isDereferablePtr = nodeFactory.newQuantifiedExpressionNode(
+						item.getSource(), Quantifier.FORALL,
+						nodeFactory.newSequenceNode(item.getSource(),
+								"bound var declaration list", boundVars),
+						null, isDereferablePtr);
+
+			} else
+				isDereferablePtr = nodeFactory.newFunctionCallNode(
+						item.getSource(), identifierExpression(DEREFABLE),
+						Arrays.asList(ptr_range.left.copy()), null);
+			parent.setChild(childIdx, isDereferablePtr);
 		}
 		return new Pair<>(results, copy);
+	}
+
+	private Triple<ExpressionNode, Operator, ExpressionNode> parseValidArgument(
+			ExpressionNode arg) throws SyntaxException {
+		if (arg.expressionKind() == ExpressionKind.OPERATOR) {
+			OperatorNode opNode = (OperatorNode) arg;
+
+			assert opNode.getOperator() == Operator.PLUS
+					|| opNode.getOperator() == Operator.MINUS;
+
+			ExpressionNode left = opNode.getArgument(0);
+			ExpressionNode right = opNode.getArgument(1);
+
+			if (left.getConvertedType().kind() == TypeKind.POINTER)
+				return new Triple<>(left, opNode.getOperator(), right);
+			else
+				return new Triple<>(right, opNode.getOperator(), left);
+
+		} else
+			return new Triple<>(arg, null, null);
 	}
 
 	/**
@@ -2555,7 +2611,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return
 	 * @throws SyntaxException
 	 */
-	private List<BlockItemNode> createMallocStatementSequenceFoValid(
+	private List<BlockItemNode> createMallocStatementSequenceForValid(
 			OperatorNode valid, FunctionDeclarationNode funcDecl)
 			throws SyntaxException {
 		Source source = valid.getSource();
