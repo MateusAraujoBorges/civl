@@ -580,27 +580,27 @@ public abstract class CommonEnabler implements Enabler {
 			StatementKind kind = statement.statementKind();
 
 			switch (kind) {
-			case CALL_OR_SPAWN: {
-				CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
+				case CALL_OR_SPAWN : {
+					CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
 
-				if (call.isSystemCall()) { // TODO check function pointer
-					return this.getEnabledTransitionsOfSystemCall(
-							call.getSource(), state, call, pathCondition, pid,
-							atomicLockAction);
-				} else if (procBound > 0 && call.isSpawn()
-						&& state.numLiveProcs() >= procBound) {
-					// empty set: spawn is disabled due to procBound
-					return localTransitions;
+					if (call.isSystemCall()) { // TODO check function pointer
+						return this.getEnabledTransitionsOfSystemCall(
+								call.getSource(), state, call, pathCondition,
+								pid, atomicLockAction);
+					} else if (procBound > 0 && call.isSpawn()
+							&& state.numLiveProcs() >= procBound) {
+						// empty set: spawn is disabled due to procBound
+						return localTransitions;
+					}
+					break;
 				}
-				break;
-			}
-			case WITH:
-				return enabledTransitionsOfWithStatement(state, pid,
-						(WithStatement) statement, atomicLockAction);
-			case UPDATE:
-				return enabledTransitionsOfUpdateStatement(state, pid,
-						(UpdateStatement) statement, atomicLockAction);
-			default:
+				case WITH :
+					return enabledTransitionsOfWithStatement(state, pid,
+							(WithStatement) statement, atomicLockAction);
+				case UPDATE :
+					return enabledTransitionsOfUpdateStatement(state, pid,
+							(UpdateStatement) statement, atomicLockAction);
+				default :
 			}
 			localTransitions.add(Semantics.newTransition(pathCondition, pid,
 					statement, atomicLockAction));
@@ -656,7 +656,7 @@ public abstract class CommonEnabler implements Enabler {
 		colState = stateFactory.getStateByReference(colStateID);
 		colState = stateFactory.addExternalProcess(colState, state, pid, place,
 				with.function(), new SymbolicExpression[0]);
-		newColStates = collateExecutor.run2Completion(colState,
+		newColStates = collateExecutor.run2Completion(state, pid, colState,
 				this.civlConfig);
 		return getCollateStateUpdateTransitions(oldPC, pid, colStateRef,
 				newColStates, atomicLockAction, with);
@@ -844,8 +844,8 @@ public abstract class CommonEnabler implements Enabler {
 
 				colState = stateFactory.addExternalProcess(colState, state, pid,
 						placeID, function, argumentValues);
-				newColStates = collateExecutor.run2Completion(colState,
-						this.civlConfig);
+				newColStates = collateExecutor.run2Completion(state, pid,
+						colState, this.civlConfig);
 
 				Pair<LHSExpression, List<Expression>> myColStateUpdatePair = this
 						.getCollateStateUpdateExpressions(pid, colStateRefExpr,
@@ -937,7 +937,8 @@ public abstract class CommonEnabler implements Enabler {
 			Statement statement, int statementId,
 			BooleanExpression newGuardMap[][]) {
 		BooleanExpression guard;
-		BooleanExpression myMap[] = newGuardMap != null ? newGuardMap[pid]
+		BooleanExpression myMap[] = newGuardMap != null
+				? newGuardMap[pid]
 				: null;
 
 		guard = myMap != null ? myMap[statementId] : null;

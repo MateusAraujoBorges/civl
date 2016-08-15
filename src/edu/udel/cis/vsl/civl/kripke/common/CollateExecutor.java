@@ -74,7 +74,7 @@ public class CollateExecutor {
 	// this.errorLogger = errorLogger;
 	// }
 
-	Collection<State> run2Completion(State initState,
+	Collection<State> run2Completion(State realState, int pid, State initState,
 			CIVLConfiguration oldConfig) {
 		ColStateManager colStateManager = new ColStateManager(enabler, executor,
 				executor.evaluator().symbolicAnalyzer(), errorLogger, config);
@@ -92,14 +92,15 @@ public class CollateExecutor {
 		}
 		if (this.config.showTransitions() || this.config.showStates()
 				|| config.showSavedStates() || config.debugOrVerbose())
-			config.out().println(
-					"********************************\nStart executing sub-program on collate states.");
+			config.out().println("********************************\n"
+					+ "Process " + realState.getProcessState(pid).name()
+					+ " at State " + realState.getCanonicId()
+					+ ": start executing sub-program on collate states.");
 		if (this.config.showStates() || config.showSavedStates()
 				|| config.debugOrVerbose())
 			config.out().println(executor.evaluator().symbolicAnalyzer()
 					.stateToString(initState));
-		while (searcher.search(initState))
-			;
+		while (searcher.search(initState));
 		if (this.config.showTransitions() || this.config.showStates()
 				|| config.showSavedStates() || config.debugOrVerbose())
 			config.out().println(
