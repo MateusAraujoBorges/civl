@@ -77,7 +77,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * The common prefix for all generated identifiers, 'ctat' is short for
 	 * 'contract':
 	 */
-	private final static String CONTRACT_VAR_PREFIX = "_ctat_";
+	private final static String CONTRACT_PREFIX = "_ctat_";
 
 	/**
 	 * $havoc system function identifier:
@@ -238,23 +238,49 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private final static String COPY = "$copy";
 
-	private final static String TMP_HEAP_PREFIX = CONTRACT_VAR_PREFIX
-			+ "_heap_";
+	/**
+	 * Generated heap variable prefix:
+	 */
+	private final static String TMP_HEAP_PREFIX = CONTRACT_PREFIX + "heap";
 
+	/**
+	 * Generated heap variable counter:
+	 */
 	private int tmpHeapCounter = 0;
 
-	private final static String TMP_EXTENT_PREFIX = CONTRACT_VAR_PREFIX
-			+ "_extent_";
+	/**
+	 * Generated datatype-extent variable prefix:
+	 */
+	private final static String TMP_EXTENT_PREFIX = CONTRACT_PREFIX + "extent";
 
+	/**
+	 * Generated datatype-extent variable counter:
+	 */
 	private int tmpExtentCounter = 0;
 
-	private final static String TMP_OLD_PREFIX = CONTRACT_VAR_PREFIX + "_old_";
+	/**
+	 * Generated old variable prefix:
+	 */
+	private final static String TMP_OLD_PREFIX = CONTRACT_PREFIX + "old";
 
+	/**
+	 * Generated old variable counter:
+	 */
 	private int tmpOldCounter = 0;
 
 	private int tmpRemoteInLambdaCounter = 0;
 
+	/**
+	 * Set of all global variables in source files:
+	 */
 	private Set<VariableDeclarationNode> globalVarDecls = new HashSet<>();
+
+	/**
+	 * Function identifier for the generated function which assigns all global
+	 * variables new symbolic constants:
+	 */
+	private final static String ASSIGN_GLOBAL_FUNCTION = CONTRACT_PREFIX
+			+ "assign_gloabl";
 
 	/**
 	 * This class represents a contract behavior. Without loss of generality,
@@ -527,7 +553,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	public ContractTransformerWorker(ASTFactory astFactory,
 			String targetFunctionName) {
 		super(ContractTransformer.LONG_NAME, astFactory);
-		identifierPrefix = CONTRACT_VAR_PREFIX;
+		identifierPrefix = CONTRACT_PREFIX;
 		this.targetFunctionName = targetFunctionName;
 		mpiCommSizeSource = newSource("int " + MPI_COMM_SIZE_CONST + ";",
 				CivlcTokenConstant.DECLARATION);
@@ -2587,9 +2613,8 @@ public class ContractTransformerWorker extends BaseWorker {
 		PointerType ptrType = (PointerType) buf.getConvertedType();
 		TypeNode referedType;
 
-		if (ptrType.referencedType().kind() != TypeKind.VOID)
-			referedType = typeNode(ptrType.referencedType());
-		else
+		referedType = typeNode(ptrType.referencedType());
+		if (referedType.typeNodeKind() == TypeNodeKind.VOID)
 			referedType = nodeFactory.newBasicTypeNode(buf.getSource(),
 					BasicTypeKind.CHAR);
 
@@ -2896,8 +2921,7 @@ public class ContractTransformerWorker extends BaseWorker {
 								expr.getSource());
 				}
 				resultVar = this.variableDeclaration(
-						CONTRACT_VAR_PREFIX + "exquant"
-								+ tmpRemoteInLambdaCounter,
+						CONTRACT_PREFIX + "exquant" + tmpRemoteInLambdaCounter,
 						this.typeNode(outputType), init);
 
 				ExpressionNode loopBodyExpr = nodeFactory.newOperatorNode(
@@ -2945,4 +2969,32 @@ public class ContractTransformerWorker extends BaseWorker {
 		return false;
 	}
 
+	/**
+	 * Creates a function which assigns all global variables new symbolic
+	 * constants and new allocated heap variables for valid pointers.
+	 * 
+	 * This function can be called when there is a function whose contracts
+	 * never specifies an assign clause.
+	 * 
+	 * @return
+	 */
+	private FunctionDefinitionNode createAssignAllGlobalFunction() {
+		List<BlockItemNode> body = new LinkedList<>();
+		CompoundStatementNode compoundBody;
+		Source source = newSource("void _assigns_all_global()",
+				CivlcTokenConstant.FUNCTION_DEFINITION);
+
+		for (VariableDeclarationNode gVar : globalVarDecls) {
+			ExpressionNode havocCall = createHavocCall(
+					identifierExpression(gVar.getName()));
+
+			body.add(nodeFactory.newExpressionStatementNode(havocCall));
+		}
+		compoundBody = nodeFactory.newCompoundStatementNode(source, body);
+		return nodeFactory.newFunctionDefinitionNode(source,
+				identifier(ASSIGN_GLOBAL_FUNCTION),
+				nodeFactory.newFunctionTypeNode(source,
+						nodeFactory.newVoidTypeNode(source), null, false),
+				null, compoundBody);
+	}
 }

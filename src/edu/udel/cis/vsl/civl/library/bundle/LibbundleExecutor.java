@@ -27,7 +27,6 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
@@ -528,15 +527,6 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		if (reasoner.isValid(universe.equals(dataSize, zero))) {
 			eval = evaluator.dereference(civlsource, state, process, null,
 					pointer, false);
-			return new Pair<Evaluation, SymbolicExpression>(eval, pointer);
-		} else if (reasoner.isValid(universe.equals(dataSize, one))) {
-			ReferenceExpression ref;
-
-			// If data size is one, reading array to get the element
-			eval = new Evaluation(state, universe.arrayRead(data, zero));
-			ref = symbolicAnalyzer.getMemBaseReference(state, pointer,
-					civlsource);
-			pointer = symbolicUtil.makePointer(pointer, ref);
 			return new Pair<Evaluation, SymbolicExpression>(eval, pointer);
 		}
 		// If data size larger than one, return an array and the corresponding

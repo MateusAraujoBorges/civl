@@ -7,8 +7,8 @@
   @   requires \mpi_agree(root) && \mpi_agree(recvcount * \mpi_extent(recvtype));
   @   requires \mpi_valid(recvbuf, recvcount, recvtype);
   @   requires 0 <= root && root < \mpi_comm_size;
-  @   requires sendcount >= 0 && sendcount * \mpi_extent(sendtype) < 8;
-  @   requires recvcount >= 0 && recvcount * \mpi_extent(recvtype) < 8;
+  @   requires sendcount >= 0 && sendcount * \mpi_extent(sendtype) < 5;
+  @   requires recvcount >= 0 && recvcount * \mpi_extent(recvtype) < 5;
   @   assigns  \mpi_region(recvbuf, recvcount, recvtype);
   @   behavior imroot:
   @     assumes \mpi_comm_rank == root;
@@ -22,7 +22,7 @@
   @     assumes \mpi_comm_rank != root;
   @     ensures \mpi_equals(recvbuf, recvcount, recvtype,
   @                \mpi_offset(\on(root, sendbuf), 
-                               recvcount * \mpi_comm_rank, recvtype));
+  @                            recvcount * \mpi_comm_rank, sendtype));
  */
 int scatter(const void* sendbuf, int sendcount, MPI_Datatype sendtype, 
 		 void* recvbuf, int recvcount, MPI_Datatype recvtype, int root,
@@ -39,17 +39,17 @@ int scatter(const void* sendbuf, int sendcount, MPI_Datatype sendtype,
 
     ptr = $mpi_pointer_add(sendbuf, root*sendcount, sendtype);
     memcpy(recvbuf, ptr, sizeofDatatype(recvtype)*recvcount);
-    for(int i=0; i<nprocs; i++){
+    for(int i=0; i<nprocs; i++)
       if(i != root) {
 	void * ptr;
-
+	
 	offset = i * sendcount;
 	ptr = $mpi_pointer_add(sendbuf, offset, sendtype);
 	MPI_Send(ptr, sendcount, sendtype, i, tag, comm);
       }
-    }
   }else
-    MPI_Recv(recvbuf, recvcount, recvtype, 
+    MPI_Recv(recvbuf, 0, recvtype, 
 	     root, tag, comm, MPI_STATUS_IGNORE);
+  
   return 0;
 }

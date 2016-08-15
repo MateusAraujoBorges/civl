@@ -41,6 +41,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.ArrayType;
 import edu.udel.cis.vsl.abc.ast.type.IF.EnumerationType;
 import edu.udel.cis.vsl.abc.ast.type.IF.PointerType;
+import edu.udel.cis.vsl.abc.ast.type.IF.QualifiedObjectType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
@@ -826,6 +827,8 @@ public abstract class BaseWorker {
 			case POINTER :
 				return nodeFactory.newPointerTypeNode(source, this.typeNode(
 						source, ((PointerType) type).referencedType()));
+			case QUALIFIED :
+				return typeNode(((QualifiedObjectType) type).getBaseType());
 			case STRUCTURE_OR_UNION : {
 				StructureOrUnionType structOrUnionType = (StructureOrUnionType) type;
 

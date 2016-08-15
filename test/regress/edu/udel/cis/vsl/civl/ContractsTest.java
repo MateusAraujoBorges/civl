@@ -109,7 +109,7 @@ public class ContractsTest {
 
 	@Test
 	public void gather() {
-		assertTrue(ui.run("show -input_mpi_nprocs=2 -mpiContract=gather",
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
 				filename("contractsMPI/gather.c")));
 	}
 
@@ -133,6 +133,12 @@ public class ContractsTest {
 	public void scatter() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
 				filename("contractsMPI/scatter.c")));
+	}
+
+	@Test
+	public void scatter_bad() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
+				filename("contractsMPI/scatter_bad.c")));
 	}
 
 	@Test
