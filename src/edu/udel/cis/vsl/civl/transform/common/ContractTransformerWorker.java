@@ -630,7 +630,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+		newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -1948,13 +1948,41 @@ public class ContractTransformerWorker extends BaseWorker {
 		Source source = newSource(COLLATE_ARRIVED + "(...)",
 				CivlcTokenConstant.CALL);
 		ExpressionNode arrivedFuncId = identifierExpression(COLLATE_ARRIVED);
-		List<ExpressionNode> arguments = new LinkedList<>();
+		ExpressionNode first = ranges.get(0);
+		ExpressionNode call;
 
-		arguments.add(stateRef.copy());
-		for (ExpressionNode range : ranges)
-			arguments.add(range.copy());
-		return nodeFactory.newFunctionCallNode(source, arrivedFuncId, arguments,
-				null);
+		first.remove();
+		first = makeItRange(first);
+		call = nodeFactory.newFunctionCallNode(source, arrivedFuncId,
+				Arrays.asList(stateRef.copy(), first), null);
+		ranges.remove(0);
+		for (ExpressionNode range : ranges) {
+			range.remove();
+			range = makeItRange(range);
+
+			ExpressionNode anotherCall = nodeFactory.newFunctionCallNode(source,
+					arrivedFuncId.copy(), Arrays.asList(stateRef.copy(), range),
+					null);
+
+			call = nodeFactory.newOperatorNode(source, Operator.LAND, call,
+					anotherCall);
+		}
+		return call;
+	}
+
+	/**
+	 * Transform an expression e to a range type: [e, e], no-op if e alreay has
+	 * a range type.
+	 * 
+	 * @return
+	 */
+	private ExpressionNode makeItRange(ExpressionNode e) {
+		if (e.expressionKind() == ExpressionKind.REGULAR_RANGE)
+			return e;
+		else {
+			e.remove();
+			return nodeFactory.newRegularRangeNode(e.getSource(), e, e.copy());
+		}
 	}
 
 	/**
@@ -2600,6 +2628,13 @@ public class ContractTransformerWorker extends BaseWorker {
 				identifier(TMP_HEAP_PREFIX + (tmpHeapCounter++)), type);
 	}
 
+	/**
+	 * Create heap variables then let valid pointers point to them.
+	 * 
+	 * @param mpiValid
+	 * @return
+	 * @throws SyntaxException
+	 */
 	private List<BlockItemNode> createMallocStatementSequenceForMPIValid2(
 			MPIContractExpressionNode mpiValid) throws SyntaxException {
 		Source source = mpiValid.getSource();

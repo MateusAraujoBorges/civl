@@ -13,7 +13,9 @@
   @   requires \mpi_valid(recvbuf, count, datatype);
   @   requires \mpi_agree(root) && \mpi_agree(count * datatype);
   @   requires 0 <= root && root < \mpi_comm_size;
-  @   ensures  \forall integer i; 0<= i && i <count ==> 
+  @   behavior root:
+  @     assumes \mpi_comm_rank == root;
+  @     ensures  \forall integer i; 0<= i && i <count ==> 
   @                recvbuf[i] == \sum(0, \mpi_comm_size-1, 
   @                \lambda int k; \on(k, sendbuf)[i]);
   @   waitsfor root;
@@ -33,8 +35,8 @@ int reduce_sum(int * sendbuf, int * recvbuf, MPI_Datatype datatype,
 
     MPI_Comm_size(comm, &nprocs);
     size = count * sizeof(int);
-    memcpy(recvbuf, sendbuf, size);
     sum = (int *)malloc(sizeof(int) * count);
+    memcpy(sum, sendbuf, size);
     for (int i = 0; i<nprocs; i++) {
       if (i != root){
 	MPI_Recv(recvbuf, count, datatype, i, REDUCE_TAG, comm, MPI_STATUS_IGNORE);

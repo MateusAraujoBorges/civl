@@ -19,7 +19,7 @@
   @     assumes \mpi_comm_rank != root;
   @     assigns \mpi_region(buf, count, datatype);
   @     ensures \mpi_equals(buf, count, datatype, \on(root, buf));
-  @   waitsfor (root .. root);
+  @     waitsfor root;
   @*/
 int broadcast(void * buf, int count, 
 	      MPI_Datatype datatype, int root, MPI_Comm comm) {

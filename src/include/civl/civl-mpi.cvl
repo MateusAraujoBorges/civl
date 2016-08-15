@@ -91,7 +91,7 @@ int sizeofDatatype(MPI_Datatype datatype) {
     $assert(0, "Unreachable");
   }
 #ifdef  _MPI_CONTRACT
-  $assume(result == $mpi_extentof(datatype) * sizeof(char));
+  $assume(result == $mpi_extentof(datatype));
 #endif
   return result;
 }
