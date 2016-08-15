@@ -648,6 +648,8 @@ public class MemoryUnitExpressionAnalyzer {
 						derefCount);
 				break;
 			}
+			case POINTER_SET :
+				break;
 			default :
 				throw new CIVLUnimplementedFeatureException(
 						"computing the impact memory units"

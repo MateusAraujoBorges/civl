@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.model.common.expression;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -10,8 +11,9 @@ import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
-public class CommonPointerSetExpression extends CommonExpression implements
-		PointerSetExpression {
+public class CommonPointerSetExpression extends CommonExpression
+		implements
+			PointerSetExpression {
 	private LHSExpression basePointer;
 
 	private Expression range;
@@ -31,17 +33,31 @@ public class CommonPointerSetExpression extends CommonExpression implements
 
 	@Override
 	public Set<Variable> variableAddressedOf(Scope scope) {
-		Set<Variable> result = basePointer.variableAddressedOf(scope);
+		Set<Variable> result = new HashSet<>(),
+				subResult = basePointer.variableAddressedOf(scope);
 
-		result.addAll(range.variableAddressedOf(scope));
+		if (subResult != null)
+			result.addAll(subResult);
+		subResult = range.variableAddressedOf(scope);
+		if (subResult != null)
+			result.addAll(subResult);
+		if (result.isEmpty())
+			return null;
 		return result;
 	}
 
 	@Override
 	public Set<Variable> variableAddressedOf() {
-		Set<Variable> result = basePointer.variableAddressedOf();
+		Set<Variable> result = new HashSet<>(),
+				subResult = basePointer.variableAddressedOf();
 
-		result.addAll(range.variableAddressedOf());
+		if (subResult != null)
+			result.addAll(subResult);
+		subResult = range.variableAddressedOf();
+		if (subResult != null)
+			result.addAll(subResult);
+		if (result.isEmpty())
+			return null;
 		return result;
 	}
 
