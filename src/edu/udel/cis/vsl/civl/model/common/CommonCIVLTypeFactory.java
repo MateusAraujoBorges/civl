@@ -46,6 +46,7 @@ import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
@@ -591,14 +592,13 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 			return universe.oneInt();
 
 		String name = "SIZEOF_" + kind;
-		NumericExpression result = (NumericExpression) universe
-				.symbolicConstant(universe.stringObject(name),
-						universe.integerType());
+		SymbolicConstant result = universe.symbolicConstant(
+				universe.stringObject(name), universe.integerType());
 
+		ModelConfiguration.SIZEOF_VARS.add(result);
 		if (!ModelConfiguration.RESERVE_NAMES.contains(name))
 			ModelConfiguration.RESERVE_NAMES.add(name);
-		result = (NumericExpression) universe.canonic(result);
-		return result;
+		return (NumericExpression) universe.canonic(result);
 	}
 
 	@Override

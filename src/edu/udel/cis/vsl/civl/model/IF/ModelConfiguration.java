@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 
 /**
  * This file contains the constants used by the model builder/translator, which
@@ -78,8 +79,15 @@ public final class ModelConfiguration {
 	 *            name to be added to the reserved name set
 	 */
 	public static void addReservedName(String name) {
-		if (!RESERVE_NAMES.contains(name))
-			RESERVE_NAMES.add(name);
+		RESERVE_NAMES.add(name);
+	}
+
+	/* Global symbolic constants: size_of primitive types */
+
+	public static Set<SymbolicConstant> SIZEOF_VARS = new HashSet<>();
+
+	public static void addSizeofSymbol(SymbolicConstant symbol) {
+		SIZEOF_VARS.add(symbol);
 	}
 
 	/* Domain decomposition strategies */

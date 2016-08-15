@@ -58,6 +58,7 @@ import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
+import edu.udel.cis.vsl.sarl.simplify.IF.Simplifier;
 
 /**
  * An implementation of StateFactory based on the Immutable Pattern.
@@ -867,6 +868,22 @@ public class ImmutableStateFactory implements StateFactory {
 		return simplifyWork(state, true);
 	}
 
+	private BooleanExpression getContextOfSizeofSymbols(Reasoner reasoner) {
+		Simplifier simplifier = reasoner.simplifier();
+		Map<SymbolicConstant, SymbolicExpression> map = simplifier
+				.substitutionMap();
+		BooleanExpression result = universe.trueExpression();
+
+		for (Map.Entry<SymbolicConstant, SymbolicExpression> pair : map
+				.entrySet()) {
+			if (ModelConfiguration.SIZEOF_VARS.contains(pair.getKey())) {
+				result = universe.and(result,
+						universe.equals(pair.getValue(), pair.getKey()));
+			}
+		}
+		return (BooleanExpression) universe.canonic(result);
+	}
+
 	public ImmutableState simplifyWork(State state, boolean simplifyStateRefs) {
 		ImmutableState theState = (ImmutableState) state;
 
@@ -886,6 +903,10 @@ public class ImmutableStateFactory implements StateFactory {
 		if (newPathCondition != pathCondition) {
 			if (nsat(newPathCondition))
 				newPathCondition = universe.falseExpression();
+			else
+				newPathCondition = (BooleanExpression) universe
+						.canonic(universe.and(newPathCondition,
+								this.getContextOfSizeofSymbols(reasoner)));
 			hasSimplication = true;
 		} else
 			newPathCondition = null;
