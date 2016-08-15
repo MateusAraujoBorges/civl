@@ -242,7 +242,7 @@ public class ModelTranslator {
 		Map<String, String> macros = this.getMacros();
 
 		for (int i = 0; i < unitTasks.length; i++) {
-			unitTasks[i] = new UnitTask(new File[] { files.get(i) });
+			unitTasks[i] = new UnitTask(new File[]{files.get(i)});
 			unitTasks[i].setMacros(macros);
 			unitTasks[i].setSystemIncludes(systemIncludes);
 			unitTasks[i].setUserIncludes(userIncludes);
@@ -356,6 +356,16 @@ public class ModelTranslator {
 			totalTime = (endTime - startTime);
 			out.println(totalTime
 					+ "ms: total time for building the whole program");
+		}
+		if (program != null && config.showInputVars()) {
+			List<VariableDeclarationNode> inputs = this
+					.inputVariablesOfProgram(program);
+
+			out.println("input variables:");
+			for (VariableDeclarationNode input : inputs) {
+				input.prettyPrint(out);
+				out.println();
+			}
 		}
 		if (program != null) {
 			Model model;

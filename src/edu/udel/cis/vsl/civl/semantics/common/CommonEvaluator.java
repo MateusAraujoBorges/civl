@@ -3771,10 +3771,14 @@ public class CommonEvaluator implements Evaluator {
 		if (type instanceof CIVLPrimitiveType) {
 			NumericExpression value = ((CIVLPrimitiveType) type).getSizeof();
 			BooleanExpression facts = ((CIVLPrimitiveType) type).getFacts();
-			BooleanExpression pathCondition = universe.and(facts,
-					state.getPathCondition());
+			BooleanExpression pc = state.getPathCondition();
+			Reasoner reasoner = universe.reasoner(pc);
 
-			state = state.setPathCondition(pathCondition);
+			if (!reasoner.isValid(facts))
+				facts = universe.and(facts, pc);
+			else
+				facts = pc;
+			state = state.setPathCondition(facts);
 			eval = new Evaluation(state, value);
 		} else if (type instanceof CIVLCompleteArrayType) {
 			NumericExpression extentValue;
