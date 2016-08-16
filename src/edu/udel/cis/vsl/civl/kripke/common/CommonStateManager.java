@@ -138,20 +138,24 @@ public class CommonStateManager implements StateManager {
 	 * @param config
 	 *            The configuration of the civl model.
 	 */
-	public CommonStateManager(Enabler enabler, Executor executor, SymbolicAnalyzer symbolicAnalyzer,
-			CIVLErrorLogger errorLogger, CIVLConfiguration config) {
+	public CommonStateManager(Enabler enabler, Executor executor,
+			SymbolicAnalyzer symbolicAnalyzer, CIVLErrorLogger errorLogger,
+			CIVLConfiguration config) {
 		this.executor = executor;
 		this.enabler = (CommonEnabler) enabler;
 		this.stateFactory = executor.stateFactory();
 		this.config = config;
-		printTransitions = this.config.printTransitions() || config.debugOrVerbose();
-		printAllStates = this.config.debugOrVerbose() || this.config.showStates();
+		printTransitions = this.config.printTransitions()
+				|| config.debugOrVerbose();
+		printAllStates = this.config.debugOrVerbose()
+				|| this.config.showStates();
 		printSavedStates = printAllStates || this.config.showSavedStates();
 		this.errorLogger = errorLogger;
 		this.symbolicAnalyzer = symbolicAnalyzer;
 		this.falseExpr = symbolicAnalyzer.getUniverse().falseExpression();
 		if (config.collectOutputs())
-			this.outputCollector = new OutputCollector(this.enabler.modelFactory.model());
+			this.outputCollector = new OutputCollector(
+					this.enabler.modelFactory.model());
 		ignoredHeapErrors = new HashSet<>(0);
 	}
 
@@ -169,8 +173,8 @@ public class CommonStateManager implements StateManager {
 	 * @return the resulting trace step after executing the state.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	protected TraceStepIF<Transition, State> nextStateWork(State state, Transition transition)
-			throws UnsatisfiablePathConditionException {
+	protected TraceStepIF<Transition, State> nextStateWork(State state,
+			Transition transition) throws UnsatisfiablePathConditionException {
 		int pid;
 		int numProcs;
 		int oldMaxCanonicId = this.maxCanonicId;
@@ -200,13 +204,15 @@ public class CommonStateManager implements StateManager {
 		}
 		traceStep.addAtomicStep(new CommonAtomicStep(state, firstTransition));
 		for (stateStatus = singleEnabled(state, pid, atomCount,
-				process); stateStatus.val; stateStatus = singleEnabled(state, pid, stateStatus.atomCount, process)) {
+				process); stateStatus.val; stateStatus = singleEnabled(state,
+						pid, stateStatus.atomCount, process)) {
 			assert stateStatus.enabledTransition != null;
 			assert stateStatus.enabledStatus == EnabledStatus.DETERMINISTIC;
 			assert stateStatus.atomCount >= 0;
 			if (this.printAllStates) {
 				config.out().println();
-				config.out().print(this.symbolicAnalyzer.stateToString(state, startStateId, sequenceId++));
+				config.out().print(this.symbolicAnalyzer.stateToString(state,
+						startStateId, sequenceId++));
 			}
 			// if (stateStatus.enabledTransition.statement()
 			// .statementKind() == StatementKind.WITH) {
@@ -218,7 +224,8 @@ public class CommonStateManager implements StateManager {
 			// state = colstateAndPlace.left;
 			// pid = colstateAndPlace.right;
 			// } else {
-			state = executor.execute(state, stateStatus.enabledTransition.pid(), stateStatus.enabledTransition);
+			state = executor.execute(state, stateStatus.enabledTransition.pid(),
+					stateStatus.enabledTransition);
 			// }
 			numStatesExplored++;
 			if (printTransitions) {
@@ -226,7 +233,8 @@ public class CommonStateManager implements StateManager {
 					config.out().println();
 				printStatement(oldState, state, stateStatus.enabledTransition);
 			}
-			traceStep.addAtomicStep(new CommonAtomicStep(state, stateStatus.enabledTransition));
+			traceStep.addAtomicStep(
+					new CommonAtomicStep(state, stateStatus.enabledTransition));
 			oldState = state;
 			// if (config.debug()) {
 			// config.out().println(
@@ -237,21 +245,24 @@ public class CommonStateManager implements StateManager {
 		}
 		assert stateStatus.atomCount == 0;
 		assert stateStatus.enabledStatus != EnabledStatus.DETERMINISTIC;
-		if (stateStatus.enabledStatus == EnabledStatus.BLOCKED && stateFactory.lockedByAtomic(state))
+		if (stateStatus.enabledStatus == EnabledStatus.BLOCKED
+				&& stateFactory.lockedByAtomic(state))
 			state = stateFactory.releaseAtomicLock(state);
 		if (printTransitions) {
 			config.out().print("--> ");
 		}
 		if (config.saveStates()) {
 			int newCanonicId;
-			Set<HeapErrorKind> ignoredErrorSet = new HashSet<>(this.ignoredHeapErrors);
+			Set<HeapErrorKind> ignoredErrorSet = new HashSet<>(
+					this.ignoredHeapErrors);
 			boolean finished = false;
 
 			do {
 				try {
 					if (ignoredErrorSet.size() == HeapErrorKind.values().length)
 						finished = true;
-					state = stateFactory.canonic(state, config.collectProcesses(), config.collectScopes(),
+					state = stateFactory.canonic(state,
+							config.collectProcesses(), config.collectScopes(),
 							config.collectHeaps(), ignoredErrorSet);
 					finished = true;
 				} catch (CIVLHeapException hex) {
@@ -261,21 +272,28 @@ public class CommonStateManager implements StateManager {
 
 					state = hex.state();
 					switch (hex.heapErrorKind()) {
-					case NONEMPTY:
-						message = "The dyscope " + hex.dyscopeName() + "(id=" + hex.dyscopeID()
-								+ ") has a non-empty heap upon termination.\n";
-						break;
-					case UNREACHABLE:
-						message = "An unreachable object (mallocID=" + hex.heapFieldID() + ", objectID="
-								+ hex.heapObjectID() + ") is detectd in the heap of dyscope " + hex.dyscopeName()
-								+ "(id=" + hex.dyscopeID() + ").\n";
-						break;
-					default:
+						case NONEMPTY :
+							message = "The dyscope " + hex.dyscopeName()
+									+ "(id=" + hex.dyscopeID()
+									+ ") has a non-empty heap upon termination.\n";
+							break;
+						case UNREACHABLE :
+							message = "An unreachable object (mallocID="
+									+ hex.heapFieldID() + ", objectID="
+									+ hex.heapObjectID()
+									+ ") is detected in the heap of dyscope "
+									+ hex.dyscopeName() + "(id="
+									+ hex.dyscopeID() + ").\n";
+							break;
+						default :
 					}
-					message = message + "heap" + symbolicAnalyzer.symbolicExpressionToString(hex.source(), hex.state(),
-							null, hex.heapValue());
+					message = message + "heap"
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									hex.source(), hex.state(), null,
+									hex.heapValue());
 					errorLogger.logSimpleError(hex.source(), state, process,
-							symbolicAnalyzer.stateInformation(hex.state()), hex.kind(), message);
+							symbolicAnalyzer.stateInformation(hex.state()),
+							hex.kind(), message);
 					ignoredErrorSet.add(hex.heapErrorKind());
 				}
 			} while (!finished);
@@ -344,14 +362,17 @@ public class CommonStateManager implements StateManager {
 		}
 		if (config.printTransitions())
 			config.out().println(state);
-		if (ampleSetUpdated && (config.showAmpleSet() || config.showAmpleSetWtStates())) {
+		if (ampleSetUpdated
+				&& (config.showAmpleSet() || config.showAmpleSetWtStates())) {
 			State updatedState = stack.peek().state();
 
-			config.out().println("\nample set at state " + updatedState.getCanonicId() + " fully expanded");
+			config.out().println("\nample set at state "
+					+ updatedState.getCanonicId() + " fully expanded");
 			if (config.showAmpleSetWtStates())
 				config.out().println(updatedState.callStackToString());
 		}
-		if (printSavedStates && (!config.saveStates() || this.maxCanonicId > oldMaxCanonicId)) {
+		if (printSavedStates && (!config.saveStates()
+				|| this.maxCanonicId > oldMaxCanonicId)) {
 			// in -savedStates mode, only print new states.
 			config.out().println();
 			config.out().print(this.symbolicAnalyzer.stateToString(state));
@@ -373,10 +394,12 @@ public class CommonStateManager implements StateManager {
 		if (!transitionSequence.containsAllEnabled()) {
 			State state = transitionSequence.state();
 			TransitionSequence ampleSet = enabler.enabledTransitionsPOR(state);
-			TransitionSequence enabledSet = enabler.enabledTransitionsOfAllProcesses(state);
+			TransitionSequence enabledSet = enabler
+					.enabledTransitionsOfAllProcesses(state);
 			@SuppressWarnings("unchecked")
-			Collection<Transition> difference = (Collection<Transition>) Utils.difference(enabledSet.transitions(),
-					ampleSet.transitions());
+			Collection<Transition> difference = (Collection<Transition>) Utils
+					.difference(enabledSet.transitions(),
+							ampleSet.transitions());
 
 			transitionSequence.setContainingAllEnabled(true);
 			transitionSequence.addAll(difference);
@@ -419,8 +442,8 @@ public class CommonStateManager implements StateManager {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private StateStatus singleEnabled(State state, int pid, int atomCount, String process)
-			throws UnsatisfiablePathConditionException {
+	private StateStatus singleEnabled(State state, int pid, int atomCount,
+			String process) throws UnsatisfiablePathConditionException {
 		List<Transition> enabled;
 		ProcessState procState = state.getProcessState(pid);
 		Location pLocation;
@@ -428,12 +451,14 @@ public class CommonStateManager implements StateManager {
 		boolean inAtom = false;
 
 		if (procState == null || procState.hasEmptyStack())
-			return new StateStatus(false, null, atomCount, EnabledStatus.TERMINATED);
+			return new StateStatus(false, null, atomCount,
+					EnabledStatus.TERMINATED);
 		else
 			pLocation = procState.getLocation();
 		assert pLocation != null;
 		if (pLocation.isGuardedLocation())
-			return new StateStatus(false, null, atomCount, EnabledStatus.BLOCKED);
+			return new StateStatus(false, null, atomCount,
+					EnabledStatus.BLOCKED);
 		enabled = enabler.enabledTransitionsOfProcess(state, pid);
 		if (pLocation.enterAtom()) {
 			if (atomCount == 0 && !pLocation.isPurelyLocal())
@@ -446,13 +471,18 @@ public class CommonStateManager implements StateManager {
 		if (inAtom || atomCount > 0) {
 			// in atom execution
 			if (enabled.size() == 1)
-				return new StateStatus(true, enabled.get(0), atomCount, EnabledStatus.DETERMINISTIC);
+				return new StateStatus(true, enabled.get(0), atomCount,
+						EnabledStatus.DETERMINISTIC);
 			else if (enabled.size() > 1) {// non deterministic
-				reportErrorForAtom(EnabledStatus.NONDETERMINISTIC, state, pLocation, process);
-				return new StateStatus(false, null, atomCount, EnabledStatus.NONDETERMINISTIC);
+				reportErrorForAtom(EnabledStatus.NONDETERMINISTIC, state,
+						pLocation, process);
+				return new StateStatus(false, null, atomCount,
+						EnabledStatus.NONDETERMINISTIC);
 			} else {// blocked
-				reportErrorForAtom(EnabledStatus.BLOCKED, state, pLocation, process);
-				return new StateStatus(false, null, atomCount, EnabledStatus.BLOCKED);
+				reportErrorForAtom(EnabledStatus.BLOCKED, state, pLocation,
+						process);
+				return new StateStatus(false, null, atomCount,
+						EnabledStatus.BLOCKED);
 			}
 		} else {
 			int pidInAtomic = stateFactory.processInAtomic(state);
@@ -461,18 +491,23 @@ public class CommonStateManager implements StateManager {
 				// the process is in atomic execution
 				// assert pidInAtomic == pid;
 				if ((pLocation.isInLoop() && !pLocation.isSafeLoop())
-						|| (pLocation.isStart() && pLocation.getNumIncoming() > 0))
+						|| (pLocation.isStart()
+								&& pLocation.getNumIncoming() > 0))
 					// possible loop, save state
-					return new StateStatus(false, null, atomCount, EnabledStatus.LOOP_POSSIBLE);
+					return new StateStatus(false, null, atomCount,
+							EnabledStatus.LOOP_POSSIBLE);
 				inAtomic = true;
 			}
 			if (inAtomic || pLocation.isPurelyLocal()) {
 				if (enabled.size() == 1)
-					return new StateStatus(true, enabled.get(0), atomCount, EnabledStatus.DETERMINISTIC);
+					return new StateStatus(true, enabled.get(0), atomCount,
+							EnabledStatus.DETERMINISTIC);
 				else if (enabled.size() > 1) // blocking
-					return new StateStatus(false, null, atomCount, EnabledStatus.NONDETERMINISTIC);
+					return new StateStatus(false, null, atomCount,
+							EnabledStatus.NONDETERMINISTIC);
 				else
-					return new StateStatus(false, null, atomCount, EnabledStatus.BLOCKED);
+					return new StateStatus(false, null, atomCount,
+							EnabledStatus.BLOCKED);
 			}
 			return new StateStatus(false, null, atomCount, EnabledStatus.NONE);
 		}
@@ -499,22 +534,27 @@ public class CommonStateManager implements StateManager {
 	 *            execution of the statement.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private void printStatement(State currentState, State newState, Transition transition)
-			throws UnsatisfiablePathConditionException {
+	private void printStatement(State currentState, State newState,
+			Transition transition) throws UnsatisfiablePathConditionException {
 		Statement stmt = transition.statement();
 
 		config.out().print("  ");
 		config.out().print(stmt.locationStepString());
 		config.out().print(": ");
-		config.out().print(symbolicAnalyzer.statementEvaluation(currentState, newState, transition.pid(), stmt));
+		config.out().print(symbolicAnalyzer.statementEvaluation(currentState,
+				newState, transition.pid(), stmt));
 		if (transition.transitionKind() == TransitionKind.NOOP) {
 			NoopTransition noopTransition = (NoopTransition) transition;
 			BooleanExpression assumption = noopTransition.assumption();
 
 			if (assumption != null) {
 				config.out().print(" [$assume(");
-				config.out().print(symbolicAnalyzer.symbolicExpressionToString(stmt.getSource(), currentState,
-						this.enabler.modelFactory.typeFactory().booleanType(), assumption));
+				config.out()
+						.print(symbolicAnalyzer.symbolicExpressionToString(
+								stmt.getSource(),
+								currentState, this.enabler.modelFactory
+										.typeFactory().booleanType(),
+								assumption));
 				config.out().print(")]");
 			}
 		}
@@ -563,18 +603,23 @@ public class CommonStateManager implements StateManager {
 	 *            The location that the error occurs.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private void reportErrorForAtom(EnabledStatus enabled, State state, Location location, String process)
+	private void reportErrorForAtom(EnabledStatus enabled, State state,
+			Location location, String process)
 			throws UnsatisfiablePathConditionException {
 		switch (enabled) {
-		case NONDETERMINISTIC:
-			errorLogger.logSimpleError(location.getSource(), state, process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.OTHER, "nondeterminism is encountered in $atom block.");
-			throw new UnsatisfiablePathConditionException();
-		case BLOCKED:
-			errorLogger.logSimpleError(location.getSource(), state, process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.OTHER, "blocked location is encountered in $atom block.");
-			throw new UnsatisfiablePathConditionException();
-		default:
+			case NONDETERMINISTIC :
+				errorLogger.logSimpleError(location.getSource(), state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.OTHER,
+						"nondeterminism is encountered in $atom block.");
+				throw new UnsatisfiablePathConditionException();
+			case BLOCKED :
+				errorLogger.logSimpleError(location.getSource(), state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.OTHER,
+						"blocked location is encountered in $atom block.");
+				throw new UnsatisfiablePathConditionException();
+			default :
 		}
 	}
 
@@ -586,7 +631,8 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public TraceStepIF<Transition, State> nextState(State state, Transition transition) {
+	public TraceStepIF<Transition, State> nextState(State state,
+			Transition transition) {
 		TraceStepIF<Transition, State> result;
 
 		// nextStateCalls++;

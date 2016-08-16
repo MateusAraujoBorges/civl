@@ -75,7 +75,7 @@ public class CommonValueAtExpression extends CommonExpression
 			ValueAtExpression that = (ValueAtExpression) expression;
 
 			return state.equals(that.state())
-					&& expression.equals(that.expression());
+					&& this.expression.equals(that.expression());
 		}
 		return false;
 	}
@@ -83,6 +83,19 @@ public class CommonValueAtExpression extends CommonExpression
 	@Override
 	public Expression pid() {
 		return this.pid;
+	}
+
+	@Override
+	public String toString() {
+		StringBuffer result = new StringBuffer("$value_at (");
+
+		result.append(state);
+		result.append(", ");
+		result.append(pid);
+		result.append(", ");
+		result.append(expression);
+		result.append(")");
+		return result.toString();
 	}
 
 }

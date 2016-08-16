@@ -829,7 +829,7 @@ public class ContractTransformerWorker extends BaseWorker {
 					.getConditionalClauses())
 				for (ExpressionNode requires : condClause
 						.getRequires(nodeFactory)) {
-					requires = getValidAndReplaceValidExprNodes(true,
+					requires = getAndReplaceValidExprNodes(true,
 							requires).right;
 					bodyItems.addAll(translateConditionalPredicates(false,
 							condClause.condition, requires).left);
@@ -849,8 +849,7 @@ public class ContractTransformerWorker extends BaseWorker {
 							ensures, hasMpi);
 
 					tmpVars4localOldExprs.addAll(tmp_pre_post.left);
-					ensures = getValidAndReplaceValidExprNodes(false,
-							ensures).right;
+					ensures = getAndReplaceValidExprNodes(false, ensures).right;
 					localAssumes4ensurances
 							.addAll(translateConditionalPredicates(true,
 									condClauses.condition, ensures).left);
@@ -974,7 +973,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ConditionalClauses requires : localBlock
 					.getConditionalClauses())
 				for (ExpressionNode pred : requires.getRequires(nodeFactory)) {
-					Pair<List<OperatorNode>, ExpressionNode> valids_newPred = getValidAndReplaceValidExprNodes(
+					Pair<List<OperatorNode>, ExpressionNode> valids_newPred = getAndReplaceValidExprNodes(
 							false, pred);
 
 					bodyItems.addAll(translateConditionalPredicates(true,
@@ -997,7 +996,7 @@ public class ContractTransformerWorker extends BaseWorker {
 							pred, hasMpi);
 
 					tmpVarDecls4OldExprs.addAll(tmp_pre_post.left);
-					pred = getValidAndReplaceValidExprNodes(true, pred).right;
+					pred = getAndReplaceValidExprNodes(true, pred).right;
 					assert4localEnsures
 							.addAll(translateConditionalPredicates(false,
 									ensures.condition, pred).left);
@@ -1171,7 +1170,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ExpressionNode requires : condClauses
 					.getRequires(nodeFactory)) {
 				List<MPIContractExpressionNode> mpiValids = getMPIValidExpressionNodes(
-						requires);
+						true, requires);
 
 				for (MPIContractExpressionNode mpiValid : mpiValids) {
 					bodyItems.addAll(createMallocStatementSequenceForMPIValid2(
@@ -2342,7 +2341,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return
 	 */
 	private List<MPIContractExpressionNode> getMPIValidExpressionNodes(
-			ExpressionNode expression) {
+			boolean isTrivial, ExpressionNode expression) {
 		ASTNode astNode = expression;
 		List<MPIContractExpressionNode> results = new LinkedList<>();
 
@@ -2356,6 +2355,14 @@ public class ContractTransformerWorker extends BaseWorker {
 				}
 			}
 		} while ((astNode = astNode.nextDFS()) != null);
+		if (isTrivial) {
+			for (MPIContractExpressionNode mpiValid : results) {
+				ASTNode parent = mpiValid.parent();
+
+				parent.setChild(mpiValid.childIndex(), nodeFactory
+						.newBooleanConstantNode(mpiValid.getSource(), true));
+			}
+		}
 		return results;
 	}
 
@@ -2366,24 +2373,24 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return
 	 * @throws SyntaxException
 	 */
-	private Pair<List<OperatorNode>, ExpressionNode> getValidAndReplaceValidExprNodes(
+	private Pair<List<OperatorNode>, ExpressionNode> getAndReplaceValidExprNodes(
 			boolean conditionNeeded, ExpressionNode expression)
 			throws SyntaxException {
 		ExpressionNode copy = expression;
 		ASTNode astNode = copy;
-		List<OperatorNode> results = new LinkedList<>();
+		List<OperatorNode> validNodes = new LinkedList<>();
 		OperatorNode opNode;
 		ExpressionNode isDereferablePtr;
 
 		do {
-			if (astNode instanceof OperatorNode)
+			if (astNode instanceof OperatorNode) {
 				if ((opNode = (OperatorNode) astNode)
 						.getOperator() == Operator.VALID) {
-					results.add(opNode);
+					validNodes.add(opNode);
 				}
+			}
 		} while ((astNode = astNode.nextDFS()) != null);
-
-		for (OperatorNode item : results) {
+		for (OperatorNode item : validNodes) {
 			ASTNode parent = item.parent();
 			int childIdx = item.childIndex();
 			Triple<ExpressionNode, Operator, ExpressionNode> ptr_range = parseValidArgument(
@@ -2427,7 +2434,7 @@ public class ContractTransformerWorker extends BaseWorker {
 						.newBooleanConstantNode(item.getSource(), true);
 			parent.setChild(childIdx, isDereferablePtr);
 		}
-		return new Pair<>(results, copy);
+		return new Pair<>(validNodes, copy);
 	}
 
 	private Triple<ExpressionNode, Operator, ExpressionNode> parseValidArgument(
