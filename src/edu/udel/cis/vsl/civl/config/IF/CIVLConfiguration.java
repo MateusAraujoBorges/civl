@@ -136,7 +136,7 @@ public class CIVLConfiguration {
 	/**
 	 * Should CIVL show the path condition of each state?
 	 */
-	private boolean showPathConditon = false;
+	private String showPathConditon = "NONE";
 
 	/**
 	 * Should CIVL delete terminated processes and renumber all processes?
@@ -258,54 +258,55 @@ public class CIVLConfiguration {
 
 		if (ompLoopDecompString != null) {
 			switch (ompLoopDecompString) {
-			case "ALL":
-				this.setOmpLoopDecomp(ModelConfiguration.DECOMP_ALL);
-				break;
-			case "ROUND_ROBIN":
-				this.setOmpLoopDecomp(ModelConfiguration.DECOMP_ROUND_ROBIN);
-				break;
-			case "RANDOM":
-				this.setOmpLoopDecomp(ModelConfiguration.DECOMP_RANDOM);
-				break;
-			default:
-				throw new CIVLInternalException(
-						"invalid OpenMP loop decomposition strategy "
-								+ deadlockString,
-						(CIVLSource) null);
+				case "ALL" :
+					this.setOmpLoopDecomp(ModelConfiguration.DECOMP_ALL);
+					break;
+				case "ROUND_ROBIN" :
+					this.setOmpLoopDecomp(
+							ModelConfiguration.DECOMP_ROUND_ROBIN);
+					break;
+				case "RANDOM" :
+					this.setOmpLoopDecomp(ModelConfiguration.DECOMP_RANDOM);
+					break;
+				default :
+					throw new CIVLInternalException(
+							"invalid OpenMP loop decomposition strategy "
+									+ deadlockString,
+							(CIVLSource) null);
 			}
 		}
 		if (deadlockString != null)
 			switch (deadlockString) {
-			case "absolute":
-				this.deadlock = DeadlockKind.ABSOLUTE;
-				break;
-			case "potential":
-				this.deadlock = DeadlockKind.POTENTIAL;
-				break;
-			case "none":
-				this.deadlock = DeadlockKind.NONE;
-				break;
-			default:
-				throw new CIVLInternalException(
-						"invalid deadlock kind " + deadlockString,
-						(CIVLSource) null);
+				case "absolute" :
+					this.deadlock = DeadlockKind.ABSOLUTE;
+					break;
+				case "potential" :
+					this.deadlock = DeadlockKind.POTENTIAL;
+					break;
+				case "none" :
+					this.deadlock = DeadlockKind.NONE;
+					break;
+				default :
+					throw new CIVLInternalException(
+							"invalid deadlock kind " + deadlockString,
+							(CIVLSource) null);
 			}
 		if (errorStateEquivString != null)
 			switch (errorStateEquivString) {
-			case "LOC":
-				this.errorStateEquiv = ErrorStateEquivalence.LOC;
-				break;
-			case "CALLSTACK":
-				this.errorStateEquiv = ErrorStateEquivalence.CALLSTACK;
-				break;
-			case "FULL":
-				this.errorStateEquiv = ErrorStateEquivalence.FULL;
-				break;
-			default:
-				throw new CIVLInternalException(
-						"invalid error state equivalence"
-								+ errorStateEquivString,
-						(CIVLSource) null);
+				case "LOC" :
+					this.errorStateEquiv = ErrorStateEquivalence.LOC;
+					break;
+				case "CALLSTACK" :
+					this.errorStateEquiv = ErrorStateEquivalence.CALLSTACK;
+					break;
+				case "FULL" :
+					this.errorStateEquiv = ErrorStateEquivalence.FULL;
+					break;
+				default :
+					throw new CIVLInternalException(
+							"invalid error state equivalence"
+									+ errorStateEquivString,
+							(CIVLSource) null);
 			}
 		this.setShowMemoryUnits(config.isTrue(CIVLConstants.showMemoryUnitsO));
 		this.debug = config.isTrue(CIVLConstants.debugO);
@@ -324,7 +325,10 @@ public class CIVLConfiguration {
 		this.verbose = config.isTrue(CIVLConstants.verboseO);
 		this.svcomp = config.isTrue(CIVLConstants.svcomp16O);
 		this.setShowProgram(config.isTrue(CIVLConstants.showProgramO));
-		this.showPathConditon = config.isTrue(CIVLConstants.showPathConditionO);
+		this.showPathConditon = (String) config
+				.getValue(CIVLConstants.showPathConditionO);
+		if (this.showPathConditon == null)
+			showPathConditon = "NONE";
 		this.ompNoSimplify = config.isTrue(CIVLConstants.ompNoSimplifyO);
 		this.collectProcesses = config.isTrue(CIVLConstants.collectProcessesO);
 		this.collectScopes = config.isTrue(CIVLConstants.collectScopesO);
@@ -583,12 +587,12 @@ public class CIVLConfiguration {
 		this.showProgram = showProgram;
 	}
 
-	public boolean showPathConditon() {
-		return showPathConditon;
+	public boolean showPathConditonAsOneLine() {
+		return showPathConditon.equals("LINE");
 	}
 
-	public void setShowPathConditon(boolean showPathConditon) {
-		this.showPathConditon = showPathConditon;
+	public boolean showPathConditonAsMultipleLine() {
+		return showPathConditon.equals("BLOCK");
 	}
 
 	public boolean ompNoSimplify() {
@@ -842,5 +846,9 @@ public class CIVLConfiguration {
 	 */
 	public void setCheckExpressionError(boolean checkExpressionError) {
 		this.checkExpressionError = checkExpressionError;
+	}
+
+	public boolean showPathConditon() {
+		return !this.showPathConditon.equals("NONE");
 	}
 }

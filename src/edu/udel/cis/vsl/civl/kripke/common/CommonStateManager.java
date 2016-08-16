@@ -379,7 +379,12 @@ public class CommonStateManager implements StateManager {
 		} else if (config.showPathConditon()) {
 			config.out().print(state.toString());
 			config.out().print(" -- path condition: ");
-			config.out().println(state.getPathCondition());
+			if (config.showPathConditonAsOneLine())
+				config.out().println(state.getPathCondition());
+			else
+				config.out().println(
+						this.symbolicAnalyzer.pathconditionToString(null, state,
+								"\t", state.getPathCondition()));
 		}
 		numProcs = state.numLiveProcs();
 		if (numProcs > maxProcs)

@@ -477,8 +477,10 @@ public class CIVLConstants {
 	 * Show the path condition of each state? false by default.
 	 */
 	public final static Option showPathConditionO = Option.newScalarOption(
-			SHOW_PATH_CONDITION, BOOLEAN,
-			"show the path condition of each state?", false);
+			SHOW_PATH_CONDITION, STRING,
+			"show the path condition of each state? "
+					+ "(LINE (display as one line) | BLOCK (display as multiple lines))",
+			"LINE");
 
 	/**
 	 * Don't simplify OpenMP pragmas? false by default.
@@ -573,7 +575,7 @@ public class CIVLConstants {
 	 * @return all options defined for CIVL in alphabetic order.
 	 */
 	public final static Option[] getAllOptions() {
-		return new Option[] { astO, collectHeapsO, collectProcessesO,
+		return new Option[]{astO, collectHeapsO, collectProcessesO,
 				collectScopesO, deadlockO, debugO, enablePrintfO, errorBoundO,
 				errorStateEquivO, guiO, guidedO, idO, inputO, linkO, macroO,
 				maxdepthO, minO, mpiContractO, ompLoopDecompO, ompNoSimplifyO,
@@ -586,7 +588,7 @@ public class CIVLConstants {
 				traceO, userIncludePathO, verboseO, webO, CIVLMacroO,
 				analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
-				sliceAnalysisO, witnessO };
+				sliceAnalysisO, witnessO};
 	}
 
 	// headers...
