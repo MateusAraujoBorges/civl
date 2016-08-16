@@ -30,11 +30,11 @@ void exchange_ghost_cells() {
                MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
 
-/*@ requires \valid(u + (0 .. (nxl + 2)));
-  @ requires \valid(u_new + (0 .. (nxl + 2)));
+/*@ requires \valid(u + (0 .. (nxl + 1)));
+  @ requires \valid(u_new + (0 .. (nxl + 1)));
   @ requires nxl > 0 && nxl <= 4;
   @ requires k > 0;
-  @ assigns  u_new[0 .. (nxl + 2)];
+  @ assigns  u_new[0 .. (nxl + 1)];
   @ ensures  \forall int i; 0< i && i <= nxl
   @           ==> 
   @          u[i] == \old(u[i] + k*(u[i+1] + u[i-1] - 2*u[i]));
@@ -53,6 +53,7 @@ void update() {
   @   requires \mpi_valid(u_new, nxl + 2, MPI_DOUBLE);
   @   requires  nx == \sum(0, \mpi_comm_size - 1, 
   @                    (\lambda int k; \on(k, nxl)));
+  @   requires k > 0.0;
   @   ensures  \forall int i; 0 < i && i <= nx
   @             ==>
   @            u[i] == \old(u[i] + k*(u[i+1] + u[i-1] - 2*u[i]));
@@ -61,9 +62,9 @@ void update() {
   @     requires right == 0 && left == rank - 1;
   @   behavior minrank:
   @     assumes rank == 0;
-  @     requires left == \mpi_comm_size - 1 && right == rank + 1;
+  @     requires left == \mpi_comm_size - 1 && right == 1;
   @   behavior others:
-  @     assumes 0 < rank && rank < \mpi_comm_size;
+  @     assumes 0 < rank && rank < \mpi_comm_size - 1;
   @     requires left == rank - 1 && right == rank + 1;
   @*/
 void diff1dIter() {

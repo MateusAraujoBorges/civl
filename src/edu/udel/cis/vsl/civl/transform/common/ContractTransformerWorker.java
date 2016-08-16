@@ -2737,6 +2737,10 @@ public class ContractTransformerWorker extends BaseWorker {
 		if (referedType.typeNodeKind() == TypeNodeKind.VOID)
 			referedType = nodeFactory.newBasicTypeNode(buf.getSource(),
 					BasicTypeKind.CHAR);
+		else
+			// If refered type is not void, no extent of datatype for the heap
+			// array:
+			countTimesMPISizeof = count.copy();
 
 		ArrayTypeNode arrayTypeNode = nodeFactory.newArrayTypeNode(source,
 				referedType.copy(), countTimesMPISizeof.copy());
