@@ -632,7 +632,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+		newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -835,6 +835,9 @@ public class ContractTransformerWorker extends BaseWorker {
 							condClause.condition, requires).left);
 				}
 
+		// TODO: improve all the helper function to the form of PRE & POST:
+		Pair<List<BlockItemNode>, List<BlockItemNode>> pre_post = new Pair<>(
+				new LinkedList<>(), new LinkedList<>());
 		// Transform local ensurances to assumes, add temporary variable
 		// declarations for old expressions:
 		if (localBlock != null) {
@@ -842,13 +845,16 @@ public class ContractTransformerWorker extends BaseWorker {
 					.getConditionalClauses())
 				for (ExpressionNode ensures : condClauses
 						.getEnsures(nodeFactory)) {
-					tmpVars4localOldExprs.addAll(
-							replaceOldExpressionNodes4Local(ensures, hasMpi));
+					Pair<List<BlockItemNode>, List<BlockItemNode>> tmp_pre_post = replaceOldExpressionNodes4Local(
+							ensures, hasMpi);
+
+					tmpVars4localOldExprs.addAll(tmp_pre_post.left);
 					ensures = getValidAndReplaceValidExprNodes(false,
 							ensures).right;
 					localAssumes4ensurances
 							.addAll(translateConditionalPredicates(true,
 									condClauses.condition, ensures).left);
+					pre_post.right.addAll(tmp_pre_post.right);
 				}
 		}
 		// Transform step 2: Inserts $mpi_comm_rank and $mpi_comm_size:
@@ -896,6 +902,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
 					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
+		bodyItems.addAll(pre_post.right);
 		if (!returnVoid)
 			bodyItems.add(nodeFactory.newReturnNode(
 					newSource(RETURN_RESULT, CivlcTokenConstant.RETURN),
@@ -977,18 +984,24 @@ public class ContractTransformerWorker extends BaseWorker {
 						bodyItems.addAll(createMallocStatementSequenceForValid(
 								valid, funcDefi));
 				}
+
+		Pair<List<BlockItemNode>, List<BlockItemNode>> pre_post = new Pair<>(
+				new LinkedList<>(), new LinkedList<>());
 		// Transform sequential ensurances into asserts, add temporary variable
 		// declarations here for old expressions:
 		if (localBlock != null)
 			for (ConditionalClauses ensures : localBlock
 					.getConditionalClauses())
 				for (ExpressionNode pred : ensures.getEnsures(nodeFactory)) {
-					tmpVarDecls4OldExprs.addAll(
-							replaceOldExpressionNodes4Local(pred, hasMpi));
+					Pair<List<BlockItemNode>, List<BlockItemNode>> tmp_pre_post = replaceOldExpressionNodes4Local(
+							pred, hasMpi);
+
+					tmpVarDecls4OldExprs.addAll(tmp_pre_post.left);
 					pred = getValidAndReplaceValidExprNodes(true, pred).right;
 					assert4localEnsures
 							.addAll(translateConditionalPredicates(false,
 									ensures.condition, pred).left);
+					pre_post.right.addAll(tmp_pre_post.right);
 				}
 		// Transform step 2: Add $mpi_comm_rank and $mpi_comm_size variables:
 		intTypeNode = nodeFactory.newBasicTypeNode(
@@ -1047,6 +1060,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
 					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
+		bodyItems.addAll(pre_post.right);
 		// Free for $mpi_valid() calls at requirements:
 		// for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 		// for (ConditionalClauses condClauses : mpiBlock
@@ -2499,7 +2513,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return
 	 * @throws SyntaxException
 	 */
-	private List<BlockItemNode> replaceOldExpressionNodes4Local(
+	private Pair<List<BlockItemNode>, List<BlockItemNode>> replaceOldExpressionNodes4Local(
 			ExpressionNode expression, boolean hasMpi) throws SyntaxException {
 		Source source = expression.getSource();
 		VariableDeclarationNode varDecl;
@@ -2507,6 +2521,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		OperatorNode opNode;
 		List<OperatorNode> opNodes = new LinkedList<>();
 		List<BlockItemNode> results = new LinkedList<>();
+		List<BlockItemNode> postStmts = new LinkedList<>();
 		// Function call getting a $state object:
 		ExpressionNode getStateCall;
 		// Identifiers of $state and process which will be used in $value_at
@@ -2539,6 +2554,9 @@ public class ContractTransformerWorker extends BaseWorker {
 			results.add(
 					createMPICommRankCall(identifierExpression(MPI_COMM_WORLD),
 							identifierExpression(MPI_COMM_RANK_CONST)));
+			postStmts.add(nodeFactory
+					.newExpressionStatementNode(createMPIUnsnapshotCall(
+							identifierExpression(MPI_COMM_WORLD))));
 		} else {
 			getStateCall = functionCall(expression.getSource(), GET_STATE,
 					Arrays.asList());
@@ -2561,7 +2579,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			parent.setChild(childIdx, valueAt);
 			results.add(varDecl);
 		}
-		return results;
+		return new Pair<>(results, postStmts);
 	}
 
 	/**

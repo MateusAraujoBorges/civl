@@ -719,10 +719,42 @@ void $mpi_unsnapshot(MPI_Comm comm) {
 }
 
 void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
-  size_t realCount = count * $mpi_extentof(datatype);
-  char newValues[realCount];
+  if ($is_concrete_int(datatype)) {
+    int _int[count];
+    int _2int[count * 2];
+    $real _real[count];
+    char _char[count];
 
-  memcpy(buf, newValues, count * sizeofDatatype(datatype));
+    switch (datatype) {
+    case MPI_INT:
+    case MPI_SHORT:
+    case MPI_LONG:
+    case MPI_LONG_LONG_INT:
+    case MPI_LONG_LONG:
+    case MPI_UNSIGNED_LONG_LONG:
+      memcpy(buf, _int, count * sizeof(int));
+      break;      
+    case MPI_2INT:
+      memcpy(buf, _2int, 2 * count * sizeof(int));
+      break;
+    case MPI_FLOAT:
+    case MPI_DOUBLE:
+    case MPI_LONG_DOUBLE:
+      memcpy(buf, _real, count * sizeof($real));
+      break;
+    case MPI_CHAR:
+    case MPI_BYTE:
+      memcpy(buf, _char, count * sizeof(char));
+      break;
+    default:
+      $assert(0, "Unreachable");
+    } 
+  } else {
+    size_t realCount = count * $mpi_extentof(datatype);
+    char newValues[realCount];
+    
+    memcpy(buf, newValues, count * sizeofDatatype(datatype));   
+  }
 }
 
 
