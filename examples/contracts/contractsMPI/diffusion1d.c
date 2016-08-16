@@ -53,7 +53,7 @@ void update() {
   @   requires \mpi_valid(u_new, nxl + 2, MPI_DOUBLE);
   @   requires  nx == \sum(0, \mpi_comm_size - 1, 
   @                    (\lambda int k; \on(k, nxl)));
-  @   ensures  \forall int i; 0 < i <= nx
+  @   ensures  \forall int i; 0 < i && i <= nx
   @             ==>
   @            u[i] == \old(u[i] + k*(u[i+1] + u[i-1] - 2*u[i]));
   @   behavior maxrank:
