@@ -631,7 +631,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		newAst.prettyPrint(System.out, false);
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -2794,7 +2794,7 @@ public class ContractTransformerWorker extends BaseWorker {
 
 			results.add(stmt);
 		}
-		if (condition == null)
+		if (condition == null || results.isEmpty())
 			return results;
 		else {
 			StatementNode stmt = nodeFactory.newCompoundStatementNode(source,

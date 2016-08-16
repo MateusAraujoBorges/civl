@@ -2179,7 +2179,6 @@ public class CommonEvaluator implements Evaluator {
 			reasoner = universe.reasoner(context);
 			simplifiedExpression = (BooleanExpression) reasoner
 					.simplify(quantifiedExpression.value);
-
 			quantifiedExpressionNew = simplifiedExpression;
 			for (int i = numBoundVars - 1; i >= 0; i--) {
 				SymbolicConstant boundVar = boundVariables[i];
