@@ -9,6 +9,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Variable;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
@@ -828,7 +829,8 @@ public class ContractTransformerWorker extends BaseWorker {
 					.getConditionalClauses())
 				for (ExpressionNode requires : condClause
 						.getRequires(nodeFactory)) {
-					requires = getValidAndReplaceValidExprNodes(requires).right;
+					requires = getValidAndReplaceValidExprNodes(true,
+							requires).right;
 					bodyItems.addAll(translateConditionalPredicates(false,
 							condClause.condition, requires).left);
 				}
@@ -842,7 +844,8 @@ public class ContractTransformerWorker extends BaseWorker {
 						.getEnsures(nodeFactory)) {
 					tmpVars4localOldExprs.addAll(
 							replaceOldExpressionNodes4Local(ensures, hasMpi));
-					ensures = getValidAndReplaceValidExprNodes(ensures).right;
+					ensures = getValidAndReplaceValidExprNodes(false,
+							ensures).right;
 					localAssumes4ensurances
 							.addAll(translateConditionalPredicates(true,
 									condClauses.condition, ensures).left);
@@ -965,7 +968,7 @@ public class ContractTransformerWorker extends BaseWorker {
 					.getConditionalClauses())
 				for (ExpressionNode pred : requires.getRequires(nodeFactory)) {
 					Pair<List<OperatorNode>, ExpressionNode> valids_newPred = getValidAndReplaceValidExprNodes(
-							pred);
+							false, pred);
 
 					bodyItems.addAll(translateConditionalPredicates(true,
 							requires.condition, valids_newPred.right).left);
@@ -982,7 +985,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				for (ExpressionNode pred : ensures.getEnsures(nodeFactory)) {
 					tmpVarDecls4OldExprs.addAll(
 							replaceOldExpressionNodes4Local(pred, hasMpi));
-					pred = getValidAndReplaceValidExprNodes(pred).right;
+					pred = getValidAndReplaceValidExprNodes(true, pred).right;
 					assert4localEnsures
 							.addAll(translateConditionalPredicates(false,
 									ensures.condition, pred).left);
@@ -1082,10 +1085,14 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private boolean isSourceFileFunctionContracted(
 			FunctionDeclarationNode funcDecl) {
-		if (!funcDecl.isDefinition())
-			if (!funcDecl.getEntity().getDefinition().getSource()
-					.getFirstToken().getSourceFile().getName().endsWith(".c"))
+		if (!funcDecl.isDefinition()) {
+			FunctionDefinitionNode functionDef = funcDecl.getEntity()
+					.getDefinition();
+
+			if (functionDef != null && !functionDef.getSource().getFirstToken()
+					.getSourceFile().getName().endsWith(".c"))
 				return false;
+		}
 		if (funcDecl.getContract() == null)
 			return false;
 		for (ContractNode contract : funcDecl.getContract()) {
@@ -2346,7 +2353,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @throws SyntaxException
 	 */
 	private Pair<List<OperatorNode>, ExpressionNode> getValidAndReplaceValidExprNodes(
-			ExpressionNode expression) throws SyntaxException {
+			boolean conditionNeeded, ExpressionNode expression)
+			throws SyntaxException {
 		ExpressionNode copy = expression;
 		ASTNode astNode = copy;
 		List<OperatorNode> results = new LinkedList<>();
@@ -2368,35 +2376,41 @@ public class ContractTransformerWorker extends BaseWorker {
 					item.getArgument(0));
 
 			item.remove();
-			if (ptr_range.right != null) {
-				VariableDeclarationNode boundOffsetVar = nodeFactory
-						.newVariableDeclarationNode(item.getSource(),
-								identifier("i"), nodeFactory.newBasicTypeNode(
-										item.getSource(), BasicTypeKind.INT));
-				OperatorNode ptrPLUSboundVar = nodeFactory.newOperatorNode(
-						item.getSource(), ptr_range.middle,
-						ptr_range.left.copy(),
-						identifierExpression(boundOffsetVar.getName()));
-				List<PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode>> boundVars = new LinkedList<>();
+			if (conditionNeeded) {
+				if (ptr_range.right != null) {
+					VariableDeclarationNode boundOffsetVar = nodeFactory
+							.newVariableDeclarationNode(item.getSource(),
+									identifier("i"),
+									nodeFactory.newBasicTypeNode(
+											item.getSource(),
+											BasicTypeKind.INT));
+					OperatorNode ptrPLUSboundVar = nodeFactory.newOperatorNode(
+							item.getSource(), ptr_range.middle,
+							ptr_range.left.copy(),
+							identifierExpression(boundOffsetVar.getName()));
+					List<PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode>> boundVars = new LinkedList<>();
 
-				boundVars.add(nodeFactory.newPairNode(item.getSource(),
-						nodeFactory.newSequenceNode(item.getSource(),
-								"bound var declaration list",
-								Arrays.asList(boundOffsetVar)),
-						ptr_range.right.copy()));
-				isDereferablePtr = nodeFactory.newFunctionCallNode(
-						item.getSource(), identifierExpression(DEREFABLE),
-						Arrays.asList(ptrPLUSboundVar), null);
-				isDereferablePtr = nodeFactory.newQuantifiedExpressionNode(
-						item.getSource(), Quantifier.FORALL,
-						nodeFactory.newSequenceNode(item.getSource(),
-								"bound var declaration list", boundVars),
-						null, isDereferablePtr);
+					boundVars.add(nodeFactory.newPairNode(item.getSource(),
+							nodeFactory.newSequenceNode(item.getSource(),
+									"bound var declaration list",
+									Arrays.asList(boundOffsetVar)),
+							ptr_range.right.copy()));
+					isDereferablePtr = nodeFactory.newFunctionCallNode(
+							item.getSource(), identifierExpression(DEREFABLE),
+							Arrays.asList(ptrPLUSboundVar), null);
+					isDereferablePtr = nodeFactory.newQuantifiedExpressionNode(
+							item.getSource(), Quantifier.FORALL,
+							nodeFactory.newSequenceNode(item.getSource(),
+									"bound var declaration list", boundVars),
+							null, isDereferablePtr);
 
+				} else
+					isDereferablePtr = nodeFactory.newFunctionCallNode(
+							item.getSource(), identifierExpression(DEREFABLE),
+							Arrays.asList(ptr_range.left.copy()), null);
 			} else
-				isDereferablePtr = nodeFactory.newFunctionCallNode(
-						item.getSource(), identifierExpression(DEREFABLE),
-						Arrays.asList(ptr_range.left.copy()), null);
+				isDereferablePtr = nodeFactory
+						.newBooleanConstantNode(item.getSource(), true);
 			parent.setChild(childIdx, isDereferablePtr);
 		}
 		return new Pair<>(results, copy);
@@ -2640,32 +2654,19 @@ public class ContractTransformerWorker extends BaseWorker {
 		if (buf.expressionKind() != ExpressionKind.IDENTIFIER_EXPRESSION)
 			throw new CIVLUnimplementedFeatureException(
 					"ACSL valid pointer must refer to a formal parameter");
+
 		IdentifierExpressionNode bufId = (IdentifierExpressionNode) buf;
 
-		for (VariableDeclarationNode formal : funcDecl.getTypeNode()
-				.getParameters()) {
-			if (bufId.getIdentifier().name().equals(formal.getName())) {
-				ptrType = formal.getTypeNode();
-				break;
-			}
-		}
-		for (VariableDeclarationNode global : globalVarDecls) {
-			if (bufId.getIdentifier().name().equals(global.getName())) {
-				ptrType = global.getTypeNode();
-				break;
-			}
-		}
+		ptrType = ((Variable) bufId.getIdentifier().getEntity()).getDefinition()
+				.getTypeNode();
 		if (ptrType == null)
 			throw new CIVLUnimplementedFeatureException(
 					"ACSL valid pointer must refer to a formal parameter");
 		assert ptrType.kind() == TypeNodeKind.POINTER;
 		referedType = ((PointerTypeNode) ptrType).referencedType();
 
-		ArrayTypeNode arrayTypeNode;
-
-		arrayTypeNode = nodeFactory.newArrayTypeNode(buf.getSource(),
-				referedType.copy(), count.copy());
-
+		ArrayTypeNode arrayTypeNode = nodeFactory.newArrayTypeNode(
+				buf.getSource(), referedType.copy(), count.copy());
 		VariableDeclarationNode tmpHeapVar = createTmpHeapVariable(
 				buf.getSource(), arrayTypeNode);
 		List<BlockItemNode> results = new LinkedList<>();
