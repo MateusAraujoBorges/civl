@@ -4,7 +4,7 @@ double * u, * u_new, k;
 
 /*@ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
-  @   requires nxl >= 0 && nxl < 5;
+  @   requires nxl > 0 && nxl < 5;         //nxl shall not equal to zero
   @   requires \mpi_valid(u, nxl + 2, MPI_DOUBLE);
   @   assigns  \mpi_region(u, 1, MPI_DOUBLE), 
   @            \mpi_region(&u[nxl+1], 1, MPI_DOUBLE);
@@ -45,10 +45,10 @@ void update() {
   double * tmp = u_new; u_new=u; u=tmp;
 }
 
-/*@ requires nsteps > 1;
+/*@ 
   @ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
-  @   requires nxl > 0;
+  @   requires nxl > 0 && nxl < 5 && nx > nxl;
   @   requires \mpi_valid(u, nxl + 2, MPI_DOUBLE);
   @   requires \mpi_valid(u_new, nxl + 2, MPI_DOUBLE);
   @   requires  nx == \sum(0, \mpi_comm_size - 1, 
