@@ -306,8 +306,9 @@ public class ModelTranslator {
 				transformerFactory.getMPI2CIVLTransformerRecord());
 		task.addTransformRecord(
 				transformerFactory.getCuda2CIVLTransformerRecord());
-		task.addTransformRecord(
-				transformerFactory.getIntDivTransformerRecord(macros));
+		if (!config.isEnableMpiContract())
+			task.addTransformRecord(
+					transformerFactory.getIntDivTransformerRecord(macros));
 		task.addTransformCode(SideEffectRemover.CODE);
 		task.addTransformCode(Pruner.CODE);
 	}

@@ -244,6 +244,21 @@ public class ContractTransformerWorker extends BaseWorker {
 	private final static String RETURN_RESULT = "return $result;";
 
 	/**
+	 * Civlc system function identifier
+	 */
+	private final static String HIGH_OF_RANGE = "$high_of_regular_range";
+
+	/**
+	 * Civlc system function identifier
+	 */
+	private final static String LOW_OF_RANGE = "$low_of_regular_range";
+
+	/**
+	 * C standard function identifier
+	 */
+	private final static String MEMCPY = "memcpy";
+
+	/**
 	 * A string source for a return statement:
 	 */
 	private final static String COPY = "$copy";
@@ -277,6 +292,17 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * Generated old variable counter:
 	 */
 	private int tmpOldCounter = 0;
+
+	/**
+	 * Generated assigns variable prefix:
+	 */
+	private final static String TMP_ASSIGNS_PREFIX = CONTRACT_PREFIX
+			+ "assigns";
+
+	/**
+	 * Generated assigns variable counter:
+	 */
+	private int tmpAssignsCounter = 0;
 
 	private int tmpRemoteInLambdaCounter = 0;
 
@@ -637,7 +663,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+		newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -847,7 +873,11 @@ public class ContractTransformerWorker extends BaseWorker {
 		// declarations for old expressions:
 		if (localBlock != null) {
 			for (ConditionalClauses condClauses : localBlock
-					.getConditionalClauses())
+					.getConditionalClauses()) {
+				localAssumes4ensurances
+						.addAll(processConditionalAssignsArgumentNode(
+								condClauses.condition,
+								condClauses.getAssignsArgs()));
 				for (ExpressionNode ensures : condClauses
 						.getEnsures(nodeFactory)) {
 					Pair<List<BlockItemNode>, List<BlockItemNode>> tmp_pre_post = replaceOldExpressionNodes4Local(
@@ -860,6 +890,8 @@ public class ContractTransformerWorker extends BaseWorker {
 									condClauses.condition, ensures).left);
 					pre_post.right.addAll(tmp_pre_post.right);
 				}
+			}
+
 		}
 		// Transform step 2: Inserts $mpi_comm_rank and $mpi_comm_size:
 		intTypeNode = nodeFactory.newBasicTypeNode(
@@ -2638,13 +2670,11 @@ public class ContractTransformerWorker extends BaseWorker {
 								identifierExpression(tmpHeap.getName()))),
 				null);
 
-		results.add(
-				createAssumption(
-						nodeFactory.newOperatorNode(source, Operator.LT,
-								Arrays.asList(
-										nodeFactory.newIntegerConstantNode(
-												source, "0"),
-										countTimesMPISizeof.copy()))));
+		results.add(createAssumption(
+				nodeFactory.newOperatorNode(source, Operator.LT,
+						Arrays.asList(
+								nodeFactory.newIntegerConstantNode(source, "0"),
+								countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(copyNode));
 		return results;
@@ -2759,13 +2789,11 @@ public class ContractTransformerWorker extends BaseWorker {
 				Operator.ASSIGN, Arrays.asList(buf.copy(),
 						identifierExpression(tmpHeap.getName())));
 
-		results.add(
-				createAssumption(
-						nodeFactory.newOperatorNode(source, Operator.LT,
-								Arrays.asList(
-										nodeFactory.newIntegerConstantNode(
-												source, "0"),
-										countTimesMPISizeof.copy()))));
+		results.add(createAssumption(
+				nodeFactory.newOperatorNode(source, Operator.LT,
+						Arrays.asList(
+								nodeFactory.newIntegerConstantNode(source, "0"),
+								countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(assignBuf));
 		return results;
@@ -2824,73 +2852,6 @@ public class ContractTransformerWorker extends BaseWorker {
 		return nodeFactory.newExpressionStatementNode(assignExpr);
 	}
 
-	private List<BlockItemNode> processConditionalAssignsArgumentNode(
-			ExpressionNode condition, List<ExpressionNode> assignsArgs) {
-		List<BlockItemNode> results = new LinkedList<>();
-		Source source = newSource("assigns ...", CivlcTokenConstant.CONTRACT);
-
-		for (ExpressionNode assignsArg : assignsArgs) {
-			StatementNode stmt = nodeFactory.newExpressionStatementNode(
-					processAssignsArgumentNodeWorker(assignsArg));
-
-			results.add(stmt);
-		}
-		if (condition == null || results.isEmpty())
-			return results;
-		else {
-			StatementNode stmt = nodeFactory.newCompoundStatementNode(source,
-					results);
-
-			return Arrays.asList(
-					nodeFactory.newIfNode(source, condition.copy(), stmt));
-		}
-	}
-
-	private ExpressionNode processAssignsArgumentNodeWorker(
-			ExpressionNode arg) {
-		ExpressionKind kind = arg.expressionKind();
-
-		switch (kind) {
-			case OPERATOR : {
-				OperatorNode derefNode = (OperatorNode) arg;
-				Operator op = derefNode.getOperator();
-
-				if (op == Operator.DEREFERENCE) {
-					// For any kind of arguments with the form *(ptr-expr), the
-					// assigns clause should be translated as $havoc(ptr-expr):
-					return createHavocCall(derefNode.getArgument(0).copy());
-				}
-				if (op == Operator.SUBSCRIPT) {
-					// For any kind of arguments with the form
-					// ptr-expr[index], the assign clause should be
-					// translated as $havoc(&ptr-expr[index]):
-					// TODO: currently not support range:
-					ExpressionNode addrDerefNode = nodeFactory.newOperatorNode(
-							derefNode.getSource(), Operator.ADDRESSOF,
-							derefNode.copy());
-
-					return createHavocCall(addrDerefNode);
-				}
-				break;
-			}
-			case IDENTIFIER_EXPRESSION : {
-				return arg;
-			}
-			case MPI_CONTRACT_EXPRESSION : {
-				MPIContractExpressionNode mpiConcExpr = (MPIContractExpressionNode) arg;
-
-				assert mpiConcExpr
-						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_REGION;
-				return createMPIAssignsCalls(mpiConcExpr);
-			}
-			default :
-				// TODO: do nothing or report an error , what about MemSetNode ?
-		}
-		throw new CIVLUnimplementedFeatureException(
-				"assigns clause with an argument: "
-						+ arg.prettyRepresentation());
-	}
-
 	/**
 	 * Find out variable declarations in the given list of block item nodes, do
 	 * $havoc for them.
@@ -2920,7 +2881,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * $mpi_extentof(datatype);
 	 * 
 	 * @param condition
-	 * @return
+	 *            The condition may contains appearances of data types.
+	 * @return A list of variable declarations and an updated condition
 	 */
 	private Pair<List<BlockItemNode>, ExpressionNode> transformMPIDatatype2extentofDatatype(
 			ExpressionNode condition) {
@@ -2978,6 +2940,14 @@ public class ContractTransformerWorker extends BaseWorker {
 		return new Pair<>(results, copy);
 	}
 
+	/**
+	 * Create a temporary variable which represents the extent of an MPI data
+	 * type.
+	 * 
+	 * @param datatype
+	 * @param isMPIExtent
+	 * @return
+	 */
 	private VariableDeclarationNode createTmpVarForDatatype(
 			ExpressionNode datatype, boolean isMPIExtent) {
 		TypeNode intNode = nodeFactory.newBasicTypeNode(datatype.getSource(),
@@ -3509,8 +3479,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				ExpressionNode call;
 
 				loc.remove();
-				call = processAssignsArgumentNodeWorker(loc);
-				assigns.add(nodeFactory.newExpressionStatementNode(call));
+				processAssignsArgumentNodeWorker(assigns, loc);
 			}
 		}
 		if (!assigns.isEmpty()) {
@@ -3537,9 +3506,11 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * 
 	 * @return
 	 */
-	private FunctionDefinitionNode createAssignAllGlobalFunction() {
+	private void createAssignAllGlobalFunction(
+			Pair<List<BlockItemNode>, List<BlockItemNode>> pre_post) {
 		List<BlockItemNode> body = new LinkedList<>();
 		CompoundStatementNode compoundBody;
+		BlockItemNode funcDef;
 		Source source = newSource("void _assigns_all_global()",
 				CivlcTokenConstant.FUNCTION_DEFINITION);
 
@@ -3550,10 +3521,155 @@ public class ContractTransformerWorker extends BaseWorker {
 			body.add(nodeFactory.newExpressionStatementNode(havocCall));
 		}
 		compoundBody = nodeFactory.newCompoundStatementNode(source, body);
-		return nodeFactory.newFunctionDefinitionNode(source,
+		funcDef = nodeFactory.newFunctionDefinitionNode(source,
 				identifier(ASSIGN_GLOBAL_FUNCTION),
 				nodeFactory.newFunctionTypeNode(source,
 						nodeFactory.newVoidTypeNode(source), null, false),
 				null, compoundBody);
+		pre_post.left.add(funcDef);
+	}
+
+	/**
+	 * Given an "assigns clause" argument, returns a list of intermedia code.
+	 * 
+	 * @param arg
+	 * @return
+	 */
+	private List<BlockItemNode> processConditionalAssignsArgumentNode(
+			ExpressionNode condition, List<ExpressionNode> assignsArgs) {
+		List<BlockItemNode> results = new LinkedList<>();
+		Source source = newSource("assigns ...", CivlcTokenConstant.CONTRACT);
+
+		for (ExpressionNode assignsArg : assignsArgs)
+			processAssignsArgumentNodeWorker(results, assignsArg);
+		if (condition == null || results.isEmpty())
+			return results;
+		else {
+			StatementNode stmt = nodeFactory.newCompoundStatementNode(source,
+					results);
+
+			return Arrays.asList(
+					nodeFactory.newIfNode(source, condition.copy(), stmt));
+		}
+	}
+
+	/**
+	 * Given an "assigns clause" argument, returns a $havoc call expression
+	 * 
+	 * @param arg
+	 * @return
+	 */
+	private void processAssignsArgumentNodeWorker(List<BlockItemNode> output,
+			ExpressionNode arg) {
+		ExpressionKind kind = arg.expressionKind();
+		ExpressionNode call;
+
+		switch (kind) {
+			case OPERATOR : {
+				OperatorNode derefNode = (OperatorNode) arg;
+				Operator op = derefNode.getOperator();
+
+				if (op == Operator.DEREFERENCE) {
+					// For any kind of arguments with the form *(ptr-expr), the
+					// assigns clause should be translated as $havoc(ptr-expr):
+					call = createHavocCall(derefNode.getArgument(0).copy());
+					output.add(nodeFactory.newExpressionStatementNode(call));
+				}
+				if (op == Operator.SUBSCRIPT) {
+					processAssignsSubscriptArgument(output, derefNode);
+				}
+				break;
+			}
+			case IDENTIFIER_EXPRESSION : {
+				call = createHavocCall(arg);
+				output.add(nodeFactory.newExpressionStatementNode(call));
+				break;
+			}
+			case MPI_CONTRACT_EXPRESSION : {
+				MPIContractExpressionNode mpiConcExpr = (MPIContractExpressionNode) arg;
+
+				assert mpiConcExpr
+						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_REGION;
+				call = createMPIAssignsCalls(mpiConcExpr);
+				output.add(nodeFactory.newExpressionStatementNode(call));
+				break;
+			}
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"assigns clause with an argument: "
+								+ arg.prettyRepresentation());
+		}
+
+	}
+
+	private void processAssignsSubscriptArgument(List<BlockItemNode> results,
+			OperatorNode subscript) {
+		ExpressionNode ptr = subscript.getArgument(0);
+		ExpressionNode index = subscript.getArgument(1);
+
+		Type referedType = ((PointerType) ptr.getConvertedType())
+				.referencedType();
+		if (index.expressionKind() == ExpressionKind.REGULAR_RANGE) {
+			// For assigns a[low .. high]:
+			RegularRangeNode regRangeNode = (RegularRangeNode) index;
+			// int tmp0 = high;
+			// int tmp1 = low;
+			VariableDeclarationNode high = nodeFactory
+					.newVariableDeclarationNode(index.getSource(),
+							identifier(
+									TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
+							nodeFactory.newBasicTypeNode(index.getSource(),
+									BasicTypeKind.INT),
+							regRangeNode.getHigh().copy());
+			VariableDeclarationNode low = nodeFactory
+					.newVariableDeclarationNode(index.getSource(),
+							identifier(
+									TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
+							nodeFactory.newBasicTypeNode(index.getSource(),
+									BasicTypeKind.INT),
+							regRangeNode.getLow().copy());
+			// referedType heap[high - low];
+			TypeNode referedTypeNode = typeNode(referedType);
+			TypeNode newHeapType = nodeFactory.newArrayTypeNode(ptr.getSource(),
+					referedTypeNode,
+					nodeFactory.newOperatorNode(index.getSource(),
+							Operator.MINUS,
+							identifierExpression(high.getName()),
+							identifierExpression(low.getName())));
+			VariableDeclarationNode newHeap = nodeFactory
+					.newVariableDeclarationNode(ptr.getSource(),
+							identifier(
+									TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
+							newHeapType);
+			// sizeof(referedType) * (high - low)
+			ExpressionNode totalSizeNode = nodeFactory.newOperatorNode(ptr
+					.getSource(), Operator.TIMES, Arrays.asList(
+							nodeFactory.newOperatorNode(index.getSource(),
+									Operator.MINUS,
+									identifierExpression(high.getName()),
+									identifierExpression(low.getName())),
+							nodeFactory.newSizeofNode(index.getSource(),
+									referedTypeNode.copy())));
+			// &a[low]
+			ExpressionNode addressOfLow = nodeFactory.newOperatorNode(
+					index.getSource(), Operator.ADDRESSOF,
+					nodeFactory.newOperatorNode(index.getSource(),
+							Operator.SUBSCRIPT, Arrays.asList(ptr.copy(),
+									regRangeNode.getLow().copy())));
+			// memcpy(&a[low], heap, sizeof(referedType) * (high - low)) :
+			ExpressionNode memcpyCall = nodeFactory.newFunctionCallNode(
+					index.getSource(), identifierExpression(MEMCPY),
+					Arrays.asList(addressOfLow,
+							identifierExpression(newHeap.getName()),
+							totalSizeNode),
+					null);
+
+			results.addAll(Arrays.asList(high, low, newHeap,
+					nodeFactory.newExpressionStatementNode(memcpyCall)));
+		} else {
+			ExpressionNode call = createHavocCall(subscript.copy());
+
+			results.add(nodeFactory.newExpressionStatementNode(call));
+		}
 	}
 }
