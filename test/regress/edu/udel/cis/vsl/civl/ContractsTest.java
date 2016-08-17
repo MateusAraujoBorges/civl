@@ -160,6 +160,12 @@ public class ContractsTest {
 	}
 
 	@Test
+	public void diffusion1d_dev() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
+				filename("contractsMPI/diffusion1d_dev.c")));
+	}
+
+	@Test
 	public void diffusion1d() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
 				filename("contractsMPI/diffusion1d.c")));
