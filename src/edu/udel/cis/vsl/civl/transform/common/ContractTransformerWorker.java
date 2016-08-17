@@ -2631,11 +2631,13 @@ public class ContractTransformerWorker extends BaseWorker {
 								identifierExpression(tmpHeap.getName()))),
 				null);
 
-		results.add(createAssumption(
-				nodeFactory.newOperatorNode(source, Operator.LT,
-						Arrays.asList(
-								nodeFactory.newIntegerConstantNode(source, "0"),
-								countTimesMPISizeof.copy()))));
+		results.add(
+				createAssumption(
+						nodeFactory.newOperatorNode(source, Operator.LT,
+								Arrays.asList(
+										nodeFactory.newIntegerConstantNode(
+												source, "0"),
+										countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(copyNode));
 		return results;
@@ -2750,11 +2752,13 @@ public class ContractTransformerWorker extends BaseWorker {
 				Operator.ASSIGN, Arrays.asList(buf.copy(),
 						identifierExpression(tmpHeap.getName())));
 
-		results.add(createAssumption(
-				nodeFactory.newOperatorNode(source, Operator.LT,
-						Arrays.asList(
-								nodeFactory.newIntegerConstantNode(source, "0"),
-								countTimesMPISizeof.copy()))));
+		results.add(
+				createAssumption(
+						nodeFactory.newOperatorNode(source, Operator.LT,
+								Arrays.asList(
+										nodeFactory.newIntegerConstantNode(
+												source, "0"),
+										countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(assignBuf));
 		return results;
@@ -2861,6 +2865,9 @@ public class ContractTransformerWorker extends BaseWorker {
 					return createHavocCall(addrDerefNode);
 				}
 				break;
+			}
+			case IDENTIFIER_EXPRESSION : {
+				return arg;
 			}
 			case MPI_CONTRACT_EXPRESSION : {
 				MPIContractExpressionNode mpiConcExpr = (MPIContractExpressionNode) arg;
@@ -3346,6 +3353,72 @@ public class ContractTransformerWorker extends BaseWorker {
 			}
 		}
 		return false;
+	}
+
+	/* ****************** PROCESS ASSIGNS CLAUSE ***********************/
+	/**
+	 * For pointer type parameter and global pointer set P, the object pointed
+	 * by P can be either modified or freed.
+	 * 
+	 * Within one behavior: Let P' be the valid pointer set at post-state and L
+	 * be the set of locations specified with assigns clauses:
+	 * <ul>
+	 * <li>if L is empty, all reachable locations R shall be assign new symbolic
+	 * constants.</li>
+	 * <li>if L is not empty, only L shall be assign new symbolic constants.
+	 * </li>
+	 * </ul>
+	 * <ul>
+	 * <li>if P' is empty, all global pointers and pointer type parameters are
+	 * undefined.</li>
+	 * <li>if P' is not empty, only P - P' are undefined.</li>
+	 * </ul>
+	 * 
+	 * @param contractBlock
+	 * @return
+	 */
+	private List<BlockItemNode> conditionalAssigns4NT(
+			ConditionalClauses conditionalClauses) {
+		List<BlockItemNode> assigns = new LinkedList<>();
+		Source source = conditionalClauses.condition.getSource();
+		StatementNode block;
+
+		if (conditionalClauses.getAssignsArgs().isEmpty()) {
+			// TODO: must translate this after the translation of the target
+			// function so that the heap variables are complete:
+			for (int i = 0; i < tmpHeapCounter; i++) {
+				ExpressionNode call = createHavocCall(
+						identifierExpression(TMP_HEAP_PREFIX + i));
+
+				assigns.add(nodeFactory.newExpressionStatementNode(call));
+			}
+			ExpressionNode assignGlobals = nodeFactory.newFunctionCallNode(
+					source, identifierExpression(ASSIGN_GLOBAL_FUNCTION),
+					Arrays.asList(), null);
+
+			assigns.add(nodeFactory.newExpressionStatementNode(assignGlobals));
+		} else {
+			for (ExpressionNode loc : conditionalClauses.getAssignsArgs()) {
+				ExpressionNode call;
+
+				loc.remove();
+				call = processAssignsArgumentNodeWorker(loc);
+				assigns.add(nodeFactory.newExpressionStatementNode(call));
+			}
+		}
+		if (!assigns.isEmpty()) {
+			Source assignSource = assigns.get(0).getSource();
+
+			if (conditionalClauses.condition != null) {
+				block = nodeFactory.newCompoundStatementNode(assignSource,
+						assigns);
+				block = nodeFactory.newIfNode(assignSource,
+						conditionalClauses.condition.copy(), block);
+				assigns.clear();
+				assigns.add(block);
+			}
+		}
+		return assigns;
 	}
 
 	/**
