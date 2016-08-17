@@ -21,6 +21,7 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
@@ -33,6 +34,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
@@ -2257,19 +2259,33 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				case BINARY : {
 					BinaryExpression binary = (BinaryExpression) expression;
 
-					if (!isTopLevel)
-						result.append("(");
-					temp = this.expressionEvaluationWorker(state, pid,
-							binary.left(), resultOnly, false);
-					state = temp.left;
-					result.append(temp.right);
-					result.append(binary.operatorToString());
-					temp = this.expressionEvaluationWorker(state, pid,
-							binary.right(), resultOnly, false);
-					state = temp.left;
-					result.append(temp.right);
-					if (!isTopLevel)
+					if (binary.operator() != BINARY_OPERATOR.REMOTE) {
+						if (!isTopLevel)
+							result.append("(");
+						temp = this.expressionEvaluationWorker(state, pid,
+								binary.left(), resultOnly, false);
+						state = temp.left;
+						result.append(temp.right);
+						result.append(binary.operatorToString());
+						temp = this.expressionEvaluationWorker(state, pid,
+								binary.right(), resultOnly, false);
+						state = temp.left;
+						result.append(temp.right);
+						if (!isTopLevel)
+							result.append(")");
+					} else {
+						result.append(binary.operatorToString() + "(");
+						temp = this.expressionEvaluationWorker(state, pid,
+								binary.left(), resultOnly, false);
+						state = temp.left;
+						result.append(temp.right);
+						result.append(", ");
+						temp = this.expressionEvaluationWorker(state, pid,
+								binary.right(), resultOnly, false);
+						state = temp.left;
+						result.append(temp.right);
 						result.append(")");
+					}
 					break;
 				}
 				case CAST : {
@@ -2363,18 +2379,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				}
 				case MPI_CONTRACT_EXPRESSION : {
 					MPIContractExpression mpiExpr = (MPIContractExpression) expression;
+					Pair<State, StringBuffer> eval = mpiContractExpressionEvaluation(
+							state, pid, mpiExpr);
 
-					temp = expressionEvaluationWorker(state, pid,
-							mpiExpr.arguments()[0], resultOnly, false);
-					state = temp.left;
-					result.append(mpiExpr.expressionKind() + "(" + temp.right);
-					for (int i = 1; i < mpiExpr.arguments().length; i++) {
-						temp = expressionEvaluationWorker(state, pid,
-								mpiExpr.arguments()[i], resultOnly, false);
-						state = temp.left;
-						result.append(", " + temp.right);
-					}
-					result.append(")");
+					state = eval.left;
+					result.append(eval.right);
 					break;
 				}
 				case QUANTIFIER : {
@@ -2476,6 +2485,52 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 	void setEvaluator(Evaluator evaluator) {
 		this.evaluator = evaluator;
+	}
+
+	private Pair<State, StringBuffer> mpiContractExpressionEvaluation(
+			State state, int pid, MPIContractExpression mpiExpr)
+			throws UnsatisfiablePathConditionException {
+		int numArgs;
+		StringBuffer result = new StringBuffer();
+		MPI_CONTRACT_EXPRESSION_KIND kind = mpiExpr.mpiContractKind();
+		Pair<State, String> eval;
+
+		switch (kind) {
+			case MPI_AGREE :
+				result.append("$mpi_agree(");
+				numArgs = 1;
+				break;
+			case MPI_EQUALS :
+				result.append("$mpi_equals(");
+				numArgs = 4;
+				break;
+			case MPI_EXTENT :
+				result.append("$mpi_extent(");
+				numArgs = 1;
+				break;
+			case MPI_OFFSET :
+				result.append("$mpi_offset(");
+				numArgs = 3;
+				break;
+			case MPI_REGION :
+				result.append("$mpi_region(");
+				numArgs = 3;
+				break;
+			case MPI_VALID :
+				result.append("$mpi_valid(");
+				numArgs = 3;
+				break;
+			default :
+				throw new CIVLInternalException("unreachable",
+						mpiExpr.getSource());
+		}
+		for (int i = 0; i < numArgs; i++) {
+			eval = expressionEvaluation(state, pid, mpiExpr.arguments()[i]);
+			state = eval.left;
+			result.append(eval.right);
+			result.append(i == numArgs - 1 ? ")" : ", ");
+		}
+		return new Pair<>(state, result);
 	}
 
 	@Override

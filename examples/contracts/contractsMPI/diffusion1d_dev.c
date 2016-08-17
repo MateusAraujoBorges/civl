@@ -76,7 +76,6 @@ void update() {
   @     requires left == rank - 1 && right == rank + 1;
   @*/
 void diff1dIter() {
-  $elaborate(nxl);
   exchange_ghost_cells();
   update();
 }

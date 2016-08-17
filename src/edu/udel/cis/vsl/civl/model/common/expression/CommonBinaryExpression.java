@@ -26,8 +26,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public class CommonBinaryExpression extends CommonExpression implements
-		BinaryExpression {
+public class CommonBinaryExpression extends CommonExpression
+		implements
+			BinaryExpression {
 
 	/* ************************** Private Fields *************************** */
 
@@ -73,9 +74,9 @@ public class CommonBinaryExpression extends CommonExpression implements
 	 * @param right
 	 *            The right-hand-side operand.
 	 */
-	public CommonBinaryExpression(CIVLSource source, Scope hscope,
-			Scope lscope, CIVLType type, BINARY_OPERATOR operator,
-			Expression left, Expression right) {
+	public CommonBinaryExpression(CIVLSource source, Scope hscope, Scope lscope,
+			CIVLType type, BINARY_OPERATOR operator, Expression left,
+			Expression right) {
 		super(source, hscope, lscope, type);
 		this.operator = operator;
 		this.left = left;
@@ -225,73 +226,74 @@ public class CommonBinaryExpression extends CommonExpression implements
 		if (leftValue == null || rightValue == null)
 			return;
 		switch (operator) {
-		case BIT_AND:
-		case BIT_OR:
-		case BIT_XOR:
-			break;
-		case PLUS:
-			constantValue = universe.add((NumericExpression) leftValue,
-					(NumericExpression) rightValue);
-			break;
-		case MINUS:
-			constantValue = universe.subtract((NumericExpression) leftValue,
-					(NumericExpression) rightValue);
-			break;
-		case TIMES:
-			constantValue = universe.multiply((NumericExpression) leftValue,
-					(NumericExpression) rightValue);
-			break;
-		case DIVIDE:
-			// try {
-			// constantValue = universe.divide((NumericExpression) leftValue,
-			// (NumericExpression) rightValue);
-			// } catch (Exception ex) {
-			//
-			// }
-			break;
-		case LESS_THAN:
-			constantValue = universe.lessThan((NumericExpression) leftValue,
-					(NumericExpression) rightValue);
-			break;
-		case LESS_THAN_EQUAL:
-			constantValue = universe.lessThanEquals(
-					(NumericExpression) leftValue,
-					(NumericExpression) rightValue);
-			break;
-		case EQUAL:
-			constantValue = universe.equals((NumericExpression) leftValue,
-					(NumericExpression) rightValue);
-			break;
-		case NOT_EQUAL:
-			constantValue = universe.not(universe.equals(
-					(NumericExpression) leftValue,
-					(NumericExpression) rightValue));
-			break;
-		case AND:
-			// TODO change to andTo
-			constantValue = universe.and((BooleanExpression) leftValue,
-					(BooleanExpression) rightValue);
-			break;
-		case OR:
-			constantValue = universe.or((BooleanExpression) leftValue,
-					(BooleanExpression) rightValue);
-			break;
-		case IMPLIES:
-			constantValue = universe.implies((BooleanExpression) leftValue,
-					(BooleanExpression) rightValue);
-			break;
-		case MODULO:
-			constantValue = universe.modulo((NumericExpression) leftValue,
-					(NumericExpression) rightValue);
-			break;
-		case POINTER_ADD:
-		case POINTER_SUBTRACT:
-		case SHIFTLEFT:
-		case SHIFTRIGHT:
-			break;
-		default:
-			throw new CIVLInternalException("Unknown operator: " + operator,
-					this);
+			case BIT_AND :
+			case BIT_OR :
+			case BIT_XOR :
+				break;
+			case PLUS :
+				constantValue = universe.add((NumericExpression) leftValue,
+						(NumericExpression) rightValue);
+				break;
+			case MINUS :
+				constantValue = universe.subtract((NumericExpression) leftValue,
+						(NumericExpression) rightValue);
+				break;
+			case TIMES :
+				constantValue = universe.multiply((NumericExpression) leftValue,
+						(NumericExpression) rightValue);
+				break;
+			case DIVIDE :
+				// try {
+				// constantValue = universe.divide((NumericExpression)
+				// leftValue,
+				// (NumericExpression) rightValue);
+				// } catch (Exception ex) {
+				//
+				// }
+				break;
+			case LESS_THAN :
+				constantValue = universe.lessThan((NumericExpression) leftValue,
+						(NumericExpression) rightValue);
+				break;
+			case LESS_THAN_EQUAL :
+				constantValue = universe.lessThanEquals(
+						(NumericExpression) leftValue,
+						(NumericExpression) rightValue);
+				break;
+			case EQUAL :
+				constantValue = universe.equals((NumericExpression) leftValue,
+						(NumericExpression) rightValue);
+				break;
+			case NOT_EQUAL :
+				constantValue = universe
+						.not(universe.equals((NumericExpression) leftValue,
+								(NumericExpression) rightValue));
+				break;
+			case AND :
+				// TODO change to andTo
+				constantValue = universe.and((BooleanExpression) leftValue,
+						(BooleanExpression) rightValue);
+				break;
+			case OR :
+				constantValue = universe.or((BooleanExpression) leftValue,
+						(BooleanExpression) rightValue);
+				break;
+			case IMPLIES :
+				constantValue = universe.implies((BooleanExpression) leftValue,
+						(BooleanExpression) rightValue);
+				break;
+			case MODULO :
+				constantValue = universe.modulo((NumericExpression) leftValue,
+						(NumericExpression) rightValue);
+				break;
+			case POINTER_ADD :
+			case POINTER_SUBTRACT :
+			case SHIFTLEFT :
+			case SHIFTRIGHT :
+				break;
+			default :
+				throw new CIVLInternalException("Unknown operator: " + operator,
+						this);
 		}
 	}
 
@@ -307,69 +309,69 @@ public class CommonBinaryExpression extends CommonExpression implements
 		String op = "";
 
 		switch (operator) {
-		case BIT_AND:
-			op = "&";
-			break;
-		case BIT_OR:
-			op = "|";
-			break;
-		case BIT_XOR:
-			op = "^";
-			break;
-		case PLUS:
-			op = "+";
-			break;
-		case MINUS:
-			op = "-";
-			break;
-		case TIMES:
-			op = "*";
-			break;
-		case DIVIDE:
-			op = "/";
-			break;
-		case LESS_THAN:
-			op = "<";
-			break;
-		case LESS_THAN_EQUAL:
-			op = "<=";
-			break;
-		case EQUAL:
-			op = "==";
-			break;
-		case NOT_EQUAL:
-			op = "!=";
-			break;
-		case AND:
-			op = "&&";
-			break;
-		case OR:
-			op = "||";
-			break;
-		case IMPLIES:
-			op = "=>";
-			break;
-		case MODULO:
-			op = "%";
-			break;
-		case POINTER_ADD:
-			op = "+";
-			break;
-		case POINTER_SUBTRACT:
-			op = "-";
-			break;
-		case SHIFTLEFT:
-			op = "<<";
-			break;
-		case SHIFTRIGHT:
-			op = ">>";
-			break;
-		case REMOTE:
-			op = ":Remote:";
-			break;
-		default:
-			throw new CIVLInternalException("Unknown operator: " + operator,
-					this);
+			case BIT_AND :
+				op = "&";
+				break;
+			case BIT_OR :
+				op = "|";
+				break;
+			case BIT_XOR :
+				op = "^";
+				break;
+			case PLUS :
+				op = "+";
+				break;
+			case MINUS :
+				op = "-";
+				break;
+			case TIMES :
+				op = "*";
+				break;
+			case DIVIDE :
+				op = "/";
+				break;
+			case LESS_THAN :
+				op = "<";
+				break;
+			case LESS_THAN_EQUAL :
+				op = "<=";
+				break;
+			case EQUAL :
+				op = "==";
+				break;
+			case NOT_EQUAL :
+				op = "!=";
+				break;
+			case AND :
+				op = "&&";
+				break;
+			case OR :
+				op = "||";
+				break;
+			case IMPLIES :
+				op = "=>";
+				break;
+			case MODULO :
+				op = "%";
+				break;
+			case POINTER_ADD :
+				op = "+";
+				break;
+			case POINTER_SUBTRACT :
+				op = "-";
+				break;
+			case SHIFTLEFT :
+				op = "<<";
+				break;
+			case SHIFTRIGHT :
+				op = ">>";
+				break;
+			case REMOTE :
+				op = "$on";
+				break;
+			default :
+				throw new CIVLInternalException("Unknown operator: " + operator,
+						this);
 		}
 		return op;
 	}
@@ -406,18 +408,18 @@ public class CommonBinaryExpression extends CommonExpression implements
 	 */
 	private static boolean isSymmetric(BINARY_OPERATOR op) {
 		switch (op) {
-		case AND:
-		case BIT_AND:
-		case BIT_OR:
-		case BIT_XOR:
-		case EQUAL:
-		case NOT_EQUAL:
-		case OR:
-		case PLUS:
-		case TIMES:
-			return true;
-		default:
-			return false;
+			case AND :
+			case BIT_AND :
+			case BIT_OR :
+			case BIT_XOR :
+			case EQUAL :
+			case NOT_EQUAL :
+			case OR :
+			case PLUS :
+			case TIMES :
+				return true;
+			default :
+				return false;
 		}
 	}
 
