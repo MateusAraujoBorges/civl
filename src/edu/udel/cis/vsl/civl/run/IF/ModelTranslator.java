@@ -248,6 +248,9 @@ public class ModelTranslator {
 			unitTasks[i].setUserIncludes(userIncludes);
 		}
 		task = new TranslationTask(unitTasks);
+		// if (this.config.showAST())
+		// task.setPrettyPrint(false);
+		// else
 		task.setPrettyPrint(true);
 		task.setLinkLanguage(Language.CIVL_C);
 		task.setStage(TranslationStage.TRANSFORM_PROGRAM);
@@ -350,6 +353,8 @@ public class ModelTranslator {
 		long endTime = System.currentTimeMillis();
 		long totalTime;
 
+		if (config.showAST())
+			program.print(out);
 		if (config.showProgram())
 			program.prettyPrint(out);
 		if (config.showTime()) {

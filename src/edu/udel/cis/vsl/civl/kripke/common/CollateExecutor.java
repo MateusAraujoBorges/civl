@@ -33,7 +33,8 @@ public class CollateExecutor {
 		this.config.setCollectProcesses(true);
 		this.config.setCheckMemoryLeak(false);
 		this.config.setCheckExpressionError(false);
-		this.config.setSimplify(false);
+		// this.config.setSimplify(false);
+		this.config.setInSubprogram(true);
 	}
 
 	// public CollateExecutor(Evaluator mainEvaluator, CIVLErrorLogger

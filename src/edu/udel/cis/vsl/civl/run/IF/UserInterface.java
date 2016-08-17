@@ -277,21 +277,22 @@ public class UserInterface {
 			// if (commandLine.gmcSection().isTrue(echoO))
 			// out.println(commandLine.getCommandString());
 			switch (kind) {
-			case SHOW:
-				return runShow(modelTranslator);
-			case VERIFY:
-				return runVerify(commandLine.getCommandString(),
-						modelTranslator);
-			case REPLAY:
-				return runReplay(commandLine.getCommandString(),
-						modelTranslator, traceFile);
-			case RUN:
-				return runRun(commandLine.getCommandString(), modelTranslator);
-			default:
-				throw new CIVLInternalException(
-						"missing implementation for command of "
-								+ commandLine.normalCommandKind() + " kind",
-						(CIVLSource) null);
+				case SHOW :
+					return runShow(modelTranslator);
+				case VERIFY :
+					return runVerify(commandLine.getCommandString(),
+							modelTranslator);
+				case REPLAY :
+					return runReplay(commandLine.getCommandString(),
+							modelTranslator, traceFile);
+				case RUN :
+					return runRun(commandLine.getCommandString(),
+							modelTranslator);
+				default :
+					throw new CIVLInternalException(
+							"missing implementation for command of "
+									+ commandLine.normalCommandKind() + " kind",
+							(CIVLSource) null);
 			}
 		}
 		return true;
@@ -416,6 +417,9 @@ public class UserInterface {
 		// combinedAST.prettyPrint(System.out, true);
 		compositeProgram = specWorker.frontEnd
 				.getProgramFactory(Language.CIVL_C).newProgram(combinedAST);
+		if (civlConfig.debugOrVerbose() || civlConfig.showAST()) {
+			compositeProgram.print(out);
+		}
 		if (civlConfig.debugOrVerbose() || civlConfig.showProgram()) {
 			compositeProgram.prettyPrint(out);
 		}
@@ -603,13 +607,16 @@ public class UserInterface {
 
 			try {
 				switch (commandLine.commandLineKind()) {
-				case NORMAL:
-					return runNormalCommand((NormalCommandLine) commandLine);
-				case COMPARE:
-					return runCompareCommand((CompareCommandLine) commandLine);
-				default:
-					throw new CIVLUnimplementedFeatureException("command of "
-							+ commandLine.commandLineKind() + " kind");
+					case NORMAL :
+						return runNormalCommand(
+								(NormalCommandLine) commandLine);
+					case COMPARE :
+						return runCompareCommand(
+								(CompareCommandLine) commandLine);
+					default :
+						throw new CIVLUnimplementedFeatureException(
+								"command of " + commandLine.commandLineKind()
+										+ " kind");
 				}
 			} catch (ABCException e) {
 				err.println(e);
@@ -905,7 +912,7 @@ public class UserInterface {
 			throws CommandLineException, ABCException, IOException {
 		Verifier verifier = new Verifier(cmdConfig, model, out, err, startTime);
 		boolean result = false;
-		boolean quiet = isQuiet(new String[] { command });
+		boolean quiet = isQuiet(new String[]{command});
 
 		try {
 			result = verifier.run_work();
@@ -938,7 +945,7 @@ public class UserInterface {
 		TracePlayer replayer;
 		Trace<Transition, State> trace;
 		boolean result;
-		boolean quiet = isQuiet(new String[] { command });
+		boolean quiet = isQuiet(new String[]{command});
 
 		replayer = TracePlayer.guidedPlayer(gmcConfig, model, traceFile, out,
 				err);
@@ -983,61 +990,61 @@ public class UserInterface {
 		else {
 			out.println();
 			switch (arg) {
-			case CommandLine.COMPARE:
-				out.println(
-						"COMPARE the functional equivalence of two programs.");
-				out.println(
-						"\nUsage: civl compare [common options] -spec [spec options] "
-								+ "filename+ -impl [impl options] filename+");
-				out.println("\nOptions:");
-				break;
-			case CommandLine.GUI:
-				out.println("Run the graphical interface of CIVL.");
-				out.println("\nUsage: civl gui");
-				break;
-			case CommandLine.HELP:
-				out.println("Prints the HELP information of CIVL");
-				out.println("\nUsage: civl help [command]");
-				out.println("command can be any of the following: "
-						+ "compare, gui, help, replay, run, show and verify.");
-				break;
-			case CommandLine.REPLAY:
-				out.println(
-						"REPLAY the counterexample trace of some verification result.");
-				out.println("\nUsage: civl replay [options] filename+");
-				out.println(
-						"    or civl replay [common options] -spec [spec options] "
-								+ "filename+ -impl [impl options] filename+");
-				out.println(
-						"the latter replays the counterexample of some comparison result.");
-				out.println("\nOptions:");
-				break;
-			case CommandLine.RUN:
-				out.println("RUN a program randomly.");
-				out.println("\nUsage: civl run [options] filename+");
-				out.println("\nOptions:");
-				break;
-			case CommandLine.SHOW:
-				out.println(
-						"SHOW the preprocessing, parsing and translating result of a program.");
-				out.println("\nUsage: civl show [options] filename+");
-				out.println("\nOptions:");
-				break;
-			case CommandLine.CONFIG:
-				out.println(
-						"Configure CIVL.  Detect theorem provers and create .sarl.");
-				out.println("\nUsage: civl config");
-				break;
-			case CommandLine.VERIFY:
-				out.println("VERIFY a certain program.");
-				out.println("\nUsage: civl verify [options] filename+");
-				out.println("\nOptions:");
-				break;
-			default:
-				throw new CIVLInternalException(
-						"missing implementation for command of " + arg
-								+ " kind",
-						(CIVLSource) null);
+				case CommandLine.COMPARE :
+					out.println(
+							"COMPARE the functional equivalence of two programs.");
+					out.println(
+							"\nUsage: civl compare [common options] -spec [spec options] "
+									+ "filename+ -impl [impl options] filename+");
+					out.println("\nOptions:");
+					break;
+				case CommandLine.GUI :
+					out.println("Run the graphical interface of CIVL.");
+					out.println("\nUsage: civl gui");
+					break;
+				case CommandLine.HELP :
+					out.println("Prints the HELP information of CIVL");
+					out.println("\nUsage: civl help [command]");
+					out.println("command can be any of the following: "
+							+ "compare, gui, help, replay, run, show and verify.");
+					break;
+				case CommandLine.REPLAY :
+					out.println(
+							"REPLAY the counterexample trace of some verification result.");
+					out.println("\nUsage: civl replay [options] filename+");
+					out.println(
+							"    or civl replay [common options] -spec [spec options] "
+									+ "filename+ -impl [impl options] filename+");
+					out.println(
+							"the latter replays the counterexample of some comparison result.");
+					out.println("\nOptions:");
+					break;
+				case CommandLine.RUN :
+					out.println("RUN a program randomly.");
+					out.println("\nUsage: civl run [options] filename+");
+					out.println("\nOptions:");
+					break;
+				case CommandLine.SHOW :
+					out.println(
+							"SHOW the preprocessing, parsing and translating result of a program.");
+					out.println("\nUsage: civl show [options] filename+");
+					out.println("\nOptions:");
+					break;
+				case CommandLine.CONFIG :
+					out.println(
+							"Configure CIVL.  Detect theorem provers and create .sarl.");
+					out.println("\nUsage: civl config");
+					break;
+				case CommandLine.VERIFY :
+					out.println("VERIFY a certain program.");
+					out.println("\nUsage: civl verify [options] filename+");
+					out.println("\nOptions:");
+					break;
+				default :
+					throw new CIVLInternalException(
+							"missing implementation for command of " + arg
+									+ " kind",
+							(CIVLSource) null);
 			}
 			CIVLCommand.printOptionsOfCommand(arg, out);
 		}

@@ -876,7 +876,8 @@ public class ImmutableStateFactory implements StateFactory {
 
 		for (Map.Entry<SymbolicConstant, SymbolicExpression> pair : map
 				.entrySet()) {
-			if (ModelConfiguration.SIZEOF_VARS.contains(pair.getKey())) {
+			if ((this.config.isEnableMpiContract() && this.config.inSubprogram())
+					|| ModelConfiguration.SIZEOF_VARS.contains(pair.getKey())) {
 				result = universe.and(result,
 						universe.equals(pair.getValue(), pair.getKey()));
 			}

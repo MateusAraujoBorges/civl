@@ -59,7 +59,7 @@ public class CommonStateManager implements StateManager {
 	 */
 	protected Executor executor;
 
-	private CIVLConfiguration config;
+	protected CIVLConfiguration config;
 
 	/**
 	 * The maximal number of processes at a state, initialized as 0.
@@ -94,12 +94,12 @@ public class CommonStateManager implements StateManager {
 	 */
 	private int maxCanonicId = -1;
 
-	private CIVLErrorLogger errorLogger;
+	protected CIVLErrorLogger errorLogger;
 
 	/**
 	 * The symbolic analyzer to be used.
 	 */
-	private SymbolicAnalyzer symbolicAnalyzer;
+	protected SymbolicAnalyzer symbolicAnalyzer;
 
 	protected BooleanExpression falseExpr;
 

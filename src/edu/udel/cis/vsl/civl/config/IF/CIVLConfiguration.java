@@ -239,6 +239,8 @@ public class CIVLConfiguration {
 
 	private boolean checkExpressionError = true;
 
+	private boolean isInSubprogram = false;
+
 	// private boolean pthreadOnly = true;
 
 	/**
@@ -850,5 +852,13 @@ public class CIVLConfiguration {
 
 	public boolean showPathConditon() {
 		return !this.showPathConditon.equals("NONE");
+	}
+
+	public boolean inSubprogram() {
+		return isInSubprogram;
+	}
+
+	public void setInSubprogram(boolean isInSubprogram) {
+		this.isInSubprogram = isInSubprogram;
 	}
 }

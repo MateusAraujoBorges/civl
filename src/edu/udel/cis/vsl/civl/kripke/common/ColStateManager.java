@@ -11,10 +11,10 @@ import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
+import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
 import edu.udel.cis.vsl.gmc.TraceStepIF;
 
 /**
@@ -31,7 +31,8 @@ import edu.udel.cis.vsl.gmc.TraceStepIF;
  *
  */
 public class ColStateManager extends CommonStateManager
-		implements StateManager {
+		implements
+			StateManager {
 
 	/**
 	 * The set of FINAL collate states.
@@ -52,7 +53,7 @@ public class ColStateManager extends CommonStateManager
 			CIVLConfiguration config) {
 		super(enabler, executor, symbolicAnalyzer, errorLogger, config);
 		finalColStates = new HashSet<>();
-		ignoredHeapErrors=new HashSet<>(2);
+		ignoredHeapErrors = new HashSet<>(2);
 		ignoredHeapErrors.add(HeapErrorKind.NONEMPTY);
 		ignoredHeapErrors.add(HeapErrorKind.UNREACHABLE);
 	}
@@ -83,6 +84,20 @@ public class ColStateManager extends CommonStateManager
 			// reuse the general method, since only one process (the external
 			// process) is enabled
 			result = nextStateWork(state, transition);
+
+			// if (this.config.isEnableMpiContract()
+			// && result.getFinalState().getPathCondition().isFalse()) {
+			//
+			// errorLogger.report(entry);
+			//
+			//
+			// this.errorLogger.logSimpleError(null, result.getFinalState(),
+			// state.getProcessState(transition.pid()).name(),
+			// this.symbolicAnalyzer.stateInformation(
+			// result.getFinalState()),
+			// ErrorKind.CONTRACT,
+			// "unsatisfiable condition encountered in contract specification");
+			// }
 		} catch (UnsatisfiablePathConditionException e) {
 			// problem is the interface requires an actual State
 			// be returned. There is no concept of executing a
