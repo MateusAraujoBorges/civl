@@ -9,6 +9,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Entity;
 import edu.udel.cis.vsl.abc.ast.entity.IF.Variable;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
@@ -46,9 +47,13 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode.Quantifier;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteOnExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.CivlForNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.DeclarationListNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
@@ -1416,6 +1421,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	 *         should be added at outside of the with block.
 	 * @throws SyntaxException
 	 */
+	@SuppressWarnings("unused")
 	private Pair<List<BlockItemNode>, List<BlockItemNode>> translateConditionalPredicates(
 			boolean isAssume, ExpressionNode cond, ExpressionNode preds)
 			throws SyntaxException {
@@ -1427,13 +1433,14 @@ public class ContractTransformerWorker extends BaseWorker {
 		replaceDatatype = transformMPIDatatype2extentofDatatype(preds);
 		preds = replaceDatatype.right;
 
-		SETriple transformRemoteInLambda = this
+		SETriple transformRemoteWtBoundVars = this
 				.transformRemoteWtBoundVariable(preds);
 
-		if (transformRemoteInLambda != null) {
-			stmts.addAll(transformRemoteInLambda.getBefore());
-			preds = (ExpressionNode) transformRemoteInLambda.getNode();
+		if (transformRemoteWtBoundVars != null) {
+			stmts.addAll(transformRemoteWtBoundVars.getBefore());
+			preds = (ExpressionNode) transformRemoteWtBoundVars.getNode();
 		}
+		stmts.addAll(this.elaboratePid4Remote(preds));
 		stmts.add(isAssume ? createAssumption(preds) : createAssertion(preds));
 		if (conditionNeedsChecking != null)
 			stmts.add(createAssertion(conditionNeedsChecking));
@@ -3088,7 +3095,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			loopBody.addAll(bodyTriple.getBefore());
 		ifBodyList.add(nodeFactory.newExpressionStatementNode(assignResult));
 		ifBodyList.add(nodeFactory.newBreakNode(source));
-
+		// add elaborate for body
+		loopBody.addAll(this.elaboratePid4Remote(body));
 		StatementNode ifStmt = nodeFactory
 				.newIfNode(source,
 						quantifier == Quantifier.FORALL
@@ -3107,6 +3115,94 @@ public class ContractTransformerWorker extends BaseWorker {
 				nodeFactory.newCompoundStatementNode(source, loopBody), null));
 		return new SETriple(before,
 				this.identifierExpression(tmpResult.getName()), null);
+	}
+
+	private List<StatementNode> elaboratePid4Remote(ASTNode expr) {
+		List<StatementNode> result = new LinkedList<>();
+
+		if (expr instanceof RemoteOnExpressionNode) {
+			StatementNode stmt = elaboratePid4RemoteWork(
+					(RemoteOnExpressionNode) expr);
+
+			if (stmt != null)
+				result.add(stmt);
+		}
+		for (ASTNode child : expr.children()) {
+			if (child != null) {
+				List<StatementNode> subResult = elaboratePid4Remote(child);
+
+				result.addAll(subResult);
+			}
+		}
+		return result;
+	}
+
+	private boolean hasNonTrivialSubExpression(ASTNode node) {
+		if (node instanceof ExpressionNode)
+			return hasNonTrivialSubExpressionWork((ExpressionNode) node);
+		else
+			for (ASTNode child : node.children()) {
+				boolean subResult = hasNonTrivialSubExpression(child);
+
+				if (subResult)
+					return true;
+			}
+		return false;
+	}
+
+	private boolean hasNonTrivialSubExpressionWork(ExpressionNode node) {
+		if (node.expressionKind() == ExpressionKind.CONSTANT)
+			return false;
+		else if (node
+				.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
+			IdentifierExpressionNode idExpr = (IdentifierExpressionNode) node;
+			Entity entity = idExpr.getIdentifier().getEntity();
+
+			if (entity != null && entity instanceof Variable) {
+				Variable variable = (Variable) entity;
+				VariableDeclarationNode variableDecl = variable
+						.getDeclaration(0);
+
+				if (variableDecl != null) {
+					ASTNode parent = variableDecl.parent();
+
+					if (parent instanceof DeclarationListNode) {
+						parent = parent.parent();
+						if (parent instanceof CivlForNode
+								|| parent instanceof ForLoopNode)
+							return true;
+					} else if (parent instanceof SequenceNode<?>) {
+						parent = parent.parent();
+
+						if (parent instanceof PairNode<?, ?>) {
+							parent = parent.parent().parent();
+
+							if (parent instanceof LambdaNode
+									|| parent instanceof QuantifiedExpressionNode)
+								return false;
+						}
+					}
+				}
+			}
+		}
+		for (ASTNode child : node.children()) {
+			if (child != null && child instanceof ExpressionNode) {
+				boolean subResult = hasNonTrivialSubExpression(child);
+
+				if (subResult)
+					return true;
+			}
+		}
+		return true;
+	}
+
+	private StatementNode elaboratePid4RemoteWork(RemoteOnExpressionNode expr) {
+		if (expr.expressionKind() == ExpressionKind.REMOTE_REFERENCE
+				&& this.hasNonTrivialSubExpression(expr.getProcessExpression()))
+			return this.nodeFactory.newExpressionStatementNode(
+					this.functionCall(expr.getSource(), ELABORATE,
+							Arrays.asList(expr.getProcessExpression().copy())));
+		return null;
 	}
 
 	/**
@@ -3310,22 +3406,33 @@ public class ContractTransformerWorker extends BaseWorker {
 						CONTRACT_PREFIX + "exquant" + tmpRemoteInLambdaCounter,
 						this.typeNode(outputType), init);
 
+				List<BlockItemNode> loopBody = new LinkedList<>();
 				ExpressionNode loopBodyExpr = nodeFactory.newOperatorNode(
 						expr.getSource(), assignOperator,
 						this.identifierExpression(resultVar.getName()),
 						body.copy());
-
 				ExpressionNode domain = nodeFactory.newRegularRangeNode(
 						expr.lower().getSource(), expr.lower().copy(),
 						expr.higher().copy());
+
+				loopBody.addAll(this.elaboratePid4Remote(body));
+				loopBody.add(
+						nodeFactory.newExpressionStatementNode(loopBodyExpr));
+
+				StatementNode loopBodyStmt;
+
+				if (loopBody.size() == 1)
+					loopBodyStmt = (StatementNode) loopBody.get(0);
+				else
+					loopBodyStmt = nodeFactory.newCompoundStatementNode(
+							expr.getSource(), loopBody);
+
 				StatementNode civlForNode = nodeFactory.newCivlForNode(
 						expr.getSource(), false,
 						nodeFactory.newForLoopInitializerNode(
 								boundVar.getSource(),
 								Arrays.asList(boundVar.copy())),
-						domain,
-						nodeFactory.newExpressionStatementNode(loopBodyExpr),
-						null);
+						domain, loopBodyStmt, null);
 				List<BlockItemNode> list = new LinkedList<>();
 
 				list.add(resultVar);
