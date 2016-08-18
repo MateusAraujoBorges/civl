@@ -166,9 +166,10 @@ public class ContractsTest {
 	}
 
 	@Test
-	public void diffusion1dUpdateDevBad() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
-				filename("contractsMPI/diffusion1d_dev_bad.c")));
+	public void diffusion1dDevUpdateBad() {
+		// update is bad when it is called by "diff1dIter"
+		assertFalse(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
+				filename("contractsMPI/diffusion1d_dev-bad-update.c")));
 	}
 
 	@Test
