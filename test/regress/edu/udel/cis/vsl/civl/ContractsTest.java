@@ -160,17 +160,31 @@ public class ContractsTest {
 	}
 
 	@Test
-	public void diffusion1d_dev() {
+	public void diffusion1dIterDev() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
 				filename("contractsMPI/diffusion1d_dev.c")));
 	}
 
 	@Test
-	public void diffusion1d() {
+	public void diffusion1dUpdateDevBad() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
+				filename("contractsMPI/diffusion1d_dev_bad.c")));
+	}
+
+	@Test
+	public void diffusion1dIter() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
 				filename("contractsMPI/diffusion1d.c")));
+	}
+
+	@Test
+	public void diffusion1dUpdate() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
 				filename("contractsMPI/diffusion1d.c")));
+	}
+
+	@Test
+	public void diffusion1dExchange() {
 		assertTrue(
 				ui.run("verify -input_mpi_nprocs=2 -mpiContract=exchange_ghost_cells",
 						filename("contractsMPI/diffusion1d.c")));
