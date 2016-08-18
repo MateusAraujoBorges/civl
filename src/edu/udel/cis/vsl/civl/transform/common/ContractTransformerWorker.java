@@ -44,16 +44,15 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.LambdaNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.OriginalExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode.Quantifier;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteOnExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ValueAtNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.CivlForNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.DeclarationListNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
@@ -1480,7 +1479,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			stmts.addAll(transformRemoteWtBoundVars.getBefore());
 			preds = (ExpressionNode) transformRemoteWtBoundVars.getNode();
 		}
-		stmts.addAll(this.elaboratePid4Remote(preds));
+		// stmts.addAll(this.elaboratePid4Remote(preds));
 		stmts.add(isAssume ? createAssumption(preds) : createAssertion(preds));
 		if (conditionNeedsChecking != null)
 			stmts.add(createAssertion(conditionNeedsChecking));
@@ -2531,12 +2530,14 @@ public class ContractTransformerWorker extends BaseWorker {
 		for (OperatorNode item : results) {
 			ASTNode parent = item.parent();
 			int childIdx = item.childIndex();
+			ExpressionNode expr = item.getArgument(0);
 
 			item.remove();
+			expr.remove();
 			valueAtNode = nodeFactory.newValueAtNode(item.getSource(),
 					pre_state_state.copy(),
-					identifierExpression(MPI_COMM_RANK_CONST),
-					item.getArgument(0).copy());
+					identifierExpression(MPI_COMM_RANK_CONST), expr);
+			valueAtNode.setInitialType(expr.getConvertedType());
 			parent.setChild(childIdx, valueAtNode);
 		}
 		return copy;
@@ -2636,6 +2637,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			item.getArgument(0).remove();
 			valueAt = nodeFactory.newValueAtNode(item.getSource(),
 					stateIdentiifer.copy(), procIndentifier.copy(), arg);
+			valueAt.setInitialType(arg.getConvertedType());
 			parent.setChild(childIdx, valueAt);
 			results.add(stateVarDecl);
 		}
@@ -3070,7 +3072,7 @@ public class ContractTransformerWorker extends BaseWorker {
 
 		body = bodyTriple != null
 				? (ExpressionNode) bodyTriple.getNode()
-				: body.copy();
+				: body;
 
 		ExpressionNode assignResult = this.nodeFactory.newOperatorNode(source,
 				Operator.ASSIGN, this.identifierExpression(tmpResult.getName()),
@@ -3085,7 +3087,9 @@ public class ContractTransformerWorker extends BaseWorker {
 		ifBodyList.add(nodeFactory.newExpressionStatementNode(assignResult));
 		ifBodyList.add(nodeFactory.newBreakNode(source));
 		// add elaborate for body
-		loopBody.addAll(this.elaboratePid4Remote(body));
+		// loopBody.addAll(this.elaboratePid4Remote(body));
+		this.transformBoundVariableInValueAt(body);
+		
 		StatementNode ifStmt = nodeFactory
 				.newIfNode(source,
 						quantifier == Quantifier.FORALL
@@ -3139,40 +3143,76 @@ public class ContractTransformerWorker extends BaseWorker {
 		return false;
 	}
 
+	private void transformBoundVariableInValueAt(ASTNode node) {
+		if (node instanceof ValueAtNode)
+			transformBoundVariableInValueAtWork(
+					((ValueAtNode) node).expressionNode());
+		else
+			for (ASTNode child : node.children()) {
+				if (child != null)
+					transformBoundVariableInValueAt(child);
+			}
+	}
+
+	private void transformBoundVariableInValueAtWork(ASTNode node) {
+		if (node instanceof IdentifierExpressionNode) {
+			IdentifierExpressionNode idExpr = (IdentifierExpressionNode) node;
+
+			if (node.parent() instanceof OriginalExpressionNode)
+				return;
+			if (this.isBoundVariableReference(idExpr)) {
+				int childIndex = idExpr.childIndex();
+				ASTNode parent = idExpr.parent();
+				ExpressionNode original;
+
+				idExpr.remove();
+				original = nodeFactory
+						.newOriginalExpressionNode(node.getSource(), idExpr);
+				parent.setChild(childIndex, original);
+			}
+		} else {
+			for (ASTNode child : node.children()) {
+				if (child != null)
+					transformBoundVariableInValueAtWork(child);
+			}
+		}
+	}
+
+	private boolean isBoundVariableReference(IdentifierExpressionNode idExpr) {
+		Entity entity = idExpr.getIdentifier().getEntity();
+
+		if (entity != null && entity instanceof Variable) {
+			Variable variable = (Variable) entity;
+			VariableDeclarationNode variableDecl = variable.getDeclaration(0);
+
+			if (variableDecl != null) {
+				ASTNode parent = variableDecl.parent();
+
+				if (parent instanceof SequenceNode<?>) {
+					parent = parent.parent();
+
+					if (parent instanceof PairNode<?, ?>) {
+						parent = parent.parent().parent();
+
+						if (parent instanceof LambdaNode
+								|| parent instanceof QuantifiedExpressionNode)
+							return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
 	private boolean hasNonTrivialSubExpressionWork(ExpressionNode node) {
 		if (node.expressionKind() == ExpressionKind.CONSTANT)
 			return false;
 		else if (node
 				.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
 			IdentifierExpressionNode idExpr = (IdentifierExpressionNode) node;
-			Entity entity = idExpr.getIdentifier().getEntity();
 
-			if (entity != null && entity instanceof Variable) {
-				Variable variable = (Variable) entity;
-				VariableDeclarationNode variableDecl = variable
-						.getDeclaration(0);
-
-				if (variableDecl != null) {
-					ASTNode parent = variableDecl.parent();
-
-					if (parent instanceof DeclarationListNode) {
-						parent = parent.parent();
-						if (parent instanceof CivlForNode
-								|| parent instanceof ForLoopNode)
-							return true;
-					} else if (parent instanceof SequenceNode<?>) {
-						parent = parent.parent();
-
-						if (parent instanceof PairNode<?, ?>) {
-							parent = parent.parent().parent();
-
-							if (parent instanceof LambdaNode
-									|| parent instanceof QuantifiedExpressionNode)
-								return false;
-						}
-					}
-				}
-			}
+			if (this.isBoundVariableReference(idExpr))
+				return false;
 		}
 		for (ASTNode child : node.children()) {
 			if (child != null && child instanceof ExpressionNode) {
@@ -3396,6 +3436,9 @@ public class ContractTransformerWorker extends BaseWorker {
 						this.typeNode(outputType), init);
 
 				List<BlockItemNode> loopBody = new LinkedList<>();
+
+				this.transformBoundVariableInValueAt(body);
+
 				ExpressionNode loopBodyExpr = nodeFactory.newOperatorNode(
 						expr.getSource(), assignOperator,
 						this.identifierExpression(resultVar.getName()),
@@ -3404,7 +3447,7 @@ public class ContractTransformerWorker extends BaseWorker {
 						expr.lower().getSource(), expr.lower().copy(),
 						expr.higher().copy());
 
-				loopBody.addAll(this.elaboratePid4Remote(body));
+				// loopBody.addAll(this.elaboratePid4Remote(body));
 				loopBody.add(
 						nodeFactory.newExpressionStatementNode(loopBodyExpr));
 
