@@ -2743,8 +2743,13 @@ public class ContractTransformerWorker extends BaseWorker {
 		assert ptrType.kind() == TypeNodeKind.POINTER;
 		referedType = ((PointerTypeNode) ptrType).referencedType();
 
+		// For \valid(ptr + x), there must equivalently be an array ptr[extent]
+		// where extent >= x + 1:
+		OperatorNode countPlusOne = nodeFactory.newOperatorNode(buf.getSource(),
+				Operator.PLUS, count.copy(), count = nodeFactory
+						.newIntegerConstantNode(buf.getSource(), "1"));
 		ArrayTypeNode arrayTypeNode = nodeFactory.newArrayTypeNode(
-				buf.getSource(), referedType.copy(), count.copy());
+				buf.getSource(), referedType.copy(), countPlusOne);
 		VariableDeclarationNode tmpHeapVar = createTmpHeapVariable(
 				buf.getSource(), arrayTypeNode);
 		List<BlockItemNode> results = new LinkedList<>();

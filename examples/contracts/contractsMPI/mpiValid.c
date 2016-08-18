@@ -1,9 +1,6 @@
 #include <mpi.h>
 #include <civl-mpi.cvh>
 
-
-#define
-
 int main() {
   MPI_Init(NULL, NULL);
 
