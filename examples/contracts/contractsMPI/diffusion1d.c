@@ -1,6 +1,10 @@
 #include<mpi.h>
-int left, right, nxl, nx, rank, nsteps;
+int left, right, nxl, nx, rank, nprocs;
 double * u, * u_new, k;
+
+#define OWNER(index) ((nprocs*(index+1)-1)/nx)
+
+#define LOCAL_OF(index)  u[index - (OWNER(index)*nx/nprocs)]
 
 /*@ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
@@ -54,21 +58,27 @@ void update() {
 /*@ 
   @ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
-  @   requires nxl > 0 && nxl < 5 && nx > nxl && nx < 10;
+  @   requires nprocs == \mpi_comm_size;
+  @   requires nxl > 0 && nxl < 5;
+  @   requires nx > 5 && nx < 10;
   @   requires \mpi_valid(u, nxl + 2, MPI_DOUBLE);
   @   requires \mpi_valid(u_new, nxl + 2, MPI_DOUBLE);
   @   requires  nx == \sum(0, \mpi_comm_size - 1, 
   @                    (\lambda int k; \on(k, nxl)));
   @   requires k > 0.0;
+  @   requires \mpi_agree(nx) && \mpi_agree(k);
   @   ensures  \forall int i; 0 < i && i <= nx
   @             ==>
-  @            u[i] == \old(u[i] + k*(u[i+1] + u[i-1] - 2*u[i]));
+  @            \on(OWNER(i), LOCAL_OF(i)) == 
+  @            \old( \on(OWNER(i), LOCAL_OF(i)) + 
+  @              k* (\on(OWNER(i+1), LOCAL_OF(i+1)) + \on(OWNER(i-1), LOCAL_OF(i-1)) - 2*\on(OWNER(i), LOCAL_OF(i)))
+  @            ); 
   @   behavior maxrank:
   @     assumes rank == \mpi_comm_size - 1;
-  @     requires right == 0 && left == rank - 1;
+  @     requires right == MPI_PROC_NULL && left == rank - 1;
   @   behavior minrank:
   @     assumes rank == 0;
-  @     requires left == \mpi_comm_size - 1 && right == 1;
+  @     requires left == MPI_PROC_NULL && right == 1;
   @   behavior others:
   @     assumes 0 < rank && rank < \mpi_comm_size - 1;
   @     requires left == rank - 1 && right == rank + 1;
