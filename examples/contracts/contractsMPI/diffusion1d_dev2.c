@@ -83,6 +83,6 @@ void update() {
   @*/
 void diff1dIter() {
   $elaborate(nxl);
-    exchange_ghost_cells();
-    update();
+  exchange_ghost_cells();
+  update();
 }

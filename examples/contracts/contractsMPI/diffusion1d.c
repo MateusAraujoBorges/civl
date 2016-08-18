@@ -4,7 +4,9 @@ double * u, * u_new, k;
 
 #define OWNER(index) ((nprocs*(index+1)-1)/nx)
 
-#define LOCAL_OF(index)  u[index - (OWNER(index)*nx/nprocs)]
+#define LOCAL_OF(index) [index - (OWNER(index)*nx/nprocs)]
+
+#define READ(index)  (\on(OWNER(index), u)LOCAL_OF(index))
 
 /*@ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
@@ -69,9 +71,9 @@ void update() {
   @   requires \mpi_agree(nx) && \mpi_agree(k);
   @   ensures  \forall int i; 0 < i && i <= nx
   @             ==>
-  @            \on(OWNER(i), LOCAL_OF(i)) == 
-  @            \old( \on(OWNER(i), LOCAL_OF(i)) + 
-  @              k* (\on(OWNER(i+1), LOCAL_OF(i+1)) + \on(OWNER(i-1), LOCAL_OF(i-1)) - 2*\on(OWNER(i), LOCAL_OF(i)))
+  @            READ(i) == 
+  @            \old( 
+  @               READ(i) + k* (READ(i+1) + READ(i-1) - 2*READ(i))
   @            ); 
   @   behavior maxrank:
   @     assumes rank == \mpi_comm_size - 1;
