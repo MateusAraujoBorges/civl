@@ -1,10 +1,11 @@
 #include<mpi.h>
+#include<civlc.cvh>
 int left, right, nxl, nx, rank, nprocs;
 double * u, * u_new, k;
 
 #define OWNER(index) ((nprocs*(index+1)-1)/nx)
 
-#define LOCAL_OF(index)  u[index - (OWNER(index)*nx/nprocs)]
+#define LOCAL_OF(index)  [index - (OWNER(index)*nx/nprocs)]
 
 /*@ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
@@ -68,8 +69,8 @@ void update() {
   @   requires k > 0.0;
   @   requires \mpi_agree(nx) && \mpi_agree(k);
   @   ensures  \forall int i; 0 < i && i < nxl + 1 ==>
-  @            \on(OWNER(i), LOCAL_OF(i)) != 
-  @            \old( \on(OWNER(i), LOCAL_OF(i)) ); 
+  @            \on(OWNER(i), u)LOCAL_OF(i) != 
+  @            \old( \on(OWNER(i), u)LOCAL_OF(i) ); 
   @   behavior maxrank:
   @     assumes rank == \mpi_comm_size - 1;
   @     requires right == MPI_PROC_NULL && left == rank - 1;
@@ -81,6 +82,7 @@ void update() {
   @     requires left == rank - 1 && right == rank + 1;
   @*/
 void diff1dIter() {
+  $elaborate(nxl);
     exchange_ghost_cells();
     update();
 }
