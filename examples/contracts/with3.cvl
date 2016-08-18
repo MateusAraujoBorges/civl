@@ -18,7 +18,7 @@ void process(int id){
   $with(cs){
     $assert($is_concrete_int(x));
   }
-  $collate_departs(collator);
+  $collate_departs(collator, cs);
   $free(collator);
 }
 

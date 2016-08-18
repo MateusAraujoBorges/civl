@@ -714,8 +714,8 @@ $collate_state $mpi_snapshot(MPI_Comm comm, $scope scope) {
   return $collate_arrives(comm.collator, scope);
 }
 
-void $mpi_unsnapshot(MPI_Comm comm) {
-     $collate_departs(comm.collator);
+void $mpi_unsnapshot(MPI_Comm comm, $collate_state cs) {
+  $collate_departs(comm.collator, cs);
 }
 
 void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {

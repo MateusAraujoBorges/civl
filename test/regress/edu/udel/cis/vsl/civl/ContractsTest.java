@@ -51,8 +51,8 @@ public class ContractsTest {
 
 	@Test
 	public void guardSE() {
-		assertTrue(ui.run("verify", QUIET,
-				filename("contractsMPI/simpleGuard.c")));
+		assertTrue(ui.run("show -showProgram", QUIET,
+				filename("contractsMPI/simpleGuard.cvl")));
 	}
 
 	@Test

@@ -933,11 +933,15 @@ public class ContractTransformerWorker extends BaseWorker {
 		// Unsnapshots for pre-:
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
-					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
+					createMPIUnsnapshotCall(mpiBlock.mpiComm.copy(),
+							identifierExpression(
+									CONTRACT_PREFIX + COLLATE_STATE_VAR_PRE))));
 		// Unsnapshots for post-:
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
-					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
+					createMPIUnsnapshotCall(mpiBlock.mpiComm.copy(),
+							identifierExpression(CONTRACT_PREFIX
+									+ COLLATE_STATE_VAR_POST))));
 		bodyItems.addAll(pre_post.right);
 		if (!returnVoid)
 			bodyItems.add(nodeFactory.newReturnNode(
@@ -1091,11 +1095,15 @@ public class ContractTransformerWorker extends BaseWorker {
 		// Unsnapshots for pre-:
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
-					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
+					createMPIUnsnapshotCall(mpiBlock.mpiComm.copy(),
+							identifierExpression(
+									CONTRACT_PREFIX + COLLATE_STATE_VAR_PRE))));
 		// Unsnapshots for post-:
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
-					createMPIUnsnapshotCall(mpiBlock.mpiComm)));
+					createMPIUnsnapshotCall(mpiBlock.mpiComm.copy(),
+							identifierExpression(CONTRACT_PREFIX
+									+ COLLATE_STATE_VAR_POST))));
 		bodyItems.addAll(pre_post.right);
 		// Free for $mpi_valid() calls at requirements:
 		// for (ParsedContractBlock mpiBlock : parsedContractBlocks)
@@ -1751,11 +1759,12 @@ public class ContractTransformerWorker extends BaseWorker {
 	 *            An {@link ExpressionNode} representing an MPI communicator.
 	 * @return The created $mpi_unsnapshot call statement node.
 	 */
-	private ExpressionNode createMPIUnsnapshotCall(ExpressionNode mpiComm) {
+	private ExpressionNode createMPIUnsnapshotCall(ExpressionNode mpiComm,
+			ExpressionNode collateStateRef) {
 		Source source = newSource(MPI_UNSNAPSHOT, CivlcTokenConstant.CALL);
 		ExpressionNode callIdentifier = identifierExpression(MPI_UNSNAPSHOT);
 		FunctionCallNode call = nodeFactory.newFunctionCallNode(source,
-				callIdentifier, Arrays.asList(mpiComm.copy()), null);
+				callIdentifier, Arrays.asList(mpiComm, collateStateRef), null);
 
 		return call;
 	}
@@ -2602,7 +2611,8 @@ public class ContractTransformerWorker extends BaseWorker {
 							identifierExpression(MPI_COMM_RANK_CONST)));
 			postStmts.add(nodeFactory
 					.newExpressionStatementNode(createMPIUnsnapshotCall(
-							identifierExpression(MPI_COMM_WORLD))));
+							identifierExpression(MPI_COMM_WORLD),
+							identifierExpression(varDecl.getName()))));
 		} else {
 			getStateCall = functionCall(expression.getSource(), GET_STATE,
 					Arrays.asList());
@@ -2670,11 +2680,13 @@ public class ContractTransformerWorker extends BaseWorker {
 								identifierExpression(tmpHeap.getName()))),
 				null);
 
-		results.add(createAssumption(
-				nodeFactory.newOperatorNode(source, Operator.LT,
-						Arrays.asList(
-								nodeFactory.newIntegerConstantNode(source, "0"),
-								countTimesMPISizeof.copy()))));
+		results.add(
+				createAssumption(
+						nodeFactory.newOperatorNode(source, Operator.LT,
+								Arrays.asList(
+										nodeFactory.newIntegerConstantNode(
+												source, "0"),
+										countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(copyNode));
 		return results;
@@ -2789,11 +2801,13 @@ public class ContractTransformerWorker extends BaseWorker {
 				Operator.ASSIGN, Arrays.asList(buf.copy(),
 						identifierExpression(tmpHeap.getName())));
 
-		results.add(createAssumption(
-				nodeFactory.newOperatorNode(source, Operator.LT,
-						Arrays.asList(
-								nodeFactory.newIntegerConstantNode(source, "0"),
-								countTimesMPISizeof.copy()))));
+		results.add(
+				createAssumption(
+						nodeFactory.newOperatorNode(source, Operator.LT,
+								Arrays.asList(
+										nodeFactory.newIntegerConstantNode(
+												source, "0"),
+										countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(assignBuf));
 		return results;

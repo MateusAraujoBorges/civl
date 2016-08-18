@@ -151,43 +151,45 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   return result;
 }
 
-$atomic_f void $collate_departs($collator c) {
+$atomic_f void $collate_departs($collator c, $collate_state cs) {
   int nprocs, queue_size, place, index;
   $gcollate_state *queue;
-  $gcollate_state marking;
-  _Bool found = $false;
+  $gcollate_state gcollate_state = cs.gstate;
 
   place = c->place;
   nprocs = c->gcollator->nprocs;
   queue_size = c->gcollator->queue_length;
   queue = c->gcollator->queue;
-  // Mark the toppest arrived but not departed collate state as
-  // departed:
-  for (int i = 0; i < queue_size; i++) 
-    if (_STATE_USED(queue[i], place) && !_DEPARTED(queue[i], place) 
-	&& _ARRIVED(queue[i], place)) {
-      marking = queue[i];
-      found = $true;
+  $assert(_STATE_USED(gcollate_state, place) 
+	  && _ARRIVED(gcollate_state, place), 
+	  "Only an arrived collate state can be freed");
+  // Mark the refered gcollate state as departed:
+  gcollate_state->status[place] = DEPARTED;
+
+  // Scan the queue in the gcollator to remove an entry
+  // that has already been  marked as DEPARTED by all processes:
+  index = -1;
+  for (int i = 0; i < queue_size; i++) {
+    _Bool isGarbage = $true;
+
+    for (int j = 0; j < nprocs; j++) 
+      if (!_DEPARTED(queue[i], j)) {
+	isGarbage = $false;
+	break;
+      }
+    if (isGarbage) {
       index = i;
+      $free(gcollate_state);
       break;
     }
-  $assert(found && marking->status[place] == ARRIVED, 
-	  "No collate state can be unsnapshot");
-
-  _Bool last = $true;
-
-  marking->status[place] = DEPARTED;
-  for (int i = 0; i < nprocs; i++) 
-    if (!_DEPARTED(marking, i)) {
-      last = $false;
-      break;
-    }
-  if (last) {
-    $assert(index == 0, "Internal violation of a FIFO queue");
-    $seq_remove(&c->gcollator->queue, 0, NULL, 1);
-    $free(marking);
+  }
+  if (index >= 0) {
+    $seq_remove(&c->gcollator->queue, index, NULL, 1);
     c->gcollator->queue_length--;
   }
+  // set the gcollate state reference to NULL so that the process 
+  // cannot access it after the call of departs():
+  cs.gstate = NULL;
 }
 
 $bundle $collate_check($collator c, $bundle bundle) {

@@ -22,7 +22,7 @@ void process(int id){
       $assert( y > 0);
     }  
   }
-  $collate_departs(collator);
+  $collate_departs(collator, cs);
   $free(collator);
 }
 
