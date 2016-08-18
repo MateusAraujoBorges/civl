@@ -2571,7 +2571,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	private Pair<List<BlockItemNode>, List<BlockItemNode>> replaceOldExpressionNodes4Local(
 			ExpressionNode expression, boolean hasMpi) throws SyntaxException {
 		Source source = expression.getSource();
-		VariableDeclarationNode varDecl;
+		VariableDeclarationNode stateVarDecl;
 		ASTNode astNode = expression;
 		OperatorNode opNode;
 		List<OperatorNode> opNodes = new LinkedList<>();
@@ -2595,15 +2595,18 @@ public class ContractTransformerWorker extends BaseWorker {
 		} while ((astNode = astNode.nextDFS()) != null);
 		// create state and process identifiers:
 		if (hasMpi) {
+			VariableDeclarationNode collateStateRefDecl;
+
 			getStateCall = createMPISnapshotCall(
 					identifierExpression(MPI_COMM_WORLD));
-			varDecl = declareTmpStateVar4OldExpr(source, nodeFactory
+			collateStateRefDecl = declareTmpStateVar4OldExpr(source, nodeFactory
 					.newTypedefNameNode(identifier(COLLATE_STATE), null),
 					getStateCall);
-			results.add(varDecl);
+			results.add(collateStateRefDecl);
 			stateIdentiifer = functionCall(source, COLLATE_GET_STATE,
-					Arrays.asList(identifierExpression(varDecl.getName())));
-			varDecl = declareTmpStateVar4OldExpr(source,
+					Arrays.asList(identifierExpression(
+							collateStateRefDecl.getName())));
+			stateVarDecl = declareTmpStateVar4OldExpr(source,
 					nodeFactory.newStateTypeNode(source), stateIdentiifer);
 			procIndentifier = identifierExpression(MPI_COMM_RANK_CONST);
 			results.add(
@@ -2612,15 +2615,16 @@ public class ContractTransformerWorker extends BaseWorker {
 			postStmts.add(nodeFactory
 					.newExpressionStatementNode(createMPIUnsnapshotCall(
 							identifierExpression(MPI_COMM_WORLD),
-							identifierExpression(varDecl.getName()))));
+							identifierExpression(
+									collateStateRefDecl.getName()))));
 		} else {
 			getStateCall = functionCall(expression.getSource(), GET_STATE,
 					Arrays.asList());
-			varDecl = declareTmpStateVar4OldExpr(source,
+			stateVarDecl = declareTmpStateVar4OldExpr(source,
 					nodeFactory.newStateTypeNode(source), getStateCall);
 			procIndentifier = zero;
 		}
-		stateIdentiifer = identifierExpression(varDecl.getName());
+		stateIdentiifer = identifierExpression(stateVarDecl.getName());
 		// replace:
 		for (OperatorNode item : opNodes) {
 			ASTNode parent = item.parent();
@@ -2633,7 +2637,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			valueAt = nodeFactory.newValueAtNode(item.getSource(),
 					stateIdentiifer.copy(), procIndentifier.copy(), arg);
 			parent.setChild(childIdx, valueAt);
-			results.add(varDecl);
+			results.add(stateVarDecl);
 		}
 		return new Pair<>(results, postStmts);
 	}
@@ -2680,13 +2684,11 @@ public class ContractTransformerWorker extends BaseWorker {
 								identifierExpression(tmpHeap.getName()))),
 				null);
 
-		results.add(
-				createAssumption(
-						nodeFactory.newOperatorNode(source, Operator.LT,
-								Arrays.asList(
-										nodeFactory.newIntegerConstantNode(
-												source, "0"),
-										countTimesMPISizeof.copy()))));
+		results.add(createAssumption(
+				nodeFactory.newOperatorNode(source, Operator.LT,
+						Arrays.asList(
+								nodeFactory.newIntegerConstantNode(source, "0"),
+								countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(copyNode));
 		return results;
@@ -2801,13 +2803,11 @@ public class ContractTransformerWorker extends BaseWorker {
 				Operator.ASSIGN, Arrays.asList(buf.copy(),
 						identifierExpression(tmpHeap.getName())));
 
-		results.add(
-				createAssumption(
-						nodeFactory.newOperatorNode(source, Operator.LT,
-								Arrays.asList(
-										nodeFactory.newIntegerConstantNode(
-												source, "0"),
-										countTimesMPISizeof.copy()))));
+		results.add(createAssumption(
+				nodeFactory.newOperatorNode(source, Operator.LT,
+						Arrays.asList(
+								nodeFactory.newIntegerConstantNode(source, "0"),
+								countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(assignBuf));
 		return results;
