@@ -1,0 +1,10 @@
+int main(){
+  int a=0;
+  
+  a=1;
+  $state s=$get_state();
+  int i=5;
+  $assert($value_at(s, -1, a+$original(i))==6);
+  i=7;
+  $assert($value_at(s, -1, a+$original(i))==8);
+}

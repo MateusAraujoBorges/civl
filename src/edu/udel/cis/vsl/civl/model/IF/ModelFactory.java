@@ -45,6 +45,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
+import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
@@ -1931,4 +1932,16 @@ public interface ModelFactory {
 	 */
 	ValueAtExpression valueAtExpression(CIVLSource source, Expression state,
 			Expression pid, Expression expression);
+
+	/**
+	 * creates a new <code>$original</code> expression.
+	 * 
+	 * @param source
+	 *            the source of the <code>$original</code> expression.
+	 * @param expression
+	 *            the expression to be evaluated
+	 * @return the new <code>$original</code> expression.
+	 */
+	OriginalExpression originalExpression(CIVLSource source,
+			Expression expression);
 }

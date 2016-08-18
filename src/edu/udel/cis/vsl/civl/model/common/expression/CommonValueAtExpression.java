@@ -74,7 +74,7 @@ public class CommonValueAtExpression extends CommonExpression
 		if (expression instanceof ValueAtExpression) {
 			ValueAtExpression that = (ValueAtExpression) expression;
 
-			return state.equals(that.state())
+			return state.equals(that.state()) && pid.equals(that.pid())
 					&& this.expression.equals(that.expression());
 		}
 		return false;

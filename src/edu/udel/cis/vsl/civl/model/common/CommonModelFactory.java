@@ -69,6 +69,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
+import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
@@ -144,6 +145,7 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonLambdaExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonMPIContractExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonMemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonNothing;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonOriginalExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonPointerSetExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonProcnullExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonQuantifiedExpression;
@@ -2571,5 +2573,11 @@ public class CommonModelFactory implements ModelFactory {
 	public ValueAtExpression valueAtExpression(CIVLSource source,
 			Expression state, Expression pid, Expression expression) {
 		return new CommonValueAtExpression(source, state, pid, expression);
+	}
+
+	@Override
+	public OriginalExpression originalExpression(CIVLSource source,
+			Expression expression) {
+		return new CommonOriginalExpression(source, expression);
 	}
 }

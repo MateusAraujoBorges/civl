@@ -60,6 +60,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.LambdaNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.OriginalExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteOnExpressionNode;
@@ -3991,6 +3992,10 @@ public class FunctionTranslator {
 				result = translateValueAtExpression(
 						(ValueAtNode) expressionNode, scope);
 				break;
+			case ORIGINAL :
+				result = translateOriginalExpression(
+						(OriginalExpressionNode) expressionNode, scope);
+				break;
 			default :
 				throw new CIVLUnimplementedFeatureException(
 						"expressions of kind "
@@ -4001,6 +4006,14 @@ public class FunctionTranslator {
 			result = this.applyConversions(scope, expressionNode, result);
 		}
 		return result;
+	}
+
+	private Expression translateOriginalExpression(
+			OriginalExpressionNode originalNode, Scope scope) {
+		return modelFactory.originalExpression(
+				modelFactory.sourceOf(originalNode),
+				this.translateExpressionNode(originalNode.expression(), scope,
+						true));
 	}
 
 	/**

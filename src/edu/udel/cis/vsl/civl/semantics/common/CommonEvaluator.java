@@ -53,6 +53,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RealLiteralExpression;
@@ -176,6 +177,12 @@ public class CommonEvaluator implements Evaluator {
 	 * Stack because of its more intuitive iteration order.
 	 */
 	protected Stack<Set<SymbolicConstant>> boundVariableStack = new Stack<>();
+
+	private State originalState = null;
+
+	private int originalPid = -1;
+
+	private int valueAtOrRemoteCount = 0;
 
 	/**
 	 * The dynamic heap type. This is the symbolic type of a symbolic expression
@@ -1713,10 +1720,28 @@ public class CommonEvaluator implements Evaluator {
 									procExpr, true).right,
 					procExpr.getSource());
 		procNumVal = ((IntegerNumber) procNum).intValue();
+		enterValueAtOrRemote(state, pid);
 		eval = evaluate(state, procNumVal, exprExpr);
+		exitValueAtOrRemote();
 		// shall not affect the remoted process state and global state:
 		eval.state = state;
 		return eval;
+	}
+
+	private void enterValueAtOrRemote(State state, int pid) {
+		if (this.valueAtOrRemoteCount == 0) {
+			this.originalState = state;
+			this.originalPid = pid;
+		}
+		valueAtOrRemoteCount++;
+	}
+
+	private void exitValueAtOrRemote() {
+		valueAtOrRemoteCount--;
+		if (this.valueAtOrRemoteCount == 0) {
+			this.originalState = null;
+			this.originalPid = -1;
+		}
 	}
 
 	private Evaluation evaluateNumericOperations(State state, int pid,
@@ -3534,6 +3559,10 @@ public class CommonEvaluator implements Evaluator {
 				result = evaluateValueAtExpression(state, pid,
 						(ValueAtExpression) expression);
 				break;
+			case ORIGINAL :
+				result = evaluateOriginalExpression(state, pid,
+						(OriginalExpression) expression);
+				break;
 			case MEMORY_UNIT :
 			case NULL_LITERAL :
 			case STRING_LITERAL :
@@ -3545,6 +3574,13 @@ public class CommonEvaluator implements Evaluator {
 				throw new CIVLInternalException("unreachable", expression);
 		}
 		return result;
+	}
+
+	private Evaluation evaluateOriginalExpression(State state, int pid,
+			OriginalExpression original)
+			throws UnsatisfiablePathConditionException {
+		return evaluate(this.originalState, this.originalPid,
+				original.expression());
 	}
 
 	private Evaluation evaluateValueAtExpression(State state, int pid,
@@ -3576,7 +3612,9 @@ public class CommonEvaluator implements Evaluator {
 		colState = colState
 				.setPathCondition(universe.and(colState.getPathCondition(),
 						getPredicateOnBoundVariables(state)));
+		enterValueAtOrRemote(state, pid);
 		eval = this.evaluate(colState, newPID, valueAt.expression());
+		exitValueAtOrRemote();
 		eval.state = state;
 		return eval;
 	}

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode.ExtendedQuantifier;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.OriginalExpressionNode;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
@@ -2427,6 +2428,14 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					result.append(temp.right);
 					result.append(", ");
 					result.append(valueAt.expression());
+					result.append(")");
+					break;
+				}
+				case ORIGINAL : {
+					OriginalExpressionNode original = (OriginalExpressionNode) expression;
+
+					result.append("$original (");
+					result.append(original.expression());
 					result.append(")");
 					break;
 				}

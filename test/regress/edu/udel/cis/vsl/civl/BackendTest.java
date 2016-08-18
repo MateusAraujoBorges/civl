@@ -67,7 +67,7 @@ public class BackendTest {
 
 	@Test
 	public void mpiSumArray() {
-		assertTrue(ui.run(VERIFY, QUIET, "-input_mpi_nprocs=3",
+		assertTrue(ui.run("show -showInputs", "-input_mpi_nprocs=3",
 				filename("mpiSumarray.cvl")));
 	}
 
@@ -93,7 +93,7 @@ public class BackendTest {
 
 	@Test
 	public void valueAt() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("valueat.cvl")));
+		assertTrue(ui.run(VERIFY, "-showTransitions", filename("valueat.cvl")));
 	}
 
 	@Test
@@ -109,6 +109,11 @@ public class BackendTest {
 	@Test
 	public void sizeof() {
 		ui.run(VERIFY, QUIET, filename("sizeof.cvl"));
+	}
+
+	@Test
+	public void original() {
+		ui.run(VERIFY, QUIET, filename("original.cvl"));
 	}
 
 	@AfterClass
