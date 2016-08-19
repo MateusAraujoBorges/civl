@@ -1,10 +1,13 @@
 #include<mpi.h>
+#include<civlc.cvh>
 int left, right, nxl, nx, rank, nprocs;
 double * u, * u_new, k;
 
 #define OWNER(index) ((nprocs*(index+1)-1)/nx)
 
-#define LOCAL_OF(index) [index - (OWNER(index)*nx/nprocs)]
+#define LOCAL_OF(index) [index - (OWNER(index)*nx/nprocs) + 1]
+
+#define FIRST(rank) ((rank)*nx/nprocs)
 
 #define READ(index)  (\on(OWNER(index), u)LOCAL_OF(index))
 
@@ -69,8 +72,8 @@ void update() {
   @                    (\lambda int k; \on(k, nxl)));
   @   requires k > 0.0;
   @   requires \mpi_agree(nx) && \mpi_agree(k);
-  @   ensures  \forall int i; 0 < i && i <= nx
-  @             ==>
+  @   ensures  \forall int i; 3 <= i && i <= 3
+  @            ==>
   @            READ(i) == 
   @            \old( 
   @               READ(i) + k* (READ(i+1) + READ(i-1) - 2*READ(i))
@@ -78,14 +81,20 @@ void update() {
   @   behavior maxrank:
   @     assumes rank == \mpi_comm_size - 1;
   @     requires right == MPI_PROC_NULL && left == rank - 1;
+  @     requires u[nxl+1] == 0;
+  @     requires nx - FIRST(\mpi_comm_rank) == nxl;
   @   behavior minrank:
   @     assumes rank == 0;
   @     requires left == MPI_PROC_NULL && right == 1;
+  @     requires u[0] == 0;
+  @     requires FIRST(\mpi_comm_rank+1) == nxl;
   @   behavior others:
   @     assumes 0 < rank && rank < \mpi_comm_size - 1;
   @     requires left == rank - 1 && right == rank + 1;
+  @     requires nxl == FIRST(\mpi_comm_rank + 1) - FIRST(\mpi_comm_rank);
   @*/
 void diff1dIter() {
-    exchange_ghost_cells();
-    update();
+  $elaborate(nxl);
+  exchange_ghost_cells();
+  update();
 }
