@@ -1,5 +1,5 @@
 /*
- * Self-defined petsc.h header for provesa PETSc examples: ex2a.c, ex2b.c,
+ * Defined petsc.h header for provesa PETSc examples: ex2a.c, ex2b.c,
  * ex2c.c,ex2d.c. This header is used for verifying the equivalence of those
  * examples by using CIVL. This header is made based on the functions and
  * types which is used in those PETSc examples. The definition of types and 
@@ -70,11 +70,11 @@ typedef struct DMDALocalInfo { /* using distributed arrays */
 #define PetscFunctionReturn(x)    return(x)
 
 /* Adds floating point operations to the global counter. */
-PetscErrorCode PetscLogFlops(double ); //{return 0;}
+PetscErrorCode PetscLogFlops(double );
 
 /* Checks error code, if non-zero it calls the error handler and then
  * returns */
-PetscErrorCode CHKERRQ(PetscErrorCode ); // {return 0;}
+PetscErrorCode CHKERRQ(PetscErrorCode );
 
 /*
 #undef __FUNCT__
