@@ -12,10 +12,10 @@ typedef struct {
    PassiveReal param;          /* test problem parameter */
 } AppCtx;
 
-$input int M = 3;
-$input int N = 3;
-//$assume(M>=0 && M < 5);
-//$assume(N>=0 && N < 5);
+$input int M;
+$input int N;
+$assume(1 < M && M <= 4);
+$assume(1 < N && N <= 4);
 $input double x_data[M][N];
 
 //TypeAnalyzer Exception if we define $input AppCtx user;
