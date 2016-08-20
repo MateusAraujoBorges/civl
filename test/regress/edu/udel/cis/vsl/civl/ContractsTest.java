@@ -179,6 +179,12 @@ public class ContractsTest {
 	}
 
 	@Test
+	public void diffusion1dIterBad() {
+		assertFalse(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
+				filename("contractsMPI/diffusion1d-bad-diffIter.c")));
+	}
+
+	@Test
 	public void diffusion1dUpdate() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
 				filename("contractsMPI/diffusion1d.c")));

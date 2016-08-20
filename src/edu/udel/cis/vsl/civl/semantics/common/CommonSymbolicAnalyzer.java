@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode.ExtendedQuantifier;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.OriginalExpressionNode;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
@@ -35,6 +34,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
+import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
@@ -2416,7 +2416,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					break;
 				}
 				case ORIGINAL : {
-					OriginalExpressionNode original = (OriginalExpressionNode) expression;
+					OriginalExpression original = (OriginalExpression) expression;
 
 					result.append("$original (");
 					result.append(original.expression());

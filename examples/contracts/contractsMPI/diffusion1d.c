@@ -82,6 +82,10 @@ void update() {
   @            \old( 
   @               READ(nx - 1) + k* (0 + READ(nx - 1 - 1) - 2*READ(nx - 1))
   @            ); 
+  @   ensures  READ(0) == 
+  @            \old( 
+  @               READ(0) + k* (READ(0 + 1) + 0 - 2*READ(0))
+  @            ); 
   @   behavior maxrank:
   @     assumes rank == \mpi_comm_size - 1;
   @     requires right == MPI_PROC_NULL && left == rank - 1;

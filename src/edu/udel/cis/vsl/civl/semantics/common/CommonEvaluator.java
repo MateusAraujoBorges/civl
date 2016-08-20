@@ -1720,6 +1720,30 @@ public class CommonEvaluator implements Evaluator {
 									procExpr, true).right,
 					procExpr.getSource());
 		procNumVal = ((IntegerNumber) procNum).intValue();
+		if (state.numProcs() <= procNumVal) {
+			String process = state.getProcessState(pid).name();
+			StringBuffer message = new StringBuffer();
+			String procExpression = "Process expression :";
+			char padding[] = new char[procExpression.length()];
+
+			Arrays.fill(padding, ' ');
+			message.append(
+					"Remote expression refers to a process p" + procNumVal
+							+ " that not exists in the corresponding state:\n");
+			message.append(procExpression
+					+ symbolicAnalyzer.expressionEvaluation(state, pid,
+							procExpr, false).right
+					+ "\n" + String.valueOf(padding) + " => "
+					+ symbolicAnalyzer.expressionEvaluation(state, pid,
+							procExpr, true).right
+					+ "\n" + String.valueOf(padding) + " =>");
+			message.append(symbolicAnalyzer.symbolicExpressionToString(
+					procExpr.getSource(), state, procExpr.getExpressionType(),
+					proc) + "\n");
+			errorLogger.logSimpleError(procExpr.getSource(), state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+					message.toString());
+		}
 		enterValueAtOrRemote(state, pid);
 		eval = evaluate(state, procNumVal, exprExpr);
 		exitValueAtOrRemote();
