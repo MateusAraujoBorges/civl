@@ -9,7 +9,7 @@ int main(){
   
   i++;
   $assert($value_at($collate_get_state(pre), 0, i) != i);
-  $collate_departs(collator);
+  $collate_departs(collator, pre);
   $free(collator);
   $free(gcollator);
 }

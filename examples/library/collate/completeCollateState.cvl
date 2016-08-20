@@ -12,7 +12,7 @@ void process(int place) {
 
   cs = $collate_arrives(collator, here);
   if($collate_complete(cs)) printf("place = %d, complete!\n", place);
-  $collate_departs(collator);
+  $collate_departs(collator, cs);
   free(collator);
 }
 
