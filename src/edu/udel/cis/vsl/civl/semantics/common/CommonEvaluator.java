@@ -3579,8 +3579,12 @@ public class CommonEvaluator implements Evaluator {
 	private Evaluation evaluateOriginalExpression(State state, int pid,
 			OriginalExpression original)
 			throws UnsatisfiablePathConditionException {
-		return evaluate(this.originalState, this.originalPid,
+		Evaluation eval = evaluate(this.originalState, this.originalPid,
 				original.expression());
+
+		this.originalState = eval.state;
+		eval.state = state;
+		return eval;
 	}
 
 	private Evaluation evaluateValueAtExpression(State state, int pid,

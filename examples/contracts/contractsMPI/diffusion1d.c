@@ -72,11 +72,15 @@ void update() {
   @                    (\lambda int k; \on(k, nxl)));
   @   requires k > 0.0;
   @   requires \mpi_agree(nx) && \mpi_agree(k);
-  @   ensures  \forall int i; 3 <= i && i <= 3
+  @   ensures  \forall int i; 1 <= i && i < nx - 1
   @            ==>
   @            READ(i) == 
   @            \old( 
   @               READ(i) + k* (READ(i+1) + READ(i-1) - 2*READ(i))
+  @            ); 
+  @   ensures  READ(nx - 1) == 
+  @            \old( 
+  @               READ(nx - 1) + k* (0 + READ(nx - 1 - 1) - 2*READ(nx - 1))
   @            ); 
   @   behavior maxrank:
   @     assumes rank == \mpi_comm_size - 1;
