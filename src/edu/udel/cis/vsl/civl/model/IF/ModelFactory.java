@@ -75,9 +75,6 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement.CONTRACTED_FUNCTION_CALL_KIND;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ParallelAssignStatement;
@@ -1761,11 +1758,6 @@ public interface ModelFactory {
 	PointerSetExpression pointerSetExpression(CIVLSource source, Scope scope,
 			LHSExpression basePointer, Expression range);
 
-	ContractVerifyStatement contractVerifyStatement(CIVLSource civlSource,
-			Scope scope, Location source,
-			FunctionIdentifierExpression functionExpression,
-			List<Expression> arguments);
-
 	/**
 	 * Creates a wildcard expression <code>...</code>, which is only used in
 	 * contract.
@@ -1801,54 +1793,6 @@ public interface ModelFactory {
 	MPIContractExpression mpiContractExpression(CIVLSource source, Scope scope,
 			Expression communicator, Expression[] arguments,
 			MPI_CONTRACT_EXPRESSION_KIND kind, MPICommunicationPattern pattern);
-
-	/**
-	 * Creates an {@link ContractedFunctionCallStatement} with the sub-kind
-	 * {@link CONTRACTED_FUNCTION_CALL_KIND} set to ENTER.
-	 * 
-	 * @param civlSource
-	 *            The CIVLSource of such a statement
-	 * @param scope
-	 *            The scope of where the statement appears
-	 * @param source
-	 *            The source location of the statement
-	 * @param functionExpression
-	 *            The {@link FunctionIdentifierExpression} of the contracted
-	 *            function
-	 * @param arguments
-	 *            A list of arguments of the function call.
-	 * @param guard
-	 *            The guard of the function call
-	 * @return The created {@link ContractedFunctionCallStatement}
-	 */
-	ContractedFunctionCallStatement enterContractedFunctionCallStatement(
-			CIVLSource civlSource, Scope scope, Location source,
-			FunctionIdentifierExpression functionExpression,
-			List<Expression> arguments, Expression guard);
-
-	/**
-	 * Creates an {@link ContractedFunctionCallStatement} with the sub-kind
-	 * {@link CONTRACTED_FUNCTION_CALL_KIND} set to EXIT.
-	 * 
-	 * @param civlSource
-	 *            The CIVLSource of the statement
-	 * @param scope
-	 *            The scope of where the statement appears
-	 * @param source
-	 *            The source location of the statement.
-	 * @param functionExpression
-	 *            The {@link FunctionIdentifierExpression} of the contracted
-	 *            function
-	 * @param arguments
-	 *            A list of arguments of the function call.
-	 * @param guard
-	 *            The guard of the function call
-	 * @return The created {@link ContractedFunctionCallStatement}
-	 */
-	ContractedFunctionCallStatement exitContractedFunctionCallStatement(
-			CIVLSource civlSource, Scope scope, Location source,
-			FunctionIdentifierExpression functionExpression,
-			List<Expression> arguments, Expression guard);
 
 	/**
 	 * Creates a {@link LoopContract} instance

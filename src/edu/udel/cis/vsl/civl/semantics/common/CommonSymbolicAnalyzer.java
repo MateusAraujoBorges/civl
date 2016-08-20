@@ -1,7 +1,6 @@
 package edu.udel.cis.vsl.civl.semantics.common;
 
 import java.math.BigInteger;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,6 @@ import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.AtomicLockAssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.ContractVerifyStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ParallelAssignStatement;
@@ -2028,20 +2026,6 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						result.append(SEF_END);
 					}
 				}
-				break;
-			}
-			case CONTRACT_VERIFY : {
-				ContractVerifyStatement conVeri = (ContractVerifyStatement) statement;
-				Iterator<Expression> argIter = conVeri.arguments().iterator();
-
-				result.append("$contractVerify");
-				if (conVeri.isWorker())
-					result.append("_worker");
-				result.append(" " + conVeri.functionExpression() + "(");
-				result.append(argIter.hasNext() ? argIter.next() : " ");
-				while (argIter.hasNext())
-					result.append(", " + argIter.next());
-				result.append(");");
 				break;
 			}
 			case DOMAIN_ITERATOR : {

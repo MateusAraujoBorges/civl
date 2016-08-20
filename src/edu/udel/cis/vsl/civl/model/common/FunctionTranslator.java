@@ -47,7 +47,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CompoundLiteralNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode.ConstantKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.ContractVerifyNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DerivativeExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DotNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.EnumerationConstantNode;
@@ -163,7 +162,6 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location.AtomicKind;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
@@ -1051,55 +1049,6 @@ public class FunctionTranslator {
 		if (callee != null)
 			modelBuilder.callStatements.put(result, callee);
 		return result;
-	}
-
-	/**
-	 * Translate a contracted non-system function call into two phased
-	 * {@link ContractedFunctionCallStatement}s: enter and exit. Such a call
-	 * shall not be on function pointers.
-	 * 
-	 * @param scope
-	 *            The current scope.
-	 * @param enterLoc
-	 *            The enter location of the
-	 *            {@link ContractedFunctionCallStatement}.
-	 * @param exitLoc
-	 *            The exit location of the
-	 *            {@link ContractedFunctionCallStatement}.
-	 * @param callNode
-	 *            The {@link FunctionCallNode}.
-	 * @param lhs
-	 *            The left-hand side expression if it exists, otherwise, it's
-	 *            null.
-	 * @param arguments
-	 *            The list of arguments
-	 * @param source
-	 *            CIVLSource of this function call.
-	 * @return
-	 */
-	private ContractedFunctionCallStatement[] contractedFunctionCallStatement(
-			Scope scope, Location enterLoc, Location exitLoc,
-			FunctionCallNode callNode, LHSExpression lhs,
-			List<Expression> arguments, CIVLSource source) {
-		ExpressionNode functionExpression = ((FunctionCallNode) callNode)
-				.getFunction();
-		FunctionIdentifierExpression funcIdExpr;
-		ContractedFunctionCallStatement enter, exit;
-		Entity entity = ((IdentifierExpressionNode) functionExpression)
-				.getIdentifier().getEntity();
-		assert entity != null && entity.getEntityKind() == EntityKind.FUNCTION;
-		ContractedFunctionCallStatement results[] = new ContractedFunctionCallStatement[2];
-
-		funcIdExpr = (FunctionIdentifierExpression) translateExpressionNode(
-				functionExpression, scope, true);
-		enter = modelFactory.enterContractedFunctionCallStatement(source, scope,
-				enterLoc, funcIdExpr, arguments, null);
-		exit = modelFactory.exitContractedFunctionCallStatement(source, scope,
-				exitLoc, funcIdExpr, arguments, null);
-		exit.setLhs(lhs);
-		results[0] = enter;
-		results[1] = exit;
-		return results;
 	}
 
 	/**
@@ -2200,10 +2149,6 @@ public class FunctionTranslator {
 				// result = new CommonFragment(noopStatement);
 				// }
 				// break;
-			case CONTRACT_VERIFY :
-				result = translateContractVerifyExpression(
-						(ContractVerifyNode) expressionNode, scope);
-				break;
 			default : {
 				Expression expression = this
 						.translateExpressionNode(expressionNode, scope, true);
@@ -2352,45 +2297,6 @@ public class FunctionTranslator {
 
 			actual = arrayToPointer(actual);
 			arguments.add(actual);
-		}
-		if (isCall
-				&& modelBuilder.getCIVLConfiguration().isEnableMpiContract()) {
-			// Function definitions are processed when the declaration had been
-			// seen, so here it is guaranteed that the CIVLFunction is complete
-			// (in another word, the "isContracted()" method may sense here):
-			if (civlFunction != null && civlFunction.isContracted()
-					&& !civlFunction.isSystemFunction()) {
-				Location enterLoc = modelFactory.location(
-						modelFactory.sourceOfBeginning(functionCallNode),
-						scope);
-				Scope functionInnerScope;
-				Location exitLoc;
-
-				if (civlFunction.startLocation() != null)
-					functionInnerScope = civlFunction.startLocation().scope();
-				else {
-					// If it's recursive function call:
-					if (civlFunction.outerScope().children().size() > 0) {
-						assert civlFunction.outerScope().children().size() == 1;
-
-						functionInnerScope = civlFunction.outerScope()
-								.children().iterator().next();
-					} else {
-						// If it's a function prototype with contracts:
-						List<Variable> variables = new LinkedList<>();
-
-						variables.addAll(civlFunction.parameters());
-						functionInnerScope = modelFactory.scope(source,
-								civlFunction.outerScope(), variables,
-								civlFunction);
-					}
-				}
-				exitLoc = modelFactory.location(
-						modelFactory.sourceOfBeginning(functionCallNode),
-						functionInnerScope);
-				return contractedFunctionCallStatement(scope, enterLoc, exitLoc,
-						functionCallNode, lhs, arguments, source);
-			}
 		}
 		location = modelFactory.location(
 				modelFactory.sourceOfBeginning(functionCallNode), scope);
@@ -4685,38 +4591,6 @@ public class FunctionTranslator {
 			throw new CIVLUnimplementedFeatureException(
 					"Using a function call as an expression.",
 					callNode.getSource());
-	}
-
-	protected Fragment translateContractVerifyExpression(
-			ContractVerifyNode conVeriNode, Scope scope) {
-		ExpressionNode functionExpressionNode = conVeriNode.getFunction();
-		Expression functionExpression;
-		Statement stmt;
-		// String functionName;
-
-		functionExpression = translateExpressionNode(functionExpressionNode,
-				scope, true);
-		if (functionExpression
-				.expressionKind() != edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind.FUNCTION_IDENTIFIER)
-			throw new CIVLUnimplementedFeatureException(
-					"$contractVerify call must use identifier for now: "
-							+ functionExpression.getSource());
-
-		List<Expression> arguments = new ArrayList<Expression>();
-		int numArgs = conVeriNode.getNumberOfArguments();
-		CIVLSource civlSource = modelFactory.sourceOf(conVeriNode);
-
-		for (int i = 0; i < numArgs; i++) {
-			Expression actual = translateExpressionNode(
-					conVeriNode.getArgument(i), scope, true);
-
-			actual = arrayToPointer(actual);
-			arguments.add(actual);
-		}
-		stmt = modelFactory.contractVerifyStatement(civlSource, scope,
-				modelFactory.location(civlSource, scope),
-				(FunctionIdentifierExpression) functionExpression, arguments);
-		return new CommonFragment(stmt);
 	}
 
 	/**

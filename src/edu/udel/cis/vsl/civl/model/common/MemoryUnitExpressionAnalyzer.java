@@ -44,7 +44,6 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CivlParForSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.statement.ContractedFunctionCallStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.DomainIteratorStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
@@ -292,15 +291,6 @@ public class MemoryUnitExpressionAnalyzer {
 				computeImpactMemoryUnitsOfExpression(writableVars,
 						((CivlParForSpawnStatement) statement).domain(),
 						result);
-				break;
-			case CONTRACT_VERIFY :
-				break;
-			case CONTRACTED_CALL :
-				ContractedFunctionCallStatement conctCall = (ContractedFunctionCallStatement) statement;
-
-				for (Expression argument : conctCall.arguments())
-					computeImpactMemoryUnitsOfExpression(writableVars, argument,
-							result);
 				break;
 			case MALLOC : {
 				MallocStatement mallocStatement = (MallocStatement) statement;

@@ -40,7 +40,8 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
  * 
  */
 public abstract class BaseLibraryExecutor extends LibraryComponent
-		implements LibraryExecutor {
+		implements
+			LibraryExecutor {
 
 	/* ************************** Instance Fields ************************** */
 

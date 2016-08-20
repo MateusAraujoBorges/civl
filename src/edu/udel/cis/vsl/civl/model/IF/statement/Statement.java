@@ -41,9 +41,7 @@ public interface Statement extends Sourceable {
 		/** CIVL for loop ($for) enter statement */
 		DOMAIN_ITERATOR,
 		/** $contractVerify statement */
-		CIVL_PAR_FOR_ENTER, CONTRACT_VERIFY,
-		/** contracted function call statement (enter or exit) */
-		CONTRACTED_CALL,
+		CIVL_PAR_FOR_ENTER,
 		/** Memory allocation */
 		MALLOC,
 		/** No operation */
@@ -176,7 +174,8 @@ public interface Statement extends Sourceable {
 	 *            The variable expression of the temporal variable for the
 	 *            conditional expression.
 	 */
-	void replaceWith(ConditionalExpression oldExpression, VariableExpression newExpression);
+	void replaceWith(ConditionalExpression oldExpression,
+			VariableExpression newExpression);
 
 	/**
 	 * Return a new statement by copying this statement and modifying it as well
@@ -198,7 +197,8 @@ public interface Statement extends Sourceable {
 	 *            the conditional expression.
 	 * @return A new statement without the conditional expression
 	 */
-	Statement replaceWith(ConditionalExpression oldExpression, Expression newExpression);
+	Statement replaceWith(ConditionalExpression oldExpression,
+			Expression newExpression);
 
 	/**
 	 * Obtain the set of variables visible from a certain scope that are
@@ -224,7 +224,8 @@ public interface Statement extends Sourceable {
 	 */
 	StatementKind statementKind();
 
-	String toStepString(AtomicKind atomicKind, int atomCount, boolean atomicLockVarChanged);
+	String toStepString(AtomicKind atomicKind, int atomCount,
+			boolean atomicLockVarChanged);
 
 	/**
 	 * Get the string representation in the form of: source location id -&gt;
