@@ -71,6 +71,7 @@ import edu.udel.cis.vsl.abc.transform.common.ExprTriple;
 import edu.udel.cis.vsl.abc.transform.common.SETriple;
 import edu.udel.cis.vsl.abc.util.IF.Pair;
 import edu.udel.cis.vsl.abc.util.IF.Triple;
+import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.transform.IF.ContractTransformer;
@@ -662,7 +663,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+		newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -2709,6 +2710,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			OperatorNode valid, FunctionDeclarationNode funcDecl)
 			throws SyntaxException {
 		Source source = valid.getSource();
+		Source bufSource;
 		ExpressionNode argument = valid.getArgument(0);
 		ExpressionNode count;
 		ExpressionNode buf;
@@ -2730,18 +2732,16 @@ public class ContractTransformerWorker extends BaseWorker {
 			count = nodeFactory.newIntegerConstantNode(source, "0");
 			buf = argument;
 		}
-
-		if (buf.expressionKind() != ExpressionKind.IDENTIFIER_EXPRESSION)
+		bufSource = buf.getSource();
+		ptrType = typeNode(buf.getConvertedType());
+		if ((buf = isLHSorCastedLHSExpression(buf)) == null)
 			throw new CIVLUnimplementedFeatureException(
-					"ACSL valid pointer must refer to a formal parameter");
-
-		IdentifierExpressionNode bufId = (IdentifierExpressionNode) buf;
-
-		ptrType = ((Variable) bufId.getIdentifier().getEntity()).getDefinition()
-				.getTypeNode();
+					"The pointer set expression is not composed by a left-hand side expression and a range (optional)",
+					bufSource);
 		if (ptrType == null)
-			throw new CIVLUnimplementedFeatureException(
-					"ACSL valid pointer must refer to a formal parameter");
+			throw new CIVLInternalException(
+					"Cannot get type from the argument of the ACSL valid clause",
+					bufSource);
 		assert ptrType.kind() == TypeNodeKind.POINTER;
 		referedType = ((PointerTypeNode) ptrType).referencedType();
 
@@ -2762,6 +2762,37 @@ public class ContractTransformerWorker extends BaseWorker {
 		results.add(tmpHeapVar);
 		results.add(nodeFactory.newExpressionStatementNode(assignExpr));
 		return results;
+	}
+
+	/**
+	 * Given a {@link ExpressionNode} expr, returns a non-null
+	 * {@link ExpressionNode} if and only if
+	 * <ul>
+	 * <li>expr is a LHS expression:</li> returns expr directly.
+	 * <li>expr is a LHS expression with a type casting:</li> returns an
+	 * expression expr' which is obtained by getting rid of type casting from
+	 * expr. (expr' is removed from expr)
+	 * </ul>
+	 * 
+	 * @param expr
+	 * @return
+	 */
+	private ExpressionNode isLHSorCastedLHSExpression(ExpressionNode expr) {
+		ExpressionKind kind = expr.expressionKind();
+
+		switch (kind) {
+			case ARROW :
+			case DOT :
+			case IDENTIFIER_EXPRESSION :
+				return expr;
+			case CAST :
+				ExpressionNode arg = ((CastNode) expr).getArgument();
+
+				arg.remove();
+				return arg;
+			default :
+				return null;
+		}
 	}
 
 	private VariableDeclarationNode createTmpHeapVariable(Source source,
@@ -3089,7 +3120,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		// add elaborate for body
 		// loopBody.addAll(this.elaboratePid4Remote(body));
 		this.transformBoundVariableInValueAt(body);
-		
+
 		StatementNode ifStmt = nodeFactory
 				.newIfNode(source,
 						quantifier == Quantifier.FORALL
@@ -3515,9 +3546,10 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * 
 	 * @param contractBlock
 	 * @return
+	 * @throws SyntaxException
 	 */
 	private List<BlockItemNode> conditionalAssigns4NT(
-			ConditionalClauses conditionalClauses) {
+			ConditionalClauses conditionalClauses) throws SyntaxException {
 		List<BlockItemNode> assigns = new LinkedList<>();
 		Source source = conditionalClauses.condition.getSource();
 		StatementNode block;
@@ -3538,7 +3570,6 @@ public class ContractTransformerWorker extends BaseWorker {
 			assigns.add(nodeFactory.newExpressionStatementNode(assignGlobals));
 		} else {
 			for (ExpressionNode loc : conditionalClauses.getAssignsArgs()) {
-				ExpressionNode call;
 
 				loc.remove();
 				processAssignsArgumentNodeWorker(assigns, loc);
@@ -3596,9 +3627,11 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * 
 	 * @param arg
 	 * @return
+	 * @throws SyntaxException
 	 */
 	private List<BlockItemNode> processConditionalAssignsArgumentNode(
-			ExpressionNode condition, List<ExpressionNode> assignsArgs) {
+			ExpressionNode condition, List<ExpressionNode> assignsArgs)
+			throws SyntaxException {
 		List<BlockItemNode> results = new LinkedList<>();
 		Source source = newSource("assigns ...", CivlcTokenConstant.CONTRACT);
 
@@ -3620,9 +3653,10 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * 
 	 * @param arg
 	 * @return
+	 * @throws SyntaxException
 	 */
 	private void processAssignsArgumentNodeWorker(List<BlockItemNode> output,
-			ExpressionNode arg) {
+			ExpressionNode arg) throws SyntaxException {
 		ExpressionKind kind = arg.expressionKind();
 		ExpressionNode call;
 
@@ -3665,13 +3699,15 @@ public class ContractTransformerWorker extends BaseWorker {
 	}
 
 	private void processAssignsSubscriptArgument(List<BlockItemNode> results,
-			OperatorNode subscript) {
+			OperatorNode subscript) throws SyntaxException {
 		ExpressionNode ptr = subscript.getArgument(0);
 		ExpressionNode index = subscript.getArgument(1);
 
 		Type referedType = ((PointerType) ptr.getConvertedType())
 				.referencedType();
 		if (index.expressionKind() == ExpressionKind.REGULAR_RANGE) {
+			ExpressionNode oneNode = nodeFactory
+					.newIntegerConstantNode(index.getSource(), "1");
 			// For assigns a[low .. high]:
 			RegularRangeNode regRangeNode = (RegularRangeNode) index;
 			// int tmp0 = high;
@@ -3690,28 +3726,28 @@ public class ContractTransformerWorker extends BaseWorker {
 							nodeFactory.newBasicTypeNode(index.getSource(),
 									BasicTypeKind.INT),
 							regRangeNode.getLow().copy());
-			// referedType heap[high - low];
-			TypeNode referedTypeNode = typeNode(referedType);
-			TypeNode newHeapType = nodeFactory.newArrayTypeNode(ptr.getSource(),
-					referedTypeNode,
+			// referedType heap[high - low + 1];
+			ExpressionNode extent = nodeFactory.newOperatorNode(
+					index.getSource(), Operator.PLUS,
 					nodeFactory.newOperatorNode(index.getSource(),
 							Operator.MINUS,
 							identifierExpression(high.getName()),
-							identifierExpression(low.getName())));
+							identifierExpression(low.getName())),
+					oneNode);
+			TypeNode referedTypeNode = typeNode(referedType);
+			TypeNode newHeapType = nodeFactory.newArrayTypeNode(ptr.getSource(),
+					referedTypeNode, extent);
 			VariableDeclarationNode newHeap = nodeFactory
 					.newVariableDeclarationNode(ptr.getSource(),
 							identifier(
 									TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
 							newHeapType);
 			// sizeof(referedType) * (high - low)
-			ExpressionNode totalSizeNode = nodeFactory.newOperatorNode(ptr
-					.getSource(), Operator.TIMES, Arrays.asList(
-							nodeFactory.newOperatorNode(index.getSource(),
-									Operator.MINUS,
-									identifierExpression(high.getName()),
-									identifierExpression(low.getName())),
-							nodeFactory.newSizeofNode(index.getSource(),
-									referedTypeNode.copy())));
+			ExpressionNode totalSizeNode = nodeFactory
+					.newOperatorNode(ptr.getSource(), Operator.TIMES,
+							Arrays.asList(extent.copy(),
+									nodeFactory.newSizeofNode(index.getSource(),
+											referedTypeNode.copy())));
 			// &a[low]
 			ExpressionNode addressOfLow = nodeFactory.newOperatorNode(
 					index.getSource(), Operator.ADDRESSOF,

@@ -49,7 +49,7 @@ void exchange_ghost_cells() {
   @ requires \valid(u_new + (0 .. (nxl + 1)));
   @ requires nxl > 0 && nxl <= 4;
   @ requires k > 0;
-  @ assigns  u[1 .. (nxl + 1)];
+  @ assigns  u[1 .. nxl];
   @ ensures  \forall int i; 0< i && i <= nxl
   @           ==> 
   @          u[i] == \old(u[i] + k*(u[i+1] + u[i-1] - 2*u[i]));

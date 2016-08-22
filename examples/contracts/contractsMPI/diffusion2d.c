@@ -1,42 +1,40 @@
-double ** u_curr, ** u_next;
-int nxl, nyl, nx, ny;
-int rank, nprocsx, nprocsy;
+#include <mpi.h>
+#define FROMLEFT   0
+#define FROMRIGHT  1
+#define FROMBOTTOM 2
+#define FROMTOP    3
+#define comm MPI_COMM_WORLD
 
-/*@ requires \valid(u_curr + (0 .. (nyl + 2)));
-  @ requires \valid(u_next + (0 .. (nyl + 2)));
-  @ requires \valid(u_curr[0 .. (nyl+2)] + (0 .. (nxl + 2)));
-  @ requires \valid(u_next[0 .. (nyl+2)] + (0 .. (nxl + 2)));
-  @ requires nxl > 0 && nyl > 0 && k > 0;
+double (*u)[];
+double (*u_new)[];
+double k;
+int nxl, nyl, nx, ny;
+int rank, nprocsx, nprocsy, left, right, top, bottom;
+
+/*@ requires \valid((double (*)[nxl+2])u + (0 .. (nyl + 1)));
+  @ requires \valid(((double (*)[nxl+2])u_new) + (0 .. (nyl + 1)));
+  @ requires k > 0;
+  @ requires 0 <= nxl && nxl < 5;
+  @ requires 0 <= nyl && nyl < 5;
+  @ assigns  u[1 .. nyl][1 .. nxl];
   @ ensures  \forall int i, j; 1 <= i <= nyl && 
   @                            1 <= j <= nxl ==>
-  @          u_curr[i][j] == \old(u_curr[i][j] +
-  @          k*(u_curr[i+1][j] + u_curr[i-1][j] + 
-  @          u_curr[i][j+1] + u_curr[i][j-1] - 4*u_curr[i][j]));
-  @
+  @          u[i][j] == \old(u[i][j] +
+  @          k*(u[i+1][j] + u[i-1][j] + 
+  @          u[i][j+1] + u[i][j-1] - 4*u[i][j]));
   @*/
 void update() {
-  double **tmp;
+  double (* tmp)[];
 
-  /*@ loop invariants \forall int k, m; 1<= k < i && 1 <=m <= nxl ==>
-    @                  u_next[k][m] == u_curr[k][m] +
-    @                  k*(u_curr[k+1][m] + u_curr[k-1][m] + 
-    @                  u_curr[k][m+1] + u_curr[k][m-1] - 4*u_curr[k][m]);
-   */
   for (int i = 1; i < nyl + 1; i++)
-    /*@ loop invariants \forall int k; 1 <= k < j ==>
-      @                  u_next[i][k] = u_curr[i][k] +
-      @                  k*(u_curr[i+1][k] + u_curr[i-1][k] + 
-      @                  u_curr[i][k+1] + u_curr[i][k-1] - 4*u_curr[i][k]);
-      @*/
     for (int j = 1; j < nxl + 1; j++) {
-      u_next[i][j] = u_curr[i][j] +
-        k*(u_curr[i+1][j] + u_curr[i-1][j] + 
-           u_curr[i][j+1] + u_curr[i][j-1] - 4*u_curr[i][j]);
+      u_new[i][j] = u[i][j] +
+        k*(u[i+1][j] + u[i-1][j] + 
+           u[i][j+1] + u[i][j-1] - 4*u[i][j]);
     }
-  // swap two pointers
-  tmp = u_curr;
-  u_curr = u_next;
-  u_next = tmp;
+  tmp = u;
+  u = u_new;
+  u_new = tmp;
 }
 
 /* The processes are arranged geometrically as follows for the case
@@ -46,112 +44,67 @@ void update() {
  * ...         
  */
 
-/*@ \mpi_collective(MPI_COMM_WORLD, P2P):
-  @   requires \mpi_valid(u_curr[1], 0, MPI_DOUBLE);
-  @             && \mpi_valid(u_curr[nyl], MPI_DOUBLE, 0);
-  @             && \mpi_valid(u_next[1], 0, MPI_DOUBLE);
-  @             && \mpi_valid(u_next[nyl], 0, MPI_DOUBLE);
-  @   requires \mpi_valid(&u_curr[1][1], nxl, MPI_DOUBLE);
-  @   requires \mpi_valid(&u_curr[nyl][1], nxl, MPI_DOUBLE);
-  @   requires \mpi_valid(&u_next[1][1], nxl, MPI_DOUBLE);
-  @   requires \mpi_valid(&u_next[nyl][1], nxl, MPI_DOUBLE);
+/*@ requires \valid((double (*)[nxl+2])u + (0 .. (nyl + 1)));
+  @ requires \valid((double (*)[nxl+2])u_new + (0 .. (nyl + 1)));
+  @ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
-  @   requires nprocsx * nprocsy == \mpi_comm_size;
+  @   requires nprocsx * nprocsy == \mpi_comm_size && nprocsx > 0 
+  @            && nprocsy > 0;
+  @   requires (rank + 1) % nprocsx == 0 ==> right == MPI_PROC_NULL &&
+  @            !((rank + 1) % nprocsx == 0) ==> right == rank + 1;
+  @   requires rank % nprocsx == 0 ==> left == MPI_PROC_NULL &&
+  @            !(rank % nprocsx == 0) ==> left == rank - 1;
+  @   requires nprocsx * nprocsy - nprocsx <= rank && rank < nprocsx * nprocsy
+  @            ==> bottom == MPI_PROC_NULL  &&
+  @            !(nprocsx * nprocsy - nprocsx <= rank && rank < nprocsx * nprocsy)
+  @            ==> bottom == rank + nprocsx;
+  @   requires 0<= rank && rank < nprocsx ==> top == MPI_PROC_NULL &&
+  @            !(0<= rank && rank < nprocsx) ==> top == rank - nprocsx;
   @   ensures  top != MPI_PROC_NULL ==> 
-  @            \mpi_equals(&u_curr[1][1], nxl, MPI_DOUBLE, \on(top, &u_curr[nyl+1][1]));  // obtain
+  @            \mpi_equals(&u[0][1], nxl, MPI_DOUBLE, \on(top, &u[nyl][1])); 
   @   ensures  bottom != MPI_PROC_NULL ==> 
-  @            \mpi_equals(&u_curr[nyl][1], nxl, MPI_DOUBLE, \on(bottom, &u_curr[0][1])); // obtain
-  @   ensures  left != MPI_PROC_NULL ==> (\forall int i; 1 <= i <= nyl
-  @                                       ==>
-  @                                       u_curr[i][1] == \remote(u_curr[i][nxl+1], left);    // obtain
-  @   ensures  right != MPI_PROC_NULL ==> (\forall int i; 1 <= i <= nyl
-  @                                       ==>
-  @                                       u_curr[i][nxl] == \remote(u_curr[i][0], right);     // obtain
-  @   waitsfor top, bottom, left, right;
-  @   behavior rightmost
-  @     assume (rank + 1) % nprocsx == 0;
-  @     requires left == MPI_PROC_NULL;
-  @   behavior leftmost
-  @     assume rank % nprocsx == 0;
-  @     requires right = MPI_PROC_NULL;
-  @   behavior atButton
-  @     assume nprocsx * nprocsy - nprocsx <= rank
-  @            && rank < nprocsx * nprocsy;
-  @	requires button == MPI_PROC_NULL;
-  @   behavior atTop
-  @     assume 0<= rank && rank < nprocsx;
-  @     requires top == MPI_PROC_NULL;
-  @   behavior others
-  @     assume nprocsx <= rank && rank < (nprocsx * nprocsy - nprocsx)
-  @            && (rank + 1) % nprocs x != 0 && rank % nprocsx != 0;
-  @     requires right == rank + 1 && left == rank - 1
-  @              && top == rank - nprocsx && button == rank + nprocsx;
+  @            \mpi_equals(&u[nyl+1][1], nxl, MPI_DOUBLE, \on(bottom, &u[1][1])); 
+  @   ensures  left != MPI_PROC_NULL ==> (\forall int i; 1 <= i <= nyl  ==>
+  @                                       u[i][0] == \on(left, u[i][nxl])); 
+  @   ensures  right != MPI_PROC_NULL ==> (\forall int i; 1 <= i <= nyl ==>
+  @                                       u[i][nxl+1] == \on(right, u[i][1])); 
+  @   waitsfor bottom, top, right, left;
+  @   behavior assign_by_left:
+  @     assumes rank % nprocsx != 0;
+  @     assigns u[1 .. nyl][0];
+  @   behavior assign_by_right:
+  @     assumes (rank + 1) % nprocsx != 0;
+  @     assigns u[1 .. nyl][nxl+1];
+  @   behavior assign_by_top:
+  @     assumes !(0 <= rank && rank < nprocsx);
+  @     assigns u[0][1 .. nxl];
+  @   behavior assign_by_bottom:
+  @     assumes !(nprocsx * nprocsy - nprocsx <= rank && rank < nprocsx * nprocsy);
+  @     assigns u[nyl+1][1 .. nxl];
   @*/
 void exchange() {
   double sendbuf[nyl];
   double recvbuf[nyl];
 
   // sends top border row, receives into bottom ghost cell row
-  MPI_Sendrecv(&u_curr[1][1], nxl, MPI_DOUBLE, top, FROMBOTTOM, &u_curr[nyl+1][1], nxl, 
+  MPI_Sendrecv(&u[1][1], nxl, MPI_DOUBLE, top, FROMBOTTOM, &u[nyl+1][1], nxl, 
                MPI_DOUBLE, bottom, FROMBOTTOM, comm, MPI_STATUS_IGNORE);
   // sends bottom border row, receives into top ghost cell row
-  MPI_Sendrecv(&u_curr[nyl][1], nxl, MPI_DOUBLE, bottom, FROMTOP, &u_curr[0][1], nxl, 
+  MPI_Sendrecv(&u[nyl][1], nxl, MPI_DOUBLE, bottom, FROMTOP, &u[0][1], nxl, 
                MPI_DOUBLE, top, FROMTOP, comm, MPI_STATUS_IGNORE);
   // sends left border column, receives into temporary buffer
-  for (int i = 0; i < nyl; i++) sendbuf[i] = u_curr[i+1][1];
+  for (int i = 0; i < nyl; i++) sendbuf[i] = u[i+1][1];
   MPI_Sendrecv(sendbuf, nyl, MPI_DOUBLE, left, FROMRIGHT, recvbuf, nyl, 
                MPI_DOUBLE, right, FROMRIGHT, comm, MPI_STATUS_IGNORE);
   // copies temporary buffer into right ghost cell column
   if (right != MPI_PROC_NULL)
-    for (int i = 0; i < nyl; i++) u_curr[i+1][nxl+1] = recvbuf[i];
+    for (int i = 0; i < nyl; i++) u[i+1][nxl+1] = recvbuf[i];
   // sends right border column, receives into temporary buffer
-  for (int i = 0; i < nyl; i++) sendbuf[i] = u_curr[i+1][nxl];
+  for (int i = 0; i < nyl; i++) sendbuf[i] = u[i+1][nxl];
   MPI_Sendrecv(sendbuf, nyl, MPI_DOUBLE, right, FROMLEFT, recvbuf, nyl, 
                MPI_DOUBLE, left, FROMLEFT, comm, MPI_STATUS_IGNORE);
   // copies temporary buffer into left ghost cell column
   if (left != MPI_PROC_NULL)
-    for (int i = 0; i < nyl; i++) u_curr[i+1][0] = recvbuf[i];
+    for (int i = 0; i < nyl; i++) u[i+1][0] = recvbuf[i];
 }
 
-/*@ requires nx > 0 && ny > 0 && nyl > 0 && nxl > 0;
-  @ \mpi_collective[MPI_COMM_WORLD, P2P]:
-  @   requires \mpi_valid(u_curr[1], MPI_DOUBLE, 0);
-  @             && \mpi_valid(u_curr[nyl], MPI_DOUBLE, 0);
-  @             && \mpi_valid(u_next[1], MPI_DOUBLE, 0);
-  @             && \mpi_valid(u_next[nyl], MPI_DOUBLE, 0);
-  @   requires \mpi_valid(&u_curr[1][1], MPI_DOUBLE, nxl);
-  @   requires \mpi_valid(&u_curr[nyl][1], MPI_DOUBLE, nxl);
-  @   requires \mpi_valid(&u_next[1][1], MPI_DOUBLE, nxl);
-  @   requires \mpi_valid(&u_next[nyl][1], MPI_DOUBLE, nxl);
-  @   requires rank == \mpi_comm_rank;
-  @   requires nprocsx * nprocsy == \mpi_comm_size;
-  @   requires nx == \sum(0, \mpi_comm_size - 1, (\lambda int k; \remote(nxl, k)));
-  @   requires ny == \sum(0, \mpi_comm_size - 1, (\lambda int k; \remote(nyl, k)));
-  @   ensures  \forall int i, j; 0 <= i < ny && 
-  @                            0 <= j < nx ==>
-  @          u_curr[i][j] == \old(u_curr[i][j] +
-  @          k*(u_curr[i+1][j] + u_curr[i-1][j] + 
-  @          u_curr[i][j+1] + u_curr[i][j-1] - 4*u_curr[i][j]));
-  @   behavior rightmost
-  @     assume (rank + 1) % nprocsx == 0;
-  @     requires left == MPI_PROC_NULL;
-  @   behavior leftmost
-  @     assume rank % nprocsx == 0;
-  @     requires right = MPI_PROC_NULL;
-  @   behavior atButton
-  @     assume nprocsx * nprocsy - nprocsx <= rank
-  @            && rank < nprocsx * nprocsy;
-  @	requires button == MPI_PROC_NULL;
-  @   behavior atTop
-  @     assume 0<= rank && rank < nprocsx;
-  @     requires top == MPI_PROC_NULL;
-  @   behavior others
-  @     assume nprocsx <= rank && rank < (nprocsx * nprocsy - nprocsx)
-  @            && (rank + 1) % nprocs x != 0 && rank % nprocsx != 0;
-  @     requires right == rank + 1 && left == rank - 1
-  @              && top == rank - nprocsx && button == rank + nprocsx;
-  @*/
-void diff2dIter() {
-  exchange_ghost_cells();
-  update();
-}

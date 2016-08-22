@@ -199,9 +199,9 @@ public class ContractsTest {
 
 	@Test
 	public void diffusion2d() {
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff2dIter",
-				filename("contractsMPI/diffusion2d.c")));
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
+				filename("contractsMPI/diffusion2d.c")));
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff2dIter",
 				filename("contractsMPI/diffusion2d.c")));
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=exchange",
 				filename("contractsMPI/diffusion2d.c")));
