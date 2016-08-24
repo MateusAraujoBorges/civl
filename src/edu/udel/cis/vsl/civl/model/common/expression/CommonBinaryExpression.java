@@ -211,7 +211,7 @@ public class CommonBinaryExpression extends CommonExpression
 	@Override
 	public String toString() {
 		if (this.operator == BINARY_OPERATOR.REMOTE) {
-			return this.operatorToString() + "HH (" + left + ", " + right + ")";
+			return this.operatorToString() + " (" + left + ", " + right + ")";
 		}
 
 		String op = this.operatorToString();
