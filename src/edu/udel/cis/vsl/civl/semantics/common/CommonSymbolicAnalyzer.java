@@ -2213,6 +2213,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		if (resultOnly && !isTopLevel) {
 			Evaluation eval;
 
+			// if (expression.expressionKind() == ExpressionKind.ORIGINAL)
+			// result.append(expression);
+			// else {
 			try {
 				eval = this.evaluator.evaluate(state, pid, expression);
 			} catch (Exception ex) {
@@ -2222,6 +2225,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			result.append(
 					this.symbolicExpressionToString(expression.getSource(),
 							state, exprType, eval.value, !isTopLevel, "", ""));
+			// }
 		} else {
 			switch (kind) {
 				case ABSTRACT_FUNCTION_CALL : {
@@ -2259,16 +2263,17 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						if (!isTopLevel)
 							result.append(")");
 					} else {
-						result.append(binary.operatorToString() + "(");
+						result.append(binary.operatorToString());
+						result.append(" (");
 						temp = this.expressionEvaluationWorker(state, pid,
-								binary.left(), resultOnly, false);
+								binary.left(), true, false);
 						state = temp.left;
+						if (temp.right == null)
+							temp = this.expressionEvaluationWorker(state, pid,
+									binary.left(), false, false);
 						result.append(temp.right);
 						result.append(", ");
-						temp = this.expressionEvaluationWorker(state, pid,
-								binary.right(), resultOnly, false);
-						state = temp.left;
-						result.append(temp.right);
+						result.append(binary.right());
 						result.append(")");
 					}
 					break;
@@ -2402,25 +2407,39 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 					result.append("$value_at(");
 					temp = this.expressionEvaluationWorker(state, pid,
-							valueAt.state(), resultOnly, false);
+							valueAt.state(), resultOnly, true);
 					state = temp.left;
 					result.append(temp.right);
 					result.append(", ");
 					temp = this.expressionEvaluationWorker(state, pid,
-							valueAt.pid(), resultOnly, false);
+							valueAt.pid(), resultOnly, true);
 					state = temp.left;
 					result.append(temp.right);
 					result.append(", ");
-					result.append(valueAt.expression());
+
+					Evaluation eval = evaluator.evaluate(state, pid,
+							valueAt.state());
+					State newState = this.evaluator.stateFactory()
+							.getStateByReference(this.modelFactory
+									.getStateRef(null, eval.value));
+					int newPid;
+
+					eval = evaluator.evaluate(eval.state, pid, valueAt.pid());
+					state = eval.state;
+					newPid = this.symbolicUtil.extractInt(null,
+							(NumericExpression) eval.value);
+					temp = this.expressionEvaluationWorker(newState, newPid,
+							valueAt.expression(), false, true);
+					result.append(temp.right);
 					result.append(")");
 					break;
 				}
 				case ORIGINAL : {
 					OriginalExpression original = (OriginalExpression) expression;
 
-					result.append("$original (");
+					// result.append("$original (");
 					result.append(original.expression());
-					result.append(")");
+					// result.append(")");
 					break;
 				}
 				case ADDRESS_OF :
