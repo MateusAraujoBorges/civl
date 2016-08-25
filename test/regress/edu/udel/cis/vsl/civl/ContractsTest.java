@@ -199,12 +199,24 @@ public class ContractsTest {
 
 	@Test
 	public void diffusion2d() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=exchange",
+				filename("contractsMPI/diffusion2d.c")));
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
 				filename("contractsMPI/diffusion2d.c")));
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff2dIter",
 				filename("contractsMPI/diffusion2d.c")));
-		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=exchange",
-				filename("contractsMPI/diffusion2d.c")));
+	}
+
+	@Test
+	public void diffusion2d_dev() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
+				filename("contractsMPI/diffusion2d_dev.c")));
+	}
+
+	@Test
+	public void quantifiedRemote() {
+		assertTrue(ui.run("show -mpiContract=foo",
+				filename("contractsMPI/quantifiedRemote.c")));
 	}
 
 	@Test
