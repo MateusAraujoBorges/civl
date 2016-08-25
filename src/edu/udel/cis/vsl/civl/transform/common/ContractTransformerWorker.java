@@ -663,7 +663,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		newAst.prettyPrint(System.out, false);
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -3119,7 +3119,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		ifBodyList.add(nodeFactory.newBreakNode(source));
 		// add elaborate for body
 		// loopBody.addAll(this.elaboratePid4Remote(body));
-		this.transformBoundVariableInValueAt(body);
+		this.transformBoundVariableInValueAtOrRemote(body);
 
 		StatementNode ifStmt = nodeFactory
 				.newIfNode(source,
@@ -3174,18 +3174,21 @@ public class ContractTransformerWorker extends BaseWorker {
 		return false;
 	}
 
-	private void transformBoundVariableInValueAt(ASTNode node) {
+	private void transformBoundVariableInValueAtOrRemote(ASTNode node) {
 		if (node instanceof ValueAtNode)
-			transformBoundVariableInValueAtWork(
+			transformBoundVariableInValueAtOrRemoteWork(
 					((ValueAtNode) node).expressionNode());
+		else if (node instanceof RemoteOnExpressionNode)
+			transformBoundVariableInValueAtOrRemoteWork(
+					((RemoteOnExpressionNode) node).getForeignExpressionNode());
 		else
 			for (ASTNode child : node.children()) {
 				if (child != null)
-					transformBoundVariableInValueAt(child);
+					transformBoundVariableInValueAtOrRemote(child);
 			}
 	}
 
-	private void transformBoundVariableInValueAtWork(ASTNode node) {
+	private void transformBoundVariableInValueAtOrRemoteWork(ASTNode node) {
 		if (node instanceof IdentifierExpressionNode) {
 			IdentifierExpressionNode idExpr = (IdentifierExpressionNode) node;
 
@@ -3204,7 +3207,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		} else {
 			for (ASTNode child : node.children()) {
 				if (child != null)
-					transformBoundVariableInValueAtWork(child);
+					transformBoundVariableInValueAtOrRemoteWork(child);
 			}
 		}
 	}
@@ -3468,7 +3471,7 @@ public class ContractTransformerWorker extends BaseWorker {
 
 				List<BlockItemNode> loopBody = new LinkedList<>();
 
-				this.transformBoundVariableInValueAt(body);
+				this.transformBoundVariableInValueAtOrRemote(body);
 
 				ExpressionNode loopBodyExpr = nodeFactory.newOperatorNode(
 						expr.getSource(), assignOperator,
