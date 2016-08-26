@@ -29,7 +29,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
-import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
@@ -85,7 +84,6 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
 
 /**
  * An executor is used to execute a CIVL statement. The basic method provided
@@ -1386,19 +1384,19 @@ public class CommonExecutor implements Executor {
 			Evaluation eval = evaluator.reference(state, pid, lhs);
 			boolean toCheckPointer = kind == LHSExpressionKind.DEREFERENCE;
 
-			if (lhs instanceof DotExpression) {
-				DotExpression dot = (DotExpression) lhs;
-
-				if (dot.isUnion()) {
-					int memberIndex = dot.fieldIndex();
-
-					value = evaluator.universe().unionInject(
-							(SymbolicUnionType) (dot.structOrUnion()
-									.getExpressionType()
-									.getDynamicType(evaluator.universe())),
-							evaluator.universe().intObject(memberIndex), value);
-				}
-			}
+			// if (lhs instanceof DotExpression) {
+			// DotExpression dot = (DotExpression) lhs;
+			//
+			// if (dot.isUnion()) {
+			// int memberIndex = dot.fieldIndex();
+			//
+			// value = evaluator.universe().unionInject(
+			// (SymbolicUnionType) (dot.structOrUnion()
+			// .getExpressionType()
+			// .getDynamicType(evaluator.universe())),
+			// evaluator.universe().intObject(memberIndex), value);
+			// }
+			// }
 			// TODO check if lhs is constant or input value
 			return assign(lhs.getSource(), eval.state, process, eval.value,
 					value, isInitialization, toCheckPointer);

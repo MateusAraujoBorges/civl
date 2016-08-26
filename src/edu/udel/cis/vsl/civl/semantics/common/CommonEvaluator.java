@@ -4376,23 +4376,22 @@ public class CommonEvaluator implements Evaluator {
 			DotExpression dot = (DotExpression) operand;
 			int index = dot.fieldIndex();
 
-			if (dot.isStruct()) {
-				Evaluation eval = reference(state, pid,
-						(LHSExpression) dot.structOrUnion());
-				SymbolicExpression structPointer = eval.value;
-				ReferenceExpression oldSymRef = symbolicUtil
-						.getSymRef(structPointer);
-				ReferenceExpression newSymRef = universe
-						.tupleComponentReference(oldSymRef,
-								universe.intObject(index));
+			Evaluation eval = reference(state, pid,
+					(LHSExpression) dot.structOrUnion());
+			SymbolicExpression structPointer = eval.value;
+			ReferenceExpression oldSymRef = symbolicUtil
+					.getSymRef(structPointer);
+			ReferenceExpression newSymRef;
 
-				eval.value = symbolicUtil.setSymRef(structPointer, newSymRef);
-				result = eval;
+			if (dot.isStruct()) {
+				newSymRef = universe.tupleComponentReference(oldSymRef,
+						universe.intObject(index));
 			} else {
-				// when u is a union type, then &(u.x) = &u.
-				return reference(state, pid,
-						(LHSExpression) dot.structOrUnion());
+				newSymRef = universe.unionMemberReference(oldSymRef,
+						universe.intObject(index));
 			}
+			eval.value = symbolicUtil.setSymRef(structPointer, newSymRef);
+			result = eval;
 		} else
 			throw new CIVLInternalException("Unknown kind of LHSExpression",
 					operand);
