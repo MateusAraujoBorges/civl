@@ -1509,7 +1509,7 @@ public class CommonEvaluator implements Evaluator {
 			State s1 = eval.state.setPathCondition(universe.and(assumption, p));
 			Evaluation eval1 = evaluate(s1, pid, expression.right());
 			BooleanExpression pc = universe.or(eval1.state.getPathCondition(),
-					universe.and(assumption, p));
+					universe.and(assumption, universe.not(p)));
 
 			eval.state = eval.state.setPathCondition(pc);
 			eval.value = universe.implies(p, (BooleanExpression) eval1.value);
