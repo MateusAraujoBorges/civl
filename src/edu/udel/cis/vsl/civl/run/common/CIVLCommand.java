@@ -56,6 +56,7 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.unpreprocO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.userIncludePathO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.verboseO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.witnessO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.linesToInstrumentO;
 
 import java.io.PrintStream;
 import java.util.Collection;
@@ -93,7 +94,8 @@ public class CIVLCommand {
 				collectScopesO, collectHeapsO, macroO, preprocO, astO,
 				showTimeO, showMemoryUnitsO, CIVLMacroO, showUnreachedCodeO,
 				analyzeAbsO, collectOutputO, checkDivisionByZeroO,
-				checkMemoryLeakO, timeoutO, quietO, unpreprocO);
+				checkMemoryLeakO, timeoutO, quietO, unpreprocO,
+				linesToInstrumentO);
 		CIVLCommand.addCompareOption(errorBoundO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO,

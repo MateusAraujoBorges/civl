@@ -126,6 +126,7 @@ OPTION_NAME
     | '-gui'
     | '-guided'
     | '-id'
+    | '-linesToInstrument'
     | '-maxdepth'
     | '-min'
     | '-mpiContract'
