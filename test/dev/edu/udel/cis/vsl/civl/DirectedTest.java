@@ -43,6 +43,16 @@ public class DirectedTest {
 	public void infeasibleVerify() throws ABCException {
 		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("infeasible.direct"), filename("infeasible.c") ));
 	}
+	
+	@Test
+	public void full() throws ABCException {
+		assertTrue(ui.run("verify", "-showProgram", filename("fullvsdirect.c")));
+	}
+	
+	@Test
+	public void direct() throws ABCException {
+		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("fullvsdirect.direct"), filename("fullvsdirect.c")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
