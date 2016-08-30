@@ -183,18 +183,13 @@ public class DirectingWorker extends BaseWorker {
 		directDecls.add(nodeFactory.newVariableDeclarationNode(src, branchArrayId, arrayOfInt, branchInitializer));
 		
 		root.insertChildren(0, directDecls);		
-		
-		root.prettyPrint(System.out);
-		System.out.println();
 	}
 
 	private void instrumentBranchStatements(ASTNode node) throws SyntaxException {
 		if (node instanceof StatementNode) {
 			int lineNum = node.getSource().getFirstToken().getLine();
 			String sourceFile = node.getSource().getFirstToken().getSourceFile().getName();
-		
-			System.out.println("Instrumenting at ("+sourceFile+", "+lineNum+") :"+node);
-				
+						
 			// Short-circuit the instrumentation when the line and/or file is not a target
 			if ( directingLines.contains(new Integer(lineNum)) && directingFile.equals(sourceFile) ) {
 
