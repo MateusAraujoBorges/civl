@@ -25,8 +25,13 @@ public class DirectedTest {
 	/* **************************** Test Methods *************************** */
 
 	@Test
-	public void itest() throws ABCException {
+	public void itestShow() throws ABCException {
 		assertTrue(ui.run("show", "-showProgram", "-direct="+filename("itest.direct"), filename("itest.c") ));
+	}
+	
+	@Test
+	public void itestVerify() throws ABCException {
+		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("itest.direct"), filename("itest.c") ));
 	}
 
 	@AfterClass
