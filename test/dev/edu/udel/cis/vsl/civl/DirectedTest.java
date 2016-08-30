@@ -33,6 +33,16 @@ public class DirectedTest {
 	public void itestVerify() throws ABCException {
 		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("itest.direct"), filename("itest.c") ));
 	}
+	
+	@Test
+	public void infeasibleShow() throws ABCException {
+		assertTrue(ui.run("show", "-showProgram", "-direct="+filename("infeasible.direct"), filename("infeasible.c") ));
+	}
+	
+	@Test
+	public void infeasibleVerify() throws ABCException {
+		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("infeasible.direct"), filename("infeasible.c") ));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {

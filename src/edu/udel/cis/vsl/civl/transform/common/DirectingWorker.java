@@ -134,9 +134,12 @@ public class DirectingWorker extends BaseWorker {
 			e.printStackTrace();
 		}
 		
-		// Must include civlc.cvh to resolve $assume
-		AST civlcAST = this.parseSystemLibrary(new File(
+		// Must include civlc.cvh to resolve $assume if it is not already present
+		AST civlcAST = null;
+		if (unit.getInternalOrExternalEntity("$assume") == null) {
+			civlcAST = this.parseSystemLibrary(new File(
 				Preprocessor.ABC_INCLUDE_PATH, "civlc.cvh"), EMPTY_MACRO_MAP);
+		}
 
 		SequenceNode<BlockItemNode> rootNode = unit.getRootNode();
 
@@ -148,9 +151,13 @@ public class DirectingWorker extends BaseWorker {
 
 		instrumentBranchStatements(rootNode);
 		
-		return this.combineASTs(
+		if (civlcAST != null) {
+			return this.combineASTs(
 				civlcAST, 
 				astFactory.newAST(rootNode, unit.getSourceFiles(), unit.isWholeProgram()));
+		} else {
+			return astFactory.newAST(rootNode, unit.getSourceFiles(), unit.isWholeProgram());
+		}
 	}
 	
 	/**
