@@ -95,9 +95,9 @@ public class DirectingWorker extends BaseWorker {
 	private String indexVarName;
 	private String arrayVarName;
 	
-	private static Set<Integer> directingLines = new HashSet<Integer>();
-	private static ArrayList<Integer> directions = new ArrayList<Integer>();
-	private static String directingFile = null;
+	private Set<Integer> directingLines;
+	private ArrayList<Integer> directions;
+	private String directingFile;
 	
 
 	public DirectingWorker(ASTFactory astFactory,
@@ -107,6 +107,9 @@ public class DirectingWorker extends BaseWorker {
 		this.config = config;
 		this.indexVarName = identifierPrefix+"index";
 		this.arrayVarName = identifierPrefix+"array";
+		directingLines = new HashSet<Integer>();
+		directions = new ArrayList<Integer>();
+		directingFile = null;
 	}
 
 	@Override
