@@ -166,7 +166,7 @@ public class CIVLConstants {
 	public static String QUIET = "quiet";
 	public static String SLICE_ANALYSIS = "sliceAnalysis";
 	public static String WITNESS = "witness";
-	public static String LINES_TO_INSTRUMENT = "linesToInstrument";
+	public static String DIRECT = "direct";
 
 	// Option objects
 
@@ -565,12 +565,13 @@ public class CIVLConstants {
 			BOOLEAN, "Generate witness from trace?", false);
 	
 	/**
-	 * Inject guiding instrumentation according to lines numbers in given file?
-	 *  Note: assumes you are given one C file (no linking)
+	 * Inject instrumentation to direct the branches at the line numbers in given file
+	 * so as to explore a sub-space of execution.
+	 *  Note: currently assumes you are given one C file (no linking)
 	 */
-	public final static Option linesToInstrumentO = Option.newScalarOption(
-			LINES_TO_INSTRUMENT, STRING, 
-			"Inject guiding instrumentation according to lines numbers in given file?", 
+	public final static Option direct0 = Option.newScalarOption(
+			DIRECT, STRING, 
+			"Direct branching at line numbers in the given file", 
 			null);
 
 	/**
@@ -598,7 +599,7 @@ public class CIVLConstants {
 				traceO, userIncludePathO, verboseO, webO, CIVLMacroO,
 				analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
-				sliceAnalysisO, witnessO, linesToInstrumentO};
+				sliceAnalysisO, witnessO, direct0};
 	}
 
 	// headers...

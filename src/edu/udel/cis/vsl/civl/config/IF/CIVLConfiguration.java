@@ -214,6 +214,12 @@ public class CIVLConfiguration {
 	 * the portions of the state considered. LOC by default.
 	 */
 	private ErrorStateEquivalence errorStateEquiv = ErrorStateEquivalence.LOC;
+	
+	/**
+	 * Direct symbolic execution based on file designating branches
+	 * to direct and how to subset their outcomes.
+	 */
+	private String directSymEx = null;
 
 	/**
 	 * Is the current command replay? Not replay by default.
@@ -369,6 +375,7 @@ public class CIVLConfiguration {
 			if (config.getValue(CIVLConstants.procBoundO) == null)
 				this.procBound = 6;
 		}
+		this.directSymEx = (String)config.getValue(CIVLConstants.direct0);
 	}
 
 	public CIVLConfiguration(CIVLConfiguration config) {
@@ -411,6 +418,7 @@ public class CIVLConfiguration {
 		this.verbose = config.verbose;
 		this.web = config.web;
 		this.witness = config.witness;
+		this.directSymEx= config.directSymEx;
 	}
 
 	public CIVLConfiguration() {
@@ -539,6 +547,14 @@ public class CIVLConfiguration {
 
 	public void setErrorStateEquiv(ErrorStateEquivalence errorStateEquiv) {
 		this.errorStateEquiv = errorStateEquiv;
+	}
+	
+	public String directSymEx() {
+		return directSymEx;
+	}
+
+	public void setDirectSymEx(String directSymEx) {
+		this.directSymEx = directSymEx;
 	}
 
 	public boolean sliceAnalysis() {

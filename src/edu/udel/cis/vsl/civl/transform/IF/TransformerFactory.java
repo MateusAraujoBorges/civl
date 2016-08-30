@@ -54,6 +54,8 @@ public class TransformerFactory {
 	private ContractTransformer contractTransformer;
 
 	private IntDivisionTransformer intDivTransformer;
+	
+	private DirectingTransformer directingTransformer;
 
 	public TransformerFactory(ASTFactory astFactory) {
 		this.astFactory = astFactory;
@@ -229,6 +231,20 @@ public class TransformerFactory {
 			}
 		};
 	}
+	
+	public TransformRecord getDirectingTransformerRecord(CIVLConfiguration config) {
+		return new TransformRecord(DirectingTransformer.CODE,
+				DirectingTransformer.LONG_NAME,
+				DirectingTransformer.SHORT_DESCRIPTION) {
+			@Override
+			public Transformer create(ASTFactory astFactory) {
+				if (directingTransformer == null)
+					directingTransformer = new DirectingTransformer(astFactory, config);
+				return directingTransformer;
+			}
+		};
+	}
+
 
 	public static boolean hasFunctionCalls(AST ast, List<String> functions) {
 		ASTNode root = ast.getRootNode();

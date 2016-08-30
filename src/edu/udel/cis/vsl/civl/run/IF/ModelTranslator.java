@@ -306,6 +306,9 @@ public class ModelTranslator {
 				transformerFactory.getMPI2CIVLTransformerRecord());
 		task.addTransformRecord(
 				transformerFactory.getCuda2CIVLTransformerRecord());
+		if (config.directSymEx() != null)
+			task.addTransformRecord(
+				transformerFactory.getDirectingTransformerRecord(config));
 		if (!config.isEnableMpiContract())
 			task.addTransformRecord(
 					transformerFactory.getIntDivTransformerRecord(macros));

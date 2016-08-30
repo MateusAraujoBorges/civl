@@ -56,7 +56,7 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.unpreprocO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.userIncludePathO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.verboseO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.witnessO;
-import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.linesToInstrumentO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.direct0;
 
 import java.io.PrintStream;
 import java.util.Collection;
@@ -82,7 +82,7 @@ public class CIVLCommand {
 		CIVLCommand.addShowOption(showModelO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, svcomp16O, showInputVarsO,
 				showProgramO, ompNoSimplifyO, ompLoopDecompO, macroO, preprocO,
-				astO, showTimeO, CIVLMacroO, quietO, unpreprocO);
+				astO, showTimeO, CIVLMacroO, quietO, unpreprocO, direct0);
 		CIVLCommand.addVerifyOrCompareOption(errorBoundO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO,
@@ -95,7 +95,7 @@ public class CIVLCommand {
 				showTimeO, showMemoryUnitsO, CIVLMacroO, showUnreachedCodeO,
 				analyzeAbsO, collectOutputO, checkDivisionByZeroO,
 				checkMemoryLeakO, timeoutO, quietO, unpreprocO,
-				linesToInstrumentO);
+				direct0);
 		CIVLCommand.addCompareOption(errorBoundO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO,
