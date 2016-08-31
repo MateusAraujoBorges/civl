@@ -41,7 +41,8 @@ import edu.udel.cis.vsl.gmc.TraceStepIF;
  * The error automata is essentially CIVL's transition system, 
  * where edges are annotated with CIVL {@link Statement}s, and nodes are 
  * CIVL {@link Location}s.  The only difference is that there is a specified 
- * "entry" node and a final "violation" node.  
+ * "entry" node and a final "violation" node, and we remove any edges which
+ * have no source code associated with the original C file.  
  * 
  * The beginning node must be of the form:
  *   
@@ -84,8 +85,10 @@ public class WitnessGenerator {
 	
 	Set<String> declaredNodes = new HashSet<String>();
 	BufferedWriter output = null;
+	boolean debug = false;
 	
 	public WitnessGenerator (Model model, Trace<Transition, State> trace) throws IOException {
+		
 		List<TraceStepIF<Transition, State>> steps = trace.traceSteps();
 		Iterator<TraceStepIF<Transition, State>> it = steps.iterator();
 		List<Pair<Location,Statement>> traceStepLocStmt = traceLocStmtPairs(it);
@@ -95,9 +98,10 @@ public class WitnessGenerator {
             output = new BufferedWriter(new FileWriter(file));
             
             output.write(header());
-            writeEntryNode();
+            
             List<String> locationPath = new ArrayList<String>();
             for(Pair<Location,Statement> step : traceStepLocStmt) {
+            	/* We need to strip the whitespace from the Location strings */
             	String compactLocationStr = step.left.toString().replaceAll("\\s+", "");
             	locationPath.add(compactLocationStr);
             }
@@ -106,25 +110,27 @@ public class WitnessGenerator {
             for (int i = 0; i < locationPath.size() - 1; i++) {
             	Pair<String,String> pair = new Pair<String,String>(locationPath.get(i), locationPath.get(i+1));
             	locationStringPairs.add(pair);
-            	System.out.println("Pair "+i+pair);
+            	if (debug) { System.out.println("Pair "+i+pair); }
             }
             Pair<String,String> finalPair = new Pair<String,String>(locationPath.get(locationPath.size()-1),"FinalLocation");
             locationStringPairs.add(finalPair);
             
+            String entrySourceStr = locationStringPairs.get(0).left;
+            writeEntryNode(entrySourceStr);
             int locationPairIndex = 0;
-    		
     		String finalLocation = "";
+    		
     		for(Pair<Location,Statement> step : traceStepLocStmt) {
-    			Location location = step.left; Statement statement = step.right;
-    			String locationStr = location.toString(); String statementStr = statement.toString();
-    			/* We need to strip the whitespace from the Location strings */
-    			//String compactSourceStr = locationStr.replaceAll("\\s+","");
+    			
+    			Location location = step.left; 
+    			Statement statement = step.right;
+    			String statementStr = statement.toString();
+    			
     			String compactSourceStr = locationStringPairs.get(locationPairIndex).left;
-    			System.out.println(location+"; about to look at target for: "+statement.toString());
-    			//String compactTargetStr = statement.target().toString().replaceAll("\\s+","");
+    			if (debug) { System.out.println(location+"; about to look at target for: "+statement.toString()); }
     			String compactTargetStr = locationStringPairs.get(locationPairIndex).right;
     			
-    			if (!locationStr.equals("Location 0")) { // The entry, Location 0, has already been declared
+    			if (!compactSourceStr.equals(entrySourceStr)) { /* The entry has already been declared */
     				if (statementStr.equals("__VERIFIER_error()")) {
     					writeViolationNode(compactSourceStr);
     					writeNode(compactTargetStr);
@@ -144,7 +150,7 @@ public class WitnessGenerator {
     				   writeStmtEdge(compactSourceStr,compactTargetStr,statement,lineNumber);
     			   }
     			} else {
-    				output.write("<edge source=\""+compactSourceStr+"\" target=\""+compactTargetStr+"\"/>");output.newLine();
+    				assert false : "Location "+sourceLocationStr+" does not lead to a source statement or branch";
     			}
     			
     			finalLocation = compactTargetStr;
@@ -172,7 +178,16 @@ public class WitnessGenerator {
 			for(AtomicStep atom : atomicSteps){
 				Location l = atom.getStatement().source();
 				Statement s = atom.getStatement();
-				tracePairs.add(new Pair<Location,Statement>(l,s));
+				/* For witness optimization, only add locations leading 
+				 * to a statement which are not system source */
+				String str = s.toString();
+				if (str != null && 
+						!str.startsWith("$") &&
+						!str.startsWith("return temp (__VERIFIER_nondet") &&
+						!str.startsWith("_svcomp_unsigned_bound") &&
+						!str.startsWith("NO_OP")) {
+					tracePairs.add(new Pair<Location,Statement>(l,s));
+				}
 			}
 		}
 		return tracePairs;
@@ -202,8 +217,8 @@ public class WitnessGenerator {
 		declaredNodes.add(locationString);
 	}
 	
-	private void writeEntryNode() throws IOException {
-		output.write("<node id=\"Location0\">\n"
+	private void writeEntryNode(String entryLocation) throws IOException {
+		output.write("<node id=\""+entryLocation+"\">\n"
 				   + "  <data key=\"entry\">true</data>\n"
 				   + "</node>\n");
 		declaredNodes.add("Location0");
@@ -211,8 +226,9 @@ public class WitnessGenerator {
 	
 	private void writeFalseEdge(String source, String target, 
 			Statement stmt, String lineNumber) throws IOException {
+		   String saneStmt = escapeXml(stmt.guard().toString());
 		   output.write("<edge source=\""+source+"\" target=\""+target+"\">");output.newLine();
-		   output.write("  <data key=\"sourcecode\">["+stmt.guard()+"]</data>");output.newLine();
+		   output.write("  <data key=\"sourcecode\">["+saneStmt+"]</data>");output.newLine();
 		   output.write("  <data key=\"startline\">"+lineNumber+"</data>");output.newLine();
 		   output.write("  <data key=\"control\">condition-false</data>");output.newLine();
 		   output.write("</edge>");
@@ -220,8 +236,9 @@ public class WitnessGenerator {
 	
 	private void writeTrueEdge(String source, String target, 
 			Statement stmt, String lineNumber) throws IOException {
+		   String saneStmt = escapeXml(stmt.guard().toString());
 		   output.write("<edge source=\""+source+"\" target=\""+target+"\">");output.newLine();
-		   output.write("  <data key=\"sourcecode\">["+stmt.guard()+"]</data>");output.newLine();
+		   output.write("  <data key=\"sourcecode\">["+saneStmt+"]</data>");output.newLine();
 		   output.write("  <data key=\"startline\">"+lineNumber+"</data>");output.newLine();
 		   output.write("  <data key=\"control\">condition-true</data>");output.newLine();
 		   output.write("</edge>");
@@ -229,10 +246,21 @@ public class WitnessGenerator {
 	
 	private void writeStmtEdge(String source, String target, 
 			Statement stmt, String lineNumber) throws IOException {
+		   String saneStmt = escapeXml(stmt.toString());
 		   output.write("<edge source=\""+source+"\" target=\""+target+"\">");output.newLine();
-		   output.write("  <data key=\"sourcecode\">"+stmt+"</data>");output.newLine();
+		   output.write("  <data key=\"sourcecode\">"+saneStmt+"</data>");output.newLine();
 		   output.write("  <data key=\"startline\">"+lineNumber+"</data>");output.newLine();
 		   output.write("</edge>");output.newLine();
+	}
+	
+	private String escapeXml(String s) {
+		/* Supports escaping only the 5 basic XML entities: gt,lt,quot,amp,apos */
+		s = s.replaceAll("&","&amp;");
+		s = s.replaceAll("\"", "&quot;");
+		s = s.replaceAll("'", "&apos;");
+		s = s.replaceAll("<", "&lt;");
+		s = s.replaceAll(">", "&gt;");
+		return s;
 	}
 	
 	private String header() {
