@@ -194,23 +194,28 @@ public class DirectingWorker extends BaseWorker {
 
 	private void instrumentBranchStatements(ASTNode node) throws SyntaxException {
 		if (node instanceof StatementNode) {
-			int lineNum = node.getSource().getFirstToken().getLine();
 			String sourceFile = node.getSource().getFirstToken().getSourceFile().getName();
-						
-			// Short-circuit the instrumentation when the line and/or file is not a target
-			if ( directingLines.contains(new Integer(lineNum)) && directingFile.equals(sourceFile) ) {
-
+			if (directingFile.equals(sourceFile) ) {
 				if (node instanceof IfNode) {
-					node.parent().setChild(node.childIndex(), instrumentedIf((IfNode)node));
-
+					int lineNum = ((IfNode)node).getCondition().getSource().getFirstToken().getLine();
+					if ( directingLines.contains(new Integer(lineNum)) ) {
+						node.parent().setChild(node.childIndex(), instrumentedIf((IfNode)node));
+					}
+					
 				} else if (node instanceof LoopNode) {
-					node.parent().setChild(node.childIndex(), instrumentedLoop((LoopNode)node));
+					int lineNum = ((LoopNode)node).getCondition().getSource().getFirstToken().getLine();
+					if ( directingLines.contains(new Integer(lineNum)) ) {
+						node.parent().setChild(node.childIndex(), instrumentedLoop((LoopNode)node));
+					}
 
 				} else if (node instanceof SwitchNode) {
-					node.parent().setChild(node.childIndex(), instrumentedSwitch((SwitchNode)node));
+					int lineNum = ((SwitchNode)node).getCondition().getSource().getFirstToken().getLine();
+					if ( directingLines.contains(new Integer(lineNum)) ) {
+						node.parent().setChild(node.childIndex(), instrumentedSwitch((SwitchNode)node));
+					}
 
 				} 
-			} 
+			}
 		}
 
 		if (node != null) {
