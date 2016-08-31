@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -44,9 +45,10 @@ public class DirectedTest {
 		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("infeasible.direct"), filename("infeasible.c") ));
 	}
 	
+	/* Running fullvsdirect.c without the branch directives file makes verification fail */
 	@Test
 	public void full() throws ABCException {
-		assertTrue(ui.run("verify", "-showProgram", filename("fullvsdirect.c")));
+		assertFalse(ui.run("verify", "-showProgram", filename("fullvsdirect.c")));
 	}
 	
 	@Test
