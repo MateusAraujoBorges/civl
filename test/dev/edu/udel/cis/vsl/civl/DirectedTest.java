@@ -55,6 +55,11 @@ public class DirectedTest {
 	public void direct() throws ABCException {
 		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("fullvsdirect.direct"), filename("fullvsdirect.c")));
 	}
+	
+	@Test
+	public void switchVerify() throws ABCException {
+		assertFalse(ui.run("verify", "-showProgram", "-svcomp16", "-direct="+filename("switch.direct"), filename("switch.c")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {

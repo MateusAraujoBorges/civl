@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
@@ -14,6 +15,7 @@ import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.PairNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
@@ -23,12 +25,15 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
+import edu.udel.cis.vsl.abc.ast.node.IF.label.SwitchLabelNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.DeclarationListNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopInitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.IfNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.LabeledStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode.LoopKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
@@ -209,9 +214,25 @@ public class DirectingWorker extends BaseWorker {
 					}
 
 				} else if (node instanceof SwitchNode) {
-					int lineNum = ((SwitchNode)node).getCondition().getSource().getFirstToken().getLine();
-					if ( directingLines.contains(new Integer(lineNum)) ) {
-						node.parent().setChild(node.childIndex(), instrumentedSwitch((SwitchNode)node));
+					
+					/* Get the line numbers of all the cases, including the default*/
+					Iterator<LabeledStatementNode> casesIter = ((SwitchNode)node).getCases();
+					Set<Integer> caseLineNums = new HashSet<Integer>();
+					while (casesIter.hasNext()) {
+						LabeledStatementNode lsn = casesIter.next();
+						int caseLine = lsn.getSource().getFirstToken().getLine();
+						if (debug) System.out.println("Case line at: "+caseLine);
+						caseLineNums.add(caseLine);
+					}
+					int defaultLine = ((SwitchNode) node).getDefaultCase().getSource().getFirstToken().getLine();
+					if (debug) System.out.println("Default line at: "+defaultLine);
+					caseLineNums.add(defaultLine);
+					
+					/* Intersect the set of directing lines with the case statement lines */
+					Set<Integer> caseDirectingLines = caseLineNums;
+					caseDirectingLines.retainAll(directingLines);
+					if ( !caseDirectingLines.isEmpty() ) {
+						node.parent().setChild(node.childIndex(), instrumentedSwitch((SwitchNode)node, caseDirectingLines));
 					}
 
 				} 
@@ -331,8 +352,60 @@ public class DirectingWorker extends BaseWorker {
 		return result;
 	}
 	
-	private StatementNode instrumentedSwitch(SwitchNode node) {
-		return null;
+	private StatementNode instrumentedSwitch(SwitchNode node, Set<Integer> directingLines) {
+		
+		Source src = node.getSource();
+		ExpressionNode swc = node.getCondition();
+		List<BlockItemNode> statements = new LinkedList<BlockItemNode>();
+		
+		Iterator<LabeledStatementNode> casesIter = node.getCases();
+		List<LabeledStatementNode> casesList = new ArrayList<>();
+		casesIter.forEachRemaining(casesList::add); // Use a List so we can add the default case
+		LabeledStatementNode defaultCase = node.getDefaultCase();
+		casesList.add(defaultCase);
+		
+		for (LabeledStatementNode currCase : casesList) {
+			
+			int caseLine = currCase.getSource().getFirstToken().getLine();
+			
+			if (directingLines.contains(caseLine)) {
+				
+				if (node.getDefaultCase().equals(currCase)) {
+					// default condition is the conjunction of the negation of all case label conditions
+					ExpressionNode defaultCondition = nodeFactory.newBooleanConstantNode(src, true);
+					for (Iterator<LabeledStatementNode> iter = node.getCases(); iter.hasNext();) {
+						LabeledStatementNode c = iter.next();
+						SwitchLabelNode sln = (SwitchLabelNode) c.getLabel();
+
+						// Copy the case constant to assemble the switch edge condition
+						ExpressionNode caseConst = sln.getExpression().copy();
+						OperatorNode caseCompare = nodeFactory.newOperatorNode(src, Operator.NEQ, swc.copy(), caseConst);
+
+						defaultCondition = nodeFactory.newOperatorNode(src, Operator.LAND, defaultCondition, caseCompare);
+					}
+					statements.add(instrumentAssume(src, defaultCondition));
+					
+				} else {
+					// match the case label and return its condition
+					for (Iterator<LabeledStatementNode> iter = node.getCases(); iter.hasNext();) {
+						LabeledStatementNode c = iter.next();
+
+						if (c.equals(currCase)) {
+							SwitchLabelNode sln = (SwitchLabelNode) c.getLabel();
+							
+							// Copy the case constant to assemble the switch edge condition
+							ExpressionNode caseConst = sln.getExpression().copy();
+							OperatorNode caseCompare = nodeFactory.newOperatorNode(src, Operator.EQUALS, swc.copy(), caseConst);
+							statements.add(instrumentAssume(src, caseCompare));
+						}
+					}
+				}
+			}
+		}
+		
+		assert (!statements.isEmpty()) : "Expected a matching case label";
+		statements.add(node.copy());
+		return nodeFactory.newCompoundStatementNode(node.getSource(), statements);
 	}
 
 }
