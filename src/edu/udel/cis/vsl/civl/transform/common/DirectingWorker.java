@@ -15,7 +15,6 @@ import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.PairNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
@@ -372,18 +371,28 @@ public class DirectingWorker extends BaseWorker {
 				
 				if (node.getDefaultCase().equals(currCase)) {
 					// default condition is the conjunction of the negation of all case label conditions
-					ExpressionNode defaultCondition = nodeFactory.newBooleanConstantNode(src, true);
-					for (Iterator<LabeledStatementNode> iter = node.getCases(); iter.hasNext();) {
+					Iterator<LabeledStatementNode> iter = node.getCases();
+					if (iter.hasNext()) {
 						LabeledStatementNode c = iter.next();
 						SwitchLabelNode sln = (SwitchLabelNode) c.getLabel();
-
-						// Copy the case constant to assemble the switch edge condition
 						ExpressionNode caseConst = sln.getExpression().copy();
-						OperatorNode caseCompare = nodeFactory.newOperatorNode(src, Operator.NEQ, swc.copy(), caseConst);
-
-						defaultCondition = nodeFactory.newOperatorNode(src, Operator.LAND, defaultCondition, caseCompare);
+						OperatorNode condition = 
+								nodeFactory.newOperatorNode(src, Operator.NEQ, swc.copy(), caseConst);
+						
+						for (; iter.hasNext();) {
+							c = iter.next();
+							sln = (SwitchLabelNode) c.getLabel();
+	
+							// Copy the case constant to assemble the switch edge condition
+							caseConst = sln.getExpression().copy();
+							OperatorNode caseCompare = nodeFactory.newOperatorNode(src, Operator.NEQ, swc.copy(), caseConst);
+	
+							condition = nodeFactory.newOperatorNode(src, Operator.LAND, condition, caseCompare);
+						}
+						
+						statements.add(instrumentAssume(src, condition));
 					}
-					statements.add(instrumentAssume(src, defaultCondition));
+					
 					
 				} else {
 					// match the case label and return its condition
