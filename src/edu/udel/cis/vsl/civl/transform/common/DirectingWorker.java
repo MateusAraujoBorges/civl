@@ -24,6 +24,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.label.SwitchLabelNode;
@@ -181,8 +182,9 @@ public class DirectingWorker extends BaseWorker {
 				
 		Source src = this.newSource(indexVarName, CivlcTokenConstant.TYPE);
 		IdentifierNode branchIdxId = nodeFactory.newIdentifierNode(src,  indexVarName);
-		directDecls.add(nodeFactory.newVariableDeclarationNode(src, branchIdxId, basicType(BasicTypeKind.INT)));
-				
+		IntegerConstantNode zero = nodeFactory.newIntegerConstantNode(src, "0");
+		directDecls.add(nodeFactory.newVariableDeclarationNode(src, branchIdxId, basicType(BasicTypeKind.INT), zero));
+		
 		List<PairNode<DesignationNode, InitializerNode>> initList = new LinkedList<PairNode<DesignationNode, InitializerNode>>();
 		for (Integer d : directions) {
 			ExpressionNode initD = nodeFactory.newIntegerConstantNode(src, d.toString());
@@ -203,6 +205,7 @@ public class DirectingWorker extends BaseWorker {
 				if (node instanceof IfNode) {
 					int lineNum = ((IfNode)node).getCondition().getSource().getFirstToken().getLine();
 					if ( directingLines.contains(new Integer(lineNum)) ) {
+						if (debug) System.out.println("About to instrument if at line: "+lineNum);
 						node.parent().setChild(node.childIndex(), instrumentedIf((IfNode)node));
 					}
 					
