@@ -92,7 +92,7 @@ import edu.udel.cis.vsl.civl.transform.IF.DirectingTransformer;
  */
 public class DirectingWorker extends BaseWorker {
 
-	private boolean debug = false;
+	private boolean debug = true;
 	private CIVLConfiguration config;
 	private String indexVarName;
 	private String arrayVarName;
@@ -199,6 +199,14 @@ public class DirectingWorker extends BaseWorker {
 	}
 
 	private void instrumentBranchStatements(ASTNode node) throws SyntaxException {
+		/* Post-order traversal of AST */
+		if (node != null) {
+			Iterable<ASTNode> children = node.children();
+			for (ASTNode child : children) {
+				instrumentBranchStatements(child);
+			}
+		}
+		
 		if (node instanceof StatementNode) {
 			String sourceFile = node.getSource().getFirstToken().getSourceFile().getName();
 			if (directingFile.equals(sourceFile) ) {
@@ -238,13 +246,6 @@ public class DirectingWorker extends BaseWorker {
 					}
 
 				} 
-			}
-		}
-
-		if (node != null) {
-			Iterable<ASTNode> children = node.children();
-			for (ASTNode child : children) {
-				instrumentBranchStatements(child);
 			}
 		}
 	}
@@ -306,6 +307,8 @@ public class DirectingWorker extends BaseWorker {
 	 */
 	private StatementNode instrumentedIf(IfNode node) {
 		List<BlockItemNode> statements = new LinkedList<BlockItemNode>();
+		System.out.println("Assume statement: "+instrumentAssume(node.getSource(), node.getCondition()).prettyRepresentation());
+		System.out.println("  above: "+node.prettyRepresentation());
 		statements.add(instrumentAssume(node.getSource(), node.getCondition()));
 		statements.add(node.copy());
 		return nodeFactory.newCompoundStatementNode(node.getSource(), statements);

@@ -60,6 +60,11 @@ public class DirectedTest {
 	public void switchVerify() throws ABCException {
 		assertFalse(ui.run("verify", "-showProgram", "-svcomp16", "-direct="+filename("switch.direct"), filename("switch.c")));
 	}
+	
+	@Test
+	public void nestedIfVerify() throws ABCException {
+		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("nested_if.direct"), filename("nested_if.c") ));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
