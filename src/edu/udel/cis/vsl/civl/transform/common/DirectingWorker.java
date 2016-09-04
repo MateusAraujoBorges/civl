@@ -249,7 +249,10 @@ public class DirectingWorker extends BaseWorker {
 		}
 	}
 
-	// build  $assume(Lbranch[LbranchIdx++] ? Cond : ! Cond );
+	/* Build:  
+	 *   $assert(LbranchIdx < directions.size() : "Concrete run differs from abstract run");
+	 *   $assume(Lbranch[LbranchIdx++] ? Cond : ! Cond );
+	 */
 	private StatementNode instrumentAssume(Source src, ExpressionNode cond) {
 		ExpressionNode branchArray = nodeFactory.newIdentifierExpressionNode(src, nodeFactory.newIdentifierNode(src, arrayVarName));
 		ExpressionNode branchIdx = nodeFactory.newIdentifierExpressionNode(src, nodeFactory.newIdentifierNode(src, indexVarName));
@@ -265,10 +268,31 @@ public class DirectingWorker extends BaseWorker {
 		plusArgs.add(cond.copy());
 		plusArgs.add(negCond);
 		
-		ExpressionNode qmarkExpr = nodeFactory.newOperatorNode(src, Operator.CONDITIONAL, plusArgs);
-		
+		ExpressionNode qmarkExpr = nodeFactory.newOperatorNode(src, Operator.CONDITIONAL, plusArgs);	
 		IdentifierExpressionNode vAssume = nodeFactory.newIdentifierExpressionNode(src, nodeFactory.newIdentifierNode(src, "$assume"));
-		return nodeFactory.newExpressionStatementNode(nodeFactory.newFunctionCallNode(src, vAssume, Arrays.asList(qmarkExpr), null));
+		StatementNode assumeStatement = nodeFactory.newExpressionStatementNode(nodeFactory.newFunctionCallNode(src, vAssume, Arrays.asList(qmarkExpr), null));
+
+		/* Construct an assert statement to check for indexing beyond branchArray */
+		IntegerConstantNode bound = null;
+		try {
+			bound = nodeFactory.newIntegerConstantNode(src, ((Integer) directions.size()).toString());
+		} catch (SyntaxException e) {
+			e.printStackTrace();
+		}
+		
+		List<ExpressionNode> assertArgs = new LinkedList<>();
+		assertArgs.add(branchIdx.copy());
+		assertArgs.add(bound);
+		
+		ExpressionNode ltExpr = nodeFactory.newOperatorNode(src, Operator.LT, assertArgs);
+		IdentifierExpressionNode vAssert = nodeFactory.newIdentifierExpressionNode(src, nodeFactory.newIdentifierNode(src, "$assert")).copy();
+		StatementNode assertStatement = nodeFactory.newExpressionStatementNode(nodeFactory.newFunctionCallNode(src, vAssert, Arrays.asList(ltExpr), null));
+		
+		List<BlockItemNode> statements = new LinkedList<BlockItemNode>();
+		statements.add(assertStatement);
+		statements.add(assumeStatement);
+		
+		return nodeFactory.newCompoundStatementNode(src, statements);
 	}
 	
 	/*
