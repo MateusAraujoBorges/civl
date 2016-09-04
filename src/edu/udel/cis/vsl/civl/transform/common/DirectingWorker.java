@@ -271,8 +271,18 @@ public class DirectingWorker extends BaseWorker {
 		ExpressionNode qmarkExpr = nodeFactory.newOperatorNode(src, Operator.CONDITIONAL, plusArgs);	
 		IdentifierExpressionNode vAssume = nodeFactory.newIdentifierExpressionNode(src, nodeFactory.newIdentifierNode(src, "$assume"));
 		StatementNode assumeStatement = nodeFactory.newExpressionStatementNode(nodeFactory.newFunctionCallNode(src, vAssume, Arrays.asList(qmarkExpr), null));
-
-		/* Construct an assert statement to check for indexing beyond branchArray */
+		/* This asserts that the branch index doesn't run past the array of given directions */
+		StatementNode assertStatement = instrumentAssert(src, branchIdx);
+		
+		List<BlockItemNode> statements = new LinkedList<BlockItemNode>();
+		statements.add(assertStatement);
+		statements.add(assumeStatement);
+		
+		return nodeFactory.newCompoundStatementNode(src, statements);
+	}
+	
+	/* Construct an assert statement to check for indexing beyond branchArray */
+	private StatementNode instrumentAssert(Source src, ExpressionNode branchIdx) {
 		IntegerConstantNode bound = null;
 		try {
 			bound = nodeFactory.newIntegerConstantNode(src, ((Integer) directions.size()).toString());
@@ -288,11 +298,7 @@ public class DirectingWorker extends BaseWorker {
 		IdentifierExpressionNode vAssert = nodeFactory.newIdentifierExpressionNode(src, nodeFactory.newIdentifierNode(src, "$assert")).copy();
 		StatementNode assertStatement = nodeFactory.newExpressionStatementNode(nodeFactory.newFunctionCallNode(src, vAssert, Arrays.asList(ltExpr), null));
 		
-		List<BlockItemNode> statements = new LinkedList<BlockItemNode>();
-		statements.add(assertStatement);
-		statements.add(assumeStatement);
-		
-		return nodeFactory.newCompoundStatementNode(src, statements);
+		return assertStatement;
 	}
 	
 	/*
