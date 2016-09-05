@@ -65,6 +65,11 @@ public class DirectedTest {
 	public void nestedIfVerify() throws ABCException {
 		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("nested_if.direct"), filename("nested_if.c") ));
 	}
+	
+	@Test
+	public void svcompException() throws ABCException {
+		assertTrue(ui.run("verify", "-showProgram", "-svcomp16", "-direct="+filename("svcomp_exception.direct"), filename("svcomp_exception.c") ));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
