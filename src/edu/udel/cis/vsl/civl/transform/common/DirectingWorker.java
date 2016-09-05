@@ -170,7 +170,7 @@ public class DirectingWorker extends BaseWorker {
 	 * These definitions are:
 	 * 
 	 *     int $direct_index = 0;
-	 *     int $direct_array[] = { direction1, direction2, ... };
+	 *     Bool_ $direct_array[] = { direction1, direction2, ... };
 	 *     
 	 * We insert these as the first definitions.
 	 *     
@@ -187,11 +187,11 @@ public class DirectingWorker extends BaseWorker {
 		
 		List<PairNode<DesignationNode, InitializerNode>> initList = new LinkedList<PairNode<DesignationNode, InitializerNode>>();
 		for (Integer d : directions) {
-			ExpressionNode initD = nodeFactory.newIntegerConstantNode(src, d.toString());
+			ExpressionNode initD = nodeFactory.newBooleanConstantNode(src, d.toString().equals("1"));
 			initList.add(nodeFactory.newPairNode(src, null, initD));
 		}
 		CompoundInitializerNode branchInitializer = nodeFactory.newCompoundInitializerNode(src, initList);
-		TypeNode arrayOfInt = nodeFactory.newArrayTypeNode(src, basicType(BasicTypeKind.INT), null);
+		TypeNode arrayOfInt = nodeFactory.newArrayTypeNode(src, basicType(BasicTypeKind.BOOL), null);
 		IdentifierNode branchArrayId = nodeFactory.newIdentifierNode(src, arrayVarName);
 		directDecls.add(nodeFactory.newVariableDeclarationNode(src, branchArrayId, arrayOfInt, branchInitializer));
 		
@@ -251,17 +251,17 @@ public class DirectingWorker extends BaseWorker {
 	}
 
 	/* Build:  
-	 *   $assert(LbranchIdx < directions.size() : "Concrete run differs from abstract run");
-	 *   $assume(Lbranch[LbranchIdx++] ? Cond : ! Cond );
+	 *   $assert($direct_index < directions.size() : "Concrete run differs from abstract run");
+	 *   $assume($direct_array[LbranchIdx++] ? Cond : ! Cond );
 	 */
-	private StatementNode instrumentAssume(Source src, ExpressionNode cond) {
+	private StatementNode instrumentAssume(Source src, ExpressionNode cond) throws SyntaxException {
 		ExpressionNode branchArray = nodeFactory.newIdentifierExpressionNode(src, nodeFactory.newIdentifierNode(src, arrayVarName));
 		ExpressionNode branchIdx = nodeFactory.newIdentifierExpressionNode(src, nodeFactory.newIdentifierNode(src, indexVarName));
 		List<ExpressionNode> accessArgs = new LinkedList<ExpressionNode>();
 		accessArgs.add(branchArray);
 		accessArgs.add(nodeFactory.newOperatorNode(src, Operator.POSTINCREMENT, Arrays.asList(branchIdx)));
 		ExpressionNode branchAccess = nodeFactory.newOperatorNode(src, Operator.SUBSCRIPT, accessArgs);
-				
+	
 		ExpressionNode negCond = nodeFactory.newOperatorNode(src, Operator.NOT, Arrays.asList(cond.copy()));
 		
 		List<ExpressionNode> plusArgs = new LinkedList<ExpressionNode>();
@@ -270,8 +270,12 @@ public class DirectingWorker extends BaseWorker {
 		plusArgs.add(negCond);
 		
 		ExpressionNode qmarkExpr = nodeFactory.newOperatorNode(src, Operator.CONDITIONAL, plusArgs);	
+		IntegerConstantNode oneNode = nodeFactory.newIntegerConstantNode(src,  "1");
+		ExpressionNode equalsNode = nodeFactory.newOperatorNode(src,  Operator.EQUALS, qmarkExpr, oneNode);
+		
 		IdentifierExpressionNode vAssume = nodeFactory.newIdentifierExpressionNode(src, nodeFactory.newIdentifierNode(src, "$assume"));
-		StatementNode assumeStatement = nodeFactory.newExpressionStatementNode(nodeFactory.newFunctionCallNode(src, vAssume, Arrays.asList(qmarkExpr), null));
+		StatementNode assumeStatement = nodeFactory.newExpressionStatementNode(nodeFactory.newFunctionCallNode(src, vAssume, Arrays.asList(equalsNode), null));
+		
 		/* This asserts that the branch index doesn't run past the array of given directions */
 		StatementNode assertStatement = instrumentAssert(src, branchIdx);
 		
@@ -283,13 +287,8 @@ public class DirectingWorker extends BaseWorker {
 	}
 	
 	/* Construct an assert statement to check for indexing beyond branchArray */
-	private StatementNode instrumentAssert(Source src, ExpressionNode branchIdx) {
-		IntegerConstantNode bound = null;
-		try {
-			bound = nodeFactory.newIntegerConstantNode(src, ((Integer) directions.size()).toString());
-		} catch (SyntaxException e) {
-			e.printStackTrace();
-		}
+	private StatementNode instrumentAssert(Source src, ExpressionNode branchIdx) throws SyntaxException {
+		IntegerConstantNode bound = nodeFactory.newIntegerConstantNode(src, ((Integer) directions.size()).toString());
 		
 		List<ExpressionNode> assertArgs = new LinkedList<>();
 		assertArgs.add(branchIdx.copy());
@@ -305,7 +304,7 @@ public class DirectingWorker extends BaseWorker {
 	/*
 	 * Replace the given IfNode with a block 
 	 */
-	private StatementNode instrumentedIf(IfNode node) {
+	private StatementNode instrumentedIf(IfNode node) throws SyntaxException {
 		List<BlockItemNode> statements = new LinkedList<BlockItemNode>();
 		System.out.println("Assume statement: "+instrumentAssume(node.getSource(), node.getCondition()).prettyRepresentation());
 		System.out.println("  above: "+node.prettyRepresentation());
@@ -387,7 +386,7 @@ public class DirectingWorker extends BaseWorker {
 		return result;
 	}
 	
-	private StatementNode instrumentedSwitch(SwitchNode node, Set<Integer> directingLines) {
+	private StatementNode instrumentedSwitch(SwitchNode node, Set<Integer> directingLines) throws SyntaxException {
 		
 		Source src = node.getSource();
 		ExpressionNode swc = node.getCondition();
