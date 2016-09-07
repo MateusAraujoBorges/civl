@@ -404,7 +404,8 @@ int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcount[]
    * for MPI_Reduce routine, and the reason it plays a trick here is
    * because allocating a memory space for a void pointer is not
    * allowed in CIVL yet. */
-  char * temp = (char *)malloc(sizeofDatatype(datatype) * total_count);
+  void * temp = $mpi_malloc(total_count, datatype);
+
   $mpi_reduce(sendbuf, temp, total_count, datatype, op, 
 	      root, RED_SCATTER_TAG, comm, "MPI_Reduce_scatter()");
   $mpi_scatterv(temp, recvcount, displs, datatype, recvbuf,

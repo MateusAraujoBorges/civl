@@ -17,10 +17,6 @@
 
 /* Library private helper function declaration */
 char * $mpi_coroutine_name(int tag);
-
-int $mpi_send_snapshot($collator collator, $comm comm, $message out);
-
-int $mpi_recv_snapshot($collator collator, $comm comm, int src, int tag);
 /**************************** Duplicated Part *************************************/
 
 #ifdef _MPI_CONTRACT
@@ -97,6 +93,31 @@ int sizeofDatatype(MPI_Datatype datatype) {
   $assume(result == $mpi_extentof(datatype));
 #endif
   return result;
+}
+
+
+void * $mpi_malloc(int count, MPI_Datatype datatype) {  
+  switch (datatype) {
+  case MPI_INT:
+  case MPI_SHORT:
+  case MPI_LONG:
+  case MPI_LONG_LONG_INT:
+  case MPI_LONG_LONG:
+  case MPI_UNSIGNED_LONG_LONG:
+    return (int *)malloc(sizeof(int) * count);
+  case MPI_2INT:
+    return (int *)malloc(2 * count * sizeof(int));
+  case MPI_FLOAT:
+  case MPI_DOUBLE:
+  case MPI_LONG_DOUBLE:
+    return ($real *)malloc(count * sizeof($real));
+  case MPI_CHAR:
+  case MPI_BYTE:
+    return (char *)malloc(count * sizeof(char));
+  default:
+    $assert(0, "Unreachable");
+  } 
+  return (void *)0;
 }
 
 /************************** MPI LIB Implementations *******************************/
@@ -190,7 +211,7 @@ void * $mpi_pointer_add(const void * ptr, int offset, MPI_Datatype datatype) {
    means no potential deadlocks related to these functions */
 int $mpi_send(const void *buf, int count, MPI_Datatype datatype, int dest,
 	      int tag, MPI_Comm comm) {
-  if (dest >= 0 && count > 0) {
+  if (dest >= 0 && count >= 0) {
     int size = count*sizeofDatatype(datatype);
     int place = $comm_place(comm.p2p);
     $message out;
@@ -207,19 +228,18 @@ int $mpi_send(const void *buf, int count, MPI_Datatype datatype, int dest,
 
 int $mpi_recv(void *buf, int count, MPI_Datatype datatype, int source,
 	      int tag, MPI_Comm comm, MPI_Status *status) {
-  if ((source >= 0 || source == MPI_ANY_SOURCE) && count > 0) {
+  if ((source >= 0 || source == MPI_ANY_SOURCE) && count >= 0) {
     $message in;
     int place = $comm_place(comm.p2p);
     int deterministicTag;
 
-    /* A deterministic tag is a sugar for CIVL implementaion. The CIVL
-       implementation only needs to care about two cases: tag == -2
-       which is a wild-card tag or any other tags which can either be
-       concrete or not:.*/
     $assert(tag == -2 || tag >= 0, "Illegal MPI message receive tag %d.\n", tag);
     deterministicTag = tag < 0 ? -2 : tag;
     $elaborate(source);
     in = $comm_dequeue(comm.p2p, source, deterministicTag);
+#ifdef _MPI_CONTRACT
+    $elaborate(count);
+#endif
 
     int size = count*sizeofDatatype(datatype);
 
@@ -243,12 +263,7 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   $assert(sendtag >= 0, "MPI sendtag should be greater than or equal to zero");
   $assert(recvtag == -2 || recvtag >= 0, "Illegal MPI message receive tag %d.\n", recvtag);
   
-  if (sendcount == 0) 
-    return $mpi_recv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
-  if (recvcount == 0)
-    return $mpi_send(sendbuf, sendcount, sendtype, dest, sendtag, comm);
   deterministicRecvTag = recvtag < 0 ? -2 : recvtag;
-  //send and receive triggering flags
   if((dest >= 0) && ((source >= 0 || source == MPI_ANY_SOURCE))) {
     $message out, in;
     int size = sendcount*sizeofDatatype(sendtype);
@@ -256,7 +271,7 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
     out = $message_pack(place, dest, sendtag, sendbuf, size);
     $elaborate(source);
-    
+    $elaborate(dest);
     $choose {
       $when($true){
 	$comm_enqueue(comm.p2p, out);
@@ -282,12 +297,10 @@ int $mpi_sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
       status->MPI_ERROR = 0;
     }
   }
-  else if (dest >= 0) {
+  else if (dest >= 0)
     $mpi_send(sendbuf, sendcount, sendtype, dest, sendtag, comm);
-  }
-  else if (source >= 0 || source == MPI_ANY_SOURCE) {
+  else if (source >= 0 || source == MPI_ANY_SOURCE) 
     $mpi_recv(recvbuf, recvcount, recvtype, source, deterministicRecvTag, comm, status);
-  }
   return 0;
 }
 
@@ -764,19 +777,6 @@ void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
     memcpy(buf, newValues, count * sizeofDatatype(datatype));   
   }
 }
-
-int $mpi_send_snapshot($collator collator, $comm comm, $message out) {
-  $update(collator)
-    $comm_enqueue(comm, out);
-  return 0;
-}
-
-int $mpi_recv_snapshot($collator collator, $comm comm, int src, int tag) {
-  $update(collator)
-    $comm_dequeue(comm, src, tag);
-  return 0;
-}
-
 
 /********************* Private helper functions *********************/
 /* Returns the string literal of MPI collective routine names by

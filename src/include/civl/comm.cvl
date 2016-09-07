@@ -52,7 +52,8 @@ $atomic_f $message $message_pack(int source, int dest, int tag,
   result.source = source;
   result.dest = dest;
   result.tag = tag;
-  result.data = $bundle_pack(data, size);
+  if (data != NULL)
+    result.data = $bundle_pack(data, size);
   result.size = size;
   return result;
 }
@@ -81,8 +82,14 @@ int $message_size($message message) {
  * size exceeds specified size */
 /*@ depends_on \access(buf); */
 $atomic_f void $message_unpack($message message, void *buf, int size) {
-  $bundle_unpack(message.data, buf);
-  $assert(message.size <= size, "Message of size %d exceeds the specified size %d.", message.size, size);
+  if (buf != NULL) {
+    $bundle_unpack(message.data, buf);
+    $assert(message.size <= size, "Message of size %d exceeds the specified size %d.", 
+	    message.size, size);
+  }
+  else
+    $assert(message.size == 0,
+	    "Receiving a non-zero size of messages with a NULL pointer.");
 }
 
 /*@ depends_on \nothing;
