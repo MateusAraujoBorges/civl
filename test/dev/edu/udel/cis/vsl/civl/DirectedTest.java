@@ -31,6 +31,11 @@ public class DirectedTest {
 	}
 	
 	@Test
+	public void forTestShow() throws ABCException {
+		assertTrue(ui.run("show", "-showProgram", "-direct="+filename("forTest.direct"), filename("forTest.c") ));
+	}
+	
+	@Test
 	public void itestVerify() throws ABCException {
 		assertTrue(ui.run("verify", "-showProgram", "-direct="+filename("itest.direct"), filename("itest.c") ));
 	}
@@ -68,7 +73,7 @@ public class DirectedTest {
 	
 	@Test
 	public void svcompException() throws ABCException {
-		assertTrue(ui.run("verify", "-showProgram", "-svcomp16", "-direct="+filename("svcomp_exception.direct"), filename("svcomp_exception.c") ));
+		assertFalse(ui.run("verify", "-showProgram", "-svcomp16", "-direct="+filename("svcomp_exception.direct"), filename("svcomp_exception.c") ));
 	}
 
 	@AfterClass

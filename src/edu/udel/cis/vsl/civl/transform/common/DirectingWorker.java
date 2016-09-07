@@ -92,7 +92,7 @@ import edu.udel.cis.vsl.civl.transform.IF.DirectingTransformer;
  */
 public class DirectingWorker extends BaseWorker {
 
-	private boolean debug = true;
+	private boolean debug = false;
 	private CIVLConfiguration config;
 	private String indexVarName;
 	private String arrayVarName;
@@ -218,9 +218,16 @@ public class DirectingWorker extends BaseWorker {
 					}
 					
 				} else if (node instanceof LoopNode) {
-					int lineNum = ((LoopNode)node).getCondition().getSource().getFirstToken().getLine();
-					if ( directingLines.contains(new Integer(lineNum)) ) {
-						node.parent().setChild(node.childIndex(), instrumentedLoop((LoopNode)node));
+					LoopNode ln = (LoopNode) node;
+					/* Check for the existence of a loop condition, a statement like:
+					 *    for (;;)
+					 * will not have directives, so we don't need to instrument it
+					 */
+					if (ln.getCondition() != null) {
+						int lineNum = (ln.getCondition().getSource().getFirstToken().getLine());
+						if ( directingLines.contains(new Integer(lineNum)) ) {
+							node.parent().setChild(node.childIndex(), instrumentedLoop((LoopNode)node));
+						}
 					}
 
 				} else if (node instanceof SwitchNode) {
@@ -306,8 +313,6 @@ public class DirectingWorker extends BaseWorker {
 	 */
 	private StatementNode instrumentedIf(IfNode node) throws SyntaxException {
 		List<BlockItemNode> statements = new LinkedList<BlockItemNode>();
-		System.out.println("Assume statement: "+instrumentAssume(node.getSource(), node.getCondition()).prettyRepresentation());
-		System.out.println("  above: "+node.prettyRepresentation());
 		statements.add(instrumentAssume(node.getSource(), node.getCondition()));
 		statements.add(node.copy());
 		return nodeFactory.newCompoundStatementNode(node.getSource(), statements);
@@ -358,7 +363,7 @@ public class DirectingWorker extends BaseWorker {
 					compoundItems.add(vdn.copy());
 				}
 			} else {
-				compoundItems.add(nodeFactory.newExpressionStatementNode((ExpressionNode)init));
+				compoundItems.add(nodeFactory.newExpressionStatementNode((ExpressionNode)init.copy()));
 			}
 
 			ExpressionNode trueCondition = nodeFactory.newIntegerConstantNode(src, "1");
