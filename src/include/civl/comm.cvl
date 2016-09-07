@@ -54,6 +54,8 @@ $atomic_f $message $message_pack(int source, int dest, int tag,
   result.tag = tag;
   if (data != NULL)
     result.data = $bundle_pack(data, size);
+  else
+    $assert(size == 0, "Attempt to pack a non-zero size message with a NULL pointer");
   result.size = size;
   return result;
 }
@@ -89,7 +91,7 @@ $atomic_f void $message_unpack($message message, void *buf, int size) {
   }
   else
     $assert(message.size == 0,
-	    "Receiving a non-zero size of messages with a NULL pointer.");
+	    "Attempt to unpack a non-zero size message with a NULL pointer.");
 }
 
 /*@ depends_on \nothing;
