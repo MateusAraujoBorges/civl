@@ -26,7 +26,8 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 
 public class LibcollateExecutor extends BaseLibraryExecutor
-		implements LibraryExecutor {
+		implements
+			LibraryExecutor {
 	/**
 	 * Field index for $collate_state.gstate:
 	 */
@@ -66,29 +67,32 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$collate_complete":
-			callEval = executeCollateComplete(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$collate_arrived":
-			callEval = executeCollateArrived(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		// case "$enter_collate_state":
-		// callEval = executeEnterCollateState(state, pid, process, arguments,
-		// argumentValues, source);
-		// break;
-		// case "$exit_collate_state":
-		// callEval = executeExitCollateState(state, pid, process, arguments,
-		// argumentValues, source);
-		// break;
-		case "$collate_snapshot":
-			callEval = executeCollateSnapshot(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"the function " + name + " of library pointer.cvh", source);
+			case "$collate_complete" :
+				callEval = executeCollateComplete(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$collate_arrived" :
+				callEval = executeCollateArrived(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			// case "$enter_collate_state":
+			// callEval = executeEnterCollateState(state, pid, process,
+			// arguments,
+			// argumentValues, source);
+			// break;
+			// case "$exit_collate_state":
+			// callEval = executeExitCollateState(state, pid, process,
+			// arguments,
+			// argumentValues, source);
+			// break;
+			case "$collate_snapshot" :
+				callEval = executeCollateSnapshot(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"the function " + name + " of library pointer.cvh",
+						source);
 		}
 		return callEval;
 	}
@@ -368,9 +372,14 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 				.nextSetBit(i + 1)) {
 			BooleanExpression claim;
 
-			status = universe.arrayRead(statusArray, universe.integer(i));
-			claim = universe.equals(status, one);
-			claim = universe.or(universe.equals(status, two), claim);
+			if (i < 0) {
+				// Waiting for non-existed processes means waiting for nothing:
+				claim = trueValue;
+			} else {
+				status = universe.arrayRead(statusArray, universe.integer(i));
+				claim = universe.equals(status, one);
+				claim = universe.or(universe.equals(status, two), claim);
+			}
 			pred = universe.and(pred, claim);
 		}
 		eval.value = pred;

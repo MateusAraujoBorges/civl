@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
@@ -52,7 +53,9 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteOnExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ValueAtNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.CivlForNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.DeclarationListNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
@@ -299,10 +302,17 @@ public class ContractTransformerWorker extends BaseWorker {
 	private final static String TMP_ASSIGNS_PREFIX = CONTRACT_PREFIX
 			+ "assigns";
 
+	private final static String TMP_LOOP_PREFIX = CONTRACT_PREFIX + "i";
+
 	/**
 	 * Generated assigns variable counter:
 	 */
 	private int tmpAssignsCounter = 0;
+
+	/**
+	 * Generated loop identifier counter;
+	 */
+	private int tmpLoopCounter = 0;
 
 	private int tmpRemoteInLambdaCounter = 0;
 
@@ -663,7 +673,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+		newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 
@@ -1480,7 +1490,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			stmts.addAll(transformRemoteWtBoundVars.getBefore());
 			preds = (ExpressionNode) transformRemoteWtBoundVars.getNode();
 		}
-		// stmts.addAll(this.elaboratePid4Remote(preds));
+		stmts.addAll(this.elaboratePid4Remote(preds));
 		stmts.add(isAssume ? createAssumption(preds) : createAssertion(preds));
 		if (conditionNeedsChecking != null)
 			stmts.add(createAssertion(conditionNeedsChecking));
@@ -1550,6 +1560,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		newEnsurance = replaceOldExpressionNodes4collective(ensurance,
 				identifierExpression(tmpStateVar4OldDecl.getName()));
 		tmpVarDecls_pred.left.add(tmpStateVar4OldDecl);
+		tmpVarDecls_pred.left.addAll(elaboratePid4Remote(newEnsurance));
 		stmt = createAssumption(newEnsurance);
 		stmt = nodeFactory.newWithNode(collateStateRef.getSource(),
 				collateStateRef.copy(), stmt);
@@ -2759,9 +2770,37 @@ public class ContractTransformerWorker extends BaseWorker {
 				Operator.ASSIGN, buf.copy(),
 				identifierExpression(tmpHeapVar.getName()));
 
+		results.add(createAssumption(validArrayTypeCondition(arrayTypeNode)));
 		results.add(tmpHeapVar);
 		results.add(nodeFactory.newExpressionStatementNode(assignExpr));
 		return results;
+	}
+
+	private ExpressionNode validArrayTypeCondition(ArrayTypeNode arrayTypeNode)
+			throws SyntaxException {
+		TypeNode elementType = arrayTypeNode;
+		ExpressionNode condition = null;
+		ExpressionNode zero = nodeFactory
+				.newIntegerConstantNode(arrayTypeNode.getSource(), "0");
+
+		while (elementType.kind() == TypeNodeKind.ARRAY) {
+			ArrayTypeNode arrayType = (ArrayTypeNode) elementType;
+			ExpressionNode extent = arrayType.getExtent();
+
+			if (extent != null) {
+				ExpressionNode greaterThanZero = nodeFactory.newOperatorNode(
+						extent.getSource(), Operator.LT, zero.copy(),
+						extent.copy());
+
+				if (condition == null)
+					condition = greaterThanZero;
+				else
+					condition = nodeFactory.newOperatorNode(extent.getSource(),
+							Operator.LAND, condition, greaterThanZero);
+			}
+			elementType = arrayType.getElementType();
+		}
+		return condition;
 	}
 
 	/**
@@ -3141,8 +3180,8 @@ public class ContractTransformerWorker extends BaseWorker {
 				this.identifierExpression(tmpResult.getName()), null);
 	}
 
-	private List<StatementNode> elaboratePid4Remote(ASTNode expr) {
-		List<StatementNode> result = new LinkedList<>();
+	private List<BlockItemNode> elaboratePid4Remote(ASTNode expr) {
+		List<BlockItemNode> result = new LinkedList<>();
 
 		if (expr instanceof RemoteOnExpressionNode) {
 			StatementNode stmt = elaboratePid4RemoteWork(
@@ -3153,7 +3192,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		}
 		for (ASTNode child : expr.children()) {
 			if (child != null) {
-				List<StatementNode> subResult = elaboratePid4Remote(child);
+				List<BlockItemNode> subResult = elaboratePid4Remote(child);
 
 				result.addAll(subResult);
 			}
@@ -3529,6 +3568,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	}
 
 	/* ****************** PROCESS ASSIGNS CLAUSE ***********************/
+
 	/**
 	 * For pointer type parameter and global pointer set P, the object pointed
 	 * by P can be either modified or freed.
@@ -3575,7 +3615,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ExpressionNode loc : conditionalClauses.getAssignsArgs()) {
 
 				loc.remove();
-				processAssignsArgumentNodeWorker(assigns, loc);
+				assigns.addAll(processAssignsArgument(loc));
 			}
 		}
 		if (!assigns.isEmpty()) {
@@ -3639,7 +3679,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		Source source = newSource("assigns ...", CivlcTokenConstant.CONTRACT);
 
 		for (ExpressionNode assignsArg : assignsArgs)
-			processAssignsArgumentNodeWorker(results, assignsArg);
+			results.addAll(processAssignsArgument(assignsArg));
 		if (condition == null || results.isEmpty())
 			return results;
 		else {
@@ -3658,119 +3698,248 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return
 	 * @throws SyntaxException
 	 */
-	private void processAssignsArgumentNodeWorker(List<BlockItemNode> output,
-			ExpressionNode arg) throws SyntaxException {
+	private List<BlockItemNode> processAssignsArgument(ExpressionNode arg)
+			throws SyntaxException {
+		List<BlockItemNode> results = new LinkedList<>();
+
+		if (arg.expressionKind() == ExpressionKind.MPI_CONTRACT_EXPRESSION) {
+			MPIContractExpressionNode mpiConcExpr = (MPIContractExpressionNode) arg;
+			ExpressionNode call;
+
+			assert mpiConcExpr
+					.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_REGION;
+			call = createMPIAssignsCalls(mpiConcExpr);
+			results.add(nodeFactory.newExpressionStatementNode(call));
+			return results;
+		} else {
+			// Other type:
+			Type argType = arg.getConvertedType();
+
+			argType = argType.kind() == TypeKind.MEMORY
+					? arg.getInitialType()
+					: argType;
+
+			TypeNode argTypeNode = typeNode(argType);
+			VariableDeclarationNode varDecl = nodeFactory
+					.newVariableDeclarationNode(arg.getSource(),
+							identifier(
+									TMP_ASSIGNS_PREFIX + (tmpAssignsCounter++)),
+							argTypeNode);
+
+			results.add(varDecl);
+			results.add(processAssignsArgumentWorker(new Stack<>(), arg,
+					(IdentifierExpressionNode) identifierExpression(
+							varDecl.getName())));
+		}
+		return results;
+	}
+
+	/**
+	 * Given an "assigns" argument a, an new object obj which has the same
+	 * structure as the argument and a container of {@link BlockItemNode}s which
+	 * will be inserted statements that represent assigning values from parts of
+	 * obj to a.
+	 * 
+	 * 
+	 * @param outputs
+	 * @param obj
+	 * @param arg
+	 * @return
+	 * @throws SyntaxException
+	 */
+	private BlockItemNode processAssignsArgumentWorker(
+			Stack<Pair<Operator, ExpressionNode>> parseStack,
+			ExpressionNode arg, IdentifierExpressionNode obj)
+			throws SyntaxException {
 		ExpressionKind kind = arg.expressionKind();
-		ExpressionNode call;
 
 		switch (kind) {
 			case OPERATOR : {
-				OperatorNode derefNode = (OperatorNode) arg;
-				Operator op = derefNode.getOperator();
+				OperatorNode opNode = (OperatorNode) arg;
+				Operator op = opNode.getOperator();
+				int numArgs = opNode.getNumberOfArguments();
+				Pair<Operator, ExpressionNode> stackEntry = new Pair<>(null,
+						null);
 
-				if (op == Operator.DEREFERENCE) {
-					// For any kind of arguments with the form *(ptr-expr), the
-					// assigns clause should be translated as $havoc(ptr-expr):
-					call = createHavocCall(derefNode.getArgument(0).copy());
-					output.add(nodeFactory.newExpressionStatementNode(call));
-				}
-				if (op == Operator.SUBSCRIPT) {
-					processAssignsSubscriptArgument(output, derefNode);
-				}
-				break;
-			}
-			case IDENTIFIER_EXPRESSION : {
-				call = createHavocCall(arg);
-				output.add(nodeFactory.newExpressionStatementNode(call));
-				break;
-			}
-			case MPI_CONTRACT_EXPRESSION : {
-				MPIContractExpressionNode mpiConcExpr = (MPIContractExpressionNode) arg;
+				stackEntry.left = op;
+				assert numArgs >= 1 && numArgs <= 2;
+				if (numArgs > 1) // binary operator
+					stackEntry.right = opNode.getArgument(1);
+				parseStack.push(stackEntry);
+				return processAssignsArgumentWorker(parseStack,
+						opNode.getArgument(0), obj);
 
-				assert mpiConcExpr
-						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_REGION;
-				call = createMPIAssignsCalls(mpiConcExpr);
-				output.add(nodeFactory.newExpressionStatementNode(call));
-				break;
 			}
+			case IDENTIFIER_EXPRESSION :
+				return createStatements4AssignsArgument(parseStack, arg, obj);
 			default :
 				throw new CIVLUnimplementedFeatureException(
-						"assigns clause with an argument: "
-								+ arg.prettyRepresentation());
+						"Parse un-supported assigns arguments.",
+						arg.getSource());
 		}
-
 	}
 
-	private void processAssignsSubscriptArgument(List<BlockItemNode> results,
-			OperatorNode subscript) throws SyntaxException {
-		ExpressionNode ptr = subscript.getArgument(0);
-		ExpressionNode index = subscript.getArgument(1);
+	private BlockItemNode createStatements4AssignsArgument(
+			Stack<Pair<Operator, ExpressionNode>> parseStack,
+			ExpressionNode arg, ExpressionNode objIdentifier)
+			throws SyntaxException {
+		ExpressionNode lhs, rhs;
+		CivlForNode stmt = null;
+		CivlForNode parent = null;
 
-		Type referedType = ((PointerType) ptr.getConvertedType())
-				.referencedType();
+		lhs = arg;
+		rhs = objIdentifier;
+		while (!parseStack.isEmpty()) {
+			Pair<Operator, ExpressionNode> entry = parseStack.pop();
+
+			switch (entry.left) {
+				case SUBSCRIPT : {
+					// For loop statement (if necessary), left-hand side,
+					// right-hand side:
+					Triple<CivlForNode, ExpressionNode, ExpressionNode> subscriptRet;
+
+					subscriptRet = createStatements4AssignsArgumentSCRIPT(
+							entry.right, lhs, rhs);
+					lhs = subscriptRet.middle;
+					rhs = subscriptRet.right;
+					// Dynamically construct nested for loop statements:
+					if (subscriptRet.left != null)
+						if (stmt == null) {
+							stmt = subscriptRet.left;
+							parent = stmt;
+						} else {
+							stmt.setChild(2, subscriptRet.left);
+							stmt = subscriptRet.left;
+						}
+					break;
+				}
+				default :
+					// do nothing
+			}
+		}
+
+		StatementNode assignment = nodeFactory.newExpressionStatementNode(
+				nodeFactory.newOperatorNode(lhs.getSource(), Operator.ASSIGN,
+						lhs, rhs));
+
+		if (stmt != null) {
+			stmt.setChild(2, assignment);
+			return parent;
+		} else
+			return assignment;
+	}
+
+	private Triple<CivlForNode, ExpressionNode, ExpressionNode> createStatements4AssignsArgumentSCRIPT(
+			ExpressionNode index, ExpressionNode lhs, ExpressionNode rhs)
+			throws SyntaxException {
+		ExpressionNode newLhs, newRhs;
+		Source idxSource = index.getSource();
+		CivlForNode forNode;
+
 		if (index.expressionKind() == ExpressionKind.REGULAR_RANGE) {
-			ExpressionNode oneNode = nodeFactory
-					.newIntegerConstantNode(index.getSource(), "1");
-			// For assigns a[low .. high]:
-			RegularRangeNode regRangeNode = (RegularRangeNode) index;
-			// int tmp0 = high;
-			// int tmp1 = low;
-			VariableDeclarationNode high = nodeFactory
-					.newVariableDeclarationNode(index.getSource(),
-							identifier(
-									TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
-							nodeFactory.newBasicTypeNode(index.getSource(),
-									BasicTypeKind.INT),
-							regRangeNode.getHigh().copy());
-			VariableDeclarationNode low = nodeFactory
-					.newVariableDeclarationNode(index.getSource(),
-							identifier(
-									TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
-							nodeFactory.newBasicTypeNode(index.getSource(),
-									BasicTypeKind.INT),
-							regRangeNode.getLow().copy());
-			// referedType heap[high - low + 1];
-			ExpressionNode extent = nodeFactory.newOperatorNode(
-					index.getSource(), Operator.PLUS,
-					nodeFactory.newOperatorNode(index.getSource(),
-							Operator.MINUS,
-							identifierExpression(high.getName()),
-							identifierExpression(low.getName())),
-					oneNode);
-			TypeNode referedTypeNode = typeNode(referedType);
-			TypeNode newHeapType = nodeFactory.newArrayTypeNode(ptr.getSource(),
-					referedTypeNode, extent);
-			VariableDeclarationNode newHeap = nodeFactory
-					.newVariableDeclarationNode(ptr.getSource(),
-							identifier(
-									TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
-							newHeapType);
-			// sizeof(referedType) * (high - low)
-			ExpressionNode totalSizeNode = nodeFactory
-					.newOperatorNode(ptr.getSource(), Operator.TIMES,
-							Arrays.asList(extent.copy(),
-									nodeFactory.newSizeofNode(index.getSource(),
-											referedTypeNode.copy())));
-			// &a[low]
-			ExpressionNode addressOfLow = nodeFactory.newOperatorNode(
-					index.getSource(), Operator.ADDRESSOF,
-					nodeFactory.newOperatorNode(index.getSource(),
-							Operator.SUBSCRIPT, Arrays.asList(ptr.copy(),
-									regRangeNode.getLow().copy())));
-			// memcpy(&a[low], heap, sizeof(referedType) * (high - low)) :
-			ExpressionNode memcpyCall = nodeFactory.newFunctionCallNode(
-					index.getSource(), identifierExpression(MEMCPY),
-					Arrays.asList(addressOfLow,
-							identifierExpression(newHeap.getName()),
-							totalSizeNode),
-					null);
+			VariableDeclarationNode loopIdDecl;
+			DeclarationListNode declList;
+			ExpressionNode idMinusLow;
+			ExpressionNode low = ((RegularRangeNode) index).getLow();
 
-			results.addAll(Arrays.asList(high, low, newHeap,
-					nodeFactory.newExpressionStatementNode(memcpyCall)));
+			loopIdDecl = nodeFactory.newVariableDeclarationNode(idxSource,
+					identifier(TMP_LOOP_PREFIX + tmpLoopCounter++),
+					nodeFactory.newBasicTypeNode(idxSource, BasicTypeKind.INT));
+			idMinusLow = nodeFactory.newOperatorNode(idxSource, Operator.MINUS,
+					identifierExpression(loopIdDecl.getName()), low.copy());
+			newLhs = nodeFactory.newOperatorNode(lhs.getSource(),
+					Operator.SUBSCRIPT, lhs.copy(),
+					identifierExpression(loopIdDecl.getName()));
+			newRhs = nodeFactory.newOperatorNode(rhs.getSource(),
+					Operator.SUBSCRIPT, rhs.copy(), idMinusLow);
+			declList = nodeFactory.newForLoopInitializerNode(idxSource,
+					Arrays.asList(loopIdDecl));
+			forNode = nodeFactory.newCivlForNode(idxSource, false, declList,
+					index.copy(), null, null); // body is child 2
 		} else {
-			ExpressionNode call = createHavocCall(subscript.copy());
+			ExpressionNode zero = nodeFactory.newIntegerConstantNode(idxSource,
+					"0");
 
-			results.add(nodeFactory.newExpressionStatementNode(call));
+			// Index is a integer type:
+			newLhs = nodeFactory.newOperatorNode(lhs.getSource(),
+					Operator.SUBSCRIPT, lhs.copy(), zero);
+			newRhs = nodeFactory.newOperatorNode(rhs.getSource(),
+					Operator.SUBSCRIPT, rhs.copy(), zero.copy());
+			forNode = null;
 		}
+		return new Triple<>(forNode, newLhs, newRhs);
 	}
+
+	// private void processAssignsSubscriptArgument(List<BlockItemNode> results,
+	// OperatorNode subscript) throws SyntaxException {
+	// ExpressionNode ptr = subscript.getArgument(0);
+	// ExpressionNode index = subscript.getArgument(1);
+	//
+	// Type referedType = ((PointerType) ptr.getConvertedType())
+	// .referencedType();
+	// if (index.expressionKind() == ExpressionKind.REGULAR_RANGE) {
+	// ExpressionNode oneNode = nodeFactory
+	// .newIntegerConstantNode(index.getSource(), "1");
+	// // For assigns a[low .. high]:
+	// RegularRangeNode regRangeNode = (RegularRangeNode) index;
+	// // int tmp0 = high;
+	// // int tmp1 = low;
+	// VariableDeclarationNode high = nodeFactory
+	// .newVariableDeclarationNode(index.getSource(),
+	// identifier(
+	// TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
+	// nodeFactory.newBasicTypeNode(index.getSource(),
+	// BasicTypeKind.INT),
+	// regRangeNode.getHigh().copy());
+	// VariableDeclarationNode low = nodeFactory
+	// .newVariableDeclarationNode(index.getSource(),
+	// identifier(
+	// TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
+	// nodeFactory.newBasicTypeNode(index.getSource(),
+	// BasicTypeKind.INT),
+	// regRangeNode.getLow().copy());
+	// // referedType heap[high - low + 1];
+	// ExpressionNode extent = nodeFactory.newOperatorNode(
+	// index.getSource(), Operator.PLUS,
+	// nodeFactory.newOperatorNode(index.getSource(),
+	// Operator.MINUS,
+	// identifierExpression(high.getName()),
+	// identifierExpression(low.getName())),
+	// oneNode);
+	// TypeNode referedTypeNode = typeNode(referedType);
+	// TypeNode newHeapType = nodeFactory.newArrayTypeNode(ptr.getSource(),
+	// referedTypeNode, extent);
+	// VariableDeclarationNode newHeap = nodeFactory
+	// .newVariableDeclarationNode(ptr.getSource(),
+	// identifier(
+	// TMP_ASSIGNS_PREFIX + tmpAssignsCounter++),
+	// newHeapType);
+	// // sizeof(referedType) * (high - low)
+	// ExpressionNode totalSizeNode = nodeFactory
+	// .newOperatorNode(ptr.getSource(), Operator.TIMES,
+	// Arrays.asList(extent.copy(),
+	// nodeFactory.newSizeofNode(index.getSource(),
+	// referedTypeNode.copy())));
+	// // &a[low]
+	// ExpressionNode addressOfLow = nodeFactory.newOperatorNode(
+	// index.getSource(), Operator.ADDRESSOF,
+	// nodeFactory.newOperatorNode(index.getSource(),
+	// Operator.SUBSCRIPT, Arrays.asList(ptr.copy(),
+	// regRangeNode.getLow().copy())));
+	// // memcpy(&a[low], heap, sizeof(referedType) * (high - low)) :
+	// ExpressionNode memcpyCall = nodeFactory.newFunctionCallNode(
+	// index.getSource(), identifierExpression(MEMCPY),
+	// Arrays.asList(addressOfLow,
+	// identifierExpression(newHeap.getName()),
+	// totalSizeNode),
+	// null);
+	//
+	// results.addAll(Arrays.asList(high, low, newHeap,
+	// nodeFactory.newExpressionStatementNode(memcpyCall)));
+	// } else {
+	// ExpressionNode call = createHavocCall(subscript.copy());
+	//
+	// results.add(nodeFactory.newExpressionStatementNode(call));
+	// }
+	// }
 }
