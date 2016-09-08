@@ -48,6 +48,11 @@ public class ReasoningTest {
 	public void unsatClause2() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("unsatClause2.c")));
 	}
+	
+	@Test
+	public void quantified() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("quantified.cvl")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
