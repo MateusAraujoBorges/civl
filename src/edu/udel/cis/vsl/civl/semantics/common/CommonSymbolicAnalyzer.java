@@ -2751,7 +2751,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 								universe.unionExtract(index, targetValue),
 								universe.trueExpression(), ResultType.YES);
 				}
-			} else {
+			} else { 
 				// offset reference
 				return new Triple<>(null, universe.trueExpression(),
 						ResultType.YES);
