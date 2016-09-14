@@ -170,7 +170,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public ReferenceExpression getMemBaseReference(State state,
+	public ReferenceExpression getLeafNodeReference(State state,
 			SymbolicExpression pointer, CIVLSource source) {
 		CIVLType objType;
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);

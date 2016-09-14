@@ -821,7 +821,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		NumericExpression result = sizeofDynamicMap.get(type);
 
 		if (result == null) {
-
 			if (type.isBoolean())
 				result = typeFactory.booleanType().getSizeof();
 			else if (type == typeFactory.dynamicSymbolicType())

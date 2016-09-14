@@ -4417,7 +4417,7 @@ public class CommonEvaluator implements Evaluator {
 			boolean ifCheckOutput, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression newPtr = symbolicUtil.makePointer(ptr,
-				symbolicAnalyzer.getMemBaseReference(state, ptr, source));
+				symbolicAnalyzer.getLeafNodeReference(state, ptr, source));
 
 		return this.pointerAddWorker(state, process, newPtr, offset,
 				ifCheckOutput, source);
@@ -4662,7 +4662,7 @@ public class CommonEvaluator implements Evaluator {
 				(SymbolicCompleteArrayType) eval.value.type());
 		sliceSizes = symbolicUtil.arraySlicesSizes(coordinateSizes);
 		dim = coordinateSizes.length;
-		oldRef = symbolicAnalyzer.getMemBaseReference(state, pointer, source);
+		oldRef = symbolicAnalyzer.getLeafNodeReference(state, pointer, source);
 		assert oldRef.isArrayElementReference();
 		oldIndices = symbolicUtil
 				.stripIndicesFromReference((ArrayElementReference) oldRef);

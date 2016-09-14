@@ -15,8 +15,8 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType.TypeKind;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -33,6 +33,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression.ReferenceKind;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
@@ -674,7 +675,7 @@ public abstract class LibraryComponent {
 		}
 		dim = arraySlicesSizes.length;
 		// "startPtr" may not point to a memory base type object yet
-		symref = symbolicAnalyzer.getMemBaseReference(state, startPtr, source);
+		symref = symbolicAnalyzer.getLeafNodeReference(state, startPtr, source);
 		startPtr = symbolicUtil.makePointer(startPtr, symref);
 		startPos = zero;
 		if (symref.isArrayElementReference()) {
@@ -739,81 +740,143 @@ public abstract class LibraryComponent {
 			Expression pointerExpr, SymbolicExpression pointer,
 			NumericExpression count, boolean toBase, boolean checkOutput,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
-		NumericExpression[] arraySlicesSizes;
-		NumericExpression startPos;
-		SymbolicExpression startPtr, endPtr;
-		SymbolicExpression commonArray;
 		ReferenceExpression symref;
 		Evaluation eval;
-		int dim;
-		Pair<Evaluation, NumericExpression[]> pointer_and_slices;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		CIVLPointerType ptrType = (CIVLPointerType) pointerExpr
-				.getExpressionType();
-		CIVLType referencedType = ptrType.baseType();
-		TypeEvaluation teval = evaluator.getDynamicType(state, pid,
-				referencedType, source, true);
 
-		state = teval.state;
-		// If "count" == 0:
-		if (reasoner.isValid(universe.equals(count, zero))) {
-			return new Evaluation(state, universe.nullExpression());
-		}
 		// If "count" == 1:
 		if (reasoner.isValid(universe.equals(count, one))) {
 			eval = evaluator.dereference(source, state, process, pointerExpr,
 					pointer, true);
+			if (eval.value.isNull())
+				reportUndefinedValueError(state, pid,
+						symbolicUtil.getSymRef(pointer).isIdentityReference(),
+						pointerExpr);
 			eval.value = universe.array(eval.value.type(),
 					Arrays.asList(eval.value));
 			eval.value = arrayFlatten(state, process, eval.value, source);
 			return eval;
 		}
-		// Else "count" > 1 :
-		startPtr = pointer;
-		pointer_and_slices = evaluator.evaluatePointerAdd(state, process,
-				startPtr, count, false, source);
-		arraySlicesSizes = pointer_and_slices.right;
-		eval = pointer_and_slices.left;
-		endPtr = eval.value;
-		// If the pointer addition happens to be done within one dimensional
-		// space, the "arraySlicesSizes" is null and we don't really need it.
-		if (arraySlicesSizes == null) {
-			arraySlicesSizes = new NumericExpression[1];
-			arraySlicesSizes[0] = one;
-		}
-		// startPtr may not be the memory base type reference form yet
-		if (toBase) {
-			symref = symbolicAnalyzer.getMemBaseReference(state, startPtr,
-					source);
-			startPtr = symbolicUtil.makePointer(startPtr, symref);
-		} else
-			symref = symbolicUtil.getSymRef(startPtr);
-		startPos = zero;
-		if (symref.isArrayElementReference()) {
-			NumericExpression[] startPtrIndices = symbolicUtil
-					.stripIndicesFromReference((ArrayElementReference) symref);
-			int numIndices = startPtrIndices.length;
+		// Else "count" > 1:
+		SymbolicExpression rootPointer, rootArray;
+		List<NumericExpression> indicesList = new LinkedList<>();
+		NumericExpression indices[];
+		boolean isHeap = symbolicUtil.isHeapPointer(pointer);
 
-			dim = arraySlicesSizes.length;
-			for (int i = 1; !startPtr.equals(endPtr); i++) {
-				startPtr = symbolicUtil.parentPointer(source, startPtr);
-				endPtr = symbolicUtil.parentPointer((CIVLSource) null, endPtr);
-				startPos = universe.add(startPos,
-						universe.multiply(startPtrIndices[numIndices - i],
-								arraySlicesSizes[dim - i]));
-			}
+		symref = symbolicUtil.getSymRef(pointer);
+		while (symref.isArrayElementReference()) {
+			indicesList.add(((ArrayElementReference) symref).getIndex());
+			symref = ((ArrayElementReference) symref).getParent();
+			// Special handling for memory heap:
+			if (isHeap)
+				break;
 		}
+		rootPointer = symbolicUtil.makePointer(pointer, symref);
 		eval = evaluator.dereference(source, state, process, pointerExpr,
-				startPtr, true);
+				rootPointer, false);
 		state = eval.state;
-		commonArray = eval.value;
-		if (commonArray.type().typeKind() == SymbolicTypeKind.ARRAY)
-			eval.value = getDataBetween(state, process, startPos, count,
-					commonArray, arraySlicesSizes, source);
-		else
-			reportOutOfBoundError(state, process, null, null, startPtr, one,
-					count, source);
+		rootArray = eval.value;
+		if (rootArray.isNull())
+			reportUndefinedValueError(state, pid,
+					symbolicUtil.getSymRef(pointer).isIdentityReference(),
+					pointerExpr);
+		indices = new NumericExpression[indicesList.size()];
+		indicesList.toArray(indices);
+		// reverse so that the order satisfies the requirements of the denseRead
+		// method:
+		for (int i = indices.length / 2; i >= 0; i--) {
+			NumericExpression tmp = indices[i];
+			indices[i] = indices[indices.length - i - 1];
+			indices[indices.length - i - 1] = tmp;
+		}
+		eval.value = denseRead(state, pid, rootArray, indices, count, source);
 		return eval;
+	}
+
+	/**
+	 * <p>
+	 * Report an attempt to read undefined (or uninitialized) object error
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state when calling this method
+	 * @param pid
+	 *            The PID of the process who calls this method
+	 * @param isVariable
+	 *            If the object is an variable
+	 * @param expression
+	 *            The expression associates to this error. Error reporting will
+	 *            be on the {@link CIVLSource} of this expression.
+	 * @throws UnsatisfiablePathConditionException
+	 *             always.
+	 */
+	public void reportUndefinedValueError(State state, int pid,
+			boolean isVariable, Expression expression)
+			throws UnsatisfiablePathConditionException {
+		String kind = "undefined";
+		String process = state.getProcessState(pid).name();
+
+		if (isVariable)
+			kind = "uninitialized";
+		errorLogger.logSimpleError(expression.getSource(), state, process,
+				symbolicAnalyzer.stateInformation(state),
+				ErrorKind.UNDEFINED_VALUE,
+				"Attempt to read an object with " + kind + " value");
+	}
+
+	/**
+	 * <p>
+	 * <b>Pre-condition:</b> <br>
+	 * 1. The dimensions of the array must equel to "indices.length"; <br>
+	 * 2. Values in "indices" array are ordered from left to right as same as
+	 * subscript order. (e.g. A[a][b][c] ==> {a,b,c})
+	 * </p>
+	 * 
+	 * <p>
+	 * <b> Spec: </b> Given a group of indices I, an array a and a number c.
+	 * Read c consequent elements start from a[I].
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state when calling this method
+	 * @param pid
+	 *            The PID of the current process
+	 * @param arrayType
+	 *            The {@link CIVLType} of the array
+	 * @param array
+	 *            The array that will be read
+	 * @param indices
+	 *            The start indices of the element in the array.
+	 * @param count
+	 *            The number of elements will be read
+	 * @param source
+	 *            The {@link CIVLSource} associates to this method call.
+	 * @return A sequence of elements (A one dimensional array)
+	 * @throws UnsatisfiablePathConditionException
+	 *             When array out of bound happens.
+	 */
+	private SymbolicExpression denseRead(State state, int pid,
+			SymbolicExpression array, NumericExpression indices[],
+			NumericExpression count, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		SymbolicCompleteArrayType dyArrayType;
+		NumericExpression pos = zero;
+		SymbolicExpression flattenArray;
+		String process = state.getProcessState(pid).name();
+
+		assert array.type().typeKind() == SymbolicTypeKind.ARRAY
+				&& ((SymbolicArrayType) array.type()).isComplete();
+		dyArrayType = (SymbolicCompleteArrayType) array.type();
+		assert dyArrayType.dimensions() == indices.length;
+		for (int i = 0; i < indices.length - 1; i++) {
+			dyArrayType = (SymbolicCompleteArrayType) dyArrayType.elementType();
+			pos = universe.multiply(dyArrayType.extent(),
+					universe.add(pos, indices[i]));
+		}
+		pos = universe.add(pos, indices[indices.length - 1]);
+		flattenArray = arrayFlatten(state, process, array, source);
+		return symbolicAnalyzer.getSubArray(flattenArray, pos,
+				universe.add(pos, count), state, process, source);
 	}
 
 	/**
@@ -1093,51 +1156,53 @@ public abstract class LibraryComponent {
 		return new Evaluation(state, flattenArray);
 	}
 
-	/**
-	 * pre-condition:
-	 * <ol>
-	 * <li>endPos - startPos > 0</li>
-	 * <li>array has {@link SymbolicCompleteArrayType}</li>
-	 * <li>arraySlicesSize[0] >= endPos - startPos</li>
-	 * </ol>
-	 * post_condition:
-	 * <ol>
-	 * <li>Return a sequence of data with length "count" from the pointed object
-	 * starting from the pointed position</li>
-	 * </ol>
-	 * Get sequence of data between two array element references. Returns the
-	 * sequence of data which is in form of an one dimensional array.
-	 * 
-	 * @author Ziqing Luo
-	 * @param state
-	 *            The current state
-	 * @param process
-	 *            The information of the process
-	 * @param startPtr
-	 *            The pointer to the start position
-	 * @param endPtr
-	 *            The pointer to the end position
-	 * @param arrayElementsSizes
-	 *            same as the same argument in {@link #setDataBetween(State,
-	 *            String, SymbolicExpression, SymbolicExpression,
-	 *            SymbolicExpression, Map<Integer, NumericExpression>,
-	 *            CIVLSource)}
-	 * @param source
-	 *            The CIVL source of start pointer.
-	 * @return a sequence of data which is in form of an one dimensional array.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private SymbolicExpression getDataBetween(State state, String process,
-			NumericExpression startPos, NumericExpression count,
-			SymbolicExpression array, NumericExpression[] arraySlicesSizes,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		SymbolicExpression flattenArray;
-
-		// TODO: getSubArray not support non-concrete length
-		flattenArray = arrayFlatten(state, process, array, source);
-		return symbolicAnalyzer.getSubArray(flattenArray, startPos,
-				universe.add(startPos, count), state, process, source);
-	}
+	// /**
+	// * pre-condition:
+	// * <ol>
+	// * <li>endPos - startPos > 0</li>
+	// * <li>array has {@link SymbolicCompleteArrayType}</li>
+	// * <li>arraySlicesSize[0] >= endPos - startPos</li>
+	// * </ol>
+	// * post_condition:
+	// * <ol>
+	// * <li>Return a sequence of data with length "count" from the pointed
+	// object
+	// * starting from the pointed position</li>
+	// * </ol>
+	// * Get sequence of data between two array element references. Returns the
+	// * sequence of data which is in form of an one dimensional array.
+	// *
+	// * @author Ziqing Luo
+	// * @param state
+	// * The current state
+	// * @param process
+	// * The information of the process
+	// * @param startPtr
+	// * The pointer to the start position
+	// * @param endPtr
+	// * The pointer to the end position
+	// * @param arrayElementsSizes
+	// * same as the same argument in {@link #setDataBetween(State,
+	// * String, SymbolicExpression, SymbolicExpression,
+	// * SymbolicExpression, Map<Integer, NumericExpression>,
+	// * CIVLSource)}
+	// * @param source
+	// * The CIVL source of start pointer.
+	// * @return a sequence of data which is in form of an one dimensional
+	// array.
+	// * @throws UnsatisfiablePathConditionException
+	// */
+	// private SymbolicExpression getDataBetween(State state, String process,
+	// NumericExpression startPos, NumericExpression count,
+	// SymbolicExpression array, NumericExpression[] arraySlicesSizes,
+	// CIVLSource source) throws UnsatisfiablePathConditionException {
+	// SymbolicExpression flattenArray;
+	//
+	// // TODO: getSubArray not support non-concrete length
+	// flattenArray = arrayFlatten(state, process, array, source);
+	// return symbolicAnalyzer.getSubArray(flattenArray, startPos,
+	// universe.add(startPos, count), state, process, source);
+	// }
 
 	/**
 	 * Recursively flatten the given array. Only can be used on arrays have
@@ -1304,4 +1369,203 @@ public abstract class LibraryComponent {
 		throw new UnsatisfiablePathConditionException();
 	}
 
+	/**
+	 * TODO: Once sizeof (struct/union type) can be represented more precisely,
+	 * what should we do for this method ? It will be more easier to compare
+	 * size and sizeofObj. May not need typingDown/Up any more, the comparion of
+	 * size and sizeofObj should indicate the structure.
+	 * 
+	 * 
+	 * <p>
+	 * <b>Pre:</b><br>
+	 * 1. pointer must be valid (in the ACSL term of valid); <br>
+	 * 2. size > 0.
+	 * </p>
+	 * <p>
+	 * <b>Spec:</b> A sequence of objects in memory in C language can be
+	 * represented as the form <code>objs (p, s)</code> where p is a pointer
+	 * (base address) and s is the total size (in bytes) of the object sequence.
+	 * Returns the same sequence of objects in another form
+	 * <code> objs' (p', c) </code> where <code>
+	 * (void *) p' == (void *) p
+	 * &&
+	 * sizeof( typeof (*p') ) * c == s
+	 * </code>
+	 * 
+	 * Or returns a pair of nulls when cannot find such a pair of p' and c.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state when calling this method.
+	 * @param pid
+	 *            The PID of the calling process
+	 * @param pointer
+	 *            The {@link SymbolicExpression} of the pointer
+	 * @param size
+	 *            The size of the sequence of objects represents by 'pointer'
+	 *            and 'size' togather.
+	 * @param source
+	 *            The {@link CIVLSource} associates to this call.
+	 * @return A {@link Pair} of pointer and count
+	 * @throws UnsatisfiablePathConditionException
+	 *             when problems happen in
+	 *             {@link Evaluator#getDynamicType(State, int, CIVLType, CIVLSource, boolean)}
+	 */
+	public Pair<SymbolicExpression, NumericExpression> pointerTyping(
+			State state, int pid, SymbolicExpression pointer,
+			NumericExpression size, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		CIVLType objType;
+		TypeEvaluation teval;
+		SymbolicExpression newPointer;
+		NumericExpression sizeofObj;
+		BooleanExpression query;
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		ResultType resultType;
+		// Termination:
+		boolean term = false;
+		// Flag: keep searching down to the end, then turns to false:
+		boolean keepDown = true;
+
+		newPointer = pointer;
+		// while loop : change from recursion to loop:
+		while (!term) {
+			// update sizeofObj:
+			objType = symbolicAnalyzer.typeOfObjByPointer(source, state,
+					newPointer);
+			teval = evaluator.getDynamicType(state, pid, objType, source,
+					false);
+			sizeofObj = symbolicUtil.sizeof(source, objType, teval.type);
+			state = teval.state;
+			// Case 1: sizeof(obj(pointer)) > size:
+			query = universe.lessThan(size, sizeofObj);
+			resultType = reasoner.valid(query).getResultType();
+			if (resultType == ResultType.YES) {
+				newPointer = typingDown(newPointer, objType);
+				if (newPointer != null)
+					continue;
+				else
+					return new Pair<>(null, null);
+			}
+			// Case 2: sizeof(obj(pointer)) <= size:
+			query = universe.lessThanEquals(sizeofObj, size);
+			resultType = reasoner.valid(query).getResultType();
+			if (resultType == ResultType.YES) {
+				query = universe.equals(zero, universe.modulo(size, sizeofObj));
+				resultType = reasoner.valid(query).getResultType();
+				if (resultType == ResultType.YES)
+					return new Pair<>(newPointer,
+							universe.divide(size, sizeofObj));
+			}
+			// Case 3: UNKNOWN:
+			if (keepDown) {
+				newPointer = typingDown(newPointer, objType);
+				if (newPointer != null)
+					continue;
+			}
+			// searching down ends here.
+			// upward searching starts from 'pointer' since newPointer may be
+			// polluted by 'typingDown()':
+			if (keepDown)
+				newPointer = pointer;
+			keepDown = false;
+			newPointer = typingUp(newPointer, source);
+			if (newPointer != null)
+				continue;
+			term = true;
+		}
+		return new Pair<>(null, null);
+	}
+
+	/**
+	 * <p>
+	 * <b>Type tree:</b>T Suppose there is an object o in memory, the type
+	 * structure of the object can be represented as a type tree t: A node can
+	 * have multiple children. For a node n, denotes a child of n as child(n, i)
+	 * where i is the index of the child. If n represents a sturct/union type,
+	 * i-th child represents the type of the i-th field of n; if n represents an
+	 * array type, i-th child represents the type of the i-th element of n. Only
+	 * Leaf nodes represent scalar types.
+	 * </p>
+	 * <p>
+	 * <b>Spec:</b>This method requires a valid pointer p and the type t of the
+	 * object pointed by p. Returns a new pointer p' such that <br>
+	 * <code> (void *)p' == (void *)p </code>.<br>
+	 * && the type t' of the object pointed by p' must be a sub-tree of t.<br>
+	 * && root(t') is 0-th child of root(t).
+	 * </p>
+	 * 
+	 * @param pointer
+	 *            {@link SymbolicExpression} of A valid pointer
+	 * @param objType
+	 *            The {@link CIVLType} of the object pointed by the pointer.
+	 * @return A new pointer p' or null if the objType is already a scalar type.
+	 */
+	private SymbolicExpression typingDown(SymbolicExpression pointer,
+			CIVLType objType) {
+		TypeKind kind = objType.typeKind();
+		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
+
+		switch (kind) {
+			case ARRAY :
+			case COMPLETE_ARRAY :
+				ref = universe.arrayElementReference(ref, zero);
+				return symbolicUtil.setSymRef(pointer, ref);
+			case STRUCT_OR_UNION :
+				ref = universe.tupleComponentReference(ref, zeroObject);
+				return symbolicUtil.setSymRef(pointer, ref);
+			default :
+				return null;
+		}
+	}
+
+	/**
+	 * <p>
+	 * <b>type tree:</b> see {@link #typingDown(SymbolicExpression, CIVLType)}.
+	 * </p>
+	 * <p>
+	 * <b>Spec:</b> This method requires a valid pointer p and the type t of the
+	 * object pointed by p. Returns a new pointer p' such that <br>
+	 * <code> (void *)p' == (void *)p </code>.<br>
+	 * && t must be a sub-tree of the type t' of the object pointed by p'.<br>
+	 * && root(t) is 0-th child of root(t').
+	 * </p>
+	 * 
+	 * @param pointer
+	 *            {@link SymbolicExpression} of A valid pointer.
+	 * @param source
+	 *            The {@link CIVLSource} associates to this method call.
+	 * @return A new pointer p' or null if no parent node can be found for the
+	 *         type of the object pointed by 'pointer'.
+	 */
+	private SymbolicExpression typingUp(SymbolicExpression pointer,
+			CIVLSource source) {
+		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
+		ReferenceKind kind = ref.referenceKind();
+
+		// Contraint: memory heap structure: a tuple of 2d-arrays. Thus, if
+		// pointer points to heap locations, the ReferenceExpression of the
+		// returned pointer p'must starts with a
+		// tupleComponentRef(ArrayElementRef i), j):
+		if (symbolicUtil.isHeapPointer(pointer)) {
+			if (ref.isArrayElementReference()) {
+				ref = symbolicUtil
+						.getSymRef(symbolicUtil.parentPointer(source, pointer));
+				if (ref.isTupleComponentReference()) {
+					ref = symbolicUtil.getSymRef(
+							symbolicUtil.parentPointer(source, pointer));
+					if (ref.isIdentityReference())
+						return null;
+				}
+			}
+		}
+		switch (kind) {
+			case ARRAY_ELEMENT :
+			case TUPLE_COMPONENT :
+			case UNION_MEMBER :
+				return symbolicUtil.parentPointer(source, pointer);
+			default :
+				return null;
+		}
+	}
 }

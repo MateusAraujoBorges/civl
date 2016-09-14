@@ -551,7 +551,7 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 			NumericExpression mpiDatatype, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		ReferenceExpression baseRef = symbolicAnalyzer
-				.getMemBaseReference(state, ptr, source);
+				.getLeafNodeReference(state, ptr, source);
 		SymbolicExpression basePtr = symbolicUtil.makePointer(ptr, baseRef);
 		CIVLType leafNodeType = symbolicAnalyzer.typeOfObjByPointer(source,
 				state, basePtr);

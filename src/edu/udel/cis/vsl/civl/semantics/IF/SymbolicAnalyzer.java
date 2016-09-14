@@ -98,7 +98,8 @@ public interface SymbolicAnalyzer {
 	 * The representation of <code>p</code> would be <code>&a&lt;d0></code>
 	 * assuming that the name of the dynamic scope of <code>a</code> is
 	 * <code>d0</code>.</li>
-	 * <li>an element of an array: <code>&array&lt;dyscope name>[index]</code>;<br>
+	 * <li>an element of an array: <code>&array&lt;dyscope name>[index]</code>;
+	 * <br>
 	 * e.g.,
 	 * 
 	 * <pre>
@@ -173,18 +174,11 @@ public interface SymbolicAnalyzer {
 			SymbolicExpression arrayPtr);
 
 	/**
-	 * 
-	 * pre-condition:
-	 * <ol>
-	 * <li>"source" is the @{link CIVLSource} of the pointer expression</li>
-	 * </ol>
-	 * post-condition:
-	 * <ol>
-	 * <li>the returned object cannot be null</li>
-	 * </ol>
-	 * Returns the {@link ReferenceExpression} directly to the object which has
-	 * the physical base type of the pointed array (or object) residing in
-	 * memory. <br>
+	 * <p>
+	 * <b>Spec:</b> Returns a {@link ReferenceExpression} object which directly
+	 * refer to the object which has the physical base type of the pointed array
+	 * (or object) residing in memory.
+	 * </p>
 	 * Note: The "physical base type" means the base type of the a physical
 	 * sequence of objects in memory space. For example: <code> 
 	 * int ** a; 
@@ -206,7 +200,7 @@ public interface SymbolicAnalyzer {
 	 * @return The Reference to the object that has physical base type
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	ReferenceExpression getMemBaseReference(State state,
+	ReferenceExpression getLeafNodeReference(State state,
 			SymbolicExpression pointer, CIVLSource source);
 
 	/**

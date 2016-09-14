@@ -6,8 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
-import org.junit.Test;
-
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 
@@ -25,68 +23,68 @@ public class ContractsTest {
 	}
 
 	/* **************************** Test Methods *************************** */
-	@Test
+	@Ignore
 	public void with() {
 		assertTrue(ui.run("verify", QUIET, filename("with.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void with2() {
 		assertTrue(ui.run("verify", QUIET, filename("with2.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void with3() {
 		assertTrue(ui.run("verify", QUIET, filename("with3.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void update() {
 		assertTrue(ui.run("verify", QUIET, filename("update.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void update2() {
 		assertTrue(ui.run("verify", QUIET, filename("update2.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void guardSE() {
 		assertTrue(ui.run("show -showProgram", QUIET,
 				filename("contractsMPI/simpleGuard.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void mpiAgree() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
 				QUIET, filename("contractsMPI/simpleMpiAgree.c")));
 	}
 
-	@Test
+	@Ignore
 	public void mpiRegion() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
 				QUIET, filename("contractsMPI/simpleMpiRegion.c")));
 	}
 
-	@Test
+	@Ignore
 	public void mpiOffset() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
 				QUIET, filename("contractsMPI/simpleMpiOffset.c")));
 	}
 
-	@Test
+	@Ignore
 	public void mpiValid() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=target",
 				QUIET, filename("contractsMPI/simpleMpiValid.c")));
 	}
 
-	@Test
+	@Ignore
 	public void mpiValid2() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=5 -mpiContract=target",
 				QUIET, filename("contractsMPI/simpleMpiValid2.c")));
 	}
 
-	@Test
+	@Ignore
 	public void bcast() {
 		assertTrue(ui.run(
 				"verify -input_mpi_nprocs=2 -showProgram "
@@ -94,7 +92,7 @@ public class ContractsTest {
 				filename("contractsMPI/broadcast.c")));
 	}
 
-	@Test
+	@Ignore
 	public void bcast_bad() {
 		assertFalse(ui.run(
 				"verify -input_mpi_nprocs=2 -showProgram "
@@ -102,25 +100,25 @@ public class ContractsTest {
 				filename("contractsMPI/broadcast_bad.c")));
 	}
 
-	@Test
+	@Ignore
 	public void bcast_order() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=broadcast",
 				filename("contractsMPI/broadcast_order.c")));
 	}
 
-	@Test
+	@Ignore
 	public void gather() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
 				filename("contractsMPI/gather.c")));
 	}
 
-	@Test
+	@Ignore
 	public void gatherBad() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=2 -mpiContract=gather",
 				filename("contractsMPI/gather_bad.c")));
 	}
 
-	@Test
+	@Ignore
 	public void allgather() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=allgather",
 				filename("contractsMPI/allgather.c")));
@@ -130,75 +128,75 @@ public class ContractsTest {
 				filename("contractsMPI/allgather.c")));
 	}
 
-	@Test
+	@Ignore
 	public void scatter() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
 				filename("contractsMPI/scatter.c")));
 	}
 
-	@Test
+	@Ignore
 	public void scatter_bad() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=2 -mpiContract=scatter",
 				filename("contractsMPI/scatter_bad.c")));
 	}
 
-	@Test
+	@Ignore
 	public void reduce_sum() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=reduce_sum",
 				filename("contractsMPI/reduce_sum.c")));
 	}
 
-	@Test
+	@Ignore
 	public void wildcardError() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=3 -mpiContract=wildcard",
 				filename("contractsMPI/wildcard-error.c")));
 	}
 
-	@Test
+	@Ignore
 	public void wildcardGood() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=wildcard",
 				filename("contractsMPI/wildcard-good.c")));
 	}
 
-	@Test
+	@Ignore
 	public void diffusion1dIterDev() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
 				filename("contractsMPI/diffusion1d_dev.c")));
 	}
 
-	@Test
+	@Ignore
 	public void diffusion1dDevUpdateBad() {
 		// update is bad when it is called by "diff1dIter"
 		assertFalse(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
 				filename("contractsMPI/diffusion1d_dev-bad-update.c")));
 	}
 
-	@Test
+	@Ignore
 	public void diffusion1dIter() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
 				filename("contractsMPI/diffusion1d.c")));
 	}
 
-	@Test
+	@Ignore
 	public void diffusion1dIterBad() {
 		assertFalse(ui.run("verify -input_mpi_nprocs=2 -mpiContract=diff1dIter",
 				filename("contractsMPI/diffusion1d-bad-diffIter.c")));
 	}
 
-	@Test
+	@Ignore
 	public void diffusion1dUpdate() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=update",
 				filename("contractsMPI/diffusion1d.c")));
 	}
 
-	@Test
+	@Ignore
 	public void diffusion1dExchange() {
 		assertTrue(
 				ui.run("verify -input_mpi_nprocs=2 -mpiContract=exchange_ghost_cells",
 						filename("contractsMPI/diffusion1d.c")));
 	}
 
-	@Test
+	@Ignore
 	public void diffusion2d() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=2 -mpiContract=exchange",
 				filename("contractsMPI/diffusion2d.c")));
@@ -214,13 +212,13 @@ public class ContractsTest {
 				filename("contractsMPI/diffusion2d_dev2.c")));
 	}
 
-	@Test
+	@Ignore
 	public void quantifiedRemote() {
 		assertTrue(ui.run("show -mpiContract=foo",
 				filename("contractsMPI/quantifiedRemote.c")));
 	}
 
-	@Test
+	@Ignore
 	public void gj_elim() {
 		assertTrue(ui.run(
 				"verify -input_mpi_nprocs=2 -mpiContract=backwardReduce",
@@ -230,14 +228,14 @@ public class ContractsTest {
 				filename("contractsMPI/gaussJordan_elimination_mpi.c")));
 	}
 
-	@Test
+	@Ignore
 	public void madre() {
 		assertTrue(
 				ui.run("verify -input_mpi_nprocs=2 -mpiContract=computeDirectMoves",
 						filename("contractsMPI/madre_computeDirectMoves.c")));
 	}
 
-	@Test // extendQuant
+	@Ignore // extendQuant
 	public void extendQuant() {
 		assertTrue(
 				ui.run("verify -showProgram=false -showTransitions=false -mpiContract=f ",

@@ -4,14 +4,12 @@
 
 int nprocs;
 int myrank;
-
+#define NULL ((void*)0)
 void main() {
-    int argc;
-    char **argv;
-    double x;
+    double x = 0;
     MPI_Status status;
-    
-    MPI_Init(&argc, &argv);
+
+    MPI_Init(NULL, NULL);
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     if (myrank == 0) {
         MPI_Send(&x, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);

@@ -8,8 +8,6 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
-import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
@@ -21,10 +19,12 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
+import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -219,89 +219,54 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression pointer = argumentValues[0];
 		NumericExpression size = (NumericExpression) argumentValues[1];
-		NumericExpression count = null;
-		SymbolicType elementType;
 		SymbolicUnionType symbolicBundleType;
-		SymbolicExpression arrayInBundle = null;
+		SymbolicExpression bundleContent = null;
 		SymbolicExpression bundle = null;
 		IntObject elementTypeIndexObj;
 		Evaluation eval;
 		int elementTypeIndex;
 		CIVLBundleType bundleType = this.typeFactory.bundleType();
+		BooleanExpression isPtrValid, isSizeGTZ;
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 
-		if (pointer.operator() != SymbolicOperator.TUPLE) {
-			errorLogger.logSimpleError(arguments[1].getSource(), state, process,
-					this.symbolicAnalyzer.stateInformation(state),
-					ErrorKind.POINTER,
-					"attempt to read/write a invalid pointer type variable");
+		// requires : pointer is valid:
+		isPtrValid = symbolicAnalyzer.isDerefablePointer(state, pointer).left;
+		// requires : size > 0:
+		isSizeGTZ = universe.lessThan(zero, size);
+		if (isPtrValid.isFalse() || reasoner.valid(isPtrValid)
+				.getResultType() != ResultType.YES) {
+			errorLogger.logSimpleError(arguments[0].getSource(), state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
+					"Attempt to read/write a invalid pointer type variable.");
 			throw new UnsatisfiablePathConditionException();
 		}
-		if (pointer.type().typeKind() != SymbolicTypeKind.TUPLE) {
-			throw new CIVLUnimplementedFeatureException(
-					"string literals in message passing function calls,",
-					source);
+		if (isSizeGTZ.isFalse() || reasoner.valid(isSizeGTZ)
+				.getResultType() != ResultType.YES) {
+			errorLogger.logSimpleError(arguments[1].getSource(), state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+					"Attempt to pack data of 0 size.");
+			throw new UnsatisfiablePathConditionException();
 		}
-		// check if size is zero
-		if (size.isZero()) {
-			// if size is 0 then just ignore the pointer. The pointer could be
-			// NULL, or even invalid. The result is still a bundle of size 0.
-			symbolicBundleType = bundleType.getDynamicType(universe);
-			elementTypeIndex = 0;
-			elementTypeIndexObj = universe.intObject(0);
-			elementType = bundleType.getElementType(elementTypeIndex);
-			arrayInBundle = universe.emptyArray(elementType);
-			bundle = universe.unionInject(symbolicBundleType,
-					elementTypeIndexObj, arrayInBundle);
-		} else if (!size.isZero()
-				&& symbolicUtil.getDyscopeId(source, pointer) == -1
-				&& symbolicUtil.getVariableId(source, pointer) == -1) {
-			throw new CIVLSyntaxException(
-					"Packing a NULL message with size larger than 0", source);
-		} else {
-			Reasoner reasoner = universe.reasoner(state.getPathCondition());
-			BooleanExpression claim;
-			CIVLType eleType = symbolicAnalyzer.getArrayBaseType(state,
-					arguments[0].getSource(), pointer);
+		// test:
+		Pair<SymbolicExpression, NumericExpression> ptr_count = pointerTyping(
+				state, pid, pointer, size, source);
+		CIVLType baseType = symbolicAnalyzer.typeOfObjByPointer(source, state,
+				ptr_count.left);
+		TypeEvaluation teval = evaluator.getDynamicType(state, pid, baseType,
+				source, false);
 
-			elementType = eleType.getDynamicType(universe);
-			count = universe.divide(size, symbolicUtil
-					.sizeof(arguments[1].getSource(), eleType, elementType));
-			// If count == 1, directly dereferencing the pointer to get the
-			// first non-array element.
-			claim = universe.equals(count, one);
-			if (!reasoner.isValid(claim)) {
-				eval = getDataFrom(state, pid, process, arguments[0], pointer,
-						count, true, false, arguments[0].getSource());
-				state = eval.state;
-				arrayInBundle = eval.value;
-			} else {
-				eval = evaluator.dereference(source, state, process, null,
-						pointer, true);
-				if (eval.value.type() instanceof SymbolicArrayType) {
-					SymbolicExpression arraySubObj = eval.value;
-
-					while (((SymbolicArrayType) arraySubObj.type())
-							.elementType() instanceof SymbolicArrayType)
-						arraySubObj = universe.arrayRead(arraySubObj, zero);
-					arrayInBundle = symbolicAnalyzer.getSubArray(arraySubObj,
-							zero, one, state, process, source);
-				} else if (eval.value.isNull())
-					arrayInBundle = universe.emptyArray(elementType);
-				else
-					arrayInBundle = universe.array(elementType,
-							Arrays.asList(eval.value));
-				state = eval.state;
-			}
-			assert (arrayInBundle != null);
-			symbolicBundleType = bundleType.getDynamicType(universe);
-			elementTypeIndex = bundleType
-					.getIndexOf(universe.pureType(elementType));
-			elementTypeIndexObj = universe.intObject(elementTypeIndex);
-			bundle = universe.unionInject(symbolicBundleType,
-					elementTypeIndexObj, arrayInBundle);
-		}
-		// if (lhs != null)
-		// state = primaryExecutor.assign(state, pid, process, lhs, bundle);
+		eval = getDataFrom(teval.state, pid, process, arguments[0],
+				ptr_count.left, ptr_count.right, true, false,
+				arguments[0].getSource());
+		state = eval.state;
+		bundleContent = eval.value;
+		assert (bundleContent != null);
+		// Packing bundle:
+		symbolicBundleType = bundleType.getDynamicType(universe);
+		elementTypeIndex = bundleType.getIndexOf(universe.pureType(teval.type));
+		elementTypeIndexObj = universe.intObject(elementTypeIndex);
+		bundle = universe.unionInject(symbolicBundleType, elementTypeIndexObj,
+				bundleContent);
 		return new Evaluation(state, bundle);
 	}
 

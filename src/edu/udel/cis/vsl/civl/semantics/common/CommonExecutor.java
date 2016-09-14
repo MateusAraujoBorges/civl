@@ -147,7 +147,7 @@ public class CommonExecutor implements Executor {
 	 * The set of characters that are used to construct a number in a format
 	 * string.
 	 */
-	private Set<Character> numbers;
+	final private Set<Character> numbers;
 
 	private List<CodeAnalyzer> analyzers;
 
