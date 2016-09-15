@@ -312,6 +312,17 @@ public interface Evaluator {
 	 */
 	SymbolicUniverse universe();
 
+	/**
+	 * extracts a string based on a given character pointer or string literal.
+	 * 
+	 * @param source
+	 * @param state
+	 * @param process
+	 * @param charPointerExpr
+	 * @param charPointer
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	Triple<State, StringBuffer, Boolean> getString(CIVLSource source,
 			State state, String process, Expression charPointerExpr,
 			SymbolicExpression charPointer)

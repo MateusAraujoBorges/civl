@@ -112,6 +112,12 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 		reasoner = universe.reasoner(state.getPathCondition());
 		valid = reasoner.valid(assertValue);
 		resultType = valid.getResultType();
+		// System.out.println(this.symbolicAnalyzer.expressionEvaluation(state,
+		// pid, arguments[0], true));
+		// System.out.println(this.symbolicAnalyzer
+		// .symbolicExpressionToString(source, state, null, assertValue));
+		// System.out.println(this.symbolicAnalyzer.pathconditionToString(source,
+		// state, "\t", state.getPathCondition()));
 		if (resultType != ResultType.YES) {
 			StringBuilder message = new StringBuilder();
 			Pair<State, String> messageResult = this.symbolicAnalyzer

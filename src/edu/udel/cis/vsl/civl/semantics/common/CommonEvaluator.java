@@ -3984,8 +3984,12 @@ public class CommonEvaluator implements Evaluator {
 		} else
 			throw new CIVLUnimplementedFeatureException(
 					"access on a non-concrete string", source);
-		result = symbolicUtil.charArrayToString(source, originalArray,
-				int_arrayIndex, false);
+		if (originalArray.operator() != SymbolicOperator.ARRAY)
+			result.append(symbolicAnalyzer.symbolicExpressionToString(source,
+					state, null, originalArray));
+		else
+			result = symbolicUtil.charArrayToString(source, originalArray,
+					int_arrayIndex, false);
 		return new Triple<>(state, result, true);
 		// if (charPointer.operator() == SymbolicOperator.ARRAY) {
 		// // SymbolicSequence<?> originalArray = null;

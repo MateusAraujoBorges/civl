@@ -14,6 +14,7 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -428,6 +429,10 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		StringBuffer result = new StringBuffer();
 		int numChars = charArray.numArguments();
 
+		if (charArray.operator() != SymbolicOperator.ARRAY)
+			throw new CIVLUnimplementedFeatureException(
+					"extracting string from a non-concrete array of characters",
+					source);
 		// assert charArray.operator() == SymbolicOperator.ARRAY;
 		// ignoring the '\0' at the end of the string.
 		for (int j = startIndex; j < numChars; j++) {
