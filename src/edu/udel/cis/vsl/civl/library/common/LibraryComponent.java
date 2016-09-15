@@ -784,7 +784,7 @@ public abstract class LibraryComponent {
 		indicesList.toArray(indices);
 		// reverse so that the order satisfies the requirements of the denseRead
 		// method:
-		for (int i = indices.length / 2; i >= 0; i--) {
+		for (int i = (indices.length / 2) - 1; i >= 0; i--) {
 			NumericExpression tmp = indices[i];
 			indices[i] = indices[indices.length - i - 1];
 			indices[indices.length - i - 1] = tmp;

@@ -192,7 +192,8 @@ $system[comm] void $comm_enqueue($comm comm, $message message);
   @ depends_on \write(comm);
   @ executes_when $true;
   @*/
-$system[comm] _Bool $comm_probe($comm comm, int source, int tag);
+$system[comm] $state_f _Bool $comm_probe($comm comm, int source, int tag);
+
 /*@ depends_on \write(comm);
   @ executes_when $comm_probe(comm, source, tag);
   @*/
