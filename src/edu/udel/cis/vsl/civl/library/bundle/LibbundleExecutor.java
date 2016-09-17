@@ -260,10 +260,16 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 				arguments[0].getSource());
 		state = eval.state;
 		bundleContent = eval.value;
-		assert (bundleContent != null);
+		assert (bundleContent != null
+				&& bundleContent.type().typeKind() == SymbolicTypeKind.ARRAY);
+
+		SymbolicType bundleContentElementType = ((SymbolicArrayType) bundleContent
+				.type()).elementType();
+
 		// Packing bundle:
 		symbolicBundleType = bundleType.getDynamicType(universe);
-		elementTypeIndex = bundleType.getIndexOf(universe.pureType(teval.type));
+		elementTypeIndex = bundleType
+				.getIndexOf(universe.pureType(bundleContentElementType));
 		elementTypeIndexObj = universe.intObject(elementTypeIndex);
 		bundle = universe.unionInject(symbolicBundleType, elementTypeIndexObj,
 				bundleContent);
