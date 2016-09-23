@@ -365,7 +365,8 @@ public interface CIVLTypeFactory {
 	 * @param types
 	 *            the set of all dynamic types which occur as bundle elements
 	 */
-	void completeBundleType(CIVLBundleType bundleType, List<CIVLType> eleTypes, Collection<SymbolicType> types);
+	void completeBundleType(CIVLBundleType bundleType, List<CIVLType> eleTypes,
+			Collection<SymbolicType> types);
 
 	/**
 	 * Completes the heap type.

@@ -51,7 +51,9 @@ $atomic_f int abs(int x){
 }
 
 int atoi(const char *nptr){
-  return 0;
+  $abstract int _atoi(const char * ptr);
+  
+  return _atoi(nptr);
 }
 
 #ifdef _LINUX

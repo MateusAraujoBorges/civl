@@ -859,21 +859,24 @@ public abstract class LibraryComponent {
 			SymbolicExpression array, NumericExpression indices[],
 			NumericExpression count, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicCompleteArrayType dyArrayType;
 		NumericExpression pos = zero;
 		SymbolicExpression flattenArray;
 		String process = state.getProcessState(pid).name();
 
 		assert array.type().typeKind() == SymbolicTypeKind.ARRAY
 				&& ((SymbolicArrayType) array.type()).isComplete();
-		dyArrayType = (SymbolicCompleteArrayType) array.type();
-		assert dyArrayType.dimensions() == indices.length;
-		for (int i = 0; i < indices.length - 1; i++) {
-			dyArrayType = (SymbolicCompleteArrayType) dyArrayType.elementType();
-			pos = universe.multiply(dyArrayType.extent(),
-					universe.add(pos, indices[i]));
+		if (indices.length > 0) {
+			SymbolicCompleteArrayType dyArrayType = (SymbolicCompleteArrayType) array
+					.type();
+			assert dyArrayType.dimensions() == indices.length;
+			for (int i = 0; i < indices.length - 1; i++) {
+				dyArrayType = (SymbolicCompleteArrayType) dyArrayType
+						.elementType();
+				pos = universe.multiply(dyArrayType.extent(),
+						universe.add(pos, indices[i]));
+			}
+			pos = universe.add(pos, indices[indices.length - 1]);
 		}
-		pos = universe.add(pos, indices[indices.length - 1]);
 		flattenArray = arrayFlatten(state, process, array, source);
 		return symbolicAnalyzer.getSubArray(flattenArray, pos,
 				universe.add(pos, count), state, process, source);
