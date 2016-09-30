@@ -661,6 +661,24 @@ public abstract class LibraryComponent {
 
 		// Else, count greater than one:
 		startPtr = pointer;
+		// "startPtr" may not point to a memory base type object yet
+		symref = symbolicAnalyzer.getLeafNodeReference(state, startPtr, source);
+		if (!symref.isArrayElementReference()) {
+			CIVLType integerType;
+
+			integerType = typeFactory.integerType();
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.OUT_OF_BOUNDS,
+					"$bundle_unpack out of bound: \nPointer: "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									source, state, ptrExpr.getExpressionType(),
+									pointer)
+							+ "\nSize: "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									source, state, integerType, count)
+							+ "\n");
+		}
 		eval_and_slices = evaluator.evaluatePointerAdd(state, process, startPtr,
 				count, checkOutput, source);
 		eval = eval_and_slices.left;
@@ -674,8 +692,6 @@ public abstract class LibraryComponent {
 			arraySlicesSizes[0] = one;
 		}
 		dim = arraySlicesSizes.length;
-		// "startPtr" may not point to a memory base type object yet
-		symref = symbolicAnalyzer.getLeafNodeReference(state, startPtr, source);
 		startPtr = symbolicUtil.makePointer(startPtr, symref);
 		startPos = zero;
 		if (symref.isArrayElementReference()) {
