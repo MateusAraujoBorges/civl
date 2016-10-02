@@ -162,4 +162,9 @@ public class ImmutableMemoryUnitSet implements MemoryUnitSet {
 	public Iterator<MemoryUnit> iterator() {
 		return this.memUnits.iterator();
 	}
+
+	@Override
+	public boolean isEmpty() {
+		return this.memUnits.isEmpty();
+	}
 }

@@ -61,7 +61,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * @author Manchun Zheng
  *
  */
-public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator {
+public class CommonMemoryUnitEvaluator
+		implements
+			MemoryUnitExpressionEvaluator {
 
 	private ModelFactory modelFactory;
 
@@ -125,9 +127,9 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 
 		if (dyscopeID < 0)
 			return result;
-		referenceValues = this.evaluatesMemoryUnitReference(
-				memUnit.getSource(), state, pid, memUnit.objectType(),
-				memUnit.reference(), null).right;
+		referenceValues = this.evaluatesMemoryUnitReference(memUnit.getSource(),
+				state, pid, memUnit.objectType(), memUnit.reference(),
+				null).right;
 		for (ReferenceExpression reference : referenceValues) {
 			MemoryUnit newMemUnit = muFactory.newMemoryUnit(dyscopeID,
 					memUnit.variableId(), reference);
@@ -137,9 +139,8 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 				SymbolicExpression pointer = state.getVariableValue(dyscopeID,
 						memUnit.variableId());
 
-				if (!pointer.isNull()
-						&& pointer.type().equals(
-								this.typeFactory.pointerSymbolicType()))
+				if (!pointer.isNull() && pointer.type()
+						.equals(this.typeFactory.pointerSymbolicType()))
 					muFactory.add(result, this.muFactory.newMemoryUnit(
 							this.symbolicUtil.getDyscopeId(null, pointer),
 							this.symbolicUtil.getVariableId(null, pointer),
@@ -178,72 +179,75 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 		// ReferenceExpression myRefValue = null;
 
 		switch (refKind) {
-		case SELF:
-			myRefValues.add(universe.identityReference());
-			break;
-		case ARRAY_SLICE:// TODO to be finished
-		{
-			ArraySliceReference arraySlice = (ArraySliceReference) reference;
-			ArraySliceKind sliceKind = arraySlice.sliceKind();
-			Expression indexExpression = arraySlice.index();
-			Evaluation eval = null;
+			case SELF :
+				myRefValues.add(universe.identityReference());
+				break;
+			case ARRAY_SLICE :// TODO to be finished
+			{
+				ArraySliceReference arraySlice = (ArraySliceReference) reference;
+				ArraySliceKind sliceKind = arraySlice.sliceKind();
+				Expression indexExpression = arraySlice.index();
+				Evaluation eval = null;
 
-			assert parents != null && parents.size() > 0;
-			if (indexExpression != null) {
-				eval = evaluator.evaluate(state, pid, indexExpression);
-				state = eval.state;
+				assert parents != null && parents.size() > 0;
+				if (indexExpression != null) {
+					eval = evaluator.evaluate(state, pid, indexExpression);
+					state = eval.state;
+				}
+				switch (sliceKind) {
+					case ELEMENT :
+						for (ReferenceExpression parent : parents)
+							myRefValues.add(universe.arrayElementReference(
+									parent, (NumericExpression) eval.value));
+						break;
+					case WILDCARD : {
+						CIVLCompleteArrayType arrayType = (CIVLCompleteArrayType) objType;
+						Expression extent = arrayType.extent();
+						int extentInt;
+						Reasoner reasoner = universe
+								.reasoner(state.getPathCondition());
+						IntegerNumber length_number;
+
+						eval = evaluator.evaluate(state, pid, extent);
+						state = eval.state;
+						length_number = (IntegerNumber) reasoner
+								.extractNumber((NumericExpression) eval.value);
+						extentInt = length_number.intValue();
+						for (int i = 0; i < extentInt; i++)
+							for (ReferenceExpression parent : parents)
+								myRefValues.add(universe.arrayElementReference(
+										parent, universe.integer(i)));
+						break;
+					}
+					case REG_RANGE :
+						// TODO to be finished
+						break;
+					default :
+						throw new CIVLUnimplementedFeatureException(
+								"evaluating array slice reference of "
+										+ sliceKind + " kind",
+								source);
+				}
+
+				break;
 			}
-			switch (sliceKind) {
-			case ELEMENT:
+			case STRUCT_OR_UNION_FIELD : {
+				StructOrUnionFieldReference fieldRef = (StructOrUnionFieldReference) reference;
+				int fieldIndex = fieldRef.fieldIndex();
+
+				assert parents != null && parents.size() > 0;
+				myObjType = ((CIVLStructOrUnionType) objType)
+						.getField(fieldIndex).type();
 				for (ReferenceExpression parent : parents)
-					myRefValues.add(universe.arrayElementReference(parent,
-							(NumericExpression) eval.value));
-				break;
-			case WILDCARD: {
-				CIVLCompleteArrayType arrayType = (CIVLCompleteArrayType) objType;
-				Expression extent = arrayType.extent();
-				int extentInt;
-				Reasoner reasoner = universe.reasoner(state.getPathCondition());
-				IntegerNumber length_number;
-
-				eval = evaluator.evaluate(state, pid, extent);
-				state = eval.state;
-				length_number = (IntegerNumber) reasoner
-						.extractNumber((NumericExpression) eval.value);
-				extentInt = length_number.intValue();
-				for (int i = 0; i < extentInt; i++)
-					for (ReferenceExpression parent : parents)
-						myRefValues.add(universe.arrayElementReference(parent,
-								universe.integer(i)));
+					myRefValues.add(universe.tupleComponentReference(parent,
+							universe.intObject(fieldRef.fieldIndex())));
 				break;
 			}
-			case REG_RANGE:
-				// TODO to be finished
-				break;
-			default:
+			default :
 				throw new CIVLUnimplementedFeatureException(
-						"evaluating array slice reference of " + sliceKind
-								+ " kind", source);
-			}
-
-			break;
-		}
-		case STRUCT_OR_UNION_FIELD: {
-			StructOrUnionFieldReference fieldRef = (StructOrUnionFieldReference) reference;
-			int fieldIndex = fieldRef.fieldIndex();
-
-			assert parents != null && parents.size() > 0;
-			myObjType = ((CIVLStructOrUnionType) objType).getField(fieldIndex)
-					.type();
-			for (ReferenceExpression parent : parents)
-				myRefValues.add(universe.tupleComponentReference(parent,
-						universe.intObject(fieldRef.fieldIndex())));
-			break;
-		}
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"evaluating memory unit reference of " + refKind + " kind",
-					source);
+						"evaluating memory unit reference of " + refKind
+								+ " kind",
+						source);
 		}
 		assert myRefValues.size() > 0;
 		if (child != null)
@@ -274,10 +278,11 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 				SymbolicExpression pointerValue;
 				Evaluation eval;
 
-				this.muFactory.add(set, this.muFactory.newMemoryUnit(
-						this.symbolicUtil.getDyscopeId(null, expr),
-						this.symbolicUtil.getVariableId(null, expr),
-						symbolicUtil.getSymRef(expr)));
+				this.muFactory.add(set,
+						this.muFactory.newMemoryUnit(
+								this.symbolicUtil.getDyscopeId(null, expr),
+								this.symbolicUtil.getVariableId(null, expr),
+								symbolicUtil.getSymRef(expr)));
 				// set.add(expr);
 				try {
 					if (expr.operator() == SymbolicOperator.TUPLE
@@ -300,8 +305,8 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 							if (universe.length(eval.value).isZero())
 								return;
 						}
-						eval = evaluator.dereference(null, state, process,
-								null, expr, false, true);
+						eval = evaluator.dereference(null, state, process, null,
+								expr, false, true);
 						pointerValue = eval.value;
 						state = eval.state;
 						if (pointerValue.operator() == SymbolicOperator.TUPLE
@@ -342,17 +347,17 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 	private void findPointersInObject(SymbolicObject object, MemoryUnitSet set,
 			State state, String process) {
 		switch (object.symbolicObjectKind()) {
-		case EXPRESSION:
-			findPointersInExpression((SymbolicExpression) object, set, state,
-					process);
-			break;
-		case SEQUENCE:
-			for (SymbolicExpression expr : (SymbolicSequence<?>) object)
-				findPointersInExpression(expr, set, state, process);
-			break;
-		default:
-			// ignore types and primitives, they don't have any pointers
-			// you can dereference.
+			case EXPRESSION :
+				findPointersInExpression((SymbolicExpression) object, set,
+						state, process);
+				break;
+			case SEQUENCE :
+				for (SymbolicExpression expr : (SymbolicSequence<?>) object)
+					findPointersInExpression(expr, set, state, process);
+				break;
+			default :
+				// ignore types and primitives, they don't have any pointers
+				// you can dereference.
 		}
 	}
 
@@ -366,81 +371,91 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 
 		// DEREFERENCE, DOT, SUBSCRIPT, VARIABLE
 		switch (exprKind) {
-		case BINARY: {
-			BinaryExpression binary = (BinaryExpression) muExpr;
+			case BINARY : {
+				BinaryExpression binary = (BinaryExpression) muExpr;
 
-			if (binary.operator() != BINARY_OPERATOR.POINTER_ADD) {
-				throw new CIVLInternalException(
-						"invalid expression for memory units",
-						muExpr.getSource());
-			}
-
-			MemoryUnitSet leftMus = this.evaluateMemoryUnit(state,
-					parameterScope, pid, binary.left());
-			SymbolicType offsetType;
-
-			eval = this.evaluator.evaluate(state, pid, binary.right());
-			offsetType = eval.value.type();
-			state = eval.state;
-
-			NumericExpression offset = (NumericExpression) eval.value;
-
-			if (!offsetType.isInteger()
-					&& !offsetType.equals(this.typeFactory.rangeType()
-							.getDynamicType(universe))) {
-				throw new CIVLInternalException(
-						"invalid pointer addition: "
-								+ "the right hand side operand should be either of integer or range type",
-						muExpr.getSource());
-			}
-			for (MemoryUnit mu : leftMus) {
-				ReferenceExpression reference = mu.reference();
-
-				if (!reference.isArrayElementReference())
-					throw new CIVLInternalException("invalid pointer addition",
+				if (binary.operator() != BINARY_OPERATOR.POINTER_ADD) {
+					throw new CIVLInternalException(
+							"invalid expression for memory units",
 							muExpr.getSource());
+				}
 
-				ArrayElementReference arrayEle = (ArrayElementReference) reference;
+				MemoryUnitSet leftMus = this.evaluateMemoryUnit(state,
+						parameterScope, pid, binary.left());
+				SymbolicType offsetType;
 
-				arrayEle = universe.arrayElementReference(arrayEle.getParent(),
-						universe.add(arrayEle.getIndex(), offset));
-				result.add(mu.setReference(arrayEle));
+				eval = this.evaluator.evaluate(state, pid, binary.right());
+				offsetType = eval.value.type();
+				state = eval.state;
+
+				NumericExpression offset = (NumericExpression) eval.value;
+
+				if (!offsetType.isInteger()
+						&& !offsetType.equals(this.typeFactory.rangeType()
+								.getDynamicType(universe))) {
+					throw new CIVLInternalException(
+							"invalid pointer addition: "
+									+ "the right hand side operand should be either of integer or range type",
+							muExpr.getSource());
+				}
+				for (MemoryUnit mu : leftMus) {
+					ReferenceExpression reference = mu.reference();
+
+					if (!reference.isArrayElementReference())
+						throw new CIVLInternalException(
+								"invalid pointer addition", muExpr.getSource());
+
+					ArrayElementReference arrayEle = (ArrayElementReference) reference;
+
+					arrayEle = universe.arrayElementReference(
+							arrayEle.getParent(),
+							universe.add(arrayEle.getIndex(), offset));
+					result.add(mu.setReference(arrayEle));
+				}
+				break;
 			}
-			break;
-		}
-		case DOT: {
-			DotExpression dotExpr = (DotExpression) muExpr;
-			Expression structOrUnion = dotExpr.structOrUnion();
-			MemoryUnitSet suMus = this.evaluateMemoryUnit(state,
-					parameterScope, pid, structOrUnion);
-			int index = dotExpr.fieldIndex();
+			case DOT : {
+				DotExpression dotExpr = (DotExpression) muExpr;
+				Expression structOrUnion = dotExpr.structOrUnion();
+				MemoryUnitSet suMus = this.evaluateMemoryUnit(state,
+						parameterScope, pid, structOrUnion);
+				int index = dotExpr.fieldIndex();
 
-			for (MemoryUnit mu : suMus) {
-				result.add(this.muFactory.extendReference(mu, this.universe
-						.tupleComponentReference(mu.reference(),
-								universe.intObject(index))));
+				for (MemoryUnit mu : suMus) {
+					result.add(this.muFactory.extendReference(mu,
+							this.universe.tupleComponentReference(
+									mu.reference(),
+									universe.intObject(index))));
+				}
+				break;
 			}
-			break;
-		}
-		case ADDRESS_OF: {
-			return lhs2MemoryUnit(state, parameterScope, pid,
-					((AddressOfExpression) muExpr).operand());
-		}
-		case VARIABLE: {
-			Variable variable = ((VariableExpression) muExpr).variable();
-			SymbolicExpression value;
+			case ADDRESS_OF : {
+				return lhs2MemoryUnit(state, parameterScope, pid,
+						((AddressOfExpression) muExpr).operand());
+			}
+			case VARIABLE : {
+				Variable variable = ((VariableExpression) muExpr).variable();
 
-			if (parameterScope.left == variable.scope()) {
-				value = parameterScope.right[variable.vid()];
-			} else
-				value = state.valueOf(pid, variable);
-			if (isPointer(value))
-				result.add(this.pointer2MemoryUnit(value));
-			break;
-		}
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"invalid kind of memory unit expression: " + exprKind);
+				SymbolicExpression value;
+
+				if (parameterScope.left == variable.scope()) {
+					value = parameterScope.right[variable.vid()];
+				} else
+					value = state.valueOf(pid, variable);
+				if (isPointer(value)) {
+					int dyscopeID = this.symbolicUtil.getDyscopeId(null, value),
+							vid = this.symbolicUtil.getVariableId(null, value);
+					Variable object = state.getDyscope(dyscopeID).lexicalScope()
+							.variable(vid);
+
+					if (!(object.isInput() || object.isConst()))
+						result.add(this.pointer2MemoryUnit(value));
+				}
+				break;
+			}
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"invalid kind of memory unit expression: " + exprKind);
 		}
 		return result;
 	}
@@ -453,62 +468,64 @@ public class CommonMemoryUnitEvaluator implements MemoryUnitExpressionEvaluator 
 		Evaluation eval;
 
 		switch (kind) {
-		case DEREFERENCE: {
-			return this.evaluateMemoryUnit(state, parameterScope, pid,
-					((DereferenceExpression) lhs).pointer());
-		}
-		case DOT: {
-			DotExpression dotExpression = (DotExpression) lhs;
-			int index = dotExpression.fieldIndex();
-			boolean isStruct = dotExpression.getExpressionType().isStructType();
+			case DEREFERENCE : {
+				return this.evaluateMemoryUnit(state, parameterScope, pid,
+						((DereferenceExpression) lhs).pointer());
+			}
+			case DOT : {
+				DotExpression dotExpression = (DotExpression) lhs;
+				int index = dotExpression.fieldIndex();
+				boolean isStruct = dotExpression.getExpressionType()
+						.isStructType();
 
-			if (dotExpression.structOrUnion() instanceof LHSExpression) {
-				MemoryUnitSet subResult = this.lhs2MemoryUnit(state,
-						parameterScope, pid,
-						(LHSExpression) dotExpression.structOrUnion());
+				if (dotExpression.structOrUnion() instanceof LHSExpression) {
+					MemoryUnitSet subResult = this.lhs2MemoryUnit(state,
+							parameterScope, pid,
+							(LHSExpression) dotExpression.structOrUnion());
 
-				for (MemoryUnit mu : subResult) {
-					if (isStruct)
-						result.add(mu.setReference(universe
-								.tupleComponentReference(mu.reference(),
-										universe.intObject(index))));
-					else
-						result.add(mu.setReference(universe
-								.unionMemberReference(mu.reference(),
-										universe.intObject(index))));
+					for (MemoryUnit mu : subResult) {
+						if (isStruct)
+							result.add(mu.setReference(universe
+									.tupleComponentReference(mu.reference(),
+											universe.intObject(index))));
+						else
+							result.add(mu.setReference(universe
+									.unionMemberReference(mu.reference(),
+											universe.intObject(index))));
+					}
 				}
+				break;
 			}
-			break;
-		}
-		case SUBSCRIPT: {
-			SubscriptExpression subscript = (SubscriptExpression) lhs;
-			MemoryUnitSet subResult = this.lhs2MemoryUnit(state,
-					parameterScope, pid, subscript.array());
-			NumericExpression index;
+			case SUBSCRIPT : {
+				SubscriptExpression subscript = (SubscriptExpression) lhs;
+				MemoryUnitSet subResult = this.lhs2MemoryUnit(state,
+						parameterScope, pid, subscript.array());
+				NumericExpression index;
 
-			eval = this.evaluator.evaluate(state, pid, subscript.index());
-			index = (NumericExpression) eval.value;
-			for (MemoryUnit mu : subResult) {
-				result.add(mu.setReference(universe.arrayElementReference(
-						mu.reference(), index)));
+				eval = this.evaluator.evaluate(state, pid, subscript.index());
+				index = (NumericExpression) eval.value;
+				for (MemoryUnit mu : subResult) {
+					result.add(mu.setReference(universe
+							.arrayElementReference(mu.reference(), index)));
+				}
+				break;
 			}
-			break;
-		}
-		case VARIABLE: {
-			Variable variable = ((VariableExpression) lhs).variable();
-			int dyscopeId = state.getDyscope(pid, variable.scope().id());
+			case VARIABLE : {
+				Variable variable = ((VariableExpression) lhs).variable();
+				int dyscopeId = state.getDyscope(pid, variable.scope().id());
 
-			result.add(muFactory.newMemoryUnit(dyscopeId, variable.vid(),
-					universe.identityReference()));
-			break;
-		}
+				result.add(muFactory.newMemoryUnit(dyscopeId, variable.vid(),
+						universe.identityReference()));
+				break;
+			}
 		}
 		return result;
 	}
 
 	private boolean isPointer(SymbolicExpression value) {
 		return value.type().equals(this.pointerType)
-				&& symbolicUtil.getDyscopeId(null, value) != ModelConfiguration.DYNAMIC_CONSTANT_SCOPE;
+				&& symbolicUtil.getDyscopeId(null,
+						value) != ModelConfiguration.DYNAMIC_CONSTANT_SCOPE;
 	}
 
 	private MemoryUnit pointer2MemoryUnit(SymbolicExpression pointer) {

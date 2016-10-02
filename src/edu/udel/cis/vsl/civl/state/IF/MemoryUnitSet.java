@@ -20,4 +20,11 @@ public interface MemoryUnitSet extends Iterable<MemoryUnit> {
 
 	void add(MemoryUnit mu);
 
+	/**
+	 * returns true iff this memory unit set is empty.
+	 * 
+	 * @return
+	 */
+	boolean isEmpty();
+
 }

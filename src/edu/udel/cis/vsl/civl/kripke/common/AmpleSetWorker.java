@@ -730,6 +730,8 @@ public class AmpleSetWorker {
 				// ignore the exception
 			}
 		}
+		if(criticalMuSet.isEmpty())
+			return result;
 		switch (kind) {
 		case READ:
 			break;
