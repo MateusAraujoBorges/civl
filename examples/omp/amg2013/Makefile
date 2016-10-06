@@ -85,6 +85,9 @@ all:
 amg2013: 
 	${SHOW} ${INCLUDES} AMG2013/test/amg2013.c 
 
+par_multi_interp: 
+	${SHOW} ${INCLUDES} AMG2013/parcsr_ls/par_multi_interp.c
+
 allGCC: 
 	gcc ${INCLUDES} AMG2013/test/amg2013.c ${SOURCE}
 
