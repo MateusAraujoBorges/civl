@@ -1,0 +1,12 @@
+struct A;
+
+struct A{
+   int a[32/sizeof(int)];
+};
+
+int main(){
+   struct A b;
+   b.a[0] = 0;
+   return b.a[0];
+}
+
