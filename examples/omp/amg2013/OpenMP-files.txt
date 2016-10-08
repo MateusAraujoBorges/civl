@@ -1,0 +1,20 @@
+Files with "pragma omp":
+parcsr_ls/par_interp.c 
+ - includes barrier
+ - hypre_BoomerAMGInterpTruncation
+ - there is a syntax error in this file!!!
+parcsr_ls/par_multi_interp.c
+ - single method large complex arg list, so driver is complex
+ - hypre_BoomerAMGBuildMultipass
+parcsr_ls/par_relax_more.c
+ - hypre_ParCSRMaxEigEstimateCG
+ - hypre_ParCSRRelax_Cheby3
+ - hypre_ParCSRRelax_Cheby
+ - another function wrapped with "#if 0"
+seq_mv/csr_matvec.c
+ - hypre_CSRMatrixMatvec
+ - hypre_CSRMatrixMatvecT
+ - hypre_CSRMatrixMatvec_FF
+seq_mv/vector.c
+ - all easy to discharge
+utilities/threading.c

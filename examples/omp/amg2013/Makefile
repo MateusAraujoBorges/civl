@@ -85,8 +85,14 @@ all:
 amg2013: 
 	${SHOW} ${INCLUDES} AMG2013/test/amg2013.c 
 
+par_relax_more: 
+	${SHOW} ${INCLUDES} -DHYPRE_OPENMP par_relax_more_main.c AMG2013/parcsr_ls/par_relax_more.c
+
 par_multi_interp: 
-	${SHOW} ${INCLUDES} AMG2013/parcsr_ls/par_multi_interp.c
+	${SHOW} ${INCLUDES} -DHYPRE_OPENMP par_multi_interp_main.c AMG2013/parcsr_ls/par_multi_interp.c
+
+gccit: 
+	gcc ${INCLUDES} -DHYPRE_OPENMP par_relax_more_main.c AMG2013/parcsr_ls/par_relax_more.c
 
 allGCC: 
 	gcc ${INCLUDES} AMG2013/test/amg2013.c ${SOURCE}

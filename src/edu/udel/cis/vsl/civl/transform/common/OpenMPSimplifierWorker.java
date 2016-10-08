@@ -18,6 +18,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
@@ -1089,10 +1090,13 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 	 * the LHS and RHS of the loop.
 	 * 
 	 * If there exists in the loop, statements of the form: a[e1] = ... and ...
-	 * = ... a[e2] ... where e1 and e2 are expressions written in terms of the
+	 * = ... a[e2] ... where e1 and e2 are distinct expressions written in terms of the
 	 * loop index variable, then it must be the case that for all values of the
 	 * index variable that satisfy initCondition and exitCondition that e1 ==
 	 * e2.
+	 * 
+	 * Note that if the index expressions are identical then there is no loop
+	 * carried dependence.  More generally if their equivalence is valid.
 	 * 
 	 * TBD: Currently this analysis does not handle copy statements and may
 	 * therefore overestimate dependences
@@ -1112,24 +1116,64 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 				if (baseWrite.getIdentifier().getEntity() == baseRead
 						.getIdentifier().getEntity()) {
 
-					System.out.println("Checking Array Refs for:");
-					System.out.println("  " + baseWrite + "["
-							+ indexExpression(w, 1) + "]");
-					System.out.println("  " + baseRead + "["
-							+ indexExpression(r, 1) + "]");
-					System.out.println("with bounding conditions:"
-							+ boundingConditions);
-
-					// Need to check logical equality of these expressions
-					if (!ExpressionEvaluator.checkEqualityWithConditions(
-							indexExpression(w, 1), indexExpression(r, 1),
-							boundingConditions)) {
-						return false;
+					if (debug) {
+						System.out.println("Checking Array Refs for:");
+						System.out.println("  " + baseWrite + "["
+								+ indexExpression(w, 1) + "]");
+						System.out.println("  " + baseRead + "["
+								+ indexExpression(r, 1) + "]");
+						System.out.println("with bounding conditions:"
+								+ boundingConditions);
+					}
+					
+					// if expressions are identical then there is no loop carried dependence
+					if (!identicalExprs(indexExpression(w,1), indexExpression(r,1))) {
+						// Need to check logical equality of these expressions
+						if (!ExpressionEvaluator.checkEqualityWithConditions(
+								indexExpression(w, 1), indexExpression(r, 1),
+								boundingConditions)) {
+							return false;
+						}
 					}
 				}
 			}
 		}
 		return true;
+	}
+	
+	private boolean identicalExprs(ExpressionNode x, ExpressionNode y) {
+		boolean result = false;
+
+		if (x instanceof IdentifierExpressionNode) {
+			IdentifierExpressionNode xId = (IdentifierExpressionNode)x;
+			if (y instanceof IdentifierExpressionNode) {
+				IdentifierExpressionNode yId = (IdentifierExpressionNode)y;
+				result = xId.getIdentifier().getEntity().equals(yId.getIdentifier().getEntity());
+			}
+		} else if (x instanceof ConstantNode) {
+			ConstantNode xConst = (ConstantNode)x;
+			if (y instanceof ConstantNode) {
+				ConstantNode yConst = (ConstantNode)y;
+				result = xConst.getConstantValue().equals(yConst.getConstantValue());
+			}
+		} else if (x instanceof OperatorNode) {
+			OperatorNode xOp = (OperatorNode)x;
+
+			if (y instanceof OperatorNode) {
+				OperatorNode yOp = (OperatorNode)y;
+				if (yOp.getOperator().equals(xOp.getOperator())) {
+					if (yOp.getNumberOfArguments() == xOp.getNumberOfArguments()) {
+						result = true; // initialize with "zero" for iterative conjunction
+						for (int i=0; i<xOp.getNumberOfArguments(); i++) {
+							result &= identicalExprs(xOp.getArgument(i), yOp.getArgument(i));
+						}
+					}
+				}
+			} else {
+				assert false : "OpenMPSimplifier : cannot compare expression "+x;
+			}	
+		}
+		return result;
 	}
 
 	/* This is a weaker version of the test that just compares base arrays */
