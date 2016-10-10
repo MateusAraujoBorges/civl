@@ -4,6 +4,8 @@ CIVL=civl
 
 INCLUDES=-userIncludePath=./AMG2013:AMG2013/IJ_mv:AMG2013/krylov:AMG2013/parcsr_ls:AMG2013/parcsr_mv:AMG2013/seq_mv:AMG2013/sstruct_mv:AMG2013/struct_mv:AMG2013/test:AMG2013/utilities:
 
+ABC_INCLUDES=-iquote ./AMG2013 -iquote AMG2013/IJ_mv -iquote AMG2013/krylov -iquote AMG2013/parcsr_ls -iquote AMG2013/parcsr_mv -iquote AMG2013/seq_mv -iquote AMG2013/sstruct_mv -iquote AMG2013/struct_mv -iquote AMG2013/test -iquote AMG2013/utilities
+
 SHOWV=${CIVL} show -verbose -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
 SHOW=${CIVL} show -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
 VERIFY=${CIVL} verify -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
@@ -84,6 +86,9 @@ all:
 
 amg2013: 
 	${SHOW} ${INCLUDES} AMG2013/test/amg2013.c 
+
+abc_amg2013: 
+	abc $(ABC_INCLUDES)  AMG2013/test/amg2013.c $(SOURCE) -summarize -prune
 
 par_relax_more: 
 	${SHOW} ${INCLUDES} -DHYPRE_OPENMP par_relax_more_main.c AMG2013/parcsr_ls/par_relax_more.c
