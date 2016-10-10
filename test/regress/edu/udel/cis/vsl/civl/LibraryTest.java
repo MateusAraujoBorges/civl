@@ -334,6 +334,24 @@ public class LibraryTest {
 				filename(COLLATE, "completeCollateState.cvl")));
 	}
 
+	@Test
+	public void pointerRealloc() {
+		assertTrue(ui.run("verify", QUIET,
+				filename(POINTER, "simplePointerRealloc.cvl")));
+	}
+
+	@Test
+	public void pointerReallocBad() {
+		assertFalse(ui.run("verify", "-DBAD", QUIET,
+				filename(POINTER, "simplePointerRealloc.cvl")));
+	}
+
+	@Test
+	public void SymPointerRealloc() {
+		assertTrue(ui.run("verify", QUIET,
+				filename(POINTER, "symbolicPointerRealloc.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

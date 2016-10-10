@@ -21,14 +21,15 @@
 #define SQR(X) ((X)*(X))
 
 #ifdef _CIVL
-const int DARTSB = 2;         // upper bound of DARTS
+$input int DARTSB = 2;         // upper bound of DARTS
 $input int DARTS;             // number of darts will be throwed
 $assume(0 < DARTS && DARTS <= DARTSB);
-const int ROUNDSB = 2;        // upper bound of ROUNDS
+$input int ROUNDSB = 2;        // upper bound of ROUNDS
 $input int ROUNDS;            // number of rounds of throwing darts
 $assume(0 < ROUNDS && ROUNDS <= ROUNDSB);
 $input int _mpi_nprocs = 2;
 $input int N;                 // length of random data array
+$assume(N > 0);
 $input double RANDOM[N];      // random data array
 double oracle[ROUNDS];        // array of results of sequential run
 
@@ -97,8 +98,6 @@ void initialization() {
   double pi = 0.0;
   double avepi = 0.0;
 
-  //$elaborate(DARTS);
-  //$elaborate(ROUNDS);
   $assume(N == DARTSB * _mpi_nprocs * ROUNDSB * 2);
   if(taskid == 0) {
     for(curr_round=0; curr_round < ROUNDS; curr_round++) {

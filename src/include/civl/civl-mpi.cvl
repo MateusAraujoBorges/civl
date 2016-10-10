@@ -389,6 +389,7 @@ int $mpi_reduce(const void* sendbuf, void* recvbuf, int count,
     for (int i = 0; i<nprocs; i++) {
       if(i != root){
 	int colTag;
+	void * applybuf;
 	$message in = $comm_dequeue(comm.col, i, MPI_ANY_TAG);	
 
 	/* Collective routines have no non-deterministic tags.*/
@@ -397,7 +398,10 @@ int $mpi_reduce(const void* sendbuf, void* recvbuf, int count,
 		 "message with a mismatched tag\n", routName);
 	/* the third argument "count" indicates the number of cells needs doing the
 	   operation. */
-	$bundle_unpack_apply(in.data, recvbuf, count, op);
+	applybuf = $mpi_malloc(count, datatype);
+	$bundle_unpack_apply(in.data, recvbuf, op, count, applybuf);
+	memcpy(recvbuf, applybuf, size);
+	free(applybuf);
 	$assert (in.size <= size ,
 		 "Message of size %d exceeds the specified size %d.", in.size, size);
       }

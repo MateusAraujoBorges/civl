@@ -563,16 +563,14 @@ public class CIVLConstants {
 	 */
 	public final static Option witnessO = Option.newScalarOption(WITNESS,
 			BOOLEAN, "Generate witness from trace?", false);
-	
+
 	/**
-	 * Inject instrumentation to direct the branches at the line numbers in given file
-	 * so as to explore a sub-space of execution.
-	 *  Note: currently assumes you are given one C file (no linking)
+	 * Inject instrumentation to direct the branches at the line numbers in
+	 * given file so as to explore a sub-space of execution. Note: currently
+	 * assumes you are given one C file (no linking)
 	 */
-	public final static Option direct0 = Option.newScalarOption(
-			DIRECT, STRING, 
-			"Direct branching at line numbers in the given file", 
-			null);
+	public final static Option direct0 = Option.newScalarOption(DIRECT, STRING,
+			"Direct branching at line numbers in the given file", null);
 
 	/**
 	 * The name of the CIVL system function, which is the starting point of a
@@ -603,6 +601,7 @@ public class CIVLConstants {
 	}
 
 	// headers...
+	public final static String BUNDLE = "bundle.cvh";
 	public final static String CIVLC = "civlc.cvh";
 	public final static String CIVL_MPI = "civl-mpi.cvh";
 	public final static String CIVL_PTHREAD = "civl-pthread.cvh";
@@ -646,8 +645,9 @@ public class CIVLConstants {
 	 * @return all CIVL-C libraries.
 	 */
 	public final static Set<String> getAllCivlLibs() {
-		return new HashSet<String>(Arrays.asList(CIVLC, CIVL_MPI, CIVL_PTHREAD,
-				COMM, CONCURRENCY, CIVL_OMP, SEQ, CIVL_CUDA, COLLATE));
+		return new HashSet<String>(
+				Arrays.asList(BUNDLE, CIVLC, CIVL_MPI, CIVL_PTHREAD, COMM,
+						CONCURRENCY, CIVL_OMP, SEQ, CIVL_CUDA, COLLATE));
 	}
 
 	/**

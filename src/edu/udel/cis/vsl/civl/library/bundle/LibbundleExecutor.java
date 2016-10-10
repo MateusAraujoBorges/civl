@@ -1,7 +1,5 @@
 package edu.udel.cis.vsl.civl.library.bundle;
 
-import java.util.Arrays;
-
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
@@ -11,7 +9,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
@@ -29,7 +26,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
-import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
@@ -376,77 +372,78 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression bundle = argumentValues[0],
-				pointer = argumentValues[1];
-		SymbolicExpression assignedPtr;
-		NumericExpression count = (NumericExpression) argumentValues[2],
-				totalUnits;
-		// Enumerator number of the operation
-		NumericExpression operation = (NumericExpression) argumentValues[3];
-		CIVLOperator CIVL_Op;
-		Pair<Evaluation, SymbolicExpression> eval_and_pointer;
-		SymbolicExpression[] operands = new SymbolicExpression[2];
-		SymbolicType operandElementType;
-		BooleanExpression pathCondition = state.getPathCondition();
-		Reasoner reasoner = universe.reasoner(pathCondition);
-		Evaluation eval = null;
-		int countStep;
-		// TODO: support struct operands, i.e. struct in bundle and buf ->
-		// struct
-		// Checking if pointer is valid.
-		if (pointer.operator() != SymbolicOperator.TUPLE) {
-			errorLogger.logSimpleError(source, state, process,
-					this.symbolicAnalyzer.stateInformation(state),
-					ErrorKind.POINTER,
-					"attempt to read/write an invalid pointer type variable");
-			throw new UnsatisfiablePathConditionException();
-		}
-		// In executor, operation must be concrete.
-		// Translate operation
-		CIVL_Op = translateOperator(
-				((IntegerNumber) reasoner.extractNumber(operation)).intValue());
-		countStep = (CIVL_Op == CIVLOperator.CIVL_MINLOC
-				|| CIVL_Op == CIVLOperator.CIVL_MAXLOC) ? 2 : 1;
-		totalUnits = universe.multiply(count, universe.integer(countStep));
-		eval = getDataFrom(state, pid, process, arguments[1], pointer,
-				totalUnits, true, false, arguments[1].getSource());
-		state = eval.state;
-		operands[1] = eval.value;
-		// Obtain data form bundle
-		operands[0] = (SymbolicExpression) bundle.argument(1);
-		// convert operand0 to array type if it is a single element
-		if (operands[0].type().typeKind() != SymbolicTypeKind.ARRAY)
-			operands[0] = universe.array(operands[0].type(),
-					Arrays.asList(operands[0]));
-		// type checking for two operands:
-		operandElementType = ((SymbolicArrayType) operands[0].type())
-				.elementType();
-		if (!((SymbolicArrayType) operands[1].type()).elementType()
-				.equals(operandElementType)) {
-			int bundleTypeIdx = ((IntObject) bundle.argument(0)).getInt();
-			CIVLPointerType bufPtrType = (CIVLPointerType) arguments[1]
-					.getExpressionType();
-
-			errorLogger.logSimpleError(source, state, process,
-					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
-					"Operands of $bundle_unpack_apply has different types:"
-							+ "data in bundle has type: "
-							+ modelFactory.typeFactory().bundleType()
-									.getElementType(bundleTypeIdx)
-							+ "\n " + arguments[1]
-							+ " points to objects of type: "
-							+ bufPtrType.baseType());
-			throw new UnsatisfiablePathConditionException();
-		}
-		eval.value = applyCIVLOperation(state, pid, process, operands, CIVL_Op,
-				count, operandElementType, source);
-		eval_and_pointer = setDataFrom(state, pid, process, arguments[1],
-				pointer, totalUnits, eval.value, false, source);
-		eval = eval_and_pointer.left;
-		assignedPtr = eval_and_pointer.right;
-		state = eval.state;
-		state = primaryExecutor.assign(source, state, process, assignedPtr,
-				eval.value);
+		// SymbolicExpression bundle = argumentValues[0],
+		// pointer = argumentValues[1];
+		// SymbolicExpression assignedPtr;
+		// NumericExpression count = (NumericExpression) argumentValues[2],
+		// totalUnits;
+		// // Enumerator number of the operation
+		// NumericExpression operation = (NumericExpression) argumentValues[3];
+		// CIVLOperator CIVL_Op;
+		// Pair<Evaluation, SymbolicExpression> eval_and_pointer;
+		// SymbolicExpression[] operands = new SymbolicExpression[2];
+		// SymbolicType operandElementType;
+		// BooleanExpression pathCondition = state.getPathCondition();
+		// Reasoner reasoner = universe.reasoner(pathCondition);
+		// Evaluation eval = null;
+		// int countStep;
+		// // TODO: support struct operands, i.e. struct in bundle and buf ->
+		// // struct
+		// // Checking if pointer is valid.
+		// if (pointer.operator() != SymbolicOperator.TUPLE) {
+		// errorLogger.logSimpleError(source, state, process,
+		// this.symbolicAnalyzer.stateInformation(state),
+		// ErrorKind.POINTER,
+		// "attempt to read/write an invalid pointer type variable");
+		// throw new UnsatisfiablePathConditionException();
+		// }
+		// // In executor, operation must be concrete.
+		// // Translate operation
+		// CIVL_Op = operandCounts(
+		// ((IntegerNumber) reasoner.extractNumber(operation)).intValue());
+		// countStep = (CIVL_Op == CIVLOperator.CIVL_MINLOC
+		// || CIVL_Op == CIVLOperator.CIVL_MAXLOC) ? 2 : 1;
+		// totalUnits = universe.multiply(count, universe.integer(countStep));
+		// eval = getDataFrom(state, pid, process, arguments[1], pointer,
+		// totalUnits, true, false, arguments[1].getSource());
+		// state = eval.state;
+		// operands[1] = eval.value;
+		// // Obtain data form bundle
+		// operands[0] = (SymbolicExpression) bundle.argument(1);
+		// // convert operand0 to array type if it is a single element
+		// if (operands[0].type().typeKind() != SymbolicTypeKind.ARRAY)
+		// operands[0] = universe.array(operands[0].type(),
+		// Arrays.asList(operands[0]));
+		// // type checking for two operands:
+		// operandElementType = ((SymbolicArrayType) operands[0].type())
+		// .elementType();
+		// if (!((SymbolicArrayType) operands[1].type()).elementType()
+		// .equals(operandElementType)) {
+		// int bundleTypeIdx = ((IntObject) bundle.argument(0)).getInt();
+		// CIVLPointerType bufPtrType = (CIVLPointerType) arguments[1]
+		// .getExpressionType();
+		//
+		// errorLogger.logSimpleError(source, state, process,
+		// symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+		// "Operands of $bundle_unpack_apply has different types:"
+		// + "data in bundle has type: "
+		// + modelFactory.typeFactory().bundleType()
+		// .getElementType(bundleTypeIdx)
+		// + "\n " + arguments[1]
+		// + " points to objects of type: "
+		// + bufPtrType.baseType());
+		// throw new UnsatisfiablePathConditionException();
+		// }
+		// eval.value = applyCIVLOperation(state, pid, process, operands,
+		// CIVL_Op,
+		// count, operandElementType, source);
+		// eval_and_pointer = setDataFrom(state, pid, process, arguments[1],
+		// pointer, totalUnits, eval.value, false, source);
+		// eval = eval_and_pointer.left;
+		// assignedPtr = eval_and_pointer.right;
+		// state = eval.state;
+		// state = primaryExecutor.assign(source, state, process, assignedPtr,
+		// eval.value);
 		return new Evaluation(state, null);
 	}
 

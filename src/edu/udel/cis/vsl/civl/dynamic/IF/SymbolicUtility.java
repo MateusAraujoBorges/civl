@@ -601,9 +601,12 @@ public interface SymbolicUtility {
 	 *            operation.
 	 * @return true iff the given domain is empty
 	 */
-	boolean isEmptyDomain(SymbolicExpression domain, int dim, CIVLSource source);
+	boolean isEmptyDomain(SymbolicExpression domain, int dim,
+			CIVLSource source);
 
-	/* ****************** End of Domain Operation section ********************* */
+	/*
+	 * ****************** End of Domain Operation section *********************
+	 */
 	/**
 	 * pre-condition:
 	 * <ol>
@@ -669,7 +672,8 @@ public interface SymbolicUtility {
 	 *            The type of the target array.
 	 * @return The Java Array contains array extents information.
 	 */
-	NumericExpression[] arrayCoordinateSizes(SymbolicCompleteArrayType arrayType);
+	NumericExpression[] arrayCoordinateSizes(
+			SymbolicCompleteArrayType arrayType);
 
 	/**
 	 * This function does an arithmetic integer division, returns the quotient
@@ -819,4 +823,19 @@ public interface SymbolicUtility {
 	 * @return
 	 */
 	BitSet range2BitSet(SymbolicExpression range, Reasoner reasoner);
+
+	/**
+	 * <p>
+	 * The parameter "pointer" must be a returned value of
+	 * {@link #heapMemUnit(SymbolicExpression)}
+	 * </p>
+	 * <p>
+	 * Given a pointer p to a memory heap, returns the malloc ID of the memory
+	 * heap.
+	 * </p>
+	 * 
+	 * @param pointer
+	 * @return
+	 */
+	IntObject getMallocID(SymbolicExpression pointer);
 }

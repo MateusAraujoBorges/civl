@@ -1453,4 +1453,15 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		}
 		return results;
 	}
+
+	public IntObject getMallocID(SymbolicExpression heapPointer) {
+		// As long as the argument "heapPointer" is a valid result of function
+		// #heapMemUnit, it must have the form
+		// ArrayELementReference<TupleComponentReference, a>, b>:
+		ReferenceExpression symref = getSymRef(heapPointer);
+		TupleComponentReference tupleRef = (TupleComponentReference) ((ArrayElementReference) symref)
+				.getParent();
+
+		return tupleRef.getIndex();
+	}
 }

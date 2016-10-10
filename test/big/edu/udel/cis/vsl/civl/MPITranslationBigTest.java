@@ -27,8 +27,8 @@ public class MPITranslationBigTest {
 
 	@Test
 	public void mpi_wave1d() {
-		assertTrue(ui
-				.run("verify", "-enablePrintf=false", filename("wave1d.c")));
+		assertTrue(
+				ui.run("verify", "-enablePrintf=false", filename("wave1d.c")));
 	}
 
 	@Test
@@ -39,16 +39,15 @@ public class MPITranslationBigTest {
 
 	@Test
 	public void mpi_diff2d() {
-		assertTrue(ui.run("verify",
-				"-enablePrintf=false", // "-input_mpi_nprocs=4",
-				"-inputNPROCSX=2", "-inputNPROCSY=2", "-inputNSTEPSB=3",
+		assertTrue(ui.run("verify", "-enablePrintf=false", // "-input_mpi_nprocs=4",
+				"-inputNPROCSX=2", "-inputNPROCSY=2", "-inputNSTEPSB=5",
 				filename("diffusion2d.c")));
 	}
 
 	@Test
 	public void mpi_pi() {
-		assertTrue(ui
-				.run("verify", "-enablePrintf=false", filename("mpi_pi.c")));
+		assertTrue(
+				ui.run("verify", "-enablePrintf=false", filename("mpi_pi.c")));
 	}
 
 	@Test
@@ -66,6 +65,11 @@ public class MPITranslationBigTest {
 	@Test
 	public void mpi_sumArray() {
 		assertTrue(ui.run("verify", filename("sum_array.c")));
+	}
+
+	@Test
+	public void mpi_gaussElim() {
+		assertTrue(ui.run("verify", filename("gaussJordan_elimination.c")));
 	}
 
 	@AfterClass

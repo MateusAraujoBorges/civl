@@ -442,6 +442,22 @@ public abstract class LibraryComponent {
 		}
 	}
 
+	/**
+	 * Returns the count of objects in one operand in a CIVL operation. e.g.
+	 * MINLOC or MAXLOC needs 2 objects for 1 operand
+	 * 
+	 * @param op
+	 *            The {@link CIVLOperator}
+	 * @return
+	 */
+	protected NumericExpression operandCounts(CIVLOperator civlOp) {
+		if (civlOp == CIVLOperator.CIVL_MAXLOC
+				|| civlOp == CIVLOperator.CIVL_MINLOC)
+			return two;
+		else
+			return one;
+	}
+
 	protected CIVLOperator translateOperator(int op) {
 		return CIVLOperator.values()[op];
 	}
@@ -805,7 +821,8 @@ public abstract class LibraryComponent {
 			indices[i] = indices[indices.length - i - 1];
 			indices[indices.length - i - 1] = tmp;
 		}
-		eval.value = denseRead(state, pid, rootArray, indices, count, source);
+		eval.value = arraySliceRead(state, pid, rootArray, indices, count,
+				source);
 		return eval;
 	}
 
@@ -871,7 +888,7 @@ public abstract class LibraryComponent {
 	 * @throws UnsatisfiablePathConditionException
 	 *             When array out of bound happens.
 	 */
-	private SymbolicExpression denseRead(State state, int pid,
+	public SymbolicExpression arraySliceRead(State state, int pid,
 			SymbolicExpression array, NumericExpression indices[],
 			NumericExpression count, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
@@ -896,6 +913,79 @@ public abstract class LibraryComponent {
 		flattenArray = arrayFlatten(state, process, array, source);
 		return symbolicAnalyzer.getSubArray(flattenArray, pos,
 				universe.add(pos, count), state, process, source);
+	}
+
+	/**
+	 * <p>
+	 * <b>Pre-condition:</b> <br>
+	 * length(targetArray) >= length(dataArray) + index;<br>
+	 * elementTypeOf(targetArray) == elementTypeOf(dataArray)
+	 * </p>
+	 * <p>
+	 * Writes the sequence of elements in "dataArray" to the "targetArray" from
+	 * the "index" of the "targetArray". This operation only will be done within
+	 * one dimension, i.e. both "dataArray" and "targetArray" represent a
+	 * sequence of elements, no matter the type of the elements is a scalar
+	 * type, an array type or a complex structure.
+	 * 
+	 * For example, writes b[2][3] into a[3][3] start from index 0, the results
+	 * will be:
+	 * 
+	 * a[3][3] = {b[0][0], b[0][1], b[0][2], b[1][0], b[1][1], b[1][2], a[2][0],
+	 * a[2][1], a[2][2]}
+	 * 
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state when this method is called
+	 * @param pid
+	 *            The PID of the process
+	 * @param targetArray
+	 *            The target array that will be written
+	 * @param dataArray
+	 *            The sequence of data that will be insert into the targetArray
+	 * @param index
+	 *            The start index of this write operation
+	 * @param source
+	 *            The {@link CIVLSource} related with this method call
+	 * @return
+	 */
+	public SymbolicExpression arraySliceWrite1d(State state, int pid,
+			SymbolicExpression targetArray, SymbolicExpression dataArray,
+			NumericExpression index, CIVLSource source) {
+		NumericExpression dataLength = universe.length(dataArray);
+		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Number concreteDataLength = reasoner.extractNumber(dataLength);
+
+		// If the data array has a non-concrete length, use array lambda:
+		if (concreteDataLength == null) {
+			NumericSymbolicConstant symConst = (NumericSymbolicConstant) universe
+					.symbolicConstant(universe.stringObject("i"),
+							universe.integerType());
+			BooleanExpression hiCond = universe.lessThan(symConst,
+					universe.add(index, dataLength));
+			BooleanExpression loCond = universe.lessThanEquals(index, symConst);
+			SymbolicExpression elementLambda;
+			SymbolicCompleteArrayType targetArrayType = (SymbolicCompleteArrayType) targetArray
+					.type();
+
+			elementLambda = universe.lambda(symConst,
+					universe.cond(universe.and(hiCond, loCond),
+							universe.arrayRead(dataArray, symConst),
+							universe.arrayRead(targetArray, symConst)));
+			return universe.arrayLambda(targetArrayType, elementLambda);
+		} else {
+			int intDataLength = ((IntegerNumber) concreteDataLength).intValue();
+
+			for (int i = 0; i < intDataLength; i++) {
+				NumericExpression I = universe.integer(i);
+				NumericExpression IplusIndex = universe.add(I, index);
+
+				targetArray = universe.arrayWrite(targetArray, IplusIndex,
+						universe.arrayRead(dataArray, I));
+			}
+			return targetArray;
+		}
 	}
 
 	/**
