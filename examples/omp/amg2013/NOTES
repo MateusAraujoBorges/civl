@@ -1,0 +1,48 @@
+Current problem:
+
+
+
+ABC v0.2 of 31-mar-2014 -- http://vsl.cis.udel.edu/abc
+
+Error: No conversion from type of right hand side to that of left:
+(void) *
+struct MPI_Comm
+at gen_redcs_mat.c:449.6-mpi.h:5.22 "new_comm = ((void*) ... )"
+make: *** [abc_amg2013] Error 6
+
+
+
+
+AMG2013/parcsr_ls/
+
+Probably what happened is: this file was read in after mpi.h was read.
+However in reality, this file will be preprocessed and compiled with other headers
+insteaed of mpi.h.  In those headers, MPI_Comm is defined to be int, and
+MPI_COMM_NULL is (-1).
+
+Here are the includes:
+
+#include "parcsr_ls.h"
+#include "parcsr_mv.h"
+#include "seq_mv.h"
+#include "par_amg.h"
+
+In parcsr_ls.h:
+#include "HYPRE_parcsr_ls.h"
+...
+#include "utilities.h"
+
+utilities.h includes HYPRE_utilities.h.
+
+In HYPRE_utilities.h, mpi.h is included first.
+
+In utilities.h there is  then a bunch of #defines which redefine MPI_Comm, etc.
+
+In mpi.h:  typedef struct MPI_Comm MPI_Comm;
+
+In utilities.h:
+#define MPI_Comm            hypre_MPI_Comm            
+...
+typedef int hypre_MPI_Comm;
+
+

@@ -1,0 +1,167 @@
+Making utilities ...
+mpicc -cc=gcc-mp-4.8 -o amg_linklist.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING amg_linklist.c
+mpicc -cc=gcc-mp-4.8 -o binsearch.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING binsearch.c
+mpicc -cc=gcc-mp-4.8 -o exchange_data.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING exchange_data.c
+mpicc -cc=gcc-mp-4.8 -o hypre_memory.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING hypre_memory.c
+mpicc -cc=gcc-mp-4.8 -o hypre_qsort.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING hypre_qsort.c
+mpicc -cc=gcc-mp-4.8 -o memory_dmalloc.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING memory_dmalloc.c
+mpicc -cc=gcc-mp-4.8 -o mpistubs.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING mpistubs.c
+mpicc -cc=gcc-mp-4.8 -o qsplit.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING qsplit.c
+mpicc -cc=gcc-mp-4.8 -o random.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING random.c
+mpicc -cc=gcc-mp-4.8 -o threading.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING threading.c
+mpicc -cc=gcc-mp-4.8 -o thread_mpistubs.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING thread_mpistubs.c
+mpicc -cc=gcc-mp-4.8 -D_POSIX_SOURCE -o timer.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING timer.c
+mpicc -cc=gcc-mp-4.8 -o timing.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING timing.c
+mpicc -cc=gcc-mp-4.8 -o umalloc_local.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING umalloc_local.c
+mpicc -cc=gcc-mp-4.8 -o hypre_error.o -c -I.. -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING hypre_error.c
+Building libHYPRE_utilities.a ... 
+ar -rcu libHYPRE_utilities.a amg_linklist.o binsearch.o exchange_data.o hypre_memory.o hypre_qsort.o memory_dmalloc.o mpistubs.o qsplit.o random.o threading.o thread_mpistubs.o timer.o timing.o umalloc_local.o hypre_error.o
+ranlib libHYPRE_utilities.a
+
+Making krylov ...
+mpicc -cc=gcc-mp-4.8 -o gmres.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp gmres.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_gmres.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_gmres.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_pcg.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_pcg.c
+mpicc -cc=gcc-mp-4.8 -o pcg.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp pcg.c
+Building libkrylov.a ... 
+ar -rcu libkrylov.a gmres.o HYPRE_gmres.o HYPRE_pcg.o pcg.o
+ranlib libkrylov.a
+
+Making IJ_mv ...
+mpicc -cc=gcc-mp-4.8 -o aux_parcsr_matrix.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../parcsr_ls -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp aux_parcsr_matrix.c
+mpicc -cc=gcc-mp-4.8 -o aux_par_vector.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../parcsr_ls -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp aux_par_vector.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_IJMatrix.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../parcsr_ls -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_IJMatrix.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_IJVector.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../parcsr_ls -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_IJVector.c
+mpicc -cc=gcc-mp-4.8 -o IJMatrix.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../parcsr_ls -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp IJMatrix.c
+mpicc -cc=gcc-mp-4.8 -o IJMatrix_parcsr.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../parcsr_ls -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp IJMatrix_parcsr.c
+mpicc -cc=gcc-mp-4.8 -o IJVector_parcsr.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../parcsr_ls -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp IJVector_parcsr.c
+Building libIJ_mv.a ... 
+ar -rcu libIJ_mv.a aux_parcsr_matrix.o aux_par_vector.o HYPRE_IJMatrix.o HYPRE_IJVector.o IJMatrix.o IJMatrix_parcsr.o IJVector_parcsr.o
+ranlib libIJ_mv.a
+
+Making parcsr_ls ...
+mpicc -cc=gcc-mp-4.8 -o aux_interp.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp aux_interp.c
+mpicc -cc=gcc-mp-4.8 -o gen_redcs_mat.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp gen_redcs_mat.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_parcsr_amg.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_parcsr_amg.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_parcsr_gmres.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_parcsr_gmres.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_parcsr_pcg.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_parcsr_pcg.c
+mpicc -cc=gcc-mp-4.8 -o par_amg.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_amg.c
+mpicc -cc=gcc-mp-4.8 -o par_amg_setup.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_amg_setup.c
+mpicc -cc=gcc-mp-4.8 -o par_amg_solve.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_amg_solve.c
+mpicc -cc=gcc-mp-4.8 -o par_cg_relax_wt.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_cg_relax_wt.c
+mpicc -cc=gcc-mp-4.8 -o par_coarsen.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_coarsen.c
+mpicc -cc=gcc-mp-4.8 -o par_coarse_parms.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_coarse_parms.c
+mpicc -cc=gcc-mp-4.8 -o par_cycle.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_cycle.c
+mpicc -cc=gcc-mp-4.8 -o par_indepset.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_indepset.c
+mpicc -cc=gcc-mp-4.8 -o par_interp.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_interp.c
+mpicc -cc=gcc-mp-4.8 -o par_jacobi_interp.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_jacobi_interp.c
+mpicc -cc=gcc-mp-4.8 -o par_multi_interp.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_multi_interp.c
+mpicc -cc=gcc-mp-4.8 -o par_laplace_27pt.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_laplace_27pt.c
+mpicc -cc=gcc-mp-4.8 -o par_laplace.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_laplace.c
+mpicc -cc=gcc-mp-4.8 -o par_lr_interp.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_lr_interp.c
+mpicc -cc=gcc-mp-4.8 -o par_nodal_systems.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_nodal_systems.c
+mpicc -cc=gcc-mp-4.8 -o par_rap.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_rap.c
+mpicc -cc=gcc-mp-4.8 -o par_rap_communication.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_rap_communication.c
+mpicc -cc=gcc-mp-4.8 -o par_vardifconv.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_vardifconv.c
+mpicc -cc=gcc-mp-4.8 -o par_relax.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_relax.c
+mpicc -cc=gcc-mp-4.8 -o par_relax_interface.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_relax_interface.c
+mpicc -cc=gcc-mp-4.8 -o par_scaled_matnorm.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_scaled_matnorm.c
+mpicc -cc=gcc-mp-4.8 -o par_stats.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_stats.c
+mpicc -cc=gcc-mp-4.8 -o par_strength.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_strength.c
+mpicc -cc=gcc-mp-4.8 -o partial.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp partial.c
+mpicc -cc=gcc-mp-4.8 -o pcg_par.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp pcg_par.c
+mpicc -cc=gcc-mp-4.8 -o par_relax_more.o -c -I.. -I../utilities -I../krylov -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_relax_more.c
+Building libparcsr_ls.a ... 
+ar -rcu libparcsr_ls.a aux_interp.o gen_redcs_mat.o HYPRE_parcsr_amg.o HYPRE_parcsr_gmres.o HYPRE_parcsr_pcg.o par_amg.o par_amg_setup.o par_amg_solve.o par_cg_relax_wt.o par_coarsen.o par_coarse_parms.o par_cycle.o par_indepset.o par_interp.o par_jacobi_interp.o par_multi_interp.o par_laplace_27pt.o par_laplace.o par_lr_interp.o par_nodal_systems.o par_rap.o par_rap_communication.o par_vardifconv.o par_relax.o par_relax_interface.o par_scaled_matnorm.o par_stats.o par_strength.o partial.o pcg_par.o par_relax_more.o
+ranlib libparcsr_ls.a
+
+Making parcsr_mv ...
+mpicc -cc=gcc-mp-4.8 -o HYPRE_parcsr_matrix.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_parcsr_matrix.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_parcsr_vector.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_parcsr_vector.c
+mpicc -cc=gcc-mp-4.8 -o new_commpkg.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp new_commpkg.c
+mpicc -cc=gcc-mp-4.8 -o par_csr_assumed_part.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_csr_assumed_part.c
+mpicc -cc=gcc-mp-4.8 -o par_csr_communication.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_csr_communication.c
+mpicc -cc=gcc-mp-4.8 -o par_csr_matop.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_csr_matop.c
+mpicc -cc=gcc-mp-4.8 -o par_csr_matrix.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_csr_matrix.c
+mpicc -cc=gcc-mp-4.8 -o par_csr_matop_marked.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_csr_matop_marked.c
+mpicc -cc=gcc-mp-4.8 -o par_csr_matvec.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_csr_matvec.c
+mpicc -cc=gcc-mp-4.8 -o par_vector.o -c -I.. -I../utilities -I../seq_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp par_vector.c
+Building libparcsr_mv.a ... 
+ar -rcu libparcsr_mv.a HYPRE_parcsr_matrix.o HYPRE_parcsr_vector.o new_commpkg.o par_csr_assumed_part.o par_csr_communication.o par_csr_matop.o par_csr_matrix.o par_csr_matop_marked.o par_csr_matvec.o par_vector.o
+ranlib libparcsr_mv.a
+
+Making seq_mv ...
+mpicc -cc=gcc-mp-4.8 -o big_csr_matrix.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp big_csr_matrix.c
+mpicc -cc=gcc-mp-4.8 -o csr_matop.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp csr_matop.c
+mpicc -cc=gcc-mp-4.8 -o csr_matrix.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp csr_matrix.c
+mpicc -cc=gcc-mp-4.8 -o csr_matvec.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp csr_matvec.c
+mpicc -cc=gcc-mp-4.8 -o genpart.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp genpart.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_csr_matrix.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_csr_matrix.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_vector.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_vector.c
+mpicc -cc=gcc-mp-4.8 -o vector.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp vector.c
+Building libseq_mv.a ... 
+ar -rcu libseq_mv.a big_csr_matrix.o csr_matop.o csr_matrix.o csr_matvec.o genpart.o HYPRE_csr_matrix.o HYPRE_vector.o vector.o
+ranlib libseq_mv.a
+
+Making struct_mv ...
+mpicc -cc=gcc-mp-4.8 -o assumed_part.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp assumed_part.c
+mpicc -cc=gcc-mp-4.8 -o box_algebra.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp box_algebra.c
+mpicc -cc=gcc-mp-4.8 -o box_alloc.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp box_alloc.c
+mpicc -cc=gcc-mp-4.8 -o box_boundary.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp box_boundary.c
+mpicc -cc=gcc-mp-4.8 -o box.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp box.c
+mpicc -cc=gcc-mp-4.8 -o box_manager.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp box_manager.c
+mpicc -cc=gcc-mp-4.8 -o box_neighbors.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp box_neighbors.c
+mpicc -cc=gcc-mp-4.8 -o communication_info.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp communication_info.c
+mpicc -cc=gcc-mp-4.8 -o computation.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp computation.c
+mpicc -cc=gcc-mp-4.8 -o grow.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp grow.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_struct_grid.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_struct_grid.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_struct_matrix.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_struct_matrix.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_struct_stencil.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_struct_stencil.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_struct_vector.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_struct_vector.c
+mpicc -cc=gcc-mp-4.8 -o new_assemble.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp new_assemble.c
+mpicc -cc=gcc-mp-4.8 -o new_box_neighbors.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp new_box_neighbors.c
+mpicc -cc=gcc-mp-4.8 -o project.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp project.c
+mpicc -cc=gcc-mp-4.8 -o struct_axpy.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_axpy.c
+mpicc -cc=gcc-mp-4.8 -o struct_communication.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_communication.c
+mpicc -cc=gcc-mp-4.8 -o struct_copy.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_copy.c
+mpicc -cc=gcc-mp-4.8 -o struct_grid.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_grid.c
+mpicc -cc=gcc-mp-4.8 -o struct_innerprod.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_innerprod.c
+mpicc -cc=gcc-mp-4.8 -o struct_io.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_io.c
+mpicc -cc=gcc-mp-4.8 -o struct_matrix.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_matrix.c
+mpicc -cc=gcc-mp-4.8 -o struct_matrix_mask.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_matrix_mask.c
+mpicc -cc=gcc-mp-4.8 -o struct_matvec.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_matvec.c
+mpicc -cc=gcc-mp-4.8 -o struct_overlap_innerprod.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_overlap_innerprod.c
+mpicc -cc=gcc-mp-4.8 -o struct_scale.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_scale.c
+mpicc -cc=gcc-mp-4.8 -o struct_stencil.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_stencil.c
+mpicc -cc=gcc-mp-4.8 -o struct_vector.o -c -I.. -I../utilities -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp struct_vector.c
+Building libHYPRE_struct_mv.a ... 
+ar -rcu libHYPRE_struct_mv.a assumed_part.o box_algebra.o box_alloc.o box_boundary.o box.o box_manager.o box_neighbors.o communication_info.o computation.o grow.o HYPRE_struct_grid.o HYPRE_struct_matrix.o HYPRE_struct_stencil.o HYPRE_struct_vector.o new_assemble.o new_box_neighbors.o project.o struct_axpy.o struct_communication.o struct_copy.o struct_grid.o struct_innerprod.o struct_io.o struct_matrix.o struct_matrix_mask.o struct_matvec.o struct_overlap_innerprod.o struct_scale.o struct_stencil.o struct_vector.o
+ranlib libHYPRE_struct_mv.a
+
+Making sstruct_mv ...
+mpicc -cc=gcc-mp-4.8 -o box_map.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp box_map.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_sstruct_graph.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_sstruct_graph.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_sstruct_grid.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_sstruct_grid.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_sstruct_matrix.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_sstruct_matrix.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_sstruct_stencil.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_sstruct_stencil.c
+mpicc -cc=gcc-mp-4.8 -o HYPRE_sstruct_vector.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp HYPRE_sstruct_vector.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_axpy.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_axpy.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_copy.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_copy.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_graph.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_graph.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_grid.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_grid.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_innerprod.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_innerprod.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_matrix.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_matrix.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_matvec.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_matvec.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_overlap_innerprod.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_overlap_innerprod.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_scale.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_scale.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_stencil.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_stencil.c
+mpicc -cc=gcc-mp-4.8 -o sstruct_vector.o -c -I.. -I../utilities -I../struct_mv -I../seq_mv -I../parcsr_mv -I../IJ_mv -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp sstruct_vector.c
+Building libsstruct_mv.a ... 
+ar -rcu libsstruct_mv.a box_map.o HYPRE_sstruct_graph.o HYPRE_sstruct_grid.o HYPRE_sstruct_matrix.o HYPRE_sstruct_stencil.o HYPRE_sstruct_vector.o sstruct_axpy.o sstruct_copy.o sstruct_graph.o sstruct_grid.o sstruct_innerprod.o sstruct_matrix.o sstruct_matvec.o sstruct_overlap_innerprod.o sstruct_scale.o sstruct_stencil.o sstruct_vector.o
+ranlib libsstruct_mv.a
+
+Making test ...
+mpicc -cc=gcc-mp-4.8 -o amg2013.o -c -I.. -I../utilities -I../struct_mv -I../sstruct_mv -I../IJ_mv -I../seq_mv -I../parcsr_mv -I../parcsr_ls -I../krylov -O2 -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -DHYPRE_LONG_LONG -DHYPRE_NO_GLOBAL_PARTITION -fopenmp -DHYPRE_TIMING amg2013.c
+Linking amg2013 ... 
+mpicc -cc=gcc-mp-4.8 -o amg2013 amg2013.o -L. -L../parcsr_ls -L../parcsr_mv -L../IJ_mv -L../seq_mv -L../sstruct_mv -L../struct_mv -L../krylov -L../utilities -lparcsr_ls -lparcsr_mv -lseq_mv -lsstruct_mv -lIJ_mv -lHYPRE_struct_mv -lkrylov -lHYPRE_utilities -lm  -fopenmp
+

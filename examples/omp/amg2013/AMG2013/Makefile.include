@@ -12,7 +12,8 @@
 
 
 # set the compiler here
-CC = gcc
+#CC = gcc
+CC = mpicc -cc=gcc-mp-4.8
 
 # set compile flags here
 # MPI only:
