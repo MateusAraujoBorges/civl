@@ -1,7 +1,21 @@
 Current problem:
+1. A abc bug illustrated by abcBug.c, abcBugHead1.h and abcBugHead2.h
+
+2. Error: Undeclared identifier sysconf
+at timer.c:45.41-47 "sysconf"  
+
+sysconf looks like a constant defined in standard library.
 
 
 
+[unused file]
+ABC v0.2 of 31-mar-2014 -- http://vsl.cis.udel.edu/abc
+
+Error: Expected 14 arguments but saw 13
+at par_difconv.c:224.34-225.73 "hypre_map(ix,iy,iz-1 ... )"
+
+
+[solved]
 ABC v0.2 of 31-mar-2014 -- http://vsl.cis.udel.edu/abc
 
 Error: No conversion from type of right hand side to that of left:
