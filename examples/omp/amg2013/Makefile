@@ -159,6 +159,9 @@ amg2013:
 
 abc_amg2013: 
 	abc -DHYPRE_TIMING $(ABC_INCLUDES)  AMG2013/test/amg2013.c $(SOURCE2) -summarize -prune
+	
+steve:
+	abc -DHYPRE_TIMING $(ABC_INCLUDES)  AMG2013/test/steve_test.c $(SOURCE2) -summarize -prune
 
 par_relax_more: 
 	${SHOW} ${INCLUDES} -DHYPRE_OPENMP par_relax_more_main.c AMG2013/parcsr_ls/par_relax_more.c
