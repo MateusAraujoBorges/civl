@@ -6,11 +6,6 @@ INCLUDES=-userIncludePath=./AMG2013:AMG2013/IJ_mv:AMG2013/krylov:AMG2013/parcsr_
 
 ABC_INCLUDES=-iquote ./AMG2013 -iquote AMG2013/IJ_mv -iquote AMG2013/krylov -iquote AMG2013/parcsr_ls -iquote AMG2013/parcsr_mv -iquote AMG2013/seq_mv -iquote AMG2013/sstruct_mv -iquote AMG2013/struct_mv -iquote AMG2013/test -iquote AMG2013/utilities
 
-SHOWV=${CIVL} show -verbose -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
-SHOW=${CIVL} show -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
-VERIFY=${CIVL} verify -ompNoSimplify -ompLoopDecomp=ROUND_ROBIN -inputTHREAD_MAX=3 -enablePrintf=false 
-VERIFYALL=${CIVL} verify -ompNoSimplify -ompLoopDecomp=ALL -inputTHREAD_MAX=3 -enablePrintf=false 
-SIMPLIFY=${CIVL} verify -ompLoopDecomp=ALL -inputTHREAD_MAX=3 -enablePrintf=false 
 
 SOURCE=AMG2013/IJ_mv/HYPRE_IJMatrix.c AMG2013/IJ_mv/HYPRE_IJVector.c \
  AMG2013/IJ_mv/IJMatrix.c AMG2013/IJ_mv/IJMatrix_parcsr.c \
@@ -151,6 +146,20 @@ SOURCE2=AMG2013/IJ_mv/HYPRE_IJMatrix.c AMG2013/IJ_mv/HYPRE_IJVector.c \
  AMG2013/utilities/threading.c AMG2013/utilities/timer.c \
  AMG2013/utilities/timing.c AMG2013/utilities/umalloc_local.c
 
+MATTSOURCE=AMG2013/test/matt_test.c \
+ AMG2013/parcsr_ls/par_relax_more.c \
+ AMG2013/parcsr_mv/par_csr_assumed_part.c \
+ AMG2013/parcsr_mv/par_csr_communication.c \
+ AMG2013/parcsr_mv/par_csr_matvec.c \
+ AMG2013/parcsr_mv/par_vector.c \
+ AMG2013/seq_mv/csr_matvec.c \
+ AMG2013/seq_mv/genpart.c \
+ AMG2013/seq_mv/vector.c \
+ AMG2013/utilities/hypre_error.c \
+ AMG2013/utilities/hypre_memory.c \
+ AMG2013/utilities/random.c
+
+
 all: 
 	${SHOW} ${INCLUDES} AMG2013/test/amg2013.c ${SOURCE}
 
@@ -163,16 +172,10 @@ abc_amg2013:
 steve:
 	abc -DHYPRE_TIMING $(ABC_INCLUDES)  AMG2013/test/steve_test.c $(SOURCE2) -summarize -prune
 
-par_relax_more: 
-	${SHOW} ${INCLUDES} -DHYPRE_OPENMP par_relax_more_main.c AMG2013/parcsr_ls/par_relax_more.c
+matt:
+	abc -DHYPRE_TIMING $(ABC_INCLUDES)  AMG2013/test/matt_test.c $(SOURCE2) -summarize -prune
 
-par_multi_interp: 
-	${SHOW} ${INCLUDES} -DHYPRE_OPENMP par_multi_interp_main.c AMG2013/parcsr_ls/par_multi_interp.c
-
-gccit: 
-	gcc ${INCLUDES} -DHYPRE_OPENMP par_relax_more_main.c AMG2013/parcsr_ls/par_relax_more.c
-
-allGCC: 
-	gcc ${INCLUDES} AMG2013/test/amg2013.c ${SOURCE}
+mattcivl:
+	${CIVL} show -verbose ${INCLUDES} -DHYPRE_OPENMP $(MATTSOURCE) 
 
 clean: 

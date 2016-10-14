@@ -1,8 +1,4 @@
-#include <omp.h>
-//#include <stdlib.h>
-#include <stdio.h>
-#include "headers.h"
-#include "par_amg.h"
+#include "parcsr_ls.h"
 
 int
 main( int   argc,
