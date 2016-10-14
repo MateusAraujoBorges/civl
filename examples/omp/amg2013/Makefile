@@ -94,7 +94,7 @@ SOURCE2=AMG2013/IJ_mv/HYPRE_IJMatrix.c AMG2013/IJ_mv/HYPRE_IJVector.c \
  AMG2013/parcsr_ls/par_amg_setup.c AMG2013/parcsr_ls/par_amg_solve.c \
  AMG2013/parcsr_ls/par_cg_relax_wt.c AMG2013/parcsr_ls/par_coarse_parms.c \
  AMG2013/parcsr_ls/par_coarsen.c AMG2013/parcsr_ls/par_cycle.c \
- AMG2013/parcsr_ls/par_difconv.c AMG2013/parcsr_ls/par_indepset.c \
+ AMG2013/parcsr_ls/par_indepset.c \
  AMG2013/parcsr_ls/par_interp.c AMG2013/parcsr_ls/par_jacobi_interp.c \
  AMG2013/parcsr_ls/par_laplace.c AMG2013/parcsr_ls/par_laplace_27pt.c \
  AMG2013/parcsr_ls/par_lr_interp.c AMG2013/parcsr_ls/par_multi_interp.c \
