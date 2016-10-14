@@ -1,0 +1,33 @@
+Required source files:
+f1	: AMG2013/test/steve_test.c
+f2	: AMG2013/parcsr_mv/parcsr_mv.h
+f6	: /include/abc/mpi.h
+f7	: /include/abc/op.h
+f17	: AMG2013/seq_mv/seq_mv.h
+f91	: AMG2013/parcsr_mv/par_vector.c
+f100	: AMG2013/seq_mv/vector.c
+
+Entities used from f1: AMG2013/test/steve_test.c :
+  main
+
+Entities used from f2: AMG2013/parcsr_mv/parcsr_mv.h :
+  hypre_IJAssumedPart
+  hypre_ParVector
+
+Entities used from f6: /include/abc/mpi.h :
+  MPI_Datatype
+  MPI_Allreduce
+  MPI_Comm
+  MPI_Op
+
+Entities used from f7: /include/abc/op.h :
+  Operation
+
+Entities used from f17: AMG2013/seq_mv/seq_mv.h :
+  hypre_Vector
+
+Entities used from f91: AMG2013/parcsr_mv/par_vector.c :
+  hypre_ParVectorInnerProd
+
+Entities used from f100: AMG2013/seq_mv/vector.c :
+  hypre_SeqVectorInnerProd
