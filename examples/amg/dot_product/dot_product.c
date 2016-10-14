@@ -1,5 +1,9 @@
-
 #include <mpi.h>
+#ifdef _CIVL
+#include <stdlib.h>
+#include <civlc.cvh>
+#endif
+
 #define HYPRE_BigInt int
 
 // seq_mv.h :
@@ -124,9 +128,41 @@ hypre_ParVectorInnerProd( hypre_ParVector *x,
 
 
 /* Stripped down driver for AMG2013 parallel inner product routine. */
+#define XVET  x.local_vector
+#define YVET  y.local_vector
 
+#ifdef _CIVL
+$input int VECTOR_LENGTH;
+$assume(0 <= VECTOR_LENGTH && VECTOR_LENGTH < 10);
+#endif
 int main() {
   hypre_ParVector x, y;
+  int nprocs;
+
+  MPI_Init(NULL, NULL);
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+#ifdef _CIVL
+  x.comm = MPI_COMM_WORLD;
+  y.comm = MPI_COMM_WORLD;
+  XVET = (hypre_Vector *)malloc(sizeof(hypre_Vector));
+  YVET = (hypre_Vector *)malloc(sizeof(hypre_Vector));
+  XVET->data = (double *)malloc(sizeof(double) * VECTOR_LENGTH * nprocs);
+  YVET->data = (double *)malloc(sizeof(double) * VECTOR_LENGTH * nprocs);
+  XVET->size = VECTOR_LENGTH;
+  YVET->size = VECTOR_LENGTH;
+  XVET->num_vectors = nprocs;
+  YVET->num_vectors = nprocs;
+#endif
   double result = hypre_ParVectorInnerProd(&x, &y);
+
+  MPI_Finalize();
+  free(XVET->data);
+  free(YVET->data);
+  free(XVET);
+  free(YVET);
+#ifdef DEBUG
+  #include <stdio.h>
+  printf("result = %f\n", result);
+#endif
   return result != 0;
 }
