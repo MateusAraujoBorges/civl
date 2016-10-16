@@ -120,7 +120,7 @@ typedef struct
   @   && \valid(v->data[0..v->size-1]);
   @
   @ predicate compat_vec(hypre_Vector *u, hypre_Vector *v) =
-  @      u->size == v->size && u->num_vectors == v->num_vectors
+  @      u->size == v->size && u->num_vectors == v->num_vectors;
   @
   @ predicate valid_par(hypre_ParVector *x) =
   @      \valid(x) && valid_vec(x->local_vector)
@@ -132,7 +132,7 @@ typedef struct
   @ predicate compat_par(hypre_ParVector *x, hypre_ParVector *y) =
   @      x->comm == y->comm
   @   && x->global_size == y->global_size
-  @   && compat_vec(x->local_vector, y->local_vector)
+  @   && compat_vec(x->local_vector, y->local_vector);
   @*/
    
 
