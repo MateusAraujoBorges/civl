@@ -8,6 +8,7 @@
 #include<comm.cvh>
 #include<seq.cvh>
 #include<pointer.cvh>
+#pragma PARSE_ACSL 
 /* *********************** Types *********************** */
 
 /* A datatype representing a queue of messages.  All message
@@ -44,7 +45,6 @@ struct _comm {
 /* *********************** Functions *********************** */
 
 /* creates a new message, copying data from the specified buffer */
-/*@ depends_on \access(data); */
 $atomic_f $message $message_pack(int source, int dest, int tag,
     const void *data, int size) {
   $message result;
@@ -82,7 +82,6 @@ int $message_size($message message) {
 
 /* transfers message data to buf, throwing exception if message
  * size exceeds specified size */
-/*@ depends_on \access(buf); */
 $atomic_f void $message_unpack($message message, void *buf, int size) {
   if (buf != NULL && message.size > 0) {
     $bundle_unpack(message.data, buf);
@@ -94,10 +93,6 @@ $atomic_f void $message_unpack($message message, void *buf, int size) {
 	    "Attempt to unpack a non-zero size message with a NULL pointer.");
 }
 
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @*/
 $atomic_f $gcomm $gcomm_create($scope scope, int size){
   $gcomm gcomm=($gcomm)$malloc(scope, sizeof(struct _gcomm));
   $queue empty;
@@ -111,10 +106,6 @@ $atomic_f $gcomm $gcomm_create($scope scope, int size){
   return gcomm;
 }
 
-/*@ depends_on \access(junkMsgs), \access(gcomm);
-  @ assigns junkMsgs, gcomm;
-  @ reads \nothing;
-  @*/
 $atomic_f int $gcomm_destroy($gcomm gcomm, void * junkMsgs){
   int nprocs = gcomm->nprocs;
   int numJunks = 0;
@@ -138,10 +129,6 @@ $atomic_f void $gcomm_dup($comm comm, $comm newcomm){
   $copy(newcomm->gcomm, comm->gcomm);
 }
 
-/*@ depends_on \nothing;
-  @ reads gcomm;
-  @ assigns gcomm;
-  @*/
 $atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place){
   $assert(!gcomm->isInit[place], "the place %d is already occupied in the global communicator!", place);
 
@@ -154,26 +141,16 @@ $atomic_f $comm $comm_create($scope scope, $gcomm gcomm, int place){
   return comm;
 }
 
-/*@ depends_on \access(comm);
-  @ assigns comm;
-  @ reads \nothing;
-  @*/
 $atomic_f void $comm_destroy($comm comm){
   $free(comm);
 }
 
 /* Returns the place of the local communicator.  This is the same as the
  * place argument used to create the local communicator. */
-/*@ pure;
-  @ depends_on \nothing;
-  @*/
 $atomic_f int $comm_place($comm comm){
  return comm->place;
 }
 
-/*@ pure;
-  @ depends_on \nothing;
-  @*/
 $atomic_f int $comm_size($comm comm){
  return comm->gcomm->nprocs;
 }

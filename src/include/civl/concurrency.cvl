@@ -64,10 +64,6 @@ void $barrier_call($barrier barrier) {
 }
 
 
-/*@ depends_on \nothing;
-  @ assigns \nothing;
-  @ reads \nothing;
-  @ */
 $atomic_f $gbarrier $gbarrier_create($scope scope, int size){
   $gbarrier gbarrier = ($gbarrier)$malloc(scope, sizeof(struct _gbarrier));
 
@@ -78,18 +74,10 @@ $atomic_f $gbarrier $gbarrier_create($scope scope, int size){
   return gbarrier;
 }
 
-/*@ depends_on \access(gbarrier);
-  @ reads \nothing;
-  @ assigns gbarrier;
-  @ */
 $atomic_f void $gbarrier_destroy($gbarrier gbarrier){
   $free(gbarrier);
 }
 
-/*@ depends_on \nothing;
-  @ assigns gbarrier;
-  @ reads gbarrier;
-  @ */
 $atomic_f $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place){
   $assert(gbarrier->proc_map[place]==$proc_null, "the place %d in the global barrier has already been taken.", place);
 
@@ -101,10 +89,6 @@ $atomic_f $barrier $barrier_create($scope scope, $gbarrier gbarrier, int place){
   return barrier;
 }
 
-/*@ depends_on \access(barrier);
-  @ assigns barrier;
-  @ reads \nothing;
-  @ */
 $atomic_f void $barrier_destroy($barrier barrier){
   $free(barrier);
 }

@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.library.common;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -51,6 +52,60 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType.SymbolicTypeKind;
  * 
  */
 public abstract class LibraryComponent {
+
+	/**
+	 * A helper class for storaging measurements of an array object, including
+	 * dimensions, extent for each dimension and slice size for each sub-array
+	 * with lower dimension.
+	 * 
+	 * There are three fields can be read from an instance of this class:
+	 * <ol>
+	 * <li>dimensions: number of dimensions in the corresponding array</li>
+	 * <li>extents: extents of dimensions in the corresponding array, extents
+	 * are saved in a "Java array" which have the same order as order of
+	 * declaring the corresponding array.</li>
+	 * <li>sliceSizes: sizes of sub-array slices for each lower dimension, sizes
+	 * are saved in a "java array" which have the order from largest to the
+	 * smallest.</li>
+	 * <li>baseType: the base type of the corresponding array, base type must
+	 * not be an array type.</li>
+	 * </ol>
+	 * 
+	 * @author ziqing
+	 *
+	 */
+	private class ArrayMeasurement {
+		final int dimensions;
+		final NumericExpression extents[];
+		final NumericExpression sliceSizes[];
+		final SymbolicType baseType;
+
+		ArrayMeasurement(SymbolicExpression array) {
+			assert array.type().typeKind() == SymbolicTypeKind.ARRAY;
+			SymbolicArrayType arrayType = (SymbolicArrayType) array.type();
+
+			dimensions = arrayType.dimensions();
+			extents = new NumericExpression[dimensions];
+			sliceSizes = new NumericExpression[dimensions];
+			// Get extents:
+			for (int i = 0; i < dimensions; i++) {
+				assert arrayType.isComplete();
+				SymbolicCompleteArrayType completeType = (SymbolicCompleteArrayType) arrayType;
+
+				extents[i] = completeType.extent();
+				if (i < dimensions - 1)
+					arrayType = (SymbolicArrayType) arrayType.elementType();
+			}
+			baseType = arrayType.elementType();
+			// Compute slice sizes:
+			NumericExpression sliceSize = one;
+
+			for (int i = dimensions; --i >= 0;) {
+				sliceSizes[i] = sliceSize;
+				sliceSize = universe.multiply(sliceSize, extents[i]);
+			}
+		}
+	}
 
 	// The order of these operations should be consistent with civlc.cvh
 	// file.
@@ -786,7 +841,8 @@ public abstract class LibraryComponent {
 						pointerExpr);
 			eval.value = universe.array(eval.value.type(),
 					Arrays.asList(eval.value));
-			eval.value = arrayFlatten(state, process, eval.value, source);
+			eval.value = arrayFlatten(state, process, eval.value,
+					new ArrayMeasurement(eval.value), source);
 			return eval;
 		}
 		// Else "count" > 1:
@@ -814,8 +870,8 @@ public abstract class LibraryComponent {
 					pointerExpr);
 		indices = new NumericExpression[indicesList.size()];
 		indicesList.toArray(indices);
-		// reverse so that the order satisfies the requirements of the denseRead
-		// method:
+		// reverse so that the order satisfies the requirements of the
+		// arraySliceRead method:
 		for (int i = (indices.length / 2) - 1; i >= 0; i--) {
 			NumericExpression tmp = indices[i];
 			indices[i] = indices[indices.length - i - 1];
@@ -860,14 +916,18 @@ public abstract class LibraryComponent {
 	/**
 	 * <p>
 	 * <b>Pre-condition:</b> <br>
-	 * 1. The dimensions of the array must equel to "indices.length"; <br>
+	 * 1. The dimensions of the array must be greater than or equal to
+	 * "indices.length"; <br>
 	 * 2. Values in "indices" array are ordered from left to right as same as
 	 * subscript order. (e.g. A[a][b][c] ==> {a,b,c})
 	 * </p>
 	 * 
 	 * <p>
-	 * <b> Spec: </b> Given a group of indices I, an array a and a number c.
-	 * Read c consequent elements start from a[I].
+	 * Given a group of indices I, an array a and a number c. Read c consequent
+	 * elements start from a[I]. If size of I less than the dimension of a, it
+	 * will be supplemented with zeros. e.g. Given an array a[4][5][6] and a
+	 * ordered set of indices {2, 1}. The indices locate the element [2][1][0]
+	 * in array a.
 	 * </p>
 	 * 
 	 * @param state
@@ -892,27 +952,24 @@ public abstract class LibraryComponent {
 			SymbolicExpression array, NumericExpression indices[],
 			NumericExpression count, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		NumericExpression pos = zero;
+		NumericExpression pos = zero, step = one;
 		SymbolicExpression flattenArray;
 		String process = state.getProcessState(pid).name();
+		ArrayMeasurement arrayMeasure = new ArrayMeasurement(array);
+		NumericExpression sliceSizes[] = arrayMeasure.sliceSizes;
+		int i;
 
-		assert array.type().typeKind() == SymbolicTypeKind.ARRAY
-				&& ((SymbolicArrayType) array.type()).isComplete();
-		if (indices.length > 0) {
-			SymbolicCompleteArrayType dyArrayType = (SymbolicCompleteArrayType) array
-					.type();
-			assert dyArrayType.dimensions() == indices.length;
-			for (int i = 0; i < indices.length - 1; i++) {
-				dyArrayType = (SymbolicCompleteArrayType) dyArrayType
-						.elementType();
-				pos = universe.multiply(dyArrayType.extent(),
-						universe.add(pos, indices[i]));
-			}
-			pos = universe.add(pos, indices[indices.length - 1]);
-		}
-		flattenArray = arrayFlatten(state, process, array, source);
+		flattenArray = arrayFlatten(state, process, array, arrayMeasure,
+				source);
+		for (i = 0; i < indices.length; i++)
+			pos = universe.add(pos,
+					universe.multiply(indices[i], sliceSizes[i]));
+		// valid subscript: d < indices.length <= dimension && sliceSizes.length
+		// == dimension
+		step = i > 0 ? sliceSizes[i - 1] : sliceSizes[0];
 		return symbolicAnalyzer.getSubArray(flattenArray, pos,
-				universe.add(pos, count), state, process, source);
+				universe.add(pos, universe.multiply(count, step)), state,
+				process, source);
 	}
 
 	/**
@@ -1027,7 +1084,8 @@ public abstract class LibraryComponent {
 		assert typeTemplate.isComplete() : "arrayCasting internal exception";
 		if (oldArray.type().equals(typeTemplate))
 			return oldArray;
-		flattenOldArray = arrayFlatten(state, process, oldArray, source);
+		flattenOldArray = arrayFlatten(state, process, oldArray,
+				new ArrayMeasurement(oldArray), source);
 		flattenLength = (IntegerNumber) reasoner
 				.extractNumber(universe.length(flattenOldArray));
 		if (flattenLength == null)
@@ -1091,63 +1149,70 @@ public abstract class LibraryComponent {
 	}
 
 	/**
-	 * Flatten the given array. Here flatten means converting a nested array
-	 * (which represents multiple dimensional array in CIVL) to an one
-	 * dimensional array.
+	 * <p>
+	 * <b>Pre-condition:</b>'array' must be a complete array object. <br>
+	 * 'arrayMeasurement' is an {@link ArrayMeasurement} object associates to
+	 * the 'array'.
+	 * </p>
+	 * <p>
+	 * Flatten an array to a one-dimensional array whose elements must have
+	 * non-array type.
+	 * </p>
 	 * 
 	 * @param state
-	 *            The current state
+	 *            The current state when this method is called
 	 * @param process
-	 *            The information of the process
+	 *            The String identifier of the process
 	 * @param array
-	 *            The array which is going to be flatten
+	 *            The complete array object
+	 * @param arrayMeasurement
+	 *            The {@link ArrayMeasurement} of the array.
 	 * @param civlsource
-	 *            The CIVL source the array or the pointer to the array
-	 * @return the flatten array
+	 *            The {@link CIVLSource} associates to this method.
+	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	public SymbolicExpression arrayFlatten(State state, String process,
-			SymbolicExpression array, CIVLSource civlsource)
-			throws UnsatisfiablePathConditionException {
-		List<SymbolicExpression> flattenElementList;
-		NumericExpression[] arrayElementsSizes;
+			SymbolicExpression array, ArrayMeasurement arrayMeasurement,
+			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
+		Queue<SymbolicExpression> subTreeQueue = new LinkedList<>();
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		SymbolicType baseType = arrayMeasurement.baseType;
+		NumericExpression extents[] = arrayMeasurement.extents;
+		NumericExpression sliceSizes[] = arrayMeasurement.sliceSizes;
+		int dimensions = arrayMeasurement.dimensions;
 
-		if (array == null)
-			throw new CIVLInternalException("parameter 'array' is null.",
-					civlsource);
-		if (array.isNull())
-			return array;
-		// If the array is already a one-dimensional array no matter if the
-		// length is concrete or non-concrete, return it directly.
-		if (!(((SymbolicArrayType) array.type())
-				.elementType() instanceof SymbolicArrayType))
-			return array;
-		// If the array has at least one dimension whose length is non-concrete,
-		// using array lambda to flatten it.
-		if (this.hasNonConcreteExtent(reasoner, array)) {
-			if (array.type().typeKind().equals(SymbolicTypeKind.ARRAY))
-				arrayElementsSizes = symbolicUtil
-						.arraySlicesSizes(symbolicUtil.arrayCoordinateSizes(
-								(SymbolicCompleteArrayType) array.type()));
-			else {
-				arrayElementsSizes = new NumericExpression[1];
-				arrayElementsSizes[0] = one;
+		subTreeQueue.add(array);
+		// If the total size of the array is non-concrete, use lambdaFlatten:
+		if (reasoner.extractNumber(
+				universe.multiply(extents[0], sliceSizes[0])) == null)
+			return arrayLambdaFlatten2(state, array, sliceSizes, civlsource);
+		// If the totoal size of the array is concrete:
+		for (int d = 0; d < dimensions; d++) {
+			int prevExtent = subTreeQueue.size();
+			NumericExpression extent;
+			Number concExtent;
+			int intExtent;
+
+			extent = extents[d];
+			concExtent = reasoner.extractNumber(extent);
+			// TODO: it's possible that an array 'a[1/N][N]' will be falttened
+			// as an array having concrete extents, but it should be really rare
+			// case so just throw a internal error here for now. It it realy
+			// happens, change the code here.
+			if (concExtent == null)
+				throw new CIVLInternalException(
+						"Unexpected exception during flatten an array of concrete extents.",
+						civlsource);
+			intExtent = ((IntegerNumber) concExtent).intValue();
+			for (int i = 0; i < prevExtent; i++) {
+				array = subTreeQueue.poll();
+				for (int j = 0; j < intExtent; j++)
+					subTreeQueue.add(
+							universe.arrayRead(array, universe.integer(j)));
 			}
-			return this.arrayLambdaFlatten(state, array, arrayElementsSizes,
-					civlsource);
 		}
-		flattenElementList = this.arrayFlattenWorker(state, array, civlsource);
-		if (flattenElementList.size() > 0) {
-			assert (!(flattenElementList.get(0)
-					.type() instanceof SymbolicArrayType));
-			return universe.array(flattenElementList.get(0).type(),
-					flattenElementList);
-		} else if (array instanceof SymbolicArrayType)
-			return universe
-					.emptyArray(((SymbolicArrayType) array).elementType());
-		else
-			return universe.emptyArray(array.type());
+		return universe.array(baseType, subTreeQueue);
 	}
 
 	/**
@@ -1225,7 +1290,8 @@ public abstract class LibraryComponent {
 				return new Evaluation(state, dataSequence);
 		} // TODO: what if the length of dataSize is non-concrete and cannot be
 			// decided by reasoner?
-		flattenArray = arrayFlatten(state, process, array, source);
+		flattenArray = arrayFlatten(state, process, array,
+				new ArrayMeasurement(array), source);
 		i = startPos;
 
 		Number dataSizeConcrete = reasoner.extractNumber(dataSize);
@@ -1265,167 +1331,55 @@ public abstract class LibraryComponent {
 		return new Evaluation(state, flattenArray);
 	}
 
-	// /**
-	// * pre-condition:
-	// * <ol>
-	// * <li>endPos - startPos > 0</li>
-	// * <li>array has {@link SymbolicCompleteArrayType}</li>
-	// * <li>arraySlicesSize[0] >= endPos - startPos</li>
-	// * </ol>
-	// * post_condition:
-	// * <ol>
-	// * <li>Return a sequence of data with length "count" from the pointed
-	// object
-	// * starting from the pointed position</li>
-	// * </ol>
-	// * Get sequence of data between two array element references. Returns the
-	// * sequence of data which is in form of an one dimensional array.
-	// *
-	// * @author Ziqing Luo
-	// * @param state
-	// * The current state
-	// * @param process
-	// * The information of the process
-	// * @param startPtr
-	// * The pointer to the start position
-	// * @param endPtr
-	// * The pointer to the end position
-	// * @param arrayElementsSizes
-	// * same as the same argument in {@link #setDataBetween(State,
-	// * String, SymbolicExpression, SymbolicExpression,
-	// * SymbolicExpression, Map<Integer, NumericExpression>,
-	// * CIVLSource)}
-	// * @param source
-	// * The CIVL source of start pointer.
-	// * @return a sequence of data which is in form of an one dimensional
-	// array.
-	// * @throws UnsatisfiablePathConditionException
-	// */
-	// private SymbolicExpression getDataBetween(State state, String process,
-	// NumericExpression startPos, NumericExpression count,
-	// SymbolicExpression array, NumericExpression[] arraySlicesSizes,
-	// CIVLSource source) throws UnsatisfiablePathConditionException {
-	// SymbolicExpression flattenArray;
-	//
-	// // TODO: getSubArray not support non-concrete length
-	// flattenArray = arrayFlatten(state, process, array, source);
-	// return symbolicAnalyzer.getSubArray(flattenArray, startPos,
-	// universe.add(startPos, count), state, process, source);
-	// }
-
 	/**
-	 * Recursively flatten the given array. Only can be used on arrays have
-	 * concrete lengths.
+	 * <p>
+	 * Pre-condition: array has a complete array type. <br>
+	 * dimension(array) == arraySliceSizes.length
+	 * </p>
+	 * <p>
+	 * Given a complete array a[N0][N1]..[Nn] (n >= 0), flatten a to a
+	 * one-dimensional array a'[N0 * N1 * .. * Nn]. The value of a' will be
+	 * <code>
+	 * let f(i, j) := Ni * Ni+1 * .. * Nj (j > i);
+	 * 
+	 * lambda int i : a[i/f(1,n)][i%f(1,n)/f(2,n)][i%f(1,n)%f(2,n)/f(3,n)]...[i%f(1,n)%..%f(n-1,n)]
+	 * </code> <br>
+	 * This method is used to flatten a multiple dimensional array with
+	 * non-concrete size into an one-dimensional array.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state when this method is called
+	 * @param array
+	 *            The array that will be flattened.
+	 * @param arraySliceSizes
+	 *            An sequence of size of slices of the parameter 'array'
+	 * @param civlsource
+	 *            The {@link CIVLSource} corresponding to this method call
+	 * @return A flattened array
 	 */
-	private List<SymbolicExpression> arrayFlattenWorker(State state,
-			SymbolicExpression array, CIVLSource civlsource) {
-		BooleanExpression pathCondition = state.getPathCondition();
-		List<SymbolicExpression> flattenElementList = new LinkedList<>();
-		Reasoner reasoner = universe.reasoner(pathCondition);
-
-		if (array.isNull() || array == null)
-			throw new CIVLInternalException("parameter array is null.",
-					civlsource);
-
-		if (array.type() instanceof SymbolicArrayType) {
-			BooleanExpression claim;
-			NumericExpression i = universe.zeroInt();
-			NumericExpression length = universe.length(array);
-
-			claim = universe.lessThan(i, length);
-			if (((SymbolicArrayType) array.type())
-					.elementType() instanceof SymbolicArrayType) {
-				while (reasoner.isValid(claim)) {
-					SymbolicExpression element = universe.arrayRead(array, i);
-
-					flattenElementList.addAll(
-							arrayFlattenWorker(state, element, civlsource));
-					// update
-					i = universe.add(i, one);
-					claim = universe.lessThan(i, length);
-				}
-			} else {
-				while (reasoner.isValid(claim)) {
-					SymbolicExpression element = universe.arrayRead(array, i);
-
-					flattenElementList.add(element);
-					// update
-					i = universe.add(i, one);
-					claim = universe.lessThan(i, length);
-				}
-			}
-		} else {
-			flattenElementList.add(array);
-		}
-		return flattenElementList;
-	}
-
-	/**
-	 * Helper function for
-	 * {@link #arrayFlatten(State, String, SymbolicExpression, CIVLSource)}.
-	 * Used for dealing with arrays have non-concrete lengths.
-	 */
-	private SymbolicExpression arrayLambdaFlatten(State state,
-			SymbolicExpression array, NumericExpression[] arrayElementsSizes,
+	private SymbolicExpression arrayLambdaFlatten2(State state,
+			SymbolicExpression array, NumericExpression[] arraySliceSizes,
 			CIVLSource civlsource) {
-		// Temporary array object during processing
-		SymbolicExpression tempArray = array;
-		NumericSymbolicConstant index = null;
-		SymbolicType elementType = null;
-		SymbolicExpression arrayEleFunc = null;
-		SymbolicExpression lambdaFunc;
-		SymbolicExpression newArray = null;
-		SymbolicCompleteArrayType newArrayType;
-		int dim;
-		NumericExpression capacity = one;
-		NumericExpression tempIndex;
-		NumericExpression newExtent;
+		SymbolicCompleteArrayType arrayType = (SymbolicCompleteArrayType) array
+				.type();
+		int dim = arrayType.dimensions();
+		NumericSymbolicConstant symConst = (NumericSymbolicConstant) universe
+				.symbolicConstant(universe.stringObject("i"),
+						universe.integerType());
+		NumericExpression extent = arrayType.extent();
+		NumericExpression index = symConst;
+		SymbolicExpression arrayReadFunc = array;
 
-		index = (NumericSymbolicConstant) universe.symbolicConstant(
-				universe.stringObject("i"), universe.integerType());
-		// From outer to inner. later from inner to outer
-		dim = arrayElementsSizes.length;
-		tempIndex = index;
-		newExtent = one;
-		for (int i = 0; i < dim; i++) {
-			NumericExpression newIndex; // new index is remainder
-
-			capacity = arrayElementsSizes[i];
-			newIndex = universe.divide(tempIndex, capacity);
-			newExtent = universe.multiply(newExtent,
-					universe.length(tempArray));
-			tempArray = universe.arrayRead(tempArray, newIndex);
-			tempIndex = universe.modulo(tempIndex, capacity);
+		for (int d = 0; d < dim; d++) {
+			arrayReadFunc = universe.arrayRead(arrayReadFunc,
+					universe.divide(index, arraySliceSizes[d]));
+			index = universe.modulo(index, arraySliceSizes[d]);
 		}
-		elementType = tempArray.type();
-		arrayEleFunc = universe.canonic(tempArray);
-		lambdaFunc = universe.lambda(index, arrayEleFunc);
-		newArrayType = universe.arrayType(elementType, newExtent);
-		newArray = universe.arrayLambda(newArrayType, lambdaFunc);
-		assert (newArray != null);
-		return newArray;
-	}
-
-	/**
-	 * Helper function for
-	 * {@link #arrayFlatten(State , String, SymbolicExpression , CIVLSource)}.
-	 * Returns true if and only if there is at least one array (in nested arrays
-	 * ) has non-concrete length.
-	 */
-	private boolean hasNonConcreteExtent(Reasoner reasoner,
-			SymbolicExpression array) {
-		NumericExpression extent;
-		SymbolicExpression element = array;
-		SymbolicType type = array.type();
-
-		while (type instanceof SymbolicArrayType) {
-			extent = universe.length(element);
-			if (reasoner.extractNumber(extent) == null)
-				return true;
-			element = universe.arrayRead(element, zero);
-			type = element.type();
-		}
-		return false;
+		arrayType = universe.arrayType(arrayReadFunc.type(),
+				universe.multiply(arraySliceSizes[0], extent));
+		return universe.arrayLambda(arrayType,
+				universe.lambda(symConst, arrayReadFunc));
 	}
 
 	/**

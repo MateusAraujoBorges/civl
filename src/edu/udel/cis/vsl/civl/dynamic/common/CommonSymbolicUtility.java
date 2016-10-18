@@ -18,7 +18,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
-import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
@@ -890,15 +889,14 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	/* *********************** Package-Private Methods ********************* */
 	@Override
 	public NumericExpression[] arraySlicesSizes(
-			NumericExpression[] coordinateSizes)
-			throws UnsatisfiablePathConditionException {
-		int dim = coordinateSizes.length;
+			NumericExpression[] array_extents) {
+		int dim = array_extents.length;
 		NumericExpression[] sliceSizes = new NumericExpression[dim];
 		NumericExpression sliceSize = one;
 
 		for (int i = dim; --i >= 0;) {
 			sliceSizes[i] = sliceSize;
-			sliceSize = universe.multiply(sliceSize, coordinateSizes[i]);
+			sliceSize = universe.multiply(sliceSize, array_extents[i]);
 		}
 		return sliceSizes;
 	}

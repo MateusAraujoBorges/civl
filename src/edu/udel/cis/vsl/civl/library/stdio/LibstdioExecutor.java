@@ -1191,7 +1191,6 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			Expression argPtrExpr, SymbolicExpression argPtr,
 			NumericExpression offset, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		data = this.arrayFlatten(state, process, data, source);
 		return this.setDataFrom(state, pid, process, argPtrExpr, argPtr, offset,
 				data, true, source);
 	}

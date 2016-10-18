@@ -608,26 +608,22 @@ public interface SymbolicUtility {
 	 * ****************** End of Domain Operation section *********************
 	 */
 	/**
+	 * 
+	 * <p>
 	 * pre-condition:
-	 * <ol>
-	 * <li>"coordinateSizes" must not be null</li>
-	 * </ol>
-	 * post-condition:
-	 * <ol>
-	 * <li>the returned {@link CIVLType} must not be null</li>
-	 * </ol>
+	 * <li>length(array_extents) > 0</li>
+	 * </p>
 	 * Computing sizes of all slices of the given array. Here an array slice is
 	 * a sub-array with a lower dimension of the given array.
 	 * 
-	 * @param coordinateSizes
+	 * @param array_extents
 	 *            Sizes of coordinates representing an array. e.g. {2,3,4}
 	 *            stands for an array T a[2][3][4].
 	 * @return Sizes of all array slices. e.g. input:{2,3,4} ==> output:{12, 4,
 	 *         1}
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	NumericExpression[] arraySlicesSizes(NumericExpression[] coordinateSizes)
-			throws UnsatisfiablePathConditionException;
+	NumericExpression[] arraySlicesSizes(NumericExpression[] array_extents);
 
 	/**
 	 * pre-condition:

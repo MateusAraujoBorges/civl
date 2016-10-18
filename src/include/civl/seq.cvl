@@ -1,7 +1,5 @@
 #include <seq.cvh>
 
-/*@ depends_on \access(array, values);
-  @*/
 $atomic_f void $seq_append(void *array, void *values, int count){
   int length = $seq_length(array);
   

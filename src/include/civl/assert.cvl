@@ -3,7 +3,6 @@
  */
 #include <assert.h>
 
-/*@ depends_on \nothing; */
 $atomic_f void assert(_Bool expr){
   $assert(expr);
 }
