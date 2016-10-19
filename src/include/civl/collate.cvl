@@ -5,10 +5,11 @@
 #include<civlc.cvh>
 #include<seq.cvh>
 
-// Status of a collate state for a process
+// Status of a collate state for a process:
 #define NONARRIVED 0
 #define ARRIVED    1
 #define DEPARTED   2
+// Status of a collate attribute checker:
 #define UNCHECKED  3
 #define CHECKED    4
 // The $gcollate_state whose state field is significant:
@@ -223,7 +224,7 @@ $bundle $collate_check($collator c, $bundle bundle) {
   attr->status[place] = CHECKED;
   result = attr->attribute;
 
-  // if complete, dequeue; else modify the entry:
+  // if complete, dequeue:
   _Bool complete = $true;
 
   for (int i = 0; i < nprocs; i++) 
@@ -232,9 +233,8 @@ $bundle $collate_check($collator c, $bundle bundle) {
       break;
     }
   if (complete) {
-    $assert(index == 0);
-    $free(c->gcollator->queue[0]);
-    $seq_remove(&c->gcollator->queue, 0, NULL, 1);
+    $free(c->gcollator->queue[index]);
+    $seq_remove(&c->gcollator->queue, index, NULL, 1);
     c->gcollator->queue_length--;
   }
   return result;
