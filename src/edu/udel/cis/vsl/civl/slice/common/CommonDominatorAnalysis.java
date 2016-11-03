@@ -2,7 +2,6 @@ package edu.udel.cis.vsl.civl.slice.common;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,13 +25,13 @@ import edu.udel.cis.vsl.civl.slice.IF.DominatorAnalysis;
 
 public class CommonDominatorAnalysis<E> implements DominatorAnalysis<E> {
 	
-	private List<E> stmts;
+	private Set<E> stmts;
 	private Set<E> nodesMinusStart;
 	private Map<E,Set<E>> preds;
 	private E start;
 	private Map<E, Set<E>> doms;
 
-	public CommonDominatorAnalysis (List<E> nodes,
+	public CommonDominatorAnalysis (Set<E> nodes,
 		      Map<E,Set<E>> preds, E start) {
 		assert nodes != null;
 		this.stmts = nodes;
