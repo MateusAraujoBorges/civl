@@ -1,5 +1,9 @@
 package edu.udel.cis.vsl.civl.slice.common;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -17,20 +21,22 @@ public class ControlDependence {
 	Map<Location,CfaLoc> locToCfaLoc; /* One big map */
 	Stack<ControlDependencyElement> cds;
 	Set<BooleanExpression> slicedPC;
+	File traceFile;
 	boolean debug = false;
 	
 	public ControlDependence (ErrorAutomaton tr, Map<CfaLoc,CfaLoc> ipd,
-			Map<Location,CfaLoc> locationMap) {
+			Map<Location,CfaLoc> locationMap, File f) {
 		
 		trace = tr;
 		ipdMap = ipd;
 		locToCfaLoc = locationMap;
 		cds = new Stack<>();
 		slicedPC = new HashSet<>();
+		traceFile = f;
 		
 	}
 	
-	public Stack<ControlDependencyElement> collectControlDependencyStack () {
+	public Stack<ControlDependencyElement> collectControlDependencyStack () throws IOException {
 		
 		for (ErrorCfaLoc l : trace.errorTrace) {	
 			if (isMerging(l)) mergingLogic(l);
@@ -77,6 +83,9 @@ public class ControlDependence {
 		}
 		System.out.println("\nEND Control Dependent Slice\n");
 		System.out.println();
+		
+		outputSlicedPC(traceFile);
+		
 		return cds;
 		
 	}
@@ -188,5 +197,25 @@ public class ControlDependence {
 		
 	}
 
-
+	private void outputSlicedPC(File traceFile) throws IOException {
+		
+		BufferedWriter output = null;
+		String sliceFileName = traceFile.getAbsolutePath() + ".slice";
+		try {
+			File file = new File(sliceFileName);
+            output = new BufferedWriter(new FileWriter(file));
+            
+			output.write(makeSliceString());
+        } finally {
+          if ( output != null ) {
+            output.close();
+          }
+        }
+	}
+	
+	private String makeSliceString() {
+		String s = "";
+		for (BooleanExpression e : slicedPC) s += e.toString().concat("\n");
+		return s;
+	}
 }

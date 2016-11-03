@@ -713,7 +713,8 @@ public class UserInterface {
 					locToCfaLoc.putAll(cfa.locToCfaLoc);
 				}
 				ErrorAutomaton errorTrace = new ErrorAutomaton(model, trace);
-				ControlDependence cd = new ControlDependence(errorTrace, ipds, locToCfaLoc);
+				ControlDependence cd = 
+						new ControlDependence(errorTrace, ipds, locToCfaLoc, traceFile);
 				cd.collectControlDependencyStack();
 			}
 			if (witnessMode) {
