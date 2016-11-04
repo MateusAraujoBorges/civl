@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 
 // Dense matrix spec...
@@ -13,57 +12,65 @@ double A0[N*M];
 #pragma TASS input
 double B0[N*M];
 #pragma TASS output
-double C_OUT[N*M];
+double OUT[N*M];
 
-/*
-struct DM_struct {
+
+struct DM_struct{
   double * data;
   int num_rows;
   int num_cols;
 };
-*/
-
-typedef double DenseMatrix;
-
-//typedef struct DM_struct DenseMatrix;
-//typedef DenseMatrix * DM;
 
 
-double * dense_create(int n, int m) {
-  double * mat;
+typedef struct DM_struct DenseMatrix;
 
-  mat = (double*)malloc(n*m*sizeof(double));
-  /*
+DenseMatrix * dense_create(int n, int m) {
+  DenseMatrix* mat;
+
   mat->num_rows = n;
   mat->num_cols = m;
   mat->data = (double*) malloc(n*m*sizeof(double));
-  */
+  
   return mat;
 }
 
 
-DenseMatrix * dense_add(int n, int m, DenseMatrix *A, DenseMatrix *B) {
+DenseMatrix * dense_add(DenseMatrix * X, DenseMatrix * Y) {
   int i;
-  DenseMatrix * C;
+  int n;
+  int m;
+  DenseMatrix * R;
 
-  C = dense_create(n,m);
+  n = X->num_rows;
+  m = X->num_cols;
+  R = dense_create(n,m);
   for (i=0; i<n*m; i++)
-    C[i] = A[i] + B[i];
-  return C;
+    R->data[i] = X->data[i] + Y->data[i];
+  return R;
 }
 
-void free_dense(DenseMatrix *matrix) {
-  //free(matrix->data);
+void free_dense(DenseMatrix * matrix) {
+  free(matrix->data);
   free(matrix);
 }
 
 int main() {
   int i;
-  DenseMatrix * C;
-
-  C = dense_add(N,M,&A0[0],&B0[0]);
+  DenseMatrix * X;
+  DenseMatrix * Y;
+  DenseMatrix * Z;
+  
+  X = dense_create(N,M);
+  Y = dense_create(N,M);
   for (i=0; i<N*M; i++)
-    C_OUT[i] = C[i];
-  free_dense(C);
+    X->data[i] = A0[i];
+  for (i=0; i<N*M; i++)
+    Y->data[i] = B0[i];
+  Z = dense_add(X,Y);
+  for (i=0; i<N*M; i++)
+    OUT[i] = Z->data[i];
+  free_dense(X);
+  free_dense(Y);
+  free_dense(Z);
   return 0;
 }
