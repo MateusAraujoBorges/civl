@@ -38,7 +38,6 @@ public class SliceTest {
 	 * 
 	 * @throws FileNotFoundException
 	 */
-	@SuppressWarnings("resource")
 	private boolean check(String filenameRoot) throws ABCException, FileNotFoundException {
 		String fileStr = filenameRoot + ".c";
 		
@@ -47,11 +46,15 @@ public class SliceTest {
 		
 		String newSliceFileStr = "CIVLREP/"+filenameRoot+"_0.trace.slice";
 		File newSliceFile = new File(newSliceFileStr);
-		String newSliceStr = new Scanner(newSliceFile).useDelimiter("\\Z").next();
+		Scanner testScanner = new Scanner(newSliceFile);
+		String newSliceStr = testScanner.useDelimiter("\\Z").next();
+		testScanner.close();
 		
 		String oracleSliceFileStr = "examples/slice/"+filenameRoot+"_0.trace.slice";
 		File oracleSliceFile = new File(oracleSliceFileStr);
-		String oracleSliceStr = new Scanner(oracleSliceFile).useDelimiter("\\Z").next();
+		Scanner oracleScanner = new Scanner(oracleSliceFile);
+		String oracleSliceStr = oracleScanner.useDelimiter("\\Z").next();
+		oracleScanner.close();
 		
 		return newSliceStr.equals(oracleSliceStr);
 	}
