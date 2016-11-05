@@ -48,30 +48,45 @@ public class SliceTest {
 		ui.run("replay", "-sliceAnalysis", filename(fileStr));
 		
 		String newSliceFileStr = "CIVLREP/"+filenameRoot+"_0.trace.slice";
-		Set<String> newSliceSet = createFileLineSet(newSliceFileStr);
+		Set<Set<String>> newSliceSet = createFileLineSets(newSliceFileStr);
 		
 		String oracleSliceFileStr = "examples/slice/"+filenameRoot+"_0.trace.slice";
-		Set<String> oracleSliceSet = createFileLineSet(oracleSliceFileStr);
+		Set<Set<String>> oracleSliceSet = createFileLineSets(oracleSliceFileStr);
 		
 		return newSliceSet.equals(oracleSliceSet);
 	}
 	
-	public Set<String> createFileLineSet(String fileName) {
+	public Set<Set<String>> createFileLineSets(String fileName) {
 		
-		Set<String> lineSet = new HashSet<>();
+		Set<String> originalSet = new HashSet<>();
+		Set<String> minimizedSet = new HashSet<>();
 		
 		try {
 			File file = new File(fileName);
 			Scanner scanner = new Scanner(file);
+			boolean inMinimizedSection = false;
 			while (scanner.hasNext()) {
-				lineSet.add(scanner.next());
+				String line = scanner.next();
+				
+				if (line.contains("Minimized PC")) {
+					inMinimizedSection = true;
+				}
+				if (inMinimizedSection) {
+					minimizedSet.add(line);
+				} else {
+					originalSet.add(line);
+				}
+				
 			}
 			scanner.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} 
 		
-		return lineSet;
+		Set<Set<String>> combinedSet = new HashSet<>();
+		combinedSet.add(originalSet); combinedSet.add(minimizedSet);
+		
+		return combinedSet;
 		  
 	}
 	/* **************************** Test Methods *************************** */
