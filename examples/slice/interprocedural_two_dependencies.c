@@ -2,12 +2,21 @@ extern void __VERIFIER_error() __attribute__ ((__noreturn__));
 extern void __VERIFIER_assume(int);
 extern int __VERIFIER_nondet_int();
 
-int main( ) {
+int g (int in) {
+  if (in > 2) {
+    __VERIFIER_error();
+  } 
+}
+
+int main () {
 
   int input = __VERIFIER_nondet_int();
 
-  if (input < 0) {
-    __VERIFIER_error();
-  } 
+  if ( (input > 0 && input < 4) ) {
+    g(input);
+  } else {
+    g(input);
+  }
+  g(input);
 
 }

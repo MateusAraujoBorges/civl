@@ -1,4 +1,4 @@
 *** Original PC ***
-   Y0 + 1 <= 0
+   0 <= Y0 - 3
 *** Minimized PC ***
-   Y0 + 1 <= 0
+   0 <= Y0 - 3

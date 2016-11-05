@@ -40,7 +40,6 @@ import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.util.IF.BranchConstraints;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.EnablerIF;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
@@ -442,13 +441,6 @@ public abstract class CommonEnabler implements Enabler {
 				second = pLocation.getOutgoing(1);
 		BooleanExpression firstGuard = (BooleanExpression) this.getGuard(first,
 				pid, state);
-		if (BranchConstraints.map != null) {
-			firstGuard = (BooleanExpression) universe.canonic(firstGuard);
-			BooleanExpression notFirstGuard = (BooleanExpression) universe
-					.canonic(universe.not(firstGuard));
-			Pair<BooleanExpression, BooleanExpression> guardPair = new Pair<>(firstGuard, notFirstGuard);
-			BranchConstraints.map.put(state,guardPair);
-		}
 				
 		BooleanExpression firstPc = null, secondPc = null;
 		BooleanExpression pathCondition = state.getPathCondition();

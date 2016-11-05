@@ -4,7 +4,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -28,7 +30,8 @@ public class SliceTest {
 	
 	/*
 	 * check whether the file produced by running 'civl replay -sliceAnalysis' on
-	 * the given C file equals the oracle slice file, which is stored as a file with
+	 * the given C file equals the oracle slice file (where equivalence is defined
+	 * as the Set<String> of lines being the same), which is stored as a file with
 	 * an added suffix of ".slice" in the subdirectory "examples/slice".
 	 * 
 	 * @param filenameRoot The file name of the C program (without
@@ -45,18 +48,31 @@ public class SliceTest {
 		ui.run("replay", "-sliceAnalysis", filename(fileStr));
 		
 		String newSliceFileStr = "CIVLREP/"+filenameRoot+"_0.trace.slice";
-		File newSliceFile = new File(newSliceFileStr);
-		Scanner testScanner = new Scanner(newSliceFile);
-		String newSliceStr = testScanner.useDelimiter("\\Z").next();
-		testScanner.close();
+		Set<String> newSliceSet = createFileLineSet(newSliceFileStr);
 		
 		String oracleSliceFileStr = "examples/slice/"+filenameRoot+"_0.trace.slice";
-		File oracleSliceFile = new File(oracleSliceFileStr);
-		Scanner oracleScanner = new Scanner(oracleSliceFile);
-		String oracleSliceStr = oracleScanner.useDelimiter("\\Z").next();
-		oracleScanner.close();
+		Set<String> oracleSliceSet = createFileLineSet(oracleSliceFileStr);
 		
-		return newSliceStr.equals(oracleSliceStr);
+		return newSliceSet.equals(oracleSliceSet);
+	}
+	
+	public Set<String> createFileLineSet(String fileName) {
+		
+		Set<String> lineSet = new HashSet<>();
+		
+		try {
+			File file = new File(fileName);
+			Scanner scanner = new Scanner(file);
+			while (scanner.hasNext()) {
+				lineSet.add(scanner.next());
+			}
+			scanner.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} 
+		
+		return lineSet;
+		  
 	}
 	/* **************************** Test Methods *************************** */
 
@@ -68,6 +84,21 @@ public class SliceTest {
 	@Test
 	public void subsumptionTest() throws ABCException, FileNotFoundException {	
 		assertTrue(check("subsumption"));
+	}
+	
+	@Test
+	public void intraproceduralTest() throws ABCException, FileNotFoundException {	
+		assertTrue(check("intraprocedural"));
+	}
+	
+	@Test
+	public void interproceduralOneDependencyTest() throws ABCException, FileNotFoundException {	
+		assertTrue(check("interprocedural_one_dependency"));
+	}
+	
+	@Test
+	public void interproceduralTwoDependenciesTest() throws ABCException, FileNotFoundException {	
+		assertTrue(check("interprocedural_two_dependencies"));
 	}
 	
 	@AfterClass

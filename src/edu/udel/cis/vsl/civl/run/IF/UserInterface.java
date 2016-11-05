@@ -34,7 +34,6 @@ import java.nio.channels.FileLock;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +45,6 @@ import java.util.concurrent.ExecutionException;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.err.IF.ABCRuntimeException;
@@ -96,13 +94,10 @@ import edu.udel.cis.vsl.gmc.MisguidedExecutionException;
 import edu.udel.cis.vsl.gmc.Option;
 import edu.udel.cis.vsl.gmc.Trace;
 import edu.udel.cis.vsl.sarl.SARL;
-import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.config.Configurations;
 import edu.udel.cis.vsl.sarl.IF.config.ProverInfo;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
@@ -688,7 +683,6 @@ public class UserInterface {
 		boolean guiMode = modelTranslator.cmdSection.isTrue(guiO);
 		boolean witnessMode = modelTranslator.config.witness();
 		boolean sliceMode = modelTranslator.config.sliceAnalysis();
-		BranchConstraints.map = new HashMap<>();
 		Trace<Transition, State> trace;
 
 		model = modelTranslator.translate();
@@ -697,6 +691,7 @@ public class UserInterface {
 					model, traceFile, out, err);
 			trace = replayer.run();
 			result = trace.result();
+			BranchConstraints.evaluator = replayer.evaluator;
 			if (guiMode) {
 				@SuppressWarnings("unused")
 				CIVL_GUI gui = new CIVL_GUI(trace, replayer.symbolicAnalyzer);
@@ -721,7 +716,6 @@ public class UserInterface {
 				ControlDependence cd = 
 						new ControlDependence(errorTrace, ipds, locToCfaLoc, traceFile);
 				cd.collectControlDependencyStack();
-				//printMinimizedPC(cd.getSlicedPC());
 			}
 			if (witnessMode) {
 				out.println("*** Printing Witness ***\n");
@@ -731,44 +725,6 @@ public class UserInterface {
 			return result;
 		}
 		return false;
-	}
-	
-	private void printMinimizedPC(Set<BooleanExpression> clauses) {
-		Set<BooleanExpression> impliedClauses = new HashSet<BooleanExpression>();
-		
-		SymbolicUniverse universe = SARL.newStandardUniverse();
-			
-		BooleanExpression context = universe.trueExpression();
-		Reasoner reasoner = universe.reasoner(context);
-						
-		for (BooleanExpression c : clauses) {
-			BooleanExpression antecedent = universe.trueExpression();
-			for (BooleanExpression other : clauses) {
-				if (other.equals(c)) continue;
-				antecedent = universe.and(antecedent, other);
-			}
-			
-			BooleanExpression implication = universe.implies(antecedent, c);
-			
-			if (reasoner.isValid(implication)) {
-				impliedClauses.add(c);
-			}
-		}
-		
-		out.println("*** Original PC ***");
-		for (BooleanExpression c : clauses) {
-			out.println("   "+c);
-		}
-		
-		Set<BooleanExpression> minimizedClauses = new HashSet<BooleanExpression>();
-		minimizedClauses.addAll(clauses);
-		minimizedClauses.removeAll(impliedClauses);
-		
-		out.println("*** Minimized PC ***");
-		for (BooleanExpression c : minimizedClauses) {
-			out.println("   "+c);
-		}
-		
 	}
 
 	private boolean runRun(String command, ModelTranslator modelTranslator)

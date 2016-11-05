@@ -5,9 +5,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
-import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 
 public class ControlDependencyElement {
 	
@@ -16,24 +15,23 @@ public class ControlDependencyElement {
 	int context;
 	
 	public ControlDependencyElement (ErrorCfaLoc bp, 
-			CfaLoc mp, int c) {
+			CfaLoc mp, int callingContext) {
 		
 		this.branchPoints = new ArrayList<>();
 		this.branchPoints.add(bp);
 		this.mergePoint = mp;
-		this.context = c;
+		this.context = callingContext;
 		
 	}
 	
 	public String toString() {
 		
-		List<Expression> guardExpressions = new ArrayList<>();
+		List<BooleanExpression> guardExpressions = new ArrayList<>();
 		List<String> lineNumbers = new ArrayList<>();
 		
 		for (ErrorCfaLoc b : branchPoints) {
 			Location l = b.getCIVLLocation();
-			Statement s = l.outgoing().iterator().next();
-			guardExpressions.add(s.guard());
+			guardExpressions.add(b.branchConstraint);
 			lineNumbers.add(getSourceLine(l.getSource().toString()));
 		}
 

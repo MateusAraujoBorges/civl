@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 
 public class ErrorCfaLoc {
 	
@@ -16,6 +17,7 @@ public class ErrorCfaLoc {
 	protected State state = null;
 	protected Set<ErrorCfaLoc> successors = new HashSet<>();
 	protected String sourceLine = null;
+	protected BooleanExpression branchConstraint = null;
 	
 	private boolean isEntryLocation = false;
 	private boolean isExitLocation = false;
@@ -25,7 +27,7 @@ public class ErrorCfaLoc {
 	public ErrorCfaLoc (Location l, State s) { 
 		location = l; 
 		state = s; 
-		callingContext = s.getProcessStates().iterator().next().getDyscopeId();
+		callingContext = s.getProcessState(0).stackSize();
 		sourceLine = getSourceLine(l.getSource().toString());
 	}
 	

@@ -3,6 +3,7 @@ extern void __VERIFIER_assume(int);
 extern int __VERIFIER_nondet_int();
 
 int main( ) {
+
   int input = __VERIFIER_nondet_int();
   
   if (input < 3) {
@@ -11,6 +12,4 @@ int main( ) {
     }
   } 
 
-  return 0;
 }
-

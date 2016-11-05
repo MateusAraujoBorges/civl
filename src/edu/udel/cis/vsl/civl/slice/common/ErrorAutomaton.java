@@ -19,10 +19,16 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
+import edu.udel.cis.vsl.civl.util.IF.BranchConstraints;
 import edu.udel.cis.vsl.gmc.Trace;
 import edu.udel.cis.vsl.gmc.TraceStepIF;
+import edu.udel.cis.vsl.sarl.SARL;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 public class ErrorAutomaton {
@@ -56,6 +62,7 @@ public class ErrorAutomaton {
 		}
 		
 		errorTrace = constructErrorTrace(trace);
+		collectBranchConstraints();
 		inputVariableSyntacticMap = makeSymbolicVariableMap(errorTrace);
 		inputFrequencyMap = makeInputFrequencyMap(errorTrace);
 		transitionRelations = transitionRelationsFromTrace(errorTrace);
@@ -132,7 +139,7 @@ public class ErrorAutomaton {
 		}
 		System.out.println("\nBEGIN Line -> Number of Input Reads\n");
 		System.out.println(printMap(map));
-		System.out.println("\nEND Line -> Number of Input Reads\n");
+		System.out.println("END Line -> Number of Input Reads\n");
 		return map;
 	}
 	
@@ -142,6 +149,49 @@ public class ErrorAutomaton {
         return sb.toString();
 	}
 
+	public void printBranchConstraints () {
+		for (ErrorCfaLoc l : errorTrace) {
+			if (l.isExitLocation()) continue;
+			if (l.getCIVLLocation().getNumOutgoing() > 1) {
+				Statement stmt = l.nextTransition().statement;
+				int pid = 0;
+				State state = l.state;
+				BooleanExpression branch = getGuard(stmt,pid,state);
+				System.out.println("Branch constraint: "+branch);
+			}
+		}
+	}
+	
+	public void collectBranchConstraints () {
+		
+		SymbolicUniverse universe = SARL.newStandardUniverse();
+		
+		for (ErrorCfaLoc l : errorTrace) {
+			if (l.isExitLocation()) continue;
+			if (l.getCIVLLocation().getNumOutgoing() > 1) {
+				Statement stmt = l.nextTransition().statement;
+				int pid = 0; /* We only analyze single-threaded programs */
+				State state = l.state;
+				BooleanExpression branch = getGuard(stmt,pid,state);
+				branch = (BooleanExpression) universe.canonic(branch);
+				l.branchConstraint = branch;
+			}
+		}
+		
+	}
+	
+	public BooleanExpression getGuard(Statement statement, int pid,
+			State state) {
+		Evaluation eval;
+
+		try {
+			eval = BranchConstraints.evaluator.evaluate(state, pid, statement.guard());
+			return (BooleanExpression) eval.value;
+		} catch (UnsatisfiablePathConditionException ex) {
+			SymbolicUniverse universe = SARL.newStandardUniverse();
+			return universe.falseExpression();
+		}
+	}
 	
 	private List<ErrorCfaLoc> constructErrorTrace (Trace<Transition, State> trace) {
 		
