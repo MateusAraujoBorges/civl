@@ -1,0 +1,64 @@
+$tass compare csr_add_spec.c csr_add_impl.c 
+
+To compare the two different approaches of adding two matrices.
+The 'csr_add_spec' uses the traditional method on two dense matrices:
+  In this piece of code, it directly adds each element in the two matrices; 
+  and then assigns the sum back to each position in the result matrix.
+The 'csr_add_impl' uses the CSR matrix addition method on two CSR matrices.
+  In this piece of code, it firstly constructs two CSR matrices from two given 
+  array of doubles; and then using a CSR matrices addition method to calculate 
+  the result matrix in CSR form; finally, it will expands the result CSR matrix 
+  into the dense form and outputs the array containing each element (including 0).
+
+# The Input:
+  'A0': an array of doubles, representing each element in the first DENSE matrix.
+  'B0': an array of doubles, representing each element in the second DENSE matrix.
+  
+# The Output:
+  'OUT': an array of doubles, representing the result DENSE matrix.
+  
+# Performance:
+	Number Of Row	Number Of Col	Time Cost (sec)		States
+		1				1				00.232				903
+		1				2				00.703				4112
+		1				3				03.565				18890
+		1				4				46.36				85990
+		1				5
+		2				1
+		2				2
+		2				3
+		3				1
+		3				2
+		
+		
+# loop invariant:
+
+correctEle(i,j): 
+	exists k.(
+		(impl.A_i[i] <= k && k < impl.A_i[i+1]) && 
+		(j == impl.A_j[k] && spec.C[i][j] == impl.C->data[k])) || 
+	!exists k.(
+		(impl.A_i[i] <= k && k < impl.A_i[i+1]) &&
+		(j == impl.A_j[k] && spec.C[i][j] == 0.0))
+	
+correctRow(i):
+	forall j.(0 <= j && j < spec.nc && correctEle(i,j))
+	
+correctMat:
+	forall i.(0 <= i && i < spec.nr && correctRow(i)) 
+	
+	
+	
+	
+	
+#pragma TASS joint invariant LoopCorrect										// Correct Mat
+	(forall {int r | 0 <= r && r < spec.nr} 									// Correct Row
+		(forall {int c | 0 <= c && c < spec.nc}((								// Correct Element
+			(forall {int nz1 | C_i[r] <= nz1 && nz1 < C_i[r+1]} 				//   Exist nz1 {nz1 | C_i[r] <= nz1 < C_i[r+1]} (c == C_j[nz1] && spec.C_data[r][c] != C_data[nz1]): 
+				(c != C_j[nz1] || spec.C_data[r*spec.nc + c] != C_data[nz1]))  	//  == !( Forall nz1 {..} !(c == C_j[nz1] && spec.C_data[r][c] == C_data[nz1]))
+					!= true) 													//  == (( Forall nz1 {..}  (c != C_j[nz1] || spec.C_data[r][c] != C_data[nz1])) != true)
+			|| 																	// Or
+			(forall {int nz2 | C_i[r] <= nz2 && nz2 < C_i[r+1]} 				// ! Exist nz2 {nz2 | C_i[r] <= nz2 && nz2 < C_i[r+1]} (c == C_j[nz1] && spec.C_data[r*spec.nc + c] == 0.0)
+				(c != C_j[nz1] || spec.C_data[r*spec.nc + c] != 0.0)))			//  == Forall nz2 {..} !(c == C_j[nz1] && spec.C_data[r*spec.nc + c] == 0.0)
+		));																		//  == Forall nz2 {..}  (c != C_j[nz1] || spec.C_data[r*spec.nc + c] != 0.0)
+	
