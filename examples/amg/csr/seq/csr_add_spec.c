@@ -1,9 +1,9 @@
 #include <stdlib.h>
 
 /* = = = = = = = = TASS I/O = = = = = = = = */
-#pragma TASS input {N==1}
+#pragma TASS input
 int N;
-#pragma TASS input {M==3}
+#pragma TASS input
 int M;
 
 #pragma TASS input

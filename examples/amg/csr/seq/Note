@@ -19,16 +19,17 @@ The 'csr_add_impl' uses the CSR matrix addition method on two CSR matrices.
   
 # Performance:
 	Number Of Row	Number Of Col	Time Cost (sec)		States
-		1				1				00.232				903
-		1				2				00.703				4112
-		1				3				03.565				18890
-		1				4				46.36				85990
+		1				1				00.294				909
+		1				2				00.953				4181
+		1				3				04.031				19481
+		1				4				53.978				92369
 		1				5
-		2				1
-		2				2
+		2				1				00.829				4533
+		2				2				44.91
 		2				3
-		3				1
+		3				1				03.876				22129
 		3				2
+		4				1				50.896				105049
 		
 		
 # loop invariant:

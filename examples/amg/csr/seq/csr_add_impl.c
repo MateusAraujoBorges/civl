@@ -1,9 +1,9 @@
 #include <stdlib.h>
 
 /* = = = = = = = = TASS I/O = = = = = = = = */
-#pragma TASS input {N==1}
+#pragma TASS input
 int N;
-#pragma TASS input {M==3}
+#pragma TASS input
 int M;
 
 #pragma TASS input
@@ -180,19 +180,22 @@ expand(hypre_CSRMatrix * mat)
     int i;
     int j;
     int k;
+    int nr = mat->num_rows;
+    int nc = mat->num_cols;
     double * rtn;
     
     rtn = (double *) malloc ((mat->num_rows) * (mat->num_cols) * sizeof(double));
-    for (i = 0; i < mat->num_rows;i++)
-        for (j = 0; j < mat->num_cols; j++)
-            rtn[i*M + j] = 0.0;
+    for (i = 0; i < nr;i++)
+        for (j = 0; j < nc; j++)
+            rtn[i*nc + j] = 0.0;
     k = 0;
-    for (i = 0; i < mat->num_rows; i++)
+    for (i = 0; i < nr; i++)
         while(k < mat->i[i+1])
-            for (j = 0; (k < mat->num_nonzeros) && (j < mat->num_cols); j++)
+            for (j = 0; (k < mat->num_nonzeros) && (j < nc); j++)
                 if (j == mat->j[k]){
-                    rtn[i*M + j] = mat->data[k];
+                    rtn[i*nc + j] = mat->data[k];
                     k++;
+                    j = nc; /* break */
                 }
     
     return rtn;
