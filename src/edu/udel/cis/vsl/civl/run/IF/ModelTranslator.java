@@ -212,7 +212,7 @@ public class ModelTranslator {
 	 */
 	ModelTranslator(GMCConfiguration gmcConfig, GMCSection cmdSection,
 			String[] filenames, String coreName, SymbolicUniverse universe)
-			throws PreprocessorException {
+					throws PreprocessorException {
 		this.cmdSection = cmdSection;
 		this.gmcConfig = gmcConfig;
 		// this.userFileCoreName = coreName;
@@ -308,12 +308,13 @@ public class ModelTranslator {
 				transformerFactory.getCuda2CIVLTransformerRecord());
 		if (config.directSymEx() != null)
 			task.addTransformRecord(
-				transformerFactory.getDirectingTransformerRecord(config));
+					transformerFactory.getDirectingTransformerRecord(config));
 		if (!config.isEnableMpiContract())
 			task.addTransformRecord(
 					transformerFactory.getIntDivTransformerRecord(macros));
 		task.addTransformCode(SideEffectRemover.CODE);
 		task.addTransformCode(Pruner.CODE);
+
 	}
 
 	/**

@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
@@ -107,9 +106,9 @@ public class CommonStateManager implements StateManager {
 
 	private OutputCollector outputCollector;
 
-	private Stack<TransitionSequence> stack;
+//	private Stack<TransitionSequence> stack;
 
-	private Set<Integer> expandedStateIDs = new HashSet<>();
+//	private Set<Integer> expandedStateIDs = new HashSet<>();
 
 	private boolean printTransitions;
 
@@ -184,7 +183,7 @@ public class CommonStateManager implements StateManager {
 		TraceStep traceStep;
 		String process;
 		int atomCount = 0;
-		boolean ampleSetUpdated = false;
+//		boolean ampleSetUpdated = false;
 		int startStateId = state.getCanonicId();
 		int sequenceId = 1;
 
@@ -297,42 +296,42 @@ public class CommonStateManager implements StateManager {
 					ignoredErrorSet.add(hex.heapErrorKind());
 				}
 			} while (!finished);
-			if (state.onStack()) {
-				// this is a back-edge, we need to fulfill ample set condition
-				// C3 cycle)
-				TransitionSequence transitionSequence = stack.peek();
-				State sourceState = transitionSequence.state();
-
-				// if (expandedStateIDs.contains(sourceState.getCanonicId())
-				// || expandedStateIDs.contains(state.getCanonicId()))
-				// System.out.println("State " + state.getCanonicId()
-				// + " is on stack but has been expanded before.");
-				if (!expandedStateIDs.contains(sourceState.getCanonicId())
-						&& !expandedStateIDs.contains(state.getCanonicId())
-						&& !transitionSequence.containsAllEnabled()) {
-					// int onStackID = state.getCanonicId();
-					// Stack<TransitionSequence> tmp = new Stack<>();
-					// TransitionSequence current = stack.pop();
-					// State currentState = current.state();
-					//
-					// while (currentState.getCanonicId() != onStackID) {
-					// tmp.push(current);
-					// expandedStateIDs.add(currentState.getCanonicId());
-					// current = stack.pop();
-					// currentState = current.state();
-					// }
-					// expandedStateIDs.add(currentState.getCanonicId());
-					// stack.push(current);
-					// while (!tmp.isEmpty()) {
-					// current = tmp.pop();
-					// stack.push(current);
-					// }
-					expandedStateIDs.add(state.getCanonicId());
-					expandedStateIDs.add(sourceState.getCanonicId());
-					this.expandTransitionSequence(transitionSequence);
-					ampleSetUpdated = true;
-				}
-			}
+//			if (state.onStack()) {
+//				// this is a back-edge, we need to fulfill ample set condition
+//				// C3 cycle)
+//				TransitionSequence transitionSequence = stack.peek();
+//				State sourceState = transitionSequence.state();
+//
+//				// if (expandedStateIDs.contains(sourceState.getCanonicId())
+//				// || expandedStateIDs.contains(state.getCanonicId()))
+//				// System.out.println("State " + state.getCanonicId()
+//				// + " is on stack but has been expanded before.");
+//				if (!expandedStateIDs.contains(sourceState.getCanonicId())
+//						&& !expandedStateIDs.contains(state.getCanonicId())
+//						&& !transitionSequence.containsAllEnabled()) {
+//					// int onStackID = state.getCanonicId();
+//					// Stack<TransitionSequence> tmp = new Stack<>();
+//					// TransitionSequence current = stack.pop();
+//					// State currentState = current.state();
+//					//
+//					// while (currentState.getCanonicId() != onStackID) {
+//					// tmp.push(current);
+//					// expandedStateIDs.add(currentState.getCanonicId());
+//					// current = stack.pop();
+//					// currentState = current.state();
+//					// }
+//					// expandedStateIDs.add(currentState.getCanonicId());
+//					// stack.push(current);
+//					// while (!tmp.isEmpty()) {
+//					// current = tmp.pop();
+//					// stack.push(current);
+//					// }
+//					expandedStateIDs.add(state.getCanonicId());
+//					expandedStateIDs.add(sourceState.getCanonicId());
+//					this.expandTransitionSequence(transitionSequence);
+//					ampleSetUpdated = true;
+//				}
+//			}
 			traceStep.complete(state);
 			newCanonicId = state.getCanonicId();
 			if (newCanonicId > this.maxCanonicId) {
@@ -362,15 +361,17 @@ public class CommonStateManager implements StateManager {
 		}
 		if (config.printTransitions())
 			config.out().println(state);
-		if (ampleSetUpdated
-				&& (config.showAmpleSet() || config.showAmpleSetWtStates())) {
-			State updatedState = stack.peek().state();
-
-			config.out().println("\nample set at state "
-					+ updatedState.getCanonicId() + " fully expanded");
-			if (config.showAmpleSetWtStates())
-				config.out().println(updatedState.callStackToString());
-		}
+		
+		//TODO should the expansion of transitionsequence visible here?
+//		if (ampleSetUpdated
+//				&& (config.showAmpleSet() || config.showAmpleSetWtStates())) {
+//			State updatedState = stack.peek().state();
+//
+//			config.out().println("\nample set at state "
+//					+ updatedState.getCanonicId() + " fully expanded");
+//			if (config.showAmpleSetWtStates())
+//				config.out().println(updatedState.callStackToString());
+//		}
 		if (printSavedStates && (!config.saveStates()
 				|| this.maxCanonicId > oldMaxCanonicId)) {
 			// in -savedStates mode, only print new states.
@@ -610,19 +611,23 @@ public class CommonStateManager implements StateManager {
 	 */
 	private void reportErrorForAtom(EnabledStatus enabled, State state,
 			Location location, String process)
-			throws UnsatisfiablePathConditionException {
+					throws UnsatisfiablePathConditionException {
 		switch (enabled) {
 			case NONDETERMINISTIC :
-				errorLogger.logSimpleError(location.getSource(), state, process,
-						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.OTHER,
-						"nondeterminism is encountered in $atom block.");
+				errorLogger
+						.logSimpleError(location.getSource(), state, process,
+								symbolicAnalyzer.stateInformation(
+										state),
+								ErrorKind.OTHER,
+								"nondeterminism is encountered in $atom block.");
 				throw new UnsatisfiablePathConditionException();
 			case BLOCKED :
-				errorLogger.logSimpleError(location.getSource(), state, process,
-						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.OTHER,
-						"blocked location is encountered in $atom block.");
+				errorLogger
+						.logSimpleError(location.getSource(), state, process,
+								symbolicAnalyzer.stateInformation(
+										state),
+								ErrorKind.OTHER,
+								"blocked location is encountered in $atom block.");
 				throw new UnsatisfiablePathConditionException();
 			default :
 		}
@@ -767,8 +772,8 @@ public class CommonStateManager implements StateManager {
 		return null;
 	}
 
-	@Override
-	public void setStack(Stack<TransitionSequence> stack) {
-		this.stack = stack;
-	}
+//	@Override
+//	public void setStack(Stack<TransitionSequence> stack) {
+//		this.stack = stack;
+//	}
 }

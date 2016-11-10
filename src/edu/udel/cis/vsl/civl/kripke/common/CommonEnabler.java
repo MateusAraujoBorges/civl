@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -41,6 +43,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.civl.util.IF.Utils;
 import edu.udel.cis.vsl.gmc.EnablerIF;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
@@ -142,6 +145,8 @@ public abstract class CommonEnabler implements Enabler {
 	protected CIVLConfiguration civlConfig;
 
 	private CollateExecutor collateExecutor;
+
+	private Set<Integer> expandedStateIDs = ConcurrentHashMap.newKeySet();
 
 	/* ***************************** Constructor *************************** */
 
@@ -441,7 +446,7 @@ public abstract class CommonEnabler implements Enabler {
 				second = pLocation.getOutgoing(1);
 		BooleanExpression firstGuard = (BooleanExpression) this.getGuard(first,
 				pid, state);
-				
+
 		BooleanExpression firstPc = null, secondPc = null;
 		BooleanExpression pathCondition = state.getPathCondition();
 		Reasoner reasoner = universe.reasoner(pathCondition);
@@ -628,7 +633,7 @@ public abstract class CommonEnabler implements Enabler {
 	 */
 	private List<Transition> enabledTransitionsOfWithStatement(State state,
 			int pid, WithStatement with, AtomicLockAction atomicLockAction)
-			throws UnsatisfiablePathConditionException {
+					throws UnsatisfiablePathConditionException {
 		Expression colStateExpr = with.collateState();
 		CIVLSource csSource = colStateExpr.getSource();
 		Evaluation eval;
@@ -693,7 +698,7 @@ public abstract class CommonEnabler implements Enabler {
 	// TODO
 	private List<Transition> enabledTransitionsOfUpdateStatement(State state,
 			int pid, UpdateStatement update, AtomicLockAction atomicLockAction)
-			throws UnsatisfiablePathConditionException {
+					throws UnsatisfiablePathConditionException {
 		CIVLSource source = update.getSource();
 		Expression collator = update.collator();
 		CIVLFunction updateFunction = update.function();
@@ -799,7 +804,7 @@ public abstract class CommonEnabler implements Enabler {
 			SymbolicExpression gstateQueue, int qLength,
 			NumericExpression place, int placeID, Expression collator,
 			CIVLFunction function, SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
+					throws UnsatisfiablePathConditionException {
 		final int IDLE = 0;
 		Evaluation eval;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
@@ -836,11 +841,10 @@ public abstract class CommonEnabler implements Enabler {
 						source,
 						modelFactory.dereferenceExpression(source,
 								modelFactory.subscriptExpression(source,
-										stateQueueExpr, modelFactory
-												.integerLiteralExpression(
-														source,
-														BigInteger
-																.valueOf(i)))),
+										stateQueueExpr,
+										modelFactory.integerLiteralExpression(
+												source,
+												BigInteger.valueOf(i)))),
 						1);// (*queue[i]).state
 
 				colState = stateFactory.addExternalProcess(colState, state, pid,
@@ -894,7 +898,7 @@ public abstract class CommonEnabler implements Enabler {
 			CIVLSource source, State state, CallOrSpawnStatement call,
 			BooleanExpression pathCondition, int pid,
 			AtomicLockAction atomicLockAction)
-			throws UnsatisfiablePathConditionException {
+					throws UnsatisfiablePathConditionException {
 		SystemFunction sysFunction = (SystemFunction) call.function();
 		String libraryName = sysFunction.getLibrary();
 
@@ -961,5 +965,28 @@ public abstract class CommonEnabler implements Enabler {
 			return pathCondition;
 		return (BooleanExpression) universe
 				.canonic(universe.and(pathCondition, guard));
+	}
+
+	@Override
+	public void expandTransitionSequence(TransitionSequence sequence) {
+		if (!sequence.containsAllEnabled()) {
+			State state = sequence.state();
+			TransitionSequence ampleSet = this.enabledTransitionsPOR(state);
+			TransitionSequence enabledSet = this
+					.enabledTransitionsOfAllProcesses(state);
+			@SuppressWarnings("unchecked")
+			Collection<Transition> difference = (Collection<Transition>) Utils
+					.difference(enabledSet.transitions(),
+							ampleSet.transitions());
+
+			sequence.setContainingAllEnabled(true);
+			sequence.addAll(difference);
+			expandedStateIDs.add(state.getCanonicId());
+		}
+	}
+
+	@Override
+	public boolean expanded(TransitionSequence sequence) {
+		return expandedStateIDs.contains(sequence.state().getCanonicId());
 	}
 }

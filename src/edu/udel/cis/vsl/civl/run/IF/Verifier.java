@@ -233,7 +233,7 @@ public class Verifier extends Player {
 			PrintStream err, double startTime, boolean collectOutputs,
 			String[] outputNames,
 			Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> specOutputs)
-			throws CommandLineException {
+					throws CommandLineException {
 		super(config, model, out, err, collectOutputs);
 		if (random) {
 			throw new CommandLineException(
@@ -250,7 +250,7 @@ public class Verifier extends Player {
 			searcher.setDebugOut(out);
 		searcher.setName(sessionName);
 		log.setSearcher(searcher);
-		stateManager.setStack(searcher.stack());
+		// stateManager.setStack(searcher.stack());
 		if (minimize)
 			log.setMinimize(true);
 		if (config.getAnonymousSection().getValue(maxdepthO) != null)
@@ -274,14 +274,14 @@ public class Verifier extends Player {
 
 	public Verifier(GMCConfiguration config, Model model, PrintStream out,
 			PrintStream err, double startTime, boolean collectOutputs)
-			throws CommandLineException {
+					throws CommandLineException {
 		this(config, model, out, err, startTime, collectOutputs, null, null);
 	}
 
 	public Verifier(GMCConfiguration config, Model model, PrintStream out,
 			PrintStream err, double startTime, String[] outputNames,
 			Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> specOutputs)
-			throws CommandLineException {
+					throws CommandLineException {
 		this(config, model, out, err, startTime, false, outputNames,
 				specOutputs);
 	}
