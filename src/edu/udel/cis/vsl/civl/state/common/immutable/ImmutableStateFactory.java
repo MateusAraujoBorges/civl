@@ -13,6 +13,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -89,7 +91,7 @@ public class ImmutableStateFactory implements StateFactory {
 	 * should be the same, in order to allow fast checking of existence and
 	 * returning the value.
 	 */
-	private Map<ImmutableProcessState, ImmutableProcessState> processMap = new HashMap<>(
+	private Map<ImmutableProcessState, ImmutableProcessState> processMap = new ConcurrentHashMap<>(
 			100000);
 
 	/**
@@ -97,27 +99,27 @@ public class ImmutableStateFactory implements StateFactory {
 	 * be the same, in order to allow fast checking of existence and returning
 	 * the value.
 	 */
-	private Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap = new HashMap<>(
+	private Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap = new ConcurrentHashMap<>(
 			100000);
 
 	/**
 	 * The number of canonic states.
 	 */
-	private int stateCount = 0;
+	private AtomicInteger stateCount = new AtomicInteger(0);
 
 	/**
 	 * The map of canonic states. The key and the corresponding value should be
 	 * the same, in order to allow fast checking of existence and returning the
 	 * value.
 	 */
-	private Map<ImmutableState, ImmutableState> stateMap = new HashMap<>(
+	private Map<ImmutableState, ImmutableState> stateMap = new ConcurrentHashMap<>(
 			1000000);
 
 	/**
 	 * The map of a set of saved canonic states. The key is the canonic ID of
 	 * the state and the value if the state.
 	 */
-	private Map<Integer, ImmutableState> savedCanonicStates = new HashMap<>(
+	private Map<Integer, ImmutableState> savedCanonicStates = new ConcurrentHashMap<>(
 			1000000);
 
 	protected SymbolicExpression undefinedProcessValue;
@@ -158,7 +160,7 @@ public class ImmutableStateFactory implements StateFactory {
 		}
 	}
 
-	private Map<IntArray, UnaryOperator<SymbolicExpression>> dyscopeSubMap = new HashMap<>();
+	private Map<IntArray, UnaryOperator<SymbolicExpression>> dyscopeSubMap = new ConcurrentHashMap<>();
 
 	/**
 	 * The reasoner for evaluating boolean formulas, provided by SARL.
@@ -1180,7 +1182,7 @@ public class ImmutableStateFactory implements StateFactory {
 				result = theState;
 				// result = reachableMemoryAnalysis(theState);
 				result.makeCanonic(stateCount, universe, scopeMap, processMap);
-				stateCount++;
+//				stateCount++;
 				stateMap.put(result, result);
 			}
 			return result;

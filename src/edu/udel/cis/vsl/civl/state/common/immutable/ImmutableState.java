@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
@@ -400,7 +401,7 @@ public class ImmutableState implements State {
 	 * @param processMap
 	 *            the map used to flyweight process states
 	 */
-	void makeCanonic(int canonicId, SymbolicUniverse universe,
+	void makeCanonic(AtomicInteger canonicId, SymbolicUniverse universe,
 			Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap,
 			Map<ImmutableProcessState, ImmutableProcessState> processMap) {
 		int numProcs = processStates.length;
@@ -419,7 +420,7 @@ public class ImmutableState implements State {
 			if (!scope.isCanonic())
 				dyscopes[i] = canonic(scope, scopeMap, universe);
 		}
-		this.canonicId = canonicId;
+		this.canonicId = canonicId.getAndIncrement();
 	}
 
 	/**
