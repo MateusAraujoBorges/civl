@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
@@ -63,7 +64,7 @@ public class CommonStateManager implements StateManager {
 	/**
 	 * The maximal number of processes at a state, initialized as 0.
 	 */
-	private int maxProcs = 0;
+	private AtomicInteger maxProcs = new AtomicInteger(0);
 
 	/**
 	 * The unique state factory used by the system.
@@ -91,7 +92,7 @@ public class CommonStateManager implements StateManager {
 	 * motivation to have this field is to allow the state manager to print only
 	 * new states in -savedStates mode, for better user experiences.
 	 */
-	private int maxCanonicId = -1;
+	private AtomicInteger maxCanonicId = new AtomicInteger(-1);
 
 	protected CIVLErrorLogger errorLogger;
 
@@ -102,13 +103,13 @@ public class CommonStateManager implements StateManager {
 
 	protected BooleanExpression falseExpr;
 
-	private int numStatesExplored = 1;
+	private AtomicInteger numStatesExplored = new AtomicInteger(1);
 
 	private OutputCollector outputCollector;
 
-//	private Stack<TransitionSequence> stack;
+	// private Stack<TransitionSequence> stack;
 
-//	private Set<Integer> expandedStateIDs = new HashSet<>();
+	// private Set<Integer> expandedStateIDs = new HashSet<>();
 
 	private boolean printTransitions;
 
@@ -176,14 +177,15 @@ public class CommonStateManager implements StateManager {
 			Transition transition) throws UnsatisfiablePathConditionException {
 		int pid;
 		int numProcs;
-		int oldMaxCanonicId = this.maxCanonicId;
+		int oldMaxCanonicId = this.maxCanonicId.get();
+		boolean newState = false;
 		Transition firstTransition;
 		State oldState = state;
 		StateStatus stateStatus;
 		TraceStep traceStep;
 		String process;
 		int atomCount = 0;
-//		boolean ampleSetUpdated = false;
+		// boolean ampleSetUpdated = false;
 		int startStateId = state.getCanonicId();
 		int sequenceId = 1;
 
@@ -226,7 +228,7 @@ public class CommonStateManager implements StateManager {
 			state = executor.execute(state, stateStatus.enabledTransition.pid(),
 					stateStatus.enabledTransition);
 			// }
-			numStatesExplored++;
+			numStatesExplored.getAndIncrement();
 			if (printTransitions) {
 				if (this.printAllStates)
 					config.out().println();
@@ -296,47 +298,48 @@ public class CommonStateManager implements StateManager {
 					ignoredErrorSet.add(hex.heapErrorKind());
 				}
 			} while (!finished);
-//			if (state.onStack()) {
-//				// this is a back-edge, we need to fulfill ample set condition
-//				// C3 cycle)
-//				TransitionSequence transitionSequence = stack.peek();
-//				State sourceState = transitionSequence.state();
-//
-//				// if (expandedStateIDs.contains(sourceState.getCanonicId())
-//				// || expandedStateIDs.contains(state.getCanonicId()))
-//				// System.out.println("State " + state.getCanonicId()
-//				// + " is on stack but has been expanded before.");
-//				if (!expandedStateIDs.contains(sourceState.getCanonicId())
-//						&& !expandedStateIDs.contains(state.getCanonicId())
-//						&& !transitionSequence.containsAllEnabled()) {
-//					// int onStackID = state.getCanonicId();
-//					// Stack<TransitionSequence> tmp = new Stack<>();
-//					// TransitionSequence current = stack.pop();
-//					// State currentState = current.state();
-//					//
-//					// while (currentState.getCanonicId() != onStackID) {
-//					// tmp.push(current);
-//					// expandedStateIDs.add(currentState.getCanonicId());
-//					// current = stack.pop();
-//					// currentState = current.state();
-//					// }
-//					// expandedStateIDs.add(currentState.getCanonicId());
-//					// stack.push(current);
-//					// while (!tmp.isEmpty()) {
-//					// current = tmp.pop();
-//					// stack.push(current);
-//					// }
-//					expandedStateIDs.add(state.getCanonicId());
-//					expandedStateIDs.add(sourceState.getCanonicId());
-//					this.expandTransitionSequence(transitionSequence);
-//					ampleSetUpdated = true;
-//				}
-//			}
+			// if (state.onStack()) {
+			// // this is a back-edge, we need to fulfill ample set condition
+			// // C3 cycle)
+			// TransitionSequence transitionSequence = stack.peek();
+			// State sourceState = transitionSequence.state();
+			//
+			// // if (expandedStateIDs.contains(sourceState.getCanonicId())
+			// // || expandedStateIDs.contains(state.getCanonicId()))
+			// // System.out.println("State " + state.getCanonicId()
+			// // + " is on stack but has been expanded before.");
+			// if (!expandedStateIDs.contains(sourceState.getCanonicId())
+			// && !expandedStateIDs.contains(state.getCanonicId())
+			// && !transitionSequence.containsAllEnabled()) {
+			// // int onStackID = state.getCanonicId();
+			// // Stack<TransitionSequence> tmp = new Stack<>();
+			// // TransitionSequence current = stack.pop();
+			// // State currentState = current.state();
+			// //
+			// // while (currentState.getCanonicId() != onStackID) {
+			// // tmp.push(current);
+			// // expandedStateIDs.add(currentState.getCanonicId());
+			// // current = stack.pop();
+			// // currentState = current.state();
+			// // }
+			// // expandedStateIDs.add(currentState.getCanonicId());
+			// // stack.push(current);
+			// // while (!tmp.isEmpty()) {
+			// // current = tmp.pop();
+			// // stack.push(current);
+			// // }
+			// expandedStateIDs.add(state.getCanonicId());
+			// expandedStateIDs.add(sourceState.getCanonicId());
+			// this.expandTransitionSequence(transitionSequence);
+			// ampleSetUpdated = true;
+			// }
+			// }
 			traceStep.complete(state);
 			newCanonicId = state.getCanonicId();
-			if (newCanonicId > this.maxCanonicId) {
-				this.maxCanonicId = newCanonicId;
-				numStatesExplored++;
+			if (newCanonicId > oldMaxCanonicId) {
+				Utils.biggerAndSet(this.maxCanonicId, newCanonicId);
+				newState = true;
+				numStatesExplored.getAndIncrement();
 			}
 		} else {
 			// FIXME needs to commit all symbolic expressions?
@@ -361,19 +364,18 @@ public class CommonStateManager implements StateManager {
 		}
 		if (config.printTransitions())
 			config.out().println(state);
-		
-		//TODO should the expansion of transitionsequence visible here?
-//		if (ampleSetUpdated
-//				&& (config.showAmpleSet() || config.showAmpleSetWtStates())) {
-//			State updatedState = stack.peek().state();
-//
-//			config.out().println("\nample set at state "
-//					+ updatedState.getCanonicId() + " fully expanded");
-//			if (config.showAmpleSetWtStates())
-//				config.out().println(updatedState.callStackToString());
-//		}
-		if (printSavedStates && (!config.saveStates()
-				|| this.maxCanonicId > oldMaxCanonicId)) {
+
+		// TODO should the expansion of transitionsequence visible here?
+		// if (ampleSetUpdated
+		// && (config.showAmpleSet() || config.showAmpleSetWtStates())) {
+		// State updatedState = stack.peek().state();
+		//
+		// config.out().println("\nample set at state "
+		// + updatedState.getCanonicId() + " fully expanded");
+		// if (config.showAmpleSetWtStates())
+		// config.out().println(updatedState.callStackToString());
+		// }
+		if (printSavedStates && (!config.saveStates() || newState)) {
 			// in -savedStates mode, only print new states.
 			config.out().println();
 			config.out().print(this.symbolicAnalyzer.stateToString(state));
@@ -388,8 +390,9 @@ public class CommonStateManager implements StateManager {
 								"\t", state.getPathCondition()));
 		}
 		numProcs = state.numLiveProcs();
-		if (numProcs > maxProcs)
-			maxProcs = numProcs;
+		Utils.biggerAndSet(maxProcs, numProcs);
+		// if (numProcs > maxProcs)
+		// maxProcs = numProcs;
 		if (config.collectOutputs())
 			this.outputCollector.collectOutputs(state);
 		return traceStep;
@@ -742,7 +745,7 @@ public class CommonStateManager implements StateManager {
 
 	@Override
 	public int maxProcs() {
-		return maxProcs;
+		return maxProcs.intValue();
 	}
 
 	@Override
@@ -757,7 +760,7 @@ public class CommonStateManager implements StateManager {
 
 	@Override
 	public int numStatesExplored() {
-		return numStatesExplored;
+		return numStatesExplored.get();
 	}
 
 	@Override
@@ -772,8 +775,8 @@ public class CommonStateManager implements StateManager {
 		return null;
 	}
 
-//	@Override
-//	public void setStack(Stack<TransitionSequence> stack) {
-//		this.stack = stack;
-//	}
+	// @Override
+	// public void setStack(Stack<TransitionSequence> stack) {
+	// this.stack = stack;
+	// }
 }

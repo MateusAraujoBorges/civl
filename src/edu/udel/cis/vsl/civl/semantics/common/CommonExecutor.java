@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import edu.udel.cis.vsl.civl.analysis.IF.Analysis;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
@@ -121,7 +122,7 @@ public class CommonExecutor implements Executor {
 	 * defined to be a call to method
 	 * {@link #executeWork(State, int, Statement)}.
 	 */
-	protected long numSteps = 0;
+	protected AtomicLong numSteps = new AtomicLong(0);
 
 	/** The factory used to produce and manipulate model states. */
 	private StateFactory stateFactory;
@@ -652,7 +653,7 @@ public class CommonExecutor implements Executor {
 		String process = "p" + pid;
 		StatementKind kind = statement.statementKind();
 
-		numSteps++;
+		numSteps.getAndIncrement();
 		switch (kind) {
 			case ASSIGN :
 				return executeAssign(state, pid, process,
@@ -1426,7 +1427,7 @@ public class CommonExecutor implements Executor {
 
 	@Override
 	public long getNumSteps() {
-		return numSteps;
+		return numSteps.longValue();
 	}
 
 	@Override

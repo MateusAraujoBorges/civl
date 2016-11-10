@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl.util.IF;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Utils {
 
@@ -70,31 +71,31 @@ public class Utils {
 		StringBuilder result = new StringBuilder();
 
 		switch (color) {
-		case BLACK:
-			result.append(ANSI_BLACK);
-			break;
-		case RED:
-			result.append(ANSI_RED);
-			break;
-		case GREEN:
-			result.append(ANSI_GREEN);
-			break;
-		case YELLOW:
-			result.append(ANSI_YELLOW);
-			break;
-		case BLUE:
-			result.append(ANSI_BLUE);
-			break;
-		case PURPLE:
-			result.append(ANSI_PURPLE);
-			break;
-		case CYAN:
-			result.append(ANSI_CYAN);
-			break;
-		case WHITE:
-			result.append(ANSI_WHITE);
-			break;
-		default:
+			case BLACK :
+				result.append(ANSI_BLACK);
+				break;
+			case RED :
+				result.append(ANSI_RED);
+				break;
+			case GREEN :
+				result.append(ANSI_GREEN);
+				break;
+			case YELLOW :
+				result.append(ANSI_YELLOW);
+				break;
+			case BLUE :
+				result.append(ANSI_BLUE);
+				break;
+			case PURPLE :
+				result.append(ANSI_PURPLE);
+				break;
+			case CYAN :
+				result.append(ANSI_CYAN);
+				break;
+			case WHITE :
+				result.append(ANSI_WHITE);
+				break;
+			default :
 		}
 		result.append(text);
 		result.append(ANSI_RESET);
@@ -118,5 +119,23 @@ public class Utils {
 				set.add(element);
 		}
 		return set;
+	}
+
+	/**
+	 * Atomically set v1 to a bigger value v2 in a non-blocking manner.
+	 * 
+	 * @param v1
+	 * @param v2
+	 */
+	public static void biggerAndSet(AtomicInteger v1, int v2) {
+		while (true) {
+			int oldV = v1.get();
+
+			if (v2 > oldV) {
+				if (v1.compareAndSet(oldV, v2))
+					break;
+			} else
+				break;
+		}
 	}
 }
