@@ -1,7 +1,9 @@
 struct A;
 
+const int k=9;
+
 struct A{
-   int a[32/sizeof(int)];
+   int a[32/k];
 };
 
 int main(){

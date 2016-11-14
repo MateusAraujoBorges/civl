@@ -30,28 +30,32 @@ public class SideEffectsTest {
 
 	@Test
 	public void postIncr() throws ABCException {
-		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("postIncr.cvl")));
+		assertTrue(ui.run("verify ", TestConstants.QUIET,
+				filename("postIncr.cvl")));
 	}
 
 	@Test
 	public void forLoopIncrSE() throws ABCException {
-		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("forLoopIncretSE.c")));
+		assertTrue(ui.run("verify ", TestConstants.QUIET,
+				filename("forLoopIncretSE.c")));
 	}
 
 	@Test
 	public void strictInitTest() throws ABCException {
-		assertTrue(ui.run("verify ", TestConstants.QUIET, filename("structInitSideEffect.c")));
+		assertTrue(ui.run("verify ", TestConstants.QUIET,
+				filename("structInitSideEffect.c")));
 	}
 
 	@Test
 	public void quantifiedExpressionTest() throws ABCException {
-		assertFalse(ui.run("verify ", TestConstants.QUIET, filename("quantifiedSideEffects.c")));
+		assertFalse(ui.run("verify ", TestConstants.QUIET,
+				filename("quantifiedSideEffects.c")));
 	}
 
-	// floppy_false_unreach_call
+	// see ticket #733
 	@Test
 	public void structWithDiv() {
-		assertTrue(ui.run("verify", "-svcomp16", "-showProgram", filename("structWithDiv.cvl")));
+		assertTrue(ui.run("verify", filename("structWithDiv.cvl")));
 	}
 
 	@AfterClass

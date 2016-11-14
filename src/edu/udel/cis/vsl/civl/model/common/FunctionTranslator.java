@@ -711,7 +711,7 @@ public class FunctionTranslator {
 				.withStatement(source, location,
 						(LHSExpression) this.translateExpressionNode(
 								with.getStateReference(), scope, true),
-				withFunc);
+						withFunc);
 		return new CommonFragment(withStatement);
 	}
 
@@ -813,7 +813,7 @@ public class FunctionTranslator {
 				.variable(source, typeFactory.integerType(),
 						modelFactory.getLiteralDomCounterIdentifier(source,
 								this.literalDomForCounterCount),
-				scope.numVariables());
+						scope.numVariables());
 		this.literalDomForCounterCount++;
 		scope.addVariable(literalDomCounter);
 		loopVariables = initResults.third;
@@ -2926,8 +2926,8 @@ public class FunctionTranslator {
 		Statement defaultExit = null;
 		Set<Statement> breaks;
 		Location location = modelFactory.location(
-				modelFactory.sourceOfSpan(
-						modelFactory.sourceOfBeginning(switchNode),
+				modelFactory.sourceOfSpan(modelFactory
+						.sourceOfBeginning(switchNode),
 						modelFactory.sourceOfBeginning(switchNode.child(1))),
 				scope);
 
@@ -3034,7 +3034,7 @@ public class FunctionTranslator {
 	 */
 	private Fragment translateVariableDeclarationNode(Location sourceLocation,
 			Scope scope, VariableDeclarationNode node)
-					throws CommandLineException {
+			throws CommandLineException {
 		Variable variable = translateVariableDeclarationNode(node, scope);
 
 		if (variable == null)
@@ -3453,12 +3453,12 @@ public class FunctionTranslator {
 	private Expression translateArrowNode(ArrowNode arrowNode, Scope scope) {
 		Expression struct = translateExpressionNode(
 				arrowNode.getStructurePointer(), scope, true);
-		Expression result = modelFactory
-				.dotExpression(modelFactory.sourceOf(arrowNode),
-						modelFactory.dereferenceExpression(
-								modelFactory.sourceOf(
-										arrowNode.getStructurePointer()),
-						struct), getFieldIndex(arrowNode.getFieldName()));
+		Expression result = modelFactory.dotExpression(
+				modelFactory.sourceOf(arrowNode),
+				modelFactory.dereferenceExpression(
+						modelFactory.sourceOf(arrowNode.getStructurePointer()),
+						struct),
+				getFieldIndex(arrowNode.getFieldName()));
 
 		return result;
 	}
@@ -4289,9 +4289,10 @@ public class FunctionTranslator {
 					if (expression instanceof LHSExpression) {
 						expression = modelFactory.addressOfExpression(source,
 								modelFactory.subscriptExpression(source,
-										(LHSExpression) expression,
-										modelFactory.integerLiteralExpression(
-												source, BigInteger.ZERO)));
+										(LHSExpression) expression, modelFactory
+												.integerLiteralExpression(
+														source,
+														BigInteger.ZERO)));
 					} else if (expressionKind == Expression.ExpressionKind.ARRAY_LITERAL
 							|| expressionKind == Expression.ExpressionKind.ARRAY_LAMBDA) {
 						// creates anonymous variable in the root scope for this
@@ -4351,9 +4352,9 @@ public class FunctionTranslator {
 							this.typeFactory.integerType(), expression);
 					break;
 				}
-					// case INTEGER_POINTER:{
-					//
-					// }
+				// case INTEGER_POINTER:{
+				//
+				// }
 				case VOID_POINTER :
 					// void*->T* or T*->void*
 					// ignore, pointer types are all the same
@@ -4364,7 +4365,7 @@ public class FunctionTranslator {
 							.castExpression(source,
 									this.translateABCType(source, scope,
 											conversion.getNewType()),
-							expression);
+									expression);
 					break;
 				}
 				default :
@@ -4622,7 +4623,8 @@ public class FunctionTranslator {
 			result = modelFactory.functionIdentifierExpression(source,
 					scope.getFunction(name));
 		} else {
-			throw new CIVLInternalException("No such variable ", source);
+			throw new CIVLInternalException(
+					"Can't find declaration of variable " + name, source);
 		}
 		return result;
 	}
@@ -4743,17 +4745,15 @@ public class FunctionTranslator {
 						(ConditionalExpression) result);
 				break;
 			case DIV :
-				result = modelFactory
-						.binaryExpression(source, BINARY_OPERATOR.DIVIDE,
-								modelFactory.numericExpression(
-										arguments.get(0)),
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.DIVIDE,
+						modelFactory.numericExpression(arguments.get(0)),
 						modelFactory.numericExpression(arguments.get(1)));
 				break;
 			case GT :
-				result = modelFactory
-						.binaryExpression(source, BINARY_OPERATOR.LESS_THAN,
-								modelFactory.numericExpression(
-										arguments.get(1)),
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.LESS_THAN,
+						modelFactory.numericExpression(arguments.get(1)),
 						modelFactory.numericExpression(arguments.get(0)));
 				break;
 			case GTE :
@@ -4847,10 +4847,9 @@ public class FunctionTranslator {
 						BINARY_OPERATOR.OR, booleanArg0, booleanArg1);
 				break;
 			case LT :
-				result = modelFactory
-						.binaryExpression(source, BINARY_OPERATOR.LESS_THAN,
-								modelFactory.numericExpression(
-										arguments.get(0)),
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.LESS_THAN,
+						modelFactory.numericExpression(arguments.get(0)),
 						modelFactory.numericExpression(arguments.get(1)));
 				break;
 			case LTE :
@@ -4865,10 +4864,9 @@ public class FunctionTranslator {
 						modelFactory.numericExpression(arguments.get(1)));
 				break;
 			case MOD :
-				result = modelFactory
-						.binaryExpression(source, BINARY_OPERATOR.MODULO,
-								modelFactory.numericExpression(
-										arguments.get(0)),
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.MODULO,
+						modelFactory.numericExpression(arguments.get(0)),
 						modelFactory.numericExpression(arguments.get(1)));
 				break;
 			case EQUALS :
@@ -4932,10 +4930,9 @@ public class FunctionTranslator {
 			case SUBSCRIPT :
 				throw new CIVLInternalException("unreachable", source);
 			case TIMES :
-				result = modelFactory
-						.binaryExpression(source, BINARY_OPERATOR.TIMES,
-								modelFactory.numericExpression(
-										arguments.get(0)),
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.TIMES,
+						modelFactory.numericExpression(arguments.get(0)),
 						modelFactory.numericExpression(arguments.get(1)));
 				break;
 			case UNARYMINUS :
