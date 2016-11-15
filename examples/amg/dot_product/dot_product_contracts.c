@@ -1,10 +1,11 @@
 #include <mpi.h>
-#ifdef _CIVL
 #include <stdlib.h>
 #include <civlc.cvh>
-#endif
+#pragma PARSE_ACSL
+
 
 #define HYPRE_BigInt int
+#define INT_MAX      65536
 
 // seq_mv.h :
 
@@ -38,9 +39,16 @@ typedef struct
 
 
 // vector.c :
-
-/*@ requires valid_vec(x) && valid_vec(y) && x->size==y->size;
-  @ ensures \result == \sum(i=0..x->size-1) x->data[i]*y->data[i];
+#define VEC_SIZE(x) ((x)->size * (x)->num_vectors)
+/*@ requires \valid(x) && \valid(y);
+  @ requires \valid(x->data + (0 .. VEC_SIZE(x))) && \valid(y->data + (0 .. VEC_SIZE(y)));
+  @ requires x->size == y->size;
+  @ requires 0< x->size && x->size < INT_MAX;
+  @ requires x->num_vectors == y->num_vectors;
+  @ requires 0< x->num_vectors && x->num_vectors < INT_MAX;
+  @ ensures \result == \sum(0, VEC_SIZE(x)-1, 
+  @                            \lambda int t; x->data[t]*y->data[t]
+  @                         );
   @*/
 double hypre_SeqVectorInnerProd(hypre_Vector *x, hypre_Vector *y) {
    double  *x_data = hypre_VectorData(x);
@@ -51,12 +59,9 @@ double hypre_SeqVectorInnerProd(hypre_Vector *x, hypre_Vector *y) {
 
    size *= hypre_VectorNumVectors(x);
 
-#ifdef HYPRE_USING_OPENMP
-#pragma omp parallel for private(i) reduction(+:result) schedule(static)
-#endif
-   /*@ loop invariant i <= size &&
-     @   result = \sum(j=0..i-1) y_data[j]*x_data[j];
-     @ assigns result;
+   /*@ 
+     @ loop invariant i >= 0 && i <= size && 
+     @       result == \sum(0, i-1, \lambda int t; y_data[t] * x_data[t]);
      @*/
    for (i = 0; i < size; i++)
       result += y_data[i] * x_data[i];
@@ -113,37 +118,24 @@ typedef struct
 
 // par_vector.c :
 
-#define total_size(vec) ((vec)->size * (vec)->num_vectors)
+#define LOCAL_VECTOR(x)  ((x)->local_vector)
 
-/*@ predicate valid_vec(hypre_Vector *v) =
-  @      \valid(v) && v->size >= 0
-  @   && \valid(v->data[0..v->size-1]);
-  @
-  @ predicate compat_vec(hypre_Vector *u, hypre_Vector *v) =
-  @      u->size == v->size && u->num_vectors == v->num_vectors;
-  @
-  @ predicate valid_par(hypre_ParVector *x) =
-  @      \valid(x) && valid_vec(x->local_vector)
-  @   && x->global_size == \on(0, x->global_size)
-  @   && x->comm->gcomm == \on(0, x->comm->gcomm)
-  @   && x->global_size == \sum(r=0..x->comm->size-1)
-  @                        \on(r, x->local_vector->size);
-  @
-  @ predicate compat_par(hypre_ParVector *x, hypre_ParVector *y) =
-  @      x->comm == y->comm
-  @   && x->global_size == y->global_size
-  @   && compat_vec(x->local_vector, y->local_vector);
-  @*/
-   
-
-/*@ \mpi_collective[x->comm]:
-  @   requires \valid_par(x) && \valid_par(y) && compat_par(x,y);
-  @   requires x->local_vector->num_vectors == 1;
-  @   ensures \result == 
-  @     \sum(r=0..x->comm->size-1)
-  @       \on(r, \sum(i = 0 .. x->local_vector->size - 1)
-  @           x->local_vector->data[i] * y->local_vector->data[i]);
-  @   assigns \nothing;
+/*@ requires \valid(x) && \valid(y);
+  @ requires \valid(x->local_vector) && \valid(y->local_vector);
+  @ requires \valid(LOCAL_VECTOR(x)->data + (0 .. VEC_SIZE(LOCAL_VECTOR(x)))) &&
+  @          \valid(LOCAL_VECTOR(y)->data + (0 .. VEC_SIZE(LOCAL_VECTOR(y))));
+  @ requires LOCAL_VECTOR(x)->size == LOCAL_VECTOR(y)->size;
+  @ requires 0< LOCAL_VECTOR(x)->size && LOCAL_VECTOR(x)->size < INT_MAX;
+  @ requires LOCAL_VECTOR(x)->num_vectors == LOCAL_VECTOR(y)->num_vectors;
+  @ requires 0< LOCAL_VECTOR(x)->num_vectors && LOCAL_VECTOR(x)->num_vectors < INT_MAX;
+  @ \mpi_collective(MPI_COMM_WORLD, P2P):
+  @    ensures \result ==  \sum(0, \mpi_comm_size-1, \lambda int p; \on(p,
+  @                                                  \sum(0, VEC_SIZE(LOCAL_VECTOR(x))-1, 
+  @                                                  \lambda int t; 
+  @                                                  LOCAL_VECTOR(x)->data[t]*LOCAL_VECTOR(y)->data[t])
+  @                                                                     )                   
+  @                             );
+  @   
   @*/
 double hypre_ParVectorInnerProd(hypre_ParVector *x, hypre_ParVector *y) {
    MPI_Comm      comm    = hypre_ParVectorComm(x);
@@ -152,7 +144,7 @@ double hypre_ParVectorInnerProd(hypre_ParVector *x, hypre_ParVector *y) {
    double result = 0.0;
    double local_result = hypre_SeqVectorInnerProd(x_local, y_local);
    
-   MPI_Allreduce(&local_result, &result, 1, MPI_DOUBLE, MPI_SUM, comm);
+   MPI_Allreduce(&local_result, &result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
    return result;
 }
 
@@ -161,28 +153,13 @@ double hypre_ParVectorInnerProd(hypre_ParVector *x, hypre_ParVector *y) {
 #define XVET  x.local_vector
 #define YVET  y.local_vector
 
-#ifdef _CIVL
-$input int VECTOR_LENGTH;
-$assume(0 <= VECTOR_LENGTH && VECTOR_LENGTH < 10);
-#endif
 int main() {
   hypre_ParVector x, y;
   int nprocs;
 
   MPI_Init(NULL, NULL);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-#ifdef _CIVL
-  x.comm = MPI_COMM_WORLD;
-  y.comm = MPI_COMM_WORLD;
-  XVET = (hypre_Vector *)malloc(sizeof(hypre_Vector));
-  YVET = (hypre_Vector *)malloc(sizeof(hypre_Vector));
-  XVET->data = (double *)malloc(sizeof(double) * VECTOR_LENGTH * nprocs);
-  YVET->data = (double *)malloc(sizeof(double) * VECTOR_LENGTH * nprocs);
-  XVET->size = VECTOR_LENGTH;
-  YVET->size = VECTOR_LENGTH;
-  XVET->num_vectors = nprocs;
-  YVET->num_vectors = nprocs;
-#endif
+
   double result = hypre_ParVectorInnerProd(&x, &y);
 
   MPI_Finalize();
