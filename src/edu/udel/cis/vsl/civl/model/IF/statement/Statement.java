@@ -31,7 +31,7 @@ public interface Statement extends Sourceable {
 	 * Different kinds of statements.
 	 * 
 	 * @author Manchun Zheng (zmanchun)
-	 * 
+	 * @author Wenhao Wu (W.Wu) for CALLOC
 	 */
 	public enum StatementKind {
 		/** Assignment */
@@ -42,6 +42,8 @@ public interface Statement extends Sourceable {
 		DOMAIN_ITERATOR,
 		/** $contractVerify statement */
 		CIVL_PAR_FOR_ENTER,
+		/** Clean Memory allocation */ /* W.Wu */
+		CALLOC,
 		/** Memory allocation */
 		MALLOC,
 		/** No operation */
