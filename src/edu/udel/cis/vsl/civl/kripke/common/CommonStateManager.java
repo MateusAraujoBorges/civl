@@ -647,7 +647,7 @@ public class CommonStateManager implements StateManager {
 	public TraceStepIF<Transition, State> nextState(State state,
 			Transition transition) {
 		TraceStepIF<Transition, State> result;
-
+		
 		// nextStateCalls++;
 		try {
 			result = nextStateWork(state, transition);
