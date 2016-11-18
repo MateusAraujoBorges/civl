@@ -873,12 +873,13 @@ public class ImmutableStateFactory implements StateFactory {
 	private BooleanExpression getContextOfSizeofSymbols(Reasoner reasoner) {
 		Simplifier simplifier = reasoner.simplifier();
 		Map<SymbolicConstant, SymbolicExpression> map = simplifier
-				.substitutionMap();
+				.constantSubstitutionMap();
 		BooleanExpression result = universe.trueExpression();
 
 		for (Map.Entry<SymbolicConstant, SymbolicExpression> pair : map
 				.entrySet()) {
-			if ((this.config.isEnableMpiContract() && this.config.inSubprogram())
+			if ((this.config.isEnableMpiContract()
+					&& this.config.inSubprogram())
 					|| ModelConfiguration.SIZEOF_VARS.contains(pair.getKey())) {
 				result = universe.and(result,
 						universe.equals(pair.getValue(), pair.getKey()));
@@ -1182,7 +1183,7 @@ public class ImmutableStateFactory implements StateFactory {
 				result = theState;
 				// result = reachableMemoryAnalysis(theState);
 				result.makeCanonic(stateCount, universe, scopeMap, processMap);
-//				stateCount++;
+				// stateCount++;
 				stateMap.put(result, result);
 			}
 			return result;
