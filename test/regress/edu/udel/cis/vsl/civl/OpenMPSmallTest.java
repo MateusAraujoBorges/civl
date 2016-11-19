@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -9,6 +10,11 @@ import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
+/**
+ * Some simple OpenMP tests, all of which fail currently.
+ * 
+ * @author siegel
+  */
 public class OpenMPSmallTest {
 
 	/* *************************** Static Fields *************************** */
@@ -33,6 +39,16 @@ public class OpenMPSmallTest {
 	@Test
 	public void jan() {
 		assertTrue(ui.run(VERIFY, filename("jan_example.c")));
+	}
+
+	@Test
+	public void ptr_share() {
+		assertFalse(ui.run(VERIFY, "-verbose", filename("ptr_share.c")));
+	}
+
+	@Test
+	public void simple_share() {
+		assertTrue(ui.run(VERIFY, "-verbose", filename("simple_share.c")));
 	}
 
 }
