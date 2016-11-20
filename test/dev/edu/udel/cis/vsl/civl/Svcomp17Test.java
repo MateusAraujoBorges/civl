@@ -77,6 +77,13 @@ public class Svcomp17Test {
 				ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
 						filename("20051113-1.c_false-valid-memtrack.c"));
 	}
+	
+	@Test
+	public void gcd() {
+				ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
+						filename("gcd_1_true-unreach-call.i"));
+	}
+	
 	@Test
 	public void uchar() {
 		ui.run("verify ", filename("uchar.c"));
