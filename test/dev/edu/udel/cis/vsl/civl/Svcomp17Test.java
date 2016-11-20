@@ -71,7 +71,12 @@ public class Svcomp17Test {
 				ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
 						filename("unique_loop.c")));
 	}
-
+	
+	@Test
+	public void memtrack() {
+				ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
+						filename("20051113-1.c_false-valid-memtrack.c"));
+	}
 	@Test
 	public void uchar() {
 		ui.run("verify ", filename("uchar.c"));
