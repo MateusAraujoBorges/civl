@@ -807,11 +807,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 			}
 		}
 		if (!ompHeader) {
-			AST civlcAST = this.parseSystemLibrary(
-				new File(CPreprocessor.ABC_INCLUDE_PATH, CIVLConstants.CIVLC),
-				EMPTY_MACRO_MAP);
-			newAst = this.combineASTs(civlcAST, newAst);
-
+			// This will also include the CIVLC standard header
 			AST civlcOmpAST = this.parseSystemLibrary(
 				new File(CPreprocessor.ABC_INCLUDE_PATH, CIVLConstants.CIVL_OMP),
 				EMPTY_MACRO_MAP);
