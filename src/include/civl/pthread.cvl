@@ -681,8 +681,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex){
   *            Should be changed to condition attribute
   * @return Returns 0 upon successful completion
   */
-
-int pthread_cond_init(pthread_cond_t *cond, void *arg){
+int pthread_cond_init(pthread_cond_t * restrict cond, const pthread_condattr_t * restrict arg){
   cond->signal = 0;
   cond->broadcast = 0;
   return 0;

@@ -9,6 +9,7 @@ import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
@@ -19,6 +20,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.AtomicNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.QualifiedObjectType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
@@ -129,59 +131,59 @@ public class SvcompWorker extends BaseWorker {
 					boolean needsTransform = true;
 
 					switch (operatorNode.getOperator()) {
-					case ASSIGN: {
-						ExpressionNode rhs = operatorNode.getArgument(1);
+						case ASSIGN : {
+							ExpressionNode rhs = operatorNode.getArgument(1);
 
-						rhs.remove();
-						operatorNode.setArgument(1, this.moduloExpression(
-								source, rhs, unsignedBound));
-						isAssign = true;
-						break;
-					}
-					case BITANDEQ:
-						rhsOperator = Operator.BITAND;
-						break;
-					case BITOREQ:
-						rhsOperator = Operator.BITOR;
-						break;
-					case BITXOREQ:
-						rhsOperator = Operator.BITXOR;
-						break;
-					case DIVEQ:
-						rhsOperator = Operator.DIV;
-						break;
-					case MINUSEQ:
-						rhsOperator = Operator.MINUS;
-						break;
-					case MODEQ:
-						rhsOperator = Operator.MOD;
-						break;
-					case PLUSEQ:
-						rhsOperator = Operator.PLUS;
-						break;
-					case TIMESEQ:
-						rhsOperator = Operator.PLUS;
-						break;
-					case POSTINCREMENT:
-					case PREINCREMENT:
-						rhsOperator = Operator.PLUS;
-						rightOfRhs = this.integerConstant(1);
-						break;
-					case PREDECREMENT:
-					case POSTDECREMENT:
-						rhsOperator = Operator.MINUS;
-						rightOfRhs = this.integerConstant(1);
-						break;
-					case MINUS:
-					case PLUS:
-					case TIMES:
-					case DIV:
-					case MOD:
-					case UNARYMINUS:
-					case UNARYPLUS:
-						break;
-					default:
-						needsTransform = false;
+							rhs.remove();
+							operatorNode.setArgument(1, this.moduloExpression(
+									source, rhs, unsignedBound));
+							isAssign = true;
+							break;
+						}
+						case BITANDEQ :
+							rhsOperator = Operator.BITAND;
+							break;
+						case BITOREQ :
+							rhsOperator = Operator.BITOR;
+							break;
+						case BITXOREQ :
+							rhsOperator = Operator.BITXOR;
+							break;
+						case DIVEQ :
+							rhsOperator = Operator.DIV;
+							break;
+						case MINUSEQ :
+							rhsOperator = Operator.MINUS;
+							break;
+						case MODEQ :
+							rhsOperator = Operator.MOD;
+							break;
+						case PLUSEQ :
+							rhsOperator = Operator.PLUS;
+							break;
+						case TIMESEQ :
+							rhsOperator = Operator.PLUS;
+							break;
+						case POSTINCREMENT :
+						case PREINCREMENT :
+							rhsOperator = Operator.PLUS;
+							rightOfRhs = this.integerConstant(1);
+							break;
+						case PREDECREMENT :
+						case POSTDECREMENT :
+							rhsOperator = Operator.MINUS;
+							rightOfRhs = this.integerConstant(1);
+							break;
+						case MINUS :
+						case PLUS :
+						case TIMES :
+						case DIV :
+						case MOD :
+						case UNARYMINUS :
+						case UNARYPLUS :
+							break;
+						default :
+							needsTransform = false;
 					}
 					if (!isAssign && needsTransform) {
 						if (rhsOperator != null) {
@@ -252,8 +254,8 @@ public class SvcompWorker extends BaseWorker {
 			return (basicType.getBasicTypeKind() == BasicTypeKind.UNSIGNED);
 		}
 		if (type instanceof QualifiedObjectType) {
-			return this.isUnsignedIntegerType(((QualifiedObjectType) type)
-					.getBaseType());
+			return this.isUnsignedIntegerType(
+					((QualifiedObjectType) type).getBaseType());
 		}
 		return false;
 	}
@@ -270,10 +272,9 @@ public class SvcompWorker extends BaseWorker {
 
 		blockItems.add(this.unsignedBoundVariableDeclaration());
 		if (this.nondet_int_variable_declarations.size() > 0) {
-			VariableDeclarationNode nondet_bound_var = this
-					.variableDeclaration(this.identifierPrefix + "_"
-							+ NONDET_INT + "_" + BOUND,
-							this.basicType(BasicTypeKind.INT));
+			VariableDeclarationNode nondet_bound_var = this.variableDeclaration(
+					this.identifierPrefix + "_" + NONDET_INT + "_" + BOUND,
+					this.basicType(BasicTypeKind.INT));
 			String nondet_bound_var_name = nondet_bound_var.getName();
 
 			nondet_bound_var.getTypeNode().setInputQualified(true);
@@ -282,15 +283,13 @@ public class SvcompWorker extends BaseWorker {
 			// create the bound variable for nondet int
 			blockItems.add(nondet_bound_var);
 			// add upper bound variable and assumptions
-			blockItems.add(this.assumeFunctionDeclaration(this.newSource(
-					"$assume", CivlcTokenConstant.DECLARATION)));
+			blockItems.add(this.assumeFunctionDeclaration(
+					this.newSource("$assume", CivlcTokenConstant.DECLARATION)));
 			for (VariableDeclarationNode nondet_var : nondet_int_variable_declarations) {
-				blockItems
-						.add(this.assumeNode(this.nodeFactory.newOperatorNode(
-								nondet_var.getSource(),
-								Operator.LTE,
-								this.identifierExpression(nondet_var.getName()),
-								this.identifierExpression(nondet_bound_var_name))));
+				blockItems.add(this.assumeNode(this.nodeFactory.newOperatorNode(
+						nondet_var.getSource(), Operator.LTE,
+						this.identifierExpression(nondet_var.getName()),
+						this.identifierExpression(nondet_bound_var_name))));
 			}
 		}
 		for (BlockItemNode item : rootNode) {
@@ -335,6 +334,40 @@ public class SvcompWorker extends BaseWorker {
 		}
 	}
 
+	private List<BlockItemNode> removeVariableDeclarations(
+			List<BlockItemNode> nodes) {
+		List<BlockItemNode> declarations = new LinkedList<>();
+		int size = nodes.size();
+
+		for (int i = 0; i < size; i++) {
+			BlockItemNode node = nodes.get(i);
+
+			if (node instanceof VariableDeclarationNode) {
+				VariableDeclarationNode variable = (VariableDeclarationNode) node;
+				InitializerNode init = variable.getInitializer();
+
+				if (init == null) {
+					nodes.set(i, null);
+				} else {
+					ExpressionNode initExpr = (ExpressionNode) init;
+					StatementNode initVaraible;
+
+					init.remove();
+					initVaraible = this.nodeFactory
+							.newExpressionStatementNode(nodeFactory
+									.newOperatorNode(variable.getSource(),
+											Operator.ASSIGN,
+											this.identifierExpression(
+													variable.getName()),
+											initExpr));
+					nodes.set(i, initVaraible);
+				}
+				declarations.add(variable);
+			}
+		}
+		return declarations;
+	}
+
 	/**
 	 * transforms _VERIFIER_atomic_begin/end pairs into $atomic blocks.
 	 * 
@@ -347,6 +380,7 @@ public class SvcompWorker extends BaseWorker {
 			int atomicCount = 0;
 			List<BlockItemNode> atomicItems = new LinkedList<>();
 			boolean changed = false;
+			List<BlockItemNode> declarations = new LinkedList<>();
 
 			for (BlockItemNode item : body) {
 				if (item instanceof ExpressionStatementNode) {
@@ -354,26 +388,33 @@ public class SvcompWorker extends BaseWorker {
 							.getExpression();
 
 					if (expression instanceof FunctionCallNode) {
-						if (is_atomic_begin_call((FunctionCallNode) expression)) {
+						if (is_atomic_begin_call(
+								(FunctionCallNode) expression)) {
 							atomicCount++;
 							changed = true;
-						} else if (is_atomic_end_call((FunctionCallNode) expression)) {
+						} else if (is_atomic_end_call(
+								(FunctionCallNode) expression)) {
 							atomicCount--;
 							if (atomicCount == 0 && atomicItems.size() > 0) {
 								this.releaseNodes(atomicItems);
-								newItems.add(this.nodeFactory.newAtomicStatementNode(
-										this.newSource("$atomic",
-												CivlcTokenConstant.ATOMIC),
-										false,
-										this.nodeFactory.newCompoundStatementNode(
-												this.newSource(
-														"body-of-atomic-begin-end",
-														CivlcTokenConstant.COMPOUND_STATEMENT),
-												atomicItems)));
+								declarations.addAll(removeVariableDeclarations(
+										atomicItems));
+								newItems.add(
+										this.nodeFactory.newAtomicStatementNode(
+												this.newSource("$atomic",
+														CivlcTokenConstant.ATOMIC),
+												false,
+												this.nodeFactory
+														.newCompoundStatementNode(
+																this.newSource(
+																		"body-of-atomic-begin-end",
+																		CivlcTokenConstant.COMPOUND_STATEMENT),
+																atomicItems)));
 								atomicItems = new LinkedList<>();
 							}
 						} else {
-							if (this.is_atomic_call((FunctionCallNode) expression)) {
+							if (this.is_atomic_call(
+									(FunctionCallNode) expression)) {
 								ASTNode parent = item.parent();
 								int itemIndex = item.childIndex();
 								AtomicNode atomicNode;
@@ -381,12 +422,12 @@ public class SvcompWorker extends BaseWorker {
 								item.remove();
 								atomicNode = this.nodeFactory
 										.newAtomicStatementNode(
-												item.getSource(),
-												false,
+												item.getSource(), false,
 												nodeFactory
 														.newCompoundStatementNode(
 																item.getSource(),
-																Arrays.asList(item)));
+																Arrays.asList(
+																		item)));
 								parent.setChild(itemIndex, atomicNode);
 								item = atomicNode;
 							}
@@ -410,6 +451,7 @@ public class SvcompWorker extends BaseWorker {
 				}
 			}
 			if (changed) {
+				newItems.addAll(0, declarations);
 				this.releaseNodes(newItems);
 
 				CompoundStatementNode newBody = this.nodeFactory

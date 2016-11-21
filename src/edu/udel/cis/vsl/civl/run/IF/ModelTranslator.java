@@ -212,7 +212,7 @@ public class ModelTranslator {
 	 */
 	ModelTranslator(GMCConfiguration gmcConfig, GMCSection cmdSection,
 			String[] filenames, String coreName, SymbolicUniverse universe)
-					throws PreprocessorException {
+			throws PreprocessorException {
 		this.cmdSection = cmdSection;
 		this.gmcConfig = gmcConfig;
 		// this.userFileCoreName = coreName;
@@ -309,7 +309,7 @@ public class ModelTranslator {
 		if (config.directSymEx() != null)
 			task.addTransformRecord(
 					transformerFactory.getDirectingTransformerRecord(config));
-		if (!config.isEnableMpiContract())
+		if (config.isEnableIntDivTransformation())
 			task.addTransformRecord(
 					transformerFactory.getIntDivTransformerRecord(macros));
 		task.addTransformCode(SideEffectRemover.CODE);

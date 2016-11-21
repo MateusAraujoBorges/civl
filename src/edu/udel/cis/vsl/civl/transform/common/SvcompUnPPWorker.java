@@ -606,6 +606,13 @@ public class SvcompUnPPWorker extends BaseWorker {
 				needsPthreadHeader = true;
 				return true;
 			}
+		} else if (item instanceof FunctionDeclarationNode) {
+			FunctionDeclarationNode functionDecl = (FunctionDeclarationNode) item;
+
+			if (functionDecl.getName().startsWith(PTHREAD_PREFIX)) {
+				needsPthreadHeader = true;
+				return true;
+			}
 		}
 		return false;
 	}

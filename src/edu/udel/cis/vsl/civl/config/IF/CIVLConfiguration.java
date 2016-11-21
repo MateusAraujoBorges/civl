@@ -42,6 +42,12 @@ public class CIVLConfiguration {
 	private boolean enablePrintf = true;
 
 	/**
+	 * Should CIVL apply integer division/modulus transformation? True by
+	 * default.
+	 */
+	private boolean enableIntDivTransformation = true;
+
+	/**
 	 * Should CIVL save some states as it searches, as opposed to doing a
 	 * "stateless" search? Even if this is true, CIVL will not necessarily save
 	 * every state, only important ones that have a chance of being encountered
@@ -214,10 +220,10 @@ public class CIVLConfiguration {
 	 * the portions of the state considered. LOC by default.
 	 */
 	private ErrorStateEquivalence errorStateEquiv = ErrorStateEquivalence.LOC;
-	
+
 	/**
-	 * Direct symbolic execution based on file designating branches
-	 * to direct and how to subset their outcomes.
+	 * Direct symbolic execution based on file designating branches to direct
+	 * and how to subset their outcomes.
 	 */
 	private String directSymEx = null;
 
@@ -354,6 +360,8 @@ public class CIVLConfiguration {
 		this.collectOutputs = config.isTrue(CIVLConstants.collectOutputO);
 		this.setMpiContractFunction(
 				(String) config.getValueOrDefault(CIVLConstants.mpiContractO));
+		if (this.isEnableMpiContract())
+			this.enableIntDivTransformation = false;
 		if (this.mpiContractFunction != null)
 			this.collectSymbolicNames = false;
 		this.setCheckDivisionByZero(
@@ -374,8 +382,9 @@ public class CIVLConfiguration {
 				this.deadlock = DeadlockKind.NONE;
 			if (config.getValue(CIVLConstants.procBoundO) == null)
 				this.procBound = 6;
+			this.enableIntDivTransformation = false;
 		}
-		this.directSymEx = (String)config.getValue(CIVLConstants.direct0);
+		this.directSymEx = (String) config.getValue(CIVLConstants.direct0);
 	}
 
 	public CIVLConfiguration(CIVLConfiguration config) {
@@ -418,7 +427,7 @@ public class CIVLConfiguration {
 		this.verbose = config.verbose;
 		this.web = config.web;
 		this.witness = config.witness;
-		this.directSymEx= config.directSymEx;
+		this.directSymEx = config.directSymEx;
 	}
 
 	public CIVLConfiguration() {
@@ -548,7 +557,7 @@ public class CIVLConfiguration {
 	public void setErrorStateEquiv(ErrorStateEquivalence errorStateEquiv) {
 		this.errorStateEquiv = errorStateEquiv;
 	}
-	
+
 	public String directSymEx() {
 		return directSymEx;
 	}
@@ -876,5 +885,21 @@ public class CIVLConfiguration {
 
 	public void setInSubprogram(boolean isInSubprogram) {
 		this.isInSubprogram = isInSubprogram;
+	}
+
+	/**
+	 * @return the enableIntDivTransformation
+	 */
+	public boolean isEnableIntDivTransformation() {
+		return enableIntDivTransformation;
+	}
+
+	/**
+	 * @param enableIntDivTransformation
+	 *            the enableIntDivTransformation to set
+	 */
+	public void setEnableIntDivTransformation(
+			boolean enableIntDivTransformation) {
+		this.enableIntDivTransformation = enableIntDivTransformation;
 	}
 }

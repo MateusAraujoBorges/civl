@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -69,9 +68,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.front.c.parse.COmpParser;
-import edu.udel.cis.vsl.abc.front.c.preproc.CPreprocessor;
 import edu.udel.cis.vsl.abc.token.IF.Source;
-import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
@@ -414,26 +411,24 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 		if (currentType.isRestrictQualified() || currentType.isInputQualified()
 				|| currentType.isVolatileQualified()) {
-			addressOf = nodeFactory
-					.newCastNode(newSource(place, CivlcTokenConstant.CAST),
-							nodeFactory.newPointerTypeNode(
-									newSource(place, CivlcTokenConstant.TYPE),
-									nodeFactory.newVoidTypeNode(newSource(place,
-											CivlcTokenConstant.VOID))),
-							addressOf);
+			addressOf = nodeFactory.newCastNode(
+					newSource(place, CivlcTokenConstant.CAST),
+					nodeFactory.newPointerTypeNode(
+							newSource(place, CivlcTokenConstant.TYPE),
+							nodeFactory.newVoidTypeNode(
+									newSource(place, CivlcTokenConstant.VOID))),
+					addressOf);
 		}
 
-		gsharedCreate = nodeFactory
-				.newFunctionCallNode(
-						newSource(place,
-								CivlcTokenConstant.CALL),
-						this.identifierExpression(
-								newSource(place, CivlcTokenConstant.IDENTIFIER),
-								GSHARED_CREATE),
-						Arrays.asList(this.identifierExpression(
-								newSource(place, CivlcTokenConstant.IDENTIFIER),
-								GTEAM), addressOf),
-						null);
+		gsharedCreate = nodeFactory.newFunctionCallNode(
+				newSource(place, CivlcTokenConstant.CALL),
+				this.identifierExpression(
+						newSource(place, CivlcTokenConstant.IDENTIFIER),
+						GSHARED_CREATE),
+				Arrays.asList(this.identifierExpression(
+						newSource(place, CivlcTokenConstant.IDENTIFIER), GTEAM),
+						addressOf),
+				null);
 		return nodeFactory.newVariableDeclarationNode(
 				newSource(place, CivlcTokenConstant.DECLARATION),
 				nodeFactory.newIdentifierNode(
@@ -478,13 +473,13 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 		if (currentType.isRestrictQualified()
 				|| currentType.isVolatileQualified()) {
-			addressOfLocalVar = nodeFactory
-					.newCastNode(newSource(place, CivlcTokenConstant.CAST),
-							nodeFactory.newPointerTypeNode(
-									newSource(place, CivlcTokenConstant.TYPE),
-									nodeFactory.newVoidTypeNode(newSource(place,
-											CivlcTokenConstant.VOID))),
-							addressOfLocalVar);
+			addressOfLocalVar = nodeFactory.newCastNode(
+					newSource(place, CivlcTokenConstant.CAST),
+					nodeFactory.newPointerTypeNode(
+							newSource(place, CivlcTokenConstant.TYPE),
+							nodeFactory.newVoidTypeNode(
+									newSource(place, CivlcTokenConstant.VOID))),
+					addressOfLocalVar);
 		}
 
 		sharedCreate = nodeFactory
@@ -576,13 +571,13 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 		if (origType instanceof QualifiedObjectType
 				&& ((QualifiedObjectType) origType).isVolatileQualified()) {
-			addressOfVar = nodeFactory
-					.newCastNode(newSource(place, CivlcTokenConstant.CAST),
-							nodeFactory.newPointerTypeNode(
-									newSource(place, CivlcTokenConstant.TYPE),
-									nodeFactory.newVoidTypeNode(newSource(place,
-											CivlcTokenConstant.VOID))),
-							addressOfVar);
+			addressOfVar = nodeFactory.newCastNode(
+					newSource(place, CivlcTokenConstant.CAST),
+					nodeFactory.newPointerTypeNode(
+							newSource(place, CivlcTokenConstant.TYPE),
+							nodeFactory.newVoidTypeNode(
+									newSource(place, CivlcTokenConstant.VOID))),
+					addressOfVar);
 		}
 
 		ExpressionNode addressOfTmp = nodeFactory.newOperatorNode(
@@ -619,13 +614,13 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 		if (origType instanceof QualifiedObjectType
 				&& ((QualifiedObjectType) origType).isVolatileQualified()) {
-			addressOfVar = nodeFactory
-					.newCastNode(newSource(place, CivlcTokenConstant.CAST),
-							nodeFactory.newPointerTypeNode(
-									newSource(place, CivlcTokenConstant.TYPE),
-									nodeFactory.newVoidTypeNode(newSource(place,
-											CivlcTokenConstant.VOID))),
-							addressOfVar);
+			addressOfVar = nodeFactory.newCastNode(
+					newSource(place, CivlcTokenConstant.CAST),
+					nodeFactory.newPointerTypeNode(
+							newSource(place, CivlcTokenConstant.TYPE),
+							nodeFactory.newVoidTypeNode(
+									newSource(place, CivlcTokenConstant.VOID))),
+					addressOfVar);
 		}
 
 		ExpressionNode addressOfTmp = nodeFactory.newOperatorNode(
@@ -687,18 +682,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 						null));
 	}
 
-	private boolean hasOmpPragma(ASTNode node) {
-		if (node.nodeKind() == NodeKind.OMP_NODE)
-			return true;
-		for (ASTNode child : node.children()) {
-			if (child != null) {
-				if (hasOmpPragma(child))
-					return true;
-			}
-		}
-		return false;
-	}
-
 	/*
 	 * ********************* Methods From TransformerWorker ******************
 	 */
@@ -715,11 +698,11 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 	 */
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		if (!this.hasHeader(ast, OMP_HEADER)
-				&& !hasOmpPragma(ast.getRootNode()))
+		if (!this.hasHeader(ast, CIVLConstants.CIVL_OMP_IMP))
 			return ast;
 
 		root = ast.getRootNode();
+
 		AST newAst;
 		List<BlockItemNode> externalList;
 		VariableDeclarationNode threadMax;
@@ -731,7 +714,6 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		int count;
 		Triple<List<BlockItemNode>, List<BlockItemNode>, List<BlockItemNode>> result;
 		String criticalDeclaration = "criticalDeclarations";
-		
 
 		assert this.astFactory == ast.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();
@@ -798,7 +780,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		this.processOmpLockCalls(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		boolean ompHeader = false;
+		/*boolean ompHeader = false;
 		for (SourceFile sourceFile : ast.getSourceFiles()) {
 			String filename = sourceFile.getName();
 
@@ -808,11 +790,11 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		}
 		if (!ompHeader) {
 			// This will also include the CIVLC standard header
-			AST civlcOmpAST = this.parseSystemLibrary(
-				new File(CPreprocessor.ABC_INCLUDE_PATH, CIVLConstants.CIVL_OMP),
-				EMPTY_MACRO_MAP);
+			AST civlcOmpAST = this
+					.parseSystemLibrary(new File(CPreprocessor.ABC_INCLUDE_PATH,
+							CIVLConstants.CIVL_OMP), EMPTY_MACRO_MAP);
 			newAst = this.combineASTs(civlcOmpAST, newAst);
-		}
+		}*/
 		return newAst;
 	}
 
@@ -990,12 +972,10 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 									newSource(threadRangeDeclaration,
 											CivlcTokenConstant.SUB),
 									Operator.MINUS,
-									Arrays.asList(
-											this.identifierExpression(
-													newSource(
-															threadRangeDeclaration,
-															CivlcTokenConstant.IDENTIFIER),
-													OMPPRE + "nthreads"),
+									Arrays.asList(this.identifierExpression(
+											newSource(threadRangeDeclaration,
+													CivlcTokenConstant.IDENTIFIER),
+											OMPPRE + "nthreads"),
 											nodeFactory.newIntegerConstantNode(
 													newSource(
 															threadRangeDeclaration,
@@ -1817,15 +1797,12 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 
 			List<VariableDeclarationNode> declarations = new ArrayList<VariableDeclarationNode>();
 			for (IdentifierNode var : loopVariables) {
-				declarations
-						.add(nodeFactory.newVariableDeclarationNode(
-								newSource(civlFor,
-										CivlcTokenConstant.DECLARATION),
-								var.copy(),
-								nodeFactory.newBasicTypeNode(
-										newSource(civlFor,
-												CivlcTokenConstant.INT),
-										BasicTypeKind.INT)));
+				declarations.add(nodeFactory.newVariableDeclarationNode(
+						newSource(civlFor, CivlcTokenConstant.DECLARATION),
+						var.copy(),
+						nodeFactory.newBasicTypeNode(
+								newSource(civlFor, CivlcTokenConstant.INT),
+								BasicTypeKind.INT)));
 			}
 
 			initializerNode = nodeFactory.newForLoopInitializerNode(
@@ -2015,13 +1992,12 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 				}
 				body = nodeFactory.newCompoundStatementNode(newSource(syncNode,
 						CivlcTokenConstant.COMPOUND_STATEMENT), items);
-				IfNode ifStatement = nodeFactory
-						.newIfNode(newSource(syncNode, CivlcTokenConstant.IF),
-								nodeFactory.newOperatorNode(
-										newSource(syncNode,
-												CivlcTokenConstant.EQUALS),
-										Operator.EQUALS, operands),
-								body);
+				IfNode ifStatement = nodeFactory.newIfNode(
+						newSource(syncNode, CivlcTokenConstant.IF),
+						nodeFactory.newOperatorNode(
+								newSource(syncNode, CivlcTokenConstant.EQUALS),
+								Operator.EQUALS, operands),
+						body);
 				// Replace omp master with the new if statement
 				int index = node.childIndex();
 				ASTNode parent = node.parent();
@@ -3305,40 +3281,42 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		String place;
 		if (functionName != null) {
 			switch (functionName) {
-			case "omp_get_num_threads":
-				place = "omp_get_num_threads->" + OMPPRE + "nthreads";
-				replacementNode = this.identifierExpression(
-						newSource(place, CivlcTokenConstant.IDENTIFIER),
-						NTHREADS);
-				break;
-			case "omp_get_num_procs":
-				place = "omp_get_num_procs->1";
-				replacementNode = nodeFactory.newIntegerConstantNode(
-						(newSource(place, CivlcTokenConstant.IDENTIFIER)), "1");
-				break;
-			case "omp_get_max_threads":
-				place = "omp_get_max_threads->" + OMPPRE + "nthreads";
-				replacementNode = this.identifierExpression(
-						newSource(place, CivlcTokenConstant.IDENTIFIER),
-						THREADMAX);
-				break;
-			case "omp_get_thread_num":
-				place = "omp_get_thread_num->" + TID;
-				replacementNode = this.identifierExpression(
-						newSource(place, CivlcTokenConstant.IDENTIFIER), TID);
-				break;
-			case "omp_set_num_threads":
-				place = "omp_set_num_threads->" + OMPPRE + "num_threads";
-				replacementNode = nodeFactory.newOperatorNode(
-						newSource(place, CivlcTokenConstant.EXPR),
-						Operator.ASSIGN,
-						Arrays.asList(
-								this.identifierExpression(
-										newSource(place,
-												CivlcTokenConstant.IDENTIFIER),
-										OMPPRE + "num_threads"),
-								node.getArgument(0).copy()));
-				break;
+				case "omp_get_num_threads" :
+					place = "omp_get_num_threads->" + OMPPRE + "nthreads";
+					replacementNode = this.identifierExpression(
+							newSource(place, CivlcTokenConstant.IDENTIFIER),
+							NTHREADS);
+					break;
+				case "omp_get_num_procs" :
+					place = "omp_get_num_procs->1";
+					replacementNode = nodeFactory.newIntegerConstantNode(
+							(newSource(place, CivlcTokenConstant.IDENTIFIER)),
+							"1");
+					break;
+				case "omp_get_max_threads" :
+					place = "omp_get_max_threads->" + OMPPRE + "nthreads";
+					replacementNode = this.identifierExpression(
+							newSource(place, CivlcTokenConstant.IDENTIFIER),
+							THREADMAX);
+					break;
+				case "omp_get_thread_num" :
+					place = "omp_get_thread_num->" + TID;
+					replacementNode = this.identifierExpression(
+							newSource(place, CivlcTokenConstant.IDENTIFIER),
+							TID);
+					break;
+				case "omp_set_num_threads" :
+					place = "omp_set_num_threads->" + OMPPRE + "num_threads";
+					replacementNode = nodeFactory.newOperatorNode(
+							newSource(place, CivlcTokenConstant.EXPR),
+							Operator.ASSIGN,
+							Arrays.asList(
+									this.identifierExpression(
+											newSource(place,
+													CivlcTokenConstant.IDENTIFIER),
+											OMPPRE + "num_threads"),
+									node.getArgument(0).copy()));
+					break;
 			}
 		}
 

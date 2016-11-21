@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
+import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.main.ABCExecutor;
 import edu.udel.cis.vsl.abc.main.DynamicTask;
 import edu.udel.cis.vsl.abc.main.UnitTask;
@@ -20,9 +22,27 @@ public class ParseSystemLibrary implements DynamicTask {
 	private ABCExecutor executor;
 	private Map<String, String> macros;
 
-	public ParseSystemLibrary(ABCExecutor executor, Map<String, String> macros) {
+	/**
+	 * the index of the AST that has been last visited, initially -1
+	 */
+	private int lastSeenAST = -1;
+
+	/**
+	 * true iff the unit task for system library implementation civl-omp.cvl has
+	 * been added.
+	 * 
+	 */
+	private boolean civlOmpAdded = false;
+
+	/**
+	 * true iff the OpenMP header omp.h is present. Initialized as false.
+	 */
+	private boolean hasOmpHeader = false;
+
+	public ParseSystemLibrary(ABCExecutor executor,
+			Map<String, String> macros) {
 		this.executor = executor;
-		this.macros=macros;
+		this.macros = macros;
 	}
 
 	private Set<String> getExistingFiles() {
@@ -49,7 +69,7 @@ public class ParseSystemLibrary implements DynamicTask {
 		Set<String> existingFiles = getExistingFiles();
 		Set<String> processedFiles = new HashSet<>();
 
-		for (int i = 0; i < num; i++) {
+		for (int i = this.lastSeenAST + 1; i < num; i++) {
 			AST ast = executor.getAST(i);
 			Collection<SourceFile> files = ast.getSourceFiles();
 
@@ -61,21 +81,48 @@ public class ParseSystemLibrary implements DynamicTask {
 
 				File systemFile = getSystemImplementation(file.getFile());
 
+				if (filename.equals(CIVLConstants.OMP))
+					this.hasOmpHeader = true;
 				if (systemFile != null) {
 					String systemFilename = systemFile.getName();
 
 					if (!existingFiles.contains(systemFilename)
 							&& processedFiles.add(systemFilename)) {
-						UnitTask newTask=new UnitTask(new File[] { systemFile });
-						
-						newTask.setMacros(macros);
-						result.add(newTask);
+						result.add(newUnitTask(systemFile));
 					}
 				}
 			}
+			if (!hasOmpHeader && !this.civlOmpAdded) {
+				if (this.hasOmpPragma(ast.getRootNode())) {
+					result.add(newUnitTask(
+							new File(CIVLConstants.CIVL_INCLUDE_PATH,
+									CIVLConstants.CIVL_OMP_IMP)));
+					this.civlOmpAdded = true;
+				}
+			}
 		}
+		this.lastSeenAST = num - 1;
 		UnitTask[] tasks = new UnitTask[result.size()];
 		return result.toArray(tasks);
+	}
+
+	private UnitTask newUnitTask(File systemFile) {
+		UnitTask newTask = new UnitTask(new File[]{systemFile});
+
+		newTask.setMacros(macros);
+		return newTask;
+	}
+
+	private boolean hasOmpPragma(ASTNode node) {
+		if (node.nodeKind() == NodeKind.OMP_NODE)
+			return true;
+		for (ASTNode child : node.children()) {
+			if (child != null) {
+				if (hasOmpPragma(child))
+					return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -91,11 +138,11 @@ public class ParseSystemLibrary implements DynamicTask {
 		String name = file.getName();
 
 		if (CIVLConstants.getAllCivlLibs().contains(name))
-			return new File(CIVLConstants.CIVL_INCLUDE_PATH, name.substring(0,
-					name.length() - 1) + "l");
+			return new File(CIVLConstants.CIVL_INCLUDE_PATH,
+					name.substring(0, name.length() - 1) + "l");
 		else if (CIVLConstants.getCinterfaces().contains(name))
-			return new File(CIVLConstants.CIVL_INCLUDE_PATH, name.substring(0,
-					name.length() - 1) + "cvl");
+			return new File(CIVLConstants.CIVL_INCLUDE_PATH,
+					name.substring(0, name.length() - 1) + "cvl");
 		return null;
 	}
 
