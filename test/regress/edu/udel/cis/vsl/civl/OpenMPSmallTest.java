@@ -47,8 +47,8 @@ public class OpenMPSmallTest {
 	}
 
 	@Test
-	public void simple_share() {
-		assertTrue(ui.run(VERIFY, "-verbose", filename("simple_share.c")));
+	public void simple_omp_share() {
+		assertTrue(ui.run(VERIFY, "-verbose", filename("simple_omp_share.c")));
 	}
 
 }

@@ -74,6 +74,7 @@ import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SourceFile;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.OpenMP2CIVLTransformer;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -730,12 +731,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 		int count;
 		Triple<List<BlockItemNode>, List<BlockItemNode>, List<BlockItemNode>> result;
 		String criticalDeclaration = "criticalDeclarations";
-		AST civlcAST = this.parseSystemLibrary(
-				new File(CPreprocessor.ABC_INCLUDE_PATH, "civlc.cvh"),
-				EMPTY_MACRO_MAP);
-		AST civlcOmpAST = this.parseSystemLibrary(
-				new File(CPreprocessor.ABC_INCLUDE_PATH, "civl-omp.cvh"),
-				EMPTY_MACRO_MAP);
+		
 
 		assert this.astFactory == ast.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();
@@ -811,10 +807,16 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 			}
 		}
 		if (!ompHeader) {
-			newAst = this.combineASTs(civlcOmpAST, newAst);
+			AST civlcAST = this.parseSystemLibrary(
+				new File(CPreprocessor.ABC_INCLUDE_PATH, CIVLConstants.CIVLC),
+				EMPTY_MACRO_MAP);
 			newAst = this.combineASTs(civlcAST, newAst);
+
+			AST civlcOmpAST = this.parseSystemLibrary(
+				new File(CPreprocessor.ABC_INCLUDE_PATH, CIVLConstants.CIVL_OMP),
+				EMPTY_MACRO_MAP);
+			newAst = this.combineASTs(civlcOmpAST, newAst);
 		}
-		// newAst.prettyPrint(System.out, true);
 		return newAst;
 	}
 
