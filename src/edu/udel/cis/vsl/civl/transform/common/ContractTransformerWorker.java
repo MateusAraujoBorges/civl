@@ -848,7 +848,8 @@ public class ContractTransformerWorker extends BaseWorker {
 			FunctionDeclarationNode funcDecl, boolean hasMpi)
 			throws SyntaxException {
 		CompoundStatementNode body;
-		FunctionTypeNode funcTypeNode = funcDecl.getTypeNode();
+		FunctionTypeNode funcTypeNode = (FunctionTypeNode) funcDecl
+				.getTypeNode();
 		List<BlockItemNode> bodyItems = new LinkedList<>();
 		List<BlockItemNode> localAssumes4ensurances = new LinkedList<>();
 		List<BlockItemNode> tmpVars4localOldExprs = new LinkedList<>();
@@ -917,13 +918,11 @@ public class ContractTransformerWorker extends BaseWorker {
 		for (ParsedContractBlock mpiBlock : parsedContractBlocks)
 			bodyItems.addAll(transformCoRequirements4NT(mpiBlock));
 
-		returnVoid = isVoidType(
-				funcDecl.getTypeNode().getReturnType().getType());
+		returnVoid = isVoidType(funcTypeNode.getReturnType().getType());
 		// Transform step 4: Inserts $result declaration:
 		if (!returnVoid) {
 			bodyItems.add(nodeFactory.newVariableDeclarationNode(contractSource,
-					identifier(RESULT),
-					funcDecl.getTypeNode().getReturnType().copy()));
+					identifier(RESULT), funcTypeNode.getReturnType().copy()));
 			bodyItems.add(nodeFactory.newExpressionStatementNode(
 					createHavocCall(identifierExpression(RESULT))));
 		}
