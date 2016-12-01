@@ -62,6 +62,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.StructOrUnionField;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.model.common.location.CommonLocation;
 import edu.udel.cis.vsl.civl.model.common.type.CommonType;
+import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 //import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.GMCSection;
@@ -349,7 +350,7 @@ public class ModelBuilderWorker {
 		if (civlConfig.svcomp()) {
 			if (inputInitMap == null)
 				inputInitMap = new HashMap<>();
-			inputInitMap.put("_gen_argc", 1);
+			inputInitMap.put(GeneralTransformer.PREFIX + "argc", 1);
 			inputInitMap.put("_svcomp_unpp_scale", 3);
 			inputInitMap.put("_svcomp_unsigned_bound", 4);
 			inputInitMap.put("_svcomp_int_bound", 5);
@@ -462,9 +463,11 @@ public class ModelBuilderWorker {
 	 */
 	private boolean hasTimeLibrary(ASTNode node) {
 		Source source = node.getSource();
-		CivlcToken token = source == null ? null
+		CivlcToken token = source == null
+				? null
 				: node.getSource().getFirstToken();
-		SourceFile file = token == null ? null
+		SourceFile file = token == null
+				? null
 				: token.getFormation().getLastFile();
 
 		if (file != null && file.getName().equals(ModelConfiguration.TIME_LIB))

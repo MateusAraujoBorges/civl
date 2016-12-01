@@ -58,17 +58,23 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private final static String EXIT = "exit";
 
+	private final static String STRCPY = "strcpy";
+
 	private final static String ABORT = "abort";
 
 	private final static String PRINTF = "printf";
 
 	private final static String STDLIB_HEADER = "stdlib.h";
 
+	private final static String STRING_HEADER = "string.h";
+
 	private boolean needsPthreadHeader = false;
 
 	private boolean needsIoHeader = false;
 
 	private boolean needsStdlibHeader = false;
+
+	private boolean needsStringHeader = false;
 
 	private final static int UPPER_BOUND = 11;// has to use this because of
 												// pthread/fib_bench_longest_false-unreach-call.i
@@ -263,6 +269,13 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 			ast = this.combineASTs(stdlibHeaderAST, ast);
 		}
+		if (this.needsStringHeader) {
+			AST stringlibHeaderAST = this.parseSystemLibrary(
+					new File(CPreprocessor.ABC_INCLUDE_PATH, STRING_HEADER),
+					EMPTY_MACRO_MAP);
+
+			ast = this.combineASTs(stringlibHeaderAST, ast);
+		}
 		if (needsIoHeader) {
 			AST ioHeaderAST = this.parseSystemLibrary(
 					new File(CPreprocessor.ABC_INCLUDE_PATH, IO_HEADER),
@@ -292,6 +305,9 @@ public class SvcompUnPPWorker extends BaseWorker {
 				toRemove = isQualifiedPthreadNode(item);
 			if (!toRemove) {
 				toRemove = isStdlibNode(item);
+			}
+			if (!toRemove) {
+				toRemove = isStringNode(item);
 			}
 			if (toRemove)
 				item.remove();
@@ -519,6 +535,29 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 			if (name.equals(EXIT) || name.equals(ABORT)) {
 				this.needsStdlibHeader = true;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * checks if the given node is a declaration from string.h.
+	 * 
+	 * This method assumes that only exit and abort are used in svcomp
+	 * benchmarks. If more functions are used, they need to be added here.
+	 * 
+	 * @param node
+	 *            the node to be checked
+	 * @return true iff the given node is a declaration from stdlib.h
+	 */
+	private boolean isStringNode(BlockItemNode node) {
+		if (node instanceof FunctionDeclarationNode) {
+			FunctionDeclarationNode functionDecl = (FunctionDeclarationNode) node;
+			String name = functionDecl.getName();
+
+			if (name.equals(STRCPY)) {
+				this.needsStringHeader = true;
 				return true;
 			}
 		}

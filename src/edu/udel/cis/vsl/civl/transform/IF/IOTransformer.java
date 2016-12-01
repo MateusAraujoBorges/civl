@@ -4,6 +4,7 @@ import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.BaseTransformer;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.transform.common.IOWorker;
 
 /**
@@ -19,7 +20,9 @@ import edu.udel.cis.vsl.civl.transform.common.IOWorker;
  */
 public class IOTransformer extends BaseTransformer {
 
-	/* ************************** Public Static Fields *********************** */
+	/*
+	 * ************************** Public Static Fields ***********************
+	 */
 	/**
 	 * The code (short name) of this transformer.
 	 */
@@ -35,6 +38,8 @@ public class IOTransformer extends BaseTransformer {
 	 */
 	public final static String SHORT_DESCRIPTION = "transforms C program with IO to CIVL-C";
 
+	private CIVLConfiguration config;
+
 	/**
 	 * Creates a new instance of IO transformer.
 	 * 
@@ -45,14 +50,15 @@ public class IOTransformer extends BaseTransformer {
 	 * @param config
 	 *            The CIVL configuration.
 	 */
-	public IOTransformer(ASTFactory astFactory) {
+	public IOTransformer(ASTFactory astFactory, CIVLConfiguration config) {
 		super(IOTransformer.CODE, IOTransformer.LONG_NAME,
 				IOTransformer.SHORT_DESCRIPTION, astFactory);
+		this.config = config;
 	}
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		return new IOWorker(astFactory).transform(ast);
+		return new IOWorker(astFactory, config).transform(ast);
 	}
 
 }

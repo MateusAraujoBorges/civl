@@ -291,7 +291,8 @@ public class ModelTranslator {
 							config.mpiContractFunction()));
 		task.addTransformRecord(
 				transformerFactory.getGeneralTransformerRecord());
-		task.addTransformRecord(transformerFactory.getIOTransformerRecord());
+		task.addTransformRecord(
+				transformerFactory.getIOTransformerRecord(config));
 		task.addTransformRecord(
 				transformerFactory.getOpenMPSimplifierRecord(config));
 		task.addTransformRecord(

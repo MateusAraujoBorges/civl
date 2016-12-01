@@ -117,7 +117,9 @@ public class CIVLConfiguration {
 	/**
 	 * Is svcomp transformation needed?
 	 */
-	private boolean svcomp = false;
+	private boolean svcomp16 = false;
+
+	private boolean svcomp17 = false;
 
 	/**
 	 * Should CIVL show the program after all applicable transformations?
@@ -337,7 +339,8 @@ public class CIVLConfiguration {
 		this.simplify = config.isTrue(CIVLConstants.simplifyO);
 		this.statelessPrintf = config.isTrue(CIVLConstants.statelessPrintfO);
 		this.verbose = config.isTrue(CIVLConstants.verboseO);
-		this.svcomp = config.isTrue(CIVLConstants.svcomp16O);
+		this.svcomp16 = config.isTrue(CIVLConstants.svcomp16O);
+		this.svcomp17 = config.isTrue(CIVLConstants.svcomp17O);
 		this.setShowProgram(config.isTrue(CIVLConstants.showProgramO));
 		this.showPathConditon = (String) config
 				.getValue(CIVLConstants.showPathConditionO);
@@ -371,7 +374,20 @@ public class CIVLConfiguration {
 		this.quiet = config.isTrue(CIVLConstants.quietO);
 		this.sliceAnalysis = config.isTrue(CIVLConstants.sliceAnalysisO);
 		this.witness = config.isTrue(CIVLConstants.witnessO);
-		if (this.svcomp) {
+		if (this.svcomp16) {
+			if (config.getValue(CIVLConstants.checkMemoryLeakO) == null)
+				this.checkMemoryLeak = false;
+			if (config.getValue(CIVLConstants.collectHeapsO) == null)
+				this.collectHeaps = false;
+			if (config.getValue(CIVLConstants.simplifyO) == null)
+				this.simplify = false;
+			if (config.getValue(CIVLConstants.deadlockO) == null)
+				this.deadlock = DeadlockKind.NONE;
+			if (config.getValue(CIVLConstants.procBoundO) == null)
+				this.procBound = 6;
+			this.enableIntDivTransformation = false;
+		}
+		if (this.svcomp17) {
 			if (config.getValue(CIVLConstants.checkMemoryLeakO) == null)
 				this.checkMemoryLeak = false;
 			if (config.getValue(CIVLConstants.collectHeapsO) == null)
@@ -583,11 +599,15 @@ public class CIVLConfiguration {
 	}
 
 	public boolean svcomp() {
-		return svcomp;
+		return svcomp16 || svcomp17;
 	}
 
-	public void setSvcomp(boolean svcomp) {
-		this.svcomp = svcomp;
+	public boolean svcomp16() {
+		return svcomp16;
+	}
+
+	public void setSvcomp16(boolean svcomp) {
+		this.svcomp16 = svcomp;
 	}
 
 	public DeadlockKind deadlock() {
@@ -901,5 +921,20 @@ public class CIVLConfiguration {
 	public void setEnableIntDivTransformation(
 			boolean enableIntDivTransformation) {
 		this.enableIntDivTransformation = enableIntDivTransformation;
+	}
+
+	/**
+	 * @return the svcomp17
+	 */
+	public boolean svcomp17() {
+		return svcomp17;
+	}
+
+	/**
+	 * @param svcomp17
+	 *            the svcomp17 to set
+	 */
+	public void setSvcomp17(boolean svcomp17) {
+		this.svcomp17 = svcomp17;
 	}
 }

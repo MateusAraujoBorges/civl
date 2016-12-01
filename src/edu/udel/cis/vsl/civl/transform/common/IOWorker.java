@@ -31,6 +31,7 @@ import edu.udel.cis.vsl.abc.err.IF.ABCUnsupportedException;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.StringLiteral;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.IOTransformer;
 import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
@@ -66,7 +67,9 @@ import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
  */
 public class IOWorker extends BaseWorker {
 
-	/* ************************** Private Static Fields ********************** */
+	/*
+	 * ************************** Private Static Fields **********************
+	 */
 	/**
 	 * The name of printf function.
 	 */
@@ -214,6 +217,7 @@ public class IOWorker extends BaseWorker {
 	private TypeNode fileType;
 	private TypeNode stdFileType;
 	private BlockItemNode fopen_declaration;
+	private CIVLConfiguration config;
 
 	// private BlockItemNode filesystem_variable;
 
@@ -229,9 +233,10 @@ public class IOWorker extends BaseWorker {
 	 * @param config
 	 *            The CIVL configuration.
 	 */
-	public IOWorker(ASTFactory astFactory) {
+	public IOWorker(ASTFactory astFactory, CIVLConfiguration config) {
 		super(IOTransformer.LONG_NAME, astFactory);
 		this.identifierPrefix = "_io_";
+		this.config = config;
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -262,14 +267,14 @@ public class IOWorker extends BaseWorker {
 					List<StatementNode> freeStatements = this
 							.freeCalls(rootNode.getSource());
 					CompoundStatementNode body = function.getBody();
-					BlockItemNode lastStatement = body.getSequenceChild(body
-							.numChildren() - 1);
+					BlockItemNode lastStatement = body
+							.getSequenceChild(body.numChildren() - 1);
 					StatementNode finalStatements;
 
 					finalCalls.add(this.copyFilesToOutput(source));
 					finalCalls.addAll(freeStatements);
-					finalStatements = nodeFactory.newCompoundStatementNode(
-							source, finalCalls);
+					finalStatements = nodeFactory
+							.newCompoundStatementNode(source, finalCalls);
 					if (!(lastStatement instanceof ReturnNode)) {
 						body.addSequenceChild(finalStatements.copy());
 					}
@@ -308,7 +313,8 @@ public class IOWorker extends BaseWorker {
 						// body of exit() in stdlib.cvl
 						else if (funcName.equals(CIVL_EXIT)
 								&& sourceFile.equals("stdlib.cvl")
-								&& node.parent().parent() instanceof FunctionDefinitionNode) {
+								&& node.parent()
+										.parent() instanceof FunctionDefinitionNode) {
 							FunctionDefinitionNode funcDef = (FunctionDefinitionNode) node
 									.parent().parent();
 
@@ -326,8 +332,7 @@ public class IOWorker extends BaseWorker {
 							newItems.add(this.copyFilesToOutput(source));
 						newItems.addAll(this.freeCalls(source));
 						newItems.add((BlockItemNode) node);
-						parent.setChild(
-								nodeIndex,
+						parent.setChild(nodeIndex,
 								nodeFactory.newCompoundStatementNode(
 										node.getSource(), newItems));
 					}
@@ -351,15 +356,15 @@ public class IOWorker extends BaseWorker {
 	 *         variable.
 	 */
 	private StatementNode copyFilesToOutput(Source source) {
-		ExpressionNode civlFileSystem = nodeFactory
-				.newIdentifierExpressionNode(source,
-						nodeFactory.newIdentifierNode(source, FILESYSTEM));
+		ExpressionNode civlFileSystem = nodeFactory.newIdentifierExpressionNode(
+				source, nodeFactory.newIdentifierNode(source, FILESYSTEM));
 		ExpressionNode outputArray = nodeFactory.newIdentifierExpressionNode(
 				source,
 				nodeFactory.newIdentifierNode(source, OUTPUT_FILESYSTEM));
 		FunctionCallNode copyCall = nodeFactory.newFunctionCallNode(source,
-				nodeFactory.newIdentifierExpressionNode(source, nodeFactory
-						.newIdentifierNode(source, FILESYSTEM_COPY_OUTPUT)),
+				nodeFactory.newIdentifierExpressionNode(source,
+						nodeFactory.newIdentifierNode(source,
+								FILESYSTEM_COPY_OUTPUT)),
 				Arrays.asList(civlFileSystem, outputArray), null);
 
 		return nodeFactory.newExpressionStatementNode(copyCall);
@@ -384,9 +389,11 @@ public class IOWorker extends BaseWorker {
 	 * @return A list of necessary function calls for deallocating memory space.
 	 * @throws SyntaxException
 	 */
-	private List<StatementNode> freeCalls(Source source) throws SyntaxException {
+	private List<StatementNode> freeCalls(Source source)
+			throws SyntaxException {
 		List<StatementNode> result = new ArrayList<>();
-		ExpressionStatementNode freeFilesystemStatement, freeStdoutStatement, freeStdinStatement, freeStderrStatement;
+		ExpressionStatementNode freeFilesystemStatement, freeStdoutStatement,
+				freeStdinStatement, freeStderrStatement;
 		StatementNode ifStdoutStatement, ifStdinStatement, ifStderrStatement;
 		FunctionCallNode freeFilesystem, freeStdout, freeStdin, freeStderr;
 		ExpressionNode condition;
@@ -396,8 +403,9 @@ public class IOWorker extends BaseWorker {
 
 		if (this.hasCIVLfileSystem) {
 			freeFilesystem = nodeFactory.newFunctionCallNode(source,
-					nodeFactory.newIdentifierExpressionNode(source, nodeFactory
-							.newIdentifierNode(source, FILESYSTEM_DESTROY)),
+					nodeFactory.newIdentifierExpressionNode(source,
+							nodeFactory.newIdentifierNode(source,
+									FILESYSTEM_DESTROY)),
 					Arrays.asList(argument), null);
 			freeFilesystemStatement = nodeFactory
 					.newExpressionStatementNode(freeFilesystem);
@@ -406,15 +414,13 @@ public class IOWorker extends BaseWorker {
 		if (this.hasStdout) {
 			argument = nodeFactory.newIdentifierExpressionNode(source,
 					nodeFactory.newIdentifierNode(source, STDOUT));
-			freeStdout = nodeFactory.newFunctionCallNode(
-					source,
+			freeStdout = nodeFactory.newFunctionCallNode(source,
 					nodeFactory.newIdentifierExpressionNode(source,
 							nodeFactory.newIdentifierNode(source, FREE)),
 					Arrays.asList(argument), null);
 			freeStdoutStatement = nodeFactory
 					.newExpressionStatementNode(freeStdout);
-			nullPointer = nodeFactory.newCastNode(
-					source,
+			nullPointer = nodeFactory.newCastNode(source,
 					nodeFactory.newPointerTypeNode(source,
 							nodeFactory.newVoidTypeNode(source)),
 					nodeFactory.newIntegerConstantNode(source, "0"));
@@ -427,15 +433,13 @@ public class IOWorker extends BaseWorker {
 		if (this.hasStdin) {
 			argument = nodeFactory.newIdentifierExpressionNode(source,
 					nodeFactory.newIdentifierNode(source, STDIN));
-			freeStdin = nodeFactory.newFunctionCallNode(
-					source,
+			freeStdin = nodeFactory.newFunctionCallNode(source,
 					nodeFactory.newIdentifierExpressionNode(source,
 							nodeFactory.newIdentifierNode(source, FREE)),
 					Arrays.asList(argument), null);
 			freeStdinStatement = nodeFactory
 					.newExpressionStatementNode(freeStdin);
-			nullPointer = nodeFactory.newCastNode(
-					source,
+			nullPointer = nodeFactory.newCastNode(source,
 					nodeFactory.newPointerTypeNode(source,
 							nodeFactory.newVoidTypeNode(source)),
 					nodeFactory.newIntegerConstantNode(source, "0"));
@@ -448,15 +452,13 @@ public class IOWorker extends BaseWorker {
 		if (this.hasStderr) {
 			argument = nodeFactory.newIdentifierExpressionNode(source,
 					nodeFactory.newIdentifierNode(source, STDERR));
-			freeStderr = nodeFactory.newFunctionCallNode(
-					source,
+			freeStderr = nodeFactory.newFunctionCallNode(source,
 					nodeFactory.newIdentifierExpressionNode(source,
 							nodeFactory.newIdentifierNode(source, FREE)),
 					Arrays.asList(argument), null);
 			freeStderrStatement = nodeFactory
 					.newExpressionStatementNode(freeStderr);
-			nullPointer = nodeFactory.newCastNode(
-					source,
+			nullPointer = nodeFactory.newCastNode(source,
 					nodeFactory.newPointerTypeNode(source,
 							nodeFactory.newVoidTypeNode(source)),
 					nodeFactory.newIntegerConstantNode(source, "0"));
@@ -506,7 +508,8 @@ public class IOWorker extends BaseWorker {
 	}
 
 	private void removeFflushCall(FunctionCallNode functionCall) {
-		if (functionCall.getFunction().expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
+		if (functionCall.getFunction()
+				.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
 			IdentifierExpressionNode functionExpression = (IdentifierExpressionNode) functionCall
 					.getFunction();
 			String functionName = functionExpression.getIdentifier().name();
@@ -540,7 +543,8 @@ public class IOWorker extends BaseWorker {
 
 	private void processFunctionCall(FunctionCallNode functionCall)
 			throws SyntaxException {
-		if (functionCall.getFunction().expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
+		if (functionCall.getFunction()
+				.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
 			IdentifierExpressionNode functionExpression = (IdentifierExpressionNode) functionCall
 					.getFunction();
 			String functionName = functionExpression.getIdentifier().name();
@@ -562,8 +566,9 @@ public class IOWorker extends BaseWorker {
 				processFopen(functionCall);
 			} else if (functionName.equals(FFLUSH)) {
 				SequenceNode<ExpressionNode> arguments = nodeFactory
-						.newSequenceNode(functionCall.getArgument(0)
-								.getSource(), "Actual Parameters",
+						.newSequenceNode(
+								functionCall.getArgument(0).getSource(),
+								"Actual Parameters",
 								new ArrayList<ExpressionNode>(0));
 
 				functionNameIdentifer.setName(FFLUSH_NEW);
@@ -599,8 +604,8 @@ public class IOWorker extends BaseWorker {
 					modeArg.getSource());
 
 			source = modeArg.getSource();
-			arguments.add(nodeFactory.newEnumerationConstantNode(nodeFactory
-					.newIdentifierNode(source, modeString)));
+			arguments.add(nodeFactory.newEnumerationConstantNode(
+					nodeFactory.newIdentifierNode(source, modeString)));
 		} else {
 			throw new ABCUnsupportedException(
 					"non-string-literal file mode of fopen");
@@ -660,7 +665,8 @@ public class IOWorker extends BaseWorker {
 			return CIVL_FILE_MODE_WPBX;
 		if (mode.equals(FOPEN_APB) || mode.equals(FOPEN_ABP))
 			return CIVL_FILE_MODE_APB;
-		throw new SyntaxException("Invalid mode " + mode + " of fopen.", source);
+		throw new SyntaxException("Invalid mode " + mode + " of fopen.",
+				source);
 	}
 
 	private void processPrintfOrScanf(FunctionCallNode functionCall,
@@ -737,7 +743,8 @@ public class IOWorker extends BaseWorker {
 			FunctionCallNode funcCall = (FunctionCallNode) node;
 			ExpressionNode funcName = funcCall.getFunction();
 
-			if (funcName.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
+			if (funcName
+					.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
 				String name = ((IdentifierExpressionNode) funcName)
 						.getIdentifier().name();
 
@@ -786,7 +793,8 @@ public class IOWorker extends BaseWorker {
 			FunctionCallNode funcCall = (FunctionCallNode) node;
 			ExpressionNode funcName = funcCall.getFunction();
 
-			if (funcName.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
+			if (funcName
+					.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
 				String name = ((IdentifierExpressionNode) funcName)
 						.getIdentifier().name();
 
@@ -798,9 +806,11 @@ public class IOWorker extends BaseWorker {
 
 					for (int i = 1; i < funcCall.getNumberOfArguments(); i++)
 						arguments.add(funcCall.getArgument(i).copy());
-					printfCall = nodeFactory.newFunctionCallNode(source,
-							this.identifierExpression(funcName.getSource(),
-									PRINTF), arguments, null);
+					printfCall = nodeFactory
+							.newFunctionCallNode(source,
+									this.identifierExpression(
+											funcName.getSource(), PRINTF),
+									arguments, null);
 					node.parent().setChild(node.childIndex(), printfCall);
 				}
 			}
@@ -854,34 +864,43 @@ public class IOWorker extends BaseWorker {
 						this.newSource("_io_output_filesystem", 0),
 						this.fileType, null)));
 		// CIVL_filesystem, "CIVL_stdout", CIVL_FILE_MODE_WX)
-		variable = this.variableDeclaration(STDOUT, this.nodeFactory
-				.newPointerTypeNode(this.newSource("type of stdout", 0),
-						this.stdFileType.copy()), this.functionCall(this
-				.newSource("create stdout file", 0), FOPEN_NEW, Arrays.asList(
-				this.identifierExpression(FILESYSTEM), this
-						.stringLiteral("_stdout"), this.nodeFactory
-						.newEnumerationConstantNode(this
-								.identifier(CIVL_FILE_MODE_WX)))));
+		variable = this.variableDeclaration(STDOUT,
+				this.nodeFactory.newPointerTypeNode(
+						this.newSource("type of stdout", 0),
+						this.stdFileType.copy()),
+				this.functionCall(this.newSource("create stdout file", 0),
+						FOPEN_NEW,
+						Arrays.asList(this.identifierExpression(FILESYSTEM),
+								this.stringLiteral("_stdout"), this.nodeFactory
+										.newEnumerationConstantNode(
+												this.identifier(
+														CIVL_FILE_MODE_WX)))));
 		variable.setExternStorage(true);
 		variables.add(variable);
-		variable = this.variableDeclaration(STDIN, this.nodeFactory
-				.newPointerTypeNode(this.newSource("type of stdin", 0),
-						this.stdFileType.copy()), this.functionCall(this
-				.newSource("create stdin file", 0), FOPEN_NEW, Arrays.asList(
-				this.identifierExpression(FILESYSTEM), this
-						.stringLiteral("_stdin"), this.nodeFactory
-						.newEnumerationConstantNode(this
-								.identifier(CIVL_FILE_MODE_R)))));
+		variable = this.variableDeclaration(STDIN,
+				this.nodeFactory
+						.newPointerTypeNode(this.newSource("type of stdin", 0),
+								this.stdFileType.copy()),
+				this.functionCall(this.newSource("create stdin file", 0),
+						FOPEN_NEW,
+						Arrays.asList(this.identifierExpression(FILESYSTEM),
+								this.stringLiteral("_stdin"), this.nodeFactory
+										.newEnumerationConstantNode(
+												this.identifier(
+														CIVL_FILE_MODE_R)))));
 		variable.setExternStorage(true);
 		variables.add(variable);
-		variable = this.variableDeclaration(STDERR, this.nodeFactory
-				.newPointerTypeNode(this.newSource("type of stderr", 0),
-						this.stdFileType.copy()), this.functionCall(this
-				.newSource("create stderr file", 0), FOPEN_NEW, Arrays.asList(
-				this.identifierExpression(FILESYSTEM), this
-						.stringLiteral("_stderr"), this.nodeFactory
-						.newEnumerationConstantNode(this
-								.identifier(CIVL_FILE_MODE_WX)))));
+		variable = this.variableDeclaration(STDERR,
+				this.nodeFactory.newPointerTypeNode(
+						this.newSource("type of stderr", 0),
+						this.stdFileType.copy()),
+				this.functionCall(this.newSource("create stderr file", 0),
+						FOPEN_NEW,
+						Arrays.asList(this.identifierExpression(FILESYSTEM),
+								this.stringLiteral("_stderr"), this.nodeFactory
+										.newEnumerationConstantNode(
+												this.identifier(
+														CIVL_FILE_MODE_WX)))));
 		variable.setExternStorage(true);
 		variables.add(variable);
 		root.insertChildren(fopen_declaration.childIndex() + 1, variables);
@@ -894,9 +913,11 @@ public class IOWorker extends BaseWorker {
 		if (!this.hasHeader(unit, IO_HEADER))
 			return unit;
 
-		boolean transformationNeeded = this.isTransformationNeeded(unit);
+		boolean transformationNeeded = false;
 		SequenceNode<BlockItemNode> rootNode = unit.getRootNode();
 
+		if (!this.config.svcomp())
+			transformationNeeded = this.isTransformationNeeded(unit);
 		assert this.astFactory == unit.getASTFactory();
 		assert this.nodeFactory == astFactory.getNodeFactory();
 		unit.release();
@@ -924,7 +945,8 @@ public class IOWorker extends BaseWorker {
 	private void preprocess(SequenceNode<BlockItemNode> rootNode) {
 		for (BlockItemNode item : rootNode) {
 			if (item instanceof TypedefDeclarationNode) {
-				if (!(this.filesystemType != null && this.fileType != null && this.stdFileType != null)) {
+				if (!(this.filesystemType != null && this.fileType != null
+						&& this.stdFileType != null)) {
 					TypedefDeclarationNode typedef = (TypedefDeclarationNode) item;
 					String typeName = typedef.getName();
 

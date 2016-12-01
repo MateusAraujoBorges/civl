@@ -159,6 +159,7 @@ OPTION_NAME
     | '-statelessPrintf'
     | '-strict'
     | '-svcomp16'
+    | '-svcomp17'
     | '-sysIncludePath'
     | '-timeout'
     | '-trace'

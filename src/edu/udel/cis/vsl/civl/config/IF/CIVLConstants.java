@@ -149,6 +149,7 @@ public class CIVLConstants {
 	public static String GUI = "gui";
 	public static String DEADLOCK = "deadlock";
 	public static String SVCOMP16 = "svcomp16";
+	public static String SVCOMP17 = "svcomp17";
 	public static String SHOW_INPUTS = "showInputs";
 	public static String PREPROC = "preproc";
 	public static String SHOW_PROGRAM = "showProgram";
@@ -450,10 +451,16 @@ public class CIVLConstants {
 			STRING, "deadlock kind? (potential|absolute|none)", "absolute");
 
 	/**
-	 * Perform svcomp transformation? false by default.
+	 * Perform svcomp16 transformation? false by default.
 	 */
 	public final static Option svcomp16O = Option.newScalarOption(SVCOMP16,
 			BOOLEAN, "translate program for sv-comp 2016?", false);
+
+	/**
+	 * Perform svcomp transformation? false by default.
+	 */
+	public final static Option svcomp17O = Option.newScalarOption(SVCOMP17,
+			BOOLEAN, "translate program for sv-comp 2017?", false);
 
 	/**
 	 * Show the input variables of this model? false by default.
@@ -593,9 +600,9 @@ public class CIVLConstants {
 				showMemoryUnitsO, showModelO, showPathConditionO, showProgramO,
 				showProverQueriesO, showQueriesO, showSavedStatesO, showStatesO,
 				showTimeO, showTransitionsO, showUnreachedCodeO, simplifyO,
-				solveO, statelessPrintfO, svcomp16O, quietO, sysIncludePathO,
-				traceO, userIncludePathO, verboseO, webO, CIVLMacroO,
-				analyzeAbsO, strictCompareO, collectOutputO,
+				solveO, statelessPrintfO, svcomp16O, svcomp17O, quietO,
+				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
+				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
 				sliceAnalysisO, witnessO, direct0};
 	}

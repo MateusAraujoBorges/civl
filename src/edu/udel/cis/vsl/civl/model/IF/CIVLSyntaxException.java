@@ -23,11 +23,11 @@ public class CIVLSyntaxException extends CIVLException {
 	}
 
 	public CIVLSyntaxException(String message, Sourceable sourceable) {
-		super("Syntax error: " + message, sourceable.getSource());
+		this(message, sourceable.getSource());
 	}
 
 	public CIVLSyntaxException(String message) {
-		super("Syntax error: " + message, (CIVLSource) null);
+		this(message, (CIVLSource) null);
 	}
 
 	public CIVLSyntaxException(String message, Source source) {
