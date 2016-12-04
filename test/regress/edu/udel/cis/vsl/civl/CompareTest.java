@@ -24,11 +24,13 @@ public class CompareTest {
 
 	/* **************************** Test Methods *************************** */
 
+	// TODO: failing
 	@Test
 	public void typeAnalyzerException() {
 		assertTrue(ui.run("compare", "-spec", filename("type_bad/spec.c"), "-impl", filename("type_bad/impl.c")));
 	}
 
+	// TODO: failing
 	@Test
 	public void unableExtractInt() {
 		assertTrue(ui.run("verify", filename("petscBad/ex2Driver.c"), filename("petscBad/ex2a.c")));

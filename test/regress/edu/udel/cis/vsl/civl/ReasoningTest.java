@@ -31,12 +31,12 @@ public class ReasoningTest {
 
 	@Test
 	public void neqZero() throws ABCException {
-		assertTrue(ui.run("verify", QUIET, filename("neqZero.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("neqZero.cvl")));
 	}
 
 	@Test
 	public void evaluatePc() throws ABCException {
-		assertFalse(ui.run("verify", QUIET, filename("evaluatePc.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("evaluatePc.cvl")));
 	}
 
 	@Test
@@ -48,7 +48,7 @@ public class ReasoningTest {
 	public void unsatClause2() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("unsatClause2.c")));
 	}
-	
+
 	@Test
 	public void quantified() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("quantified.cvl")));

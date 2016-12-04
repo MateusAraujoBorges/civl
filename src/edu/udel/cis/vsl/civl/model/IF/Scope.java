@@ -10,8 +10,14 @@ import java.util.Set;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
 /**
+ * <p>
  * A scope. A scope contains the variables exclusive to this scope and
  * references to any subscopes.
+ * </p>
+ * 
+ * <p>
+ * Maintainer: Stephen Siegel (siegel)
+ * </p>
  * 
  * @author Timothy K. Zirkel (zirkel)
  * 

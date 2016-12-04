@@ -52,7 +52,7 @@ public class SideEffectsTest {
 				filename("quantifiedSideEffects.c")));
 	}
 
-	// see ticket #733
+	// TODO: failing.  see ticket #733
 	@Test
 	public void structWithDiv() {
 		assertTrue(ui.run("verify", filename("structWithDiv.cvl")));

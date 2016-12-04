@@ -10,20 +10,20 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
+import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BoundVariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
@@ -100,7 +100,7 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 	@Override
 	protected Evaluation evaluateArrayLambda(State state, int pid,
 			ArrayLambdaExpression arrayLambda)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		List<Pair<List<Variable>, Expression>> boundVariableList = arrayLambda
 				.boundVariableList();
 		BooleanExpression restriction = universe.trueExpression();
@@ -184,7 +184,7 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 	@Override
 	protected Evaluation evaluateLambda(State state, int pid,
 			LambdaExpression arrayLambda)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		List<Pair<List<Variable>, Expression>> boundVariableList = arrayLambda
 				.boundVariableList();
 		Evaluation eval = null;
@@ -239,7 +239,7 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 	@Override
 	protected Evaluation evaluateQuantifiedExpression(State state, int pid,
 			QuantifiedExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		List<Pair<List<Variable>, Expression>> boundVariableList = expression
 				.boundVariableList();
 		BooleanExpression restriction = universe.trueExpression();
@@ -276,10 +276,9 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 				range = eval.value;
 				lower = this.symbolicUtil.getLowOfRegularRange(range);
 				upper = this.symbolicUtil.getHighOfRegularRange(range);
-				restriction = universe.and(restriction,
-						universe.and(
-								this.universe.lessThanEquals(lower,
-										(NumericExpression) boundValue),
+				restriction = universe.and(restriction, universe.and(
+						this.universe.lessThanEquals(lower,
+								(NumericExpression) boundValue),
 						this.universe.lessThanEquals(
 								(NumericExpression) boundValue, upper)));
 			} else {
@@ -296,85 +295,90 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 		state = eval.state;
 		restriction = universe.and(restriction, (BooleanExpression) eval.value);
 
-		Interval interval = null;
-		NumericExpression lower = null, upper = null;
-		ResultType isRestrictionInValid;
 		Evaluation result;
-		State stateWithRestriction;
-		Evaluation quantifiedExpression;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		BooleanExpression simplifiedExpression;
 
-		isRestrictionInValid = reasoner.valid(universe.not(restriction))
-				.getResultType();
-		if (isRestrictionInValid == ResultType.YES) {
+		if (reasoner.valid(universe.not(restriction))
+				.getResultType() == ResultType.YES) {
 			// invalid range restriction
 			switch (expression.quantifier()) {
-				case EXISTS :
-					result = new Evaluation(state, universe.falseExpression());
-					break;
-				default :// FORALL UNIFORM
-					result = new Evaluation(state, universe.trueExpression());
+			case EXISTS:
+				result = new Evaluation(state, universe.falseExpression());
+				break;
+			default:// FORALL UNIFORM
+				result = new Evaluation(state, universe.trueExpression());
 			}
 		} else {
-			BooleanExpression quantifiedExpressionNew = null;
 			BooleanExpression context = universe.and(restriction,
 					state.getPathCondition());
-
-			stateWithRestriction = state.setPathCondition(context);
-			quantifiedExpression = evaluate(stateWithRestriction, pid,
-					expression.expression());
+			State stateWithRestriction = state.setPathCondition(context);
+			Evaluation quantifiedExpression = evaluate(stateWithRestriction,
+					pid, expression.expression());
+			
 			context = quantifiedExpression.state.getPathCondition();
 			reasoner = universe.reasoner(context);
-			simplifiedExpression = (BooleanExpression) reasoner
+
+			BooleanExpression simplifiedExpression = (BooleanExpression) reasoner
 					.simplify(quantifiedExpression.value);
-			quantifiedExpressionNew = simplifiedExpression;
-			for (int i = numBoundVars - 1; i >= 0; i--) {
+			SymbolicConstant innermostBoundVar = boundVariables[numBoundVars
+					- 1];
+			Interval interval = reasoner
+					.assumptionAsInterval(innermostBoundVar);
+			BooleanExpression quantifiedExpressionNew;
+
+			if (interval != null) {
+				NumericExpression lower = universe.number(interval.lower());
+				NumericExpression upper = universe
+						.add(universe.number(interval.upper()), this.one);
+
+				switch (expression.quantifier()) {
+				case EXISTS:
+					quantifiedExpressionNew = universe.existsInt(
+							(NumericSymbolicConstant) innermostBoundVar, lower,
+							upper, (BooleanExpression) simplifiedExpression);
+					break;
+				case FORALL:
+				case UNIFORM:
+					quantifiedExpressionNew = universe.forallInt(
+							(NumericSymbolicConstant) innermostBoundVar, lower,
+							upper, (BooleanExpression) simplifiedExpression);
+					break;
+				default:
+					throw new CIVLInternalException("unreachable", expression);
+				}
+			} else {
+				switch (expression.quantifier()) {
+				case EXISTS:
+					quantifiedExpressionNew = universe.exists(innermostBoundVar,
+							universe.and(restriction, simplifiedExpression));
+					break;
+				case FORALL:
+				case UNIFORM:
+					quantifiedExpressionNew = universe.forall(innermostBoundVar,
+							universe.implies(restriction,
+									simplifiedExpression));
+					break;
+				default:
+					throw new CIVLInternalException("unreachable", expression);
+				}
+			}
+
+			for (int i = numBoundVars - 2; i >= 0; i--) {
 				SymbolicConstant boundVar = boundVariables[i];
 
-				interval = reasoner.assumptionAsInterval(boundVar);
-				if (interval != null) {
-					lower = universe.number(interval.lower());
-					upper = universe.add(universe.number(interval.upper()),
-							this.one);
-				}
 				switch (expression.quantifier()) {
-					case EXISTS :
-						if (interval != null)
-							quantifiedExpressionNew = universe.existsInt(
-									(NumericSymbolicConstant) boundVar, lower,
-									upper,
-									(BooleanExpression) quantifiedExpressionNew);
-						else
-							quantifiedExpressionNew = universe.exists(boundVar,
-									universe.and(restriction,
-											quantifiedExpressionNew));
-						break;
-					case FORALL :
-						if (interval != null)
-							quantifiedExpressionNew = universe.forallInt(
-									(NumericSymbolicConstant) boundVar, lower,
-									upper,
-									(BooleanExpression) quantifiedExpressionNew);
-						else
-							quantifiedExpressionNew = universe.forall(boundVar,
-									universe.implies(restriction,
-											quantifiedExpressionNew));
-						break;
-					case UNIFORM :
-						if (interval != null)
-							quantifiedExpressionNew = universe.forallInt(
-									(NumericSymbolicConstant) boundVar, lower,
-									upper,
-									(BooleanExpression) quantifiedExpressionNew);
-						else
-							quantifiedExpressionNew = universe.forall(boundVar,
-									universe.implies(restriction,
-											quantifiedExpressionNew));
-						break;
-					default :
-						throw new CIVLException("Unknown quantifier ",
-								expression.getSource());
+				case EXISTS:
+					quantifiedExpressionNew = universe.exists(boundVar,
+							quantifiedExpressionNew);
+					break;
+				case FORALL:
+				case UNIFORM:
+					quantifiedExpressionNew = universe.forall(boundVar,
+							quantifiedExpressionNew);
+					break;
+				default:
+					throw new CIVLException("Unknown quantifier ",
+							expression.getSource());
 				}
 			}
 			result = new Evaluation(state, quantifiedExpressionNew);
@@ -434,7 +438,7 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 	@Override
 	protected Evaluation evaluateRemoteOperation(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Expression procExpr = expression.left();
 		Expression exprExpr = expression.right();
 		Evaluation eval = evaluate(state, pid, procExpr);
@@ -490,7 +494,7 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 	@Override
 	public Evaluation evaluateOriginalExpression(State state, int pid,
 			OriginalExpression original)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(this.originalState, this.originalPid,
 				original.expression());
 
@@ -502,7 +506,7 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 	@Override
 	public Evaluation evaluateValueAtExpression(State state, int pid,
 			ValueAtExpression valueAt)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, valueAt.state());
 		SymbolicExpression stateRef;
 		NumericExpression place;

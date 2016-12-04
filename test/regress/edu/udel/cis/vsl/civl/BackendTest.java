@@ -92,11 +92,6 @@ public class BackendTest {
 	}
 
 	@Test
-	public void valueAt() {
-		assertTrue(ui.run(VERIFY, "-showTransitions", filename("valueat.cvl")));
-	}
-
-	@Test
 	public void valueAt_seq() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("valueat_seq.cvl")));
 	}

@@ -31,24 +31,28 @@ public class OpenMPSmallTest {
 
 	/* **************************** Test Methods *************************** */
 
+	// TODO: failing
 	@Test
 	public void array_of_ptr() {
-		assertTrue(ui.run(VERIFY, "-verbose", filename("array_of_ptr.c")));
+		assertTrue(ui.run(VERIFY, filename("array_of_ptr.c")));
 	}
 
+	// TODO: failing
 	@Test
 	public void jan() {
 		assertTrue(ui.run(VERIFY, filename("jan_example.c")));
 	}
 
+	// TODO: failing
 	@Test
 	public void ptr_share() {
-		assertFalse(ui.run(VERIFY, "-verbose", filename("ptr_share.c")));
+		assertFalse(ui.run(VERIFY, filename("ptr_share.c")));
 	}
 
+	// TODO: failing
 	@Test
 	public void simple_omp_share() {
-		assertTrue(ui.run(VERIFY, "-verbose", filename("simple_omp_share.c")));
+		assertTrue(ui.run(VERIFY, filename("simple_omp_share.c")));
 	}
 
 }
