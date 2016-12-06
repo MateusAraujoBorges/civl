@@ -70,6 +70,7 @@ import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 public class GeneralWorker extends BaseWorker {
 
 	private final static String MALLOC = "malloc";
+	private final static String CALLOC = "calloc";
 	final static String GENERAL_ROOT = ModelConfiguration.GENERAL_ROOT;
 	private final static String separator = "$";
 	private static final String SCOPE_TYPE = "$scope";
@@ -283,10 +284,11 @@ public class GeneralWorker extends BaseWorker {
 	 */
 	private ExpressionStatementNode argcAssumption(Source source,
 			String argcName) throws SyntaxException {
-		ExpressionNode lowerBound = nodeFactory.newOperatorNode(source,
-				Operator.LT,
-				Arrays.asList(nodeFactory.newIntegerConstantNode(source, "0"),
-						this.identifierExpression(source, argcName)));
+		ExpressionNode lowerBound = nodeFactory
+				.newOperatorNode(source, Operator.LT,
+						Arrays.asList(
+								nodeFactory.newIntegerConstantNode(source, "0"),
+								this.identifierExpression(source, argcName)));
 
 		return nodeFactory.newExpressionStatementNode(
 				this.functionCall(source, ASSUME, Arrays.asList(lowerBound)));
@@ -514,6 +516,51 @@ public class GeneralWorker extends BaseWorker {
 							if (type.kind() != TypeKind.POINTER)
 								throw new CIVLSyntaxException(
 										"The left hand side of a malloc call must be of pointer"
+												+ " type.",
+										lhs.getSource());
+							typeNode = this.typeNode(lhs.getSource(), type);
+							castNode = nodeFactory.newCastNode(
+									funcCall.getSource(), typeNode, funcCall);
+							parent.setChild(callIndex, castNode);
+						} else if (parent instanceof VariableDeclarationNode) {
+							VariableDeclarationNode variable = (VariableDeclarationNode) parent;
+							CastNode castNode = nodeFactory.newCastNode(
+									funcCall.getSource(),
+									variable.getTypeNode().copy(), funcCall);
+
+							variable.setInitializer(castNode);
+						}
+					}
+				} else if (functionName.equals(CALLOC)) {
+					ASTNode parent = funcCall.parent();
+					ExpressionNode myRootScope = this.identifierExpression(
+							funcCall.getSource(), GENERAL_ROOT);
+					int callIndex = funcCall.childIndex();
+					ExpressionNode memSize = null;
+					ExpressionNode numElement = funcCall.getArgument(0);
+					ExpressionNode typeElement = funcCall.getArgument(1);
+
+					functionExpression.getIdentifier().setName(CIVL_MALLOC);
+					numElement.parent().removeChild(numElement.childIndex());
+					typeElement.parent().removeChild(typeElement.childIndex());
+					memSize = nodeFactory.newOperatorNode(
+							numElement.getSource(), Operator.TIMES, numElement,
+							typeElement);
+					funcCall.setArguments(nodeFactory.newSequenceNode(
+							numElement.getSource(), "Actual Parameters",
+							Arrays.asList(myRootScope, memSize)));
+					if (!(parent instanceof CastNode)) {
+						funcCall.remove();
+						if (parent instanceof OperatorNode) {
+							ExpressionNode lhs = ((OperatorNode) parent)
+									.getArgument(0);
+							Type type = lhs.getInitialType();
+							TypeNode typeNode;
+							CastNode castNode;
+
+							if (type.kind() != TypeKind.POINTER)
+								throw new CIVLSyntaxException(
+										"The left hand side of a calloc call must be of pointer"
 												+ " type.",
 										lhs.getSource());
 							typeNode = this.typeNode(lhs.getSource(), type);
