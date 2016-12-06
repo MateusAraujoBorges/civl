@@ -1,0 +1,13 @@
+/* Commandline execution:
+ *		civl verify malloc.cvl
+ * */
+#include <civlc.cvh>
+#include <stdlib.h>
+
+void main() {
+  double *p = calloc(5, sizeof(double));
+  
+  p[4]=3.14;
+  $assert(p[4]==3.14);
+  $free(p);
+}   
