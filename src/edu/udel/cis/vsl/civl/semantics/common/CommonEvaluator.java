@@ -450,7 +450,7 @@ public class CommonEvaluator implements Evaluator {
 	Evaluation dereference(CIVLSource source, State state, String process,
 			Expression pointerExpression, SymbolicExpression pointer,
 			boolean checkOutput, boolean analysisOnly)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		boolean throwPCException = false;
 		SymbolicExpression deref = null;
 
@@ -461,12 +461,10 @@ public class CommonEvaluator implements Evaluator {
 					"attempt to deference an invalid pointer");
 			throwPCException = true;
 		} else if (pointer.operator() != SymbolicOperator.TUPLE) {
-			errorLogger
-					.logSimpleError(source, state, process,
-							this.symbolicAnalyzer.stateInformation(
-									state),
-							ErrorKind.UNDEFINED_VALUE,
-							"attempt to deference a pointer that is never initialized");
+			errorLogger.logSimpleError(source, state, process,
+					this.symbolicAnalyzer.stateInformation(state),
+					ErrorKind.UNDEFINED_VALUE,
+					"attempt to deference a pointer that is never initialized");
 			throwPCException = true;
 		} else if (symbolicUtil.isNullPointer(pointer)) {
 			// null pointer dereference
@@ -516,13 +514,11 @@ public class CommonEvaluator implements Evaluator {
 					variableValue = state.getDyscope(sid).getValue(vid);
 				}
 				if (!symRef.isIdentityReference() && variableValue.isNull()) {
-					errorLogger
-							.logSimpleError(source, state, process,
-									symbolicAnalyzer.stateInformation(
-											state),
-									ErrorKind.UNDEFINED_VALUE,
-									"Attempt to dereference a pointer that refers "
-											+ "to an object with undefined value");
+					errorLogger.logSimpleError(source, state, process,
+							symbolicAnalyzer.stateInformation(state),
+							ErrorKind.UNDEFINED_VALUE,
+							"Attempt to dereference a pointer that refers "
+									+ "to an object with undefined value");
 					throwPCException = true;
 				}
 				try {
@@ -573,7 +569,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	private Evaluation dynamicTypeOf(State state, int pid, CIVLType type,
 			CIVLSource source, boolean isDeclaration)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		TypeEvaluation typeEval = getDynamicType(state, pid, type, source,
 				isDeclaration);
 		SymbolicExpression expr = symbolicUtil.expressionOfType(type,
@@ -597,7 +593,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateAbstractFunctionCall(State state, int pid,
 			AbstractFunctionCallExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		AbstractFunction function = expression.function();
 		SymbolicType returnType = function.returnType()
 				.getDynamicType(universe);
@@ -642,7 +638,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateAddressOf(State state, int pid,
 			AddressOfExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return reference(state, pid, expression.operand());
 	}
 
@@ -662,7 +658,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateAnd(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression leftValue = (BooleanExpression) eval.value;
 		BooleanExpression assumption = eval.state.getPathCondition();
@@ -721,7 +717,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateArrayLiteral(State state, int pid,
 			ArrayLiteralExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Expression[] elements = expression.elements();
 		SymbolicType symbolicElementType;
 		List<SymbolicExpression> symbolicElements = new ArrayList<>();
@@ -751,7 +747,7 @@ public class CommonEvaluator implements Evaluator {
 
 	private Pair<State, SymbolicType> getCompleteArrayType(State state, int pid,
 			CIVLCompleteArrayType elementType)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		SymbolicType arrayType;
 		Evaluation eval;
 		Pair<State, SymbolicType> pair;
@@ -789,7 +785,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateBinary(State state, int pid, String process,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		BINARY_OPERATOR operator = expression.operator();
 
 		switch (operator) {
@@ -843,7 +839,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateRemoteOperation(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
 				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
 				memUnitFactory, errorLogger, civlConfig)
@@ -865,7 +861,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateBitand(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value, right, result;
 
@@ -892,7 +888,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	private Evaluation evaluateBitcomplement(State state, int pid,
 			UnaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.operand());
 		SymbolicExpression operand = eval.value, result;
 
@@ -916,7 +912,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateBitor(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value, right, result;
 
@@ -943,7 +939,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateBitxor(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value, right, result;
 
@@ -989,7 +985,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateCast(State state, int pid, String process,
 			CastExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return this.evaluateCastWorker(state, pid, process,
 				expression.getCastType(), expression.getExpression());
 	}
@@ -997,7 +993,7 @@ public class CommonEvaluator implements Evaluator {
 	@Override
 	public Evaluation evaluateCastWorker(State state, int pid, String process,
 			CIVLType castType, Expression arg)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		CIVLType argType = arg.getExpressionType();
 		Evaluation eval = evaluate(state, pid, arg);
 		SymbolicExpression value = eval.value;
@@ -1093,7 +1089,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateDereference(State state, int pid,
 			String process, DereferenceExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.pointer());
 
 		if (eval.value.isNull()) {
@@ -1122,7 +1118,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateDerivativeCall(State state, int pid,
 			DerivativeCallExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		AbstractFunction function = expression.function();
 		SymbolicType returnType = function.returnType()
 				.getDynamicType(universe);
@@ -1177,7 +1173,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateDomainGuard(State state, int pid,
 			DomainGuardExpression domainGuard)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Expression domain = domainGuard.domain();
 		int dimension = domainGuard.dimension();
 		// Collection for storing given domain element.
@@ -1266,7 +1262,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateRecDomainLiteral(State state, int pid,
 			RecDomainLiteralExpression recDomain)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		int dim = recDomain.dimension();
 		List<SymbolicExpression> ranges = new ArrayList<>();
 		Evaluation eval;
@@ -1324,7 +1320,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateDot(State state, int pid, String process,
 			DotExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.structOrUnion());
 		SymbolicExpression structValue = eval.value;
 		int fieldIndex = expression.fieldIndex();
@@ -1360,7 +1356,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateDynamicTypeOf(State state, int pid,
 			DynamicTypeOfExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return dynamicTypeOf(state, pid, expression.getType(),
 				expression.getSource(), true);
 	}
@@ -1379,7 +1375,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateFunctionGuard(State state, int pid,
 			String process, FunctionGuardExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Triple<State, CIVLFunction, Integer> eval = this
 				.evaluateFunctionIdentifier(state, pid,
 						expression.functionExpression(),
@@ -1441,7 +1437,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateImplies(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression p = (BooleanExpression) eval.value;
 		BooleanExpression assumption = eval.state.getPathCondition();
@@ -1483,7 +1479,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateInitialValue(State state, int pid,
 			InitialValueExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Variable variable = expression.variable();
 		CIVLType type = variable.type();
 
@@ -1525,7 +1521,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	private State checkArrayExtentDeclaration(State state, int pid,
 			CIVLCompleteArrayType arrayType, CIVLSource source)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Expression extent = arrayType.extent();
 		Evaluation eval = evaluate(state, pid, extent);
 		BooleanExpression validArrayLength;
@@ -1572,7 +1568,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	private Evaluation computeInitialValue(State state, int pid,
 			Variable variable, SymbolicType dynamicType, int dyscopeId)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		CIVLType type = variable.type();
 		SymbolicExpression result;
 
@@ -1631,7 +1627,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateNumericOperations(State state, int pid,
 			String process, BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = this.evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value;
 		SymbolicExpression right;
@@ -1731,7 +1727,18 @@ public class CommonEvaluator implements Evaluator {
 				BooleanExpression assumption = eval.state.getPathCondition();
 				NumericExpression denominator = (NumericExpression) right;
 
-				if (!this.civlConfig.svcomp()) {
+				if (this.civlConfig.svcomp()) {
+					BooleanExpression leftPositive = universe.lessThan(zero,
+							(NumericExpression) left);
+					ResultType resultType = universe.reasoner(assumption)
+							.valid(leftPositive).getResultType();
+
+					if (resultType != ResultType.YES) {
+						left = universe.add(universe
+								.modulo((NumericExpression) left, denominator),
+								denominator);
+					}
+				} else {
 					BooleanExpression claim = universe.neq(
 							zeroOf(expression.getSource(),
 									expression.getExpressionType()),
@@ -1805,7 +1812,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateOr(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression p = (BooleanExpression) eval.value;
 		BooleanExpression assumption = eval.state.getPathCondition();
@@ -1841,7 +1848,7 @@ public class CommonEvaluator implements Evaluator {
 	protected SymbolicExpression lambda(State state, int pid,
 			NumericSymbolicConstant[] boundVariables, int boundIndex,
 			SymbolicFunctionType arrayType, Expression body)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		NumericSymbolicConstant index = boundVariables[boundIndex];
 		SymbolicExpression eleValue;
 		Evaluation eval;
@@ -1860,7 +1867,7 @@ public class CommonEvaluator implements Evaluator {
 	protected SymbolicExpression arrayLambda(State state, int pid,
 			NumericSymbolicConstant[] boundVariables, int boundIndex,
 			SymbolicCompleteArrayType arrayType, Expression body)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		NumericSymbolicConstant index = boundVariables[boundIndex];
 		SymbolicExpression eleValue;
 		SymbolicExpression arrayEleFunction;
@@ -2069,7 +2076,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateRegularRange(State state, int pid,
 			RegularRangeExpression range)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		SymbolicTupleType type = (SymbolicTupleType) range.getExpressionType()
 				.getDynamicType(universe);
 		Evaluation eval = this.evaluate(state, pid, range.getLow());
@@ -2114,7 +2121,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateScopeOperations(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		int left = modelFactory.getScopeId(expression.left().getSource(),
 				eval.value);
@@ -2159,14 +2166,14 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateSizeofExpressionExpression(State state,
 			int pid, SizeofExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return evaluateSizeofType(expression.getSource(), state, pid,
 				expression.getArgument().getExpressionType());
 	}
 
 	protected Evaluation evaluateSizeofTypeExpression(State state, int pid,
 			SizeofTypeExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return evaluateSizeofType(expression.getSource(), state, pid,
 				expression.getTypeArgument());
 	}
@@ -2185,7 +2192,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateSubscript(State state, int pid, String process,
 			SubscriptExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.array());
 		SymbolicExpression array = eval.value;
 		SymbolicArrayType arrayType = (SymbolicArrayType) array.type();
@@ -2265,7 +2272,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateScopeofExpression(State state, int pid,
 			String process, ScopeofExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		LHSExpression argument = expression.argument();
 
 		return evaluateScopeofExpressionWorker(state, pid, process, argument);
@@ -2273,7 +2280,7 @@ public class CommonEvaluator implements Evaluator {
 
 	private Evaluation evaluateScopeofExpressionWorker(State state, int pid,
 			String process, LHSExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval;
 
 		switch (expression.lhsExpressionKind()) {
@@ -2286,12 +2293,10 @@ public class CommonEvaluator implements Evaluator {
 						eval.value);
 				state = eval.state;
 				if (sid < 0) {
-					errorLogger
-							.logSimpleError(pointer.getSource(), state, process,
-									symbolicAnalyzer.stateInformation(
-											state),
-									ErrorKind.DEREFERENCE,
-									"Attempt to dereference pointer into scope which has been removed from state");
+					errorLogger.logSimpleError(pointer.getSource(), state,
+							process, symbolicAnalyzer.stateInformation(state),
+							ErrorKind.DEREFERENCE,
+							"Attempt to dereference pointer into scope which has been removed from state");
 					throw new UnsatisfiablePathConditionException();
 				}
 				return new Evaluation(state, modelFactory.scopeValue(sid));
@@ -2318,7 +2323,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateShiftleft(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value, right, result;
 
@@ -2331,7 +2336,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateShiftright(State state, int pid,
 			BinaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		SymbolicExpression left = eval.value, right, result;
 
@@ -2357,7 +2362,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateStructOrUnionLiteral(State state, int pid,
 			StructOrUnionLiteralExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Expression[] fields = expression.fields();
 		SymbolicType dynamicStructType = expression.getExpressionType()
 				.getDynamicType(universe);
@@ -2402,7 +2407,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateUnary(State state, int pid,
 			UnaryExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.operand());
 
 		switch (expression.operator()) {
@@ -2440,7 +2445,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateVariable(State state, int pid, String process,
 			VariableExpression expression, boolean checkUndefinedValue)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		if (expression.variable().isOutput()) {
 			errorLogger.logSimpleError(expression.getSource(), state, process,
 					this.symbolicAnalyzer.stateInformation(state),
@@ -2453,13 +2458,10 @@ public class CommonEvaluator implements Evaluator {
 					expression.variable());
 
 			if (checkUndefinedValue && value.isNull()) {
-				errorLogger
-						.logSimpleError(expression.getSource(), state, process,
-								this.symbolicAnalyzer.stateInformation(
-										state),
-								ErrorKind.UNDEFINED_VALUE,
-								"attempt to read uninitialized variable "
-										+ expression);
+				errorLogger.logSimpleError(expression.getSource(), state,
+						process, this.symbolicAnalyzer.stateInformation(state),
+						ErrorKind.UNDEFINED_VALUE,
+						"attempt to read uninitialized variable " + expression);
 				throw new UnsatisfiablePathConditionException();
 			}
 			return new Evaluation(state, value);
@@ -2491,7 +2493,7 @@ public class CommonEvaluator implements Evaluator {
 	protected Evaluation evaluateGuardofSystemFunction(CIVLSource source,
 			State state, int pid, String library, CIVLFunction function,
 			List<Expression> arguments)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		if (function.functionContract() != null) {
 			Expression guard = function.functionContract().guard();
 
@@ -2522,7 +2524,7 @@ public class CommonEvaluator implements Evaluator {
 	@Override
 	public TypeEvaluation getDynamicType(State state, int pid, CIVLType type,
 			CIVLSource source, boolean isDefinition)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		TypeEvaluation result;
 
 		// if type has a state variable and computeStructs is false, use
@@ -2591,7 +2593,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation getSystemGuard(CIVLSource source, State state, int pid,
 			String library, String function, List<Expression> arguments)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		try {
 			LibraryEvaluator libEvaluator = this.libLoader.getLibraryEvaluator(
 					library, this, this.modelFactory, symbolicUtil,
@@ -2779,30 +2781,26 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	private void isValueDefined(State state, String process,
 			Expression expression, SymbolicExpression expressionValue)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		CIVLSource source = expression.getSource();
 		CIVLType expressionType = expression.getExpressionType();
 
 		if (expressionType.equals(typeFactory.scopeType())) {
 			if (expressionValue.equals(modelFactory
 					.undefinedValue(typeFactory.scopeSymbolicType()))) {
-				errorLogger
-						.logSimpleError(source, state, process,
-								symbolicAnalyzer.stateInformation(
-										state),
-								ErrorKind.UNDEFINED_VALUE,
-								"Attempt to evaluate an invalid scope reference");
+				errorLogger.logSimpleError(source, state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.UNDEFINED_VALUE,
+						"Attempt to evaluate an invalid scope reference");
 				throw new UnsatisfiablePathConditionException();
 			}
 		} else if (expressionType.equals(typeFactory.processType())) {
 			if (expressionValue.equals(modelFactory
 					.undefinedValue(typeFactory.processSymbolicType()))) {
-				errorLogger
-						.logSimpleError(source, state, process,
-								symbolicAnalyzer.stateInformation(
-										state),
-								ErrorKind.UNDEFINED_VALUE,
-								"Attempt to evaluate an invalid process reference");
+				errorLogger.logSimpleError(source, state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.UNDEFINED_VALUE,
+						"Attempt to evaluate an invalid process reference");
 				throw new UnsatisfiablePathConditionException();
 			}
 		} else if (expressionValue.type().equals(this.pointerType)) {
@@ -2903,7 +2901,7 @@ public class CommonEvaluator implements Evaluator {
 	private Pair<Evaluation, NumericExpression[]> pointerAddWorker(State state,
 			String process, SymbolicExpression pointer,
 			NumericExpression offset, boolean checkOutput, CIVLSource source)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression arrayPtr;
 		ReferenceExpression parentRef;
 		NumericExpression extent, index;
@@ -3004,7 +3002,7 @@ public class CommonEvaluator implements Evaluator {
 	@Override
 	public Evaluation evaluate(State state, int pid, Expression expression,
 			boolean checkUndefinedValue)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		ExpressionKind kind = expression.expressionKind();
 		Evaluation result;
 		String process = state.getProcessState(pid).name();
@@ -3208,12 +3206,10 @@ public class CommonEvaluator implements Evaluator {
 		}
 		return result;
 	}
-	
-	
 
 	protected Evaluation evaluateOriginalExpression(State state, int pid,
 			OriginalExpression original)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
 				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
 				memUnitFactory, errorLogger, civlConfig)
@@ -3222,7 +3218,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateValueAtExpression(State state, int pid,
 			ValueAtExpression valueAt)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
 				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
 				memUnitFactory, errorLogger, civlConfig)
@@ -3231,7 +3227,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateQuantifiedExpression(State state, int pid,
 			QuantifiedExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
 				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
 				memUnitFactory, errorLogger, civlConfig)
@@ -3241,7 +3237,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateArrayLambda(State state, int pid,
 			ArrayLambdaExpression arrayLambda)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
 				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
 				memUnitFactory, errorLogger, civlConfig)
@@ -3250,7 +3246,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateLambda(State state, int pid,
 			LambdaExpression arrayLambda)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
 				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
 				memUnitFactory, errorLogger, civlConfig).evaluateLambda(state,
@@ -3288,7 +3284,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateExtendedQuantifiedExpression(State state,
 			int pid, ExtendedQuantifiedExpression extQuant)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Evaluation eval;
 		Expression function = extQuant.function();
 		NumericExpression low, high;
@@ -3348,13 +3344,11 @@ public class CommonEvaluator implements Evaluator {
 									: universe.add(result, one);
 						} else if (!reasoner.isValid(
 								universe.not((BooleanExpression) current))) {
-							errorLogger
-									.logSimpleError(source, state,
-											state.getProcessState(pid).name(),
-											symbolicAnalyzer.stateInformation(
-													state),
-											ErrorKind.OTHER,
-											"unable to decide the result of the boolean function in \numof");
+							errorLogger.logSimpleError(source, state,
+									state.getProcessState(pid).name(),
+									symbolicAnalyzer.stateInformation(state),
+									ErrorKind.OTHER,
+									"unable to decide the result of the boolean function in \numof");
 							throw new UnsatisfiablePathConditionException();
 						}
 						break;
@@ -3390,13 +3384,11 @@ public class CommonEvaluator implements Evaluator {
 						result = this.one;
 						break;
 					default :
-						errorLogger
-								.logSimpleError(source, state,
-										state.getProcessState(pid).name(),
-										symbolicAnalyzer.stateInformation(
-												state),
-										ErrorKind.OTHER,
-										"undefined input for " + quant);
+						errorLogger.logSimpleError(source, state,
+								state.getProcessState(pid).name(),
+								symbolicAnalyzer.stateInformation(state),
+								ErrorKind.OTHER,
+								"undefined input for " + quant);
 						throw new UnsatisfiablePathConditionException();
 				}
 			} else {
@@ -3419,7 +3411,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateFunctionCallExpression(State state, int pid,
 			FunctionCallExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return this.functionCallExecutor.evaluateAtomicPureFunction(state, pid,
 				expression.callStatement());
 	}
@@ -3533,7 +3525,7 @@ public class CommonEvaluator implements Evaluator {
 	public Triple<State, StringBuffer, Boolean> getString(CIVLSource source,
 			State state, String process, Expression charPointerExpr,
 			SymbolicExpression charPointer)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression originalArray = null;
 		SymbolicOperator operator = charPointer.operator();
 		int int_arrayIndex = -1;
@@ -3566,13 +3558,11 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger
-							.logSimpleError(source, state, process,
-									this.symbolicAnalyzer.stateInformation(
-											state),
-									ErrorKind.OTHER,
-									"Try to obtain a string from a sequence of char has length"
-											+ " less than or equal to one");
+					this.errorLogger.logSimpleError(source, state, process,
+							this.symbolicAnalyzer.stateInformation(state),
+							ErrorKind.OTHER,
+							"Try to obtain a string from a sequence of char has length"
+									+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;
@@ -3642,7 +3632,7 @@ public class CommonEvaluator implements Evaluator {
 	@Override
 	public Evaluation getStringExpression(State state, String process,
 			CIVLSource source, SymbolicExpression charPointer)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		BooleanExpression pc = state.getPathCondition();
 		Reasoner reasoner = universe.reasoner(pc);
 		ReferenceExpression symRef = symbolicUtil.getSymRef(charPointer);
@@ -3720,7 +3710,7 @@ public class CommonEvaluator implements Evaluator {
 	public Evaluation pointerAdd(State state, int pid, String process,
 			BinaryExpression expression, SymbolicExpression pointer,
 			NumericExpression offset)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Pair<BooleanExpression, ResultType> checkPointer = this.symbolicAnalyzer
 				.isDefinedPointer(state, pointer);
 
@@ -3808,7 +3798,7 @@ public class CommonEvaluator implements Evaluator {
 	public Evaluation pointerSubtraction(State state, int pid, String process,
 			BinaryExpression expression, SymbolicExpression leftPtr,
 			SymbolicExpression rightPtr)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		int leftVid, leftSid, rightVid, rightSid;
 		SymbolicExpression array, arrayPtr;
 		NumericExpression leftPos = zero, rightPos = zero;
@@ -4017,7 +4007,7 @@ public class CommonEvaluator implements Evaluator {
 	public Pair<Evaluation, NumericExpression[]> evaluatePointerAdd(State state,
 			String process, SymbolicExpression ptr, NumericExpression offset,
 			boolean ifCheckOutput, CIVLSource source)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression newPtr = symbolicUtil.makePointer(ptr,
 				symbolicAnalyzer.getLeafNodeReference(state, ptr, source));
 
@@ -4028,7 +4018,7 @@ public class CommonEvaluator implements Evaluator {
 	@Override
 	public List<ReferenceExpression> leafNodeReferencesOfType(CIVLSource source,
 			State state, int pid, CIVLType type)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		return this.leafNodeReferencesOfType(source, state, pid, type,
 				universe.identityReference());
 	}
@@ -4036,7 +4026,7 @@ public class CommonEvaluator implements Evaluator {
 	private List<ReferenceExpression> leafNodeReferencesOfType(
 			CIVLSource source, State state, int pid, CIVLType type,
 			ReferenceExpression parent)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		List<ReferenceExpression> result = new ArrayList<>();
 		TypeKind typeKind = type.typeKind();
 
@@ -4110,7 +4100,7 @@ public class CommonEvaluator implements Evaluator {
 	@Override
 	public Pair<State, SymbolicArrayType> evaluateCIVLArrayType(State state,
 			int pid, CIVLArrayType type)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Pair<State, SymbolicArrayType> ret_pair;
 		Evaluation eval;
 		NumericExpression extent;
@@ -4180,7 +4170,7 @@ public class CommonEvaluator implements Evaluator {
 			String process, BooleanExpression claim, ResultType resultType,
 			SymbolicExpression array, SymbolicExpression pointer,
 			SymbolicExpression offset, boolean multiDimensional)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		String msg = (multiDimensional)
 				? "array object"
 				: "a heap-allocated object";
@@ -4238,7 +4228,7 @@ public class CommonEvaluator implements Evaluator {
 			State state, String process, int pointedVid, int pointedSid,
 			SymbolicExpression pointer, NumericExpression offset,
 			Reasoner reasoner, CIVLSource source)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		NumericExpression newIndex, totalOffset = zero;
 		NumericExpression sliceSize = one;
 		SymbolicExpression arrayRootPtr, wholeArray;
@@ -4254,12 +4244,10 @@ public class CommonEvaluator implements Evaluator {
 		state = eval.state;
 		wholeArray = eval.value;
 		if (!(eval.value.type() instanceof SymbolicCompleteArrayType)) {
-			this.errorLogger
-					.logSimpleError(source, state, process,
-							this.symbolicAnalyzer.stateInformation(
-									state),
-							ErrorKind.POINTER,
-							"unable to perform pointer arithmetics on pointer to incomplete arrays");
+			this.errorLogger.logSimpleError(source, state, process,
+					this.symbolicAnalyzer.stateInformation(state),
+					ErrorKind.POINTER,
+					"unable to perform pointer arithmetics on pointer to incomplete arrays");
 			throw new UnsatisfiablePathConditionException();
 		}
 		coordinateSizes = symbolicUtil.arrayCoordinateSizes(
@@ -4358,7 +4346,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected Evaluation evaluateMPIContractExpression(State state, int pid,
 			String process, MPIContractExpression expression)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		LibmpiEvaluator mpiEvaluator;
 
 		if (!civlConfig.isEnableMpiContract())
