@@ -123,11 +123,13 @@ public class SvcompUnPPWorker extends BaseWorker {
 					this.newSource("$assume", CivlcTokenConstant.DECLARATION)));
 			newItems.add(scale_bound);
 			for (VariableDeclarationNode varNode : scalerVariableMap.values()) {
+				varNode.setInitializer(
+						this.identifierExpression(scale_bound.getName()));
 				newItems.add(varNode);
-				newItems.add(this.assumeNode(this.nodeFactory.newOperatorNode(
-						varNode.getSource(), Operator.EQUALS,
-						this.identifierExpression(varNode.getName()),
-						this.identifierExpression(scale_bound.getName()))));
+				// newItems.add(this.assumeNode(this.nodeFactory.newOperatorNode(
+				// varNode.getSource(), Operator.EQUALS,
+				// this.identifierExpression(varNode.getName()),
+				// this.identifierExpression(scale_bound.getName()))));
 			}
 			for (BlockItemNode item : root) {
 				if (item == null)
@@ -375,7 +377,7 @@ public class SvcompUnPPWorker extends BaseWorker {
 					this.newUniqueIdentifier(SCALE_VAR),
 					this.basicType(BasicTypeKind.INT));
 
-			scaleVariable.getTypeNode().setInputQualified(true);
+			// scaleVariable.getTypeNode().setInputQualified(true);
 			scaleVariable.setStaticStorage(isStatic);
 			this.scalerVariableMap.put(intValue, scaleVariable);
 			return this.identifierExpression(scaleVariable.getName());
