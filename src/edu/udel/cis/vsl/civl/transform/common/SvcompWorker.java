@@ -39,6 +39,10 @@ public class SvcompWorker extends BaseWorker {
 
 	private final static String VERIFIER_ATOMIC_END = "__VERIFIER_atomic_end";
 
+	private final static String VERIFIER_NONDET_INT = "__VERIFIER_nondet_int";
+
+	private final static String VERIFIER_NONDET_UINT = "__VERIFIER_nondet_uint";
+
 	private final static String NONDET_INT = "int";
 
 	private final static String BOUND = "bound";
@@ -330,7 +334,37 @@ public class SvcompWorker extends BaseWorker {
 					process_atomic_begin_end(funcDef.getBody());
 				}
 			}
-			// process_nondet_int(item);
+			process_nondet_int(item);
+		}
+	}
+
+	/**
+	 * transforms _VERIFIER_nondet_int(uint) function calls into input variables
+	 * 
+	 * @param node
+	 */
+	private void process_nondet_int(ASTNode node) {
+		if (node instanceof FunctionCallNode) {
+			FunctionCallNode callNode = (FunctionCallNode) node;
+
+			if (this.is_callee_name_equals(callNode, VERIFIER_NONDET_INT)
+					|| this.is_callee_name_equals(callNode,
+							VERIFIER_NONDET_UINT)) {
+				VariableDeclarationNode inputVar = this.variableDeclaration(
+						this.newUniqueIdentifier(NONDET_INT),
+						this.basicType(BasicTypeKind.INT));
+				ExpressionNode inputVarID = this
+						.identifierExpression(inputVar.getName());
+
+				inputVar.getTypeNode().setInputQualified(true);
+				this.nondet_int_variable_declarations.add(inputVar);
+				callNode.parent().setChild(callNode.childIndex(), inputVarID);
+				return;
+			}
+		}
+		for (ASTNode child : node.children()) {
+			if (child != null)
+				process_nondet_int(child);
 		}
 	}
 

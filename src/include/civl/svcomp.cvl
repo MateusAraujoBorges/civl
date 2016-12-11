@@ -47,13 +47,14 @@ unsigned long __VERIFIER_nondet_ulong(){
   return temp;
 }
 
+/*
 int __VERIFIER_nondet_int(){
   int temp;
 
   $havoc(&temp);
   $assume(temp<=SVCOM_INT_UPPER && temp>=SVCOM_INT_LOWER);
   return temp;
-}
+}*/
 
 char __VERIFIER_nondet_char(){
   char temp;
@@ -76,13 +77,14 @@ float __VERIFIER_nondet_float(){
   return temp;
 }
 
+/*
 unsigned int __VERIFIER_nondet_uint(){
   int temp;
 
   $havoc(&temp);
   $assume(temp>=0 && temp<=SVCOM_UINT_UPPER);
   return temp;
-}
+}*/
 
 int __VERIFIER_nondet_bool(){
   $abstract int __VERIFIER_nondet_bool_worker(int x);
