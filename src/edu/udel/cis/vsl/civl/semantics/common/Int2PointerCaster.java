@@ -3,7 +3,6 @@ package edu.udel.cis.vsl.civl.semantics.common;
 import java.util.Arrays;
 
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
@@ -24,7 +23,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  *
  */
 // int to pointer
-public class Int2PointerCaster implements CIVLUnaryOperator<SymbolicExpression> {
+public class Int2PointerCaster
+		implements
+			CIVLUnaryOperator<SymbolicExpression> {
 	private SymbolicUniverse universe;
 	private SymbolicConstant int2PointerFunc;
 	private SymbolicUtility symbolicUtil;
@@ -33,8 +34,8 @@ public class Int2PointerCaster implements CIVLUnaryOperator<SymbolicExpression> 
 			SymbolicUtility symbolicUtil, SymbolicType pointerType) {
 		this.universe = universe;
 		this.symbolicUtil = symbolicUtil;
-		this.int2PointerFunc = universe.symbolicConstant(universe
-				.stringObject(CommonEvaluator.INT_TO_POINTER_FUNCTION),
+		this.int2PointerFunc = universe.symbolicConstant(
+				universe.stringObject(CommonEvaluator.INT_TO_POINTER_FUNCTION),
 				universe.functionType(Arrays.asList(universe.integerType()),
 						pointerType));
 	}
@@ -56,7 +57,8 @@ public class Int2PointerCaster implements CIVLUnaryOperator<SymbolicExpression> 
 
 			if (castedValue != null)
 				value = castedValue;
-			else if (!((CIVLPointerType) castType).baseType().isVoidType()) {
+			else {// if (!((CIVLPointerType) castType).baseType().isVoidType())
+					// {
 				value = universe.apply(this.int2PointerFunc,
 						Arrays.asList(value));
 				// state = errorLogger.logError(arg.getSource(), state,

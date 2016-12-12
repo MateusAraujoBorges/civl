@@ -58,6 +58,8 @@ public class SvcompUnPPWorker extends BaseWorker {
 
 	private final static String EXIT = "exit";
 
+	private final static String FREE = "free";
+
 	private final static String STRCPY = "strcpy";
 
 	private final static String ABORT = "abort";
@@ -535,7 +537,7 @@ public class SvcompUnPPWorker extends BaseWorker {
 			FunctionDeclarationNode functionDecl = (FunctionDeclarationNode) node;
 			String name = functionDecl.getName();
 
-			if (name.equals(EXIT) || name.equals(ABORT)) {
+			if (name.equals(EXIT) || name.equals(ABORT) || name.equals(FREE)) {
 				this.needsStdlibHeader = true;
 				return true;
 			}
