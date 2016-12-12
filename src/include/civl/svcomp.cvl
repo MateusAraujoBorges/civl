@@ -86,7 +86,7 @@ unsigned int __VERIFIER_nondet_uint(){
   return temp;
 }*/
 
-int __VERIFIER_nondet_bool(){
+_Bool __VERIFIER_nondet_bool(){
   $abstract int __VERIFIER_nondet_bool_worker(int x);
 
   return __VERIFIER_nondet_bool_worker(_bool_count++)!=0;
