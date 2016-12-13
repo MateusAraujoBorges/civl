@@ -1,6 +1,3 @@
-/**
- * 
- */
 package edu.udel.cis.vsl.civl.model.IF;
 
 import java.io.PrintStream;
@@ -16,10 +13,11 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
 /**
- * A model of a program.
+ * A model of a CIVL program. This is the "low-level" intermediate
+ * representation of a CIVL program. It is the thing that is executed using
+ * model checking and/or symbolic execution techniques.
  * 
  * @author Timothy K. Zirkel (zirkel)
- * 
  */
 public interface Model extends Sourceable {
 

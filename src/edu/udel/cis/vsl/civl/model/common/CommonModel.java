@@ -24,10 +24,13 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
 /**
- * A model of a CIVL program.
+ * <p>
+ * Implementation of {@link Model}.
+ * </p>
+ * 
+ * @maintainer Stephen Siegel (siegel)
  * 
  * @author Timothy K. Zirkel (zirkel)
- * 
  */
 public class CommonModel extends CommonSourceable implements Model {
 
