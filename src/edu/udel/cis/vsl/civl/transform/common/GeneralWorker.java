@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,7 +21,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.DeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ArrayLambdaNode;
@@ -35,8 +35,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.AtomicNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopInitializerNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.WithNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
@@ -46,6 +44,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
+import edu.udel.cis.vsl.abc.front.c.preproc.CPreprocessor;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.NameTransformer;
@@ -72,7 +71,7 @@ import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
  *
  */
 public class GeneralWorker extends BaseWorker {
-
+	private final static String STRING_HEADER = "string.h";
 	private final static String MALLOC = "malloc";
 	private final static String CALLOC = "calloc";
 	private final static String MEMSET = "memset";
@@ -91,6 +90,7 @@ public class GeneralWorker extends BaseWorker {
 	private List<VariableDeclarationNode> static_variables = new LinkedList<>();
 	private boolean argcUsed = false;
 	private boolean argvUsed = false;
+	private boolean callocExists = false;
 	private StatementNode argcAssumption = null;
 
 	private BlockItemNode scopeType, mallocDeclaration;
@@ -181,6 +181,14 @@ public class GeneralWorker extends BaseWorker {
 		newAst = astFactory.newAST(root, unit.getSourceFiles(),
 				unit.isWholeProgram());
 		// newAst.prettyPrint(System.out, false);
+		//TODO: Check if there is a string.h
+		if (callocExists) {
+			AST stringlibHeaderAST = this.parseSystemLibrary(
+				new File(CPreprocessor.ABC_INCLUDE_PATH, STRING_HEADER),
+				EMPTY_MACRO_MAP);
+
+			newAst = this.combineASTs(stringlibHeaderAST, newAst);
+		}
 		return newAst;
 	}
 
@@ -538,6 +546,8 @@ public class GeneralWorker extends BaseWorker {
 						}
 					}
 				} else if (functionName.equals(CALLOC)) {
+					callocExists = true;
+					
 					ASTNode parent = funcCall.parent();
 					ExpressionNode myRootScope = this.identifierExpression(
 							funcCall.getSource(), GENERAL_ROOT);
