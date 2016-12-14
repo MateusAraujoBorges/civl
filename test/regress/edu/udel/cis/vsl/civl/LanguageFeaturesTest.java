@@ -193,6 +193,12 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
+	public void calloc() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("calloc.cvl")));
+
+	}
+
+	@Test
 	public void charTest() throws ABCException {
 		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF, filename("char.cvl")));
 	}
@@ -409,7 +415,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void stateNullObjects() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("stateNull.cvl"))); 
+		assertTrue(ui.run(VERIFY, QUIET, filename("stateNull.cvl")));
 	}
 
 	@Test
