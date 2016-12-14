@@ -1,0 +1,17 @@
+typedef struct data_t{
+  int x;
+  int y;
+}data_t;
+
+int main(){
+  data_t data;
+  int *k=&(data.x);
+  data_t *dptr;
+
+  data.x=0;
+  data.x=1;
+  dptr=(data_t *)((char *)k- (unsigned long)(&((data_t *)0)->x));
+  dptr->x=100;
+  dptr->y=100;
+  $assert(data.x==100 && data.y==100);
+}
