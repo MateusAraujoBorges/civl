@@ -104,5 +104,9 @@ void __VERIFIER_assume(int expression) {
       }
 }
 
+void __VERIFIER_atomic_end(){
+  return;
+}
+
 #endif
 
