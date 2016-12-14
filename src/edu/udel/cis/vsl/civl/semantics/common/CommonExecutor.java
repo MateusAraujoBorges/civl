@@ -30,6 +30,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
+import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
@@ -152,6 +153,8 @@ public class CommonExecutor implements Executor {
 
 	private List<CodeAnalyzer> analyzers;
 
+	private Int2PointerCaster int2PointerCaster;
+
 	/* ***************************** Constructors ************************** */
 
 	/**
@@ -228,9 +231,28 @@ public class CommonExecutor implements Executor {
 			} else {// leave atomic
 				state = stateFactory.leaveAtomic(state, pid);
 			}
-		} else
+		} else {
+			CIVLType lhsType = statement.getLhs().getExpressionType();
+			Expression rhs = statement.rhs();
+
+			// The int2pointer remains as no-op for int-to-pointer-to-void conversion
+			// this is to revert it when it is used to assign to a component of an object
+			if (rhs instanceof CastExpression) {
+				CastExpression cast = (CastExpression) rhs;
+
+				if (cast.getExpression().getExpressionType().isIntegerType()) {
+					if (lhsType.isPointerType() && ((CIVLPointerType) lhsType)
+							.baseType().isVoidType()) {
+						if (eval.value.type().isInteger()) {
+							eval.value = int2PointerCaster
+									.forceCast(eval.value);
+						}
+					}
+				}
+			}
 			state = assign(eval.state, pid, process, statement.getLhs(),
 					eval.value, statement.isInitialization());
+		}
 		state = stateFactory.setLocation(state, pid, statement.target(), true);
 		return state;
 	}

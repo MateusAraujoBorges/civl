@@ -72,4 +72,8 @@ public class Int2PointerCaster
 			value = this.symbolicUtil.nullPointer();
 		return value;
 	}
+
+	public SymbolicExpression forceCast(SymbolicExpression intValue) {
+		return universe.apply(this.int2PointerFunc, Arrays.asList(intValue));
+	}
 }

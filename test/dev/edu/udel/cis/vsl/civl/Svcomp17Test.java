@@ -105,4 +105,10 @@ public class Svcomp17Test {
 		ui.run("verify -showTransitions ",
 				filename("lorBug.cvl"));
 	}
+	
+	@Test
+	public void callocTest(){
+		ui.run("verify -svcomp16 ",
+				filename("race-2_2-container_of_false-unreach-call.i"));
+	}
 }
