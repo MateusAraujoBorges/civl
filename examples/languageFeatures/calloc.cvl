@@ -2,12 +2,16 @@
  *		civl verify malloc.cvl
  * */
 #include <civlc.cvh>
+#include <string.h>
 #include <stdlib.h>
 
 void main() {
   double *p = calloc(5, sizeof(double));
   
-  p[4]=3.14;
-  $assert(p[4]==3.14);
+  $assert(p[0]==0.0);
+  $assert(p[1]==0.0);
+  $assert(p[2]==0.0);
+  $assert(p[3]==0.0);
+  $assert(p[4]==0.0);
   $free(p);
 }   
