@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.semantics.common;
 import java.util.Arrays;
 
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
@@ -57,8 +58,7 @@ public class Int2PointerCaster
 
 			if (castedValue != null)
 				value = castedValue;
-			else {// if (!((CIVLPointerType) castType).baseType().isVoidType())
-					// {
+			else if (!((CIVLPointerType) castType).baseType().isVoidType()) {
 				value = universe.apply(this.int2PointerFunc,
 						Arrays.asList(value));
 				// state = errorLogger.logError(arg.getSource(), state,
