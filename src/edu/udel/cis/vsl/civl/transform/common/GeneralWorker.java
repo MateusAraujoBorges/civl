@@ -182,11 +182,12 @@ public class GeneralWorker extends BaseWorker {
 				unit.isWholeProgram());
 		// newAst.prettyPrint(System.out, false);
 		//TODO: Check if there is a string.h
-		if (callocExists) {
+		if (callocExists && !this.hasHeader(newAst, STRING_HEADER)) {
 			AST stringlibHeaderAST = this.parseSystemLibrary(
 				new File(CPreprocessor.ABC_INCLUDE_PATH, STRING_HEADER),
 				EMPTY_MACRO_MAP);
 
+			
 			newAst = this.combineASTs(stringlibHeaderAST, newAst);
 		}
 		return newAst;
