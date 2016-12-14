@@ -617,8 +617,9 @@ public class SvcompUnPPWorker extends BaseWorker {
 	private boolean isStructOrUnionOfIO(TypeNode typeNode) {
 		if (typeNode instanceof StructureOrUnionTypeNode) {
 			StructureOrUnionTypeNode structOrUnion = (StructureOrUnionTypeNode) typeNode;
+			String name = structOrUnion.getName();
 
-			if (structOrUnion.getName().startsWith(IO_PREFIX))
+			if (name != null && name.startsWith(IO_PREFIX))
 				return true;
 		}
 		return false;
@@ -644,8 +645,9 @@ public class SvcompUnPPWorker extends BaseWorker {
 			}
 		} else if (item instanceof StructureOrUnionTypeNode) {
 			StructureOrUnionTypeNode structOrUnion = (StructureOrUnionTypeNode) item;
+			String name = structOrUnion.getName();
 
-			if (structOrUnion.getName().startsWith(PTHREAD_PREFIX)) {
+			if (name != null && name.startsWith(PTHREAD_PREFIX)) {
 				needsPthreadHeader = true;
 				return true;
 			}
