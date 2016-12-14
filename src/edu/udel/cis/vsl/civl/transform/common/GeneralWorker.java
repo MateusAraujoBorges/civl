@@ -20,6 +20,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.DeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ArrayLambdaNode;
@@ -32,7 +33,10 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.AtomicNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopInitializerNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.WithNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
@@ -71,10 +75,12 @@ public class GeneralWorker extends BaseWorker {
 
 	private final static String MALLOC = "malloc";
 	private final static String CALLOC = "calloc";
+	private final static String MEMSET = "memset";
 	final static String GENERAL_ROOT = ModelConfiguration.GENERAL_ROOT;
 	private final static String separator = "$";
 	private static final String SCOPE_TYPE = "$scope";
 	private static final String CIVL_MALLOC = "$malloc";
+	private static final String CIVL_SET_DEFAULT = "$set_default";
 	private int static_var_count = 0;
 	private String CIVL_argc_name;
 	private String CIVL_argv_name;
@@ -124,7 +130,7 @@ public class GeneralWorker extends BaseWorker {
 		unit.release();
 		this.getCIVLMallocDeclaration(root);
 		root = moveStaticVariables(root);
-		processMalloc(root);
+		processMalloc(root, null);
 		// transformWith(root);
 		// remove main prototypes...
 		for (DeclarationNode decl : mainFunction.getDeclarations()) {
@@ -482,9 +488,9 @@ public class GeneralWorker extends BaseWorker {
 				nodeFactory.newHereNode(mainSource));
 	}
 
-	private void processMalloc(ASTNode node) {
-		if (node instanceof FunctionCallNode) {
-			FunctionCallNode funcCall = (FunctionCallNode) node;
+	private void processMalloc(ASTNode rhsMallocNode, ASTNode lhsNode) {
+		if (rhsMallocNode instanceof FunctionCallNode) {
+			FunctionCallNode funcCall = (FunctionCallNode) rhsMallocNode;
 
 			if (funcCall.getFunction()
 					.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
@@ -544,8 +550,8 @@ public class GeneralWorker extends BaseWorker {
 					numElement.parent().removeChild(numElement.childIndex());
 					typeElement.parent().removeChild(typeElement.childIndex());
 					memSize = nodeFactory.newOperatorNode(
-							numElement.getSource(), Operator.TIMES, numElement,
-							typeElement);
+							numElement.getSource(), Operator.TIMES,
+							numElement.copy(), typeElement);
 					funcCall.setArguments(nodeFactory.newSequenceNode(
 							numElement.getSource(), "Actual Parameters",
 							Arrays.asList(myRootScope, memSize)));
@@ -576,12 +582,71 @@ public class GeneralWorker extends BaseWorker {
 							variable.setInitializer(castNode);
 						}
 					}
+
+					// TODO: Add 0-initialize loop by using memset
+					Source memsetSource = functionExpression.getSource();
+					IdentifierNode memsetIdNode = nodeFactory
+							.newIdentifierNode(memsetSource, MEMSET);
+					IdentifierExpressionNode memsetIDExprNode = nodeFactory
+							.newIdentifierExpressionNode(memsetSource,
+									memsetIdNode);
+					ExpressionNode memsetFuncCallArg0ExprNode = null;
+					ExpressionNode memsetFuncCallArg1ExprNode = null;
+					ExpressionNode memsetFuncCallArg2ExprNode = nodeFactory
+							.newOperatorNode(memsetSource, Operator.TIMES,
+									numElement.copy(), typeElement.copy());
+
+					try {
+						memsetFuncCallArg1ExprNode = nodeFactory
+								.newIntegerConstantNode(memsetSource, "0");
+					} catch (SyntaxException e) {
+						e.printStackTrace();
+					}
+					if (lhsNode instanceof ExpressionNode) {
+						memsetFuncCallArg0ExprNode = (ExpressionNode) lhsNode
+								.copy();
+					} else if (lhsNode instanceof IdentifierNode) {
+						memsetFuncCallArg0ExprNode = nodeFactory
+								.newIdentifierExpressionNode(
+										lhsNode.getSource(),
+										(IdentifierNode) lhsNode.copy());
+					}
+
+					FunctionCallNode memsetCallNode = nodeFactory
+							.newFunctionCallNode(memsetSource, memsetIDExprNode,
+									Arrays.asList(memsetFuncCallArg0ExprNode,
+											memsetFuncCallArg1ExprNode,
+											memsetFuncCallArg2ExprNode),
+									null);
+					ExpressionStatementNode memsetFuncCallNode = nodeFactory
+							.newExpressionStatementNode(memsetCallNode);
+					ASTNode statementsNode = lhsNode;
+					ASTNode tempNode = memsetFuncCallNode;
+					int callocStatementNodeIndex = 0;
+					int bound = -1;
+
+					while (statementsNode.parent() != null) {
+						if (statementsNode instanceof CompoundStatementNode) {
+							bound = statementsNode.numChildren();
+							for (int i = callocStatementNodeIndex+1; i <= bound; i++)
+								tempNode = statementsNode.setChild(i, tempNode);
+							break;
+						}
+						callocStatementNodeIndex = statementsNode.childIndex();
+						statementsNode = statementsNode.parent();
+					}
 				}
 			}
 		} else {
-			for (ASTNode child : node.children()) {
+			ASTNode tempLhsNode = null;
+
+			for (int i = 0; i < rhsMallocNode.numChildren(); i++) {
+				ASTNode child = rhsMallocNode.child(i);
+
+				if (tempLhsNode == null)
+					tempLhsNode = child;
 				if (child != null)
-					processMalloc(child);
+					processMalloc(child, tempLhsNode);
 			}
 		}
 
