@@ -329,6 +329,8 @@ public class CommonEvaluator implements Evaluator {
 
 	private FunctionCallExecutor functionCallExecutor;
 
+	private SymbolicExpression offsetFunction;
+
 	/* ***************************** Constructors ************************** */
 
 	/**
@@ -382,6 +384,13 @@ public class CommonEvaluator implements Evaluator {
 						new Singleton<SymbolicType>(universe.realType()),
 						universe.realType()));
 		bigOFunction = universe.canonic(bigOFunction);
+		offsetFunction = universe.symbolicConstant(
+				universe.stringObject("OFFSET"),
+				universe.functionType(
+						Arrays.asList(symbolicUtil.dynamicType(),
+								universe.integerType()),
+						universe.integerType()));
+		offsetFunction = universe.canonic(offsetFunction);
 		charType = universe.characterType();
 		nullCharExpr = universe.canonic(universe.character('\u0000'));
 		this.shiftLeftFunc = universe.symbolicConstant(
@@ -639,7 +648,16 @@ public class CommonEvaluator implements Evaluator {
 	protected Evaluation evaluateAddressOf(State state, int pid,
 			AddressOfExpression expression)
 			throws UnsatisfiablePathConditionException {
-		return reference(state, pid, expression.operand());
+		if (expression.isFieldOffset()) {
+			CIVLType structType = expression.getTypeForOffset();
+			SymbolicExpression typeValue = this.symbolicUtil.expressionOfType(
+					structType, structType.getDynamicType(universe));
+			SymbolicExpression value = universe.apply(offsetFunction,
+					Arrays.asList(typeValue,
+							universe.integer(expression.getFieldIndex())));
+			return new Evaluation(state, value);
+		} else
+			return reference(state, pid, expression.operand());
 	}
 
 	/**
@@ -1020,7 +1038,8 @@ public class CommonEvaluator implements Evaluator {
 			CIVLType argBaseType = ((CIVLPointerType) argType).baseType(),
 					castBaseType = ((CIVLPointerType) castType).baseType();
 
-			if (!castBaseType.isVoidType() && !argBaseType.isVoidType()
+			if (!castBaseType.isCharType() && !argBaseType.isCharType()
+					&& !castBaseType.isVoidType() && !argBaseType.isVoidType()
 					&& !argBaseType.equals(castBaseType)) {
 				// eval.value.type()
 				throw new CIVLUnimplementedFeatureException(
@@ -3711,6 +3730,58 @@ public class CommonEvaluator implements Evaluator {
 			BinaryExpression expression, SymbolicExpression pointer,
 			NumericExpression offset)
 			throws UnsatisfiablePathConditionException {
+		if (offset.numArguments() == 2
+				&& offset.argument(1) instanceof SymbolicExpression) {
+			if (offset.operator() == SymbolicOperator.MULTIPLY) {
+				SymbolicExpression offsetValue = (SymbolicExpression) offset
+						.argument(1);
+
+				if (offsetValue.argument(0).equals(this.offsetFunction)) {
+					// -1 * OFFSET(..., ...)
+					SymbolicExpression arg0 = (SymbolicExpression) offset
+							.argument(0);
+
+					if (universe.equals(arg0, universe.integer(-1)).isTrue()) {
+						@SuppressWarnings("unchecked")
+						SymbolicSequence<? extends SymbolicExpression> sequence = (SymbolicSequence<? extends SymbolicExpression>) offsetValue
+								.argument(1);
+						SymbolicExpression dynamicType = sequence.get(0);
+						NumericExpression fieldIndex = (NumericExpression) sequence
+								.get(1);
+						ReferenceExpression reference = this.symbolicUtil
+								.getSymRef(pointer);
+
+						if (reference.isTupleComponentReference()) {
+							int pointerFieldIndex = ((TupleComponentReference) reference)
+									.getIndex().getInt();
+
+							if (pointerFieldIndex == this.symbolicUtil
+									.extractInt(null, fieldIndex)) {
+								CIVLType type = symbolicUtil
+										.getStaticTypeOfDynamicType(
+												dynamicType);
+								SymbolicType expectedType = state
+										.getVariableValue(
+												symbolicUtil.getDyscopeId(null,
+														pointer),
+												symbolicUtil.getVariableId(null,
+														pointer))
+										.type();
+
+								if (type.getDynamicType(
+										universe) == expectedType) {
+									return new Evaluation(state,
+											symbolicUtil.setSymRef(pointer,
+													identityReference));
+								}
+							}
+						}
+					}
+				}
+			}
+
+		}
+
 		Pair<BooleanExpression, ResultType> checkPointer = this.symbolicAnalyzer
 				.isDefinedPointer(state, pointer);
 

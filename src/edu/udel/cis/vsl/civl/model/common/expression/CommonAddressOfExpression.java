@@ -11,10 +11,12 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
-public class CommonAddressOfExpression extends CommonExpression implements
-		AddressOfExpression {
+public class CommonAddressOfExpression extends CommonExpression
+		implements
+			AddressOfExpression {
 
 	/* ************************** Private Fields *************************** */
 
@@ -22,6 +24,16 @@ public class CommonAddressOfExpression extends CommonExpression implements
 	 * The operand of the address-off operator (<code> & </code>).
 	 */
 	private LHSExpression operand;
+
+	/**
+	 * Is this expression evaluating the offset of a field of some struct, which
+	 * has the form <code>&(((T*)0)->f)</code>?
+	 */
+	private boolean isOffset = false;
+
+	private CIVLType type4Offset = null;
+
+	private int fieldIndex = -1;
 
 	/* **************************** Constructor **************************** */
 
@@ -144,5 +156,35 @@ public class CommonAddressOfExpression extends CommonExpression implements
 	public void setErrorFree(boolean value) {
 		super.setErrorFree(value);
 		this.operand.setErrorFree(value);
+	}
+
+	@Override
+	public boolean isFieldOffset() {
+		return this.isOffset;
+	}
+
+	@Override
+	public void setFieldOffset(boolean value) {
+		this.isOffset = value;
+	}
+
+	@Override
+	public void setTypeForOffset(CIVLType type) {
+		this.type4Offset = type;
+	}
+
+	@Override
+	public void setFieldIndex(int index) {
+		this.fieldIndex = index;
+	}
+
+	@Override
+	public CIVLType getTypeForOffset() {
+		return this.type4Offset;
+	}
+
+	@Override
+	public int getFieldIndex() {
+		return this.fieldIndex;
 	}
 }

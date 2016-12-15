@@ -61,6 +61,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.HereOrRootExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.InitialValueExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
@@ -448,8 +449,35 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public AddressOfExpression addressOfExpression(CIVLSource source,
 			LHSExpression operand) {
-		return new CommonAddressOfExpression(source,
+		AddressOfExpression result = new CommonAddressOfExpression(source,
 				typeFactory.pointerType(operand.getExpressionType()), operand);
+
+		if (operand.lhsExpressionKind() == LHSExpressionKind.DOT) {
+			DotExpression dotExpr = (DotExpression) operand;
+			Expression structExpr = dotExpr.structOrUnion();
+
+			if (structExpr instanceof DereferenceExpression) {
+				DereferenceExpression derefExpr = (DereferenceExpression) structExpr;
+				Expression pointerExpr = derefExpr.pointer();
+
+				if (pointerExpr instanceof CastExpression) {
+					CastExpression castExpr = (CastExpression) pointerExpr;
+					Expression expr = castExpr.getExpression();
+					CIVLType castType = castExpr.getCastType();
+
+					if ((expr instanceof IntegerLiteralExpression)
+							&& ((IntegerLiteralExpression) expr).value()
+									.intValue() == 0
+							&& castType.isPointerType()) {
+						result.setFieldOffset(true);
+						result.setFieldIndex(dotExpr.fieldIndex());
+						result.setTypeForOffset(
+								((CIVLPointerType) castType).baseType());
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 	/**
