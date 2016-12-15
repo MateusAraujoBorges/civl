@@ -73,7 +73,7 @@ public class Int2PointerCaster
 		return value;
 	}
 
-	public SymbolicExpression forceCast(SymbolicExpression intValue) {
+	SymbolicExpression forceCast(SymbolicExpression intValue) {
 		return universe.apply(this.int2PointerFunc, Arrays.asList(intValue));
 	}
 }

@@ -439,6 +439,13 @@ public class LibstringExecutor extends BaseLibraryExecutor
 					dataTypeSize = one;
 				break;
 			default :
+				if (objectElementType == this.modelFactory.typeFactory()
+						.pointerSymbolicType()) {
+					zeroVar = this.symbolicUtil.nullPointer();
+					if (byteIsUnit)
+						dataTypeSize = one;
+					break;
+				}
 				throw new CIVLUnimplementedFeatureException(
 						"Any datatype other than REAL, INTEGER, CHAR and BOOLEAN is not supported yet");
 		}

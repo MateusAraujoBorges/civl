@@ -30,7 +30,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
-import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
@@ -153,7 +152,7 @@ public class CommonExecutor implements Executor {
 
 	private List<CodeAnalyzer> analyzers;
 
-	private Int2PointerCaster int2PointerCaster;
+	//private Int2PointerCaster int2PointerCaster;
 
 	/* ***************************** Constructors ************************** */
 
@@ -187,9 +186,12 @@ public class CommonExecutor implements Executor {
 		this.modelFactory = modelFactory;
 		this.typeFactory = modelFactory.typeFactory();
 		this.evaluator = evaluator;
+		this.symbolicUtil = evaluator.symbolicUtility();
+		// this.int2PointerCaster = new Int2PointerCaster(universe,
+		// symbolicUtil,
+		// modelFactory.typeFactory().pointerSymbolicType());
 		this.symbolicAnalyzer = symbolicAnalyzer;
 		this.loader = loader;
-		this.symbolicUtil = evaluator.symbolicUtility();
 		this.errorLogger = errorLogger;
 		this.zeroObj = (IntObject) universe.canonic(universe.intObject(0));
 		this.oneObj = (IntObject) universe.canonic(universe.intObject(1));
@@ -232,24 +234,20 @@ public class CommonExecutor implements Executor {
 				state = stateFactory.leaveAtomic(state, pid);
 			}
 		} else {
-			CIVLType lhsType = statement.getLhs().getExpressionType();
-			Expression rhs = statement.rhs();
-
-			// The int2pointer remains as no-op for int-to-pointer-to-void conversion
-			// this is to revert it when it is used to assign to a component of an object
-			if (rhs instanceof CastExpression) {
-				CastExpression cast = (CastExpression) rhs;
-
-				if (cast.getExpression().getExpressionType().isIntegerType()) {
-					if (lhsType.isPointerType() && ((CIVLPointerType) lhsType)
-							.baseType().isVoidType()) {
-						if (eval.value.type().isInteger()) {
-							eval.value = int2PointerCaster
-									.forceCast(eval.value);
-						}
-					}
-				}
-			}
+			/*
+			 * CIVLType lhsType = statement.getLhs().getExpressionType();
+			 * Expression rhs = statement.rhs();
+			 * 
+			 * // The int2pointer remains as no-op for int-to-pointer-to-void
+			 * conversion // this is to revert it when it is used to assign to a
+			 * component of an object if (rhs instanceof CastExpression) {
+			 * CastExpression cast = (CastExpression) rhs;
+			 * 
+			 * if (cast.getExpression().getExpressionType().isIntegerType()) {
+			 * if (lhsType.isPointerType() && ((CIVLPointerType) lhsType)
+			 * .baseType().isVoidType()) { if (eval.value.type().isInteger()) {
+			 * eval.value = int2PointerCaster .forceCast(eval.value); } } } }
+			 */
 			state = assign(eval.state, pid, process, statement.getLhs(),
 					eval.value, statement.isInitialization());
 		}
@@ -1359,6 +1357,32 @@ public class CommonExecutor implements Executor {
 				result = stateFactory.setVariable(state, vid, sid,
 						newVariableValue);
 			} catch (SARLException e) {
+				/*String message = e.getMessage();
+
+				if (civlConfig.svcomp()) {
+					if (message
+							.startsWith("Argument value "
+									+ "to method arrayWrite has incompatible type")
+							&& message.contains("type: int")
+							&& message.contains("Expected: pointer")) {
+						value = this.int2PointerCaster.forceCast(value);
+						try {
+							SymbolicExpression newVariableValue = universe
+									.assign(oldVariableValue, symRef, value);
+
+							result = stateFactory.setVariable(state, vid, sid,
+									newVariableValue);
+							
+						} catch (SARLException e1) {
+							errorLogger.logSimpleError(source, state, process,
+									symbolicAnalyzer.stateInformation(state),
+									ErrorKind.DEREFERENCE,
+									"Invalid assignment: " + e.getMessage());
+							throw new UnsatisfiablePathConditionException();
+						}
+						return result;
+					}
+				}*/
 				errorLogger.logSimpleError(source, state, process,
 						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.DEREFERENCE,
