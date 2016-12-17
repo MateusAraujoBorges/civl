@@ -102,7 +102,7 @@ public class Svcomp17Test {
 
 	@Test
 	public void lorBug() {
-		ui.run("verify -showTransitions ", filename("lorBug.cvl"));
+		ui.run("verify -showTransitions=false ", filename("lorBug.cvl"));
 	}
 
 	@Test
@@ -113,7 +113,12 @@ public class Svcomp17Test {
 
 	@Test
 	public void bitwise_op() {
-		ui.run("verify -svcomp16 ", filename(
+		ui.run("show -svcomp16 -showProgram", filename(
 				"char_generic_nvram_nvram_llseek_nvram_unlocked_ioctl_true-unreach-call.i"));
+	}
+
+	@Test
+	public void unnamed_field() {
+		ui.run("verify -showProgram", filename("unnamedField.c"));
 	}
 }
