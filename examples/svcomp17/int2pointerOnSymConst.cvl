@@ -1,0 +1,15 @@
+int foo(void *p) {
+  void * q[5];
+
+  q[0] = p;  // where bug happens
+  
+ return  (int*)q[0] - (int*)p; // ignore this, just for not pruning
+
+}
+
+int main() {
+  int a;
+  
+  $havoc(&a);
+  return  foo((void*)a);
+}
