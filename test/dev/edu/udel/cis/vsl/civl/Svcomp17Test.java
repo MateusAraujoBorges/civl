@@ -71,19 +71,19 @@ public class Svcomp17Test {
 				ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
 						filename("unique_loop.c")));
 	}
-	
+
 	@Test
 	public void memtrack() {
-				ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
-						filename("20051113-1.c_false-valid-memtrack.c"));
+		ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
+				filename("20051113-1.c_false-valid-memtrack.c"));
 	}
-	
+
 	@Test
 	public void gcd() {
-				ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
-						filename("gcd_1_true-unreach-call.i"));
+		ui.run("verify -svcomp16 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
+				filename("gcd_1_true-unreach-call.i"));
 	}
-	
+
 	@Test
 	public void uchar() {
 		ui.run("verify ", filename("uchar.c"));
@@ -99,16 +99,21 @@ public class Svcomp17Test {
 		ui.run("verify -showTransitions -svcomp16",
 				filename("assume_with_disjuncts.c"));
 	}
-	
+
 	@Test
 	public void lorBug() {
-		ui.run("verify -showTransitions ",
-				filename("lorBug.cvl"));
+		ui.run("verify -showTransitions ", filename("lorBug.cvl"));
 	}
-	
+
 	@Test
-	public void callocTest(){
+	public void callocTest() {
 		ui.run("verify -svcomp16 ",
 				filename("race-2_2-container_of_false-unreach-call.i"));
+	}
+
+	@Test
+	public void bitwise_op() {
+		ui.run("verify -svcomp16 ", filename(
+				"char_generic_nvram_nvram_llseek_nvram_unlocked_ioctl_true-unreach-call.i"));
 	}
 }
