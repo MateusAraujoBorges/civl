@@ -2349,7 +2349,8 @@ public class CommonEvaluator implements Evaluator {
 		eval = evaluate(eval.state, pid, expression.right());
 		right = eval.value;
 		state = eval.state;
-		result = universe.apply(this.shiftLeftFunc, Arrays.asList(left, right));
+		result = universe.bitshiftLeft((NumericExpression) left,
+				(NumericExpression) right);
 		return new Evaluation(state, result);
 	}
 
@@ -2362,8 +2363,8 @@ public class CommonEvaluator implements Evaluator {
 		eval = evaluate(eval.state, pid, expression.right());
 		right = eval.value;
 		state = eval.state;
-		result = universe.apply(this.shiftRightFunc,
-				Arrays.asList(left, right));
+		result = universe.bitshiftRight((NumericExpression) left,
+				(NumericExpression) right);
 		return new Evaluation(state, result);
 	}
 
