@@ -74,6 +74,8 @@ public class Pthread2CIVLWorker extends BaseWorker {
 
 	final static String PTHREAD_POOL_CREATE = "$pthread_pool_create";
 
+	final static String PTHREAD_POOL_CREATE_MAIN = "$pthread_pool_create_main";
+
 	final static String PTHREAD_GPOOL = "$pthread_gpool";
 
 	private final static String PTHREAD_POOL = "_pthread_pool";
@@ -149,11 +151,14 @@ public class Pthread2CIVLWorker extends BaseWorker {
 	/* *************************** Private Methods ************************* */
 
 	private VariableDeclarationNode pthread_pool_declaration(
-			boolean wtInitializer) {
+			boolean wtInitializer, boolean isMain) {
 		TypeNode pthreadPoolType;
 		List<ExpressionNode> pthreadPoolCreateArgs;
 		ExpressionNode pthreadPoolCreate;
+		String pthread_pool_create_function = PTHREAD_POOL_CREATE;
 
+		if (isMain)
+			pthread_pool_create_function = PTHREAD_POOL_CREATE_MAIN;
 		pthreadPoolType = nodeFactory
 				.newTypedefNameNode(nodeFactory.newIdentifierNode(
 						this.newSource("$phtread_pool_t type",
@@ -164,9 +169,10 @@ public class Pthread2CIVLWorker extends BaseWorker {
 			pthreadPoolCreateArgs.add(this.hereNode());
 			pthreadPoolCreateArgs.add(this.identifierExpression(PTHREAD_GPOOL));
 			pthreadPoolCreate = nodeFactory.newFunctionCallNode(
-					this.newSource("function call " + PTHREAD_POOL_CREATE,
+					this.newSource(
+							"function call " + pthread_pool_create_function,
 							CivlcTokenConstant.CALL),
-					this.identifierExpression(PTHREAD_POOL_CREATE),
+					this.identifierExpression(pthread_pool_create_function),
 					pthreadPoolCreateArgs, null);
 			return this.variableDeclaration(PTHREAD_POOL, pthreadPoolType,
 					pthreadPoolCreate);
@@ -282,7 +288,7 @@ public class Pthread2CIVLWorker extends BaseWorker {
 				FunctionDeclarationNode functionDecl = (FunctionDeclarationNode) declaration;
 				TypeNode type = functionDecl.getTypeNode();
 				VariableDeclarationNode pthread_pool_param = this
-						.pthread_pool_declaration(false);
+						.pthread_pool_declaration(false, false);
 				FunctionTypeNode funcType;
 
 				if (type.typeNodeKind() == TypeNodeKind.TYPEDEF_NAME) {
@@ -376,7 +382,7 @@ public class Pthread2CIVLWorker extends BaseWorker {
 			FunctionDefinitionNode funcDef) {
 		FunctionTypeNode funcType = funcDef.getTypeNode();
 		VariableDeclarationNode pthread_pool_param = this
-				.pthread_pool_declaration(false);
+				.pthread_pool_declaration(false, false);
 
 		funcType.getParameters().addSequenceChild(pthread_pool_param);
 		// if (!this.funcList.contains(funcDef.getName()))
@@ -474,7 +480,8 @@ public class Pthread2CIVLWorker extends BaseWorker {
 			CompoundStatementNode body = node.getBody();
 			List<BlockItemNode> newBodyNodes = new LinkedList<>();
 			VariableDeclarationNode pthreadPoolVar = this
-					.pthread_pool_declaration(true);
+					.pthread_pool_declaration(true,
+							name.equals(this.originalMain));
 
 			body.remove();
 			newBodyNodes.add(pthreadPoolVar);

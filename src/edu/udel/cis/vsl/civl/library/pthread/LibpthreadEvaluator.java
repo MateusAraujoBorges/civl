@@ -15,8 +15,9 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
-public class LibpthreadEvaluator extends BaseLibraryEvaluator implements
-		LibraryEvaluator {
+public class LibpthreadEvaluator extends BaseLibraryEvaluator
+		implements
+			LibraryEvaluator {
 
 	public LibpthreadEvaluator(String name, Evaluator evaluator,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -40,11 +41,12 @@ public class LibpthreadEvaluator extends BaseLibraryEvaluator implements
 			argumentValues[i] = eval.value;
 		}
 		switch (function) {
-		case "$pthread_gpool_join":
-			return evaluateGuard_pthread_gpool_join(source, state, pid,
-					function, arguments, argumentValues);
-		default:
-			return super.evaluateGuard(source, state, pid, function, arguments);
+			case "$pthread_gpool_join" :
+				return evaluateGuard_pthread_gpool_join(source, state, pid,
+						function, arguments, argumentValues);
+			default :
+				return super.evaluateGuard(source, state, pid, function,
+						arguments);
 		}
 	}
 
@@ -73,7 +75,7 @@ public class LibpthreadEvaluator extends BaseLibraryEvaluator implements
 
 			pidValue = universe.tupleRead(threadObj, this.zeroObject);
 			pidInt = modelFactory.getProcessId(source, pidValue);
-			if (!modelFactory.isProcessIdNull(pidInt)
+			if (pidInt != pid && !modelFactory.isProcessIdNull(pidInt)
 					&& modelFactory.isPocessIdDefined(pidInt))
 				if (!state.getProcessState(pidInt).hasEmptyStack())
 					return new Evaluation(state, this.falseValue);

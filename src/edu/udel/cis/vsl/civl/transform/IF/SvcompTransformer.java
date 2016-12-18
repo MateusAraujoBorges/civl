@@ -15,6 +15,10 @@ import edu.udel.cis.vsl.civl.transform.common.SvcompWorker;
  */
 public class SvcompTransformer extends BaseTransformer {
 
+	public static final int UNPP_SCALE = 3;
+	public static final int UNSIGNED_BOUND = 4;
+	public static final int INT_BOUND = 5;
+
 	/**
 	 * The code (short name) of this transformer.
 	 */

@@ -14,6 +14,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.AtomicNode;
@@ -212,6 +213,14 @@ public class SvcompWorker extends BaseWorker {
 									operatorNode, unsignedBound);
 						}
 					}
+				} else if (node instanceof IntegerConstantNode) {
+					IntegerConstantNode integerNode = (IntegerConstantNode) node;
+					int intValue = integerNode.getConstantValue()
+							.getIntegerValue().intValue();
+
+					intValue = intValue % SvcompTransformer.UNSIGNED_BOUND;
+					newExpressionNode = this.nodeFactory
+							.newIntegerConstantNode(source, intValue + "U");
 				} else if (!(node instanceof IdentifierExpressionNode)) {
 					node.remove();
 					newExpressionNode = this.moduloExpression(source,

@@ -63,6 +63,7 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.model.common.location.CommonLocation;
 import edu.udel.cis.vsl.civl.model.common.type.CommonType;
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
+import edu.udel.cis.vsl.civl.transform.IF.SvcompTransformer;
 //import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.GMCSection;
@@ -351,9 +352,11 @@ public class ModelBuilderWorker {
 			if (inputInitMap == null)
 				inputInitMap = new HashMap<>();
 			inputInitMap.put(GeneralTransformer.PREFIX + "argc", 1);
-			inputInitMap.put("_svcomp_unpp_scale", 3);
-			inputInitMap.put("_svcomp_unsigned_bound", 4);
-			inputInitMap.put("_svcomp_int_bound", 5);
+			inputInitMap.put("_svcomp_unpp_scale",
+					SvcompTransformer.UNPP_SCALE);
+			inputInitMap.put("_svcomp_unsigned_bound",
+					SvcompTransformer.UNSIGNED_BOUND);
+			inputInitMap.put("_svcomp_int_bound", SvcompTransformer.INT_BOUND);
 		}
 		this.factory = factory;
 		this.program = program;

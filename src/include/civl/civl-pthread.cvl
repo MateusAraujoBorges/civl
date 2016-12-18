@@ -1,6 +1,7 @@
 #ifndef __CIVL_CIVLPTHREAD__
 #define __CIVL_CIVLPTHREAD__
 
+#include <pthread.h>
 #include <civl-pthread.cvh>
 #include <civlc.cvh>
 #include <seq.cvh>
@@ -17,6 +18,25 @@ struct _pthread_t{
   const pthread_attr_t attr;
   _Bool terminated;
   void** exitValue;
+};
+
+/* pthread_attr_t struct definition
+  Description: This struct corresponds to the pthread_attr_t which is the attribute of a pthread_t. It's fields
+  define the way the pthread_t is able to interact (join/detach), (memory capacity), (scope) etc.
+  
+  Fields:
+  int detachstate: Defines a threads ability to join with two values: PTHREAD_CREATE_DETACHED and PTHREAD_CREATE_JOINABLE
+  int inheritsched: The inheritance scheduling policy of the thread
+  int contentionscope: Defines the contention scope of the thread
+  int schedpolicy: Determines the scheduling policy of the thread
+  
+*/
+struct _pthread_attr_t{
+  int detachstate;
+  int inheritsched;
+  int contentionscope;
+  int schedpolicy;
+  //sched_param param;
 };
 
 struct _pthread_gpool_t{
@@ -38,6 +58,20 @@ $atomic_f $pthread_gpool_t $pthread_gpool_create($scope scope){
 
 $atomic_f void $pthread_gpool_destroy($pthread_gpool_t gpool){
   $free(gpool);
+}
+
+$atomic_f $pthread_pool_t $pthread_pool_create_main($scope scope, $pthread_gpool_t gpool){
+  pthread_t thread;
+  
+  thread.thr = $self;
+  thread.attr.detachstate = PTHREAD_CREATE_JOINABLE;
+  thread.attr.inheritsched = 0;
+  thread.attr.contentionscope = 0;
+  thread.attr.schedpolicy = 0;
+  thread.terminated = $false;
+  thread.exitValue = NULL;
+  $pthread_gpool_add(gpool, &thread);
+  return $pthread_pool_create(scope, gpool);
 }
 
 $atomic_f $pthread_pool_t $pthread_pool_create($scope scope, $pthread_gpool_t gpool){

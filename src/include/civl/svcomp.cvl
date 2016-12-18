@@ -108,5 +108,14 @@ void __VERIFIER_atomic_end(){
   return;
 }
 
+int printk(const char * fmt, ...){
+  return 0;
+}
+
+/*
+int access_ok(int type, const void *addr, unsigned long size){
+  $access_ok(addr, size);
+}*/
+
 #endif
 

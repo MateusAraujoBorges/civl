@@ -29,8 +29,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
-public class LibpthreadExecutor extends BaseLibraryExecutor implements
-		LibraryExecutor {
+public class LibpthreadExecutor extends BaseLibraryExecutor
+		implements
+			LibraryExecutor {
 
 	private CIVLType gpoolType;
 	private SymbolicTupleType gpoolSymbolicType;
@@ -75,66 +76,67 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$pthread_gpool_thread":
-			callEval = execute_pthread_gpool_thread(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$pthread_gpool_size":
-			callEval = execute_pthread_gpool_size(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$pthread_gpool_create":
-			callEval = execute_pthread_gpool_create(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$pthread_pool_create":
-			callEval = execute_pthread_pool_create(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$pthread_gpool_add":
-			callEval = execute_pthread_gpool_add(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$pthread_gpool_join":
-			callEval = execute_pthread_gpool_join(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		// case "$pthread_pool_exit":
-		// state = execute_pthread_pool_exit(state, pid, process, arguments,
-		// argumentValues, source);
-		// break;
-		case "$pthread_pool_get_terminated":
-			callEval = execute_pthread_pool_get_terminated(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$pthread_pool_get_id":
-			callEval = this.execute_pthread_pool_get_id(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "_add_thread":
-			callEval = execute_add_thread(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$pthread_pool_terminates":
-			callEval = execute_pthread_pool_terminates(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$pthread_pool_is_terminated":
-			callEval = execute_pthread_pool_is_terminated(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$pthread_pool_thread":
-			callEval = execute_pthread_pool_thread(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$pthread_exit":
-			callEval = execute_pthread_exit(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"execution of function " + functionName
-							+ " in pthread library", source);
+			case "$pthread_gpool_thread" :
+				callEval = execute_pthread_gpool_thread(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$pthread_gpool_size" :
+				callEval = execute_pthread_gpool_size(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$pthread_gpool_create" :
+				callEval = execute_pthread_gpool_create(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$pthread_pool_create" :
+				callEval = execute_pthread_pool_create(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$pthread_gpool_add" :
+				callEval = execute_pthread_gpool_add(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$pthread_gpool_join" :
+				callEval = execute_pthread_gpool_join(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			// case "$pthread_pool_exit":
+			// state = execute_pthread_pool_exit(state, pid, process, arguments,
+			// argumentValues, source);
+			// break;
+			case "$pthread_pool_get_terminated" :
+				callEval = execute_pthread_pool_get_terminated(state, pid,
+						process, arguments, argumentValues, source);
+				break;
+			case "$pthread_pool_get_id" :
+				callEval = this.execute_pthread_pool_get_id(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "_add_thread" :
+				callEval = execute_add_thread(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$pthread_pool_terminates" :
+				callEval = execute_pthread_pool_terminates(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$pthread_pool_is_terminated" :
+				callEval = execute_pthread_pool_is_terminated(state, pid,
+						process, arguments, argumentValues, source);
+				break;
+			case "$pthread_pool_thread" :
+				callEval = execute_pthread_pool_thread(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$pthread_exit" :
+				callEval = execute_pthread_exit(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"execution of function " + functionName
+								+ " in pthread library",
+						source);
 		}
 		return callEval;
 	}
@@ -199,7 +201,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 
 			pidValue = universe.tupleRead(threadObj, this.zeroObject);
 			pidInt = modelFactory.getProcessId(source, pidValue);
-			if (!modelFactory.isProcessIdNull(pidInt)
+			if (pidInt != pid && !modelFactory.isProcessIdNull(pidInt)
 					&& modelFactory.isPocessIdDefined(pidInt))
 				state = stateFactory.removeProcess(state, pidInt);
 		}
@@ -297,9 +299,10 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 				gpool, false);
 		gpoolObject = eval.value;
 		state = eval.state;
-		threadPointer = universe.arrayRead(
-				universe.tupleRead(gpoolObject, zeroObject), index);
-		if (symbolicAnalyzer.isDerefablePointer(state, threadPointer).right != ResultType.YES)
+		threadPointer = universe
+				.arrayRead(universe.tupleRead(gpoolObject, zeroObject), index);
+		if (symbolicAnalyzer.isDerefablePointer(state,
+				threadPointer).right != ResultType.YES)
 			result = modelFactory.nullProcessValue();
 		else {
 			eval = this.evaluator.dereference(source, state, process, null,
@@ -332,13 +335,14 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression gpoolObject, result;
 		Evaluation eval;
 
-		if (symbolicAnalyzer.isDerefablePointer(state, gpool).right == ResultType.YES) {
+		if (symbolicAnalyzer.isDerefablePointer(state,
+				gpool).right == ResultType.YES) {
 			eval = this.evaluator.dereference(source, state, process,
 					arguments[0], gpool, false);
 			gpoolObject = eval.value;
 			state = eval.state;
-			result = universe.length(universe
-					.tupleRead(gpoolObject, zeroObject));
+			result = universe
+					.length(universe.tupleRead(gpoolObject, zeroObject));
 		} else
 			result = zero;
 		return new Evaluation(state, result);
@@ -371,7 +375,8 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 		poolObj = eval.value;
 		state = eval.state;
 		threadPointer = universe.tupleRead(poolObj, this.twoObject);
-		if (this.symbolicAnalyzer.isDerefablePointer(state, threadPointer).right == ResultType.YES) {
+		if (this.symbolicAnalyzer.isDerefablePointer(state,
+				threadPointer).right == ResultType.YES) {
 			threadTermPointer = this.symbolicUtil.makePointer(threadPointer,
 					universe.tupleComponentReference(
 							symbolicUtil.getSymRef(threadPointer),
@@ -380,7 +385,8 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 					threadTermPointer, trueValue);
 			if (!argumentValues[1].type().isInteger()) {
 				threadExitValuePointer = this.symbolicUtil.makePointer(
-						threadPointer, universe.tupleComponentReference(
+						threadPointer,
+						universe.tupleComponentReference(
 								symbolicUtil.getSymRef(threadPointer),
 								this.threeObject));
 				state = this.primaryExecutor.assign(source, state, process,
@@ -394,29 +400,30 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression threadPointer = universe.tupleRead(
-				argumentValues[0], this.twoObject);
+		SymbolicExpression threadPointer = universe.tupleRead(argumentValues[0],
+				this.twoObject);
 		Evaluation eval = this.evaluator.dereference(source, state, process,
 				null, threadPointer, false);
 		SymbolicExpression thread = eval.value;
 
 		state = eval.state;
-		return new Evaluation(state, universe.tupleRead(thread, this.twoObject));
+		return new Evaluation(state,
+				universe.tupleRead(thread, this.twoObject));
 	}
 
-	private Evaluation execute_pthread_pool_get_terminated(State state,
-			int pid, String process, Expression[] arguments,
+	private Evaluation execute_pthread_pool_get_terminated(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression threadPointer = universe.tupleRead(
-				argumentValues[0], this.twoObject);
+		SymbolicExpression threadPointer = universe.tupleRead(argumentValues[0],
+				this.twoObject);
 		Evaluation eval = this.evaluator.dereference(source, state, process,
 				null, threadPointer, false);
 		SymbolicExpression thread = eval.value;
 
 		state = eval.state;
-		return new Evaluation(state, universe.tupleRead(thread,
-				this.threeObject));
+		return new Evaluation(state,
+				universe.tupleRead(thread, this.threeObject));
 	}
 
 	/**
@@ -435,7 +442,8 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression gpool = argumentValues[0], threadPointer = argumentValues[1], threadObj;
+		SymbolicExpression gpool = argumentValues[0],
+				threadPointer = argumentValues[1], threadObj;
 		Evaluation eval;
 		SymbolicExpression gpoolObj, threads;
 
@@ -476,7 +484,8 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression scopeValue = argumentValues[0], gpool = argumentValues[1];
+		SymbolicExpression scopeValue = argumentValues[0],
+				gpool = argumentValues[1];
 		SymbolicExpression tid = modelFactory.processValue(pid);
 		SymbolicExpression gpoolObject;
 		Evaluation eval;
@@ -486,8 +495,8 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 				gpool, false);
 		gpoolObject = eval.value;
 		state = eval.state;
-		eval = this
-				.findThreadFromPool(source, state, process, gpoolObject, pid);
+		eval = this.findThreadFromPool(source, state, process, gpoolObject,
+				pid);
 		state = eval.state;
 		threadPointer = eval.value;
 		pool = universe.tuple(this.poolSymbolicType,
@@ -556,8 +565,8 @@ public class LibpthreadExecutor extends BaseLibraryExecutor implements
 				Arrays.asList(threads));
 		SymbolicExpression scopeValue = argumentValues[0];
 
-		return this.primaryExecutor.malloc(arguments[0].getSource(), state,
-				pid, process, arguments[0], scopeValue, this.gpoolType, gpool);
+		return this.primaryExecutor.malloc(arguments[0].getSource(), state, pid,
+				process, arguments[0], scopeValue, this.gpoolType, gpool);
 	}
 
 	private Evaluation execute_add_thread(State state, int pid, String process,
