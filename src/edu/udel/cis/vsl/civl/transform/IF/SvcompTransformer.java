@@ -17,7 +17,12 @@ public class SvcompTransformer extends BaseTransformer {
 
 	public static final int UNPP_SCALE = 3;
 	public static final int UNSIGNED_BOUND = 4;
-	public static final int INT_BOUND = 5;
+	public static final int INT_BOUND_UP = 5;
+	public static final String INT_BOUND_UP_NAME = "_svcomp_int_bound_up";
+	public static final String INT_BOUND_LO_NAME = "_svcomp_int_bound_lo";
+	public static final String UNSIGNED_BOUND_NAME = "_svcomp_unsigned_bound";
+
+	public static final int INT_BOUND_LO = -5;
 
 	/**
 	 * The code (short name) of this transformer.

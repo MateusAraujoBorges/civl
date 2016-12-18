@@ -152,7 +152,7 @@ public class CommonExecutor implements Executor {
 
 	private List<CodeAnalyzer> analyzers;
 
-	// private Int2PointerCaster int2PointerCaster;
+	 private Int2PointerCaster int2PointerCaster;
 
 	/* ***************************** Constructors ************************** */
 
@@ -187,9 +187,8 @@ public class CommonExecutor implements Executor {
 		this.typeFactory = modelFactory.typeFactory();
 		this.evaluator = evaluator;
 		this.symbolicUtil = evaluator.symbolicUtility();
-		// this.int2PointerCaster = new Int2PointerCaster(universe,
-		// symbolicUtil,
-		// modelFactory.typeFactory().pointerSymbolicType());
+		this.int2PointerCaster = new Int2PointerCaster(universe, symbolicUtil,
+				modelFactory.typeFactory().pointerSymbolicType());
 		this.symbolicAnalyzer = symbolicAnalyzer;
 		this.loader = loader;
 		this.errorLogger = errorLogger;
@@ -1357,28 +1356,32 @@ public class CommonExecutor implements Executor {
 				result = stateFactory.setVariable(state, vid, sid,
 						newVariableValue);
 			} catch (SARLException e) {
-				/*
-				 * String message = e.getMessage();
-				 * 
-				 * if (civlConfig.svcomp()) { if (message
-				 * .startsWith("Argument value " +
-				 * "to method arrayWrite has incompatible type") &&
-				 * message.contains("type: int") &&
-				 * message.contains("Expected: pointer")) { value =
-				 * this.int2PointerCaster.forceCast(value); try {
-				 * SymbolicExpression newVariableValue = universe
-				 * .assign(oldVariableValue, symRef, value);
-				 * 
-				 * result = stateFactory.setVariable(state, vid, sid,
-				 * newVariableValue);
-				 * 
-				 * } catch (SARLException e1) {
-				 * errorLogger.logSimpleError(source, state, process,
-				 * symbolicAnalyzer.stateInformation(state),
-				 * ErrorKind.DEREFERENCE, "Invalid assignment: " +
-				 * e.getMessage()); throw new
-				 * UnsatisfiablePathConditionException(); } return result; } }
-				 */
+				String message = e.getMessage();
+
+				if (civlConfig.svcomp()) {
+					if (message
+							.startsWith("Argument value "
+									+ "to method arrayWrite has incompatible type")
+							&& message.contains("type: int")
+							&& message.contains("Expected: pointer")) {
+						value = this.int2PointerCaster.forceCast(value);
+						try {
+							SymbolicExpression newVariableValue = universe
+									.assign(oldVariableValue, symRef, value);
+
+							result = stateFactory.setVariable(state, vid, sid,
+									newVariableValue);
+
+						} catch (SARLException e1) {
+							errorLogger.logSimpleError(source, state, process,
+									symbolicAnalyzer.stateInformation(state),
+									ErrorKind.DEREFERENCE,
+									"Invalid assignment: " + e.getMessage());
+							throw new UnsatisfiablePathConditionException();
+						}
+						return result;
+					}
+				}
 				errorLogger.logSimpleError(source, state, process,
 						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.DEREFERENCE,
@@ -1550,7 +1553,8 @@ public class CommonExecutor implements Executor {
 						transition.statement().getSource());
 
 		}
-		if (transition.simpifyState() && this.civlConfig.simplify())
+		if (transition.simpifyState()
+				&& (civlConfig.svcomp() || this.civlConfig.simplify()))
 			state = this.stateFactory.simplify(state);
 		return state;
 	}

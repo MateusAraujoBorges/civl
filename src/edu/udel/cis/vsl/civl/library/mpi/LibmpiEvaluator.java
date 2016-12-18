@@ -545,6 +545,7 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 	 *         </ul>
 	 * @throws UnsatisfiablePathConditionException
 	 */
+	@SuppressWarnings("unused")
 	private Pair<SymbolicExpression, NumericExpression> processMPIPointer(
 			State state, int pid, String process, Expression ptrExpr,
 			SymbolicExpression ptr, Expression mpiDatatypeExpr,

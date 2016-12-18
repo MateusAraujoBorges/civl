@@ -355,6 +355,10 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 				Number lowerNum = interval.lower(), upperNum = interval.upper();
 				int lower = Integer.MIN_VALUE, upper = Integer.MAX_VALUE;
 
+				if (this.civlConfig.svcomp()
+						&& (lowerNum.isInfinite() || upperNum.isInfinite())) {
+					continue;
+				}
 				if (!lowerNum.isInfinite()) {
 					lower = ((IntegerNumber) lowerNum).intValue();
 				}

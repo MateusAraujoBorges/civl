@@ -65,6 +65,7 @@ public class ContractTranslator extends FunctionTranslator {
 	 * contract kind during recursive parsing. {@link ContractKind} depends on a
 	 * contract clause, which cannot be nested, so no need to use a stack.
 	 */
+	@SuppressWarnings("unused")
 	private ContractKind currentContractKind;
 
 	/**

@@ -96,7 +96,8 @@ void __VERIFIER_error(){
   $assert($false, "__VERIFIER_error() is called.\n");
 }
 
-void __VERIFIER_assume(int expression) { 
+void __VERIFIER_assume(int expression) {
+  $elaborate(expression);
   if (!expression) 
   { 
     LOOP: 

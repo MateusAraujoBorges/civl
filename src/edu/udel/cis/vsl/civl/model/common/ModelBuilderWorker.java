@@ -354,9 +354,12 @@ public class ModelBuilderWorker {
 			inputInitMap.put(GeneralTransformer.PREFIX + "argc", 1);
 			inputInitMap.put("_svcomp_unpp_scale",
 					SvcompTransformer.UNPP_SCALE);
-			inputInitMap.put("_svcomp_unsigned_bound",
+			inputInitMap.put(SvcompTransformer.UNSIGNED_BOUND_NAME,
 					SvcompTransformer.UNSIGNED_BOUND);
-			inputInitMap.put("_svcomp_int_bound", SvcompTransformer.INT_BOUND);
+			inputInitMap.put(SvcompTransformer.INT_BOUND_UP_NAME,
+					SvcompTransformer.INT_BOUND_UP);
+			inputInitMap.put(SvcompTransformer.INT_BOUND_LO_NAME,
+					SvcompTransformer.INT_BOUND_LO);
 		}
 		this.factory = factory;
 		this.program = program;

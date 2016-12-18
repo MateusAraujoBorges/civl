@@ -79,6 +79,7 @@ public class GeneralWorker extends BaseWorker {
 	private final static String separator = "$";
 	private static final String SCOPE_TYPE = "$scope";
 	private static final String CIVL_MALLOC = "$malloc";
+	@SuppressWarnings("unused")
 	private static final String CIVL_SET_DEFAULT = "$set_default";
 	private int static_var_count = 0;
 	private String CIVL_argc_name;
@@ -219,6 +220,7 @@ public class GeneralWorker extends BaseWorker {
 	 * 
 	 * @param node
 	 */
+	@SuppressWarnings("unused")
 	private void transformWith(ASTNode node) {
 		if (node instanceof WithNode) {
 			WithNode withNode = (WithNode) node;
