@@ -23,8 +23,6 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
-import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
@@ -421,50 +419,40 @@ public abstract class CommonEnabler implements Enabler {
 					statement, i, newGuardMap);
 
 			if (!newPathCondition.isFalse()) {
-				boolean elaborated = false;
-
-				if (this.civlConfig.svcomp() && numOutgoing == 1) {
-					if (statement.statementKind() == StatementKind.ASSIGN) {
-						AssignStatement assign = (AssignStatement) statement;
-						LHSExpression lhs = assign.getLhs();
-
-						if (lhs.lhsExpressionKind() == LHSExpressionKind.SUBSCRIPT) {
-							SubscriptExpression subscript = (SubscriptExpression) lhs;
-							Expression indexExpr = subscript.index();
-
-							try {
-								SymbolicExpression indexValue = this.evaluator
-										.evaluate(state, pid, indexExpr).value;
-								List<BooleanExpression> newPCs = elaborateSymbolicConstants(
-										newPathCondition, pid, indexValue);
-
-								if (newPCs.size() > 0) {
-									elaborated = true;
-									for (BooleanExpression pc : newPCs) {
-										transitions
-												.addAll(enabledTransitionsOfStatement(
-														state, statement, pc,
-														pid, true,
-														atomicLockAction));
-									}
-								}
-
-							} catch (UnsatisfiablePathConditionException e) {
-								// ignore
-							}
-						}
-					}
-
-				}
-				if (!elaborated)
-					transitions.addAll(enabledTransitionsOfStatement(state,
-							statement, newPathCondition, pid, false,
-							atomicLockAction));
+				// boolean elaborated = false;
+				/*
+				 * if (this.civlConfig.svcomp() && numOutgoing == 1) { if
+				 * (statement.statementKind() == StatementKind.ASSIGN) {
+				 * AssignStatement assign = (AssignStatement) statement;
+				 * LHSExpression lhs = assign.getLhs();
+				 * 
+				 * if (lhs.lhsExpressionKind() == LHSExpressionKind.SUBSCRIPT) {
+				 * SubscriptExpression subscript = (SubscriptExpression) lhs;
+				 * Expression indexExpr = subscript.index();
+				 * 
+				 * try { SymbolicExpression indexValue = this.evaluator
+				 * .evaluate(state, pid, indexExpr).value;
+				 * List<BooleanExpression> newPCs = elaborateSymbolicConstants(
+				 * newPathCondition, pid, indexValue);
+				 * 
+				 * if (newPCs.size() > 0) { elaborated = true; for
+				 * (BooleanExpression pc : newPCs) { transitions
+				 * .addAll(enabledTransitionsOfStatement( state, statement, pc,
+				 * pid, true, atomicLockAction)); } }
+				 * 
+				 * } catch (UnsatisfiablePathConditionException e) { // ignore }
+				 * } } }
+				 */
+				// if (!elaborated)
+				transitions.addAll(enabledTransitionsOfStatement(state,
+						statement, newPathCondition, pid, false,
+						atomicLockAction));
 			}
 		}
 		return transitions;
 	}
 
+	@SuppressWarnings("unused")
 	private List<BooleanExpression> elaborateSymbolicConstants(
 			BooleanExpression pathCondition, int pid, SymbolicExpression expr) {
 		List<ConstantBound> bounds = new ArrayList<>();
