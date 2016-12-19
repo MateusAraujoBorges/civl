@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +23,8 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.AssignStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
@@ -50,7 +53,11 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Interval;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 
 /**
  * CommonEnabler implements {@link EnablerIF} for CIVL models. It is an abstract
@@ -61,6 +68,8 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * @author Timothy K. Zirkel (zirkel)
  */
 public abstract class CommonEnabler implements Enabler {
+
+	private final static int ELABORATE_UPPER_BOUND = 100;
 
 	/* *************************** Instance Fields ************************* */
 
@@ -412,11 +421,162 @@ public abstract class CommonEnabler implements Enabler {
 					statement, i, newGuardMap);
 
 			if (!newPathCondition.isFalse()) {
-				transitions.addAll(enabledTransitionsOfStatement(state,
-						statement, newPathCondition, pid, atomicLockAction));
+				boolean elaborated = false;
+
+				if (this.civlConfig.svcomp() && numOutgoing == 1) {
+					if (statement.statementKind() == StatementKind.ASSIGN) {
+						AssignStatement assign = (AssignStatement) statement;
+						LHSExpression lhs = assign.getLhs();
+
+						if (lhs.lhsExpressionKind() == LHSExpressionKind.SUBSCRIPT) {
+							SubscriptExpression subscript = (SubscriptExpression) lhs;
+							Expression indexExpr = subscript.index();
+
+							try {
+								SymbolicExpression indexValue = this.evaluator
+										.evaluate(state, pid, indexExpr).value;
+								List<BooleanExpression> newPCs = elaborateSymbolicConstants(
+										newPathCondition, pid, indexValue);
+
+								if (newPCs.size() > 0) {
+									elaborated = true;
+									for (BooleanExpression pc : newPCs) {
+										transitions
+												.addAll(enabledTransitionsOfStatement(
+														state, statement, pc,
+														pid, true,
+														atomicLockAction));
+									}
+								}
+
+							} catch (UnsatisfiablePathConditionException e) {
+								// ignore
+							}
+						}
+					}
+
+				}
+				if (!elaborated)
+					transitions.addAll(enabledTransitionsOfStatement(state,
+							statement, newPathCondition, pid, false,
+							atomicLockAction));
 			}
 		}
 		return transitions;
+	}
+
+	private List<BooleanExpression> elaborateSymbolicConstants(
+			BooleanExpression pathCondition, int pid, SymbolicExpression expr) {
+		List<ConstantBound> bounds = new ArrayList<>();
+		ConstantBound[] constantBounds;
+		Set<BooleanExpression> concreteValueClauses;
+		Reasoner reasoner = universe.reasoner(pathCondition);
+		Set<SymbolicConstant> symbolicConstants = universe
+				.getFreeSymbolicConstants(expr);
+
+		if (symbolicConstants.size() != 1) {
+			// noop if no symbolic constant is contained
+			return new LinkedList<>();
+		}
+		for (SymbolicConstant var : symbolicConstants) {
+			// no need to elaborate non-numeric symbolic constants:
+			if (!var.isNumeric())
+				continue;
+			Interval interval = reasoner
+					.intervalApproximation((NumericExpression) var);
+
+			if (interval.isIntegral()) {
+				Number lowerNum = interval.lower(), upperNum = interval.upper();
+				int lower = Integer.MIN_VALUE, upper = Integer.MAX_VALUE;
+
+				if (this.civlConfig.svcomp() && upperNum.isInfinite()) {
+					continue;
+				}
+				if (!lowerNum.isInfinite()) {
+					lower = ((IntegerNumber) lowerNum).intValue();
+				} else if (civlConfig.svcomp())
+					lower = 0;
+				if (!upperNum.isInfinite()) {
+					upper = ((IntegerNumber) upperNum).intValue();
+				}
+				bounds.add(new ConstantBound(var, lower, upper));
+			}
+		}
+		constantBounds = new ConstantBound[bounds.size()];
+		bounds.toArray(constantBounds);
+
+		List<BooleanExpression> newPCs = new LinkedList<>();
+
+		// If there is no elaborated constants, return a default unchanged
+		// transition:
+		if (constantBounds.length != 0) {
+			concreteValueClauses = this.generateConcreteValueClauses(reasoner,
+					constantBounds, 0);
+			for (BooleanExpression clause : concreteValueClauses) {
+				BooleanExpression newPathCondition = (BooleanExpression) universe
+						.canonic(universe.and(pathCondition, clause));
+
+				newPCs.add(newPathCondition);
+			}
+		}
+		return newPCs;
+	}
+
+	/**
+	 * generates boolean expressions by elaborating symbolic constants according
+	 * to their upper/lower bound. The result is the permutation of the possible
+	 * values of all symbolic constants. For example, if the constant bounds are
+	 * {(X, [2, 3]), (Y, [6,7]), (Z, [8,9])} then the result will be { X=2 &&
+	 * Y=6 && Z==8, X=2 && Y=6 && Z=9, X=2 && Y=7 && Z=8, X=2 && Y=7 && Z=9, X=3
+	 * && Y=6 && Z=8, X=3 && Y=6 && Z=9, X=3 && Y=7 && Z=8, X=3 && Y=7 && Z=9}.
+	 * 
+	 * @param reasoner
+	 * @param constantBounds
+	 * @param start
+	 * @return
+	 */
+	private Set<BooleanExpression> generateConcreteValueClauses(
+			Reasoner reasoner, ConstantBound[] constantBounds, int start) {
+		Set<BooleanExpression> myResult = new LinkedHashSet<>();
+		ConstantBound myConstantBound = constantBounds[start];
+		Set<BooleanExpression> subfixResult;
+		Set<BooleanExpression> result = new LinkedHashSet<>();
+		// last constant bound
+		int lower = myConstantBound.lower, upper = myConstantBound.upper;
+		NumericExpression symbol = (NumericExpression) myConstantBound.constant;
+		BooleanExpression newClause;
+		boolean upperBoundCluaseNeeded = false;
+
+		if (lower < 0) {
+			lower = 0;
+			newClause = universe.lessThan(symbol, universe.integer(lower));
+			if (!reasoner.isValid(universe.not(newClause)))
+				myResult.add(newClause);
+		}
+		if (upper > lower + ELABORATE_UPPER_BOUND) {
+			upper = lower + ELABORATE_UPPER_BOUND;
+			upperBoundCluaseNeeded = true;
+			newClause = universe.lessThan(universe.integer(upper), symbol);
+			if (!reasoner.isValid(universe.not(newClause)))
+				myResult.add(newClause);
+		}
+		for (int value = lower; value <= upper; value++) {
+			newClause = universe.equals(symbol, universe.integer(value));
+			if (!reasoner.isValid(universe.not(newClause)))
+				myResult.add(newClause);
+		}
+		if (upperBoundCluaseNeeded)
+			myResult.add(universe.lessThan(universe.integer(upper), symbol));
+		if (start == constantBounds.length - 1)
+			return myResult;
+		subfixResult = this.generateConcreteValueClauses(reasoner,
+				constantBounds, start + 1);
+		for (BooleanExpression myClause : myResult) {
+			for (BooleanExpression subfixClause : subfixResult) {
+				result.add(universe.and(myClause, subfixClause));
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -479,10 +639,10 @@ public abstract class CommonEnabler implements Enabler {
 			secondPc = pathCondition;
 		if (firstPc != null)
 			transitions.addAll(enabledTransitionsOfStatement(state, first,
-					firstPc, pid, atomicLockAction));
+					firstPc, pid, false, atomicLockAction));
 		if (secondPc != null)
 			transitions.addAll(enabledTransitionsOfStatement(state, second,
-					secondPc, pid, atomicLockAction));
+					secondPc, pid, false, atomicLockAction));
 		return transitions;
 	}
 
@@ -543,7 +703,7 @@ public abstract class CommonEnabler implements Enabler {
 						}
 					}
 					localTransitions.addAll(enabledTransitionsOfStatement(state,
-							statement, newPathCondition, pidInAtomic,
+							statement, newPathCondition, pidInAtomic, false,
 							AtomicLockAction.NONE));
 				}
 				return new Pair<>(otherAssumption, localTransitions);
@@ -579,7 +739,7 @@ public abstract class CommonEnabler implements Enabler {
 	 */
 	private List<Transition> enabledTransitionsOfStatement(State state,
 			Statement statement, BooleanExpression pathCondition, int pid,
-			AtomicLockAction atomicLockAction) {
+			boolean simplifyState, AtomicLockAction atomicLockAction) {
 		List<Transition> localTransitions = new LinkedList<>();
 
 		try {
@@ -609,7 +769,7 @@ public abstract class CommonEnabler implements Enabler {
 				default :
 			}
 			localTransitions.add(Semantics.newTransition(pathCondition, pid,
-					statement, atomicLockAction));
+					statement, simplifyState, atomicLockAction));
 		} catch (UnsatisfiablePathConditionException e) {
 			// nothing to do: don't add this transition
 		}
@@ -633,7 +793,7 @@ public abstract class CommonEnabler implements Enabler {
 	 */
 	private List<Transition> enabledTransitionsOfWithStatement(State state,
 			int pid, WithStatement with, AtomicLockAction atomicLockAction)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		Expression colStateExpr = with.collateState();
 		CIVLSource csSource = colStateExpr.getSource();
 		Evaluation eval;
@@ -698,7 +858,7 @@ public abstract class CommonEnabler implements Enabler {
 	// TODO
 	private List<Transition> enabledTransitionsOfUpdateStatement(State state,
 			int pid, UpdateStatement update, AtomicLockAction atomicLockAction)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		CIVLSource source = update.getSource();
 		Expression collator = update.collator();
 		CIVLFunction updateFunction = update.function();
@@ -804,7 +964,7 @@ public abstract class CommonEnabler implements Enabler {
 			SymbolicExpression gstateQueue, int qLength,
 			NumericExpression place, int placeID, Expression collator,
 			CIVLFunction function, SymbolicExpression[] argumentValues)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		final int IDLE = 0;
 		Evaluation eval;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
@@ -841,10 +1001,11 @@ public abstract class CommonEnabler implements Enabler {
 						source,
 						modelFactory.dereferenceExpression(source,
 								modelFactory.subscriptExpression(source,
-										stateQueueExpr,
-										modelFactory.integerLiteralExpression(
-												source,
-												BigInteger.valueOf(i)))),
+										stateQueueExpr, modelFactory
+												.integerLiteralExpression(
+														source,
+														BigInteger
+																.valueOf(i)))),
 						1);// (*queue[i]).state
 
 				colState = stateFactory.addExternalProcess(colState, state, pid,
@@ -898,7 +1059,7 @@ public abstract class CommonEnabler implements Enabler {
 			CIVLSource source, State state, CallOrSpawnStatement call,
 			BooleanExpression pathCondition, int pid,
 			AtomicLockAction atomicLockAction)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		SystemFunction sysFunction = (SystemFunction) call.function();
 		String libraryName = sysFunction.getLibrary();
 
@@ -988,5 +1149,41 @@ public abstract class CommonEnabler implements Enabler {
 	@Override
 	public boolean expanded(TransitionSequence sequence) {
 		return expandedStateIDs.contains(sequence.state().getCanonicId());
+	}
+}
+
+/**
+ * This represents the bound specification of a symbolic constant.
+ * 
+ * @author Manchun Zheng
+ *
+ */
+class ConstantBound {
+	/**
+	 * The symbolic constant associates with this object
+	 */
+	SymbolicConstant constant;
+	/**
+	 * The lower bound of the symbolic constant
+	 */
+	int lower;
+	/**
+	 * The upper bound of the symbolic constant
+	 */
+	int upper;
+
+	/**
+	 * 
+	 * @param constant
+	 *            the symbolic constant
+	 * @param lower
+	 *            the lower bound
+	 * @param upper
+	 *            the upper bound
+	 */
+	ConstantBound(SymbolicConstant constant, int lower, int upper) {
+		this.constant = constant;
+		this.lower = lower;
+		this.upper = upper;
 	}
 }

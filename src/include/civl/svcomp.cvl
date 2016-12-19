@@ -97,7 +97,7 @@ void __VERIFIER_error(){
 }
 
 void __VERIFIER_assume(int expression) {
-  $elaborate(expression);
+  //$elaborate(expression);
   if (!expression) 
   { 
     LOOP: 
