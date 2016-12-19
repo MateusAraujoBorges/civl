@@ -121,11 +121,11 @@ int printk(const char * fmt, ...){
   return 0;
 }
 
-int register_chrdev_region(dev_t, unsigned, const char *) {
+int register_chrdev_region(unsigned int, unsigned, const char *) {
   return __VERIFIER_nondet_int();
 }
 
-void unregister_chrdev_region(dev_t, unsigned) {
+void unregister_chrdev_region(unsigned int, unsigned) {
   return;
 }
 
