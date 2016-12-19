@@ -285,36 +285,29 @@ public class SvcompWorker extends BaseWorker {
 		if (this.nondet_int_variable_declarations.size() > 0) {
 			VariableDeclarationNode nondet_bound_up_var = this
 					.variableDeclaration(SvcompTransformer.INT_BOUND_UP_NAME,
-							this.basicType(BasicTypeKind.INT)),
-					nondet_bound_lo_var = this.variableDeclaration(
-							SvcompTransformer.INT_BOUND_LO_NAME,
 							this.basicType(BasicTypeKind.INT));
-			String nondet_bound_up_var_name = nondet_bound_up_var.getName(),
-					nondet_bound_lo_var_name = nondet_bound_lo_var.getName();
+			// ,
+			// nondet_bound_lo_var = this.variableDeclaration(
+			// SvcompTransformer.INT_BOUND_LO_NAME,
+			// this.basicType(BasicTypeKind.INT));
+			String nondet_bound_up_var_name = nondet_bound_up_var.getName();
+			// nondet_bound_lo_var_name = nondet_bound_lo_var.getName();
 
 			nondet_bound_up_var.getTypeNode().setInputQualified(true);
 			blockItems.addAll(this.nondet_int_variable_declarations);
-
 			// create the bound variable for nondet int
 			blockItems.add(nondet_bound_up_var);
-			blockItems.add(nondet_bound_lo_var);
+			// blockItems.add(nondet_bound_lo_var);
 			// add upper bound variable and assumptions
 			blockItems.add(this.assumeFunctionDeclaration(
 					this.newSource("$assume", CivlcTokenConstant.DECLARATION)));
 			for (VariableDeclarationNode nondet_var : nondet_int_variable_declarations) {
 				Source source = nondet_var.getSource();
 
-				blockItems.add(this.assumeNode(nodeFactory.newOperatorNode(
-						source, Operator.LAND,
-						nodeFactory.newOperatorNode(source, Operator.LTE,
-								this.identifierExpression(
-										nondet_bound_lo_var_name),
-								this.identifierExpression(
-										nondet_var.getName())),
-						this.nodeFactory.newOperatorNode(source, Operator.LTE,
-								this.identifierExpression(nondet_var.getName()),
-								this.identifierExpression(
-										nondet_bound_up_var_name)))));
+				blockItems.add(this.assumeNode(this.nodeFactory.newOperatorNode(
+						source, Operator.LTE,
+						this.identifierExpression(nondet_var.getName()),
+						this.identifierExpression(nondet_bound_up_var_name))));
 			}
 		}
 		for (BlockItemNode item : rootNode) {
