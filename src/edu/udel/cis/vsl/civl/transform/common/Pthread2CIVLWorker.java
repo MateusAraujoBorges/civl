@@ -875,7 +875,12 @@ public class Pthread2CIVLWorker extends BaseWorker {
 			if (item.getSource().getFirstToken().getSourceFile().getName()
 					.equals("pthread.h"))
 				continue;
-			if (item instanceof VariableDeclarationNode) {
+			if (item instanceof FunctionDeclarationNode) {
+				FunctionDeclarationNode function = (FunctionDeclarationNode) item;
+
+				if (function.getName().equals("main"))
+					break;
+			} else if (item instanceof VariableDeclarationNode) {
 				VariableDeclarationNode mutexInit = (VariableDeclarationNode) item;
 				TypeNode type = mutexInit.getTypeNode();
 
