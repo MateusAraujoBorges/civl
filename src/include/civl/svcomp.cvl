@@ -108,6 +108,7 @@ void __VERIFIER_atomic_end(){
   return;
 }
 
+/*
 int _nondet_int(){
   int result;
 
@@ -158,6 +159,6 @@ void __release_region(struct resource * a, resource_size_t b, resource_size_t c)
 int __get_user(int size, const void *ptr){
     return _nondet_int();
 }
-
+*/
 #endif
 
