@@ -12,6 +12,7 @@ import edu.udel.cis.vsl.abc.ast.entity.IF.Variable;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundInitializerNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.EnumeratorDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
@@ -26,6 +27,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.EnumerationTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.PointerTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
@@ -52,6 +54,8 @@ import edu.udel.cis.vsl.civl.transform.IF.SvcompUnPPTransformer;
 public class SvcompUnPPWorker extends BaseWorker {
 
 	private final static String PTHREAD_PREFIX = "pthread_";
+
+	private final static String PTHREAD_PREFIX_CAP = "PTHREAD_";
 
 	private final static String PTHREAD_HEADER = "pthread.h";
 
@@ -350,6 +354,18 @@ public class SvcompUnPPWorker extends BaseWorker {
 			if (!toRemove) {
 				toRemove = isStringNode(item);
 			}
+			if(!toRemove){
+				if (item instanceof EnumerationTypeNode) {
+					EnumerationTypeNode enumType=(EnumerationTypeNode)item;
+					SequenceNode<EnumeratorDeclarationNode> enumerators = enumType.enumerators();
+					
+					for(EnumeratorDeclarationNode enumerator: enumerators){
+						if(enumerator.getName().startsWith(PTHREAD_PREFIX_CAP))
+							toRemove=true;
+						break;
+					}
+				}
+			}
 			if (toRemove)
 				item.remove();
 			else if (item instanceof VariableDeclarationNode) {
@@ -398,7 +414,7 @@ public class SvcompUnPPWorker extends BaseWorker {
 			} else if (item instanceof FunctionDefinitionNode) {
 				this.checkBigLoopBound(
 						((FunctionDefinitionNode) item).getBody());
-			}
+			} 
 		}
 	}
 
