@@ -49,6 +49,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -290,7 +291,21 @@ public class CommonExecutor implements Executor {
 			throws UnsatisfiablePathConditionException {
 		CIVLFunction function = statement.function();
 
-		if (function != null && function.isSystemFunction()) {
+		if (function != null && function.isNondet()) {
+			LHSExpression lhs = statement.lhs();
+
+			if (lhs != null) {
+				CIVLFunctionType functionType = function.functionType();
+				Evaluation eval = this.evaluator.havoc(state,
+						functionType.returnType().getDynamicType(universe));
+
+				state = eval.state;
+				state = this.assign(state, pid, "p" + pid, lhs, eval.value);
+			}
+			state = stateFactory.setLocation(state, pid, statement.target(),
+					true);
+			return state;
+		} else if (function != null && function.isSystemFunction()) {
 			state = this.executeSystemFunctionCall(state, pid, statement,
 					(SystemFunction) function).state;
 		} else {

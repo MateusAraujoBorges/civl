@@ -24,6 +24,8 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
  */
 public interface CIVLFunction extends Sourceable {
 
+	public boolean isNondet();
+
 	/**
 	 * @return The name of this function.
 	 */

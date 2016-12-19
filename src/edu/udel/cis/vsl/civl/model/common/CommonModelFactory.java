@@ -2493,4 +2493,13 @@ public class CommonModelFactory implements ModelFactory {
 			Expression expression) {
 		return new CommonOriginalExpression(source, expression);
 	}
+
+	@Override
+	public CIVLFunction nondetFunction(CIVLSource source, Identifier name,
+			CIVLType returnType, Scope containingScope) {
+		return new CommonNondetFunction(source, name, 
+				 returnType, containingScope,
+				containingScope != null ? containingScope.numFunctions() : -1,
+				 this);
+	}
 }

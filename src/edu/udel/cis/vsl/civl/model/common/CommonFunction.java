@@ -693,4 +693,9 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	public void setPureFunction(Boolean value) {
 		this.isPure = value;
 	}
+
+	@Override
+	public boolean isNondet() {
+		return false;
+	}
 }

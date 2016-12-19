@@ -155,5 +155,9 @@ void __release_region(struct resource * a, resource_size_t b, resource_size_t c)
   return;
 }
 
+int __get_user(int size, const void *ptr){
+    return _nondet_int();
+}
+
 #endif
 

@@ -357,6 +357,9 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 
 	@Override
 	public CIVLPointerType pointerType(CIVLType baseType) {
+		if (baseType.isFunction())
+			return new CommonPointerType(baseType,
+					this.functionPointerSymbolicType);
 		return new CommonPointerType(baseType, pointerSymbolicType);
 	}
 

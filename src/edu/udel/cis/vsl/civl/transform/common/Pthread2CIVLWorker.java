@@ -611,8 +611,8 @@ public class Pthread2CIVLWorker extends BaseWorker {
 			process_pthread_exit(function, true);
 			// return;
 		}
-		if ((this.isVoidPointerType(returnType)
-				&& this.threadFunctionNames.contains(name))) {
+		if ((this.isVoidOrVoidPointerType(returnType))
+				&& this.threadFunctionNames.contains(name)) {
 			String pthread_exit_name = isMain
 					? PTHREAD_EXIT_MAIN_NEW
 					: PTHREAD_EXIT_NEW;
@@ -1050,14 +1050,14 @@ public class Pthread2CIVLWorker extends BaseWorker {
 	 * @param type
 	 * @return
 	 */
-	private boolean isVoidPointerType(TypeNode type) {
+	private boolean isVoidOrVoidPointerType(TypeNode type) {
 		if (type.kind() == TypeNodeKind.POINTER) {
 			PointerTypeNode pointer = (PointerTypeNode) type;
 
 			if (pointer.referencedType().kind() == TypeNodeKind.VOID)
 				return true;
 		}
-		return false;
+		return (type.kind() == TypeNodeKind.VOID);
 	}
 
 	/*

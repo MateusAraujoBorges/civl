@@ -530,7 +530,7 @@ public class ModelBuilderWorker {
 			throw new CIVLInternalException("Did not process declaration",
 					factory.sourceOf(functionNode));
 		functionTranslator = new FunctionTranslator(this, factory,
-				functionNode.getBody(), result);
+				functionNode.getBody(), result, this.civlConfig);
 		// no return value because the result will be stored in the variable
 		// "result" of CIVLFunction type.
 		functionTranslator.translateFunction();
@@ -551,7 +551,7 @@ public class ModelBuilderWorker {
 			CIVLFunction function = working.pop();
 			StatementNode bodyNode = parProcFunctions.get(function);
 			FunctionTranslator translator = new FunctionTranslator(this,
-					factory, bodyNode, function);
+					factory, bodyNode, function, this.civlConfig);
 
 			checkedFunctions.add(function);
 			translator.translateFunction();
@@ -584,7 +584,7 @@ public class ModelBuilderWorker {
 				continue;
 
 			FunctionTranslator translator = new FunctionTranslator(this,
-					factory, bodyNode, function);
+					factory, bodyNode, function, this.civlConfig);
 
 			checkedFunctions.add(function);
 			translator.translateFunction();
@@ -989,7 +989,7 @@ public class ModelBuilderWorker {
 		preprocess();
 		initialization();
 		rootFunctionTranslator = new FunctionTranslator(this, factory,
-				rootFunction);
+				rootFunction, this.civlConfig);
 		rootFunctionTranslator.translateRootFunction(rootScope, rootNode);
 		if (inputInitMap != null) {
 			// if commandline specified input variables that do not

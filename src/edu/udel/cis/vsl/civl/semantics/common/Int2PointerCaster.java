@@ -68,8 +68,12 @@ public class Int2PointerCaster
 				// "Cast from non-zero integer to pointer");
 				// eval.state = state;
 			}
-		} else
-			value = this.symbolicUtil.nullPointer();
+		} else {
+			if (((CIVLPointerType) castType).baseType().isFunction())
+				value = this.symbolicUtil.nullFunctionPointer();
+			else
+				value = this.symbolicUtil.nullPointer();
+		}
 		return value;
 	}
 

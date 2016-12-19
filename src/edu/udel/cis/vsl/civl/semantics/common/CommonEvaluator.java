@@ -1717,10 +1717,12 @@ public class CommonEvaluator implements Evaluator {
 			case EQUAL : {
 				SymbolicType leftType = left.type(), rightType = right.type();
 
+				// if (!this.civlConfig.svcomp()) {
 				this.isValueDefined(eval.state, process, expression.left(),
 						left);
 				this.isValueDefined(eval.state, process, expression.right(),
 						right);
+				// }
 				if (leftType.isBoolean() && rightType.isInteger()) {
 					left = booleanToInteger(left);
 				} else if (leftType.isInteger() && rightType.isBoolean()) {

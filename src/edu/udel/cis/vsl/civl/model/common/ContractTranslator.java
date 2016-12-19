@@ -25,6 +25,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MemoryEventNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.WaitsforNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
@@ -85,8 +86,8 @@ public class ContractTranslator extends FunctionTranslator {
 	/******************** Constructor ********************/
 	ContractTranslator(ModelBuilderWorker modelBuilder,
 			ModelFactory modelFactory, CIVLTypeFactory typeFactory,
-			CIVLFunction function) {
-		super(modelBuilder, modelFactory, function);
+			CIVLFunction function, CIVLConfiguration civlConfig) {
+		super(modelBuilder, modelFactory, function, civlConfig);
 		this.modelFactory = modelFactory;
 		this.modelBuilder = modelBuilder;
 		this.function = function;

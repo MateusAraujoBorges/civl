@@ -123,6 +123,7 @@ import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.StringLiteral;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
 import edu.udel.cis.vsl.civl.model.IF.AccuracyAssumptionBuilder;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
@@ -251,6 +252,8 @@ public class FunctionTranslator {
 	@SuppressWarnings("unused")
 	private AccuracyAssumptionBuilder accuracyAssumptionBuilder;
 
+	private CIVLConfiguration civlConfig;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -275,7 +278,7 @@ public class FunctionTranslator {
 	 */
 	FunctionTranslator(ModelBuilderWorker modelBuilder,
 			ModelFactory modelFactory, StatementNode bodyNode,
-			CIVLFunction function) {
+			CIVLFunction function, CIVLConfiguration civlConfig) {
 		this.modelBuilder = modelBuilder;
 		this.modelFactory = modelFactory;
 		this.typeFactory = modelFactory.typeFactory();
@@ -284,6 +287,7 @@ public class FunctionTranslator {
 		this.functionInfo = new FunctionInfo(function);
 		this.accuracyAssumptionBuilder = new CommonAccuracyAssumptionBuilder(
 				modelFactory);
+		this.civlConfig = civlConfig;
 	}
 
 	/**
@@ -308,7 +312,8 @@ public class FunctionTranslator {
 	 *            translator.
 	 */
 	FunctionTranslator(ModelBuilderWorker modelBuilder,
-			ModelFactory modelFactory, CIVLFunction function) {
+			ModelFactory modelFactory, CIVLFunction function,
+			CIVLConfiguration civlConfig) {
 		this.modelBuilder = modelBuilder;
 		this.modelFactory = modelFactory;
 		this.typeFactory = modelFactory.typeFactory();
@@ -316,6 +321,7 @@ public class FunctionTranslator {
 		this.functionInfo = new FunctionInfo(function);
 		this.accuracyAssumptionBuilder = new CommonAccuracyAssumptionBuilder(
 				modelFactory);
+		this.civlConfig = civlConfig;
 	}
 
 	/* *************************** Public Methods ************************** */
@@ -2506,6 +2512,10 @@ public class FunctionTranslator {
 				result = modelFactory.abstractFunction(nodeSource,
 						functionIdentifier, parameterScope, parameters,
 						returnType, scope, continuity, modelFactory);
+				// } else if (this.civlConfig.svcomp()) {
+				// result=modelFactory.nondetFunction(nodeSource,
+				// functionIdentifier,
+				// returnType, scope);
 			} else {
 				throw new CIVLSyntaxException(
 						"missing the definition of function " + functionName,
@@ -2519,7 +2529,8 @@ public class FunctionTranslator {
 		}
 		if (contract != null) {
 			ContractTranslator contractTranslator = new ContractTranslator(
-					modelBuilder, modelFactory, typeFactory, result);
+					modelBuilder, modelFactory, typeFactory, result,
+					this.civlConfig);
 			contractTranslator.translateFunctionContract(contract);
 		}
 	}
@@ -4611,6 +4622,7 @@ public class FunctionTranslator {
 				identifierNode.getIdentifier().name());
 		Expression result;
 		Variable boundVariable = functionInfo.findBoundVariable(name);
+
 		if (boundVariable != null) {
 			result = modelFactory.boundVariableExpression(source, name,
 					boundVariable.type());

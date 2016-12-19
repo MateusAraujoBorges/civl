@@ -1344,6 +1344,9 @@ public interface ModelFactory {
 			Scope parameterScope, List<Variable> parameters,
 			CIVLType returnType, Scope containingScope, Location startLocation);
 
+	CIVLFunction nondetFunction(CIVLSource source, Identifier name,
+			CIVLType returnType, Scope containingScope);
+
 	/**
 	 * Get an identifier with the given name.
 	 * 

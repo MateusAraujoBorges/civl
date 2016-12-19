@@ -834,4 +834,8 @@ public interface SymbolicUtility {
 	 * @return
 	 */
 	IntObject getMallocID(SymbolicExpression pointer);
+
+	SymbolicExpression makeFunctionPointer(int dyscopeID, int fid);
+
+	SymbolicExpression nullFunctionPointer();
 }

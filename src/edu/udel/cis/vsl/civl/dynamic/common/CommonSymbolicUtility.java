@@ -151,6 +151,10 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 	private SymbolicType stringType;
 
+	private SymbolicTupleType functionPointerType;
+
+	private SymbolicExpression nullFunctionPointer;
+
 	/* ***************************** Constructor *************************** */
 
 	/**
@@ -186,8 +190,12 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		this.trueValue = (BooleanExpression) universe
 				.canonic(universe.trueExpression());
 		this.pointerType = this.typeFactory.pointerSymbolicType();
+		this.functionPointerType = this.typeFactory
+				.functionPointerSymbolicType();
 		this.nullPointer = universe.canonic(
 				this.makePointer(-1, -1, universe.identityReference()));
+		this.nullFunctionPointer = universe
+				.canonic(this.makeFunctionPointer(-1, -1));
 		this.undefinedPointer = universe.canonic(universe.nullExpression());
 		this.stringType = universe.arrayType(universe.characterType());
 	}
@@ -1461,5 +1469,16 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 				.getParent();
 
 		return tupleRef.getIndex();
+	}
+
+	@Override
+	public SymbolicExpression nullFunctionPointer() {
+		return this.nullFunctionPointer;
+	}
+
+	@Override
+	public SymbolicExpression makeFunctionPointer(int dyscopeID, int fid) {
+		return universe.tuple(this.functionPointerType, Arrays.asList(
+				modelFactory.scopeValue(dyscopeID), universe.integer(fid)));
 	}
 }
