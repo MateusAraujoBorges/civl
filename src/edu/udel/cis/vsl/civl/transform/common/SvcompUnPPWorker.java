@@ -11,6 +11,7 @@ import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.entity.IF.Variable;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundInitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
@@ -27,6 +28,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.PointerTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.TypedefNameNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.value.IF.IntegerValue;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
@@ -102,6 +104,7 @@ public class SvcompUnPPWorker extends BaseWorker {
 		// this.removeIoNodes(rootNode);
 		// this.removePthreadTypedefs(rootNode);
 		this.removeNodes(rootNode);
+		transformPthreadMutexInitializer(rootNode);
 		rootNode = downScaler(rootNode);
 		// rootNode.prettyPrint(System.out);
 		this.completeSources(rootNode);
@@ -111,6 +114,40 @@ public class SvcompUnPPWorker extends BaseWorker {
 		// ast.prettyPrint(System.out, false);
 		return ast;
 	}
+
+	private void transformPthreadMutexInitializer(
+			SequenceNode<BlockItemNode> root) {
+		for (BlockItemNode item : root) {
+			if (item == null)
+				continue;
+			if (item instanceof FunctionDeclarationNode) {
+				FunctionDeclarationNode function = (FunctionDeclarationNode) item;
+
+				if (function.getName().equals("main"))
+					break;
+			} else if (item instanceof VariableDeclarationNode) {
+				VariableDeclarationNode var = (VariableDeclarationNode) item;
+				TypeNode type = var.getTypeNode();
+
+				if (type instanceof TypedefNameNode) {
+					TypedefNameNode typedef = (TypedefNameNode) type;
+
+					if (typedef.getName().name()
+							.equals(Pthread2CIVLWorker.PTHREAD_MUTEX_TYPE)) {
+						InitializerNode init = var.getInitializer();
+
+						if (init != null
+								&& init instanceof CompoundInitializerNode) {
+							var.setInitializer(this.identifierExpression(
+									Pthread2CIVLWorker.PTHREAD_MUTEX_INITIALIZER));
+						}
+					}
+				}
+			}
+		}
+
+	}
+	
 
 	private SequenceNode<BlockItemNode> downScaler(
 			SequenceNode<BlockItemNode> root) throws SyntaxException {

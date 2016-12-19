@@ -143,7 +143,7 @@ struct pthread_t{
   void** exitValue;
 };
 
-extern pthread_mutex_t PTHREAD_MUTEX_INITIALIZER = {0,$proc_null,0,0,{0,0,0,PTHREAD_MUTEX_NORMAL,0}};
+extern pthread_mutex_t PTHREAD_MUTEX_INITIALIZER = {0,$proc_null,0,0,{0,0,0,0,0}};
 $pthread_gpool_t $pthread_gpool = $pthread_gpool_create($here);
 
 /**

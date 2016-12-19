@@ -34,6 +34,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.ReturnNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.PointerTypeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypedefNameNode;
@@ -55,6 +56,12 @@ import edu.udel.cis.vsl.civl.transform.IF.Pthread2CIVLTransformer;
 public class Pthread2CIVLWorker extends BaseWorker {
 
 	// private final static String PTHREAD_MUTEX_LOCK="pthread_mutex_lock";
+
+	final static String PTHREAD_MUTEX_TYPE = "pthread_mutex_t";
+
+	private final static String PTHREAD_MUTEX_ATTR_TYPE = "pthread_mutexattr_t";
+
+	final static String PTHREAD_MUTEX_INITIALIZER = "PTHREAD_MUTEX_INITIALIZER";
 
 	private final static String PTHREAD_POOL_TYPE = "$pthread_pool_t";
 
@@ -103,6 +110,8 @@ public class Pthread2CIVLWorker extends BaseWorker {
 	private String originalMain = MAIN;
 
 	private BlockItemNode firstThreadFunctionNode = null;
+
+	private BlockItemNode firstMutexVarNode = null;
 
 	private Set<String> threadFunctionNames = new LinkedHashSet<>();
 
@@ -859,6 +868,76 @@ public class Pthread2CIVLWorker extends BaseWorker {
 		}
 	}
 
+	private void movePthreadMutexInitializer(SequenceNode<BlockItemNode> root) {
+		for (BlockItemNode item : root) {
+			if (item == null)
+				continue;
+			if (item.getSource().getFirstToken().getSourceFile().getName()
+					.equals("pthread.h"))
+				continue;
+			if (item instanceof VariableDeclarationNode) {
+				VariableDeclarationNode mutexInit = (VariableDeclarationNode) item;
+				TypeNode type = mutexInit.getTypeNode();
+
+				if (type instanceof TypedefNameNode) {
+					TypedefNameNode typedefNode = (TypedefNameNode) type;
+
+					if (typedefNode.getName().name()
+							.equals(PTHREAD_MUTEX_TYPE)) {
+						firstMutexVarNode = item;
+						break;
+					}
+				}
+			}
+		}
+		if (firstMutexVarNode != null) {
+			VariableDeclarationNode mutexInit = null;
+			StructureOrUnionTypeNode mutexType = null, mutexAttrType = null;
+			int achieved = 0;
+
+			for (BlockItemNode item : root) {
+				if (item == null)
+					continue;
+				if (!item.getSource().getFirstToken().getSourceFile().getName()
+						.equals("pthread.cvl"))
+					continue;
+				if (item instanceof VariableDeclarationNode) {
+					VariableDeclarationNode variable = (VariableDeclarationNode) item;
+					String name = variable.getName();
+
+					if (name.equals(PTHREAD_MUTEX_INITIALIZER)) {
+						mutexInit = variable;
+						achieved++;
+					}
+				} else if (item instanceof StructureOrUnionTypeNode) {
+					StructureOrUnionTypeNode structType = (StructureOrUnionTypeNode) item;
+
+					if (structType.getName().equals(PTHREAD_MUTEX_TYPE)) {
+						mutexType = structType;
+						achieved++;
+					} else if (structType.getName()
+							.equals(PTHREAD_MUTEX_ATTR_TYPE)) {
+						mutexAttrType = structType;
+						achieved++;
+					}
+				}
+				if (achieved == 3)
+					break;
+			}
+			if (mutexInit != null) {
+				mutexAttrType.remove();
+				root.insertChildren(this.firstMutexVarNode.childIndex(),
+						Arrays.asList(mutexAttrType));
+				mutexType.remove();
+				root.insertChildren(this.firstMutexVarNode.childIndex(),
+						Arrays.asList(mutexType));
+				mutexInit.remove();
+				root.insertChildren(this.firstMutexVarNode.childIndex(),
+						Arrays.asList(mutexInit));
+			}
+		}
+	}
+
 	private void movePthreadGpoolDeclaration(SequenceNode<BlockItemNode> root) {
 		for (BlockItemNode item : root) {
 			if (item != null && item instanceof FunctionDeclarationNode) {
@@ -1069,6 +1148,7 @@ public class Pthread2CIVLWorker extends BaseWorker {
 		this.getThreadFunctions(root);
 		ast.release();
 		movePthreadGpoolDeclaration(root);
+		movePthreadMutexInitializer(root);
 		transformWorker(root);
 		this.completeSources(root);
 		AST result = astFactory.newAST(root, ast.getSourceFiles(),
