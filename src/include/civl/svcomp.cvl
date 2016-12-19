@@ -109,6 +109,12 @@ void __VERIFIER_atomic_end(){
   return;
 }
 
+
+int alloc_chrdev_region(dev_t * a, unsigned b, unsigned c, const char * d) {
+  $havoc(a);
+  return __VERIFIER_nondet_int();
+}
+
 int printk(const char * fmt, ...){
   return 0;
 }
