@@ -94,4 +94,10 @@ public class SvcompTest {
 		assertTrue(ui.run("verify  -svcomp16", TestConstants.QUIET,
 				filename("10_fmaxsym_cas_true-unreach-call.i")));
 	}
+
+	@Test
+	public void free_pthread_pool_test() {
+		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
+				filename("safestack_relacy_false-unreach-call.i")));
+	}
 }
