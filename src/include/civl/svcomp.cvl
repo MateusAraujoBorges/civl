@@ -108,13 +108,19 @@ void __VERIFIER_atomic_end(){
   return;
 }
 
+int _nondet_int(){
+  int result;
+
+  $havoc(&result);
+  return result;
+}
+
 int access_ok(int type, const void *addr, unsigned long size){
-  return __VERIFIER_nondet_int();
+  return _nondet_int();
 }
 
 int alloc_chrdev_region(unsigned int * a, unsigned b, unsigned c, const char * d) {
-  $havoc(a);
-  return __VERIFIER_nondet_int();
+  return _nondet_int();
 }
 
 int printk(const char * fmt, ...){
@@ -122,7 +128,7 @@ int printk(const char * fmt, ...){
 }
 
 int register_chrdev_region(unsigned int, unsigned, const char *) {
-  return __VERIFIER_nondet_int();
+  return _nondet_int();
 }
 
 void unregister_chrdev_region(unsigned int, unsigned) {
@@ -130,11 +136,11 @@ void unregister_chrdev_region(unsigned int, unsigned) {
 }
 
 loff_t no_llseek(struct file *file, loff_t offset, int origin) {
- return __VERIFIER_nondet_int();
+  return _nondet_int();
 }
 
 int nonseekable_open(struct inode * inode, struct file * filp) {
- return __VERIFIER_nondet_int();
+  return _nondet_int();
 }
 
 struct resource {
@@ -146,7 +152,6 @@ struct resource {
 typedef struct resource resource_type;
 
 void __release_region(struct resource * a, resource_size_t b, resource_size_t c) {
-  $havoc(a);
   return;
 }
 

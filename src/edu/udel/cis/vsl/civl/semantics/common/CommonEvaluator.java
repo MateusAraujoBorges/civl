@@ -1038,7 +1038,9 @@ public class CommonEvaluator implements Evaluator {
 			CIVLType argBaseType = ((CIVLPointerType) argType).baseType(),
 					castBaseType = ((CIVLPointerType) castType).baseType();
 
-			if (!castBaseType.isCharType() && !argBaseType.isCharType()
+			if (castBaseType.isFunction()) {
+				return eval;
+			} else if (!castBaseType.isCharType() && !argBaseType.isCharType()
 					&& !castBaseType.isVoidType() && !argBaseType.isVoidType()
 					&& !argBaseType.equals(castBaseType)) {
 				// eval.value.type()

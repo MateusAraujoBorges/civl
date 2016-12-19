@@ -94,6 +94,8 @@ public class ModelTranslator {
 	 */
 	private static final String CIVL_MACRO = "_CIVL";
 
+	private static final String SVCOMP_MACRO = "_SVCOMP";
+
 	/**
 	 * A macro for MPI contract features. Once the option "-mpiContrac" is set
 	 * in command line, such a macro should be enabled.
@@ -293,20 +295,24 @@ public class ModelTranslator {
 				transformerFactory.getGeneralTransformerRecord());
 		task.addTransformRecord(
 				transformerFactory.getIOTransformerRecord(config));
-		task.addTransformRecord(
-				transformerFactory.getOpenMPSimplifierRecord(config));
-		task.addTransformRecord(
-				transformerFactory.getOpenMPOrphanTransformerRecord());
-		task.addTransformRecord(
-				transformerFactory.getOpenMP2CIVLTransformerRecord(config));
-		task.addTransformRecord(
-				transformerFactory.getMacroTransformerRecord(config));
+		if (!config.svcomp()) {
+			task.addTransformRecord(
+					transformerFactory.getOpenMPSimplifierRecord(config));
+			task.addTransformRecord(
+					transformerFactory.getOpenMPOrphanTransformerRecord());
+			task.addTransformRecord(
+					transformerFactory.getOpenMP2CIVLTransformerRecord(config));
+			task.addTransformRecord(
+					transformerFactory.getMacroTransformerRecord(config));
+		}
 		task.addTransformRecord(
 				transformerFactory.getPthread2CIVLTransformerRecord());
-		task.addTransformRecord(
-				transformerFactory.getMPI2CIVLTransformerRecord());
-		task.addTransformRecord(
-				transformerFactory.getCuda2CIVLTransformerRecord());
+		if (!config.svcomp()) {
+			task.addTransformRecord(
+					transformerFactory.getMPI2CIVLTransformerRecord());
+			task.addTransformRecord(
+					transformerFactory.getCuda2CIVLTransformerRecord());
+		}
 		if (config.directSymEx() != null)
 			task.addTransformRecord(
 					transformerFactory.getDirectingTransformerRecord(config));
@@ -315,7 +321,6 @@ public class ModelTranslator {
 					transformerFactory.getIntDivTransformerRecord(macros));
 		task.addTransformCode(SideEffectRemover.CODE);
 		task.addTransformCode(Pruner.CODE);
-
 	}
 
 	/**
@@ -331,6 +336,8 @@ public class ModelTranslator {
 
 		if (this.cmdSection.isTrue(CIVLConstants.CIVLMacroO))
 			macroDefs.put(CIVL_MACRO, "");
+		if (this.config.svcomp())
+			macroDefs.put(SVCOMP_MACRO, "");
 		if (this.config.isEnableMpiContract())
 			macroDefs.put(MPI_CONTRACT_MACRO, "");
 		if (macroDefMap != null) {

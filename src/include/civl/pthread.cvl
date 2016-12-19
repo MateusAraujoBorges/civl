@@ -764,12 +764,14 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_
   */
 
 int pthread_join(pthread_t thread, void **value_ptr){
+#ifndef _SVCOMP
   if(&thread.attr != NULL){
     if(thread.attr.detachstate == PTHREAD_CREATE_DETACHED){
       $assert($false, "Thread is designated as unjoinable");
       return 1;
     }
   }
+#endif
   $wait(thread.thr);
   if(value_ptr!=NULL)
     *value_ptr = thread.exitValue;
