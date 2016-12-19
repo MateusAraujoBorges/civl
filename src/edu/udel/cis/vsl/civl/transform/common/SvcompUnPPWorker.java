@@ -18,6 +18,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
@@ -147,7 +148,6 @@ public class SvcompUnPPWorker extends BaseWorker {
 		}
 
 	}
-	
 
 	private SequenceNode<BlockItemNode> downScaler(
 			SequenceNode<BlockItemNode> root) throws SyntaxException {
@@ -424,12 +424,44 @@ public class SvcompUnPPWorker extends BaseWorker {
 		return null;
 	}
 
+	boolean isLiteralIteration(ASTNode node) {
+		if (node instanceof FunctionCallNode) {
+			FunctionCallNode funCall = (FunctionCallNode) node;
+			ExpressionNode function = funCall.getFunction();
+
+			if (function instanceof IdentifierExpressionNode) {
+				IdentifierExpressionNode funcExpr = (IdentifierExpressionNode) function;
+
+				if (funcExpr.getIdentifier().name().equals("pthread_create"))
+					return false;
+			}
+		} else if (node instanceof OperatorNode) {
+			OperatorNode operatorNode = (OperatorNode) node;
+
+			if (operatorNode.getOperator() == Operator.SUBSCRIPT)
+				return false;
+		}
+		for (ASTNode child : node.children()) {
+			if (child == null)
+				continue;
+			if (!isLiteralIteration(child))
+				return false;
+		}
+		return true;
+	}
+
 	private void checkBigLoopBound(ASTNode node) throws SyntaxException {
 		// look for
 		// while(i<1000){...; i=i+1;} or
 		// do{...; i=i+1;}while(i<1000) or
 		// for(;i<1000;i++)
+		if (!node.getSource().getFirstToken().getSourceFile().getName()
+				.endsWith("i"))
+			return;
 		if (node instanceof LoopNode) {
+			if (isLiteralIteration(((LoopNode) node).getBody()))
+				return;
+
 			ExpressionNode condition = ((LoopNode) node).getCondition();
 
 			if (condition instanceof OperatorNode) {
