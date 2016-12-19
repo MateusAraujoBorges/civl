@@ -2512,10 +2512,9 @@ public class FunctionTranslator {
 				result = modelFactory.abstractFunction(nodeSource,
 						functionIdentifier, parameterScope, parameters,
 						returnType, scope, continuity, modelFactory);
-				// } else if (this.civlConfig.svcomp()) {
-				// result=modelFactory.nondetFunction(nodeSource,
-				// functionIdentifier,
-				// returnType, scope);
+			} else if (this.civlConfig.svcomp()) {
+				result = modelFactory.nondetFunction(nodeSource,
+						functionIdentifier, returnType, scope);
 			} else {
 				throw new CIVLSyntaxException(
 						"missing the definition of function " + functionName,
