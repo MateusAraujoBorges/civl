@@ -97,7 +97,13 @@ public class SvcompTest {
 
 	@Test
 	public void free_pthread_pool_test() {
-		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
+		assertFalse(ui.run("verify", "-svcomp16", 
 				filename("safestack_relacy_false-unreach-call.i")));
+	}
+
+	@Test
+	public void wwh_test() {
+		assertFalse(ui.run("verify", "-svcomp16",TestConstants.SHOW_PROGRAM,
+				filename("pthread-numerical-integration_true-unreach-call.i")));
 	}
 }
