@@ -1,8 +1,11 @@
 package edu.udel.cis.vsl.civl.semantics.common;
 
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLCompleteArrayType;
@@ -11,12 +14,16 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType.TypeKind;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
-import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
  * This class implements a subset of the semantics of a casted pointer q, where
@@ -28,20 +35,11 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * Constraints:
  * <ol>
  * <li>T must be a pointer type. Thus, pointer type T can be written as
- * <code>pointer-to- (pointer-to | array-of-)* T'</code> where T' is a derived
- * type</li>
+ * <code>pointer-to- (array-of-)* T'</code> where T' is a derived type</li>
  * <li>Both q and p must have pointer types : t<sub>q</sub>, t<sub>p</sub>.<br>
- * 
  * t<sub>q</sub> is same as T. <br>
- * 
  * T, t<sub>q</sub> and t<sub>p</sub> must have the same T' when they are
  * written in the form specified in constraint 1.</li>
- * <li>t<sub>q</sub> and t<sub>p</sub> can be written in the following forms:
- * <code>
- * Common-Prefix-T := pointer-to- (pointer-to | array-of-)*
- * t<sub>q</sub> :=  Common-Prefix-T  (array-of-)*  T'
- * t<sub>p</sub> :=  Common-Prefix-T  (array-of-)*  T'
- * </code></li>
  * </ol>
  * </p>
  * 
@@ -71,101 +69,208 @@ class pointer2ArrayCastingSemantics {
 
 	private Evaluator evaluator;
 
+	private final NumericExpression noExtent;
+
+	private final SymbolicConstant castFunc;
+
+	private static final String castFuncName = "_cast";
+
+	pointer2ArrayCastingSemantics(Evaluator evaluator) {
+		this.evaluator = evaluator;
+		this.universe = evaluator.universe();
+		noExtent = universe.zeroInt();
+
+		SymbolicType intArrayType = universe.arrayType(universe.integerType());
+		SymbolicType pointerType = evaluator.modelFactory().typeFactory()
+				.pointerSymbolicType();
+
+		castFunc = universe.symbolicConstant(
+				universe.stringObject(castFuncName),
+				universe.functionType(
+						Arrays.asList(intArrayType, intArrayType, pointerType),
+						pointerType));
+	}
+
 	Evaluation castingPointer(State state, int pid, Expression pointer,
-			CIVLType castedType) {
-		// TODO:
-		return null;
+			CIVLType castedType, CIVLSource castingSource)
+			throws UnsatisfiablePathConditionException {
+		CIVLType originType = pointer.getExpressionType();
+		SymbolicExpression pointerVal;
+		Evaluation eval;
+
+		assert originType.isPointerType() && castedType.isPointerType();
+		eval = evaluator.evaluate(state, pid, pointer);
+		pointerVal = eval.value;
+		eval = makeCastedPointer(eval.state, pid, (CIVLPointerType) castedType,
+				(CIVLPointerType) originType, pointerVal, castingSource);
+		return eval;
 	}
 
 	boolean isCastedPointer(SymbolicExpression pointer) {
-		// TODO:
+		if (pointer.operator() == SymbolicOperator.APPLY) {
+			SymbolicConstant symConst = (SymbolicConstant) pointer.argument(0);
+
+			return symConst.name().equals(castFunc.name());
+		}
 		return false;
+	}
+
+	Evaluation pointerAdd(State state, int pid, String process,
+			Expression pointerAddExpression, SymbolicExpression pointer,
+			NumericExpression offset) {
+		assert isCastedPointer(pointer);
+		SymbolicExpression originPointer = getOriginPointer(pointer);
+		SymbolicExpression castedDimArray = getCastedDimArray(pointer);
+		NumericExpression originExtsProd = getOriginExtProd(pointer);
+		NumericExpression step, castedExtsProd;
+		SymbolicArrayType dimArrayType = (SymbolicArrayType) castedDimArray
+				.type();
+		int dim = dimArrayType.dimensions();
+
+		castedExtsProd = universe.oneInt();
+		for (int i = 0; i < dim; i++)
+			castedExtsProd = universe.multiply(castedExtsProd,
+					(NumericExpression) universe.arrayRead(castedDimArray,
+							universe.integer(i)));
+		// cannot do pointer addition on a pointer which has incomplete type:
+		assert !castedExtsProd.isZero();
+		// TODO: If originExtsProd is normalized to one, then castedExtsProd is
+		// the step:
+		return null;
 	}
 
 	/* ******************** private helper methods *********************/
-	private void getTypeDifference(State state, int pid,
+	private Evaluation makeCastedPointer(State state, int pid,
 			CIVLPointerType castedType, CIVLPointerType originType,
-			CIVLSource castedTypeSource, CIVLSource originTypeSource)
+			SymbolicExpression pointer, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		Pair<CIVLType, Pair<TypeKind, Expression>> derivedRet0, derivedRet1;
-		LinkedList<Pair<TypeKind, Expression>> typeRefs0, typeRefs1;
-		CIVLType derivedType0, derivedType1;
-		TypeEvaluation teval;
+		CIVLType originSuffixType, castedSuffixType;
+		List<Expression> originExts, castedExts;
+		SymbolicExpression castedDimArray, originDimArray, originExtsProd;
+		Evaluation eval;
 
-		typeRefs0 = new LinkedList<>();
-		typeRefs1 = new LinkedList<>();
-		derivedRet0 = derivedType(castedType);
-		derivedRet1 = derivedType(originType);
-		while (derivedRet0 != null && derivedRet1 != null) {
-			typeRefs0.add(derivedRet0.right);
-			typeRefs1.add(derivedRet1.right);
-			derivedRet0 = derivedType(derivedRet0.left);
-			derivedRet1 = derivedType(derivedRet1.left);
+		originExts = new LinkedList<>();
+		castedExts = new LinkedList<>();
+		originSuffixType = getPointer2ArrayReferedType(originType, originExts);
+		castedSuffixType = getPointer2ArrayReferedType(castedType, castedExts);
+		// Constraint 2 checking:
+		if (!originSuffixType.equals(castedSuffixType))
+			throw new CIVLUnimplementedFeatureException(
+					"Casting a pointer-to-(array-of)*-T1 to a pointer-to-(array-of)*-T2,"
+							+ " where T1 and T2 are not lexically equivalent.",
+					source);
+		eval = valueOfExtents(state, pid, castedExts);
+		castedDimArray = eval.value;
+		// If the given pointer was casted before, then it contains the original
+		// array dimensions and original pointer values:
+		if (isCastedPointer(pointer)) {
+			originExtsProd = getOriginExtProd(pointer);
+			pointer = getOriginPointer(pointer);
+			eval.value = universe.apply(castFunc,
+					Arrays.asList(castedDimArray, originExtsProd, pointer));
+		} else {
+			eval = valueOfExtents(state, pid, originExts);
+			originDimArray = eval.value;
+			eval.value = this.normalize(castedDimArray, originDimArray,
+					pointer);
 		}
-
-		// check then remove the common prefix and suffix:
-		while (!typeRefs0.isEmpty() && !typeRefs1.isEmpty()) {
-			Pair<TypeKind, Expression> typeRef0, typeRef1;
-
-			typeRef0 = typeRefs0.removeFirst();
-			typeRef1 = typeRefs1.removeFirst();
-		}
+		return eval;
 	}
 
-	private Pair<CIVLType, Pair<TypeKind, Expression>> derivedType(
-			CIVLType type) {
-		TypeKind kind = type.typeKind();
+	// invariants:
+	// isCastedPointer(pointer) ==>
+	// originExtsProd <= castedExtsProd && castedExtsProd % originExtsProd == 0;
+	private SymbolicExpression normalize(SymbolicExpression castedDimArray,
+			SymbolicExpression originDimArray, SymbolicExpression pointer) {
+		NumericExpression castedExtsProd, originExtsProd;
+		NumericExpression factor;
+		SymbolicArrayType originDimArrayType = (SymbolicArrayType) originDimArray
+				.type();
+		int dim = originDimArrayType.dimensions();
+		ReferenceExpression reference = evaluator.symbolicUtility()
+				.getSymRef(pointer);
 
-		switch (kind) {
-			case ARRAY :
-				CIVLArrayType arrayType = (CIVLArrayType) type;
-				Expression extent = null;
-				if (arrayType.isComplete())
-					extent = ((CIVLCompleteArrayType) arrayType).extent();
-				return new Pair<>(arrayType.elementType(),
-						new Pair<>(TypeKind.ARRAY, extent));
-			case POINTER :
-				CIVLPointerType ptrType = (CIVLPointerType) type;
-				return new Pair<>(ptrType.baseType(),
-						new Pair<>(TypeKind.POINTER, null));
-			default :
-				return null;
-		}
+		for (int i = 0; i < dim; i++)
+			reference = universe.arrayElementReference(reference,
+					universe.zeroInt());
+		pointer = evaluator.symbolicUtility().makePointer(pointer, reference);
+		return universe.apply(castFunc, Arrays.asList(castedDimArray, pointer));
 	}
 
-	private boolean typeAbstEquals(State state, int pid,
-			Pair<TypeKind, Expression> typeAbst0,
-			Pair<TypeKind, Expression> typeAbst1)
+	private CIVLType getPointer2ArrayReferedType(CIVLPointerType type,
+			List<Expression> extents) {
+		CIVLType referedType = type.baseType();
+		TypeKind kind = referedType.typeKind();
+
+		while (kind == TypeKind.ARRAY) {
+			CIVLArrayType arrayType = (CIVLArrayType) referedType;
+
+			referedType = (arrayType).elementType();
+			if (arrayType.isComplete()) {
+				extents.add(((CIVLCompleteArrayType) arrayType).extent());
+			} else
+				extents.add(null);
+			kind = referedType.typeKind();
+		}
+		return referedType;
+	}
+
+	private Evaluation valueOfExtents(State state, int pid,
+			List<Expression> extents)
 			throws UnsatisfiablePathConditionException {
-		// If both are null, true
-		if (typeAbst0 == null && typeAbst1 == null)
-			return true;
-		// If both are pointers, true
-		if (typeAbst0.left == TypeKind.POINTER
-				&& typeAbst1.left == TypeKind.POINTER)
-			return true;
-		// If both are array, check extent
-		if (typeAbst0.left == TypeKind.ARRAY
-				&& typeAbst1.left == TypeKind.ARRAY) {
-			Expression ext0, ext1;
+		List<NumericExpression> valueComponents = new LinkedList<>();
+		Evaluation eval = null;
 
-			ext0 = typeAbst0.right;
-			ext1 = typeAbst1.right;
-			if (ext0 != null && ext1 != null) {
-				if (ext0.equals(ext1))
-					return true;
-
-				Evaluation eval;
-				SymbolicExpression ext0val, ext1val;
-
-				eval = evaluator.evaluate(state, pid, ext0);
-				ext0val = eval.value;
-				eval = evaluator.evaluate(eval.state, pid, ext1);
-				ext1val = eval.value;
-
+		for (Expression extent : extents) {
+			if (extent == null) {
+				// Only first extent can be absent, e.g. a[][N];
+				// Front-end should guarantee this:
+				assert valueComponents.isEmpty();
+				valueComponents.add(noExtent);
+			} else {
+				eval = evaluator.evaluate(state, pid, extent);
+				state = eval.state;
+				valueComponents.add((NumericExpression) eval.value);
 			}
 		}
-		// Else false
-		return false;
+		if (eval == null)
+			eval = new Evaluation(state, null);
+		eval.value = universe.array(universe.integerType(), valueComponents);
+		return eval;
+	}
+
+	private NumericExpression product(SymbolicExpression array) {
+		NumericExpression product = universe.oneInt();
+		SymbolicArrayType arrayType = (SymbolicArrayType) array.type();
+		int dim = arrayType.dimensions();
+
+		for (int i = 0; i < dim; i++)
+			product = universe.multiply(product, (NumericExpression) universe
+					.arrayRead(array, universe.integer(i)));
+		return product;
+	}
+
+	private SymbolicExpression getCastedDimArray(
+			SymbolicExpression castedPointer) {
+		SymbolicExpression args = (SymbolicExpression) castedPointer
+				.argument(1);
+
+		return (SymbolicExpression) args.argument(0);
+	}
+
+	private NumericExpression getOriginExtProd(
+			SymbolicExpression castedPointer) {
+		SymbolicExpression args = (SymbolicExpression) castedPointer
+				.argument(1);
+
+		return (NumericExpression) args.argument(1);
+	}
+
+	private SymbolicExpression getOriginPointer(
+			SymbolicExpression castedPointer) {
+		SymbolicExpression args = (SymbolicExpression) castedPointer
+				.argument(1);
+
+		return (SymbolicExpression) args.argument(2);
 	}
 }
