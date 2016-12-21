@@ -170,7 +170,7 @@ public class Svcomp17PthreadsTest {
 	public void pthread_complex_1() {
 		// Expected error: VERIFIER_error(), but in fact other error
 		assertFalse(ui.run("verify -svcomp17 ",
-				filename("bounded_buffer_false-unreach-call.i.i")));
+				filename("bounded_buffer_false-unreach-call.i")));
 	}
 
 	@Test
