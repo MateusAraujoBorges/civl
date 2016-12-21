@@ -6671,10 +6671,10 @@ int main(void)
  whoop_int = __VERIFIER_nondet_int();
  __VERIFIER_assume(whoop_int >= 0);
  int _whoop_init_result = _whoop_init();
- pthread_t pthread_t_nvram_unlocked_ioctl;
+ pthread_t pthread_t_read_nvram;
  pthread_t pthread_t_nvram_llseek;
- pthread_create(&pthread_t_nvram_unlocked_ioctl, ((void *)0), whoop_wrapper_nvram_unlocked_ioctl, ((void *)0));
+ pthread_create(&pthread_t_read_nvram, ((void *)0), whoop_wrapper_read_nvram, ((void *)0));
  pthread_create(&pthread_t_nvram_llseek, ((void *)0), whoop_wrapper_nvram_llseek, ((void *)0));
- pthread_join(pthread_t_nvram_unlocked_ioctl, ((void *)0));
+ pthread_join(pthread_t_read_nvram, ((void *)0));
  pthread_join(pthread_t_nvram_llseek, ((void *)0));
 }

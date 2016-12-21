@@ -35,25 +35,25 @@ public class Svcomp17Test {
 				ui.run("verify -svcomp17 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
 						TestConstants.QUIET, filename("unique_loop.c")));
 	}
-	
+
 	@Test
 	public void stringLiteral() {
 		assertTrue(ui.run("verify -showModel=false ", TestConstants.QUIET,
 				filename("stringLiteralIf.c")));
 	}
-	
+
 	@Test
 	public void assumeTest() {
 		ui.run("verify -svcomp17", TestConstants.QUIET,
 				filename("assume_with_disjuncts.c"));
 	}
-	
+
 	@Test
 	public void lorBug() {
 		ui.run("verify -showTransitions=false ", TestConstants.QUIET,
 				filename("lorBug.cvl"));
 	}
-	
+
 	@Test
 	public void unnamed_field() {
 		assertTrue(ui.run("verify", TestConstants.QUIET,
@@ -85,12 +85,6 @@ public class Svcomp17Test {
 	// *************** Failed CIVL 3826, ABC 1384 *****************
 
 	@Test
-	public void svcompHeader() {
-		// Can't find the header..
-		ui.run("show -svcomp17", filename("svcompHeader.i"));
-	}
-
-	@Test
 	public void int2pointerOnInputs() {
 		// DEREFERENCE violation at int2pointerOnSymConst.cvl:4.2-5 "q[0]"
 		ui.run("verify -svcomp17", filename("int2pointerOnSymConst.cvl"));
@@ -110,7 +104,7 @@ public class Svcomp17Test {
 	public void parport_false() {
 		// HomogeneousExpression cannot be cast to ReferenceExpression
 		assertFalse(
-				ui.run("verify -svcomp17 -showTransitions -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
+				ui.run("verify -svcomp17 -showTransitions=false -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
 						filename("parport_false-unreach-call.i.cil.c")));
 	}
 
@@ -150,7 +144,7 @@ public class Svcomp17Test {
 	@Test
 	public void bitwise_op2() {
 		// Error: Anonymous struct or union.
-		assertTrue(ui.run("verify -svcomp17", filename(
+		assertTrue(ui.run("verify -svcomp17 -debug=false", filename(
 				"char_pc8736x_gpio_pc8736x_gpio_configure_pc8736x_gpio_set_true-unreach-call.i")));
 	}
 

@@ -161,6 +161,49 @@ void __VERIFIER_assert(int cond) {
   }
   return;
 }
+static inline void INIT_LIST_HEAD(struct list_head *list)
+{
+ list->next = list;
+ list->prev = list;
+}
+static inline void __list_add(struct list_head *new, struct list_head *prev, struct list_head *next)
+{
+ next->prev = new;
+ new->next = next;
+ new->prev = prev;
+ prev->next = new;
+}
+static inline void list_add(struct list_head *new, struct list_head *head)
+{
+ __list_add(new, head, head->next);
+}
+static inline void __list_del(struct list_head * prev, struct list_head * next)
+{
+ next->prev = prev;
+ prev->next = next;
+}
+static inline void list_del_init(struct list_head *entry)
+{
+ __list_del(entry->prev, entry->next);
+ INIT_LIST_HEAD(entry);
+}
+static inline int list_empty(const struct list_head *head)
+{
+ return head->next == head;
+}
+__attribute__((always_inline)) void barrier(void);
+__attribute__((always_inline)) void wmb(void);
+__attribute__((always_inline)) void smp_mb(void);
+__attribute__((always_inline)) void smp_wmb(void);
+void set_bit(int nr, unsigned long * addr);
+void clear_bit(long nr, volatile unsigned long * addr);
+int test_and_set_bit(long nr, unsigned long * addr);
+int test_and_clear_bit(long nr, unsigned long * addr);
+int test_and_change_bit(long nr, unsigned long* addr);
+int test_bit(long nr, const void * addr);
+int find_first_zero_bit(const unsigned long *addr, unsigned size);
+struct task_struct;
+struct exec_domain;
 struct task_struct;
 typedef struct kernel_cap_struct {
  __u32 cap[2];
@@ -229,234 +272,6 @@ struct cpuinfo_x86 {
   u32 microcode;
 };
 extern struct cpuinfo_x86 boot_cpu_data;
-unsigned long jiffies;
-void synchronize_sched(void);
-void* rcu_dereference_raw(void*);
-void* rcu_dereference_check(void*,int);
-extern unsigned int __VMALLOC_RESERVE;
-extern int sysctl_legacy_va_layout;
-extern void find_low_pfn_range(void);
-extern void setup_bootmem_allocator(void);
-extern int devmem_is_allowed(unsigned long pagenr);
-extern unsigned long max_low_pfn_mapped;
-extern unsigned long max_pfn_mapped;
-extern bool kaslr_enabled;
-static __attribute__((always_inline)) phys_addr_t get_max_mapped(void)
-{
- return (phys_addr_t)max_pfn_mapped << 12;
-}
-bool pfn_range_is_mapped(unsigned long start_pfn, unsigned long end_pfn);
-extern unsigned long init_memory_mapping(unsigned long start,
-      unsigned long end);
-extern void initmem_init(void);
-enum page_cache_mode {
- _PAGE_CACHE_MODE_WB = 0,
- _PAGE_CACHE_MODE_WC = 1,
- _PAGE_CACHE_MODE_UC_MINUS = 2,
- _PAGE_CACHE_MODE_UC = 3,
- _PAGE_CACHE_MODE_WT = 4,
- _PAGE_CACHE_MODE_WP = 5,
- _PAGE_CACHE_MODE_NUM = 8
-};
-typedef unsigned long pteval_t;
-typedef unsigned long pmdval_t;
-typedef unsigned long pudval_t;
-typedef unsigned long pgdval_t;
-typedef unsigned long pgprotval_t;
-typedef struct { pteval_t pte; } pte_t;
-typedef struct {
- unsigned long pgprot;
-} pgprot_t;
-typedef struct { pgdval_t pgd; } pgd_t;
-static __attribute__((always_inline)) pgd_t native_make_pgd(pgdval_t val)
-{
- return (pgd_t) { val };
-}
-static __attribute__((always_inline)) pgdval_t native_pgd_val(pgd_t pgd)
-{
- return pgd.pgd;
-}
-static __attribute__((always_inline)) pgdval_t pgd_flags(pgd_t pgd)
-{
- return native_pgd_val(pgd) & (~((pteval_t)(((signed long)(~(((1UL) << 12)-1))) & ((phys_addr_t)((1ULL << 32) - 1)))));
-}
-typedef struct { pudval_t pud; } pud_t;
-static __attribute__((always_inline)) pud_t native_make_pud(pmdval_t val)
-{
- return (pud_t) { val };
-}
-static __attribute__((always_inline)) pudval_t native_pud_val(pud_t pud)
-{
- return pud.pud;
-}
-typedef struct { pmdval_t pmd; } pmd_t;
-static __attribute__((always_inline)) pmd_t native_make_pmd(pmdval_t val)
-{
- return (pmd_t) { val };
-}
-static __attribute__((always_inline)) pmdval_t native_pmd_val(pmd_t pmd)
-{
- return pmd.pmd;
-}
-static __attribute__((always_inline)) pudval_t pud_flags(pud_t pud)
-{
- return native_pud_val(pud) & (~((pteval_t)(((signed long)(~(((1UL) << 12)-1))) & ((phys_addr_t)((1ULL << 32) - 1)))));
-}
-static __attribute__((always_inline)) pmdval_t pmd_flags(pmd_t pmd)
-{
- return native_pmd_val(pmd) & (~((pteval_t)(((signed long)(~(((1UL) << 12)-1))) & ((phys_addr_t)((1ULL << 32) - 1)))));
-}
-static __attribute__((always_inline)) pte_t native_make_pte(pteval_t val)
-{
- return (pte_t) { .pte = val };
-}
-static __attribute__((always_inline)) pteval_t native_pte_val(pte_t pte)
-{
- return pte.pte;
-}
-static __attribute__((always_inline)) pteval_t pte_flags(pte_t pte)
-{
- return native_pte_val(pte) & (~((pteval_t)(((signed long)(~(((1UL) << 12)-1))) & ((phys_addr_t)((1ULL << 32) - 1)))));
-}
-extern uint16_t __cachemode2pte_tbl[_PAGE_CACHE_MODE_NUM];
-extern uint8_t __pte2cachemode_tbl[8];
-static __attribute__((always_inline)) unsigned long cachemode2protval(enum page_cache_mode pcm)
-{
- if (true)
-  return 0;
- return __cachemode2pte_tbl[pcm];
-}
-static __attribute__((always_inline)) pgprot_t cachemode2pgprot(enum page_cache_mode pcm)
-{
- return ((pgprot_t) { (cachemode2protval(pcm)) } );
-}
-static __attribute__((always_inline)) enum page_cache_mode pgprot2cachemode(pgprot_t pgprot)
-{
- unsigned long masked;
- masked = ((pgprot).pgprot) & ((((pteval_t)(1)) << 7) | (((pteval_t)(1)) << 4) | (((pteval_t)(1)) << 3));
- if (true)
-  return 0;
- return __pte2cachemode_tbl[((((masked) >> (7 - 2)) & 4) | (((masked) >> (4 - 1)) & 2) | (((masked) >> 3) & 1))];
-}
-static __attribute__((always_inline)) pgprot_t pgprot_4k_2_large(pgprot_t pgprot)
-{
- pgprot_t new;
- unsigned long val;
- val = ((pgprot).pgprot);
- ((new).pgprot) = (val & ~((((pteval_t)(1)) << 7) | (((pteval_t)(1)) << 12))) |
-  ((val & (((pteval_t)(1)) << 7)) << (12 - 7));
- return new;
-}
-static __attribute__((always_inline)) pgprot_t pgprot_large_2_4k(pgprot_t pgprot)
-{
- pgprot_t new;
- unsigned long val;
- val = ((pgprot).pgprot);
- ((new).pgprot) = (val & ~((((pteval_t)(1)) << 7) | (((pteval_t)(1)) << 12))) |
-     ((val & (((pteval_t)(1)) << 12)) >>
-      (12 - 7));
- return new;
-}
-typedef struct page *pgtable_t;
-extern pteval_t __supported_pte_mask;
-extern void set_nx(void);
-extern int nx_enabled;
-extern pgprot_t pgprot_writecombine(pgprot_t prot);
-struct file;
-pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
-                              unsigned long size, pgprot_t vma_prot);
-int phys_mem_access_prot_allowed(struct file *file, unsigned long pfn,
-                              unsigned long size, pgprot_t *vma_prot);
-void set_pte_vaddr(unsigned long vaddr, pte_t pte);
-struct seq_file;
-extern void arch_report_meminfo(struct seq_file *m);
-enum pg_level {
- PG_LEVEL_NONE,
- PG_LEVEL_4K,
- PG_LEVEL_2M,
- PG_LEVEL_1G,
- PG_LEVEL_NUM
-};
-static __attribute__((always_inline)) void update_page_count(int level, unsigned long pages) { }
-extern pte_t *lookup_address(unsigned long address, unsigned int *level);
-extern pte_t *lookup_address_in_pgd(pgd_t *pgd, unsigned long address,
-        unsigned int *level);
-extern pmd_t *lookup_pmd_address(unsigned long address);
-extern phys_addr_t slow_virt_to_phys(void *__address);
-extern int kernel_map_pages_in_pgd(pgd_t *pgd, u64 pfn, unsigned long address,
-       unsigned numpages, unsigned long page_flags);
-void kernel_unmap_pages_in_pgd(pgd_t *root, unsigned long address,
-          unsigned numpages);
-struct page {
-    void *data;
-};
-struct vm_area_struct {
-  unsigned long vm_start;
-  unsigned long vm_end;
-  pgprot_t vm_page_prot;
-  unsigned long vm_pgoff;
-};
-static __attribute__((always_inline)) void *page_address(struct page *page)
-{
- return page->data;
-}
-struct task_struct {
-  long state;
-};
-struct resource {
- unsigned long start, end;
- const char *name;
- unsigned long flags;
-};
-extern void __release_region(struct resource *, resource_size_t, resource_size_t);
-extern struct resource * __request_region(struct resource *,
-                                          resource_size_t start,
-                                          resource_size_t n,
-                                          const char *name, int flags);
-struct mutex
-{
-  int init;
-  int locked;
-};
-void mutex_init(struct mutex *lock)
-{
-  lock->locked = 0;
-  lock->init = 1;
-}
-void mutex_lock(struct mutex *lock)
-{
-  __VERIFIER_atomic_begin();
-  __VERIFIER_assume(lock->locked == 0);
-  lock->locked = 1;
-  __VERIFIER_atomic_end();
-}
-bool mutex_lock_interruptible(struct mutex *lock)
-{
-  bool ret = __VERIFIER_nondet_bool();
-  if(!ret) {
-    __VERIFIER_atomic_begin();
-    __VERIFIER_assume(lock->locked == 0);
-    lock->locked = 1;
-    __VERIFIER_atomic_end();
-  }
-  return ret;
-}
-void mutex_unlock(struct mutex *lock)
-{
-  __VERIFIER_atomic_begin();
-  lock->locked = 0;
-  __VERIFIER_atomic_end();
-}
-struct timer_list {
- unsigned long expires;
- void (*function)(unsigned long);
- unsigned long data;
-};
-void init_timer(struct timer_list * timer);
-void add_timer_on(struct timer_list *timer, int cpu);
-void add_timer(struct timer_list *timer);
-int del_timer(struct timer_list * timer);
-int mod_timer(struct timer_list *timer, unsigned long expires);
 static __attribute__((always_inline)) int atomic_read(const atomic_t *v)
 {
  return v->counter;
@@ -522,20 +337,33 @@ static __attribute__((always_inline)) int atomic_sub_return(int i, atomic_t *v)
 {
  return v->counter - i;
 }
-struct work_struct {
-    void (*func)(void *);
-    void *data;
+struct thread_info {
+ struct task_struct *task;
+ struct exec_domain *exec_domain;
+ __u32 flags;
+ __u32 status;
+ __u32 cpu;
+ int saved_preempt_count;
+ void *sysenter_return;
+ unsigned int sig_on_uaccess_error:1;
+ unsigned int uaccess_err:1;
 };
-typedef void (*work_func_t)(struct work_struct *work);
-struct delayed_work {
-  struct work_struct work;
-  struct timer_list timer;
-  struct workqueue_struct *wq;
-  int cpu;
-};
-bool schedule_work(struct work_struct *work);
-void flush_scheduled_work(void);
-bool cancel_work_sync(struct work_struct *work);
+extern void* malloc(unsigned int);
+static __attribute__((always_inline)) struct thread_info *current_thread_info(void)
+{
+ struct thread_info *ti = (struct thread_info *) malloc(sizeof(struct thread_info));
+ return ti;
+}
+extern enum system_states {
+ SYSTEM_BOOTING,
+ SYSTEM_RUNNING,
+ SYSTEM_HALT,
+ SYSTEM_POWER_OFF,
+ SYSTEM_RESTART,
+} system_state;
+int printk(const char * fmt, ...);
+int sprintf(char * buf, const char * fmt, ...);
+int snprintf(char * buf, size_t size, const char * fmt, ...);
 typedef struct
 {
   int init;
@@ -598,512 +426,6 @@ void spin_unlock_bh(spinlock_t *lock)
   lock->lock = 0;
   __VERIFIER_atomic_end();
 }
-static __attribute__((always_inline)) void INIT_LIST_HEAD(struct list_head *list)
-{
- list->next = list;
- list->prev = list;
-}
-static __attribute__((always_inline)) void __list_add(struct list_head *new, struct list_head *prev, struct list_head *next)
-{
- next->prev = new;
- new->next = next;
- new->prev = prev;
- prev->next = new;
-}
-static __attribute__((always_inline)) void list_add(struct list_head *new, struct list_head *head)
-{
- __list_add(new, head, head->next);
-}
-static __attribute__((always_inline)) void __list_del(struct list_head * prev, struct list_head * next)
-{
- next->prev = prev;
- prev->next = next;
-}
-static __attribute__((always_inline)) void list_del_init(struct list_head *entry)
-{
- __list_del(entry->prev, entry->next);
- INIT_LIST_HEAD(entry);
-}
-static __attribute__((always_inline)) int list_empty(const struct list_head *head)
-{
- return head->next == head;
-}
-struct device;
-typedef struct pm_message {
- int event;
-} pm_message_t;
-struct dev_pm_ops {
- int (*prepare)(struct device *dev);
- void (*complete)(struct device *dev);
- int (*suspend)(struct device *dev);
- int (*resume)(struct device *dev);
- int (*freeze)(struct device *dev);
- int (*thaw)(struct device *dev);
- int (*poweroff)(struct device *dev);
- int (*restore)(struct device *dev);
- int (*suspend_late)(struct device *dev);
- int (*resume_early)(struct device *dev);
- int (*freeze_late)(struct device *dev);
- int (*thaw_early)(struct device *dev);
- int (*poweroff_late)(struct device *dev);
- int (*restore_early)(struct device *dev);
- int (*suspend_noirq)(struct device *dev);
- int (*resume_noirq)(struct device *dev);
- int (*freeze_noirq)(struct device *dev);
- int (*thaw_noirq)(struct device *dev);
- int (*poweroff_noirq)(struct device *dev);
- int (*restore_noirq)(struct device *dev);
- int (*runtime_suspend)(struct device *dev);
- int (*runtime_resume)(struct device *dev);
- int (*runtime_idle)(struct device *dev);
-};
-int device_set_wakeup_enable(struct device *dev, bool enable);
-int pm_schedule_suspend(struct device *dev, unsigned int delay);
-int pm_request_idle(struct device *dev);
-int pm_request_resume(struct device *dev);
-int pm_request_autosuspend(struct device *dev);
-int pm_runtime_idle(struct device *dev);
-int pm_runtime_suspend(struct device *dev);
-int pm_runtime_autosuspend(struct device *dev);
-int pm_runtime_resume(struct device *dev);
-int pm_runtime_get(struct device *dev);
-int pm_runtime_get_sync(struct device *dev);
-int pm_runtime_put(struct device *dev);
-int pm_runtime_put_autosuspend(struct device *dev);
-int pm_runtime_put_sync(struct device *dev);
-int pm_runtime_put_sync_suspend(struct device *dev);
-int pm_runtime_put_sync_autosuspend(struct device *dev);
-int pm_runtime_set_active(struct device *dev);
-void pm_runtime_get_noresume(struct device *dev);
-void pm_runtime_set_suspended(struct device *dev);
-void pm_runtime_disable(struct device *dev);
-void pm_runtime_use_autosuspend(struct device *dev);
-void pm_runtime_dont_use_autosuspend(struct device *dev);
-void pm_runtime_put_noidle(struct device *dev);
-__attribute__((always_inline)) void barrier(void);
-__attribute__((always_inline)) void wmb(void);
-__attribute__((always_inline)) void smp_mb(void);
-__attribute__((always_inline)) void smp_wmb(void);
-void set_bit(int nr, unsigned long * addr);
-void clear_bit(long nr, volatile unsigned long * addr);
-int test_and_set_bit(long nr, unsigned long * addr);
-int test_and_clear_bit(long nr, unsigned long * addr);
-int test_and_change_bit(long nr, unsigned long* addr);
-int test_bit(long nr, const void * addr);
-int find_first_zero_bit(const unsigned long *addr, unsigned size);
-struct task_struct;
-struct exec_domain;
-struct thread_info {
- struct task_struct *task;
- struct exec_domain *exec_domain;
- __u32 flags;
- __u32 status;
- __u32 cpu;
- int saved_preempt_count;
- void *sysenter_return;
- unsigned int sig_on_uaccess_error:1;
- unsigned int uaccess_err:1;
-};
-extern void* malloc(unsigned int);
-static __attribute__((always_inline)) struct thread_info *current_thread_info(void)
-{
- struct thread_info *ti = (struct thread_info *) malloc(sizeof(struct thread_info));
- return ti;
-}
-extern enum system_states {
- SYSTEM_BOOTING,
- SYSTEM_RUNNING,
- SYSTEM_HALT,
- SYSTEM_POWER_OFF,
- SYSTEM_RESTART,
-} system_state;
-int printk(const char * fmt, ...);
-int sprintf(char * buf, const char * fmt, ...);
-int snprintf(char * buf, size_t size, const char * fmt, ...);
-static int fls(int x)
-{
- int r = 32;
- if (!x)
-  return 0;
- if (!(x & 0xffff0000u)) {
-  x <<= 16;
-  r -= 16;
- }
- if (!(x & 0xff000000u)) {
-  x <<= 8;
-  r -= 8;
- }
- if (!(x & 0xf0000000u)) {
-  x <<= 4;
-  r -= 4;
- }
- if (!(x & 0xc0000000u)) {
-  x <<= 2;
-  r -= 2;
- }
- if (!(x & 0x80000000u)) {
-  x <<= 1;
-  r -= 1;
- }
- return r;
-}
-static int fls64(unsigned long x)
-{
- unsigned int h = x >> 16;
- if (h)
-  return fls(h) + 32;
- return fls(x);
-}
-static unsigned fls_long(unsigned long l)
-{
- if (sizeof(l) == 4)
-  return fls(l);
- return fls64(l);
-}
-struct idr_layer {
- int prefix;
- int layer;
- struct idr_layer *ary[1<<8];
- int count;
- union {
-  unsigned long bitmap[((((1 << 8)) + (8 * sizeof(long)) - 1) / (8 * sizeof(long)))];
-  struct callback_head callback_head;
- };
-};
-struct idr {
- struct idr_layer *hint;
- struct idr_layer *top;
- int layers;
- int cur;
- spinlock_t lock;
- int id_free_cnt;
- struct idr_layer *id_free;
-};
-void *idr_find_slowpath(struct idr *idp, int id);
-void idr_preload(gfp_t gfp_mask);
-int idr_alloc(struct idr *idp, void *ptr, int start, int end, gfp_t gfp_mask);
-int idr_alloc_cyclic(struct idr *idr, void *ptr, int start, int end, gfp_t gfp_mask);
-int idr_for_each(struct idr *idp,
-   int (*fn)(int id, void *p, void *data), void *data);
-void *idr_get_next(struct idr *idp, int *nextid);
-void *idr_replace(struct idr *idp, void *ptr, int id);
-void idr_remove(struct idr *idp, int id);
-void idr_destroy(struct idr *idp);
-void idr_init(struct idr *idp);
-bool idr_is_empty(struct idr *idp);
-static __attribute__((always_inline)) void idr_preload_end(void)
-{
- barrier();
-}
-static __attribute__((always_inline)) void *idr_find(struct idr *idr, int id)
-{
- struct idr_layer *hint = rcu_dereference_raw(idr->hint);
- if (hint && (id & ~((1 << 8)-1)) == hint->prefix)
-  return rcu_dereference_raw(hint->ary[id & ((1 << 8)-1)]);
- return idr_find_slowpath(idr, id);
-}
-struct ida_bitmap {
- long nr_busy;
- unsigned long bitmap[(128 / sizeof(long) - 1)];
-};
-struct ida {
- struct idr idr;
- struct ida_bitmap *free_bitmap;
-};
-int ida_pre_get(struct ida *ida, gfp_t gfp_mask);
-int ida_get_new_above(struct ida *ida, int starting_id, int *p_id);
-void ida_remove(struct ida *ida, int id);
-void ida_destroy(struct ida *ida);
-void ida_init(struct ida *ida);
-int ida_simple_get(struct ida *ida, unsigned int start, unsigned int end,
-     gfp_t gfp_mask);
-void ida_simple_remove(struct ida *ida, unsigned int id);
-static __attribute__((always_inline)) int ida_get_new(struct ida *ida, int *p_id)
-{
- return ida_get_new_above(ida, 0, p_id);
-}
-void idr_init_cache(void);
-struct task_struct;
-struct lockdep_map;
-extern int prove_locking;
-extern int lock_stat;
-static __attribute__((always_inline)) void lockdep_off(void)
-{
-}
-static __attribute__((always_inline)) void lockdep_on(void)
-{
-}
-struct lock_class_key { };
-static __attribute__((always_inline)) void print_irqtrace_events(struct task_struct *curr)
-{
-}
-struct rb_node {
-  unsigned long __rb_parent_color;
-  struct rb_node *rb_right;
-  struct rb_node *rb_left;
-};
-struct rb_root {
-  struct rb_node *rb_node;
-};
-typedef struct __wait_queue wait_queue_t;
-typedef int (*wait_queue_func_t)(wait_queue_t *wait, unsigned mode, int flags, void *key);
-int default_wake_function(wait_queue_t *wait, unsigned mode, int flags, void *key);
-struct __wait_queue {
- unsigned int flags;
- void *private;
- wait_queue_func_t func;
- struct list_head task_list;
-};
-struct wait_bit_key {
- void *flags;
- int bit_nr;
- unsigned long timeout;
-};
-struct wait_bit_queue {
- struct wait_bit_key key;
- wait_queue_t wait;
-};
-struct __wait_queue_head {
- spinlock_t lock;
-};
-typedef struct __wait_queue_head wait_queue_head_t;
-struct file;
-struct dentry;
-struct iattr;
-struct seq_file;
-struct vm_area_struct;
-struct super_block;
-struct file_system_type;
-struct kernfs_open_node;
-struct kernfs_iattrs;
-enum kernfs_node_type {
- KERNFS_DIR = 0x0001,
- KERNFS_FILE = 0x0002,
- KERNFS_LINK = 0x0004,
-};
-enum kernfs_node_flag {
- KERNFS_ACTIVATED = 0x0010,
- KERNFS_NS = 0x0020,
- KERNFS_HAS_SEQ_SHOW = 0x0040,
- KERNFS_HAS_MMAP = 0x0080,
- KERNFS_LOCKDEP = 0x0100,
- KERNFS_SUICIDAL = 0x0400,
- KERNFS_SUICIDED = 0x0800,
-};
-enum kernfs_root_flag {
- KERNFS_ROOT_CREATE_DEACTIVATED = 0x0001,
- KERNFS_ROOT_EXTRA_OPEN_PERM_CHECK = 0x0002,
-};
-struct kernfs_elem_dir {
- unsigned long subdirs;
- struct rb_root children;
- struct kernfs_root *root;
-};
-struct kernfs_elem_symlink {
- struct kernfs_node *target_kn;
-};
-struct kernfs_elem_attr {
- const struct kernfs_ops *ops;
- struct kernfs_open_node *open;
- loff_t size;
- struct kernfs_node *notify_next;
-};
-struct kernfs_node {
- atomic_t count;
- atomic_t active;
- struct kernfs_node *parent;
- const char *name;
- struct rb_node rb;
- const void *ns;
- unsigned int hash;
- union {
-  struct kernfs_elem_dir dir;
-  struct kernfs_elem_symlink symlink;
-  struct kernfs_elem_attr attr;
- };
- void *priv;
- unsigned short flags;
- umode_t mode;
- unsigned int ino;
- struct kernfs_iattrs *iattr;
-};
-struct kernfs_syscall_ops {
- int (*remount_fs)(struct kernfs_root *root, int *flags, char *data);
- int (*show_options)(struct seq_file *sf, struct kernfs_root *root);
- int (*mkdir)(struct kernfs_node *parent, const char *name,
-       umode_t mode);
- int (*rmdir)(struct kernfs_node *kn);
- int (*rename)(struct kernfs_node *kn, struct kernfs_node *new_parent,
-        const char *new_name);
-};
-struct kernfs_root {
- struct kernfs_node *kn;
- unsigned int flags;
- struct ida ino_ida;
- struct kernfs_syscall_ops *syscall_ops;
- struct list_head supers;
- wait_queue_head_t deactivate_waitq;
-};
-struct kernfs_open_file {
- struct kernfs_node *kn;
- struct file *file;
- void *priv;
- struct mutex mutex;
- int event;
- struct list_head list;
- char *prealloc_buf;
- size_t atomic_write_len;
- bool mmapped;
- const struct vm_operations_struct *vm_ops;
-};
-struct kernfs_ops {
- int (*seq_show)(struct seq_file *sf, void *v);
- void *(*seq_start)(struct seq_file *sf, loff_t *ppos);
- void *(*seq_next)(struct seq_file *sf, void *v, loff_t *ppos);
- void (*seq_stop)(struct seq_file *sf, void *v);
- ssize_t (*read)(struct kernfs_open_file *of, char *buf, size_t bytes,
-   loff_t off);
- size_t atomic_write_len;
- bool prealloc;
- ssize_t (*write)(struct kernfs_open_file *of, char *buf, size_t bytes,
-    loff_t off);
- int (*mmap)(struct kernfs_open_file *of, struct vm_area_struct *vma);
-};
-static __attribute__((always_inline)) enum kernfs_node_type kernfs_type(struct kernfs_node *kn)
-{ return 0; }
-static __attribute__((always_inline)) void kernfs_enable_ns(struct kernfs_node *kn) { }
-static __attribute__((always_inline)) bool kernfs_ns_enabled(struct kernfs_node *kn)
-{ return false; }
-static __attribute__((always_inline)) int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen)
-{ return -38; }
-static __attribute__((always_inline)) char * kernfs_path(struct kernfs_node *kn, char *buf,
-           size_t buflen)
-{ return ((void *)0); }
-static __attribute__((always_inline)) void pr_cont_kernfs_name(struct kernfs_node *kn) { }
-static __attribute__((always_inline)) void pr_cont_kernfs_path(struct kernfs_node *kn) { }
-static __attribute__((always_inline)) struct kernfs_node *kernfs_get_parent(struct kernfs_node *kn)
-{ return ((void *)0); }
-static __attribute__((always_inline)) struct kernfs_node *
-kernfs_find_and_get_ns(struct kernfs_node *parent, const unsigned char *name,
-         const void *ns)
-{ return ((void *)0); }
-static __attribute__((always_inline)) void kernfs_get(struct kernfs_node *kn) { }
-static __attribute__((always_inline)) void kernfs_put(struct kernfs_node *kn) { }
-static __attribute__((always_inline)) struct kernfs_node *kernfs_node_from_dentry(struct dentry *dentry)
-{ return ((void *)0); }
-static __attribute__((always_inline)) struct kernfs_root *kernfs_root_from_sb(struct super_block *sb)
-{ return ((void *)0); }
-static __attribute__((always_inline)) struct kernfs_root *
-kernfs_create_root(struct kernfs_syscall_ops *scops, unsigned int flags,
-     void *priv)
-{ return ERR_PTR(-38); }
-static __attribute__((always_inline)) void kernfs_destroy_root(struct kernfs_root *root) { }
-static __attribute__((always_inline)) struct kernfs_node *
-kernfs_create_dir_ns(struct kernfs_node *parent, const char *name,
-       umode_t mode, void *priv, const void *ns)
-{ return ERR_PTR(-38); }
-static __attribute__((always_inline)) struct kernfs_node *
-__kernfs_create_file(struct kernfs_node *parent, const char *name,
-       umode_t mode, loff_t size, const struct kernfs_ops *ops,
-       void *priv, const void *ns, struct lock_class_key *key)
-{ return ERR_PTR(-38); }
-static __attribute__((always_inline)) struct kernfs_node *
-kernfs_create_link(struct kernfs_node *parent, const char *name,
-     struct kernfs_node *target)
-{ return ERR_PTR(-38); }
-static __attribute__((always_inline)) void kernfs_activate(struct kernfs_node *kn) { }
-static __attribute__((always_inline)) void kernfs_remove(struct kernfs_node *kn) { }
-static __attribute__((always_inline)) bool kernfs_remove_self(struct kernfs_node *kn)
-{ return false; }
-static __attribute__((always_inline)) int kernfs_remove_by_name_ns(struct kernfs_node *kn,
-        const char *name, const void *ns)
-{ return -38; }
-static __attribute__((always_inline)) int kernfs_rename_ns(struct kernfs_node *kn,
-       struct kernfs_node *new_parent,
-       const char *new_name, const void *new_ns)
-{ return -38; }
-static __attribute__((always_inline)) int kernfs_setattr(struct kernfs_node *kn,
-     const struct iattr *iattr)
-{ return -38; }
-static __attribute__((always_inline)) void kernfs_notify(struct kernfs_node *kn) { }
-static __attribute__((always_inline)) const void *kernfs_super_ns(struct super_block *sb)
-{ return ((void *)0); }
-static __attribute__((always_inline)) struct dentry *
-kernfs_mount_ns(struct file_system_type *fs_type, int flags,
-  struct kernfs_root *root, unsigned long magic,
-  bool *new_sb_created, const void *ns)
-{ return ERR_PTR(-38); }
-static __attribute__((always_inline)) void kernfs_kill_sb(struct super_block *sb) { }
-static __attribute__((always_inline)) void kernfs_init(void) { }
-static __attribute__((always_inline)) struct kernfs_node *
-kernfs_find_and_get(struct kernfs_node *kn, const unsigned char *name)
-{
- return kernfs_find_and_get_ns(kn, name, ((void *)0));
-}
-static __attribute__((always_inline)) struct kernfs_node *
-kernfs_create_dir(struct kernfs_node *parent, const char *name, umode_t mode,
-    void *priv)
-{
- return kernfs_create_dir_ns(parent, name, mode, priv, ((void *)0));
-}
-static __attribute__((always_inline)) struct kernfs_node *
-kernfs_create_file_ns(struct kernfs_node *parent, const char *name,
-        umode_t mode, loff_t size, const struct kernfs_ops *ops,
-        void *priv, const void *ns)
-{
- struct lock_class_key *key = ((void *)0);
- return __kernfs_create_file(parent, name, mode, size, ops, priv, ns,
-        key);
-}
-static __attribute__((always_inline)) struct kernfs_node *
-kernfs_create_file(struct kernfs_node *parent, const char *name, umode_t mode,
-     loff_t size, const struct kernfs_ops *ops, void *priv)
-{
- return kernfs_create_file_ns(parent, name, mode, size, ops, priv, ((void *)0));
-}
-static __attribute__((always_inline)) int kernfs_remove_by_name(struct kernfs_node *parent,
-     const char *name)
-{
- return kernfs_remove_by_name_ns(parent, name, ((void *)0));
-}
-static __attribute__((always_inline)) int kernfs_rename(struct kernfs_node *kn,
-    struct kernfs_node *new_parent,
-    const char *new_name)
-{
- return kernfs_rename_ns(kn, new_parent, new_name, ((void *)0));
-}
-static __attribute__((always_inline)) struct dentry *
-kernfs_mount(struct file_system_type *fs_type, int flags,
-  struct kernfs_root *root, unsigned long magic,
-  bool *new_sb_created)
-{
- return kernfs_mount_ns(fs_type, flags, root,
-    magic, new_sb_created, ((void *)0));
-}
-struct sock;
-struct kobject;
-enum kobj_ns_type {
- KOBJ_NS_TYPE_NONE = 0,
- KOBJ_NS_TYPE_NET,
- KOBJ_NS_TYPES
-};
-struct kobj_ns_type_operations {
- enum kobj_ns_type type;
- bool (*current_may_mount)(void);
- void *(*grab_current_ns)(void);
- const void *(*netlink_ns)(struct sock *sk);
- const void *(*initial_ns)(void);
- void (*drop_ns)(void *);
-};
-int kobj_ns_type_register(const struct kobj_ns_type_operations *ops);
-int kobj_ns_type_registered(enum kobj_ns_type type);
-const struct kobj_ns_type_operations *kobj_child_ns_ops(struct kobject *parent);
-const struct kobj_ns_type_operations *kobj_ns_ops(struct kobject *kobj);
-bool kobj_ns_current_may_mount(enum kobj_ns_type type);
-void *kobj_ns_grab_current(enum kobj_ns_type type);
-const void *kobj_ns_netlink(enum kobj_ns_type type, struct sock *sk);
-const void *kobj_ns_initial(enum kobj_ns_type type);
-void kobj_ns_drop(enum kobj_ns_type type, void *ns);
 typedef struct seqcount {
  unsigned sequence;
 } seqcount_t;
@@ -1510,6 +832,1318 @@ struct kstat {
  unsigned long blksize;
  unsigned long long blocks;
 };
+struct mutex
+{
+  int init;
+  int locked;
+};
+void mutex_init(struct mutex *lock)
+{
+  lock->locked = 0;
+  lock->init = 1;
+}
+void mutex_lock(struct mutex *lock)
+{
+  __VERIFIER_atomic_begin();
+  __VERIFIER_assume(lock->locked == 0);
+  lock->locked = 1;
+  __VERIFIER_atomic_end();
+}
+bool mutex_lock_interruptible(struct mutex *lock)
+{
+  bool ret = __VERIFIER_nondet_bool();
+  if(!ret) {
+    __VERIFIER_atomic_begin();
+    __VERIFIER_assume(lock->locked == 0);
+    lock->locked = 1;
+    __VERIFIER_atomic_end();
+  }
+  return ret;
+}
+void mutex_unlock(struct mutex *lock)
+{
+  __VERIFIER_atomic_begin();
+  lock->locked = 0;
+  __VERIFIER_atomic_end();
+}
+typedef struct {
+ unsigned int clock_rate;
+ unsigned int clock_type;
+ unsigned short loopback;
+} sync_serial_settings;
+typedef struct {
+ unsigned int clock_rate;
+ unsigned int clock_type;
+ unsigned short loopback;
+ unsigned int slot_map;
+} te1_settings;
+typedef struct {
+ unsigned short encoding;
+ unsigned short parity;
+} raw_hdlc_proto;
+typedef struct {
+ unsigned int t391;
+ unsigned int t392;
+ unsigned int n391;
+ unsigned int n392;
+ unsigned int n393;
+ unsigned short lmi;
+ unsigned short dce;
+} fr_proto;
+typedef struct {
+ unsigned int dlci;
+} fr_proto_pvc;
+typedef struct {
+ unsigned int dlci;
+ char master[16];
+}fr_proto_pvc_info;
+typedef struct {
+    unsigned int interval;
+    unsigned int timeout;
+} cisco_proto;
+unsigned long jiffies;
+void synchronize_sched(void);
+void* rcu_dereference_raw(void*);
+void* rcu_dereference_check(void*,int);
+extern unsigned int __VMALLOC_RESERVE;
+extern int sysctl_legacy_va_layout;
+extern void find_low_pfn_range(void);
+extern void setup_bootmem_allocator(void);
+extern int devmem_is_allowed(unsigned long pagenr);
+extern unsigned long max_low_pfn_mapped;
+extern unsigned long max_pfn_mapped;
+extern bool kaslr_enabled;
+static __attribute__((always_inline)) phys_addr_t get_max_mapped(void)
+{
+ return (phys_addr_t)max_pfn_mapped << 12;
+}
+bool pfn_range_is_mapped(unsigned long start_pfn, unsigned long end_pfn);
+extern unsigned long init_memory_mapping(unsigned long start,
+      unsigned long end);
+extern void initmem_init(void);
+enum page_cache_mode {
+ _PAGE_CACHE_MODE_WB = 0,
+ _PAGE_CACHE_MODE_WC = 1,
+ _PAGE_CACHE_MODE_UC_MINUS = 2,
+ _PAGE_CACHE_MODE_UC = 3,
+ _PAGE_CACHE_MODE_WT = 4,
+ _PAGE_CACHE_MODE_WP = 5,
+ _PAGE_CACHE_MODE_NUM = 8
+};
+typedef unsigned long pteval_t;
+typedef unsigned long pmdval_t;
+typedef unsigned long pudval_t;
+typedef unsigned long pgdval_t;
+typedef unsigned long pgprotval_t;
+typedef struct { pteval_t pte; } pte_t;
+typedef struct {
+ unsigned long pgprot;
+} pgprot_t;
+typedef struct { pgdval_t pgd; } pgd_t;
+static __attribute__((always_inline)) pgd_t native_make_pgd(pgdval_t val)
+{
+ return (pgd_t) { val };
+}
+static __attribute__((always_inline)) pgdval_t native_pgd_val(pgd_t pgd)
+{
+ return pgd.pgd;
+}
+static __attribute__((always_inline)) pgdval_t pgd_flags(pgd_t pgd)
+{
+ return native_pgd_val(pgd) & (~((pteval_t)(((signed long)(~(((1UL) << 12)-1))) & ((phys_addr_t)((1ULL << 32) - 1)))));
+}
+typedef struct { pudval_t pud; } pud_t;
+static __attribute__((always_inline)) pud_t native_make_pud(pmdval_t val)
+{
+ return (pud_t) { val };
+}
+static __attribute__((always_inline)) pudval_t native_pud_val(pud_t pud)
+{
+ return pud.pud;
+}
+typedef struct { pmdval_t pmd; } pmd_t;
+static __attribute__((always_inline)) pmd_t native_make_pmd(pmdval_t val)
+{
+ return (pmd_t) { val };
+}
+static __attribute__((always_inline)) pmdval_t native_pmd_val(pmd_t pmd)
+{
+ return pmd.pmd;
+}
+static __attribute__((always_inline)) pudval_t pud_flags(pud_t pud)
+{
+ return native_pud_val(pud) & (~((pteval_t)(((signed long)(~(((1UL) << 12)-1))) & ((phys_addr_t)((1ULL << 32) - 1)))));
+}
+static __attribute__((always_inline)) pmdval_t pmd_flags(pmd_t pmd)
+{
+ return native_pmd_val(pmd) & (~((pteval_t)(((signed long)(~(((1UL) << 12)-1))) & ((phys_addr_t)((1ULL << 32) - 1)))));
+}
+static __attribute__((always_inline)) pte_t native_make_pte(pteval_t val)
+{
+ return (pte_t) { .pte = val };
+}
+static __attribute__((always_inline)) pteval_t native_pte_val(pte_t pte)
+{
+ return pte.pte;
+}
+static __attribute__((always_inline)) pteval_t pte_flags(pte_t pte)
+{
+ return native_pte_val(pte) & (~((pteval_t)(((signed long)(~(((1UL) << 12)-1))) & ((phys_addr_t)((1ULL << 32) - 1)))));
+}
+extern uint16_t __cachemode2pte_tbl[_PAGE_CACHE_MODE_NUM];
+extern uint8_t __pte2cachemode_tbl[8];
+static __attribute__((always_inline)) unsigned long cachemode2protval(enum page_cache_mode pcm)
+{
+ if (true)
+  return 0;
+ return __cachemode2pte_tbl[pcm];
+}
+static __attribute__((always_inline)) pgprot_t cachemode2pgprot(enum page_cache_mode pcm)
+{
+ return ((pgprot_t) { (cachemode2protval(pcm)) } );
+}
+static __attribute__((always_inline)) enum page_cache_mode pgprot2cachemode(pgprot_t pgprot)
+{
+ unsigned long masked;
+ masked = ((pgprot).pgprot) & ((((pteval_t)(1)) << 7) | (((pteval_t)(1)) << 4) | (((pteval_t)(1)) << 3));
+ if (true)
+  return 0;
+ return __pte2cachemode_tbl[((((masked) >> (7 - 2)) & 4) | (((masked) >> (4 - 1)) & 2) | (((masked) >> 3) & 1))];
+}
+static __attribute__((always_inline)) pgprot_t pgprot_4k_2_large(pgprot_t pgprot)
+{
+ pgprot_t new;
+ unsigned long val;
+ val = ((pgprot).pgprot);
+ ((new).pgprot) = (val & ~((((pteval_t)(1)) << 7) | (((pteval_t)(1)) << 12))) |
+  ((val & (((pteval_t)(1)) << 7)) << (12 - 7));
+ return new;
+}
+static __attribute__((always_inline)) pgprot_t pgprot_large_2_4k(pgprot_t pgprot)
+{
+ pgprot_t new;
+ unsigned long val;
+ val = ((pgprot).pgprot);
+ ((new).pgprot) = (val & ~((((pteval_t)(1)) << 7) | (((pteval_t)(1)) << 12))) |
+     ((val & (((pteval_t)(1)) << 12)) >>
+      (12 - 7));
+ return new;
+}
+typedef struct page *pgtable_t;
+extern pteval_t __supported_pte_mask;
+extern void set_nx(void);
+extern int nx_enabled;
+extern pgprot_t pgprot_writecombine(pgprot_t prot);
+struct file;
+pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
+                              unsigned long size, pgprot_t vma_prot);
+int phys_mem_access_prot_allowed(struct file *file, unsigned long pfn,
+                              unsigned long size, pgprot_t *vma_prot);
+void set_pte_vaddr(unsigned long vaddr, pte_t pte);
+struct seq_file;
+extern void arch_report_meminfo(struct seq_file *m);
+enum pg_level {
+ PG_LEVEL_NONE,
+ PG_LEVEL_4K,
+ PG_LEVEL_2M,
+ PG_LEVEL_1G,
+ PG_LEVEL_NUM
+};
+static __attribute__((always_inline)) void update_page_count(int level, unsigned long pages) { }
+extern pte_t *lookup_address(unsigned long address, unsigned int *level);
+extern pte_t *lookup_address_in_pgd(pgd_t *pgd, unsigned long address,
+        unsigned int *level);
+extern pmd_t *lookup_pmd_address(unsigned long address);
+extern phys_addr_t slow_virt_to_phys(void *__address);
+extern int kernel_map_pages_in_pgd(pgd_t *pgd, u64 pfn, unsigned long address,
+       unsigned numpages, unsigned long page_flags);
+void kernel_unmap_pages_in_pgd(pgd_t *root, unsigned long address,
+          unsigned numpages);
+struct page {
+    void *data;
+};
+struct vm_area_struct {
+  unsigned long vm_start;
+  unsigned long vm_end;
+  pgprot_t vm_page_prot;
+  unsigned long vm_pgoff;
+};
+static __attribute__((always_inline)) void *page_address(struct page *page)
+{
+ return page->data;
+}
+struct task_struct {
+  long state;
+};
+struct hlist_bl_head {
+ struct hlist_bl_node *first;
+};
+struct hlist_bl_node {
+ struct hlist_bl_node *next, **pprev;
+};
+static __attribute__((always_inline)) void INIT_HLIST_BL_NODE(struct hlist_bl_node *h)
+{
+ h->next = ((void *)0);
+ h->pprev = ((void *)0);
+}
+static __attribute__((always_inline)) int hlist_bl_unhashed(const struct hlist_bl_node *h)
+{
+ return !h->pprev;
+}
+static __attribute__((always_inline)) struct hlist_bl_node *hlist_bl_first(struct hlist_bl_head *h)
+{
+ return (struct hlist_bl_node *)
+  ((unsigned long)h->first & ~0UL);
+}
+static __attribute__((always_inline)) void hlist_bl_set_first(struct hlist_bl_head *h,
+     struct hlist_bl_node *n)
+{
+ ;
+ ;
+ h->first = (struct hlist_bl_node *)((unsigned long)n | 0UL);
+}
+static __attribute__((always_inline)) int hlist_bl_empty(const struct hlist_bl_head *h)
+{
+ return !((unsigned long)h->first & ~0UL);
+}
+static __attribute__((always_inline)) void hlist_bl_add_head(struct hlist_bl_node *n,
+     struct hlist_bl_head *h)
+{
+ struct hlist_bl_node *first = hlist_bl_first(h);
+ n->next = first;
+ if (first)
+  first->pprev = &n->next;
+ n->pprev = &h->first;
+ hlist_bl_set_first(h, n);
+}
+static __attribute__((always_inline)) void __hlist_bl_del(struct hlist_bl_node *n)
+{
+ struct hlist_bl_node *next = n->next;
+ struct hlist_bl_node **pprev = n->pprev;
+ ;
+ *pprev = (struct hlist_bl_node *)
+   ((unsigned long)next |
+    ((unsigned long)*pprev & 0UL));
+ if (next)
+  next->pprev = pprev;
+}
+static __attribute__((always_inline)) void hlist_bl_del(struct hlist_bl_node *n)
+{
+ __hlist_bl_del(n);
+ n->next = ((void *) 0x00100100 + 0);
+ n->pprev = ((void *) 0x00200200 + 0);
+}
+static __attribute__((always_inline)) void hlist_bl_del_init(struct hlist_bl_node *n)
+{
+ if (!hlist_bl_unhashed(n)) {
+  __hlist_bl_del(n);
+  INIT_HLIST_BL_NODE(n);
+ }
+}
+extern void bit_spin_lock(int, unsigned long*);
+extern bool bit_spin_is_locked(int, unsigned long*);
+extern void __bit_spin_unlock(int, unsigned long*);
+static __attribute__((always_inline)) void hlist_bl_lock(struct hlist_bl_head *b)
+{
+ bit_spin_lock(0, (unsigned long *)b);
+}
+static __attribute__((always_inline)) void hlist_bl_unlock(struct hlist_bl_head *b)
+{
+ __bit_spin_unlock(0, (unsigned long *)b);
+}
+static __attribute__((always_inline)) bool hlist_bl_is_locked(struct hlist_bl_head *b)
+{
+ return bit_spin_is_locked(0, (unsigned long *)b);
+}
+static __attribute__((always_inline)) void hlist_bl_set_first_rcu(struct hlist_bl_head *h,
+     struct hlist_bl_node *n)
+{
+ ;
+ ;
+ do {} while(0);
+}
+static __attribute__((always_inline)) struct hlist_bl_node *hlist_bl_first_rcu(struct hlist_bl_head *h)
+{
+ return (struct hlist_bl_node *)
+  ((unsigned long)rcu_dereference_check(h->first, hlist_bl_is_locked(h)) & ~0UL);
+}
+static __attribute__((always_inline)) void hlist_bl_del_init_rcu(struct hlist_bl_node *n)
+{
+ if (!hlist_bl_unhashed(n)) {
+  __hlist_bl_del(n);
+  n->pprev = ((void *)0);
+ }
+}
+static __attribute__((always_inline)) void hlist_bl_del_rcu(struct hlist_bl_node *n)
+{
+ __hlist_bl_del(n);
+ n->pprev = ((void *) 0x00200200 + 0);
+}
+static __attribute__((always_inline)) void hlist_bl_add_head_rcu(struct hlist_bl_node *n,
+     struct hlist_bl_head *h)
+{
+ struct hlist_bl_node *first;
+ first = hlist_bl_first(h);
+ n->next = first;
+ if (first)
+  first->pprev = &n->next;
+ n->pprev = &h->first;
+ hlist_bl_set_first_rcu(h, n);
+}
+struct nameidata;
+struct path;
+struct vfsmount;
+struct qstr {
+ union {
+  struct {
+   u32 hash; u32 len;
+  };
+  u64 hash_len;
+ };
+ const unsigned char *name;
+};
+struct dentry_stat_t {
+ int nr_dentry;
+ int nr_unused;
+ int age_limit;
+ int want_pages;
+ int dummy[2];
+};
+extern struct dentry_stat_t dentry_stat;
+static __attribute__((always_inline)) unsigned long
+partial_name_hash(unsigned long c, unsigned long prevhash)
+{
+ return (prevhash + (c << 4) + (c >> 4)) * 11;
+}
+static __attribute__((always_inline)) unsigned long end_name_hash(unsigned long hash)
+{
+ return (unsigned int) hash;
+}
+extern unsigned int full_name_hash(const unsigned char *, unsigned int);
+struct dentry {
+ unsigned int d_flags;
+ seqcount_t d_seq;
+ struct hlist_bl_node d_hash;
+ struct dentry *d_parent;
+ struct qstr d_name;
+ struct inode *d_inode;
+ unsigned char d_iname[40];
+ unsigned int d_count;
+ spinlock_t d_lock;
+ const struct dentry_operations *d_op;
+ struct super_block *d_sb;
+ unsigned long d_time;
+ void *d_fsdata;
+ struct list_head d_lru;
+ union {
+  struct list_head d_child;
+   struct callback_head d_rcu;
+ } d_u;
+ struct list_head d_subdirs;
+ struct hlist_node d_alias;
+};
+enum dentry_d_lock_class
+{
+ DENTRY_D_LOCK_NORMAL,
+ DENTRY_D_LOCK_NESTED
+};
+struct dentry_operations {
+ int (*d_revalidate)(struct dentry *, unsigned int);
+ int (*d_weak_revalidate)(struct dentry *, unsigned int);
+ int (*d_hash)(const struct dentry *, const struct inode *,
+   struct qstr *);
+ int (*d_compare)(const struct dentry *, const struct inode *,
+   const struct dentry *, const struct inode *,
+   unsigned int, const char *, const struct qstr *);
+ int (*d_delete)(const struct dentry *);
+ void (*d_release)(struct dentry *);
+ void (*d_prune)(struct dentry *);
+ void (*d_iput)(struct dentry *, struct inode *);
+ char *(*d_dname)(struct dentry *, char *, int);
+ struct vfsmount *(*d_automount)(struct path *);
+ int (*d_manage)(struct dentry *, bool);
+};
+extern seqlock_t rename_lock;
+static __attribute__((always_inline)) int dname_external(struct dentry *dentry)
+{
+ return dentry->d_name.name != dentry->d_iname;
+}
+extern void d_instantiate(struct dentry *, struct inode *);
+extern struct dentry * d_instantiate_unique(struct dentry *, struct inode *);
+extern struct dentry * d_materialise_unique(struct dentry *, struct inode *);
+extern void __d_drop(struct dentry *dentry);
+extern void d_drop(struct dentry *dentry);
+extern void d_delete(struct dentry *);
+extern void d_set_d_op(struct dentry *dentry, const struct dentry_operations *op);
+extern struct dentry * d_alloc(struct dentry *, const struct qstr *);
+extern struct dentry * d_alloc_pseudo(struct super_block *, const struct qstr *);
+extern struct dentry * d_splice_alias(struct inode *, struct dentry *);
+extern struct dentry * d_add_ci(struct dentry *, struct inode *, struct qstr *);
+extern struct dentry *d_find_any_alias(struct inode *inode);
+extern struct dentry * d_obtain_alias(struct inode *);
+extern void shrink_dcache_sb(struct super_block *);
+extern void shrink_dcache_parent(struct dentry *);
+extern void shrink_dcache_for_umount(struct super_block *);
+extern int d_invalidate(struct dentry *);
+extern struct dentry * d_make_root(struct inode *);
+extern void d_genocide(struct dentry *);
+extern struct dentry *d_find_alias(struct inode *);
+extern void d_prune_aliases(struct inode *);
+extern int have_submounts(struct dentry *);
+extern void d_rehash(struct dentry *);
+static __attribute__((always_inline)) void d_add(struct dentry *entry, struct inode *inode)
+{
+ d_instantiate(entry, inode);
+ d_rehash(entry);
+}
+static __attribute__((always_inline)) struct dentry *d_add_unique(struct dentry *entry, struct inode *inode)
+{
+ struct dentry *res;
+ res = d_instantiate_unique(entry, inode);
+ d_rehash(res != ((void *)0) ? res : entry);
+ return res;
+}
+extern void dentry_update_name_case(struct dentry *, struct qstr *);
+extern void d_move(struct dentry *, struct dentry *);
+extern struct dentry *d_ancestor(struct dentry *, struct dentry *);
+extern struct dentry *d_lookup(const struct dentry *, const struct qstr *);
+extern struct dentry *d_hash_and_lookup(struct dentry *, struct qstr *);
+extern struct dentry *__d_lookup(const struct dentry *, const struct qstr *);
+extern struct dentry *__d_lookup_rcu(const struct dentry *parent,
+    const struct qstr *name,
+    unsigned *seq, struct inode *inode);
+static __attribute__((always_inline)) int __d_rcu_to_refcount(struct dentry *dentry, unsigned seq)
+{
+ int ret = 0;
+ if (!read_seqcount_retry(&dentry->d_seq, seq)) {
+  ret = 1;
+  dentry->d_count++;
+ }
+ return ret;
+}
+extern int d_validate(struct dentry *, struct dentry *);
+extern char *dynamic_dname(struct dentry *, char *, int, const char *, ...);
+extern char *__d_path(const struct path *, const struct path *, char *, int);
+extern char *d_absolute_path(const struct path *, char *, int);
+extern char *d_path(const struct path *, char *, int);
+extern char *dentry_path_raw(struct dentry *, char *, int);
+extern char *dentry_path(struct dentry *, char *, int);
+static __attribute__((always_inline)) struct dentry *dget_dlock(struct dentry *dentry)
+{
+ if (dentry)
+  dentry->d_count++;
+ return dentry;
+}
+static __attribute__((always_inline)) struct dentry *dget(struct dentry *dentry)
+{
+ if (dentry) {
+  spin_lock(&dentry->d_lock);
+  dget_dlock(dentry);
+  spin_unlock(&dentry->d_lock);
+ }
+ return dentry;
+}
+extern struct dentry *dget_parent(struct dentry *dentry);
+static __attribute__((always_inline)) int d_unhashed(struct dentry *dentry)
+{
+ return hlist_bl_unhashed(&dentry->d_hash);
+}
+static __attribute__((always_inline)) int d_unlinked(struct dentry *dentry)
+{
+ return d_unhashed(dentry) && !((dentry) == (dentry)->d_parent);
+}
+static __attribute__((always_inline)) int cant_mount(struct dentry *dentry)
+{
+ return (dentry->d_flags & 0x0100);
+}
+static __attribute__((always_inline)) void dont_mount(struct dentry *dentry)
+{
+ spin_lock(&dentry->d_lock);
+ dentry->d_flags |= 0x0100;
+ spin_unlock(&dentry->d_lock);
+}
+extern void dput(struct dentry *);
+static __attribute__((always_inline)) bool d_managed(struct dentry *dentry)
+{
+ return dentry->d_flags & (0x10000|0x20000|0x40000);
+}
+static __attribute__((always_inline)) bool d_mountpoint(struct dentry *dentry)
+{
+ return dentry->d_flags & 0x10000;
+}
+extern int sysctl_vfs_cache_pressure;
+struct buffer_head;
+struct kiocb;
+struct writeback_control;
+struct kstatfs;
+typedef int (get_block_t)(struct inode *inode, sector_t iblock, struct buffer_head *bh_result, int create);
+typedef void (dio_iodone_t)(struct kiocb *iocb, loff_t offset, ssize_t bytes, void *private);
+struct hd_geometry;
+struct iovec;
+struct poll_table_struct;
+struct vm_area_struct;
+struct page;
+struct seq_file;
+struct address_space {
+  struct inode *host;
+  spinlock_t tree_lock;
+  unsigned int i_mmap_writable;
+  struct list_head i_mmap_nonlinear;
+  struct mutex i_mmap_mutex;
+  unsigned long nrpages;
+  const struct address_space_operations *a_ops;
+  unsigned long flags;
+  spinlock_t private_lock;
+  struct list_head private_list;
+  void *private_data;
+};
+struct file {
+    struct dentry *f_dentry;
+    struct file_operations *f_op;
+    atomic_t f_count;
+    unsigned int f_flags;
+    mode_t f_mode;
+    loff_t f_pos;
+    void *private_data;
+    struct address_space *f_mapping;
+};
+struct block_device {
+  dev_t bd_dev;
+  struct inode * bd_inode;
+  struct gendisk * bd_disk;
+  struct block_device * bd_contains;
+  unsigned bd_block_size;
+};
+struct inode {
+    umode_t i_mode;
+    unsigned short i_opflags;
+    unsigned int i_flags;
+    unsigned long i_ino;
+    struct address_space *i_mapping;
+    const struct inode_operations *i_op;
+    const struct file_operations *i_fop;
+    struct super_block *i_sb;
+    struct block_device *i_bdev;
+    struct timespec i_atime;
+    struct timespec i_mtime;
+    struct timespec i_ctime;
+    blkcnt_t i_blocks;
+    dev_t i_rdev;
+    loff_t i_size;
+    struct cdev *i_cdev;
+    unsigned long i_state;
+    struct mutex i_mutex;
+    struct address_space i_data;
+    union {
+      const unsigned int i_nlink;
+      unsigned int __i_nlink;
+    };
+    union {
+      struct hlist_head i_dentry;
+      struct callback_head i_rcu;
+    };
+};
+typedef struct {
+ size_t written;
+ size_t count;
+} read_descriptor_t;
+typedef int (*filldir_t)(void *, const char *, int, loff_t, ino_t, unsigned);
+typedef int (*read_actor_t)(read_descriptor_t *, struct page *, unsigned long, unsigned long);
+struct file_lock {
+    int something;
+};
+struct file_operations {
+    struct module *owner;
+    loff_t (*llseek) (struct file *, loff_t, int);
+    ssize_t (*read) (struct file *, char *, size_t, loff_t *);
+    ssize_t (*write) (struct file *, const char *, size_t, loff_t *);
+    int (*readdir) (struct file *, void *, filldir_t);
+    unsigned int (*poll) (struct file *, struct poll_table_struct *);
+    int (*ioctl) (struct inode *, struct file *, unsigned int, unsigned long);
+    long (*unlocked_ioctl) (struct file *, unsigned int, unsigned long);
+    long (*compat_ioctl) (struct file *, unsigned int, unsigned long);
+    int (*mmap) (struct file *, struct vm_area_struct *);
+    int (*open) (struct inode *, struct file *);
+    int (*flush) (struct file *);
+    int (*release) (struct inode *, struct file *);
+    int (*fsync) (struct file *, struct dentry *, int datasync);
+    int (*fasync) (int, struct file *, int);
+    int (*lock) (struct file *, int, struct file_lock *);
+    ssize_t (*readv) (struct file *, const struct iovec *, unsigned long, loff_t *);
+    ssize_t (*writev) (struct file *, const struct iovec *, unsigned long, loff_t *);
+    ssize_t (*sendfile) (struct file *, loff_t *, size_t, read_actor_t, void *);
+    ssize_t (*sendpage) (struct file *, struct page *, int, size_t, loff_t *, int);
+    unsigned long (*get_unmapped_area)(struct file *, unsigned long, unsigned long, unsigned long, unsigned long);
+    int (*check_flags)(int);
+    int (*dir_notify)(struct file *filp, unsigned long arg);
+    int (*flock) (struct file *, int, struct file_lock *);
+    int (*open_exec) (struct inode *);
+};
+struct block_device_operations {
+ int (*open) (struct inode *, struct file *);
+ int (*release) (struct inode *, struct file *);
+ int (*ioctl) (struct inode *, struct file *, unsigned, unsigned long);
+ long (*unlocked_ioctl) (struct file *, unsigned, unsigned long);
+ long (*compat_ioctl) (struct file *, unsigned, unsigned long);
+ int (*direct_access) (struct block_device *, sector_t, unsigned long *);
+  unsigned int (*check_events) (struct gendisk *disk, unsigned int clearing);
+ int (*media_changed) (struct gendisk *);
+ int (*revalidate_disk) (struct gendisk *);
+ int (*getgeo)(struct block_device *, struct hd_geometry *);
+ struct module *owner;
+};
+struct fasync_struct {
+    int something;
+};
+enum {
+  SB_UNFROZEN = 0,
+  SB_FREEZE_WRITE = 1,
+  SB_FREEZE_PAGEFAULT = 2,
+  SB_FREEZE_FS = 3,
+  SB_FREEZE_COMPLETE = 4,
+};
+struct super_operations {
+  struct inode *(*alloc_inode)(struct super_block *sb);
+  void (*destroy_inode)(struct inode *);
+  void (*dirty_inode) (struct inode *, int flags);
+  int (*write_inode) (struct inode *, struct writeback_control *wbc);
+  int (*drop_inode) (struct inode *);
+  void (*evict_inode) (struct inode *);
+  void (*put_super) (struct super_block *);
+  int (*sync_fs)(struct super_block *sb, int wait);
+  int (*freeze_fs) (struct super_block *);
+  int (*unfreeze_fs) (struct super_block *);
+  int (*statfs) (struct dentry *, struct kstatfs *);
+  int (*remount_fs) (struct super_block *, int *, char *);
+  void (*umount_begin) (struct super_block *);
+  int (*show_options)(struct seq_file *, struct dentry *);
+  int (*show_devname)(struct seq_file *, struct dentry *);
+  int (*show_path)(struct seq_file *, struct dentry *);
+  int (*show_stats)(struct seq_file *, struct dentry *);
+  int (*bdev_try_to_free_page)(struct super_block*, struct page*, gfp_t);
+  int (*nr_cached_objects)(struct super_block *);
+  void (*free_cached_objects)(struct super_block *, int);
+};
+struct file_system_type {
+  const char *name;
+  int fs_flags;
+  struct dentry *(*mount) (struct file_system_type *, int,
+  const char *, void *);
+  void (*kill_sb) (struct super_block *);
+  struct module *owner;
+  struct file_system_type * next;
+  struct hlist_head fs_supers;
+};
+struct super_block {
+  struct list_head s_list;
+  dev_t s_dev;
+  unsigned char s_blocksize_bits;
+  unsigned long s_blocksize;
+  loff_t s_maxbytes;
+  struct file_system_type *s_type;
+  const struct super_operations *s_op;
+  const struct dquot_operations *dq_op;
+  const struct quotactl_ops *s_qcop;
+  const struct export_operations *s_export_op;
+  unsigned long s_flags;
+  unsigned long s_magic;
+  struct dentry *s_root;
+  int s_count;
+  atomic_t s_active;
+  struct list_head s_inodes;
+  struct list_head s_files;
+  struct list_head s_mounts;
+  int s_nr_dentry_unused;
+  spinlock_t s_inode_lru_lock;
+  struct list_head s_inode_lru;
+  int s_nr_inodes_unused;
+  struct block_device *s_bdev;
+  char s_id[32];
+  u8 s_uuid[16];
+  void *s_fs_info;
+  unsigned int s_max_links;
+  u32 s_time_gran;
+  struct mutex s_vfs_rename_mutex;
+  char *s_subtype;
+  char *s_options;
+  int cleancache_poolid;
+  int s_readonly_remount;
+};
+extern int fasync_helper(int, struct file *, int, struct fasync_struct **);
+struct swap_info_struct;
+enum migrate_mode {X};
+struct address_space_operations {
+  int (*writepage)(struct page *page, struct writeback_control *wbc);
+  int (*readpage)(struct file *, struct page *);
+  int (*writepages)(struct address_space *, struct writeback_control *);
+  int (*set_page_dirty)(struct page *page);
+  int (*readpages)(struct file *filp, struct address_space *mapping,
+  struct list_head *pages, unsigned nr_pages);
+  int (*write_begin)(struct file *, struct address_space *mapping,
+  loff_t pos, unsigned len, unsigned flags,
+  struct page **pagep, void **fsdata);
+  int (*write_end)(struct file *, struct address_space *mapping,
+  loff_t pos, unsigned len, unsigned copied,
+  struct page *page, void *fsdata);
+  sector_t (*bmap)(struct address_space *, sector_t);
+  void (*invalidatepage) (struct page *, unsigned long);
+  int (*releasepage) (struct page *, gfp_t);
+  void (*freepage)(struct page *);
+  ssize_t (*direct_IO)(int, struct kiocb *, const struct iovec *iov,
+  loff_t offset, unsigned long nr_segs);
+  int (*get_xip_mem)(struct address_space *, unsigned long, int,
+  void **, unsigned long *);
+  int (*migratepage) (struct address_space *,
+  struct page *, struct page *, enum migrate_mode);
+  int (*launder_page) (struct page *);
+  int (*is_partially_uptodate) (struct page *, read_descriptor_t *,
+  unsigned long);
+  int (*error_remove_page)(struct address_space *, struct page *);
+  int (*swap_activate)(struct swap_info_struct *sis, struct file *file,
+  sector_t *span);
+  void (*swap_deactivate)(struct file *file);
+};
+struct fiemap_extent_info;
+struct iattr;
+struct inode_operations {
+  struct dentry * (*lookup) (struct inode *,struct dentry *, unsigned int);
+  void * (*follow_link) (struct dentry *, struct nameidata *);
+  int (*permission) (struct inode *, int);
+  struct posix_acl * (*get_acl)(struct inode *, int);
+  int (*readlink) (struct dentry *, char *,int);
+  void (*put_link) (struct dentry *, struct nameidata *, void *);
+  int (*create) (struct inode *,struct dentry *, umode_t, bool);
+  int (*link) (struct dentry *,struct inode *,struct dentry *);
+  int (*unlink) (struct inode *,struct dentry *);
+  int (*symlink) (struct inode *,struct dentry *,const char *);
+  int (*mkdir) (struct inode *,struct dentry *,umode_t);
+  int (*rmdir) (struct inode *,struct dentry *);
+  int (*mknod) (struct inode *,struct dentry *,umode_t,dev_t);
+  int (*rename) (struct inode *, struct dentry *,
+  struct inode *, struct dentry *);
+  int (*setattr) (struct dentry *, struct iattr *);
+  int (*getattr) (struct vfsmount *mnt, struct dentry *, struct kstat *);
+  int (*setxattr) (struct dentry *, const char *,const void *,size_t,int);
+  ssize_t (*getxattr) (struct dentry *, const char *, void *, size_t);
+  ssize_t (*listxattr) (struct dentry *, char *, size_t);
+  int (*removexattr) (struct dentry *, const char *);
+  int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
+  u64 len);
+  int (*update_time)(struct inode *, struct timespec *, int);
+  int (*atomic_open)(struct inode *, struct dentry *,
+  struct file *, unsigned open_flag,
+  umode_t create_mode, int *opened);
+};
+int alloc_chrdev_region(dev_t *, unsigned, unsigned, const char *);
+int register_chrdev_region(dev_t, unsigned, const char *);
+void unregister_chrdev_region(dev_t, unsigned);
+int register_chrdev(unsigned int, const char *, struct file_operations *);
+int unregister_chrdev(unsigned int, const char *);
+int chrdev_open(struct inode *, struct file *);
+void chrdev_show(struct seq_file *,off_t);
+int register_blkdev(unsigned int, const char *);
+int unregister_blkdev(unsigned int, const char *);
+void kill_fasync(struct fasync_struct **, int, int);
+static __attribute__((always_inline)) unsigned iminor(struct inode *inode)
+{
+ return ((unsigned int) ((inode->i_rdev) & ((1U << 20) - 1)));
+}
+static __attribute__((always_inline)) unsigned imajor(struct inode *inode)
+{
+ return ((unsigned int) ((inode->i_rdev) >> 20));
+}
+loff_t no_llseek(struct file *file, loff_t offset, int origin);
+int check_disk_change(struct block_device *);
+int nonseekable_open(struct inode * inode, struct file * filp);
+loff_t i_size_read(struct inode *inode);
+int set_blocksize(struct block_device *, int);
+void generic_shutdown_super(struct super_block *sb);
+void kill_block_super(struct super_block *sb);
+void kill_anon_super(struct super_block *sb);
+void kill_litter_super(struct super_block *sb);
+void deactivate_super(struct super_block *sb);
+void deactivate_locked_super(struct super_block *sb);
+int set_anon_super(struct super_block *s, void *data);
+int get_anon_bdev(dev_t *);
+void free_anon_bdev(dev_t);
+extern int generic_readlink(struct dentry *, char *, int);
+extern void *page_follow_link_light(struct dentry *, struct nameidata *);
+extern void page_put_link(struct dentry *, struct nameidata *, void *);
+struct timespec current_fs_time(struct super_block *sb)
+{
+  struct timespec now = current_kernel_time();
+  return timespec_trunc(now, sb->s_time_gran);
+}
+struct resource {
+ unsigned long start, end;
+ const char *name;
+ unsigned long flags;
+};
+extern void __release_region(struct resource *, resource_size_t, resource_size_t);
+extern struct resource * __request_region(struct resource *,
+                                          resource_size_t start,
+                                          resource_size_t n,
+                                          const char *name, int flags);
+struct timer_list {
+ unsigned long expires;
+ void (*function)(unsigned long);
+ unsigned long data;
+};
+void init_timer(struct timer_list * timer);
+void add_timer_on(struct timer_list *timer, int cpu);
+void add_timer(struct timer_list *timer);
+int del_timer(struct timer_list * timer);
+int mod_timer(struct timer_list *timer, unsigned long expires);
+struct work_struct {
+    void (*func)(void *);
+    void *data;
+};
+typedef void (*work_func_t)(struct work_struct *work);
+struct delayed_work {
+  struct work_struct work;
+  struct timer_list timer;
+  struct workqueue_struct *wq;
+  int cpu;
+};
+bool schedule_work(struct work_struct *work);
+void flush_scheduled_work(void);
+bool cancel_work_sync(struct work_struct *work);
+struct device;
+typedef struct pm_message {
+ int event;
+} pm_message_t;
+struct dev_pm_ops {
+ int (*prepare)(struct device *dev);
+ void (*complete)(struct device *dev);
+ int (*suspend)(struct device *dev);
+ int (*resume)(struct device *dev);
+ int (*freeze)(struct device *dev);
+ int (*thaw)(struct device *dev);
+ int (*poweroff)(struct device *dev);
+ int (*restore)(struct device *dev);
+ int (*suspend_late)(struct device *dev);
+ int (*resume_early)(struct device *dev);
+ int (*freeze_late)(struct device *dev);
+ int (*thaw_early)(struct device *dev);
+ int (*poweroff_late)(struct device *dev);
+ int (*restore_early)(struct device *dev);
+ int (*suspend_noirq)(struct device *dev);
+ int (*resume_noirq)(struct device *dev);
+ int (*freeze_noirq)(struct device *dev);
+ int (*thaw_noirq)(struct device *dev);
+ int (*poweroff_noirq)(struct device *dev);
+ int (*restore_noirq)(struct device *dev);
+ int (*runtime_suspend)(struct device *dev);
+ int (*runtime_resume)(struct device *dev);
+ int (*runtime_idle)(struct device *dev);
+};
+int device_set_wakeup_enable(struct device *dev, bool enable);
+int pm_schedule_suspend(struct device *dev, unsigned int delay);
+int pm_request_idle(struct device *dev);
+int pm_request_resume(struct device *dev);
+int pm_request_autosuspend(struct device *dev);
+int pm_runtime_idle(struct device *dev);
+int pm_runtime_suspend(struct device *dev);
+int pm_runtime_autosuspend(struct device *dev);
+int pm_runtime_resume(struct device *dev);
+int pm_runtime_get(struct device *dev);
+int pm_runtime_get_sync(struct device *dev);
+int pm_runtime_put(struct device *dev);
+int pm_runtime_put_autosuspend(struct device *dev);
+int pm_runtime_put_sync(struct device *dev);
+int pm_runtime_put_sync_suspend(struct device *dev);
+int pm_runtime_put_sync_autosuspend(struct device *dev);
+int pm_runtime_set_active(struct device *dev);
+void pm_runtime_get_noresume(struct device *dev);
+void pm_runtime_set_suspended(struct device *dev);
+void pm_runtime_disable(struct device *dev);
+void pm_runtime_use_autosuspend(struct device *dev);
+void pm_runtime_dont_use_autosuspend(struct device *dev);
+void pm_runtime_put_noidle(struct device *dev);
+static int fls(int x)
+{
+ int r = 32;
+ if (!x)
+  return 0;
+ if (!(x & 0xffff0000u)) {
+  x <<= 16;
+  r -= 16;
+ }
+ if (!(x & 0xff000000u)) {
+  x <<= 8;
+  r -= 8;
+ }
+ if (!(x & 0xf0000000u)) {
+  x <<= 4;
+  r -= 4;
+ }
+ if (!(x & 0xc0000000u)) {
+  x <<= 2;
+  r -= 2;
+ }
+ if (!(x & 0x80000000u)) {
+  x <<= 1;
+  r -= 1;
+ }
+ return r;
+}
+static int fls64(unsigned long x)
+{
+ unsigned int h = x >> 16;
+ if (h)
+  return fls(h) + 32;
+ return fls(x);
+}
+static unsigned fls_long(unsigned long l)
+{
+ if (sizeof(l) == 4)
+  return fls(l);
+ return fls64(l);
+}
+struct idr_layer {
+ int prefix;
+ int layer;
+ struct idr_layer *ary[1<<8];
+ int count;
+ union {
+  unsigned long bitmap[((((1 << 8)) + (8 * sizeof(long)) - 1) / (8 * sizeof(long)))];
+  struct callback_head callback_head;
+ };
+};
+struct idr {
+ struct idr_layer *hint;
+ struct idr_layer *top;
+ int layers;
+ int cur;
+ spinlock_t lock;
+ int id_free_cnt;
+ struct idr_layer *id_free;
+};
+void *idr_find_slowpath(struct idr *idp, int id);
+void idr_preload(gfp_t gfp_mask);
+int idr_alloc(struct idr *idp, void *ptr, int start, int end, gfp_t gfp_mask);
+int idr_alloc_cyclic(struct idr *idr, void *ptr, int start, int end, gfp_t gfp_mask);
+int idr_for_each(struct idr *idp,
+   int (*fn)(int id, void *p, void *data), void *data);
+void *idr_get_next(struct idr *idp, int *nextid);
+void *idr_replace(struct idr *idp, void *ptr, int id);
+void idr_remove(struct idr *idp, int id);
+void idr_destroy(struct idr *idp);
+void idr_init(struct idr *idp);
+bool idr_is_empty(struct idr *idp);
+static __attribute__((always_inline)) void idr_preload_end(void)
+{
+ barrier();
+}
+static __attribute__((always_inline)) void *idr_find(struct idr *idr, int id)
+{
+ struct idr_layer *hint = rcu_dereference_raw(idr->hint);
+ if (hint && (id & ~((1 << 8)-1)) == hint->prefix)
+  return rcu_dereference_raw(hint->ary[id & ((1 << 8)-1)]);
+ return idr_find_slowpath(idr, id);
+}
+struct ida_bitmap {
+ long nr_busy;
+ unsigned long bitmap[(128 / sizeof(long) - 1)];
+};
+struct ida {
+ struct idr idr;
+ struct ida_bitmap *free_bitmap;
+};
+int ida_pre_get(struct ida *ida, gfp_t gfp_mask);
+int ida_get_new_above(struct ida *ida, int starting_id, int *p_id);
+void ida_remove(struct ida *ida, int id);
+void ida_destroy(struct ida *ida);
+void ida_init(struct ida *ida);
+int ida_simple_get(struct ida *ida, unsigned int start, unsigned int end,
+     gfp_t gfp_mask);
+void ida_simple_remove(struct ida *ida, unsigned int id);
+static __attribute__((always_inline)) int ida_get_new(struct ida *ida, int *p_id)
+{
+ return ida_get_new_above(ida, 0, p_id);
+}
+void idr_init_cache(void);
+struct task_struct;
+struct lockdep_map;
+extern int prove_locking;
+extern int lock_stat;
+static __attribute__((always_inline)) void lockdep_off(void)
+{
+}
+static __attribute__((always_inline)) void lockdep_on(void)
+{
+}
+struct lock_class_key { };
+static __attribute__((always_inline)) void print_irqtrace_events(struct task_struct *curr)
+{
+}
+struct rb_node {
+  unsigned long __rb_parent_color;
+  struct rb_node *rb_right;
+  struct rb_node *rb_left;
+};
+struct rb_root {
+  struct rb_node *rb_node;
+};
+typedef struct __wait_queue wait_queue_t;
+typedef int (*wait_queue_func_t)(wait_queue_t *wait, unsigned mode, int flags, void *key);
+int default_wake_function(wait_queue_t *wait, unsigned mode, int flags, void *key);
+struct __wait_queue {
+ unsigned int flags;
+ void *private;
+ wait_queue_func_t func;
+ struct list_head task_list;
+};
+struct wait_bit_key {
+ void *flags;
+ int bit_nr;
+ unsigned long timeout;
+};
+struct wait_bit_queue {
+ struct wait_bit_key key;
+ wait_queue_t wait;
+};
+struct __wait_queue_head {
+ spinlock_t lock;
+};
+typedef struct __wait_queue_head wait_queue_head_t;
+struct file;
+struct dentry;
+struct iattr;
+struct seq_file;
+struct vm_area_struct;
+struct super_block;
+struct file_system_type;
+struct kernfs_open_node;
+struct kernfs_iattrs;
+enum kernfs_node_type {
+ KERNFS_DIR = 0x0001,
+ KERNFS_FILE = 0x0002,
+ KERNFS_LINK = 0x0004,
+};
+enum kernfs_node_flag {
+ KERNFS_ACTIVATED = 0x0010,
+ KERNFS_NS = 0x0020,
+ KERNFS_HAS_SEQ_SHOW = 0x0040,
+ KERNFS_HAS_MMAP = 0x0080,
+ KERNFS_LOCKDEP = 0x0100,
+ KERNFS_SUICIDAL = 0x0400,
+ KERNFS_SUICIDED = 0x0800,
+};
+enum kernfs_root_flag {
+ KERNFS_ROOT_CREATE_DEACTIVATED = 0x0001,
+ KERNFS_ROOT_EXTRA_OPEN_PERM_CHECK = 0x0002,
+};
+struct kernfs_elem_dir {
+ unsigned long subdirs;
+ struct rb_root children;
+ struct kernfs_root *root;
+};
+struct kernfs_elem_symlink {
+ struct kernfs_node *target_kn;
+};
+struct kernfs_elem_attr {
+ const struct kernfs_ops *ops;
+ struct kernfs_open_node *open;
+ loff_t size;
+ struct kernfs_node *notify_next;
+};
+struct kernfs_node {
+ atomic_t count;
+ atomic_t active;
+ struct kernfs_node *parent;
+ const char *name;
+ struct rb_node rb;
+ const void *ns;
+ unsigned int hash;
+ union {
+  struct kernfs_elem_dir dir;
+  struct kernfs_elem_symlink symlink;
+  struct kernfs_elem_attr attr;
+ };
+ void *priv;
+ unsigned short flags;
+ umode_t mode;
+ unsigned int ino;
+ struct kernfs_iattrs *iattr;
+};
+struct kernfs_syscall_ops {
+ int (*remount_fs)(struct kernfs_root *root, int *flags, char *data);
+ int (*show_options)(struct seq_file *sf, struct kernfs_root *root);
+ int (*mkdir)(struct kernfs_node *parent, const char *name,
+       umode_t mode);
+ int (*rmdir)(struct kernfs_node *kn);
+ int (*rename)(struct kernfs_node *kn, struct kernfs_node *new_parent,
+        const char *new_name);
+};
+struct kernfs_root {
+ struct kernfs_node *kn;
+ unsigned int flags;
+ struct ida ino_ida;
+ struct kernfs_syscall_ops *syscall_ops;
+ struct list_head supers;
+ wait_queue_head_t deactivate_waitq;
+};
+struct kernfs_open_file {
+ struct kernfs_node *kn;
+ struct file *file;
+ void *priv;
+ struct mutex mutex;
+ int event;
+ struct list_head list;
+ char *prealloc_buf;
+ size_t atomic_write_len;
+ bool mmapped;
+ const struct vm_operations_struct *vm_ops;
+};
+struct kernfs_ops {
+ int (*seq_show)(struct seq_file *sf, void *v);
+ void *(*seq_start)(struct seq_file *sf, loff_t *ppos);
+ void *(*seq_next)(struct seq_file *sf, void *v, loff_t *ppos);
+ void (*seq_stop)(struct seq_file *sf, void *v);
+ ssize_t (*read)(struct kernfs_open_file *of, char *buf, size_t bytes,
+   loff_t off);
+ size_t atomic_write_len;
+ bool prealloc;
+ ssize_t (*write)(struct kernfs_open_file *of, char *buf, size_t bytes,
+    loff_t off);
+ int (*mmap)(struct kernfs_open_file *of, struct vm_area_struct *vma);
+};
+static __attribute__((always_inline)) enum kernfs_node_type kernfs_type(struct kernfs_node *kn)
+{ return 0; }
+static __attribute__((always_inline)) void kernfs_enable_ns(struct kernfs_node *kn) { }
+static __attribute__((always_inline)) bool kernfs_ns_enabled(struct kernfs_node *kn)
+{ return false; }
+static __attribute__((always_inline)) int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen)
+{ return -38; }
+static __attribute__((always_inline)) char * kernfs_path(struct kernfs_node *kn, char *buf,
+           size_t buflen)
+{ return ((void *)0); }
+static __attribute__((always_inline)) void pr_cont_kernfs_name(struct kernfs_node *kn) { }
+static __attribute__((always_inline)) void pr_cont_kernfs_path(struct kernfs_node *kn) { }
+static __attribute__((always_inline)) struct kernfs_node *kernfs_get_parent(struct kernfs_node *kn)
+{ return ((void *)0); }
+static __attribute__((always_inline)) struct kernfs_node *
+kernfs_find_and_get_ns(struct kernfs_node *parent, const unsigned char *name,
+         const void *ns)
+{ return ((void *)0); }
+static __attribute__((always_inline)) void kernfs_get(struct kernfs_node *kn) { }
+static __attribute__((always_inline)) void kernfs_put(struct kernfs_node *kn) { }
+static __attribute__((always_inline)) struct kernfs_node *kernfs_node_from_dentry(struct dentry *dentry)
+{ return ((void *)0); }
+static __attribute__((always_inline)) struct kernfs_root *kernfs_root_from_sb(struct super_block *sb)
+{ return ((void *)0); }
+static __attribute__((always_inline)) struct kernfs_root *
+kernfs_create_root(struct kernfs_syscall_ops *scops, unsigned int flags,
+     void *priv)
+{ return ERR_PTR(-38); }
+static __attribute__((always_inline)) void kernfs_destroy_root(struct kernfs_root *root) { }
+static __attribute__((always_inline)) struct kernfs_node *
+kernfs_create_dir_ns(struct kernfs_node *parent, const char *name,
+       umode_t mode, void *priv, const void *ns)
+{ return ERR_PTR(-38); }
+static __attribute__((always_inline)) struct kernfs_node *
+__kernfs_create_file(struct kernfs_node *parent, const char *name,
+       umode_t mode, loff_t size, const struct kernfs_ops *ops,
+       void *priv, const void *ns, struct lock_class_key *key)
+{ return ERR_PTR(-38); }
+static __attribute__((always_inline)) struct kernfs_node *
+kernfs_create_link(struct kernfs_node *parent, const char *name,
+     struct kernfs_node *target)
+{ return ERR_PTR(-38); }
+static __attribute__((always_inline)) void kernfs_activate(struct kernfs_node *kn) { }
+static __attribute__((always_inline)) void kernfs_remove(struct kernfs_node *kn) { }
+static __attribute__((always_inline)) bool kernfs_remove_self(struct kernfs_node *kn)
+{ return false; }
+static __attribute__((always_inline)) int kernfs_remove_by_name_ns(struct kernfs_node *kn,
+        const char *name, const void *ns)
+{ return -38; }
+static __attribute__((always_inline)) int kernfs_rename_ns(struct kernfs_node *kn,
+       struct kernfs_node *new_parent,
+       const char *new_name, const void *new_ns)
+{ return -38; }
+static __attribute__((always_inline)) int kernfs_setattr(struct kernfs_node *kn,
+     const struct iattr *iattr)
+{ return -38; }
+static __attribute__((always_inline)) void kernfs_notify(struct kernfs_node *kn) { }
+static __attribute__((always_inline)) const void *kernfs_super_ns(struct super_block *sb)
+{ return ((void *)0); }
+static __attribute__((always_inline)) struct dentry *
+kernfs_mount_ns(struct file_system_type *fs_type, int flags,
+  struct kernfs_root *root, unsigned long magic,
+  bool *new_sb_created, const void *ns)
+{ return ERR_PTR(-38); }
+static __attribute__((always_inline)) void kernfs_kill_sb(struct super_block *sb) { }
+static __attribute__((always_inline)) void kernfs_init(void) { }
+static __attribute__((always_inline)) struct kernfs_node *
+kernfs_find_and_get(struct kernfs_node *kn, const unsigned char *name)
+{
+ return kernfs_find_and_get_ns(kn, name, ((void *)0));
+}
+static __attribute__((always_inline)) struct kernfs_node *
+kernfs_create_dir(struct kernfs_node *parent, const char *name, umode_t mode,
+    void *priv)
+{
+ return kernfs_create_dir_ns(parent, name, mode, priv, ((void *)0));
+}
+static __attribute__((always_inline)) struct kernfs_node *
+kernfs_create_file_ns(struct kernfs_node *parent, const char *name,
+        umode_t mode, loff_t size, const struct kernfs_ops *ops,
+        void *priv, const void *ns)
+{
+ struct lock_class_key *key = ((void *)0);
+ return __kernfs_create_file(parent, name, mode, size, ops, priv, ns,
+        key);
+}
+static __attribute__((always_inline)) struct kernfs_node *
+kernfs_create_file(struct kernfs_node *parent, const char *name, umode_t mode,
+     loff_t size, const struct kernfs_ops *ops, void *priv)
+{
+ return kernfs_create_file_ns(parent, name, mode, size, ops, priv, ((void *)0));
+}
+static __attribute__((always_inline)) int kernfs_remove_by_name(struct kernfs_node *parent,
+     const char *name)
+{
+ return kernfs_remove_by_name_ns(parent, name, ((void *)0));
+}
+static __attribute__((always_inline)) int kernfs_rename(struct kernfs_node *kn,
+    struct kernfs_node *new_parent,
+    const char *new_name)
+{
+ return kernfs_rename_ns(kn, new_parent, new_name, ((void *)0));
+}
+static __attribute__((always_inline)) struct dentry *
+kernfs_mount(struct file_system_type *fs_type, int flags,
+  struct kernfs_root *root, unsigned long magic,
+  bool *new_sb_created)
+{
+ return kernfs_mount_ns(fs_type, flags, root,
+    magic, new_sb_created, ((void *)0));
+}
+struct sock;
+struct kobject;
+enum kobj_ns_type {
+ KOBJ_NS_TYPE_NONE = 0,
+ KOBJ_NS_TYPE_NET,
+ KOBJ_NS_TYPES
+};
+struct kobj_ns_type_operations {
+ enum kobj_ns_type type;
+ bool (*current_may_mount)(void);
+ void *(*grab_current_ns)(void);
+ const void *(*netlink_ns)(struct sock *sk);
+ const void *(*initial_ns)(void);
+ void (*drop_ns)(void *);
+};
+int kobj_ns_type_register(const struct kobj_ns_type_operations *ops);
+int kobj_ns_type_registered(enum kobj_ns_type type);
+const struct kobj_ns_type_operations *kobj_child_ns_ops(struct kobject *parent);
+const struct kobj_ns_type_operations *kobj_ns_ops(struct kobject *kobj);
+bool kobj_ns_current_may_mount(enum kobj_ns_type type);
+void *kobj_ns_grab_current(enum kobj_ns_type type);
+const void *kobj_ns_netlink(enum kobj_ns_type type, struct sock *sk);
+const void *kobj_ns_initial(enum kobj_ns_type type);
+void kobj_ns_drop(enum kobj_ns_type type, void *ns);
 struct kobject;
 struct module;
 struct bin_attribute;
@@ -2197,640 +2831,6 @@ typedef struct poll_table_struct {
     int something;
 } poll_table;
 void poll_wait(struct file * filp, wait_queue_head_t * wait_address, poll_table *p);
-typedef struct {
- unsigned int clock_rate;
- unsigned int clock_type;
- unsigned short loopback;
-} sync_serial_settings;
-typedef struct {
- unsigned int clock_rate;
- unsigned int clock_type;
- unsigned short loopback;
- unsigned int slot_map;
-} te1_settings;
-typedef struct {
- unsigned short encoding;
- unsigned short parity;
-} raw_hdlc_proto;
-typedef struct {
- unsigned int t391;
- unsigned int t392;
- unsigned int n391;
- unsigned int n392;
- unsigned int n393;
- unsigned short lmi;
- unsigned short dce;
-} fr_proto;
-typedef struct {
- unsigned int dlci;
-} fr_proto_pvc;
-typedef struct {
- unsigned int dlci;
- char master[16];
-}fr_proto_pvc_info;
-typedef struct {
-    unsigned int interval;
-    unsigned int timeout;
-} cisco_proto;
-struct hlist_bl_head {
- struct hlist_bl_node *first;
-};
-struct hlist_bl_node {
- struct hlist_bl_node *next, **pprev;
-};
-static __attribute__((always_inline)) void INIT_HLIST_BL_NODE(struct hlist_bl_node *h)
-{
- h->next = ((void *)0);
- h->pprev = ((void *)0);
-}
-static __attribute__((always_inline)) int hlist_bl_unhashed(const struct hlist_bl_node *h)
-{
- return !h->pprev;
-}
-static __attribute__((always_inline)) struct hlist_bl_node *hlist_bl_first(struct hlist_bl_head *h)
-{
- return (struct hlist_bl_node *)
-  ((unsigned long)h->first & ~0UL);
-}
-static __attribute__((always_inline)) void hlist_bl_set_first(struct hlist_bl_head *h,
-     struct hlist_bl_node *n)
-{
- ;
- ;
- h->first = (struct hlist_bl_node *)((unsigned long)n | 0UL);
-}
-static __attribute__((always_inline)) int hlist_bl_empty(const struct hlist_bl_head *h)
-{
- return !((unsigned long)h->first & ~0UL);
-}
-static __attribute__((always_inline)) void hlist_bl_add_head(struct hlist_bl_node *n,
-     struct hlist_bl_head *h)
-{
- struct hlist_bl_node *first = hlist_bl_first(h);
- n->next = first;
- if (first)
-  first->pprev = &n->next;
- n->pprev = &h->first;
- hlist_bl_set_first(h, n);
-}
-static __attribute__((always_inline)) void __hlist_bl_del(struct hlist_bl_node *n)
-{
- struct hlist_bl_node *next = n->next;
- struct hlist_bl_node **pprev = n->pprev;
- ;
- *pprev = (struct hlist_bl_node *)
-   ((unsigned long)next |
-    ((unsigned long)*pprev & 0UL));
- if (next)
-  next->pprev = pprev;
-}
-static __attribute__((always_inline)) void hlist_bl_del(struct hlist_bl_node *n)
-{
- __hlist_bl_del(n);
- n->next = ((void *) 0x00100100 + 0);
- n->pprev = ((void *) 0x00200200 + 0);
-}
-static __attribute__((always_inline)) void hlist_bl_del_init(struct hlist_bl_node *n)
-{
- if (!hlist_bl_unhashed(n)) {
-  __hlist_bl_del(n);
-  INIT_HLIST_BL_NODE(n);
- }
-}
-extern void bit_spin_lock(int, unsigned long*);
-extern bool bit_spin_is_locked(int, unsigned long*);
-extern void __bit_spin_unlock(int, unsigned long*);
-static __attribute__((always_inline)) void hlist_bl_lock(struct hlist_bl_head *b)
-{
- bit_spin_lock(0, (unsigned long *)b);
-}
-static __attribute__((always_inline)) void hlist_bl_unlock(struct hlist_bl_head *b)
-{
- __bit_spin_unlock(0, (unsigned long *)b);
-}
-static __attribute__((always_inline)) bool hlist_bl_is_locked(struct hlist_bl_head *b)
-{
- return bit_spin_is_locked(0, (unsigned long *)b);
-}
-static __attribute__((always_inline)) void hlist_bl_set_first_rcu(struct hlist_bl_head *h,
-     struct hlist_bl_node *n)
-{
- ;
- ;
- do {} while(0);
-}
-static __attribute__((always_inline)) struct hlist_bl_node *hlist_bl_first_rcu(struct hlist_bl_head *h)
-{
- return (struct hlist_bl_node *)
-  ((unsigned long)rcu_dereference_check(h->first, hlist_bl_is_locked(h)) & ~0UL);
-}
-static __attribute__((always_inline)) void hlist_bl_del_init_rcu(struct hlist_bl_node *n)
-{
- if (!hlist_bl_unhashed(n)) {
-  __hlist_bl_del(n);
-  n->pprev = ((void *)0);
- }
-}
-static __attribute__((always_inline)) void hlist_bl_del_rcu(struct hlist_bl_node *n)
-{
- __hlist_bl_del(n);
- n->pprev = ((void *) 0x00200200 + 0);
-}
-static __attribute__((always_inline)) void hlist_bl_add_head_rcu(struct hlist_bl_node *n,
-     struct hlist_bl_head *h)
-{
- struct hlist_bl_node *first;
- first = hlist_bl_first(h);
- n->next = first;
- if (first)
-  first->pprev = &n->next;
- n->pprev = &h->first;
- hlist_bl_set_first_rcu(h, n);
-}
-struct nameidata;
-struct path;
-struct vfsmount;
-struct qstr {
- union {
-  struct {
-   u32 hash; u32 len;
-  };
-  u64 hash_len;
- };
- const unsigned char *name;
-};
-struct dentry_stat_t {
- int nr_dentry;
- int nr_unused;
- int age_limit;
- int want_pages;
- int dummy[2];
-};
-extern struct dentry_stat_t dentry_stat;
-static __attribute__((always_inline)) unsigned long
-partial_name_hash(unsigned long c, unsigned long prevhash)
-{
- return (prevhash + (c << 4) + (c >> 4)) * 11;
-}
-static __attribute__((always_inline)) unsigned long end_name_hash(unsigned long hash)
-{
- return (unsigned int) hash;
-}
-extern unsigned int full_name_hash(const unsigned char *, unsigned int);
-struct dentry {
- unsigned int d_flags;
- seqcount_t d_seq;
- struct hlist_bl_node d_hash;
- struct dentry *d_parent;
- struct qstr d_name;
- struct inode *d_inode;
- unsigned char d_iname[40];
- unsigned int d_count;
- spinlock_t d_lock;
- const struct dentry_operations *d_op;
- struct super_block *d_sb;
- unsigned long d_time;
- void *d_fsdata;
- struct list_head d_lru;
- union {
-  struct list_head d_child;
-   struct callback_head d_rcu;
- } d_u;
- struct list_head d_subdirs;
- struct hlist_node d_alias;
-};
-enum dentry_d_lock_class
-{
- DENTRY_D_LOCK_NORMAL,
- DENTRY_D_LOCK_NESTED
-};
-struct dentry_operations {
- int (*d_revalidate)(struct dentry *, unsigned int);
- int (*d_weak_revalidate)(struct dentry *, unsigned int);
- int (*d_hash)(const struct dentry *, const struct inode *,
-   struct qstr *);
- int (*d_compare)(const struct dentry *, const struct inode *,
-   const struct dentry *, const struct inode *,
-   unsigned int, const char *, const struct qstr *);
- int (*d_delete)(const struct dentry *);
- void (*d_release)(struct dentry *);
- void (*d_prune)(struct dentry *);
- void (*d_iput)(struct dentry *, struct inode *);
- char *(*d_dname)(struct dentry *, char *, int);
- struct vfsmount *(*d_automount)(struct path *);
- int (*d_manage)(struct dentry *, bool);
-};
-extern seqlock_t rename_lock;
-static __attribute__((always_inline)) int dname_external(struct dentry *dentry)
-{
- return dentry->d_name.name != dentry->d_iname;
-}
-extern void d_instantiate(struct dentry *, struct inode *);
-extern struct dentry * d_instantiate_unique(struct dentry *, struct inode *);
-extern struct dentry * d_materialise_unique(struct dentry *, struct inode *);
-extern void __d_drop(struct dentry *dentry);
-extern void d_drop(struct dentry *dentry);
-extern void d_delete(struct dentry *);
-extern void d_set_d_op(struct dentry *dentry, const struct dentry_operations *op);
-extern struct dentry * d_alloc(struct dentry *, const struct qstr *);
-extern struct dentry * d_alloc_pseudo(struct super_block *, const struct qstr *);
-extern struct dentry * d_splice_alias(struct inode *, struct dentry *);
-extern struct dentry * d_add_ci(struct dentry *, struct inode *, struct qstr *);
-extern struct dentry *d_find_any_alias(struct inode *inode);
-extern struct dentry * d_obtain_alias(struct inode *);
-extern void shrink_dcache_sb(struct super_block *);
-extern void shrink_dcache_parent(struct dentry *);
-extern void shrink_dcache_for_umount(struct super_block *);
-extern int d_invalidate(struct dentry *);
-extern struct dentry * d_make_root(struct inode *);
-extern void d_genocide(struct dentry *);
-extern struct dentry *d_find_alias(struct inode *);
-extern void d_prune_aliases(struct inode *);
-extern int have_submounts(struct dentry *);
-extern void d_rehash(struct dentry *);
-static __attribute__((always_inline)) void d_add(struct dentry *entry, struct inode *inode)
-{
- d_instantiate(entry, inode);
- d_rehash(entry);
-}
-static __attribute__((always_inline)) struct dentry *d_add_unique(struct dentry *entry, struct inode *inode)
-{
- struct dentry *res;
- res = d_instantiate_unique(entry, inode);
- d_rehash(res != ((void *)0) ? res : entry);
- return res;
-}
-extern void dentry_update_name_case(struct dentry *, struct qstr *);
-extern void d_move(struct dentry *, struct dentry *);
-extern struct dentry *d_ancestor(struct dentry *, struct dentry *);
-extern struct dentry *d_lookup(const struct dentry *, const struct qstr *);
-extern struct dentry *d_hash_and_lookup(struct dentry *, struct qstr *);
-extern struct dentry *__d_lookup(const struct dentry *, const struct qstr *);
-extern struct dentry *__d_lookup_rcu(const struct dentry *parent,
-    const struct qstr *name,
-    unsigned *seq, struct inode *inode);
-static __attribute__((always_inline)) int __d_rcu_to_refcount(struct dentry *dentry, unsigned seq)
-{
- int ret = 0;
- if (!read_seqcount_retry(&dentry->d_seq, seq)) {
-  ret = 1;
-  dentry->d_count++;
- }
- return ret;
-}
-extern int d_validate(struct dentry *, struct dentry *);
-extern char *dynamic_dname(struct dentry *, char *, int, const char *, ...);
-extern char *__d_path(const struct path *, const struct path *, char *, int);
-extern char *d_absolute_path(const struct path *, char *, int);
-extern char *d_path(const struct path *, char *, int);
-extern char *dentry_path_raw(struct dentry *, char *, int);
-extern char *dentry_path(struct dentry *, char *, int);
-static __attribute__((always_inline)) struct dentry *dget_dlock(struct dentry *dentry)
-{
- if (dentry)
-  dentry->d_count++;
- return dentry;
-}
-static __attribute__((always_inline)) struct dentry *dget(struct dentry *dentry)
-{
- if (dentry) {
-  spin_lock(&dentry->d_lock);
-  dget_dlock(dentry);
-  spin_unlock(&dentry->d_lock);
- }
- return dentry;
-}
-extern struct dentry *dget_parent(struct dentry *dentry);
-static __attribute__((always_inline)) int d_unhashed(struct dentry *dentry)
-{
- return hlist_bl_unhashed(&dentry->d_hash);
-}
-static __attribute__((always_inline)) int d_unlinked(struct dentry *dentry)
-{
- return d_unhashed(dentry) && !((dentry) == (dentry)->d_parent);
-}
-static __attribute__((always_inline)) int cant_mount(struct dentry *dentry)
-{
- return (dentry->d_flags & 0x0100);
-}
-static __attribute__((always_inline)) void dont_mount(struct dentry *dentry)
-{
- spin_lock(&dentry->d_lock);
- dentry->d_flags |= 0x0100;
- spin_unlock(&dentry->d_lock);
-}
-extern void dput(struct dentry *);
-static __attribute__((always_inline)) bool d_managed(struct dentry *dentry)
-{
- return dentry->d_flags & (0x10000|0x20000|0x40000);
-}
-static __attribute__((always_inline)) bool d_mountpoint(struct dentry *dentry)
-{
- return dentry->d_flags & 0x10000;
-}
-extern int sysctl_vfs_cache_pressure;
-struct buffer_head;
-struct kiocb;
-struct writeback_control;
-struct kstatfs;
-typedef int (get_block_t)(struct inode *inode, sector_t iblock, struct buffer_head *bh_result, int create);
-typedef void (dio_iodone_t)(struct kiocb *iocb, loff_t offset, ssize_t bytes, void *private);
-struct hd_geometry;
-struct iovec;
-struct poll_table_struct;
-struct vm_area_struct;
-struct page;
-struct seq_file;
-struct address_space {
-  struct inode *host;
-  spinlock_t tree_lock;
-  unsigned int i_mmap_writable;
-  struct list_head i_mmap_nonlinear;
-  struct mutex i_mmap_mutex;
-  unsigned long nrpages;
-  const struct address_space_operations *a_ops;
-  unsigned long flags;
-  spinlock_t private_lock;
-  struct list_head private_list;
-  void *private_data;
-};
-struct file {
-    struct dentry *f_dentry;
-    struct file_operations *f_op;
-    atomic_t f_count;
-    unsigned int f_flags;
-    mode_t f_mode;
-    loff_t f_pos;
-    void *private_data;
-    struct address_space *f_mapping;
-};
-struct block_device {
-  dev_t bd_dev;
-  struct inode * bd_inode;
-  struct gendisk * bd_disk;
-  struct block_device * bd_contains;
-  unsigned bd_block_size;
-};
-struct inode {
-    umode_t i_mode;
-    unsigned short i_opflags;
-    unsigned int i_flags;
-    unsigned long i_ino;
-    struct address_space *i_mapping;
-    const struct inode_operations *i_op;
-    const struct file_operations *i_fop;
-    struct super_block *i_sb;
-    struct block_device *i_bdev;
-    struct timespec i_atime;
-    struct timespec i_mtime;
-    struct timespec i_ctime;
-    blkcnt_t i_blocks;
-    dev_t i_rdev;
-    loff_t i_size;
-    struct cdev *i_cdev;
-    unsigned long i_state;
-    struct mutex i_mutex;
-    struct address_space i_data;
-    union {
-      const unsigned int i_nlink;
-      unsigned int __i_nlink;
-    };
-    union {
-      struct hlist_head i_dentry;
-      struct callback_head i_rcu;
-    };
-};
-typedef struct {
- size_t written;
- size_t count;
-} read_descriptor_t;
-typedef int (*filldir_t)(void *, const char *, int, loff_t, ino_t, unsigned);
-typedef int (*read_actor_t)(read_descriptor_t *, struct page *, unsigned long, unsigned long);
-struct file_lock {
-    int something;
-};
-struct file_operations {
-    struct module *owner;
-    loff_t (*llseek) (struct file *, loff_t, int);
-    ssize_t (*read) (struct file *, char *, size_t, loff_t *);
-    ssize_t (*write) (struct file *, const char *, size_t, loff_t *);
-    int (*readdir) (struct file *, void *, filldir_t);
-    unsigned int (*poll) (struct file *, struct poll_table_struct *);
-    int (*ioctl) (struct inode *, struct file *, unsigned int, unsigned long);
-    long (*unlocked_ioctl) (struct file *, unsigned int, unsigned long);
-    long (*compat_ioctl) (struct file *, unsigned int, unsigned long);
-    int (*mmap) (struct file *, struct vm_area_struct *);
-    int (*open) (struct inode *, struct file *);
-    int (*flush) (struct file *);
-    int (*release) (struct inode *, struct file *);
-    int (*fsync) (struct file *, struct dentry *, int datasync);
-    int (*fasync) (int, struct file *, int);
-    int (*lock) (struct file *, int, struct file_lock *);
-    ssize_t (*readv) (struct file *, const struct iovec *, unsigned long, loff_t *);
-    ssize_t (*writev) (struct file *, const struct iovec *, unsigned long, loff_t *);
-    ssize_t (*sendfile) (struct file *, loff_t *, size_t, read_actor_t, void *);
-    ssize_t (*sendpage) (struct file *, struct page *, int, size_t, loff_t *, int);
-    unsigned long (*get_unmapped_area)(struct file *, unsigned long, unsigned long, unsigned long, unsigned long);
-    int (*check_flags)(int);
-    int (*dir_notify)(struct file *filp, unsigned long arg);
-    int (*flock) (struct file *, int, struct file_lock *);
-    int (*open_exec) (struct inode *);
-};
-struct block_device_operations {
- int (*open) (struct inode *, struct file *);
- int (*release) (struct inode *, struct file *);
- int (*ioctl) (struct inode *, struct file *, unsigned, unsigned long);
- long (*unlocked_ioctl) (struct file *, unsigned, unsigned long);
- long (*compat_ioctl) (struct file *, unsigned, unsigned long);
- int (*direct_access) (struct block_device *, sector_t, unsigned long *);
-  unsigned int (*check_events) (struct gendisk *disk, unsigned int clearing);
- int (*media_changed) (struct gendisk *);
- int (*revalidate_disk) (struct gendisk *);
- int (*getgeo)(struct block_device *, struct hd_geometry *);
- struct module *owner;
-};
-struct fasync_struct {
-    int something;
-};
-enum {
-  SB_UNFROZEN = 0,
-  SB_FREEZE_WRITE = 1,
-  SB_FREEZE_PAGEFAULT = 2,
-  SB_FREEZE_FS = 3,
-  SB_FREEZE_COMPLETE = 4,
-};
-struct super_operations {
-  struct inode *(*alloc_inode)(struct super_block *sb);
-  void (*destroy_inode)(struct inode *);
-  void (*dirty_inode) (struct inode *, int flags);
-  int (*write_inode) (struct inode *, struct writeback_control *wbc);
-  int (*drop_inode) (struct inode *);
-  void (*evict_inode) (struct inode *);
-  void (*put_super) (struct super_block *);
-  int (*sync_fs)(struct super_block *sb, int wait);
-  int (*freeze_fs) (struct super_block *);
-  int (*unfreeze_fs) (struct super_block *);
-  int (*statfs) (struct dentry *, struct kstatfs *);
-  int (*remount_fs) (struct super_block *, int *, char *);
-  void (*umount_begin) (struct super_block *);
-  int (*show_options)(struct seq_file *, struct dentry *);
-  int (*show_devname)(struct seq_file *, struct dentry *);
-  int (*show_path)(struct seq_file *, struct dentry *);
-  int (*show_stats)(struct seq_file *, struct dentry *);
-  int (*bdev_try_to_free_page)(struct super_block*, struct page*, gfp_t);
-  int (*nr_cached_objects)(struct super_block *);
-  void (*free_cached_objects)(struct super_block *, int);
-};
-struct file_system_type {
-  const char *name;
-  int fs_flags;
-  struct dentry *(*mount) (struct file_system_type *, int,
-  const char *, void *);
-  void (*kill_sb) (struct super_block *);
-  struct module *owner;
-  struct file_system_type * next;
-  struct hlist_head fs_supers;
-};
-struct super_block {
-  struct list_head s_list;
-  dev_t s_dev;
-  unsigned char s_blocksize_bits;
-  unsigned long s_blocksize;
-  loff_t s_maxbytes;
-  struct file_system_type *s_type;
-  const struct super_operations *s_op;
-  const struct dquot_operations *dq_op;
-  const struct quotactl_ops *s_qcop;
-  const struct export_operations *s_export_op;
-  unsigned long s_flags;
-  unsigned long s_magic;
-  struct dentry *s_root;
-  int s_count;
-  atomic_t s_active;
-  struct list_head s_inodes;
-  struct list_head s_files;
-  struct list_head s_mounts;
-  int s_nr_dentry_unused;
-  spinlock_t s_inode_lru_lock;
-  struct list_head s_inode_lru;
-  int s_nr_inodes_unused;
-  struct block_device *s_bdev;
-  char s_id[32];
-  u8 s_uuid[16];
-  void *s_fs_info;
-  unsigned int s_max_links;
-  u32 s_time_gran;
-  struct mutex s_vfs_rename_mutex;
-  char *s_subtype;
-  char *s_options;
-  int cleancache_poolid;
-  int s_readonly_remount;
-};
-extern int fasync_helper(int, struct file *, int, struct fasync_struct **);
-struct swap_info_struct;
-enum migrate_mode {X};
-struct address_space_operations {
-  int (*writepage)(struct page *page, struct writeback_control *wbc);
-  int (*readpage)(struct file *, struct page *);
-  int (*writepages)(struct address_space *, struct writeback_control *);
-  int (*set_page_dirty)(struct page *page);
-  int (*readpages)(struct file *filp, struct address_space *mapping,
-  struct list_head *pages, unsigned nr_pages);
-  int (*write_begin)(struct file *, struct address_space *mapping,
-  loff_t pos, unsigned len, unsigned flags,
-  struct page **pagep, void **fsdata);
-  int (*write_end)(struct file *, struct address_space *mapping,
-  loff_t pos, unsigned len, unsigned copied,
-  struct page *page, void *fsdata);
-  sector_t (*bmap)(struct address_space *, sector_t);
-  void (*invalidatepage) (struct page *, unsigned long);
-  int (*releasepage) (struct page *, gfp_t);
-  void (*freepage)(struct page *);
-  ssize_t (*direct_IO)(int, struct kiocb *, const struct iovec *iov,
-  loff_t offset, unsigned long nr_segs);
-  int (*get_xip_mem)(struct address_space *, unsigned long, int,
-  void **, unsigned long *);
-  int (*migratepage) (struct address_space *,
-  struct page *, struct page *, enum migrate_mode);
-  int (*launder_page) (struct page *);
-  int (*is_partially_uptodate) (struct page *, read_descriptor_t *,
-  unsigned long);
-  int (*error_remove_page)(struct address_space *, struct page *);
-  int (*swap_activate)(struct swap_info_struct *sis, struct file *file,
-  sector_t *span);
-  void (*swap_deactivate)(struct file *file);
-};
-struct fiemap_extent_info;
-struct iattr;
-struct inode_operations {
-  struct dentry * (*lookup) (struct inode *,struct dentry *, unsigned int);
-  void * (*follow_link) (struct dentry *, struct nameidata *);
-  int (*permission) (struct inode *, int);
-  struct posix_acl * (*get_acl)(struct inode *, int);
-  int (*readlink) (struct dentry *, char *,int);
-  void (*put_link) (struct dentry *, struct nameidata *, void *);
-  int (*create) (struct inode *,struct dentry *, umode_t, bool);
-  int (*link) (struct dentry *,struct inode *,struct dentry *);
-  int (*unlink) (struct inode *,struct dentry *);
-  int (*symlink) (struct inode *,struct dentry *,const char *);
-  int (*mkdir) (struct inode *,struct dentry *,umode_t);
-  int (*rmdir) (struct inode *,struct dentry *);
-  int (*mknod) (struct inode *,struct dentry *,umode_t,dev_t);
-  int (*rename) (struct inode *, struct dentry *,
-  struct inode *, struct dentry *);
-  int (*setattr) (struct dentry *, struct iattr *);
-  int (*getattr) (struct vfsmount *mnt, struct dentry *, struct kstat *);
-  int (*setxattr) (struct dentry *, const char *,const void *,size_t,int);
-  ssize_t (*getxattr) (struct dentry *, const char *, void *, size_t);
-  ssize_t (*listxattr) (struct dentry *, char *, size_t);
-  int (*removexattr) (struct dentry *, const char *);
-  int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
-  u64 len);
-  int (*update_time)(struct inode *, struct timespec *, int);
-  int (*atomic_open)(struct inode *, struct dentry *,
-  struct file *, unsigned open_flag,
-  umode_t create_mode, int *opened);
-};
-int alloc_chrdev_region(dev_t *, unsigned, unsigned, const char *);
-int register_chrdev_region(dev_t, unsigned, const char *);
-void unregister_chrdev_region(dev_t, unsigned);
-int register_chrdev(unsigned int, const char *, struct file_operations *);
-int unregister_chrdev(unsigned int, const char *);
-int chrdev_open(struct inode *, struct file *);
-void chrdev_show(struct seq_file *,off_t);
-int register_blkdev(unsigned int, const char *);
-int unregister_blkdev(unsigned int, const char *);
-void kill_fasync(struct fasync_struct **, int, int);
-static __attribute__((always_inline)) unsigned iminor(struct inode *inode)
-{
- return ((unsigned int) ((inode->i_rdev) & ((1U << 20) - 1)));
-}
-static __attribute__((always_inline)) unsigned imajor(struct inode *inode)
-{
- return ((unsigned int) ((inode->i_rdev) >> 20));
-}
-loff_t no_llseek(struct file *file, loff_t offset, int origin);
-int check_disk_change(struct block_device *);
-int nonseekable_open(struct inode * inode, struct file * filp);
-loff_t i_size_read(struct inode *inode);
-int set_blocksize(struct block_device *, int);
-void generic_shutdown_super(struct super_block *sb);
-void kill_block_super(struct super_block *sb);
-void kill_anon_super(struct super_block *sb);
-void kill_litter_super(struct super_block *sb);
-void deactivate_super(struct super_block *sb);
-void deactivate_locked_super(struct super_block *sb);
-int set_anon_super(struct super_block *s, void *data);
-int get_anon_bdev(dev_t *);
-void free_anon_bdev(dev_t);
-extern int generic_readlink(struct dentry *, char *, int);
-extern void *page_follow_link_light(struct dentry *, struct nameidata *);
-extern void page_put_link(struct dentry *, struct nameidata *, void *);
-struct timespec current_fs_time(struct super_block *sb)
-{
-  struct timespec now = current_kernel_time();
-  return timespec_trunc(now, sb->s_time_gran);
-}
 typedef unsigned char cc_t;
 typedef unsigned int speed_t;
 typedef unsigned int tcflag_t;
@@ -6463,149 +6463,320 @@ extern u64 tiocx_dma_addr(u64 addr);
 extern u64 tiocx_swin_base(int nasid);
 extern void tiocx_mmr_store(int nasid, u64 offset, u64 value);
 extern u64 tiocx_mmr_load(int nasid, u64 offset);
-struct miscdevice {
-    int minor;
-    const char *name;
-    struct file_operations *fops;
+void *phys_to_virt(unsigned long);
+void *ioremap(unsigned long offset, unsigned long size)
+{
+ void *memory = (void *) malloc(size);
+ return memory;
+}
+void *ioremap_nocache(unsigned long offset, unsigned long size);
+void iounmap(void *addr);
+unsigned char inb(unsigned int);
+void outb(unsigned char value, unsigned int);
+unsigned short inw(unsigned int);
+void outw(unsigned short value, unsigned int);
+unsigned inl(unsigned int);
+void outl(unsigned value, unsigned int);
+unsigned char inb_p(unsigned int);
+void outb_p(unsigned char value, unsigned int);
+unsigned short inw_p(unsigned int);
+void outw_p(unsigned short value, unsigned int);
+unsigned inl_p(unsigned int);
+void outl_p(unsigned value, unsigned int);
+unsigned insb(unsigned int value, void *addr, unsigned long count);
+void outsb(unsigned int value, void *addr, unsigned long count);
+unsigned insw(unsigned int value, void *addr, unsigned long count);
+void outsw(unsigned int value, void *addr, unsigned long count);
+unsigned insl(unsigned int value, void *addr, unsigned long count);
+void outsl(unsigned int value, void *addr, unsigned long count);
+unsigned char readb(const void *addr)
+{
+ return *(u8 *)addr;
+}
+unsigned short readw(const void *addr)
+{
+ return *(u16 *)addr;
+}
+unsigned int readl(const void *addr)
+{
+ return *(u32 *)addr;
+}
+void writeb(unsigned char value, void *addr)
+{
+ *(u8 *)addr = value;
+}
+void writew(unsigned short value, void *addr)
+{
+ *(u16 *)addr = value;
+}
+void writel(unsigned int value, void *addr)
+{
+ *(u32 *)addr = value;
+}
+unsigned int ioread8(void *addr)
+{
+ return readb(addr);
+}
+unsigned int ioread16(void *addr)
+{
+ return readw(addr);
+}
+unsigned int ioread32(void *addr)
+{
+ return readl(addr);
+}
+static __attribute__((always_inline)) void iowrite8(u8 value, void *addr)
+{
+ writeb(value, addr);
+}
+static __attribute__((always_inline)) void iowrite16(u16 value, void *addr)
+{
+ writew(value, addr);
+}
+static __attribute__((always_inline)) void iowrite32(u32 value, void *addr)
+{
+ writel(value, addr);
+}
+void ioread8_rep(void *addr, void *buf, unsigned long count);
+void ioread16_rep(void *addr, void *buf, unsigned long count);
+void ioread32_rep(void *addr, void *buf, unsigned long count);
+void iowrite8_rep(void *addr, const void *buf, unsigned long count);
+void iowrite16_rep(void *addr, const void *buf, unsigned long count);
+void iowrite32_rep(void *addr, const void *buf, unsigned long count);
+void memcpy_fromio(void *dst, const volatile void *src, size_t count)
+{
+ memcpy(dst, (const void *) src, count);
+}
+void memory_barrier(bool value);
+struct nsc_gpio_ops {
+ struct module* owner;
+ u32 (*gpio_config) (unsigned iminor, u32 mask, u32 bits);
+ void (*gpio_dump) (struct nsc_gpio_ops *amp, unsigned iminor);
+ int (*gpio_get) (unsigned iminor);
+ void (*gpio_set) (unsigned iminor, int state);
+ void (*gpio_change) (unsigned iminor);
+ int (*gpio_current) (unsigned iminor);
+ struct device* dev;
 };
-extern int misc_register(struct miscdevice * misc);
-extern int misc_deregister(struct miscdevice * misc);
-enum {
- pmac_nvram_OF,
- pmac_nvram_XPRAM,
- pmac_nvram_NR
-};
-struct pmac_machine_location {
- unsigned int latitude;
- unsigned int longitude;
- unsigned int delta;
-};
-static __attribute__((always_inline)) int mmio_nvram_init(void)
+extern ssize_t nsc_gpio_write(struct file *file, const char *data,
+         size_t len, loff_t *ppos);
+extern ssize_t nsc_gpio_read(struct file *file, char *buf,
+        size_t len, loff_t *ppos);
+extern void nsc_gpio_dump(struct nsc_gpio_ops *amp, unsigned index);
+static int major;
+static struct mutex pc8736x_gpio_config_lock = { 1, 0 };
+static unsigned pc8736x_gpio_base;
+static u8 pc8736x_gpio_shadow[4];
+static unsigned char superio_cmd = 0;
+static unsigned char selected_device = 0xFF;
+static int port_offset[] = { 0, 4, 8, 10 };
+static struct platform_device *pdev;
+static __attribute__((always_inline)) void superio_outb(int addr, int val)
 {
- return -19;
+ outb_p(addr, superio_cmd);
+ outb_p(val, superio_cmd + 1);
 }
-extern int nvram_scan_partitions(void);
-extern loff_t nvram_create_partition(const char *name, int sig,
-         int req_size, int min_size);
-extern int nvram_remove_partition(const char *name, int sig,
-     const char *exceptions[]);
-extern int nvram_get_partition_size(loff_t data_index);
-extern loff_t nvram_find_partition(const char *name, int sig, int *out_size);
-extern int pmac_get_partition(int partition);
-extern u8 pmac_xpram_read(int xpaddr);
-extern void pmac_xpram_write(int xpaddr, u8 data);
-extern void nvram_sync(void);
-extern ssize_t nvram_get_size(void);
-extern unsigned char nvram_read_byte(int i);
-extern void nvram_write_byte(unsigned char c, int i);
-static struct mutex nvram_mutex = { 1, 0 };
-static ssize_t nvram_len;
-loff_t nvram_llseek(struct file *file, loff_t offset, int origin)
+static __attribute__((always_inline)) int superio_inb(int addr)
 {
- switch (origin) {
- case 0:
-  break;
- case 1:
-  offset += file->f_pos;
-  break;
- case 2:
-  offset += nvram_len;
-  break;
- default:
-  offset = -1;
- }
- if (offset < 0)
-  return -22;
- file->f_pos = offset;
- __VERIFIER_assert(file->f_pos == offset);
- return file->f_pos;
+ outb_p(addr, superio_cmd);
+ return inb_p(superio_cmd + 1);
 }
-ssize_t read_nvram(struct file *file, char *buf,
-     size_t count, loff_t *ppos)
+static int pc8736x_superio_present(void)
 {
- unsigned int i;
- char *p = buf;
- if (!access_ok(1, buf, count))
-  return -14;
- if (*ppos >= nvram_len)
-  return 0;
- for (i = *ppos; count > 0 && i < nvram_len; ++i, ++p, --count)
-  if (__put_user(nvram_read_byte(i), p))
-   return -14;
- *ppos = i;
- __VERIFIER_assert(*ppos == i);
- return p - buf;
-}
-ssize_t write_nvram(struct file *file, const char *buf,
-      size_t count, loff_t *ppos)
-{
- unsigned int i;
- const char *p = buf;
- char c = __VERIFIER_nondet_char();
- if (!access_ok(0, buf, count))
-  return -14;
- if (*ppos >= nvram_len)
-  return 0;
- for (i = *ppos; count > 0 && i < nvram_len; ++i, ++p, --count) {
-  if (__get_user(c, p))
-   return -14;
-  nvram_write_byte(c, i);
- }
- *ppos = i;
- __VERIFIER_assert(*ppos == i);
- return p - buf;
-}
-static int nvram_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
-{
- switch(cmd) {
- case (((0U) << (((0 +8)+8)+14)) | ((('p')) << (0 +8)) | (((0x43)) << 0) | ((0) << ((0 +8)+8))):
-  nvram_sync();
-  break;
- default:
-  return -22;
- }
+ int id;
+ superio_cmd = 0x2E;
+ id = superio_inb(0x20);
+ if (id == 0xe5 || id == 0xe9)
+  return superio_cmd;
+ superio_cmd = 0x4E;
+ id = superio_inb(0x20);
+ if (id == 0xe5 || id == 0xe9)
+  return superio_cmd;
  return 0;
 }
-long nvram_unlocked_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+static void device_select(unsigned devldn)
 {
- int ret;
- mutex_lock(&nvram_mutex);
- ret = nvram_ioctl(file, cmd, arg);
- mutex_unlock(&nvram_mutex);
- return ret;
+ superio_outb(0x7, devldn);
+ selected_device = devldn;
 }
-struct file_operations nvram_fops = {
+static void select_pin(unsigned iminor)
+{
+ device_select(0x7);
+ superio_outb(0xF0,
+       ((iminor << 1) & 0xF0) | (iminor & 0x7));
+}
+static __attribute__((always_inline)) u32 pc8736x_gpio_configure_fn(unsigned index, u32 mask, u32 bits,
+         u32 func_slct)
+{
+ u32 config, new_config;
+ mutex_lock(&pc8736x_gpio_config_lock);
+ device_select(0x7);
+ select_pin(index);
+ config = superio_inb(func_slct);
+ new_config = (config & mask) | bits;
+ superio_outb(func_slct, new_config);
+ mutex_unlock(&pc8736x_gpio_config_lock);
+ return config;
+}
+u32 pc8736x_gpio_configure(unsigned index, u32 mask, u32 bits)
+{
+ return pc8736x_gpio_configure_fn(index, mask, bits,
+      0xF1);
+}
+int pc8736x_gpio_get(unsigned minor)
+{
+ int port, bit, val;
+ port = minor >> 3;
+ bit = minor & 7;
+ val = inb_p(pc8736x_gpio_base + port_offset[port] + 1);
+ val >>= bit;
+ val &= 1;
+ do {} while (0);
+ return val;
+}
+void pc8736x_gpio_set(unsigned minor, int val)
+{
+ int port, bit, curval;
+ minor &= 0x1f;
+ port = minor >> 3;
+ bit = minor & 7;
+ curval = inb_p(pc8736x_gpio_base + port_offset[port] + 0);
+ do {} while (0);
+ val = (curval & ~(1 << bit)) | (val << bit);
+ do {} while (0);
+ outb_p(val, pc8736x_gpio_base + port_offset[port] + 0);
+ curval = inb_p(pc8736x_gpio_base + port_offset[port] + 0);
+ val = inb_p(pc8736x_gpio_base + port_offset[port] + 1);
+ do {} while (0);
+ pc8736x_gpio_shadow[port] = val;
+ __VERIFIER_assert(pc8736x_gpio_shadow[port] == val);
+}
+int pc8736x_gpio_current(unsigned minor)
+{
+ int port, bit;
+ minor &= 0x1f;
+ port = minor >> 3;
+ bit = minor & 7;
+        u8 tmp = pc8736x_gpio_shadow[port];
+        __VERIFIER_assert(tmp == pc8736x_gpio_shadow[port]);
+ return ((tmp >> bit) & 0x01);
+}
+void pc8736x_gpio_change(unsigned index)
+{
+ pc8736x_gpio_set(index, !pc8736x_gpio_current(index));
+}
+static struct nsc_gpio_ops pc8736x_gpio_ops = {
  .owner = ((struct module *)0),
- .llseek = nvram_llseek,
- .read = read_nvram,
- .write = write_nvram,
- .unlocked_ioctl = nvram_unlocked_ioctl,
+ .gpio_config = pc8736x_gpio_configure,
+ .gpio_dump = nsc_gpio_dump,
+ .gpio_get = pc8736x_gpio_get,
+ .gpio_set = pc8736x_gpio_set,
+ .gpio_change = pc8736x_gpio_change,
+ .gpio_current = pc8736x_gpio_current
 };
-static struct miscdevice nvram_dev = {
- 144,
- "nvram",
- &nvram_fops
+int pc8736x_gpio_open(struct inode *inode, struct file *file)
+{
+ unsigned m = iminor(inode);
+ file->private_data = &pc8736x_gpio_ops;
+ __VERIFIER_assert(file->private_data == &pc8736x_gpio_ops);
+ do {} while (0);
+ if (m >= 32)
+  return -22;
+ return nonseekable_open(inode, file);
+}
+static struct file_operations pc8736x_gpio_fileops = {
+ .owner = ((struct module *)0),
+ .open = pc8736x_gpio_open,
+ .write = nsc_gpio_write,
+ .read = nsc_gpio_read,
+ .llseek = no_llseek,
 };
-int nvram_init(void)
+static void pc8736x_init_shadow(void)
 {
- int ret = 0;
- printk("\001" "6" "Generic non-volatile memory driver v%s\n",
-  "1.1");
- ret = misc_register(&nvram_dev);
- if (ret != 0)
-  goto out;
- nvram_len = nvram_get_size();
- if (nvram_len < 0)
-  nvram_len = 8192;
-out:
- return ret;
+ int port;
+ for (port = 0; port < 4; ++port)
+  pc8736x_gpio_shadow[port]
+      = inb_p(pc8736x_gpio_base + port_offset[port]
+       + 0);
 }
-void nvram_cleanup(void)
+static struct cdev pc8736x_gpio_cdev;
+int pc8736x_gpio_init(void)
 {
-        misc_deregister( &nvram_dev );
+ int rc;
+ dev_t devid;
+ pdev = platform_device_alloc("pc8736x_gpio", 0);
+ if (!pdev)
+  return -12;
+ rc = platform_device_add(pdev);
+ if (rc) {
+  rc = -19;
+  goto undo_platform_dev_alloc;
+ }
+ do {} while (0);
+ if (!pc8736x_superio_present()) {
+  rc = -19;
+  do {} while (0);
+  goto undo_platform_dev_add;
+ }
+ pc8736x_gpio_ops.dev = &pdev->dev;
+        __VERIFIER_assert(pc8736x_gpio_ops.dev == &pdev->dev);
+ rc = superio_inb(0x21);
+ if (!(rc & 0x01)) {
+  rc = -19;
+  do {} while (0);
+  goto undo_platform_dev_add;
+ }
+ device_select(0x7);
+ if (!superio_inb(0x30)) {
+  rc = -19;
+  do {} while (0);
+  goto undo_platform_dev_add;
+ }
+ pc8736x_gpio_base = (superio_inb(0x60) << 8
+        | superio_inb(0x61));
+ if (!__request_region(((void *)0), (pc8736x_gpio_base), (16), ("pc8736x_gpio"), 0)) {
+  rc = -19;
+  do {} while (0);
+  goto undo_platform_dev_add;
+ }
+ do {} while (0);
+ if (major) {
+  devid = (((major) << 20) | (0));
+  rc = register_chrdev_region(devid, 32, "pc8736x_gpio");
+ } else {
+  rc = alloc_chrdev_region(&devid, 0, 32, "pc8736x_gpio");
+  major = ((unsigned int) ((devid) >> 20));
+ }
+ if (rc < 0) {
+  do {} while (0);
+  goto undo_request_region;
+ }
+ if (!major) {
+  major = rc;
+  do {} while (0);
+ }
+ pc8736x_init_shadow();
+ cdev_init(&pc8736x_gpio_cdev, &pc8736x_gpio_fileops);
+ cdev_add(&pc8736x_gpio_cdev, devid, 32);
+ return 0;
+undo_request_region:
+ __release_region(((void *)0), (pc8736x_gpio_base), (16));
+undo_platform_dev_add:
+ platform_device_del(pdev);
+undo_platform_dev_alloc:
+ platform_device_put(pdev);
+ return rc;
 }
-int (* _whoop_init)(void) = nvram_init;
-void (* _whoop_exit)(void) = nvram_cleanup;
+void pc8736x_gpio_cleanup(void)
+{
+ do {} while (0);
+ cdev_del(&pc8736x_gpio_cdev);
+ unregister_chrdev_region((((major) << 20) | (0)), 32);
+ __release_region(((void *)0), (pc8736x_gpio_base), (16));
+ platform_device_unregister(pdev);
+}
+int (* _whoop_init)(void) = pc8736x_gpio_init;
+void (* _whoop_exit)(void) = pc8736x_gpio_cleanup;
 struct inode *whoop_inode_0;
 struct file *whoop_file_0;
 struct inode *whoop_inode_1;
@@ -6616,37 +6787,51 @@ struct inode *whoop_inode_3;
 struct file *whoop_file_3;
 struct inode *whoop_inode_4;
 struct file *whoop_file_4;
+struct inode *whoop_inode_5;
+struct file *whoop_file_5;
+struct inode *whoop_inode_6;
+struct file *whoop_file_6;
 struct pci_dev *whoop_pci_dev;
-char *whoop_buf;
+const char *whoop_buf;
 struct platform_device *whoop_platform_device;
 struct vm_area_struct *whoop_vm_area_struct;
 struct cx_dev *whoop_cx_dev;
 poll_table *whoop_poll_table;
 loff_t *whoop_loff_t;
 int whoop_int;
-void *whoop_wrapper_write_nvram(void* args)
+void *whoop_wrapper_pc8736x_gpio_set(void* args)
 {
- write_nvram(whoop_file_0, whoop_buf, whoop_int, whoop_loff_t);
+ pc8736x_gpio_set(whoop_int, whoop_int);
  return ((void *)0);
 }
-void *whoop_wrapper_read_nvram(void* args)
+void *whoop_wrapper_pc8736x_gpio_open(void* args)
 {
- read_nvram(whoop_file_1, whoop_buf, whoop_int, whoop_loff_t);
+ pc8736x_gpio_open(whoop_inode_1, whoop_file_1);
  return ((void *)0);
 }
-void *whoop_wrapper_nvram_unlocked_ioctl(void* args)
+void *whoop_wrapper_pc8736x_gpio_get(void* args)
 {
- nvram_unlocked_ioctl(whoop_file_2, whoop_int, whoop_int);
+ pc8736x_gpio_get(whoop_int);
  return ((void *)0);
 }
-void *whoop_wrapper_nvram_llseek(void* args)
+void *whoop_wrapper_pc8736x_gpio_current(void* args)
 {
- nvram_llseek(whoop_file_3, __VERIFIER_nondet_long(), whoop_int);
+ pc8736x_gpio_current(whoop_int);
  return ((void *)0);
 }
-void *whoop_wrapper_nvram_cleanup(void* args)
+void *whoop_wrapper_pc8736x_gpio_configure(void* args)
 {
- nvram_cleanup();
+ pc8736x_gpio_configure(whoop_int, whoop_int, whoop_int);
+ return ((void *)0);
+}
+void *whoop_wrapper_pc8736x_gpio_cleanup(void* args)
+{
+ pc8736x_gpio_cleanup();
+ return ((void *)0);
+}
+void *whoop_wrapper_pc8736x_gpio_change(void* args)
+{
+ pc8736x_gpio_change(whoop_int);
  return ((void *)0);
 }
 int main(void)
@@ -6661,6 +6846,10 @@ int main(void)
  whoop_file_3 = (struct file *) malloc(sizeof(struct file));
  whoop_inode_4 = (struct inode *) malloc(sizeof(struct inode));
  whoop_file_4 = (struct file *) malloc(sizeof(struct file));
+ whoop_inode_5 = (struct inode *) malloc(sizeof(struct inode));
+ whoop_file_5 = (struct file *) malloc(sizeof(struct file));
+ whoop_inode_6 = (struct inode *) malloc(sizeof(struct inode));
+ whoop_file_6 = (struct file *) malloc(sizeof(struct file));
  whoop_pci_dev = (struct pci_dev *) malloc(sizeof(struct pci_dev));
  whoop_buf = (char *) malloc(sizeof(char));
  whoop_platform_device = (struct platform_device *) malloc(sizeof(struct platform_device));
@@ -6671,10 +6860,10 @@ int main(void)
  whoop_int = __VERIFIER_nondet_int();
  __VERIFIER_assume(whoop_int >= 0);
  int _whoop_init_result = _whoop_init();
- pthread_t pthread_t_nvram_unlocked_ioctl;
- pthread_t pthread_t_nvram_llseek;
- pthread_create(&pthread_t_nvram_unlocked_ioctl, ((void *)0), whoop_wrapper_nvram_unlocked_ioctl, ((void *)0));
- pthread_create(&pthread_t_nvram_llseek, ((void *)0), whoop_wrapper_nvram_llseek, ((void *)0));
- pthread_join(pthread_t_nvram_unlocked_ioctl, ((void *)0));
- pthread_join(pthread_t_nvram_llseek, ((void *)0));
+ pthread_t pthread_t_pc8736x_gpio_open;
+ pthread_t pthread_t_pc8736x_gpio_get;
+ pthread_create(&pthread_t_pc8736x_gpio_open, ((void *)0), whoop_wrapper_pc8736x_gpio_open, ((void *)0));
+ pthread_create(&pthread_t_pc8736x_gpio_get, ((void *)0), whoop_wrapper_pc8736x_gpio_get, ((void *)0));
+ pthread_join(pthread_t_pc8736x_gpio_open, ((void *)0));
+ pthread_join(pthread_t_pc8736x_gpio_get, ((void *)0));
 }
