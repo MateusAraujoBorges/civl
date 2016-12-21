@@ -22,8 +22,10 @@ import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
+import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.NumberFactory;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
+import edu.udel.cis.vsl.sarl.object.common.SimpleSequence;
 
 /**
  * This class implements a subset of the semantics of a casted pointer q, where
@@ -106,37 +108,80 @@ class pointer2ArrayCastingSemantics {
 		return eval;
 	}
 
-	boolean isCastedPointer(SymbolicExpression pointer) {
+	static boolean isCastedPointer(SymbolicExpression pointer) {
 		if (pointer.operator() == SymbolicOperator.APPLY) {
 			SymbolicConstant symConst = (SymbolicConstant) pointer.argument(0);
 
-			return symConst.name().equals(castFunc.name());
+			return symConst.name().getString().equals(castFuncName);
 		}
 		return false;
 	}
 
 	Evaluation pointerAdd(State state, int pid, String process,
 			Expression pointerAddExpression, SymbolicExpression pointer,
-			NumericExpression offset) {
+			NumericExpression offset)
+			throws UnsatisfiablePathConditionException {
 		assert isCastedPointer(pointer);
 		SymbolicExpression originPointer = getOriginPointer(pointer);
 		SymbolicExpression castedDimArray = getCastedDimArray(pointer);
-		NumericExpression originExtsProd = getOriginExtProd(pointer);
-		NumericExpression step, castedExtsProd;
-		SymbolicArrayType dimArrayType = (SymbolicArrayType) castedDimArray
-				.type();
-		int dim = dimArrayType.dimensions();
+		NumericExpression step;
+		Evaluation eval;
 
-		castedExtsProd = universe.oneInt();
-		for (int i = 0; i < dim; i++)
-			castedExtsProd = universe.multiply(castedExtsProd,
-					(NumericExpression) universe.arrayRead(castedDimArray,
-							universe.integer(i)));
-		// cannot do pointer addition on a pointer which has incomplete type:
-		assert !castedExtsProd.isZero();
-		// TODO: If originExtsProd is normalized to one, then castedExtsProd is
-		// the step:
-		return null;
+		step = dimArrayProduct(castedDimArray);
+		offset = universe.multiply(offset, step);
+		eval = evaluator.evaluatePointerAdd(state, process, originPointer,
+				offset, false, pointerAddExpression.getSource()).left;
+		eval.value = universe.apply(castFunc,
+				Arrays.asList(castedDimArray, eval.value));
+		return eval;
+	}
+
+	Evaluation dereference(State state, int pid, String process,
+			Expression pointerExpression, SymbolicExpression pointer,
+			boolean checkOutput, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		assert isCastedPointer(pointer);
+		SymbolicExpression castedDimArray = getCastedDimArray(pointer);
+		SymbolicExpression originPointer = getOriginPointer(pointer);
+		Evaluation eval = new Evaluation(state, null);
+		NumberFactory numFactory = universe.numberFactory();
+
+		if (numFactory.compare(
+				universe.extractNumber(universe.length(castedDimArray)),
+				numFactory.oneInteger()) > 0) {
+			castedDimArray = universe.removeElementAt(castedDimArray, 0);
+			eval.value = universe.apply(castFunc,
+					Arrays.asList(castedDimArray, originPointer));
+		} else
+			eval.value = originPointer;
+		return eval;
+
+	}
+
+	Evaluation subscript(State state, int pid, String process,
+			Expression expression, SymbolicExpression pointer2array,
+			NumericExpression index)
+			throws UnsatisfiablePathConditionException {
+		assert isCastedPointer(pointer2array);
+		SymbolicExpression castedDimArray = getCastedDimArray(pointer2array);
+		SymbolicExpression originPointer = getOriginPointer(pointer2array);
+		NumericExpression offset = universe
+				.multiply(dimArrayProduct(castedDimArray), index);
+		Evaluation eval;
+		NumberFactory numFactory = universe.numberFactory();
+
+		eval = pointerAdd(state, pid, process, expression, originPointer,
+				offset);
+		originPointer = eval.value;
+		if (numFactory.compare(
+				universe.extractNumber(universe.length(castedDimArray)),
+				numFactory.oneInteger()) > 0) {
+			castedDimArray = universe.removeElementAt(castedDimArray, 0);
+			eval.value = universe.apply(castFunc,
+					Arrays.asList(castedDimArray, originPointer));
+		} else
+			eval.value = originPointer;
+		return eval;
 	}
 
 	/* ******************** private helper methods *********************/
@@ -146,7 +191,7 @@ class pointer2ArrayCastingSemantics {
 			throws UnsatisfiablePathConditionException {
 		CIVLType originSuffixType, castedSuffixType;
 		List<Expression> originExts, castedExts;
-		SymbolicExpression castedDimArray, originDimArray, originExtsProd;
+		SymbolicExpression castedDimArray;
 		Evaluation eval;
 
 		originExts = new LinkedList<>();
@@ -159,42 +204,32 @@ class pointer2ArrayCastingSemantics {
 					"Casting a pointer-to-(array-of)*-T1 to a pointer-to-(array-of)*-T2,"
 							+ " where T1 and T2 are not lexically equivalent.",
 					source);
-		eval = valueOfExtents(state, pid, castedExts);
-		castedDimArray = eval.value;
 		// If the given pointer was casted before, then it contains the original
 		// array dimensions and original pointer values:
 		if (isCastedPointer(pointer)) {
-			originExtsProd = getOriginExtProd(pointer);
 			pointer = getOriginPointer(pointer);
-			eval.value = universe.apply(castFunc,
-					Arrays.asList(castedDimArray, originExtsProd, pointer));
 		} else {
-			eval = valueOfExtents(state, pid, originExts);
-			originDimArray = eval.value;
-			eval.value = this.normalize(castedDimArray, originDimArray,
-					pointer);
+			pointer = normalizePointer(originExts.size(), pointer);
 		}
-		return eval;
+		if (!castedExts.isEmpty()) {
+			eval = valueOfExtents(state, pid, castedExts);
+			castedDimArray = eval.value;
+			eval.value = universe.apply(castFunc,
+					Arrays.asList(castedDimArray, pointer));
+			return eval;
+		} else
+			return new Evaluation(state, pointer);
 	}
 
-	// invariants:
-	// isCastedPointer(pointer) ==>
-	// originExtsProd <= castedExtsProd && castedExtsProd % originExtsProd == 0;
-	private SymbolicExpression normalize(SymbolicExpression castedDimArray,
-			SymbolicExpression originDimArray, SymbolicExpression pointer) {
-		NumericExpression castedExtsProd, originExtsProd;
-		NumericExpression factor;
-		SymbolicArrayType originDimArrayType = (SymbolicArrayType) originDimArray
-				.type();
-		int dim = originDimArrayType.dimensions();
+	private SymbolicExpression normalizePointer(int originDims,
+			SymbolicExpression pointer) {
 		ReferenceExpression reference = evaluator.symbolicUtility()
 				.getSymRef(pointer);
 
-		for (int i = 0; i < dim; i++)
+		for (int i = 0; i < originDims; i++)
 			reference = universe.arrayElementReference(reference,
 					universe.zeroInt());
-		pointer = evaluator.symbolicUtility().makePointer(pointer, reference);
-		return universe.apply(castFunc, Arrays.asList(castedDimArray, pointer));
+		return evaluator.symbolicUtility().makePointer(pointer, reference);
 	}
 
 	private CIVLType getPointer2ArrayReferedType(CIVLPointerType type,
@@ -202,7 +237,7 @@ class pointer2ArrayCastingSemantics {
 		CIVLType referedType = type.baseType();
 		TypeKind kind = referedType.typeKind();
 
-		while (kind == TypeKind.ARRAY) {
+		while (kind == TypeKind.ARRAY || kind == TypeKind.COMPLETE_ARRAY) {
 			CIVLArrayType arrayType = (CIVLArrayType) referedType;
 
 			referedType = (arrayType).elementType();
@@ -239,12 +274,14 @@ class pointer2ArrayCastingSemantics {
 		return eval;
 	}
 
-	private NumericExpression product(SymbolicExpression array) {
+	private NumericExpression dimArrayProduct(SymbolicExpression array) {
+		NumericExpression length = universe.length(array);
 		NumericExpression product = universe.oneInt();
-		SymbolicArrayType arrayType = (SymbolicArrayType) array.type();
-		int dim = arrayType.dimensions();
+		IntegerNumber lengthNum = (IntegerNumber) universe
+				.extractNumber(length);
+		int lengthInt = lengthNum.intValue();
 
-		for (int i = 0; i < dim; i++)
+		for (int i = 0; i < lengthInt; i++)
 			product = universe.multiply(product, (NumericExpression) universe
 					.arrayRead(array, universe.integer(i)));
 		return product;
@@ -252,25 +289,19 @@ class pointer2ArrayCastingSemantics {
 
 	private SymbolicExpression getCastedDimArray(
 			SymbolicExpression castedPointer) {
-		SymbolicExpression args = (SymbolicExpression) castedPointer
+		@SuppressWarnings("unchecked")
+		SimpleSequence<SymbolicExpression> args = (SimpleSequence<SymbolicExpression>) castedPointer
 				.argument(1);
 
-		return (SymbolicExpression) args.argument(0);
-	}
-
-	private NumericExpression getOriginExtProd(
-			SymbolicExpression castedPointer) {
-		SymbolicExpression args = (SymbolicExpression) castedPointer
-				.argument(1);
-
-		return (NumericExpression) args.argument(1);
+		return (SymbolicExpression) args.get(0);
 	}
 
 	private SymbolicExpression getOriginPointer(
 			SymbolicExpression castedPointer) {
-		SymbolicExpression args = (SymbolicExpression) castedPointer
+		@SuppressWarnings("unchecked")
+		SimpleSequence<SymbolicExpression> args = (SimpleSequence<SymbolicExpression>) castedPointer
 				.argument(1);
 
-		return (SymbolicExpression) args.argument(2);
+		return (SymbolicExpression) args.get(1);
 	}
 }
