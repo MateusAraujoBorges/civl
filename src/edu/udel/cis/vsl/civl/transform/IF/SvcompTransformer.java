@@ -15,7 +15,10 @@ import edu.udel.cis.vsl.civl.transform.common.SvcompWorker;
  */
 public class SvcompTransformer extends BaseTransformer {
 
-	public static final int UNPP_SCALE = 4;
+	// notes on deciding the upper bound of the scale parameter:
+	// pthread-ext/25_stack_... require that the value is (2*pow(2)+1)
+	// pthread-C-DAC/pthread-finding-k-matches_true-unreach-call.i requires it to be even number
+	public static final int UNPP_SCALE = 3;
 	public static final int UNSIGNED_BOUND = 4;
 	public static final int INT_BOUND_UP = 5;
 	public static final String INT_BOUND_UP_NAME = "_svcomp_int_bound_up";

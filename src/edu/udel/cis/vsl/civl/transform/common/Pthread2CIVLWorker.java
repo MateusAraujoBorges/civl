@@ -872,8 +872,11 @@ public class Pthread2CIVLWorker extends BaseWorker {
 		for (BlockItemNode item : root) {
 			if (item == null)
 				continue;
-			if (item.getSource().getFirstToken().getSourceFile().getName()
-					.equals("pthread.h"))
+			
+			String fileName=item.getSource().getFirstToken().getSourceFile().getName();
+			
+			if (fileName
+					.equals("pthread.h") || fileName.equals("pthread.cvl"))
 				continue;
 			if (item instanceof FunctionDeclarationNode) {
 				FunctionDeclarationNode function = (FunctionDeclarationNode) item;
