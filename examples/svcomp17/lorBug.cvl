@@ -1,0 +1,15 @@
+
+$input int A,B,C,D,E;
+
+$assume(0<=A && A<=5);
+$assume(0<=B && B<=5);
+$assume(0<=C && C<=5);
+$assume(0<=D && D<=5);
+$assume(0<=E && E<=5);
+
+
+void assume(_Bool b){}
+
+int main(){
+  assume(A||B||C||D||E);
+}
