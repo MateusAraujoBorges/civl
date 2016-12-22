@@ -124,6 +124,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
+import edu.udel.cis.vsl.sarl.expr.cnf.BooleanPrimitive;
 import edu.udel.cis.vsl.sarl.number.IF.Numbers;
 
 /**
@@ -2353,6 +2354,8 @@ public class CommonEvaluator implements Evaluator {
 		eval = evaluate(eval.state, pid, expression.right());
 		right = eval.value;
 		state = eval.state;
+		if (left instanceof BooleanPrimitive)
+			left = left.isTrue() ? universe.integer(1) : universe.integer(0);
 		result = universe.bitshiftLeft((NumericExpression) left,
 				(NumericExpression) right);
 		return new Evaluation(state, result);
@@ -2367,6 +2370,8 @@ public class CommonEvaluator implements Evaluator {
 		eval = evaluate(eval.state, pid, expression.right());
 		right = eval.value;
 		state = eval.state;
+		if (left instanceof BooleanPrimitive)
+			left = left.isTrue() ? universe.integer(1) : universe.integer(0);
 		result = universe.bitshiftRight((NumericExpression) left,
 				(NumericExpression) right);
 		return new Evaluation(state, result);
@@ -3408,11 +3413,13 @@ public class CommonEvaluator implements Evaluator {
 						result = this.one;
 						break;
 					default :
-						errorLogger.logSimpleError(source, state,
-								state.getProcessState(pid).name(),
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.OTHER,
-								"undefined input for " + quant);
+						errorLogger
+								.logSimpleError(source, state,
+										state.getProcessState(pid).name(),
+										symbolicAnalyzer.stateInformation(
+												state),
+										ErrorKind.OTHER,
+										"undefined input for " + quant);
 						throw new UnsatisfiablePathConditionException();
 				}
 			} else {
@@ -3582,11 +3589,13 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger.logSimpleError(source, state, process,
-							this.symbolicAnalyzer.stateInformation(state),
-							ErrorKind.OTHER,
-							"Try to obtain a string from a sequence of char has length"
-									+ " less than or equal to one");
+					this.errorLogger
+							.logSimpleError(source, state, process,
+									this.symbolicAnalyzer.stateInformation(
+											state),
+									ErrorKind.OTHER,
+									"Try to obtain a string from a sequence of char has length"
+											+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;
