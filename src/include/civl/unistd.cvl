@@ -1,7 +1,7 @@
 #ifndef __UNISTD_CIVL__
 #define __UNISTD_CIVL__
 
-int sleep(int n){
+unsigned sleep(unsigned){
   return 0;
 }
 
