@@ -775,6 +775,16 @@ public class CommonStateManager implements StateManager {
 		return null;
 	}
 
+	@Override
+	public void setAllNextOnStack(State state, boolean value) {
+		state.setAllNextOnStack(value);
+	}
+
+	@Override
+	public boolean allNextOnStack(State state) {
+		return state.getAllNextOnStack();
+	}
+
 	// @Override
 	// public void setStack(Stack<TransitionSequence> stack) {
 	// this.stack = stack;

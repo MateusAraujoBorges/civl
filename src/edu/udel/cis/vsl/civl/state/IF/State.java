@@ -353,4 +353,8 @@ public interface State {
 	 * @return
 	 */
 	boolean isFinalState();
+
+	void setAllNextOnStack(boolean value);
+
+	boolean getAllNextOnStack();
 }

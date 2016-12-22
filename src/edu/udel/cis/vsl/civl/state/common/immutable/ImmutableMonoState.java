@@ -139,6 +139,8 @@ public class ImmutableMonoState implements State {
 	 * Cached reference to the simplified version of this state
 	 */
 	ImmutableState simplifiedState = null;
+	
+	private boolean allNextOnStack = true;
 
 	/* ****************** End of instance fields ****************** */
 
@@ -605,5 +607,15 @@ public class ImmutableMonoState implements State {
 	@Override
 	public boolean isFinalState() {
 		return processState.hasEmptyStack();
+	}
+
+	@Override
+	public void setAllNextOnStack(boolean value) {
+		allNextOnStack = value;
+	}
+
+	@Override
+	public boolean getAllNextOnStack() {
+		return allNextOnStack;
 	}
 }

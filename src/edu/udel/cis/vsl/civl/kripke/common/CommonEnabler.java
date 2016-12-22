@@ -1118,8 +1118,9 @@ public abstract class CommonEnabler implements Enabler {
 
 	@Override
 	public void expandTransitionSequence(TransitionSequence sequence) {
+		State state = sequence.state();
+		
 		if (!sequence.containsAllEnabled()) {
-			State state = sequence.state();
 			TransitionSequence ampleSet = this.enabledTransitionsPOR(state);
 			TransitionSequence enabledSet = this
 					.enabledTransitionsOfAllProcesses(state);
@@ -1130,8 +1131,8 @@ public abstract class CommonEnabler implements Enabler {
 
 			sequence.setContainingAllEnabled(true);
 			sequence.addAll(difference);
-			expandedStateIDs.add(state.getCanonicId());
 		}
+		expandedStateIDs.add(state.getCanonicId());
 	}
 
 	@Override
