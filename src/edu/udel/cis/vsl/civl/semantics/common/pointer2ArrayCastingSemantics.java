@@ -65,7 +65,7 @@ import edu.udel.cis.vsl.sarl.object.common.SimpleSequence;
  * @author ziqingluo
  *
  */
-class pointer2ArrayCastingSemantics {
+class Pointer2ArrayCastingSemantics {
 
 	private SymbolicUniverse universe;
 
@@ -77,7 +77,7 @@ class pointer2ArrayCastingSemantics {
 
 	private static final String castFuncName = "_cast";
 
-	pointer2ArrayCastingSemantics(Evaluator evaluator) {
+	Pointer2ArrayCastingSemantics(Evaluator evaluator) {
 		this.evaluator = evaluator;
 		this.universe = evaluator.universe();
 		noExtent = universe.zeroInt();
