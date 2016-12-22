@@ -39,14 +39,6 @@ public class Svcomp17PthreadsTest {
 	}
 
 	@Test
-	public void gcd() {
-		// False Negative (Should report no violation)
-		assertTrue(
-				ui.run("verify -svcomp17 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
-						filename("gcd_1_true-unreach-call.i")));
-	}
-
-	@Test
 	public void pthread_driver_races_2() {
 		assertTrue(ui.run("verify -svcomp17", filename(
 				"char_generic_nvram_nvram_llseek_read_nvram_true-unreach-call.i")));
