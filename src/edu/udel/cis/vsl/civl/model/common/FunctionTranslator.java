@@ -3783,6 +3783,8 @@ public class FunctionTranslator {
 	/**
 	 * Translate a struct field reference from the CIVL AST to the CIVL model.
 	 * 
+	 * TODO: FIX ME in the case of anonymous struct/union members.
+	 * 
 	 * @param dotNode
 	 *            The dot node to be translated.
 	 * @param scope

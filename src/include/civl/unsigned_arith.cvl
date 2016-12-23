@@ -1,0 +1,39 @@
+#ifndef _UNSIGNED_ARITH
+#define _UNSIGNED_ARITH
+
+/* This file defines certain arithmetic functions on unsigned integers
+ * in terms of ordinary integer arithmetic operations.
+ * Each function consumes the integer arguments for the operation, and
+ * an additional parameter named bound.    The bound should be one
+ * greater than the maximum unsigned value of the particular type.
+ * Hence these functions can be used for all unsigned integer types
+ * by invoking with the appropriate bound: unsigned char, unsigned
+ * short, unsigned int, unsigned long, unsigned long long.
+ *
+ * There is no need for division or modulus operations, since the
+ * usual integer operations can be used for these.  (As they
+ * cannot overflow or underflow.)
+ */
+
+int $unsigned_add(int x, int y, int bound) {
+  if (x+y < bound)
+    return x+y;
+  else
+    return x+y-bound;
+}
+
+int $unsigned_subtract(int x, int y, int bound) {
+  if (x>=y)
+    return x-y;
+  else
+    return x-y+bound;
+}
+
+int $unsigned_multiply(int x, int y, int bound) {
+  if (x*y < bound)
+    return x*y;
+  else
+    return (x*y)%bound;
+}
+
+#endif
