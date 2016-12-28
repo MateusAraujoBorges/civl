@@ -318,7 +318,7 @@ public class ModelTranslator {
 					transformerFactory.getDirectingTransformerRecord(config));
 		if (config.isEnableIntDivTransformation())
 			task.addTransformRecord(
-					transformerFactory.getIntDivTransformerRecord(macros));
+					transformerFactory.getIntOperationTransformerRecord(macros));
 		task.addTransformCode(SideEffectRemover.CODE);
 		task.addTransformCode(Pruner.CODE);
 	}
