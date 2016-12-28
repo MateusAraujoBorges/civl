@@ -1,0 +1,8 @@
+int main(){
+  int x;
+
+  while(1){
+    $havoc(&x);
+    $assume(x>0);
+  }
+}

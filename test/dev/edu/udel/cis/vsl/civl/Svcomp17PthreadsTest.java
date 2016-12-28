@@ -173,4 +173,27 @@ public class Svcomp17PthreadsTest {
 		assertFalse(ui.run("verify -svcomp17",
 				filename("elimination_backoff_stack_false-unreach-call.i")));
 	}
+
+	// stack_true_25 and pthread_finding_k_matches_true can't be true together,
+	// due to the different requirement of the scale parameter
+	@Ignore
+	@Test
+	public void stack_true_25() {
+		// requires UNPP scale to be (2*pow(2)+1), which is also an odd number
+		assertTrue(ui.run("verify -svcomp17",
+				filename("25_stack_true-unreach-call.i")));
+	}
+
+	@Test
+	public void pthread_finding_k_matches_true() {
+		// requires UNPP scale to be an even number
+		assertTrue(ui.run("verify -svcomp17",
+				filename("pthread-finding-k-matches_true-unreach-call.i")));
+	}
+
+	@Test
+	public void collect_symbolic_constant() {
+		assertTrue(ui.run("verify -svcomp17 -timeout=20",
+				filename("collectSymConstant.cvl")));
+	}
 }
