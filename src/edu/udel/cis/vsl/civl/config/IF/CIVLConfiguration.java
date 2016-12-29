@@ -385,7 +385,6 @@ public class CIVLConfiguration {
 				this.deadlock = DeadlockKind.NONE;
 			if (config.getValue(CIVLConstants.procBoundO) == null)
 				this.procBound = 6;
-			this.enableIntDivTransformation = false;
 		}
 		if (this.svcomp17) {
 			if (config.getValue(CIVLConstants.checkMemoryLeakO) == null)
@@ -398,7 +397,7 @@ public class CIVLConfiguration {
 				this.deadlock = DeadlockKind.NONE;
 			if (config.getValue(CIVLConstants.procBoundO) == null)
 				this.procBound = 6;
-			this.enableIntDivTransformation = false;
+			// this.enableIntDivTransformation = false;
 		}
 		this.directSymEx = (String) config.getValue(CIVLConstants.direct0);
 	}
