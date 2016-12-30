@@ -23,21 +23,33 @@
  * (x=(x<bound-1 ? x+1 : 0)). 
  */
 
-unsigned $unsigned_add(unsigned x, unsigned y, unsigned bound) {
+/* Computes sum of two unsigned values.
+ * Preconditions: 0<bound and 0<=x,y<bound.
+ * Postconditions: 0<=result<bound and result=x+y mod bound.
+ */
+int $unsigned_add(int x, int y, int bound) {
   if (x+y < bound)
     return x+y;
   else
     return x+y-bound;
 }
 
-unsigned $unsigned_subtract(unsigned x, unsigned y, unsigned bound) {
+/* Computes difference of two unsigned values.
+ * Preconditions: 0<bound and 0<=x,y<bound.
+ * Postconditions: 0<=result<bound and result=x-y mod bound.
+ */
+int $unsigned_subtract(int x, int y, int bound) {
   if (x>=y)
     return x-y;
   else
     return x-y+bound;
 }
 
-unsigned $unsigned_multiply(unsigned x, unsigned y, unsigned bound) {
+/* Computes product of two unsigned values.
+ * Preconditions: 0<bound and 0<=x,y<bound.
+ * Postconditions: 0<=result<bound and result=x*y mod bound.
+ */
+int $unsigned_multiply(int x, int y, int bound) {
   if (x*y < bound)
     return x*y;
   else
@@ -47,19 +59,34 @@ unsigned $unsigned_multiply(unsigned x, unsigned y, unsigned bound) {
 /* Converts a signed integer to an unsigned integer.
  * According to the C Standard, the result is obtained by repeatedly
  * adding bound to x until the result is nonnegative.
+ *
+ * Preconditions: 0<bound and 0<=x<bound.
+ * Postconditions: 0<=result<bound and result=x mod bound.
  */
-unsigned $signed_to_unsigned(signed x, unsigned bound) {
+int $signed_to_unsigned(int x, int bound) {
   if (x >= 0) {
     if (x < bound)
-      return (unsigned)x;
+      return x;
     else
-      return ((unsigned)x)%bound;
+      return x%bound;
   } else {
     if (-x <= bound)
       return bound + x;
     else
       return bound - (-x)%bound;
   }
+}
+
+
+/* Computes -x for an unsigned integer x.
+ * Preconditions: 0<bound and 0<=x<bound
+ * Postconditions: 0<=result<bound and result=-x mod bound.
+ */
+int $unsigned_neg(int x, int bound) {
+  if (x==0)
+    return 0;
+  else
+    return bound - x;
 }
 
 #endif
