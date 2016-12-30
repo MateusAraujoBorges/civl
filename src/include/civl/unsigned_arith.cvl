@@ -13,27 +13,53 @@
  * There is no need for division or modulus operations, since the
  * usual integer operations can be used for these.  (As they
  * cannot overflow or underflow.)
+ *
+ * For an expression x, the expression x++ can be translated as
+ * (x<bound-1 ? x++ : ((x=0), bound-1)).
+ *
+ * The expression ++x can be translated as
+ * (x<bound-1 ? ++x : (x=0))
+ * or
+ * (x=(x<bound-1 ? x+1 : 0)). 
  */
 
-int $unsigned_add(int x, int y, int bound) {
+unsigned $unsigned_add(unsigned x, unsigned y, unsigned bound) {
   if (x+y < bound)
     return x+y;
   else
     return x+y-bound;
 }
 
-int $unsigned_subtract(int x, int y, int bound) {
+unsigned $unsigned_subtract(unsigned x, unsigned y, unsigned bound) {
   if (x>=y)
     return x-y;
   else
     return x-y+bound;
 }
 
-int $unsigned_multiply(int x, int y, int bound) {
+unsigned $unsigned_multiply(unsigned x, unsigned y, unsigned bound) {
   if (x*y < bound)
     return x*y;
   else
     return (x*y)%bound;
+}
+
+/* Converts a signed integer to an unsigned integer.
+ * According to the C Standard, the result is obtained by repeatedly
+ * adding bound to x until the result is nonnegative.
+ */
+unsigned $signed_to_unsigned(signed x, unsigned bound) {
+  if (x >= 0) {
+    if (x < bound)
+      return (unsigned)x;
+    else
+      return ((unsigned)x)%bound;
+  } else {
+    if (-x <= bound)
+      return bound + x;
+    else
+      return bound - (-x)%bound;
+  }
 }
 
 #endif
