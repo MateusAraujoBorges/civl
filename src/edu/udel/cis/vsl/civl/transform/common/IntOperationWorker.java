@@ -22,6 +22,10 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.common.acsl.CommonContractNode;
 import edu.udel.cis.vsl.abc.ast.node.common.expression.CommonQuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.IntegerType;
+import edu.udel.cis.vsl.abc.ast.type.IF.SignedIntegerType;
+import edu.udel.cis.vsl.abc.ast.type.IF.StandardUnsignedIntegerType;
+import edu.udel.cis.vsl.abc.ast.type.IF.StandardUnsignedIntegerType.UnsignedIntKind;
+import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.ast.type.IF.UnsignedIntegerType;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
@@ -57,16 +61,18 @@ public class IntOperationWorker extends BaseWorker {
 	private static final String UNSIGNED_ADD = "$unsigned_add";
 	private static final String UNSIGNED_SUBSTRACT = "$unsigned_subtract";
 	private static final String UNSIGNED_MULTIPLY = "$unsigned_multiply";
+	private static final String SIGNED_TO_UNSIGNED = "$signed_to_unsigned";
+	private static final String UNSIGNED_NEG = "$unsigned_neg";
 	private static final String UNSIGNED_ARITH_SOURCE_FILE = "unsigned_arith.cvl";
 	// private static final String INT_DIV_NO_CHECKING_SOURCE_FILE =
 	// "int_div_no_checking.cvl";
 	// private Boolean check_division_by_zero = false;
 	private Entity divEntity = null, modEntity = null, unsignedAddEntity = null,
-			unsignedSubstractEntity = null, unsignedMultiplyEntity = null;
+			unsignedSubstractEntity = null, unsignedMultiplyEntity = null,
+			signedToUnsignedEntity = null, unsignedNegEntity = null;
 	private Map<String, String> macros;
 	private boolean intDivProcessed = false;
 	private boolean unsignedArithProcessed = false;
-	private boolean insideUnsignedArith = false;
 
 	// private AttributeKey intDivMacroKey;
 
@@ -80,14 +86,6 @@ public class IntOperationWorker extends BaseWorker {
 	@Override
 	public AST transform(AST unit) throws SyntaxException {
 		SequenceNode<BlockItemNode> root = unit.getRootNode();
-
-		// if (intDivMacroKey != null) {
-		// Object obj = root.getAttribute(intDivMacroKey);
-		//
-		// if (obj != null)
-		// check_division_by_zero = true;
-		// }
-
 		AST newAst;
 
 		divEntity = unit.getInternalOrExternalEntity(INT_DIV);
@@ -97,6 +95,9 @@ public class IntOperationWorker extends BaseWorker {
 				.getInternalOrExternalEntity(UNSIGNED_SUBSTRACT);
 		unsignedMultiplyEntity = unit
 				.getInternalOrExternalEntity(UNSIGNED_MULTIPLY);
+		signedToUnsignedEntity = unit
+				.getInternalOrExternalEntity(SIGNED_TO_UNSIGNED);
+		unsignedNegEntity = unit.getInternalOrExternalEntity(UNSIGNED_NEG);
 		if (divEntity != null || modEntity != null) {
 			intDivProcessed = true;
 			// return unit;
@@ -138,16 +139,26 @@ public class IntOperationWorker extends BaseWorker {
 	 *            the node to be transformed
 	 */
 	private void processIntegerOperation(ASTNode node) {
+		// if (node instanceof IdentifierExpressionNode) {
+		// System.out.println("identifier node :" + node.toString() + " : "
+		// + ((IdentifierExpressionNode) node).getNumConversions());
+		// }
+
 		if (node instanceof OperatorNode) {
 			OperatorNode opn = (OperatorNode) node;
 
-			if (opn.getOperator() == Operator.DIV
-					|| opn.getOperator() == Operator.MOD) {
+			// System.out.println("operatorNode:" + node.toString() + ":"
+			// + opn.getOperator());
+			Operator op = opn.getOperator();
+
+			if (op == Operator.DIV || op == Operator.MOD) {
 				processIntDivNode((OperatorNode) node);
-			} else if (opn.getOperator() == Operator.PLUS
-					|| opn.getOperator() == Operator.MINUS
-					|| opn.getOperator() == Operator.TIMES) {
+			} else if (op == Operator.PLUS || op == Operator.MINUS
+					|| op == Operator.TIMES) {
 				processUnsignedArithNode(opn);
+			} else if (op == Operator.UNARYMINUS || op == Operator.POSTINCREMENT
+					|| op == Operator.PREINCREMENT) {
+				processUnaryNode(opn);
 			} else {
 				processOtherNodes(node);
 			}
@@ -156,22 +167,167 @@ public class IntOperationWorker extends BaseWorker {
 		}
 	}
 
+	private void processUnaryNode(OperatorNode opn) {
+		ExpressionNode operand = opn.getArgument(0);
+
+		if (!(operand.getConvertedType() instanceof UnsignedIntegerType))
+			return;
+
+		Operator op = opn.getOperator();
+		ASTNode parent = opn.parent();
+		int childIndex = opn.childIndex();
+		switch (op) {
+			case UNARYMINUS : {
+				if (operand instanceof IntegerConstantNode) {
+
+					String funcName = UNSIGNED_NEG;
+					String method = funcName + "()";
+					Source source = this.newSource(method,
+							CivlcTokenConstant.CALL);
+					List<ExpressionNode> args = new ArrayList<ExpressionNode>();
+
+					opn.remove();
+					args.add(opn);
+					args.add(getBound());
+
+					FunctionCallNode funcCallNode = functionCall(source,
+							funcName, args);
+					funcCallNode.setInitialType(opn.getConvertedType());
+					parent.setChild(childIndex, funcCallNode);
+				}
+				break;
+			}
+			case POSTINCREMENT : {
+				OperatorNode replacement = postIncrementReplacement(operand);
+				opn.remove();
+				replacement.setInitialType(opn.getConvertedType());
+				parent.setChild(childIndex, replacement);
+				break;
+			}
+			case PREINCREMENT : {
+				OperatorNode replacement = preIncrementReplacement(operand);
+				opn.remove();
+				replacement.setInitialType(opn.getConvertedType());
+				parent.setChild(childIndex, replacement);
+				break;
+			}
+			default :
+				break;
+		}
+	}
+
+	private OperatorNode preIncrementReplacement(ExpressionNode operand) {
+		IntegerConstantNode constantOne = null, constantZero = null,
+				bound = getBound();
+		OperatorNode boundMinusOneNode = null, assignedZeroNode = null,
+				lessThanNode = null, preIncreNode = null, conditionNode = null;
+		String one = "1", zero = "0", boundMinusOne = "bound - 1",
+				assignedZero = operand.toString() + "=0",
+				lessThan = operand.toString() + "<" + boundMinusOne,
+				preIncre = "++" + operand.toString(),
+				condition = lessThan + "?" + preIncre + ":" + assignedZero;
+		Source oneSource = this.newSource(one,
+				CivlcTokenConstant.INTEGER_CONSTANT);
+		Source zeroSource = this.newSource(zero,
+				CivlcTokenConstant.INTEGER_CONSTANT);
+		Source boundMinusOneSource = this.newSource(boundMinusOne,
+				CivlcTokenConstant.SUB);
+		Source assignedZeroSource = this.newSource(assignedZero,
+				CivlcTokenConstant.ASSIGNS);
+		Source lessThanSource = this.newSource(lessThan, CivlcTokenConstant.LT);
+		Source preIncreSource = this.newSource(preIncre,
+				CivlcTokenConstant.PRE_INCREMENT);
+		Source conditionSource = this.newSource(condition,
+				CivlcTokenConstant.IF);
+
+		try {
+			constantOne = this.nodeFactory.newIntegerConstantNode(oneSource,
+					one);
+			constantZero = this.nodeFactory.newIntegerConstantNode(zeroSource,
+					zero);
+			boundMinusOneNode = this.nodeFactory.newOperatorNode(
+					boundMinusOneSource, Operator.MINUS, bound, constantOne);
+			assignedZeroNode = this.nodeFactory.newOperatorNode(
+					assignedZeroSource, Operator.ASSIGN, operand.copy(),
+					constantZero);
+			lessThanNode = this.nodeFactory.newOperatorNode(lessThanSource,
+					Operator.LT, operand.copy(), boundMinusOneNode.copy());
+			preIncreNode = this.nodeFactory.newOperatorNode(preIncreSource,
+					Operator.PREINCREMENT, operand.copy());
+			conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
+					Operator.CONDITIONAL, lessThanNode, preIncreNode,
+					assignedZeroNode);
+		} catch (SyntaxException e) {
+			e.printStackTrace();
+		}
+		return conditionNode;
+	}
+
+	private OperatorNode postIncrementReplacement(ExpressionNode operand) {
+		IntegerConstantNode constantOne = null, constantZero = null,
+				bound = getBound();
+		OperatorNode boundMinusOneNode = null, assignedZeroNode = null,
+				commaNode = null, lessThanNode = null, postIncreNode = null,
+				conditionNode = null;
+		String one = "1", zero = "0", boundMinusOne = "bound - 1",
+				assignedZero = operand.toString() + "=0",
+				comma = assignedZero + " " + boundMinusOne,
+				lessThan = operand.toString() + "<" + boundMinusOne,
+				postIncre = operand.toString() + "++",
+				condition = lessThan + "?" + postIncre + ":" + comma;
+		Source oneSource = this.newSource(one,
+				CivlcTokenConstant.INTEGER_CONSTANT);
+		Source zeroSource = this.newSource(zero,
+				CivlcTokenConstant.INTEGER_CONSTANT);
+		Source boundMinusOneSource = this.newSource(boundMinusOne,
+				CivlcTokenConstant.SUB);
+		Source assignedZeroSource = this.newSource(assignedZero,
+				CivlcTokenConstant.ASSIGNS);
+		Source commaSource = this.newSource(comma, CivlcTokenConstant.COMMA);
+		Source lessThanSource = this.newSource(lessThan, CivlcTokenConstant.LT);
+		Source postIncreSource = this.newSource(postIncre,
+				CivlcTokenConstant.POST_DECREMENT);
+		Source conditionSource = this.newSource(condition,
+				CivlcTokenConstant.IF);
+
+		try {
+			constantOne = this.nodeFactory.newIntegerConstantNode(oneSource,
+					one);
+			constantZero = this.nodeFactory.newIntegerConstantNode(zeroSource,
+					zero);
+			boundMinusOneNode = this.nodeFactory.newOperatorNode(
+					boundMinusOneSource, Operator.MINUS, bound, constantOne);
+			assignedZeroNode = this.nodeFactory.newOperatorNode(
+					assignedZeroSource, Operator.ASSIGN, operand.copy(),
+					constantZero);
+			commaNode = this.nodeFactory.newOperatorNode(commaSource,
+					Operator.COMMA, assignedZeroNode, boundMinusOneNode);
+			lessThanNode = this.nodeFactory.newOperatorNode(lessThanSource,
+					Operator.LT, operand.copy(), boundMinusOneNode.copy());
+			postIncreNode = this.nodeFactory.newOperatorNode(postIncreSource,
+					Operator.POSTINCREMENT, operand.copy());
+			conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
+					Operator.CONDITIONAL, lessThanNode, postIncreNode,
+					commaNode);
+		} catch (SyntaxException e) {
+			e.printStackTrace();
+		}
+		return conditionNode;
+	}
+
 	private void processOtherNodes(ASTNode node) {
+		// System.out.println(node.toString() + " : " +
+		// node.getClass().toString());
+
 		if (node instanceof FunctionDeclarationNode) {
 			FunctionDeclarationNode funcDeclNode = (FunctionDeclarationNode) node;
 			String name = funcDeclNode.getName();
 
-			if (name.equals(INT_DIV) || name.equals(INT_MOD)) {
-				return;
-			} else if (name.equals(UNSIGNED_ADD)
+			if (name.equals(INT_DIV) || name.equals(INT_MOD)
+					|| name.equals(UNSIGNED_ADD)
 					|| name.equals(UNSIGNED_SUBSTRACT)
-					|| name.equals(UNSIGNED_MULTIPLY)) {
-				insideUnsignedArith = true;
-				for (ASTNode child : node.children()) {
-					if (child != null)
-						processIntegerOperation(child);
-				}
-				insideUnsignedArith = false;
+					|| name.equals(UNSIGNED_MULTIPLY)
+					|| name.equals(SIGNED_TO_UNSIGNED)) {
 				return;
 			}
 		}
@@ -186,6 +342,46 @@ public class IntOperationWorker extends BaseWorker {
 					processIntegerOperation(child);
 			}
 		}
+
+		// if (node instanceof IntegerConstantNode) {
+		// System.out.println(node.getClass().toString());
+		// System.out.println("IntegerConstantNode: "+node.toString());
+		// }
+
+		if (node instanceof ExpressionNode) {
+			ExpressionNode en = (ExpressionNode) node;
+			Type convertedType = null;
+
+			if (en.getInitialType() instanceof SignedIntegerType
+					&& (convertedType = en
+							.getConvertedType()) instanceof StandardUnsignedIntegerType
+					&& !(((StandardUnsignedIntegerType) convertedType)
+							.getIntKind() == UnsignedIntKind.BOOL)) {
+				System.out.println(node.getClass().toString());
+				System.out.println(node.toString() + " : "
+						+ en.getInitialType().getClass().toString() + " : "
+						+ en.getConvertedType().getClass().toString());
+				signedToUnsigned(en);
+			}
+		}
+
+	}
+
+	private void signedToUnsigned(ExpressionNode en) {
+		ASTNode parent = en.parent();
+		int childIndex = en.childIndex();
+		String funcName = SIGNED_TO_UNSIGNED;
+		String method = funcName + "()";
+		Source source = this.newSource(method, CivlcTokenConstant.CALL);
+		List<ExpressionNode> args = new ArrayList<ExpressionNode>();
+
+		en.remove();
+		args.add(en);
+		args.add(getBound());
+
+		FunctionCallNode funcCallNode = functionCall(source, funcName, args);
+		funcCallNode.setInitialType(en.getConvertedType());
+		parent.setChild(childIndex, funcCallNode);
 	}
 
 	private void processUnsignedArithNode(OperatorNode opn) {
@@ -203,10 +399,9 @@ public class IntOperationWorker extends BaseWorker {
 		processIntegerOperation(operand2);
 		operand1 = opn.getArgument(0);
 		operand2 = opn.getArgument(1);
-
+		// System.out.println(opn.toString() + " : " + opn.getNumConversions());
 		if (operand1.getConvertedType() instanceof UnsignedIntegerType
-				&& operand2.getConvertedType() instanceof UnsignedIntegerType
-				&& !insideUnsignedArith) {
+				&& operand2.getConvertedType() instanceof UnsignedIntegerType) {
 			// construct a new functionCallNode.
 			String funcName = "";
 
@@ -231,19 +426,7 @@ public class IntOperationWorker extends BaseWorker {
 			operand2.remove();
 			args.add(operand1);
 			args.add(operand2);
-			IntegerConstantNode bound = null;
-			long b = (1L + Integer.MAX_VALUE) * 2;
-			String boundParameter = "int bound";
-			Source boundSource = this.newSource(boundParameter,
-					CivlcTokenConstant.PARAMETER_DECLARATION);
-			try {
-				bound = this.nodeFactory.newIntegerConstantNode(boundSource,
-						b + "");
-			} catch (SyntaxException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			args.add(bound);
+			args.add(getBound());
 
 			FunctionCallNode funcCallNode = functionCall(source, funcName,
 					args);
@@ -365,13 +548,33 @@ public class IntOperationWorker extends BaseWorker {
 						|| name.equals(UNSIGNED_SUBSTRACT)
 								&& this.unsignedSubstractEntity == null
 						|| name.equals(UNSIGNED_MULTIPLY)
-								&& this.unsignedMultiplyEntity == null) {
+								&& this.unsignedMultiplyEntity == null
+						|| name.equals(SIGNED_TO_UNSIGNED)
+								&& this.signedToUnsignedEntity == null
+						|| name.equals(UNSIGNED_NEG)
+								&& this.unsignedNegEntity == null) {
 					child.remove();
 					funcDefinitions.add(child);
 				}
 			}
 		}
 		ast.insertChildren(0, funcDefinitions);
+	}
+
+	private IntegerConstantNode getBound() {
+		IntegerConstantNode bound = null;
+		long b = (1L + Integer.MAX_VALUE) * 2;
+		String boundParameter = "int bound";
+		Source boundSource = this.newSource(boundParameter,
+				CivlcTokenConstant.PARAMETER_DECLARATION);
+
+		try {
+			bound = this.nodeFactory.newIntegerConstantNode(boundSource,
+					b + "");
+		} catch (SyntaxException e) {
+			e.printStackTrace();
+		}
+		return bound;
 	}
 
 }
