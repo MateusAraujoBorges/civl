@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.util.IF;
 
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -137,5 +138,27 @@ public class Utils {
 			} else
 				break;
 		}
+	}
+
+	public static long myPower(int base, int exponent) {
+		if (exponent == 0)
+			return 1;
+		if (exponent == 1)
+			return base;
+
+		long half = myPower(base, exponent / 2);
+
+		return half * half * myPower(base, exponent % 2);
+	}
+
+	public static BigInteger myMathPower(int base, int exponent) {
+		if (exponent == 0)
+			return new BigInteger(1+ "");
+		if (exponent == 1)
+			return new BigInteger(base+ "");
+
+		BigInteger half = myMathPower(base, exponent / 2);
+
+		return half.multiply(half).multiply(myMathPower(base, exponent % 2));
 	}
 }

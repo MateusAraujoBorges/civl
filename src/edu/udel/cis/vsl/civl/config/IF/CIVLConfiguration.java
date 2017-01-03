@@ -195,6 +195,11 @@ public class CIVLConfiguration {
 	private boolean quiet = false;
 
 	/**
+	 * The upper bound of integer.
+	 */
+	private int intBit = 32;
+
+	/**
 	 * Should CIVL perform a slice analysis on the error trace.
 	 */
 	private boolean sliceAnalysis = false;
@@ -359,6 +364,7 @@ public class CIVLConfiguration {
 		this.showTime = config.isTrue(CIVLConstants.showTimeO);
 		this.procBound = (Integer) config
 				.getValueOrDefault(CIVLConstants.procBoundO);
+		this.intBit = (Integer) config.getValueOrDefault(CIVLConstants.intBit);
 		this.setInputVariables(config.getMapValue(CIVLConstants.inputO));
 		this.collectOutputs = config.isTrue(CIVLConstants.collectOutputO);
 		this.setMpiContractFunction(
@@ -443,6 +449,7 @@ public class CIVLConfiguration {
 		this.web = config.web;
 		this.witness = config.witness;
 		this.directSymEx = config.directSymEx;
+		this.intBit = config.intBit;
 	}
 
 	public CIVLConfiguration() {
@@ -935,5 +942,13 @@ public class CIVLConfiguration {
 	 */
 	public void setSvcomp17(boolean svcomp17) {
 		this.svcomp17 = svcomp17;
+	}
+
+	public int getIntBit() {
+		return intBit;
+	}
+
+	public void setIntBit(int intBit) {
+		this.intBit = intBit;
 	}
 }

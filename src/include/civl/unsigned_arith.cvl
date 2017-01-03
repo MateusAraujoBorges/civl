@@ -21,6 +21,12 @@
  * (x<bound-1 ? ++x : (x=0))
  * or
  * (x=(x<bound-1 ? x+1 : 0)). 
+ *
+ * x--:
+ * (x<1-bound ? ((x=0), 1-bound) : x--)
+ *
+ * --x:
+ * (x<1-bound ? (x=0) : --x)
  */
 
 /* Computes sum of two unsigned values.

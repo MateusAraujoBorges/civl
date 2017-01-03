@@ -6,6 +6,7 @@ import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.BaseTransformer;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.transform.common.IntOperationWorker;
 
 /**
@@ -35,16 +36,19 @@ public class IntOperationTransformer extends BaseTransformer {
 			+ " respectively.";
 
 	private Map<String, String> macros;
+	
+	private CIVLConfiguration civlConfig;
 
 	public IntOperationTransformer(ASTFactory astFactory,
-			Map<String, String> macros) {
+			Map<String, String> macros, CIVLConfiguration config) {
 		super(CODE, LONG_NAME, SHORT_DESCRIPTION, astFactory);
 		this.macros = macros;
+		this.civlConfig = config;
 	}
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		IntOperationWorker worker = new IntOperationWorker(astFactory, macros);
+		IntOperationWorker worker = new IntOperationWorker(astFactory, macros, civlConfig);
 
 		return worker.transform(ast);
 	}
