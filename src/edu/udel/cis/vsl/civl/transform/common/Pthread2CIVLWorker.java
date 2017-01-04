@@ -300,7 +300,7 @@ public class Pthread2CIVLWorker extends BaseWorker {
 						.pthread_pool_declaration(false, false);
 				FunctionTypeNode funcType;
 
-				if (type.typeNodeKind() == TypeNodeKind.TYPEDEF_NAME) {
+				if (type.kind() == TypeNodeKind.TYPEDEF_NAME) {
 					TypedefNameNode typedef = (TypedefNameNode) type;
 					Function funcEntity = (Function) typedef.getName()
 							.getEntity();

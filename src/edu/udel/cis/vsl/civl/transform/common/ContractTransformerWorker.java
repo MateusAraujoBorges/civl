@@ -2863,7 +2863,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		TypeNode referedType;
 
 		referedType = typeNode(ptrType.referencedType());
-		if (referedType.typeNodeKind() == TypeNodeKind.VOID)
+		if (referedType.kind() == TypeNodeKind.VOID)
 			referedType = nodeFactory.newBasicTypeNode(buf.getSource(),
 					BasicTypeKind.CHAR);
 		else

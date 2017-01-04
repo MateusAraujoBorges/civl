@@ -404,6 +404,7 @@ public class CIVLConfiguration {
 			if (config.getValue(CIVLConstants.procBoundO) == null)
 				this.procBound = 6;
 			// this.enableIntDivTransformation = false;
+			// 32-bit unsigned int bound
 		}
 		this.directSymEx = (String) config.getValue(CIVLConstants.direct0);
 	}

@@ -36,6 +36,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundLiteralObject;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.LiteralObject;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.ScalarLiteralObject;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.AbstractFunctionDefinitionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FieldDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
@@ -98,6 +99,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.WhenNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.WithNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.EnumerationTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.PointerTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
@@ -388,10 +390,10 @@ public class FunctionTranslator {
 			Scope scope = this.function.outerScope();
 
 			if (abcReturnType.kind() != TypeKind.VOID) {
-				CIVLType returnType = translateABCType(
+				CIVLType returnType = translateABCTypeNode(
 						modelFactory.sourceOf(
 								functionTypeNode.getReturnType().getSource()),
-						scope, abcReturnType);
+						scope, functionTypeNode.getReturnType());
 
 				this.function.setReturnType(returnType);
 			}
@@ -406,9 +408,10 @@ public class FunctionTranslator {
 					if (decl.getTypeNode().kind() == TypeNodeKind.VOID)
 						continue;
 					else {
-						CIVLType type = translateABCType(
+						CIVLType type = translateABCTypeNode(
 								modelFactory.sourceOf(decl), scope,
-								functionType.getParameterType(i));
+								functionTypeNode.getParameters()
+										.getSequenceChild(i).getTypeNode());
 						CIVLSource source = modelFactory
 								.sourceOf(decl.getIdentifier());
 						Identifier variableName = modelFactory
@@ -5414,132 +5417,251 @@ public class FunctionTranslator {
 	 *            The ABC struct or union type
 	 * @return CIVL type of struct or union
 	 */
-	private CIVLType translateABCStructureOrUnionType(CIVLSource source,
-			Scope scope, StructureOrUnionType type) {
+	private CIVLType translateABCStructureOrUnionTypeNode(CIVLSource source,
+			Scope scope, StructureOrUnionTypeNode typeNode, CIVLType result) {
+		StructureOrUnionType type = (StructureOrUnionType) typeNode.getType();
 		String tag = type.getTag();
-		CIVLStructOrUnionType result;
 		int numFields;
 		StructOrUnionField[] civlFields;
+		CIVLStructOrUnionType structType = null;
 
-		if (tag == null) {
-			if (type.isStruct())
-				tag = "__struct_" + modelBuilder.anonymousStructCounter + "__";
-			else
-				tag = "__union_" + modelBuilder.anonymousStructCounter + "__";
-			modelBuilder.anonymousStructCounter++;
+		assert tag != null;
+		if (result == null) {
+			result = translateNewABCStructureOrUnionType(source, scope, type);
 		}
-		// civlc.h defines $proc as struct __proc__, etc.
+		if (result instanceof CIVLStructOrUnionType)
+			structType = (CIVLStructOrUnionType) result;
+
+		SequenceNode<FieldDeclarationNode> fields = typeNode
+				.getStructDeclList();
+
+		if (fields != null && structType != null) {
+			numFields = fields.numChildren();
+			civlFields = new StructOrUnionField[numFields];
+			for (int i = 0; i < numFields; i++) {
+				Field field = type.getField(i);
+				CIVLType civlFieldType = translateABCTypeNode(source, scope,
+						fields.getSequenceChild(i).getTypeNode());
+				String name = field.getName() == null
+						? "f" + i
+						: field.getName();
+				Identifier identifier = modelFactory.identifier(
+						modelFactory.sourceOf(field.getDefinition()), name);
+				StructOrUnionField civlField = typeFactory
+						.structField(identifier, civlFieldType);
+
+				civlFields[i] = civlField;
+			}
+			structType.complete(civlFields);
+		}
+		return result;
+	}
+
+	private CIVLType translateNewABCStructureOrUnionType(CIVLSource source,
+			Scope scope, StructureOrUnionType type) {
+		boolean isSystemType = true;
+		CIVLStructOrUnionType structType = null;
+		CIVLType result;
+		String tag = type.getTag();
+
+		assert tag != null;
 		switch (tag) {
 			case ModelConfiguration.PROC_TYPE :
-				return typeFactory.processType();
+				result = typeFactory.processType();
+				break;
 			case ModelConfiguration.HEAP_TYPE :
-				return modelBuilder.heapType;
+				result = modelBuilder.heapType;
+				break;
 			case ModelConfiguration.DYNAMIC_TYPE :
-				return typeFactory.dynamicType();
+				result = typeFactory.dynamicType();
+				break;
 			case ModelConfiguration.BUNDLE_TYPE :
-				return modelBuilder.bundleType;
+				result = modelBuilder.bundleType;
+				break;
+			case ModelConfiguration.SCOPE_TYPE :
+				result = typeFactory.scopeType();
+				break;
 			default :
+				structType = typeFactory.structOrUnionType(
+						modelFactory.identifier(source, tag), type.isStruct());
+				result = structType;
+				isSystemType = false;
 		}
-		result = typeFactory.structOrUnionType(
-				modelFactory.identifier(source, tag), type.isStruct());
-		numFields = type.getNumFields();
-		civlFields = new StructOrUnionField[numFields];
 		modelBuilder.typeMap.put(type, result);
-		for (int i = 0; i < numFields; i++) {
-			Field field = type.getField(i);
-			String name = field.getName() == null ? "f" + i : field.getName();
-			Type fieldType = field.getType();
-			CIVLType civlFieldType = translateABCType(source, scope, fieldType);
-			Identifier identifier = modelFactory.identifier(
-					modelFactory.sourceOf(field.getDefinition()), name);
-			StructOrUnionField civlField = typeFactory.structField(identifier,
-					civlFieldType);
-
-			civlFields[i] = civlField;
+		if (!isSystemType) {
+			switch (tag) {
+				case ModelConfiguration.MESSAGE_TYPE :
+					modelBuilder.messageType = result;
+					break;
+				case ModelConfiguration.QUEUE_TYPE :
+					modelBuilder.queueType = result;
+					break;
+				case ModelConfiguration.PTHREAD_POOL :
+				case ModelConfiguration.PTHREAD_GPOOL :
+					structType.setHandleObjectType(true);
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.BARRIER_TYPE :
+					structType.setHandleObjectType(true);
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.barrierType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.GBARRIER_TYPE :
+					structType.setHandleObjectType(true);
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.gbarrierType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.INT_ITER_TYPE :
+					typeFactory.addSystemType(tag, result);
+					// result.setHandleObjectType(true);
+					modelBuilder.intIterType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.COMM_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.commType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.GCOMM_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.gcommType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.FILE_SYSTEM_TYPE :
+					// result.setHandleObjectType(true);
+					modelBuilder.basedFilesystemType = structType;
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.REAL_FILE_TYPE :
+					modelBuilder.fileType = structType;
+					typeFactory.addSystemType(tag, result);
+					break;
+				case ModelConfiguration.FILE_STREAM_TYPE :
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.FILEtype = structType;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.TM_TYPE :
+					// modelBuilder.handledObjectTypes.add(result);
+					typeFactory.addSystemType(tag, result);
+					break;
+				case ModelConfiguration.COLLECT_RECORD_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(false);
+					modelBuilder.collectRecordType = result;
+					// modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.GCOLLECT_CHECKER_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.gcollectCheckerType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.COLLECT_CHECKER_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.collectCheckerType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				default :
+					// TODO: set default case
+			}
 		}
-		result.complete(civlFields);
-		switch (tag) {
-			case ModelConfiguration.MESSAGE_TYPE :
-				modelBuilder.messageType = result;
-				break;
-			case ModelConfiguration.QUEUE_TYPE :
-				modelBuilder.queueType = result;
-				break;
-			case ModelConfiguration.PTHREAD_POOL :
-			case ModelConfiguration.PTHREAD_GPOOL :
-				result.setHandleObjectType(true);
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.BARRIER_TYPE :
-				result.setHandleObjectType(true);
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.barrierType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.GBARRIER_TYPE :
-				result.setHandleObjectType(true);
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.gbarrierType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.INT_ITER_TYPE :
-				typeFactory.addSystemType(tag, result);
-				// result.setHandleObjectType(true);
-				modelBuilder.intIterType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.COMM_TYPE :
-				typeFactory.addSystemType(tag, result);
-				result.setHandleObjectType(true);
-				modelBuilder.commType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.GCOMM_TYPE :
-				typeFactory.addSystemType(tag, result);
-				result.setHandleObjectType(true);
-				modelBuilder.gcommType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.FILE_SYSTEM_TYPE :
-				// result.setHandleObjectType(true);
-				modelBuilder.basedFilesystemType = result;
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.REAL_FILE_TYPE :
-				modelBuilder.fileType = result;
-				typeFactory.addSystemType(tag, result);
-				break;
-			case ModelConfiguration.FILE_STREAM_TYPE :
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.FILEtype = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.TM_TYPE :
-				// modelBuilder.handledObjectTypes.add(result);
-				typeFactory.addSystemType(tag, result);
-				break;
-			case ModelConfiguration.COLLECT_RECORD_TYPE :
-				typeFactory.addSystemType(tag, result);
-				result.setHandleObjectType(false);
-				modelBuilder.collectRecordType = result;
-				// modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.GCOLLECT_CHECKER_TYPE :
-				typeFactory.addSystemType(tag, result);
-				result.setHandleObjectType(true);
-				modelBuilder.gcollectCheckerType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.COLLECT_CHECKER_TYPE :
-				typeFactory.addSystemType(tag, result);
-				result.setHandleObjectType(true);
-				modelBuilder.collectCheckerType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			default :
-				// TODO: set default case
+		return result;
+	}
+
+	/**
+	 * Translate ABC struct or union type into CIVL type
+	 * 
+	 * @param source
+	 *            The CIVL source
+	 * @param scope
+	 *            The scope
+	 * @param type
+	 *            The ABC struct or union type
+	 * @return CIVL type of struct or union
+	 */
+	private CIVLType translateABCStructureOrUnionType(CIVLSource source,
+			Scope scope, StructureOrUnionType type) {
+		CIVLType result = modelBuilder.typeMap.get(type);
+
+		if (result == null) {
+			result = translateNewABCStructureOrUnionType(source, scope, type);
+		}
+		return result;
+	}
+
+	protected CIVLType translateABCTypeNode(CIVLSource source, Scope scope,
+			TypeNode abcTypeNode) {
+		Type abcType = abcTypeNode.getType();
+		CIVLType result = modelBuilder.typeMap.get(abcType);
+
+		if (result == null) {
+			TypeKind kind = abcType.kind();
+
+			switch (kind) {
+				case STRUCTURE_OR_UNION :
+					// type already entered into map, so just return:
+					return translateABCStructureOrUnionTypeNode(source, scope,
+							(StructureOrUnionTypeNode) abcTypeNode,
+							(CIVLStructOrUnionType) result);
+				case ENUMERATION :
+					return translateABCEnumerationType(source, scope,
+							(EnumerationType) abcType);
+				case POINTER : {
+					PointerTypeNode pointerTypeNode = (PointerTypeNode) abcTypeNode;
+					CIVLType baseType = this.translateABCTypeNode(source, scope,
+							pointerTypeNode.referencedType());
+
+					result = this.typeFactory.pointerType(baseType);
+					this.modelBuilder.typeMap.put(abcType, result);
+					break;
+				}
+				case ARRAY :
+				case BASIC :
+				case HEAP :
+				case OTHER_INTEGER :
+				case PROCESS :
+				case SCOPE :
+				case STATE :
+				case QUALIFIED :
+				case VOID :
+				case FUNCTION :
+				case RANGE :
+				case DOMAIN :
+					return translateABCType(source, scope, abcType);
+				case ATOMIC :
+					throw new CIVLUnimplementedFeatureException(
+							"Type " + abcType, source);
+				default :
+					throw new CIVLInternalException("Unknown type: " + abcType,
+							source);
+			}
+		} else {
+			CIVLType.TypeKind typeKind = result.typeKind();
+
+			switch (typeKind) {
+				case STRUCT_OR_UNION : {
+					if (abcTypeNode instanceof StructureOrUnionTypeNode) {
+						CIVLStructOrUnionType structUnionType = (CIVLStructOrUnionType) result;
+						StructureOrUnionTypeNode structUnionTypeNode = (StructureOrUnionTypeNode) abcTypeNode;
+
+						if (structUnionType.numFields() < 1
+								&& structUnionTypeNode
+										.getStructDeclList() != null)
+							result = this.translateABCStructureOrUnionTypeNode(
+									source, scope, structUnionTypeNode,
+									structUnionType);
+					}
+				}
+				default :
+			}
 		}
 		return result;
 	}
@@ -5706,8 +5828,8 @@ public class FunctionTranslator {
 		Fragment result = null;
 		String prefix;
 		String tag;
-		CIVLType type = translateABCType(modelFactory.sourceOf(typeNode), scope,
-				typeNode.getType());
+		CIVLType type = translateABCTypeNode(modelFactory.sourceOf(typeNode),
+				scope, typeNode);
 		CIVLSource civlSource = modelFactory.sourceOf(typeNode);
 
 		if (typeNode instanceof StructureOrUnionTypeNode) {

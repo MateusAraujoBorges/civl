@@ -195,6 +195,8 @@ public final class ModelConfiguration {
 	 */
 	public static final String PROC_TYPE = "$proc";
 
+	public static final String SCOPE_TYPE = "$scope";
+
 	/**
 	 * the name of queue type
 	 */

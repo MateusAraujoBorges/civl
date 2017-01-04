@@ -182,13 +182,12 @@ public class GeneralWorker extends BaseWorker {
 		newAst = astFactory.newAST(root, unit.getSourceFiles(),
 				unit.isWholeProgram());
 		// newAst.prettyPrint(System.out, false);
-		//TODO: Check if there is a string.h
+		// TODO: Check if there is a string.h
 		if (callocExists && !this.hasHeader(newAst, STRING_HEADER)) {
 			AST stringlibHeaderAST = this.parseSystemLibrary(
-				new File(CPreprocessor.ABC_INCLUDE_PATH, STRING_HEADER),
-				EMPTY_MACRO_MAP);
+					new File(CPreprocessor.ABC_INCLUDE_PATH, STRING_HEADER),
+					EMPTY_MACRO_MAP);
 
-			
 			newAst = this.combineASTs(stringlibHeaderAST, newAst);
 		}
 		return newAst;
@@ -301,11 +300,10 @@ public class GeneralWorker extends BaseWorker {
 	 */
 	private ExpressionStatementNode argcAssumption(Source source,
 			String argcName) throws SyntaxException {
-		ExpressionNode lowerBound = nodeFactory
-				.newOperatorNode(source, Operator.LT,
-						Arrays.asList(
-								nodeFactory.newIntegerConstantNode(source, "0"),
-								this.identifierExpression(source, argcName)));
+		ExpressionNode lowerBound = nodeFactory.newOperatorNode(source,
+				Operator.LT,
+				Arrays.asList(nodeFactory.newIntegerConstantNode(source, "0"),
+						this.identifierExpression(source, argcName)));
 
 		return nodeFactory.newExpressionStatementNode(
 				this.functionCall(source, ASSUME, Arrays.asList(lowerBound)));
@@ -550,7 +548,7 @@ public class GeneralWorker extends BaseWorker {
 					}
 				} else if (functionName.equals(CALLOC)) {
 					callocExists = true;
-					
+
 					ASTNode parent = funcCall.parent();
 					ExpressionNode myRootScope = this.identifierExpression(
 							funcCall.getSource(), GENERAL_ROOT);
@@ -641,7 +639,8 @@ public class GeneralWorker extends BaseWorker {
 					while (statementsNode.parent() != null) {
 						if (statementsNode instanceof CompoundStatementNode) {
 							bound = statementsNode.numChildren();
-							for (int i = callocStatementNodeIndex+1; i <= bound; i++)
+							for (int i = callocStatementNodeIndex
+									+ 1; i <= bound; i++)
 								tempNode = statementsNode.setChild(i, tempNode);
 							break;
 						}
@@ -694,7 +693,7 @@ public class GeneralWorker extends BaseWorker {
 		if (count != 0 && count != 2) {
 			if (count == 1) {
 				if (parameters.getSequenceChild(0).getTypeNode()
-						.typeNodeKind() != TypeNodeKind.VOID)
+						.kind() != TypeNodeKind.VOID)
 					throw new SyntaxException(
 							"The main function should have 0 or 2 parameters instead of "
 									+ count,

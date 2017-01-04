@@ -353,7 +353,7 @@ public class ModelBuilderWorker {
 				inputInitMap = new HashMap<>();
 			inputInitMap.put(GeneralTransformer.PREFIX + "argc", 1);
 			inputInitMap.put("_svcomp_unpp_scale",
-					SvcompTransformer.UNPP_SCALE);
+					SvcompTransformer.UNPP_SCALE_ODD);
 			inputInitMap.put(SvcompTransformer.UNSIGNED_BOUND_NAME,
 					SvcompTransformer.UNSIGNED_BOUND);
 			inputInitMap.put(SvcompTransformer.INT_BOUND_UP_NAME,
@@ -634,6 +634,10 @@ public class ModelBuilderWorker {
 		} else if (type.isArrayType()) {
 			result = bundleableType(((CIVLArrayType) type).elementType());
 		} else if (type.isStructType()) {
+			CIVLStructOrUnionType structType = (CIVLStructOrUnionType) type;
+
+			if (!structType.isComplete())
+				return false;
 			for (StructOrUnionField f : ((CIVLStructOrUnionType) type)
 					.fields()) {
 				result = result && bundleableType(f.type());
@@ -1022,7 +1026,8 @@ public class ModelBuilderWorker {
 		translateUndefinedFunctions();
 		// TODO when the function is a function pointer, we are unable to
 		// identify if it is a system call.
-		completeBundleType();
+		if (!this.civlConfig.svcomp())
+			completeBundleType();
 		completeHeapType();
 		completeTimeVar();
 		completeCallEvents();
