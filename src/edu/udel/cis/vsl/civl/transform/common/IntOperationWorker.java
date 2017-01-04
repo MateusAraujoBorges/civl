@@ -60,6 +60,8 @@ public class IntOperationWorker extends BaseWorker {
 	private static final String INT_DIV = "$int_div";
 	private static final String INT_MOD = "$int_mod";
 	private static final String ASSERT = "$assert";
+	private static final String REMAINDER = "$remainder";
+	private static final String QUOTIENT = "$quotient";
 	private static final String INT_DIV_SOURCE_FILE = "int_div.cvl";
 	private static final String UNSIGNED_ADD = "$unsigned_add";
 	private static final String UNSIGNED_SUBSTRACT = "$unsigned_subtract";
@@ -103,6 +105,7 @@ public class IntOperationWorker extends BaseWorker {
 		signedToUnsignedEntity = unit
 				.getInternalOrExternalEntity(SIGNED_TO_UNSIGNED);
 		unsignedNegEntity = unit.getInternalOrExternalEntity(UNSIGNED_NEG);
+
 		if (divEntity != null || modEntity != null) {
 			intDivProcessed = true;
 			// return unit;
@@ -388,7 +391,7 @@ public class IntOperationWorker extends BaseWorker {
 		String one = "1", zero = "0", oneMinusBound = "1 - bound",
 				assignedZero = operand.toString() + "=0",
 				lessThan = operand.toString() + "<" + oneMinusBound,
-				preDecre = "--"+operand.toString(),
+				preDecre = "--" + operand.toString(),
 				condition = lessThan + "?" + assignedZero + ":" + preDecre;
 		Source oneSource = this.newSource(one,
 				CivlcTokenConstant.INTEGER_CONSTANT);
@@ -617,9 +620,9 @@ public class IntOperationWorker extends BaseWorker {
 			if (child instanceof FunctionDeclarationNode) {
 				FunctionDeclarationNode function = (FunctionDeclarationNode) child;
 				String name = function.getName();
-
 				if (name.equals(INT_DIV) && this.divEntity == null
 						|| name.equals(INT_MOD) && this.modEntity == null
+						|| name.equals(REMAINDER) || name.equals(QUOTIENT)
 						|| name.equals(ASSERT)) {
 					child.remove();
 					funcDefinitions.add(child);

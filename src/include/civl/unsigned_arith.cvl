@@ -1,6 +1,8 @@
 #ifndef _UNSIGNED_ARITH
 #define _UNSIGNED_ARITH
 
+$system int $remainder(int x, int y);
+
 /* This file defines certain arithmetic functions on unsigned integers
  * in terms of ordinary integer arithmetic operations.
  * Each function consumes the integer arguments for the operation, and
@@ -59,7 +61,7 @@ int $unsigned_multiply(int x, int y, int bound) {
   if (x*y < bound)
     return x*y;
   else
-    return (x*y)%bound;
+    return $remainder((x*y),bound);
 }
 
 /* Converts a signed integer to an unsigned integer.
@@ -74,12 +76,12 @@ int $signed_to_unsigned(int x, int bound) {
     if (x < bound)
       return x;
     else
-      return x%bound;
+      return $remainder(x,bound);
   } else {
     if (-x <= bound)
       return bound + x;
     else
-      return bound - (-x)%bound;
+      return bound - $remainder(-x,bound);
   }
 }
 
