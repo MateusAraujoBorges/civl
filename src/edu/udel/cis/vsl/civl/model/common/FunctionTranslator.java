@@ -2310,29 +2310,50 @@ public class FunctionTranslator {
 		location = modelFactory.location(
 				modelFactory.sourceOfBeginning(functionCallNode), scope);
 		if (civlFunction != null) {
-			if (civlFunction.isAbstractFunction()) {
-				Expression abstractFunctionCall = modelFactory
-						.abstractFunctionCallExpression(
-								modelFactory.sourceOf(functionCallNode),
-								(AbstractFunction) civlFunction, arguments);
+			String functionName = civlFunction.name().name();
+
+			if (functionName.equals("$quotient")
+					|| functionName.equals("$remainder")) {
+				assert arguments.size() == 2;
+
+				BINARY_OPERATOR op = functionName.equals("$quotient")
+						? BINARY_OPERATOR.DIVIDE
+						: BINARY_OPERATOR.MODULO;
+				Expression binary = modelFactory.binaryExpression(source, op,
+						arguments.get(0), arguments.get(1));
 
 				if (lhs != null)
 					result[0] = modelFactory.assignStatement(source, location,
-							lhs, abstractFunctionCall, false);
+							lhs, binary, false);
 				else
-					// An abstract function call without left-hand side
-					// expression is just a no-op:
 					result[0] = modelFactory.noopStatement(source, location,
-							abstractFunctionCall);
-				return result;
+							binary);
+			} else {
+				if (civlFunction.isAbstractFunction()) {
+					Expression abstractFunctionCall = modelFactory
+							.abstractFunctionCallExpression(
+									modelFactory.sourceOf(functionCallNode),
+									(AbstractFunction) civlFunction, arguments);
+
+					if (lhs != null)
+						result[0] = modelFactory.assignStatement(source,
+								location, lhs, abstractFunctionCall, false);
+					else
+						// An abstract function call without left-hand side
+						// expression is just a no-op:
+						result[0] = modelFactory.noopStatement(source, location,
+								abstractFunctionCall);
+					return result;
+				}
+				callStmt = callOrSpawnStatement(scope, location,
+						functionCallNode, lhs, arguments, isCall, source);
+				callStmt.setFunction(modelFactory.functionIdentifierExpression(
+						civlFunction.getSource(), civlFunction));
+				if (callStmt.isSystemCall())
+					callStmt.setGuard(
+							modelFactory.systemGuardExpression(callStmt));
+				result[0] = callStmt;
 			}
-			callStmt = callOrSpawnStatement(scope, location, functionCallNode,
-					lhs, arguments, isCall, source);
-			callStmt.setFunction(modelFactory.functionIdentifierExpression(
-					civlFunction.getSource(), civlFunction));
-			if (callStmt.isSystemCall())
-				callStmt.setGuard(modelFactory.systemGuardExpression(callStmt));
-			result[0] = callStmt;
 		} else
 			// call on a function pointer
 			result[0] = callOrSpawnStatement(scope, location, functionCallNode,
