@@ -41,13 +41,8 @@ import edu.udel.cis.vsl.civl.util.IF.Utils;
 
 /**
  * <p>
- * IntDivWorker is used by {@link IntOperationTransformer}.
- * </p>
- * 
- * <p>
- * IntDivisionTransformer transforms all the integer division ('/') and integer
- * modulo ('%') in the program with $int_div(int, int) and $int_mod(int, int)
- * functions respectively.
+ * IntDivWorker is used by {@link IntOperationTransformer} to conduct the
+ * transform.
  * </p>
  * 
  * @author yanyihao
@@ -56,7 +51,9 @@ import edu.udel.cis.vsl.civl.util.IF.Utils;
 public class IntOperationWorker extends BaseWorker {
 
 	/* *******************static constants************************ */
-	// TODO add java doc for every constant field
+	/**
+	 * below are names of files of libraries and functions in libraries.
+	 */
 	private static final String INT_DIV = "$int_div";
 	private static final String INT_MOD = "$int_mod";
 	private static final String ASSERT = "$assert";
@@ -69,18 +66,22 @@ public class IntOperationWorker extends BaseWorker {
 	private static final String SIGNED_TO_UNSIGNED = "$signed_to_unsigned";
 	private static final String UNSIGNED_NEG = "$unsigned_neg";
 	private static final String UNSIGNED_ARITH_SOURCE_FILE = "unsigned_arith.cvl";
-	// private static final String INT_DIV_NO_CHECKING_SOURCE_FILE =
-	// "int_div_no_checking.cvl";
-	// private Boolean check_division_by_zero = false;
 	private Entity divEntity = null, modEntity = null, unsignedAddEntity = null,
 			unsignedSubstractEntity = null, unsignedMultiplyEntity = null,
 			signedToUnsignedEntity = null, unsignedNegEntity = null;
 	private Map<String, String> macros;
+	/**
+	 * intDivProcessed is true iff int_div.cvl is already linked.
+	 */
 	private boolean intDivProcessed = false;
+	/**
+	 * unsignedArithProcessed is true iff unsigned_arith.cvl is already linked.
+	 */
 	private boolean unsignedArithProcessed = false;
+	/**
+	 * civlConfig.getIntBit() tells the size of integer.
+	 */
 	private CIVLConfiguration civlConfig;
-
-	// private AttributeKey intDivMacroKey;
 
 	public IntOperationWorker(ASTFactory astFactory, Map<String, String> macros,
 			CIVLConfiguration civlConfig) {
@@ -108,13 +109,13 @@ public class IntOperationWorker extends BaseWorker {
 
 		if (divEntity != null || modEntity != null) {
 			intDivProcessed = true;
-			// return unit;
 		}
 		if (unsignedAddEntity != null || unsignedSubstractEntity != null
 				|| unsignedMultiplyEntity != null) {
 			unsignedArithProcessed = true;
 		}
 
+		// if both libraries are processed, then return.
 		if (intDivProcessed && unsignedArithProcessed)
 			return unit;
 
@@ -127,20 +128,23 @@ public class IntOperationWorker extends BaseWorker {
 		this.completeSources(root);
 		newAst = astFactory.newAST(root, unit.getSourceFiles(),
 				unit.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+
 		return newAst;
 	}
 
 	/**
 	 * <p>
-	 * Go through the AST from the root node, replace {@link OperatorNode}s
-	 * whose {@link Operator}s are {@link Operator#DIV} or {@link Operator#MOD}
-	 * with functions $int_div or $int_mod defined in
-	 * {@link #INT_DIV_SOURCE_FILE} respectively.
-	 * </p>
-	 * 
-	 * <p>
-	 * This only happens for integer division and integer modulo
+	 * Go through the AST from the root node,
+	 * <ul>
+	 * <li>replace {@link OperatorNode}s whose {@link Operator}s are
+	 * {@link Operator#DIV} or {@link Operator#MOD} with functions
+	 * {@link #INT_DIV} or {@link #INT_MOD} defined in
+	 * {@link #INT_DIV_SOURCE_FILE} respectively.</li>
+	 * <li>replace unsigned arithmetic operations ({@link Operator#PLUS},
+	 * {@link Operator#MINUS}, {@link Operator#TIMES}) with corresponding
+	 * functions defined in {@link #UNSIGNED_ARITH_SOURCE_FILE}</li>
+	 * <li>transform uanry arithmetic operations for unsigned integers.</li>
+	 * </ul>
 	 * </p>
 	 * 
 	 * @param node
@@ -169,6 +173,13 @@ public class IntOperationWorker extends BaseWorker {
 		}
 	}
 
+	/**
+	 * Transform unary operatorNode.
+	 * 
+	 * @param opn
+	 *            Unary {@link OperatorNode} which includes Pre/Postincrement
+	 *            and Pre/Postdecrement.
+	 */
 	private void processUnaryNode(OperatorNode opn) {
 		ExpressionNode operand = opn.getArgument(0);
 
@@ -232,6 +243,20 @@ public class IntOperationWorker extends BaseWorker {
 		}
 	}
 
+	/**
+	 * <p>
+	 * Transform preIncrement operator node:
+	 * </p>
+	 * 
+	 * <p>
+	 * ++x is transformed to (x &lt; bound-1 ? ++x : (x=0))
+	 * </p>
+	 * 
+	 * @param operand
+	 *            The operand of the unary operator node.
+	 * 
+	 * @return the transformed node which is a conditional operator node.
+	 */
 	private OperatorNode preIncrementReplacement(ExpressionNode operand) {
 		IntegerConstantNode constantOne = null, constantZero = null,
 				bound = getBound();
@@ -279,6 +304,19 @@ public class IntOperationWorker extends BaseWorker {
 		return conditionNode;
 	}
 
+	/**
+	 * <p>
+	 * Transform post increment operator node.
+	 * </p>
+	 * 
+	 * <p>
+	 * x++ is transformed to (x &lt; bound-1 ? x++ : ((x=0), bound-1))
+	 * </p>
+	 * 
+	 * @param operand
+	 *            The operand of the unary operator node.
+	 * @return the transformed node which is a conditional operator node.
+	 */
 	private OperatorNode postIncrementReplacement(ExpressionNode operand) {
 		IntegerConstantNode constantOne = null, constantZero = null,
 				bound = getBound();
@@ -331,18 +369,32 @@ public class IntOperationWorker extends BaseWorker {
 		return conditionNode;
 	}
 
+	/**
+	 * <p>
+	 * Transform post decrement operator node.
+	 * </p>
+	 * 
+	 * <p>
+	 * x-- is transformed to (x &lt; 1-bound ? ((x=0), -bound) : x--)
+	 * </p>
+	 * 
+	 * @param operand
+	 *            The operand of the unary operator node.
+	 * @return the transformed node which is a conditional operator node.
+	 */
 	private OperatorNode postDecrementReplacement(ExpressionNode operand) {
 		IntegerConstantNode constantOne = null, constantZero = null,
 				bound = getBound();
 		OperatorNode oneMinusBoundNode = null, assignedZeroNode = null,
 				commaNode = null, lessThanNode = null, postDecreNode = null,
-				conditionNode = null;
+				conditionNode = null, negBoundNode = null;
 		String one = "1", zero = "0", oneMinusBound = "1 - bound",
 				assignedZero = operand.toString() + "=0",
 				comma = assignedZero + " " + oneMinusBound,
 				lessThan = operand.toString() + "<" + oneMinusBound,
 				postDecre = operand.toString() + "--",
-				condition = lessThan + "?" + comma + ":" + postDecre;
+				condition = lessThan + "?" + comma + ":" + postDecre,
+				negBound = "-" + bound.toString();
 		Source oneSource = this.newSource(one,
 				CivlcTokenConstant.INTEGER_CONSTANT);
 		Source zeroSource = this.newSource(zero,
@@ -357,19 +409,23 @@ public class IntOperationWorker extends BaseWorker {
 				CivlcTokenConstant.POST_DECREMENT);
 		Source conditionSource = this.newSource(condition,
 				CivlcTokenConstant.IF);
+		Source negBoundSource = this.newSource(negBound,
+				CivlcTokenConstant.SUB);
 
 		try {
+			negBoundNode = this.nodeFactory.newOperatorNode(negBoundSource,
+					Operator.UNARYMINUS, bound);
 			constantOne = this.nodeFactory.newIntegerConstantNode(oneSource,
 					one);
 			constantZero = this.nodeFactory.newIntegerConstantNode(zeroSource,
 					zero);
 			oneMinusBoundNode = this.nodeFactory.newOperatorNode(
-					oneMinusBoundSource, Operator.MINUS, constantOne, bound);
+					oneMinusBoundSource, Operator.MINUS, constantOne, bound.copy());
 			assignedZeroNode = this.nodeFactory.newOperatorNode(
 					assignedZeroSource, Operator.ASSIGN, operand.copy(),
 					constantZero);
 			commaNode = this.nodeFactory.newOperatorNode(commaSource,
-					Operator.COMMA, assignedZeroNode, oneMinusBoundNode);
+					Operator.COMMA, assignedZeroNode, negBoundNode);
 			lessThanNode = this.nodeFactory.newOperatorNode(lessThanSource,
 					Operator.LT, operand.copy(), oneMinusBoundNode.copy());
 			postDecreNode = this.nodeFactory.newOperatorNode(postDecreSource,
@@ -383,6 +439,19 @@ public class IntOperationWorker extends BaseWorker {
 		return conditionNode;
 	}
 
+	/**
+	 * <p>
+	 * Transform pre decrement operator node.
+	 * </p>
+	 * 
+	 * <p>
+	 * --x is transformed to (x &lt; 1-bound ? (x=0) : --x)
+	 * </p>
+	 * 
+	 * @param operand
+	 *            The operand of the unary operator node.
+	 * @return the transformed node which is a conditional operator node.
+	 */
 	private OperatorNode preDecrementReplacement(ExpressionNode operand) {
 		IntegerConstantNode constantOne = null, constantZero = null,
 				bound = getBound();
@@ -487,6 +556,14 @@ public class IntOperationWorker extends BaseWorker {
 		parent.setChild(childIndex, funcCallNode);
 	}
 
+	/**
+	 * Transform unsigned arithmetic operations ({@link Operator#PLUS},
+	 * {@link Operator#MINUS}, {@link Operator#TIMES}) into corresponding
+	 * functions defined in {@link #UNSIGNED_ARITH_SOURCE_FILE}.
+	 * 
+	 * @param opn
+	 *            the binary operator node.
+	 */
 	private void processUnsignedArithNode(OperatorNode opn) {
 		if (opn.getNumberOfArguments() != 2) {
 			throw new CIVLSyntaxException(
@@ -538,6 +615,14 @@ public class IntOperationWorker extends BaseWorker {
 		}
 	}
 
+	/**
+	 * Transform {@link OperatorNode} with {@link Operator#DIV} and
+	 * {@link Operator#MOD} into corresponding functions defined in
+	 * {@link #INT_DIV_SOURCE_FILE}.
+	 * 
+	 * @param opn
+	 *            the binary operator node.
+	 */
 	private void processIntDivNode(OperatorNode opn) {
 		if (opn.getNumberOfArguments() != 2) {
 			throw new CIVLSyntaxException(
@@ -632,6 +717,18 @@ public class IntOperationWorker extends BaseWorker {
 		ast.insertChildren(0, funcDefinitions);
 	}
 
+	/**
+	 * Retrieve the function declarations from
+	 * {@link #UNSIGNED_ARITH_SOURCE_FILE} and insert them to the top of the
+	 * AST.
+	 * 
+	 * @param ast
+	 *            the root node of the AST into which the declarations are
+	 *            inserted.
+	 * @throws SyntaxException
+	 *             when there are syntax error in
+	 *             {@link #UNSIGNED_ARITH_SOURCE_FILE}
+	 */
 	private void linkUnsignedArithLibrary(SequenceNode<BlockItemNode> ast)
 			throws SyntaxException {
 		AST unsignedArithLib = this
@@ -663,6 +760,10 @@ public class IntOperationWorker extends BaseWorker {
 		ast.insertChildren(0, funcDefinitions);
 	}
 
+	/**
+	 * 
+	 * @return the uppper bound of integer.
+	 */
 	private IntegerConstantNode getBound() {
 		int numberOfBits = civlConfig.getIntBit();
 		BigInteger bound;

@@ -10,9 +10,14 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.transform.common.IntOperationWorker;
 
 /**
- * This transformer is used to replace integer division ('/') and integer modulo
- * ('%') in the program with $int_div(int, int) and $int_mod(int, int) functions
- * respectively.
+ * This transformer is used to
+ * <ul>
+ * <li>replace integer division ('/') and integer modulo ('%') in the program
+ * with $int_div(int, int) and $int_mod(int, int) functions respectively</li>
+ * <li>replace unsigned integer arithmetic operations with corresponding library
+ * functions: int $unsigned_add, int $unsigned_subtract, int $unsigned_multiply
+ * </li>
+ * </ul>
  * 
  * @author yanyihao
  *
@@ -29,14 +34,10 @@ public class IntOperationTransformer extends BaseTransformer {
 	/**
 	 * The description of this transformer.
 	 */
-	public final static String SHORT_DESCRIPTION = "transform division and mod operator in program "
-			+ "to $int_div and $int_mod functions"
-			+ " and unsigned integer arithmetic operation (add, substract, multiply)"
-			+ " into $unsigned_add, $unsigned_subtract and $unsigned_multiply functions"
-			+ " respectively.";
+	public final static String SHORT_DESCRIPTION = "integer arithmetic operations to its corresponding library functions.";
 
 	private Map<String, String> macros;
-	
+
 	private CIVLConfiguration civlConfig;
 
 	public IntOperationTransformer(ASTFactory astFactory,
@@ -48,7 +49,8 @@ public class IntOperationTransformer extends BaseTransformer {
 
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		IntOperationWorker worker = new IntOperationWorker(astFactory, macros, civlConfig);
+		IntOperationWorker worker = new IntOperationWorker(astFactory, macros,
+				civlConfig);
 
 		return worker.transform(ast);
 	}

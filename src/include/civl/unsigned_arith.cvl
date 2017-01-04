@@ -25,7 +25,7 @@ $system int $remainder(int x, int y);
  * (x=(x<bound-1 ? x+1 : 0)). 
  *
  * x--:
- * (x<1-bound ? ((x=0), 1-bound) : x--)
+ * (x<1-bound ? ((x=0), -bound) : x--)
  *
  * --x:
  * (x<1-bound ? (x=0) : --x)
