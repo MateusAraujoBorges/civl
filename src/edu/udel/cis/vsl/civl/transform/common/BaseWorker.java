@@ -126,6 +126,18 @@ public abstract class BaseWorker {
 
 	/* ************************** Protected Methods ************************ */
 
+	protected boolean isUnsignedIntegerType(Type type) {
+		if (type instanceof StandardBasicType) {
+			StandardBasicType basicType = (StandardBasicType) type;
+
+			return (basicType.getBasicTypeKind() == BasicTypeKind.UNSIGNED);
+		} else if (type instanceof QualifiedObjectType) {
+			return this.isUnsignedIntegerType(
+					((QualifiedObjectType) type).getBaseType());
+		}
+		return false;
+	}
+
 	/**
 	 * Transforms the AST. This is the method that will be invoked to implement
 	 * {@link Transformer#transform(AST)}.

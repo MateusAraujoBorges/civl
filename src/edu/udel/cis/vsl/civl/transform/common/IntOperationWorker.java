@@ -27,7 +27,6 @@ import edu.udel.cis.vsl.abc.ast.type.IF.SignedIntegerType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardUnsignedIntegerType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardUnsignedIntegerType.UnsignedIntKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
-import edu.udel.cis.vsl.abc.ast.type.IF.UnsignedIntegerType;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
@@ -183,7 +182,7 @@ public class IntOperationWorker extends BaseWorker {
 	private void processUnaryNode(OperatorNode opn) {
 		ExpressionNode operand = opn.getArgument(0);
 
-		if (!(operand.getConvertedType() instanceof UnsignedIntegerType))
+		if (!this.isUnsignedIntegerType(operand.getConvertedType()))
 			return;
 
 		Operator op = opn.getOperator();
@@ -383,25 +382,16 @@ public class IntOperationWorker extends BaseWorker {
 	 * @return the transformed node which is a conditional operator node.
 	 */
 	private OperatorNode postDecrementReplacement(ExpressionNode operand) {
-		IntegerConstantNode constantOne = null, constantZero = null,
-				bound = getBound();
-		OperatorNode oneMinusBoundNode = null, assignedZeroNode = null,
-				commaNode = null, lessThanNode = null, postDecreNode = null,
-				conditionNode = null, negBoundNode = null;
-		String one = "1", zero = "0", oneMinusBound = "1 - bound",
-				assignedZero = operand.toString() + "=0",
-				comma = assignedZero + " " + oneMinusBound,
+		IntegerConstantNode bound = getBound();
+		OperatorNode assignedMaxNode = null, commaNode = null,
+				isZeroNode = null, postDecreNode = null, conditionNode = null;
+		String oneMinusBound = "1 - bound",
+				assignedMax = operand.toString() + "=bound - 1",
+				comma = assignedMax + " " + oneMinusBound,
 				lessThan = operand.toString() + "<" + oneMinusBound,
 				postDecre = operand.toString() + "--",
-				condition = lessThan + "?" + comma + ":" + postDecre,
-				negBound = "-" + bound.toString();
-		Source oneSource = this.newSource(one,
-				CivlcTokenConstant.INTEGER_CONSTANT);
-		Source zeroSource = this.newSource(zero,
-				CivlcTokenConstant.INTEGER_CONSTANT);
-		Source oneMinusBoundSource = this.newSource(oneMinusBound,
-				CivlcTokenConstant.SUB);
-		Source assignedZeroSource = this.newSource(assignedZero,
+				condition = lessThan + "?" + comma + ":" + postDecre;
+		Source assignedMaxSource = this.newSource(assignedMax,
 				CivlcTokenConstant.ASSIGNS);
 		Source commaSource = this.newSource(comma, CivlcTokenConstant.COMMA);
 		Source lessThanSource = this.newSource(lessThan, CivlcTokenConstant.LT);
@@ -409,30 +399,20 @@ public class IntOperationWorker extends BaseWorker {
 				CivlcTokenConstant.POST_DECREMENT);
 		Source conditionSource = this.newSource(condition,
 				CivlcTokenConstant.IF);
-		Source negBoundSource = this.newSource(negBound,
-				CivlcTokenConstant.SUB);
 
 		try {
-			negBoundNode = this.nodeFactory.newOperatorNode(negBoundSource,
-					Operator.UNARYMINUS, bound);
-			constantOne = this.nodeFactory.newIntegerConstantNode(oneSource,
-					one);
-			constantZero = this.nodeFactory.newIntegerConstantNode(zeroSource,
-					zero);
-			oneMinusBoundNode = this.nodeFactory.newOperatorNode(
-					oneMinusBoundSource, Operator.MINUS, constantOne, bound.copy());
-			assignedZeroNode = this.nodeFactory.newOperatorNode(
-					assignedZeroSource, Operator.ASSIGN, operand.copy(),
-					constantZero);
+			assignedMaxNode = this.nodeFactory.newOperatorNode(
+					assignedMaxSource, Operator.ASSIGN, operand.copy(),
+					nodeFactory.newOperatorNode(assignedMaxSource,
+							Operator.MINUS, bound, this.integerConstant(1)));
 			commaNode = this.nodeFactory.newOperatorNode(commaSource,
-					Operator.COMMA, assignedZeroNode, negBoundNode);
-			lessThanNode = this.nodeFactory.newOperatorNode(lessThanSource,
-					Operator.LT, operand.copy(), oneMinusBoundNode.copy());
+					Operator.COMMA, assignedMaxNode, this.integerConstant(0));
+			isZeroNode = this.nodeFactory.newOperatorNode(lessThanSource,
+					Operator.EQUALS, operand.copy(), this.integerConstant(0));
 			postDecreNode = this.nodeFactory.newOperatorNode(postDecreSource,
 					Operator.POSTDECREMENT, operand.copy());
 			conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
-					Operator.CONDITIONAL, lessThanNode, commaNode,
-					postDecreNode);
+					Operator.CONDITIONAL, isZeroNode, commaNode, postDecreNode);
 		} catch (SyntaxException e) {
 			e.printStackTrace();
 		}
@@ -453,45 +433,31 @@ public class IntOperationWorker extends BaseWorker {
 	 * @return the transformed node which is a conditional operator node.
 	 */
 	private OperatorNode preDecrementReplacement(ExpressionNode operand) {
-		IntegerConstantNode constantOne = null, constantZero = null,
-				bound = getBound();
-		OperatorNode oneMinusBoundNode = null, assignedZeroNode = null,
-				lessThanNode = null, preDecreNode = null, conditionNode = null;
-		String one = "1", zero = "0", oneMinusBound = "1 - bound",
-				assignedZero = operand.toString() + "=0",
-				lessThan = operand.toString() + "<" + oneMinusBound,
+		IntegerConstantNode bound = getBound();
+		OperatorNode assignedMaxNode = null, isZeroNode = null,
+				preDecreNode = null, conditionNode = null;
+		String assignedMax = operand.toString() + "=bound-1",
 				preDecre = "--" + operand.toString(),
-				condition = lessThan + "?" + assignedZero + ":" + preDecre;
-		Source oneSource = this.newSource(one,
-				CivlcTokenConstant.INTEGER_CONSTANT);
-		Source zeroSource = this.newSource(zero,
-				CivlcTokenConstant.INTEGER_CONSTANT);
-		Source oneMinusBoundSource = this.newSource(oneMinusBound,
-				CivlcTokenConstant.SUB);
-		Source assignedZeroSource = this.newSource(assignedZero,
+				condition = "isZero?" + assignedMax + ":" + preDecre;
+		Source assignedMaxSource = this.newSource(assignedMax,
 				CivlcTokenConstant.ASSIGNS);
-		Source lessThanSource = this.newSource(lessThan, CivlcTokenConstant.LT);
+		Source lessThanSource = this.newSource("isZero", CivlcTokenConstant.LT);
 		Source preDecreSource = this.newSource(preDecre,
 				CivlcTokenConstant.PRE_DECREMENT);
 		Source conditionSource = this.newSource(condition,
 				CivlcTokenConstant.IF);
 
 		try {
-			constantOne = this.nodeFactory.newIntegerConstantNode(oneSource,
-					one);
-			constantZero = this.nodeFactory.newIntegerConstantNode(zeroSource,
-					zero);
-			oneMinusBoundNode = this.nodeFactory.newOperatorNode(
-					oneMinusBoundSource, Operator.MINUS, constantOne, bound);
-			assignedZeroNode = this.nodeFactory.newOperatorNode(
-					assignedZeroSource, Operator.ASSIGN, operand.copy(),
-					constantZero);
-			lessThanNode = this.nodeFactory.newOperatorNode(lessThanSource,
-					Operator.LT, operand.copy(), oneMinusBoundNode.copy());
+			assignedMaxNode = this.nodeFactory.newOperatorNode(
+					assignedMaxSource, Operator.ASSIGN, operand.copy(),
+					nodeFactory.newOperatorNode(assignedMaxSource,
+							Operator.MINUS, bound, this.integerConstant(1)));
+			isZeroNode = this.nodeFactory.newOperatorNode(lessThanSource,
+					Operator.EQUALS, operand.copy(), this.integerConstant(0));
 			preDecreNode = this.nodeFactory.newOperatorNode(preDecreSource,
 					Operator.PREDECREMENT, operand.copy());
 			conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
-					Operator.CONDITIONAL, lessThanNode, assignedZeroNode,
+					Operator.CONDITIONAL, isZeroNode, assignedMaxNode,
 					preDecreNode);
 		} catch (SyntaxException e) {
 			e.printStackTrace();
@@ -579,8 +545,8 @@ public class IntOperationWorker extends BaseWorker {
 		processIntegerOperation(operand2);
 		operand1 = opn.getArgument(0);
 		operand2 = opn.getArgument(1);
-		if (operand1.getConvertedType() instanceof UnsignedIntegerType
-				&& operand2.getConvertedType() instanceof UnsignedIntegerType) {
+		if (isUnsignedIntegerType(operand1.getConvertedType())
+				&& isUnsignedIntegerType(operand2.getConvertedType())) {
 			// construct a new functionCallNode.
 			String funcName = "";
 
