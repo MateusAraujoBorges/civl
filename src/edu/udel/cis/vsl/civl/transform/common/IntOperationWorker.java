@@ -194,8 +194,7 @@ public class IntOperationWorker extends BaseWorker {
 			case UNARYMINUS : {
 				if (operand instanceof IntegerConstantNode) {
 					IntegerConstantNode intNode = (IntegerConstantNode) operand;
-					BigInteger value = new BigInteger(
-							intNode.getStringRepresentation());
+					BigInteger value = intNode.getConstantValue().getIntegerValue();
 					int intBit = civlConfig.getIntBit();
 
 					if (intBit < 32 && value.bitCount() < 32) {
@@ -542,8 +541,7 @@ public class IntOperationWorker extends BaseWorker {
 	private void signedToUnsigned(ExpressionNode en) {
 		if (en instanceof IntegerConstantNode) {
 			IntegerConstantNode intNode = (IntegerConstantNode) en;
-			BigInteger value = new BigInteger(
-					intNode.getStringRepresentation());
+			BigInteger value = intNode.getConstantValue().getIntegerValue();
 			int intBit = civlConfig.getIntBit();
 
 			if (intBit < 32 && value.bitCount() < 32) {
