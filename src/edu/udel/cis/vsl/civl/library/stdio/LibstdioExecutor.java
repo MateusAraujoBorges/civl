@@ -597,7 +597,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			case "printf" :
 				if (civlConfig.enablePrintf())
 					callEval = this.primaryExecutor.execute_printf(source,
-							state, pid, process, arguments, argumentValues);
+							state, pid, process, arguments, argumentValues,
+							false);
 				else
 					callEval = new Evaluation(state, null);
 				break;

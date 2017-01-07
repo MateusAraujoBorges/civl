@@ -403,7 +403,8 @@ public class CIVLConfiguration {
 				this.deadlock = DeadlockKind.NONE;
 			if (config.getValue(CIVLConstants.procBoundO) == null)
 				this.procBound = 6;
-			this.intBit=2;
+			this.intBit = 2;
+			this.enablePrintf = false;
 			// this.enableIntDivTransformation = false;
 			// 32-bit unsigned int bound
 		}
