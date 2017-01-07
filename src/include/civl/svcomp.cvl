@@ -26,8 +26,10 @@ int _bool_count=0;
 int _pointer_count=0;
 
 void* __VERIFIER_nondet_pointer(){
-  $abstract void* __VERIFIER_nondet_pointer_worker(int x);
-  return __VERIFIER_nondet_pointer_worker(_pointer_count++);
+  void* x;
+
+  $havoc(&x);
+  return x;
 }
 
 long __VERIFIER_nondet_long(){
@@ -86,9 +88,10 @@ unsigned int __VERIFIER_nondet_uint(){
 }*/
 
 _Bool __VERIFIER_nondet_bool(){
-  $abstract int __VERIFIER_nondet_bool_worker(int x);
+  int x;
 
-  return __VERIFIER_nondet_bool_worker(_bool_count++)!=0;
+  $havoc(&x);
+  return x != 0;
 }
 
 void __VERIFIER_error(){
