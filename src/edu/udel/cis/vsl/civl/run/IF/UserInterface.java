@@ -409,10 +409,11 @@ public class UserInterface {
 		Program specProgram = specWorker.buildProgram(),
 				implProgram = implWorker.buildProgram(), compositeProgram;
 		Model model;
-		ModelBuilder modelBuilder = Models.newModelBuilder(specWorker.universe);
 		NormalCommandLine spec = compareCommand.specification(),
 				impl = compareCommand.implementation();
 		CIVLConfiguration civlConfig = new CIVLConfiguration(anonymousSection);
+		ModelBuilder modelBuilder = Models.newModelBuilder(specWorker.universe,
+				civlConfig);
 
 		// implProgram.prettyPrint(out);
 		if (civlConfig.debugOrVerbose())
@@ -704,17 +705,19 @@ public class UserInterface {
 			}
 			if (sliceMode) {
 				out.println("*** Printing Slice Analysis ***");
-				Map<CfaLoc,CfaLoc> ipds = new HashMap<>();
-				Map<Location,CfaLoc> locToCfaLoc = new HashMap<>();
+				Map<CfaLoc, CfaLoc> ipds = new HashMap<>();
+				Map<Location, CfaLoc> locToCfaLoc = new HashMap<>();
 				for (CIVLFunction f : model.functions()) {
-					if (f.isSystemFunction() || f.toString().startsWith("__VERIFIER_")) continue;
+					if (f.isSystemFunction()
+							|| f.toString().startsWith("__VERIFIER_"))
+						continue;
 					ControlFlowAutomaton cfa = new ControlFlowAutomaton(f);
 					ipds.putAll(cfa.immediatePostDominators);
 					locToCfaLoc.putAll(cfa.locToCfaLoc);
 				}
 				ErrorAutomaton errorTrace = new ErrorAutomaton(model, trace);
-				ControlDependence cd = 
-						new ControlDependence(errorTrace, ipds, locToCfaLoc, traceFile);
+				ControlDependence cd = new ControlDependence(errorTrace, ipds,
+						locToCfaLoc, traceFile);
 				cd.collectControlDependencyStack();
 			}
 			if (witnessMode) {

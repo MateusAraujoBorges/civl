@@ -182,15 +182,40 @@ public class IntOperationWorker extends BaseWorker {
 	private void processUnaryNode(OperatorNode opn) {
 		ExpressionNode operand = opn.getArgument(0);
 
-		if (!this.isUnsignedIntegerType(operand.getConvertedType()))
+		if (!this.isUnsignedIntegerType(operand.getConvertedType())
+				&& !this.isUnsignedIntegerType(opn.getConvertedType()))
 			return;
 
 		Operator op = opn.getOperator();
 		ASTNode parent = opn.parent();
 		int childIndex = opn.childIndex();
+
 		switch (op) {
 			case UNARYMINUS : {
 				if (operand instanceof IntegerConstantNode) {
+					IntegerConstantNode intNode = (IntegerConstantNode) operand;
+					BigInteger value = new BigInteger(
+							intNode.getStringRepresentation());
+					int intBit = civlConfig.getIntBit();
+
+					if (intBit < 32 && value.bitCount() < 32) {
+						int intValue = 0 - value.intValue();
+						int bound = (int) Math.pow(2, intBit);
+
+						if (intValue < 0 || intValue >= bound) {
+							intValue = intValue % bound;
+							if (intValue < 0)
+								intValue += bound;
+							try {
+								parent.setChild(childIndex,
+										this.integerConstant(intValue));
+							} catch (SyntaxException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+						break;
+					}
 
 					String funcName = UNSIGNED_NEG;
 					String method = funcName + "()";
@@ -481,6 +506,15 @@ public class IntOperationWorker extends BaseWorker {
 
 		for (ASTNode child : node.children()) {
 			if (child != null) {
+				String childSourceFile = child.getSource().getFirstToken()
+						.getSourceFile().getName();
+
+				switch (childSourceFile) {
+					case INT_DIV_SOURCE_FILE :
+					case UNSIGNED_ARITH_SOURCE_FILE :
+						continue;
+					default :
+				}
 				if ((child instanceof CommonQuantifiedExpressionNode
 						|| child instanceof CommonContractNode)) {
 					// quantified nodes are not transformed.
@@ -506,6 +540,32 @@ public class IntOperationWorker extends BaseWorker {
 	}
 
 	private void signedToUnsigned(ExpressionNode en) {
+		if (en instanceof IntegerConstantNode) {
+			IntegerConstantNode intNode = (IntegerConstantNode) en;
+			BigInteger value = new BigInteger(
+					intNode.getStringRepresentation());
+			int intBit = civlConfig.getIntBit();
+
+			if (intBit < 32 && value.bitCount() < 32) {
+				int intValue = value.intValue();
+				int bound = (int) Math.pow(2, intBit);
+
+				if (intValue < 0 || intValue >= bound) {
+					intValue = intValue % bound;
+					if (intValue < 0)
+						intValue += bound;
+					try {
+						intNode.parent().setChild(intNode.childIndex(),
+								this.integerConstant(intValue));
+					} catch (SyntaxException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				return;
+			}
+		}
+
 		ASTNode parent = en.parent();
 		int childIndex = en.childIndex();
 		String funcName = SIGNED_TO_UNSIGNED;
