@@ -3159,8 +3159,8 @@ public class FunctionTranslator {
 		}
 
 		TypeNode typeNode = node.getTypeNode();
-		CIVLType type = translateABCType(modelFactory.sourceOf(typeNode), scope,
-				typeNode.getType());
+		CIVLType type = translateABCTypeNode(modelFactory.sourceOf(typeNode),
+				scope, typeNode);
 		CIVLSource source = modelFactory.sourceOf(node.getIdentifier());
 		Identifier name = modelFactory.identifier(source, node.getName());
 		int vid = isBound ? -1 : scope.numVariables();

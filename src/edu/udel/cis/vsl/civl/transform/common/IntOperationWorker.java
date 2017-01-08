@@ -194,7 +194,8 @@ public class IntOperationWorker extends BaseWorker {
 			case UNARYMINUS : {
 				if (operand instanceof IntegerConstantNode) {
 					IntegerConstantNode intNode = (IntegerConstantNode) operand;
-					BigInteger value = intNode.getConstantValue().getIntegerValue();
+					BigInteger value = intNode.getConstantValue()
+							.getIntegerValue();
 					int intBit = civlConfig.getIntBit();
 
 					if (intBit < 32 && value.bitCount() < 32) {
@@ -505,15 +506,6 @@ public class IntOperationWorker extends BaseWorker {
 
 		for (ASTNode child : node.children()) {
 			if (child != null) {
-				String childSourceFile = child.getSource().getFirstToken()
-						.getSourceFile().getName();
-
-				switch (childSourceFile) {
-					case INT_DIV_SOURCE_FILE :
-					case UNSIGNED_ARITH_SOURCE_FILE :
-						continue;
-					default :
-				}
 				if ((child instanceof CommonQuantifiedExpressionNode
 						|| child instanceof CommonContractNode)) {
 					// quantified nodes are not transformed.
