@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
-public class PossibleBugTest {
+public class UndefinedVarTest {
 	private static File rootDir = new File(new File("examples"), "possibleBug");
 
 	private static UserInterface ui = new UserInterface();
