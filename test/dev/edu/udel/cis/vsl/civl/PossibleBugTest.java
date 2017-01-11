@@ -19,6 +19,11 @@ public class PossibleBugTest {
 	
 	@Test
 	public void classCastException1() {
-		assertTrue(ui.run("verify", filename("classCastException.cvl")));
+		assertTrue(ui.run("verify -showProgram", filename("classCastException.cvl")));
+	}
+	
+	@Test
+	public void test1() {
+		assertTrue(ui.run("verify -showProgram", filename("test1.cvl")));
 	}
 }
