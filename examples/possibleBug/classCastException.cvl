@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <math.h>
 #ifdef _CIVL
-$input double Jb;
+$input double JB_INPUT;
 $input double alphad[10];
+
 #endif
 void func(double* alpha, int n, double* J) {
   for(int i=0;i<n;i++) {
@@ -37,12 +38,14 @@ int main(int argc, char** argv) {
     Jd = 0.0;
 
 
-    #ifndef _CIVL
-    Jb = 1.0;
+    #ifdef _CIVL
+    Jb = JB_INPUT;
     for(int i=0; i<n; i++) {
       alphad[i] = 0.0;
     }
     alphad[3] += 1;
+    #else
+    Jb = 1.0
     #endif
 
 
