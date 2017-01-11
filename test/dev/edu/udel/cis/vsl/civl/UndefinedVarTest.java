@@ -23,7 +23,7 @@ public class UndefinedVarTest {
 	}
 	
 	@Test
-	public void test1() {
+	public void undefinedVarTest1() {
 		assertTrue(ui.run("verify -showProgram", filename("test1.cvl")));
 	}
 }
