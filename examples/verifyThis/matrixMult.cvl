@@ -116,7 +116,7 @@ void testMult(int n) {
 
 /* Part 2 */
 
-// tests accociativity: (A0*B0)*C0 = A0*(B0*C0)
+// tests associativity: (A0*B0)*C0 = A0*(B0*C0)
 void assoc(int n) {
   float T1[n][n], T2[n][n], R1[n][n], R2[n][n];
 

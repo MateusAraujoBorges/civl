@@ -20,11 +20,13 @@ public class QuantifierTest {
 
 	@Test
 	public void quantifier() {
-		assertTrue(ui.run("verify", "-showQueries", filename("quantifier.c")));
+		assertTrue(ui.run("verify", "-showQueries", "-showProverQueries",
+				filename("quantifier.c")));
 	}
 
 	@Test
 	public void quantifierSARLBug() {
-		assertTrue(ui.run("verify", filename("quantifierSARLBug.cvl")));
+		assertTrue(ui.run("verify", "-showQueries", "-showProverQueries",
+				filename("quantifierSARLBug.cvl")));
 	}
 }
