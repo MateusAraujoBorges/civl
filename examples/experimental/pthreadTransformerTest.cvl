@@ -1,0 +1,17 @@
+#include <pthread.h>
+
+#define ARRAYSIZE 1000
+
+pthread_mutex_t count_mutex;
+
+int a[ARRAYSIZE];
+int count = 0;
+
+int main(){
+  int ret_count = pthread_mutex_init(&count_mutex, NULL);
+  pthread_mutex_lock (&count_mutex);
+  count = count + 1;
+  pthread_mutex_unlock (&count_mutex);
+  a[0] = count;
+  return a[0];
+}
