@@ -31,8 +31,8 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 
-public class CommonAccuracyAssumptionBuilder implements
-		AccuracyAssumptionBuilder {
+public class CommonAccuracyAssumptionBuilder
+		implements AccuracyAssumptionBuilder {
 
 	/** The model factory used to create new model components. */
 	private ModelFactory factory;
@@ -119,8 +119,8 @@ public class CommonAccuracyAssumptionBuilder implements
 		Fragment newAssumptions = new CommonFragment();
 
 		for (AbstractFunctionCallExpression call : calls) {
-			newAssumptions = newAssumptions.combineWith(taylorExpansions(call,
-					scope));
+			newAssumptions = newAssumptions
+					.combineWith(taylorExpansions(call, scope));
 		}
 		return newAssumptions;
 	}
@@ -133,11 +133,11 @@ public class CommonAccuracyAssumptionBuilder implements
 
 		for (int i = 0; i < arguments.size(); i++) {
 			if (matchesPattern(arguments.get(i))) {
-				taylorExpansions = taylorExpansions.combineWith(expand(call, i,
-						scope));
+				taylorExpansions = taylorExpansions
+						.combineWith(expand(call, i, scope));
 			} else if (matchesIteratorPattern(arguments.get(i))) {
-				taylorExpansions = taylorExpansions.combineWith(expandIterator(
-						call, i, scope));
+				taylorExpansions = taylorExpansions
+						.combineWith(expandIterator(call, i, scope));
 			}
 		}
 
@@ -159,7 +159,8 @@ public class CommonAccuracyAssumptionBuilder implements
 
 				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return true;
-				} else if (right.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+				} else if (right
+						.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return true;
 				} else if ((left.expressionKind() == ExpressionKind.CAST)
 						&& ((CastExpression) left).getExpression()
@@ -190,7 +191,8 @@ public class CommonAccuracyAssumptionBuilder implements
 
 				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return right;
-				} else if (right.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+				} else if (right
+						.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return left;
 				} else if ((left.expressionKind() == ExpressionKind.CAST)
 						&& ((CastExpression) left).getExpression()
@@ -221,7 +223,8 @@ public class CommonAccuracyAssumptionBuilder implements
 
 				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return (BoundVariableExpression) left;
-				} else if (right.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+				} else if (right
+						.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
 					return (BoundVariableExpression) right;
 				} else if ((left.expressionKind() == ExpressionKind.CAST)
 						&& ((CastExpression) left).getExpression()
@@ -275,7 +278,8 @@ public class CommonAccuracyAssumptionBuilder implements
 					Expression castExpression = ((CastExpression) left)
 							.getExpression();
 
-					if (castExpression.expressionKind() == ExpressionKind.VARIABLE) {
+					if (castExpression
+							.expressionKind() == ExpressionKind.VARIABLE) {
 						if (right.expressionKind() == ExpressionKind.VARIABLE) {
 							VariableExpression leftVariable = (VariableExpression) castExpression;
 							VariableExpression rightVariable = (VariableExpression) right;
@@ -294,7 +298,8 @@ public class CommonAccuracyAssumptionBuilder implements
 					Expression castExpression = ((CastExpression) right)
 							.getExpression();
 
-					if (castExpression.expressionKind() == ExpressionKind.VARIABLE) {
+					if (castExpression
+							.expressionKind() == ExpressionKind.VARIABLE) {
 						if (left.expressionKind() == ExpressionKind.VARIABLE) {
 							VariableExpression leftVariable = (VariableExpression) left;
 							VariableExpression rightVariable = (VariableExpression) castExpression;
@@ -354,7 +359,8 @@ public class CommonAccuracyAssumptionBuilder implements
 					Expression castExpression = ((CastExpression) left)
 							.getExpression();
 
-					if (castExpression.expressionKind() == ExpressionKind.VARIABLE) {
+					if (castExpression
+							.expressionKind() == ExpressionKind.VARIABLE) {
 						if (right.expressionKind() == ExpressionKind.VARIABLE) {
 							VariableExpression leftVariable = (VariableExpression) castExpression;
 							VariableExpression rightVariable = (VariableExpression) right;
@@ -375,7 +381,8 @@ public class CommonAccuracyAssumptionBuilder implements
 					Expression castExpression = ((CastExpression) right)
 							.getExpression();
 
-					if (castExpression.expressionKind() == ExpressionKind.VARIABLE) {
+					if (castExpression
+							.expressionKind() == ExpressionKind.VARIABLE) {
 						if (left.expressionKind() == ExpressionKind.VARIABLE) {
 							VariableExpression leftVariable = (VariableExpression) left;
 							VariableExpression rightVariable = (VariableExpression) castExpression;
@@ -419,7 +426,8 @@ public class CommonAccuracyAssumptionBuilder implements
 		Fragment result = new CommonFragment();
 		Expression originalArgument = call.arguments().get(arg);
 		Expression separatedExpression = separatedExpression(originalArgument);
-		BoundVariableExpression boundVariableExpression = boundVariable(originalArgument);
+		BoundVariableExpression boundVariableExpression = boundVariable(
+				originalArgument);
 		CIVLType boundVariableType;
 
 		for (QuantifiedExpression quant : quantifiedExpressions) {
@@ -442,8 +450,8 @@ public class CommonAccuracyAssumptionBuilder implements
 						boundVariableExpression.name(), boundVariableType,
 						separatedExpression);
 				result = createAssumption(source, scope, expansion0);
-				result = result.combineWith(createAssumption(source, scope,
-						expansion1));
+				result = result.combineWith(
+						createAssumption(source, scope, expansion1));
 				break;
 			}
 		}
@@ -460,59 +468,63 @@ public class CommonAccuracyAssumptionBuilder implements
 	// TODO fix me
 	private Fragment createAssumption(CIVLSource source, Scope scope,
 			Expression expression) {
-		// Statement assumeCall = factory.callOrSpawnStatement(source,
-		// factory.location(source, scope), true, function,
-		// Arrays.asList(createAssumptionExpression(source, 0, expression)),
-		// null);
+		CallOrSpawnStatement assumeCall = factory.callOrSpawnStatement(source,
+				factory.location(source, scope), true, null,
+				Arrays.asList(
+						createAssumptionExpression(source, 0, expression)),
+				null);
 
-		return new CommonFragment();
-		// return factory.assumeFragment(source, factory.location(source,
-		// scope),
+		assumeCall.setFunction(factory.functionIdentifierExpression(source,
+				factory.systemFunction(source,
+						factory.identifier(source, "$assume"), scope,
+						new LinkedList<Variable>(), typeFactory.voidType(),
+						expression.expressionScope(), "civlc")));
+		return new CommonFragment(assumeCall);
+		// result = result. factory.assumeFragment(source,
+		// factory.location(source, scope),
 		// createAssumptionExpression(source, 0, expression));
 	}
 
-	// /**
-	// * Takes an index into the list of quantified expressions. Returns the
-	// * assumption obtained by applying all quantifiers in
-	// * {@link quantifiedExpressions} starting at index {code quantifier} to
-	// * {@code expression}.
-	// *
-	// * @param source
-	// * Source file information.
-	// * @param index
-	// * An index into the list of quantifier expressions.
-	// * @param expression
-	// * The quantified expression.
-	// * @return A fragment containing the (possibly nested) quantified
-	// * expression.
-	// */
-	// @SuppressWarnings("unused")
-	// private Expression createAssumptionExpression(CIVLSource source, int
-	// index,
-	// Expression expression) {
-	// Expression result;
-	//
-	// if (index >= quantifiedExpressions.size()) {
-	// // No more quantifiers. Just give the expression.
-	// return expression;
-	// } else {
-	// QuantifiedExpression quant = quantifiedExpressions.get(index);
-	// Expression innerExpression = createAssumptionExpression(source,
-	// index + 1, expression);
-	//
-	// // if (quant.isRange()) {
-	// // result = factory.quantifiedExpression(source,
-	// // quant.quantifier(), quant.boundVariableName(),
-	// // quant.boundVariableType(), quant.lower(),
-	// // quant.upper(), innerExpression);
-	// // } else {
-	// result = factory.quantifiedExpression(source, quant.quantifier(),
-	// quant.boundVariableName(), quant.boundVariableType(),
-	// quant.isRange(), quant.restriction(), innerExpression);
-	// // }
-	// }
-	// return result;
-	// }
+	/**
+	 * Takes an index into the list of quantified expressions. Returns the
+	 * assumption obtained by applying all quantifiers in
+	 * {@link quantifiedExpressions} starting at index {code quantifier} to
+	 * {@code expression}.
+	 *
+	 * @param source
+	 *            Source file information.
+	 * @param index
+	 *            An index into the list of quantifier expressions.
+	 * @param expression
+	 *            The quantified expression.
+	 * @return A fragment containing the (possibly nested) quantified
+	 *         expression.
+	 */
+	private Expression createAssumptionExpression(CIVLSource source, int index,
+			Expression expression) {
+		Expression result;
+
+		if (index >= quantifiedExpressions.size()) {
+			// No more quantifiers. Just give the expression.
+			return expression;
+		} else {
+			QuantifiedExpression quant = quantifiedExpressions.get(index);
+			Expression innerExpression = createAssumptionExpression(source,
+					index + 1, expression);
+
+			// if (quant.isRange()) {
+			// result = factory.quantifiedExpression(source,
+			// quant.quantifier(), quant.boundVariableName(),
+			// quant.boundVariableType(), quant.lower(),
+			// quant.upper(), innerExpression);
+			// } else {
+			result = factory.quantifiedExpression(source, quant.quantifier(),
+					quant.boundVariableList(), quant.restriction(),
+					innerExpression);
+			// }
+		}
+		return result;
+	}
 
 	private Fragment expandIterator(AbstractFunctionCallExpression call,
 			int arg, Scope scope) {
@@ -520,7 +532,8 @@ public class CommonAccuracyAssumptionBuilder implements
 		CIVLSource source = function.getSource();
 		Fragment result = new CommonFragment();
 		Expression originalArgument = call.arguments().get(arg);
-		Pair<Expression, Expression> iteratorPair = iteratorPair(originalArgument);
+		Pair<Expression, Expression> iteratorPair = iteratorPair(
+				originalArgument);
 		Expression expansion;
 
 		assert call.function().continuity() >= 2;
@@ -528,8 +541,8 @@ public class CommonAccuracyAssumptionBuilder implements
 				((VariableExpression) iteratorPair.left).variable(),
 				iteratorPair.right, 2);
 		result = result.combineWith(createAssumption(source, scope, expansion));
-		result = result.combineWith(bigOFacts(source, iteratorPair.right,
-				scope, 2));
+		result = result
+				.combineWith(bigOFacts(source, iteratorPair.right, scope, 2));
 		return result;
 	}
 
@@ -541,8 +554,8 @@ public class CommonAccuracyAssumptionBuilder implements
 	private Fragment bigOFacts(CIVLSource source, Expression expression,
 			Scope scope, int continuity) {
 		Fragment result = new CommonFragment();
-		Expression bigOh = factory.unaryExpression(source,
-				UNARY_OPERATOR.BIG_O, expression);
+		Expression bigOh = factory.unaryExpression(source, UNARY_OPERATOR.BIG_O,
+				expression);
 
 		// result = factory
 		// .assumeFragment(
@@ -570,11 +583,12 @@ public class CommonAccuracyAssumptionBuilder implements
 			rhs = factory.binaryExpression(source, BINARY_OPERATOR.TIMES,
 					hMultiple, bigOh);
 
-			CallOrSpawnStatement assumeCall = factory.callOrSpawnStatement(
-					source, factory.location(source, scope), true, null, Arrays
-							.asList((Expression) factory.binaryExpression(
+			CallOrSpawnStatement assumeCall = factory
+					.callOrSpawnStatement(source,
+							factory.location(source, scope), true, null,
+							Arrays.asList((Expression) factory.binaryExpression(
 									source, BINARY_OPERATOR.EQUAL, lhs, rhs)),
-					null);
+							null);
 
 			Scope paraScope = factory.scope(source,
 					expression.expressionScope(), new ArrayList<Variable>(0),
@@ -625,13 +639,14 @@ public class CommonAccuracyAssumptionBuilder implements
 			lhsOp = BINARY_OPERATOR.MINUS;
 		}
 		// Make this f(...,(i+1)*x,...)
-		lhsArguments.set(arg, factory.binaryExpression(source,
-				BINARY_OPERATOR.TIMES, factory.castExpression(source,
-						typeFactory.realType(), factory.binaryExpression(
-								source, lhsOp, boundVariableExpression, factory
-										.integerLiteralExpression(source,
+		lhsArguments.set(arg,
+				factory.binaryExpression(source, BINARY_OPERATOR.TIMES,
+						factory.castExpression(source, typeFactory.realType(),
+								factory.binaryExpression(source, lhsOp,
+										boundVariableExpression,
+										factory.integerLiteralExpression(source,
 												BigInteger.ONE))),
-				separatedExpression));
+						separatedExpression));
 		lhs = factory.abstractFunctionCallExpression(source, function,
 				lhsArguments);
 		for (int i = 0; i < numExpansions; i++) {
@@ -650,22 +665,15 @@ public class CommonAccuracyAssumptionBuilder implements
 								BigInteger.valueOf(i))));
 				derivative = factory.derivativeCallExpression(source, function,
 						partials, originalArguments);
-				newTerm = factory
-						.binaryExpression(
-								source,
-								BINARY_OPERATOR.TIMES,
-								derivative,
-								factory.binaryExpression(
-										source,
-										BINARY_OPERATOR.DIVIDE,
-										numerator,
-										factory.castExpression(
-												source,
-												typeFactory.realType(),
-												factory.integerLiteralExpression(
-														source,
-														BigInteger
-																.valueOf(denominator)))));
+				newTerm = factory.binaryExpression(source,
+						BINARY_OPERATOR.TIMES, derivative,
+						factory.binaryExpression(source, BINARY_OPERATOR.DIVIDE,
+								numerator,
+								factory.castExpression(source,
+										typeFactory.realType(),
+										factory.integerLiteralExpression(source,
+												BigInteger.valueOf(
+														denominator)))));
 				if (!isPlus && i % 2 == 1) {
 					op = BINARY_OPERATOR.MINUS;
 				} else {
@@ -674,17 +682,13 @@ public class CommonAccuracyAssumptionBuilder implements
 				rhs = factory.binaryExpression(source, op, rhs, newTerm);
 			}
 		}
-		rhs = factory.binaryExpression(
-				source,
-				BINARY_OPERATOR.PLUS,
-				rhs,
-				factory.unaryExpression(
-						source,
-						UNARY_OPERATOR.BIG_O,
-						multiple(source, separatedExpression,
-								function.continuity())));
-		return factory
-				.binaryExpression(source, BINARY_OPERATOR.EQUAL, lhs, rhs);
+		rhs = factory
+				.binaryExpression(source, BINARY_OPERATOR.PLUS, rhs,
+						factory.unaryExpression(source, UNARY_OPERATOR.BIG_O,
+								multiple(source, separatedExpression,
+										function.continuity())));
+		return factory.binaryExpression(source, BINARY_OPERATOR.EQUAL, lhs,
+				rhs);
 	}
 
 	private Expression expansionUnbound(boolean isPlus,
@@ -693,8 +697,8 @@ public class CommonAccuracyAssumptionBuilder implements
 		AbstractFunction function = call.function();
 		CIVLSource source = function.getSource();
 		List<Expression> originalArguments = call.arguments();
-		VariableExpression variableExpression = factory.variableExpression(
-				source, variable);
+		VariableExpression variableExpression = factory
+				.variableExpression(source, variable);
 		Expression lhs;
 		Expression rhs = null;
 		List<Expression> lhsArguments;
@@ -708,13 +712,14 @@ public class CommonAccuracyAssumptionBuilder implements
 			lhsOp = BINARY_OPERATOR.MINUS;
 		}
 		// Make this f(...,(i+1)*x,...)
-		lhsArguments.set(arg, factory.binaryExpression(source,
-				BINARY_OPERATOR.TIMES, factory.castExpression(source,
-						typeFactory.realType(), factory.binaryExpression(
-								source, lhsOp, variableExpression, factory
-										.integerLiteralExpression(source,
+		lhsArguments.set(arg,
+				factory.binaryExpression(source, BINARY_OPERATOR.TIMES,
+						factory.castExpression(source, typeFactory.realType(),
+								factory.binaryExpression(source, lhsOp,
+										variableExpression,
+										factory.integerLiteralExpression(source,
 												BigInteger.ONE))),
-				separatedExpression));
+						separatedExpression));
 		lhs = factory.abstractFunctionCallExpression(source, function,
 				lhsArguments);
 		for (int i = 0; i < numExpansions; i++) {
@@ -733,22 +738,15 @@ public class CommonAccuracyAssumptionBuilder implements
 								BigInteger.valueOf(i))));
 				derivative = factory.derivativeCallExpression(source, function,
 						partials, originalArguments);
-				newTerm = factory
-						.binaryExpression(
-								source,
-								BINARY_OPERATOR.TIMES,
-								derivative,
-								factory.binaryExpression(
-										source,
-										BINARY_OPERATOR.DIVIDE,
-										numerator,
-										factory.castExpression(
-												source,
-												typeFactory.realType(),
-												factory.integerLiteralExpression(
-														source,
-														BigInteger
-																.valueOf(denominator)))));
+				newTerm = factory.binaryExpression(source,
+						BINARY_OPERATOR.TIMES, derivative,
+						factory.binaryExpression(source, BINARY_OPERATOR.DIVIDE,
+								numerator,
+								factory.castExpression(source,
+										typeFactory.realType(),
+										factory.integerLiteralExpression(source,
+												BigInteger.valueOf(
+														denominator)))));
 				if (!isPlus && i % 2 == 1) {
 					op = BINARY_OPERATOR.MINUS;
 				} else {
@@ -757,14 +755,11 @@ public class CommonAccuracyAssumptionBuilder implements
 				rhs = factory.binaryExpression(source, op, rhs, newTerm);
 			}
 		}
-		rhs = factory.binaryExpression(
-				source,
-				BINARY_OPERATOR.PLUS,
-				rhs,
+		rhs = factory.binaryExpression(source, BINARY_OPERATOR.PLUS, rhs,
 				factory.unaryExpression(source, UNARY_OPERATOR.BIG_O,
 						multiple(source, separatedExpression, numExpansions)));
-		return factory
-				.binaryExpression(source, BINARY_OPERATOR.EQUAL, lhs, rhs);
+		return factory.binaryExpression(source, BINARY_OPERATOR.EQUAL, lhs,
+				rhs);
 	}
 
 	private int factorial(int i) {
@@ -789,7 +784,8 @@ public class CommonAccuracyAssumptionBuilder implements
 	 * @param times
 	 * @return
 	 */
-	private Expression multiple(CIVLSource source, Expression operand, int times) {
+	private Expression multiple(CIVLSource source, Expression operand,
+			int times) {
 		assert times > 0;
 		if (times == 1) {
 			return operand;

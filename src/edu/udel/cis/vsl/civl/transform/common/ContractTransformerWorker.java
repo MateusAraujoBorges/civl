@@ -2481,7 +2481,7 @@ public class ContractTransformerWorker extends BaseWorker {
 							item.getSource(), Quantifier.FORALL,
 							nodeFactory.newSequenceNode(item.getSource(),
 									"bound var declaration list", boundVars),
-							null, isDereferablePtr);
+							null, isDereferablePtr, null);
 
 				} else
 					isDereferablePtr = nodeFactory.newFunctionCallNode(
