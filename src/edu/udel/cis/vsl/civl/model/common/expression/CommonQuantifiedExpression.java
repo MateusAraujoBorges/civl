@@ -21,16 +21,18 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
  * @author zirkel
  * 
  */
-public class CommonQuantifiedExpression extends CommonExpression implements
-		QuantifiedExpression {
+public class CommonQuantifiedExpression extends CommonExpression
+		implements QuantifiedExpression {
 
 	private Quantifier quantifier;
-	// private Expression lower;
-	// private Expression upper;
+
 	private Expression restriction;
+
 	private Expression expression;
+
 	private List<Pair<List<Variable>, Expression>> boundVariableList;
-	private int numBoundVaraibles;
+
+	private int numBoundVariables;
 
 	/**
 	 * @param source
@@ -55,61 +57,17 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 		this.boundVariableList = boundVariableList;
 		this.restriction = restriction;
 		this.expression = expression;
-		numBoundVaraibles = 0;
+		numBoundVariables = 0;
 		for (Pair<List<Variable>, Expression> sublist : boundVariableList) {
-			numBoundVaraibles += sublist.left.size();
+			numBoundVariables += sublist.left.size();
 		}
 	}
 
-	// /**
-	// * @param source
-	// * The source file information for this expression.
-	// * @param quantifier
-	// * The type of quantifier.
-	// * @param boundVariableName
-	// * The name of the bound variable.
-	// * @param boundVariableType
-	// * The type of the bound variable.
-	// * @param lower
-	// * The lower bound on the range of this bound variable.
-	// * @param upper
-	// * The upper bound on the range of this bound variable.
-	// * @param expression
-	// * The quantified expression.
-	// */
-	// public CommonQuantifiedExpression(CIVLSource source, Scope scope,
-	// CIVLType type, Quantifier quantifier, Identifier boundVariableName,
-	// CIVLType boundVariableType, Expression lower, Expression upper,
-	// Expression expression) {
-	// super(source, scope, scope, type);
-	// this.quantifier = quantifier;
-	// this.boundVariableName = boundVariableName;
-	// this.boundVariableType = boundVariableType;
-	// isRange = true;
-	// this.lower = lower;
-	// this.upper = upper;
-	// this.restrictionOrRange = null;
-	// this.expression = expression;
-	// }
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * edu.udel.cis.vsl.civl.model.IF.expression.Expression#expressionKind()
-	 */
 	@Override
 	public ExpressionKind expressionKind() {
 		return ExpressionKind.QUANTIFIER;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression#quantifier
-	 * ()
-	 */
 	@Override
 	public Quantifier quantifier() {
 		return quantifier;
@@ -208,14 +166,13 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 					this.expressionScope(), this.expressionType, quantifier,
 					this.boundVariableList, newRestriction, expression);
 		} else {
-			Expression newExpressionField = expression.replaceWith(
-					oldExpression, newExpression);
+			Expression newExpressionField = expression
+					.replaceWith(oldExpression, newExpression);
 
 			if (newExpressionField != null)
 				result = new CommonQuantifiedExpression(this.getSource(),
-						this.expressionScope(), this.expressionType,
-						quantifier, boundVariableList, restriction,
-						newExpressionField);
+						this.expressionScope(), this.expressionType, quantifier,
+						boundVariableList, restriction, newExpressionField);
 		}
 		return result;
 	}
@@ -265,6 +222,6 @@ public class CommonQuantifiedExpression extends CommonExpression implements
 
 	@Override
 	public int numBoundVariables() {
-		return this.numBoundVaraibles;
+		return this.numBoundVariables;
 	}
 }
