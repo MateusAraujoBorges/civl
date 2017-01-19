@@ -45,7 +45,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.LambdaNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.OriginalExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode.Quantifier;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
@@ -2697,11 +2696,13 @@ public class ContractTransformerWorker extends BaseWorker {
 								identifierExpression(tmpHeap.getName()))),
 				null);
 
-		results.add(createAssumption(
-				nodeFactory.newOperatorNode(source, Operator.LT,
-						Arrays.asList(
-								nodeFactory.newIntegerConstantNode(source, "0"),
-								countTimesMPISizeof.copy()))));
+		results.add(
+				createAssumption(
+						nodeFactory.newOperatorNode(source, Operator.LT,
+								Arrays.asList(
+										nodeFactory.newIntegerConstantNode(
+												source, "0"),
+										countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(copyNode));
 		return results;
@@ -2879,11 +2880,13 @@ public class ContractTransformerWorker extends BaseWorker {
 				Operator.ASSIGN, Arrays.asList(buf.copy(),
 						identifierExpression(tmpHeap.getName())));
 
-		results.add(createAssumption(
-				nodeFactory.newOperatorNode(source, Operator.LT,
-						Arrays.asList(
-								nodeFactory.newIntegerConstantNode(source, "0"),
-								countTimesMPISizeof.copy()))));
+		results.add(
+				createAssumption(
+						nodeFactory.newOperatorNode(source, Operator.LT,
+								Arrays.asList(
+										nodeFactory.newIntegerConstantNode(
+												source, "0"),
+										countTimesMPISizeof.copy()))));
 		results.add(tmpHeap);
 		results.add(nodeFactory.newExpressionStatementNode(assignBuf));
 		return results;
@@ -3230,17 +3233,12 @@ public class ContractTransformerWorker extends BaseWorker {
 		if (node instanceof IdentifierExpressionNode) {
 			IdentifierExpressionNode idExpr = (IdentifierExpressionNode) node;
 
-			if (node.parent() instanceof OriginalExpressionNode)
-				return;
 			if (this.isBoundVariableReference(idExpr)) {
 				int childIndex = idExpr.childIndex();
 				ASTNode parent = idExpr.parent();
 				ExpressionNode original;
 
 				idExpr.remove();
-				original = nodeFactory
-						.newOriginalExpressionNode(node.getSource(), idExpr);
-				parent.setChild(childIndex, original);
 			}
 		} else {
 			for (ASTNode child : node.children()) {
@@ -3472,7 +3470,7 @@ public class ContractTransformerWorker extends BaseWorker {
 
 		if (function instanceof LambdaNode) {
 			LambdaNode lambda = (LambdaNode) function;
-			ExpressionNode body = lambda.expression();
+			ExpressionNode body = lambda.lambdaFunction();
 
 			if (hasRemoteExpression(body)) {
 				// this is an extended quantified expression on a lambda
@@ -3482,8 +3480,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				ExpressionNode init;
 				VariableDeclarationNode resultVar;
 				ExtendedQuantifier quant = expr.extQuantifier();
-				VariableDeclarationNode boundVar = lambda.boundVariableList()
-						.getSequenceChild(0).getLeft().getSequenceChild(0);
+				VariableDeclarationNode boundVar = lambda.freeVariable();
 				Operator assignOperator;
 
 				switch (quant) {

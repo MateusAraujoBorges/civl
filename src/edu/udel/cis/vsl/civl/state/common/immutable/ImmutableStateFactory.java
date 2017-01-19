@@ -60,7 +60,6 @@ import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.simplify.IF.Simplifier;
 
 /**
  * An implementation of StateFactory based on the Immutable Pattern.
@@ -871,8 +870,7 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	private BooleanExpression getContextOfSizeofSymbols(Reasoner reasoner) {
-		Simplifier simplifier = reasoner.simplifier();
-		Map<SymbolicConstant, SymbolicExpression> map = simplifier
+		Map<SymbolicConstant, SymbolicExpression> map = reasoner
 				.constantSubstitutionMap();
 		BooleanExpression result = universe.trueExpression();
 
