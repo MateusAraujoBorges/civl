@@ -22,4 +22,9 @@ public class CommonNondetFunction extends CommonFunction
 	public boolean isNondet() {
 		return true;
 	}
+
+	@Override
+	public boolean isNormalFunction() {
+		return false;
+	}
 }

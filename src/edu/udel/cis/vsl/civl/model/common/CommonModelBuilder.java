@@ -6,6 +6,7 @@ package edu.udel.cis.vsl.civl.model.common;
 import java.io.PrintStream;
 
 import edu.udel.cis.vsl.abc.program.IF.Program;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelBuilder;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
@@ -39,10 +40,11 @@ public class CommonModelBuilder implements ModelBuilder {
 	 * @param universe
 	 *            The symbolic universe
 	 */
-	public CommonModelBuilder(SymbolicUniverse universe) {
+	public CommonModelBuilder(SymbolicUniverse universe,
+			CIVLConfiguration config) {
 		// this.mpiMode = mpiMode;
 		// if (!mpiMode)
-		factory = new CommonModelFactory(universe);
+		factory = new CommonModelFactory(universe, config);
 		// else
 		// factory = new CommonMPIModelFactory(universe);
 	}
@@ -66,8 +68,8 @@ public class CommonModelBuilder implements ModelBuilder {
 	// Exported Methods................................................
 
 	@Override
-	public Model buildModel(GMCSection config, Program program,
-			String name, boolean debugging, PrintStream debugOut)
+	public Model buildModel(GMCSection config, Program program, String name,
+			boolean debugging, PrintStream debugOut)
 			throws CommandLineException {
 		ModelBuilderWorker worker;
 

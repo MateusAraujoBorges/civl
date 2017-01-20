@@ -35,10 +35,10 @@ import edu.udel.cis.vsl.abc.ast.node.IF.type.TypedefNameNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.value.IF.IntegerValue;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
-import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.front.c.preproc.CPreprocessor;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.civl.transform.IF.SvcompTransformer;
 import edu.udel.cis.vsl.civl.transform.IF.SvcompUnPPTransformer;
 
 /**
@@ -157,23 +157,41 @@ public class SvcompUnPPWorker extends BaseWorker {
 			SequenceNode<BlockItemNode> root) throws SyntaxException {
 		if (scalerVariableMap.size() > 0) {
 			List<BlockItemNode> newItems = new ArrayList<>();
-			VariableDeclarationNode scale_bound = this.variableDeclaration(
-					this.identifierPrefix + "_" + SCALE_VAR,
-					this.basicType(BasicTypeKind.INT));
+			ExpressionNode scale_bound_odd = this
+					.integerConstant(SvcompTransformer.UNPP_SCALE_ODD),
+					scale_bound_even = this
+							.integerConstant(SvcompTransformer.UNPP_SCALE_EVEN);
+			// VariableDeclarationNode scale_bound = this.variableDeclaration(
+			// this.identifierPrefix + "_" + SCALE_VAR,
+			// this.basicType(BasicTypeKind.INT));
 
-			scale_bound.getTypeNode().setInputQualified(true);
-			newItems.add(this.assumeFunctionDeclaration(
-					this.newSource("$assume", CivlcTokenConstant.DECLARATION)));
-			newItems.add(scale_bound);
-			for (VariableDeclarationNode varNode : scalerVariableMap.values()) {
-				varNode.setInitializer(
-						this.identifierExpression(scale_bound.getName()));
+			// scale_bound.getTypeNode().setInputQualified(true);
+			// newItems.add(this.assumeFunctionDeclaration(
+			// this.newSource("$assume", CivlcTokenConstant.DECLARATION)));
+			// newItems.add(scale_bound);
+
+			// for(VariableDeclarationNode )
+			for (Map.Entry<Integer, VariableDeclarationNode> pair : scalerVariableMap
+					.entrySet()) {
+				int value = pair.getKey();
+				VariableDeclarationNode varNode = pair.getValue();
+
+				if (value % 2 == 0)
+					varNode.setInitializer(scale_bound_even);
+				else
+					varNode.setInitializer(scale_bound_odd);
 				newItems.add(varNode);
-				// newItems.add(this.assumeNode(this.nodeFactory.newOperatorNode(
-				// varNode.getSource(), Operator.EQUALS,
-				// this.identifierExpression(varNode.getName()),
-				// this.identifierExpression(scale_bound.getName()))));
 			}
+			// for (VariableDeclarationNode varNode :
+			// scalerVariableMap.values()) {
+			// varNode.setInitializer(
+			// this.identifierExpression(scale_bound.getName()));
+			// newItems.add(varNode);
+			// // newItems.add(this.assumeNode(this.nodeFactory.newOperatorNode(
+			// // varNode.getSource(), Operator.EQUALS,
+			// // this.identifierExpression(varNode.getName()),
+			// // this.identifierExpression(scale_bound.getName()))));
+			// }
 			for (BlockItemNode item : root) {
 				if (item == null)
 					continue;
@@ -354,14 +372,15 @@ public class SvcompUnPPWorker extends BaseWorker {
 			if (!toRemove) {
 				toRemove = isStringNode(item);
 			}
-			if(!toRemove){
+			if (!toRemove) {
 				if (item instanceof EnumerationTypeNode) {
-					EnumerationTypeNode enumType=(EnumerationTypeNode)item;
-					SequenceNode<EnumeratorDeclarationNode> enumerators = enumType.enumerators();
-					
-					for(EnumeratorDeclarationNode enumerator: enumerators){
-						if(enumerator.getName().startsWith(PTHREAD_PREFIX_CAP))
-							toRemove=true;
+					EnumerationTypeNode enumType = (EnumerationTypeNode) item;
+					SequenceNode<EnumeratorDeclarationNode> enumerators = enumType
+							.enumerators();
+
+					for (EnumeratorDeclarationNode enumerator : enumerators) {
+						if (enumerator.getName().startsWith(PTHREAD_PREFIX_CAP))
+							toRemove = true;
 						break;
 					}
 				}
@@ -414,7 +433,7 @@ public class SvcompUnPPWorker extends BaseWorker {
 			} else if (item instanceof FunctionDefinitionNode) {
 				this.checkBigLoopBound(
 						((FunctionDefinitionNode) item).getBody());
-			} 
+			}
 		}
 	}
 

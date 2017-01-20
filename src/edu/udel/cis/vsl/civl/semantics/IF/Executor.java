@@ -164,7 +164,7 @@ public interface Executor {
 
 	Evaluation execute_printf(CIVLSource source, State state, int pid,
 			String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues)
+			SymbolicExpression[] argumentValues, boolean forcePrint)
 			throws UnsatisfiablePathConditionException;
 
 	List<Format> splitFormat(CIVLSource source, StringBuffer formatBuffer);

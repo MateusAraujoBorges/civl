@@ -126,6 +126,7 @@ OPTION_NAME
     | '-gui'
     | '-guided'
     | '-id'
+    | '-int_bit'
     | '-direct'
     | '-maxdepth'
     | '-min'

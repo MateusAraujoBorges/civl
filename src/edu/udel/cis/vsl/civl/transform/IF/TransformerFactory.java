@@ -53,7 +53,7 @@ public class TransformerFactory {
 
 	private ContractTransformer contractTransformer;
 
-	private IntDivisionTransformer intDivTransformer;
+//	private IntOperationTransformer intOpTransformer;
 
 	private DirectingTransformer directingTransformer;
 
@@ -217,17 +217,14 @@ public class TransformerFactory {
 		};
 	}
 
-	public TransformRecord getIntDivTransformerRecord(
-			Map<String, String> macros) {
-		return new TransformRecord(IntDivisionTransformer.CODE,
-				IntDivisionTransformer.LONG_NAME,
-				IntDivisionTransformer.SHORT_DESCRIPTION) {
+	public TransformRecord getIntOperationTransformerRecord(
+			Map<String, String> macros, CIVLConfiguration config) {
+		return new TransformRecord(IntOperationTransformer.CODE,
+				IntOperationTransformer.LONG_NAME,
+				IntOperationTransformer.SHORT_DESCRIPTION) {
 			@Override
 			public Transformer create(ASTFactory astFactory) {
-				if (intDivTransformer == null)
-					intDivTransformer = new IntDivisionTransformer(astFactory,
-							macros);
-				return intDivTransformer;
+				return new IntOperationTransformer(astFactory, macros, config);
 			}
 		};
 	}

@@ -25,8 +25,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * @author zirkel
  * 
  */
-public class CommonStructOrUnionType extends CommonType implements
-		CIVLStructOrUnionType {
+public class CommonStructOrUnionType extends CommonType
+		implements
+			CIVLStructOrUnionType {
 
 	private boolean isStruct;
 
@@ -48,6 +49,7 @@ public class CommonStructOrUnionType extends CommonType implements
 		this.name = name;
 		this.isStruct = isStruct;
 		this.isHandleObject = false;
+		//fields = new StructOrUnionField[0];
 	}
 
 	@Override
@@ -70,6 +72,8 @@ public class CommonStructOrUnionType extends CommonType implements
 
 	@Override
 	public int numFields() {
+		if (fields == null)
+			return 0;
 		return fields.length;
 	}
 
@@ -81,8 +85,10 @@ public class CommonStructOrUnionType extends CommonType implements
 	@Override
 	public boolean hasState() {
 		if (!isComplete())
-			throw new CIVLInternalException((isStruct ? "Struct" : "Union")
-					+ " not complete", (CIVLSource) null);
+			return false;
+		// throw new CIVLInternalException(
+		// (isStruct ? "Struct" : "Union") + " not complete",
+		// (CIVLSource) null);
 		for (StructOrUnionField field : fields) {
 			if (field.type().hasState())
 				return true;
@@ -98,8 +104,9 @@ public class CommonStructOrUnionType extends CommonType implements
 	@Override
 	public void complete(Collection<StructOrUnionField> fields) {
 		if (isComplete())
-			throw new CIVLInternalException((isStruct ? "Struct" : "Union")
-					+ " already complete", (CIVLSource) null);
+			throw new CIVLInternalException(
+					(isStruct ? "Struct" : "Union") + " already complete",
+					(CIVLSource) null);
 		else {
 			int numFields = fields.size();
 			int count = 0;
@@ -115,8 +122,9 @@ public class CommonStructOrUnionType extends CommonType implements
 	@Override
 	public void complete(StructOrUnionField[] fields) {
 		if (isComplete())
-			throw new CIVLInternalException((isStruct ? "Struct" : "Union")
-					+ "  already complete", (CIVLSource) null);
+			throw new CIVLInternalException(
+					(isStruct ? "Struct" : "Union") + "  already complete",
+					(CIVLSource) null);
 		else {
 			int numFields = fields.length;
 			int count = 0;
@@ -136,7 +144,8 @@ public class CommonStructOrUnionType extends CommonType implements
 				throw new CIVLInternalException(
 						"cannot get dynamic type of incomplete "
 								+ (isStruct ? "struct" : "union") + " type: "
-								+ this, (CIVLSource) null);
+								+ this,
+						(CIVLSource) null);
 			else {
 				LinkedList<SymbolicType> fieldDynamicTypes = new LinkedList<SymbolicType>();
 

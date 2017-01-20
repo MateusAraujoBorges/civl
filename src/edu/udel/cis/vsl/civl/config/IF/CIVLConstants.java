@@ -168,6 +168,7 @@ public class CIVLConstants {
 	public static String SLICE_ANALYSIS = "sliceAnalysis";
 	public static String WITNESS = "witness";
 	public static String DIRECT = "direct";
+	public static String INTBIT = "int_bit";
 
 	// Option objects
 
@@ -288,6 +289,12 @@ public class CIVLConstants {
 	 */
 	public final static Option seedO = Option.newScalarOption(SEED, INTEGER,
 			"set the random seed; applies only to run", null);
+	
+	/**
+	 * Set the upper bound of integers.
+	 */
+	public final static Option intBit = Option.newScalarOption(INTBIT, INTEGER,
+			"set the number of bits of integer", 32);
 
 	/**
 	 * Analyze abs calls? false by default.
@@ -604,7 +611,7 @@ public class CIVLConstants {
 				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
 				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
-				sliceAnalysisO, witnessO, direct0};
+				sliceAnalysisO, witnessO, direct0, intBit};
 	}
 
 	// headers...

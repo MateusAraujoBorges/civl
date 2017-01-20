@@ -317,8 +317,8 @@ public class ModelTranslator {
 			task.addTransformRecord(
 					transformerFactory.getDirectingTransformerRecord(config));
 		if (config.isEnableIntDivTransformation())
-			task.addTransformRecord(
-					transformerFactory.getIntDivTransformerRecord(macros));
+			task.addTransformRecord(transformerFactory
+					.getIntOperationTransformerRecord(macros, config));
 		task.addTransformCode(SideEffectRemover.CODE);
 		task.addTransformCode(Pruner.CODE);
 	}
@@ -430,7 +430,8 @@ public class ModelTranslator {
 	 */
 	Model buildModel(Program program) throws CommandLineException {
 		Model model;
-		ModelBuilder modelBuilder = Models.newModelBuilder(this.universe);
+		ModelBuilder modelBuilder = Models.newModelBuilder(this.universe,
+				this.config);
 		String modelName = coreName(userFileName);
 		boolean hasFscanf = TransformerFactory.hasFunctionCalls(
 				program.getAST(), Arrays.asList("scanf", "fscanf"));

@@ -1,0 +1,10 @@
+
+void fun(double *a){
+	*a = *a + 1;
+}
+
+int main(){
+	double Jb;
+    fun(&Jb);
+    return 0;
+}

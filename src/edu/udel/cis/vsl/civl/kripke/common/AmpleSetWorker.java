@@ -396,7 +396,8 @@ public class AmpleSetWorker {
 			}
 		}
 		if (result.isEmpty() && !this.infiniteLoopProcesses.isEmpty()) {
-			for (int pid = 0; pid < this.infiniteLoopProcesses.length(); pid++) {
+			for (int pid = 0; pid < this.infiniteLoopProcesses
+					.length(); pid++) {
 				BitSet ampleSet;
 				int currentSize;
 
@@ -467,8 +468,7 @@ public class AmpleSetWorker {
 										myAmpleSetActiveSize++;
 										workingProcessIDs.add(otherPid);
 										ampleProcessIDs.set(otherPid);
-									} else if (!this
-											.isWaitingFor(otherPid, pid)
+									} else if (!this.isWaitingFor(otherPid, pid)
 											&& !state.getProcessState(otherPid)
 													.hasEmptyStack()) {
 										workingProcessIDs.add(otherPid);
@@ -504,9 +504,9 @@ public class AmpleSetWorker {
 						else {
 							try {
 
-								eval = this.enabler.evaluator
-										.evaluate(state, pid, call.arguments()
-												.get(i - 1), false);
+								eval = this.enabler.evaluator.evaluate(state,
+										pid, call.arguments().get(i - 1),
+										false);
 							} catch (UnsatisfiablePathConditionException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -515,9 +515,9 @@ public class AmpleSetWorker {
 							state = eval.state;
 						}
 					}
-					ampleSubSet = ampleSetByContract(new Pair<>(parameterScope,
-							argumentValues), ampleProcessIDs, pid,
-							systemFunction);
+					ampleSubSet = ampleSetByContract(
+							new Pair<>(parameterScope, argumentValues),
+							ampleProcessIDs, pid, systemFunction);
 					if (ampleSubSet == null) {
 						try {
 							LibraryEnabler lib = enabler.libraryEnabler(
@@ -545,7 +545,8 @@ public class AmpleSetWorker {
 						}
 					}
 					if (ampleSubSet != null && !ampleSubSet.isEmpty()) {
-						for (int amplePid = 0; amplePid < ampleSubSet.length(); amplePid++) {
+						for (int amplePid = 0; amplePid < ampleSubSet
+								.length(); amplePid++) {
 							amplePid = ampleSubSet.nextSetBit(amplePid);
 							if (amplePid != pid
 									&& !ampleProcessIDs.get(amplePid)
@@ -572,7 +573,8 @@ public class AmpleSetWorker {
 					}
 				}
 			}
-			for (int otherPid = 0; otherPid < nonEmptyProcesses.length(); otherPid++) {
+			for (int otherPid = 0; otherPid < nonEmptyProcesses
+					.length(); otherPid++) {
 				otherPid = nonEmptyProcesses.nextSetBit(otherPid);
 				if (otherPid == pid || ampleProcessIDs.get(otherPid))
 					continue;
@@ -605,8 +607,7 @@ public class AmpleSetWorker {
 	 * 
 	 * This function returns null when:
 	 * <ul>
-	 * <li>
-	 * If the function is neither a system function nor an atomic function,
+	 * <li>If the function is neither a system function nor an atomic function,
 	 * returns null;</li>
 	 * <li>if the contract is absent or there is no depends clause, returns
 	 * null.</li>
@@ -640,7 +641,8 @@ public class AmpleSetWorker {
 		if (functionContract != null) {
 			if (functionContract.defaultBehavior().dependsNoact())
 				return new BitSet();
-			else if (functionContract.defaultBehavior().numDependsEvents() > 0) {
+			else if (functionContract.defaultBehavior()
+					.numDependsEvents() > 0) {
 				for (DependsEvent event : functionContract.defaultBehavior()
 						.dependsEvents()) {
 					result.or(this.ampleSetByDependsEvent(parameterScope,
@@ -659,48 +661,49 @@ public class AmpleSetWorker {
 		BitSet result = new BitSet();
 
 		switch (kind) {
-		case READ:
-		case WRITE:
-		case REACH: {
-			MemoryEvent memoryEvent = (MemoryEvent) event;
-			Set<Expression> mus = memoryEvent.memoryUnits();
+			case READ :
+			case WRITE :
+			case REACH : {
+				MemoryEvent memoryEvent = (MemoryEvent) event;
+				Set<Expression> mus = memoryEvent.memoryUnits();
 
-			result = ampleSetByMemoryEvent(parameterScope, currentAmpleSet,
-					pid, kind, mus);
-			break;
-		}
-		case CALL:
-			break;
-		case COMPOSITE: {
-			CompositeEvent compositeEvent = (CompositeEvent) event;
-			CompositeEventOperator operator = compositeEvent.operator();
-			BitSet right = this.ampleSetByDependsEvent(parameterScope,
-					currentAmpleSet, pid, compositeEvent.right());
-
-			result = this.ampleSetByDependsEvent(parameterScope,
-					currentAmpleSet, pid, compositeEvent.left());
-			switch (operator) {
-			case UNION:
-				result.or(right);
+				result = ampleSetByMemoryEvent(parameterScope, currentAmpleSet,
+						pid, kind, mus);
 				break;
-			case DIFFERENCE:
-				result.xor(right);
-				break;
-			case INTERSECT:
-				result.and(right);
-				break;
-			default:
-				throw new CIVLUnimplementedFeatureException(
-						"unknown composite event operator: " + operator);
 			}
-			break;
-		}
-		case ANYACT:
-			result = this.activeProcesses;
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"unknown kind of depends evnet: " + kind);
+			case CALL :
+				break;
+			case COMPOSITE : {
+				CompositeEvent compositeEvent = (CompositeEvent) event;
+				CompositeEventOperator operator = compositeEvent.operator();
+				BitSet right = this.ampleSetByDependsEvent(parameterScope,
+						currentAmpleSet, pid, compositeEvent.right());
+
+				result = this.ampleSetByDependsEvent(parameterScope,
+						currentAmpleSet, pid, compositeEvent.left());
+				switch (operator) {
+					case UNION :
+						result.or(right);
+						break;
+					case DIFFERENCE :
+						result.xor(right);
+						break;
+					case INTERSECT :
+						result.and(right);
+						break;
+					default :
+						throw new CIVLUnimplementedFeatureException(
+								"unknown composite event operator: "
+										+ operator);
+				}
+				break;
+			}
+			case ANYACT :
+				result = this.activeProcesses;
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"unknown kind of depends evnet: " + kind);
 		}
 		return result;
 	}
@@ -730,33 +733,34 @@ public class AmpleSetWorker {
 				// ignore the exception
 			}
 		}
-		if(criticalMuSet.isEmpty())
+		if (criticalMuSet.isEmpty())
 			return result;
 		switch (kind) {
-		case READ:
-			break;
-		case WRITE:
-			break;
-		case REACH: {
-			for (int thatPid = 0; thatPid < this.nonEmptyProcesses.length(); thatPid++) {
-				thatPid = nonEmptyProcesses.nextSetBit(thatPid);
-				if (thatPid == pid || currentAmpleSet.get(thatPid))
-					continue;
-				if (memUnitFactory.isJoint(criticalMuSet,
-						this.reachableNonPtrReadonly[thatPid])
-						|| memUnitFactory.isJoint(criticalMuSet,
-								this.reachableNonPtrWritable[thatPid])
-						|| memUnitFactory.isJoint(criticalMuSet,
-								this.reachablePtrReadonly[thatPid])
-						|| memUnitFactory.isJoint(criticalMuSet,
-								this.reachablePtrWritable[thatPid]))
-					result.set(thatPid);
+			case READ :
+				break;
+			case WRITE :
+				break;
+			case REACH : {
+				for (int thatPid = 0; thatPid < this.nonEmptyProcesses
+						.length(); thatPid++) {
+					thatPid = nonEmptyProcesses.nextSetBit(thatPid);
+					if (thatPid == pid || currentAmpleSet.get(thatPid))
+						continue;
+					if (memUnitFactory.isJoint(criticalMuSet,
+							this.reachableNonPtrReadonly[thatPid])
+							|| memUnitFactory.isJoint(criticalMuSet,
+									this.reachableNonPtrWritable[thatPid])
+							|| memUnitFactory.isJoint(criticalMuSet,
+									this.reachablePtrReadonly[thatPid])
+							|| memUnitFactory.isJoint(criticalMuSet,
+									this.reachablePtrWritable[thatPid]))
+						result.set(thatPid);
+				}
+				break;
 			}
-			break;
-		}
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"unknown memory event kind " + kind);
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"unknown memory event kind " + kind);
 		}
 		return result;
 	}
@@ -782,8 +786,8 @@ public class AmpleSetWorker {
 					SystemFunction systemFunction = (SystemFunction) call
 							.function();
 
-					if ((systemFunction.name().name().equals("$wait") || systemFunction
-							.name().name().equals("$waitall"))
+					if ((systemFunction.name().name().equals("$wait")
+							|| systemFunction.name().name().equals("$waitall"))
 							&& systemFunction.getLibrary().equals("civlc")) {
 						BitSet ampleSubSet;
 
@@ -1034,8 +1038,8 @@ public class AmpleSetWorker {
 			// Set<SymbolicExpression> subResult = new HashSet<>();
 
 			try {
-				impactMemUnits = this.memUnitExprEvaluator.evaluates(state,
-						pid, memUnitExpr, impactMemUnits);
+				impactMemUnits = this.memUnitExprEvaluator.evaluates(state, pid,
+						memUnitExpr, impactMemUnits);
 			} catch (UnsatisfiablePathConditionException e) {
 				// do nothing
 			}
@@ -1221,23 +1225,27 @@ public class AmpleSetWorker {
 
 			if (proc == null || proc.hasEmptyStack())
 				continue;
-			debugOut.println("reachable memory units (non-ptr, readonly) of process "
-					+ i + ":");
+			debugOut.println(
+					"reachable memory units (non-ptr, readonly) of process " + i
+							+ ":");
 			this.printMemoryUnitSet(debugOut, reachableNonPtrReadonly[i]);
 			// reachableNonPtrReadonly[i].print(debugOut);
 			debugOut.println();
-			debugOut.println("reachable memory units (non-ptr, writable) of process "
-					+ i + ":");
+			debugOut.println(
+					"reachable memory units (non-ptr, writable) of process " + i
+							+ ":");
 			printMemoryUnitSet(debugOut, reachableNonPtrWritable[i]);
 			// reachableNonPtrWritable[i].print(debugOut);
 			debugOut.println();
-			debugOut.println("reachable memory units (ptr, readonly) of process "
-					+ i + ":");
+			debugOut.println(
+					"reachable memory units (ptr, readonly) of process " + i
+							+ ":");
 			// reachablePtrReadonly[i].print(debugOut);
 			printMemoryUnitSet(debugOut, reachablePtrReadonly[i]);
 			debugOut.println();
-			debugOut.println("reachable memory units (ptr, writable) of process "
-					+ i + ":");
+			debugOut.println(
+					"reachable memory units (ptr, writable) of process " + i
+							+ ":");
 			// reachablePtrWritable[i].print(debugOut);
 			printMemoryUnitSet(debugOut, reachablePtrWritable[i]);
 			debugOut.println();
@@ -1255,11 +1263,12 @@ public class AmpleSetWorker {
 		for (int pid = 0; pid < numProcs; pid++) {
 			Set<Variable> writableVars = new HashSet<>();
 			ProcessState process = state.getProcessState(pid);
-			Set<MemoryUnitExpression> reachableNonPtrExpr = new HashSet<>(), reachablePtrExpr = new HashSet<>();
-			MemoryUnitSet nonPtrReadonly = memUnitFactory.newMemoryUnitSet(), nonPtrWritable = memUnitFactory
-					.newMemoryUnitSet(), ptrReadonly = memUnitFactory
-					.newMemoryUnitSet(), ptrWritable = memUnitFactory
-					.newMemoryUnitSet();
+			Set<MemoryUnitExpression> reachableNonPtrExpr = new HashSet<>(),
+					reachablePtrExpr = new HashSet<>();
+			MemoryUnitSet nonPtrReadonly = memUnitFactory.newMemoryUnitSet(),
+					nonPtrWritable = memUnitFactory.newMemoryUnitSet(),
+					ptrReadonly = memUnitFactory.newMemoryUnitSet(),
+					ptrWritable = memUnitFactory.newMemoryUnitSet();
 
 			if (process != null && !process.hasEmptyStack())
 				for (StackEntry call : process.getStackEntries()) {
@@ -1341,7 +1350,8 @@ public class AmpleSetWorker {
 		MemoryUnitSet reachablePtrReadonlyThis = this.reachablePtrReadonly[thisPid];
 		MemoryUnitSet reachableNonPtrWritableThis = this.reachableNonPtrWritable[thisPid];
 		MemoryUnitSet reachableNonPtrReadonlyThis = this.reachableNonPtrReadonly[thisPid];
-		boolean thisRead = false, thisWrite = false, thatRead = false, thatWrite = false;
+		boolean thisRead = false, thisWrite = false, thatRead = false,
+				thatWrite = false;
 
 		if (memUnitFactory.isJoint(reachablePtrWritableThis, mu)
 				|| memUnitFactory.isJoint(reachableNonPtrWritableThis, mu))
@@ -1401,7 +1411,8 @@ public class AmpleSetWorker {
 					 * return immediately. Because we can not dereference it and
 					 * the dereference exception shouldn't report here.
 					 */
-					if (symbolicUtil.getSymRef(expr).isArrayElementReference()) {
+					if (symbolicUtil.getSymRef(expr)
+							.isArrayElementReference()) {
 						SymbolicExpression arrayPointer = symbolicUtil
 								.parentPointer(null, expr);
 
@@ -1420,8 +1431,8 @@ public class AmpleSetWorker {
 						return;
 					if (pointerValue.operator() == SymbolicOperator.TUPLE
 							&& pointerValue.type() != null
-							&& pointerValue.type().equals(
-									typeFactory.pointerSymbolicType()))
+							&& pointerValue.type()
+									.equals(typeFactory.pointerSymbolicType()))
 						findPointersInExpression(pointerValue, result, state);
 				}
 			} else {
@@ -1450,21 +1461,22 @@ public class AmpleSetWorker {
 	private void findPointersInObject(SymbolicObject object,
 			MemoryUnitSet muSet, State state) {
 		switch (object.symbolicObjectKind()) {
-		case EXPRESSION: {
-			findPointersInExpression((SymbolicExpression) object, muSet, state);
-			return;
-		}
-		case SEQUENCE: {
-			MemoryUnitSet result = muSet;
+			case EXPRESSION : {
+				findPointersInExpression((SymbolicExpression) object, muSet,
+						state);
+				return;
+			}
+			case SEQUENCE : {
+				MemoryUnitSet result = muSet;
 
-			for (SymbolicExpression expr : (SymbolicSequence<?>) object)
-				findPointersInExpression(expr, result, state);
+				for (SymbolicExpression expr : (SymbolicSequence<?>) object)
+					findPointersInExpression(expr, result, state);
 
-			return;
-		}
-		default:
-			// ignore types and primitives, they don't have any pointers
-			// you can dereference.
+				return;
+			}
+			default :
+				// ignore types and primitives, they don't have any pointers
+				// you can dereference.
 		}
 		return;
 	}
@@ -1484,11 +1496,11 @@ public class AmpleSetWorker {
 		SymbolicExpression deref;
 
 		variableValue = state.getDyscope(sid).getValue(vid);
-		// try {
-		deref = universe.dereference(variableValue, symRef);
-		// } catch (Exception e) {
-		// return null;
-		// }
+		try {
+			deref = universe.dereference(variableValue, symRef);
+		} catch (Exception e) {
+			return null;
+		}
 		return deref;
 	}
 

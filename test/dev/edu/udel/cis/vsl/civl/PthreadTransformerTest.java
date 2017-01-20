@@ -8,7 +8,9 @@ import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
-public class QuantifierTest {
+public class PthreadTransformerTest {
+	/* *************************** Static Fields *************************** */
+
 	private static File rootDir = new File(new File("examples"),
 			"experimental");
 
@@ -19,14 +21,8 @@ public class QuantifierTest {
 	}
 
 	@Test
-	public void quantifier() {
-		assertTrue(ui.run("verify", "-showQueries", "-showProverQueries",
-				filename("quantifier.c")));
-	}
-
-	@Test
-	public void quantifierSARLBug() {
-		assertTrue(ui.run("verify", "-showQueries", "-showProverQueries",
-				filename("quantifierSARLBug.cvl")));
+	public void pthreadTransformerTest() {
+		assertTrue(ui.run("verify -svcomp17 -showProgram",
+				filename("pthreadTransformerTest.cvl")));
 	}
 }

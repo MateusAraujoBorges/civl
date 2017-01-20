@@ -14,18 +14,13 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.IntegerConstantNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.AtomicNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
-import edu.udel.cis.vsl.abc.ast.type.IF.QualifiedObjectType;
-import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
-import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -67,7 +62,7 @@ public class SvcompWorker extends BaseWorker {
 		SequenceNode<BlockItemNode> rootNode = ast.getRootNode();
 
 		ast.release();
-		this.processUnsignedOperators(rootNode);
+		// this.processUnsignedOperators(rootNode);
 		this.processVerifierFunctions(rootNode);
 		rootNode = insert_input_variables(rootNode);
 		this.completeSources(rootNode);
@@ -94,182 +89,184 @@ public class SvcompWorker extends BaseWorker {
 	// return false;
 	// }
 
-	private void processUnsignedOperators(ASTNode node) throws SyntaxException {
-		boolean processed = false;
+	// private void processUnsignedOperators(ASTNode node) throws
+	// SyntaxException {
+	// boolean processed = false;
+	//
+	// // if (node instanceof VariableDeclarationNode) {
+	// // VariableDeclarationNode variable = (VariableDeclarationNode) node;
+	// // InitializerNode init = variable.getInitializer();
+	// //
+	// // if (init != null && (init instanceof ExpressionNode)) {
+	// // if (this.isUnsignedIntegerTypeNode(variable.getTypeNode())) {
+	// // ExpressionNode newInit;
+	// // Source source = init.getSource();
+	// //
+	// // init.remove();
+	// // newInit = this.moduloExpression(source,
+	// // (ExpressionNode) init,
+	// // this.unsigned_bound_in_pow(source));
+	// // variable.setInitializer(newInit);
+	// // }
+	// // }
+	// // } else
+	// if (node instanceof ExpressionNode) {
+	// Type type = ((ExpressionNode) node).getConvertedType();
+	//
+	// if (this.isUnsignedIntegerType(type)) {
+	// ASTNode expressionParent = node.parent();
+	// int expressionIndex = node.childIndex();
+	// Source source = node.getSource();
+	// ExpressionNode unsignedBound = this
+	// .unsigned_bound_in_pow(source);
+	// ExpressionNode newExpressionNode = null;
+	//
+	// processed = true;
+	// if (node instanceof OperatorNode) {
+	// OperatorNode operatorNode = (OperatorNode) node;
+	// Operator rhsOperator = null;
+	// ExpressionNode rightOfRhs = null;
+	// boolean isAssign = false;
+	// boolean needsTransform = true;
+	//
+	// switch (operatorNode.getOperator()) {
+	// case ASSIGN : {
+	// ExpressionNode rhs = operatorNode.getArgument(1);
+	//
+	// rhs.remove();
+	// operatorNode.setArgument(1, this.moduloExpression(
+	// source, rhs, unsignedBound));
+	// isAssign = true;
+	// break;
+	// }
+	// case BITANDEQ :
+	// rhsOperator = Operator.BITAND;
+	// break;
+	// case BITOREQ :
+	// rhsOperator = Operator.BITOR;
+	// break;
+	// case BITXOREQ :
+	// rhsOperator = Operator.BITXOR;
+	// break;
+	// case DIVEQ :
+	// rhsOperator = Operator.DIV;
+	// break;
+	// case MINUSEQ :
+	// rhsOperator = Operator.MINUS;
+	// break;
+	// case MODEQ :
+	// rhsOperator = Operator.MOD;
+	// break;
+	// case PLUSEQ :
+	// rhsOperator = Operator.PLUS;
+	// break;
+	// case TIMESEQ :
+	// rhsOperator = Operator.PLUS;
+	// break;
+	// case POSTINCREMENT :
+	// case PREINCREMENT :
+	// rhsOperator = Operator.PLUS;
+	// rightOfRhs = this.integerConstant(1);
+	// break;
+	// case PREDECREMENT :
+	// case POSTDECREMENT :
+	// rhsOperator = Operator.MINUS;
+	// rightOfRhs = this.integerConstant(1);
+	// break;
+	// case MINUS :
+	// case PLUS :
+	// case TIMES :
+	// case DIV :
+	// case MOD :
+	// case UNARYMINUS :
+	// case UNARYPLUS :
+	// break;
+	// default :
+	// needsTransform = false;
+	// }
+	// if (!isAssign && needsTransform) {
+	// if (rhsOperator != null) {
+	// ExpressionNode lhs = operatorNode.getArgument(0);
+	// ExpressionNode rhs;
+	//
+	// lhs.remove();
+	// if (rightOfRhs == null) {
+	// rightOfRhs = operatorNode.getArgument(1);
+	// rightOfRhs.remove();
+	// }
+	// rhs = this.nodeFactory.newOperatorNode(source,
+	// rhsOperator, lhs.copy(), rightOfRhs);
+	// rhs = this.moduloExpression(source, rhs,
+	// unsignedBound);
+	// newExpressionNode = this.nodeFactory
+	// .newOperatorNode(source, Operator.ASSIGN,
+	// lhs, rhs);
+	// } else {
+	// operatorNode.remove();
+	// newExpressionNode = this.moduloExpression(source,
+	// operatorNode, unsignedBound);
+	// }
+	// }
+	// } else if (node instanceof IntegerConstantNode) {
+	// IntegerConstantNode integerNode = (IntegerConstantNode) node;
+	// int intValue = integerNode.getConstantValue()
+	// .getIntegerValue().intValue();
+	//
+	// intValue = intValue % SvcompTransformer.UNSIGNED_BOUND;
+	// newExpressionNode = this.nodeFactory
+	// .newIntegerConstantNode(source, intValue + "U");
+	// } else if (!(node instanceof IdentifierExpressionNode)) {
+	// node.remove();
+	// newExpressionNode = this.moduloExpression(source,
+	// (ExpressionNode) node, unsignedBound);
+	// }
+	// if (newExpressionNode != null)
+	// expressionParent.setChild(expressionIndex,
+	// newExpressionNode);
+	// }
+	// }
+	// if (!processed) {
+	// for (ASTNode child : node.children()) {
+	// if (child == null)
+	// continue;
+	// this.processUnsignedOperators(child);
+	// }
+	// }
+	// }
 
-		// if (node instanceof VariableDeclarationNode) {
-		// VariableDeclarationNode variable = (VariableDeclarationNode) node;
-		// InitializerNode init = variable.getInitializer();
-		//
-		// if (init != null && (init instanceof ExpressionNode)) {
-		// if (this.isUnsignedIntegerTypeNode(variable.getTypeNode())) {
-		// ExpressionNode newInit;
-		// Source source = init.getSource();
-		//
-		// init.remove();
-		// newInit = this.moduloExpression(source,
-		// (ExpressionNode) init,
-		// this.unsigned_bound_in_pow(source));
-		// variable.setInitializer(newInit);
-		// }
-		// }
-		// } else
-		if (node instanceof ExpressionNode) {
-			Type type = ((ExpressionNode) node).getConvertedType();
+	// private ExpressionNode moduloExpression(Source source, ExpressionNode
+	// left,
+	// ExpressionNode right) {
+	// if (!this.isUnsignedIntegerType(left.getInitialType())) {
+	// left = this.nodeFactory.newCastNode(source,
+	// this.basicType(BasicTypeKind.UNSIGNED), left);
+	// }
+	// return this.nodeFactory.newOperatorNode(source, Operator.MOD, left,
+	// right);
+	// };
 
-			if (this.isUnsignedIntegerType(type)) {
-				ASTNode expressionParent = node.parent();
-				int expressionIndex = node.childIndex();
-				Source source = node.getSource();
-				ExpressionNode unsignedBound = this
-						.unsigned_bound_in_pow(source);
-				ExpressionNode newExpressionNode = null;
+	// private ExpressionNode unsigned_bound_in_pow(Source source)
+	// throws SyntaxException {
+	// // return this.nodeFactory.newFunctionCallNode(
+	// // source,
+	// // this.identifierExpression(POWER),
+	// // Arrays.asList(this.integerConstant(2),
+	// // this.identifierExpression(this.UNSIGINED_BOUNT)), null);
+	// return this.identifierExpression(this.UNSIGINED_BOUND);
+	// }
 
-				processed = true;
-				if (node instanceof OperatorNode) {
-					OperatorNode operatorNode = (OperatorNode) node;
-					Operator rhsOperator = null;
-					ExpressionNode rightOfRhs = null;
-					boolean isAssign = false;
-					boolean needsTransform = true;
-
-					switch (operatorNode.getOperator()) {
-						case ASSIGN : {
-							ExpressionNode rhs = operatorNode.getArgument(1);
-
-							rhs.remove();
-							operatorNode.setArgument(1, this.moduloExpression(
-									source, rhs, unsignedBound));
-							isAssign = true;
-							break;
-						}
-						case BITANDEQ :
-							rhsOperator = Operator.BITAND;
-							break;
-						case BITOREQ :
-							rhsOperator = Operator.BITOR;
-							break;
-						case BITXOREQ :
-							rhsOperator = Operator.BITXOR;
-							break;
-						case DIVEQ :
-							rhsOperator = Operator.DIV;
-							break;
-						case MINUSEQ :
-							rhsOperator = Operator.MINUS;
-							break;
-						case MODEQ :
-							rhsOperator = Operator.MOD;
-							break;
-						case PLUSEQ :
-							rhsOperator = Operator.PLUS;
-							break;
-						case TIMESEQ :
-							rhsOperator = Operator.PLUS;
-							break;
-						case POSTINCREMENT :
-						case PREINCREMENT :
-							rhsOperator = Operator.PLUS;
-							rightOfRhs = this.integerConstant(1);
-							break;
-						case PREDECREMENT :
-						case POSTDECREMENT :
-							rhsOperator = Operator.MINUS;
-							rightOfRhs = this.integerConstant(1);
-							break;
-						case MINUS :
-						case PLUS :
-						case TIMES :
-						case DIV :
-						case MOD :
-						case UNARYMINUS :
-						case UNARYPLUS :
-							break;
-						default :
-							needsTransform = false;
-					}
-					if (!isAssign && needsTransform) {
-						if (rhsOperator != null) {
-							ExpressionNode lhs = operatorNode.getArgument(0);
-							ExpressionNode rhs;
-
-							lhs.remove();
-							if (rightOfRhs == null) {
-								rightOfRhs = operatorNode.getArgument(1);
-								rightOfRhs.remove();
-							}
-							rhs = this.nodeFactory.newOperatorNode(source,
-									rhsOperator, lhs.copy(), rightOfRhs);
-							rhs = this.moduloExpression(source, rhs,
-									unsignedBound);
-							newExpressionNode = this.nodeFactory
-									.newOperatorNode(source, Operator.ASSIGN,
-											lhs, rhs);
-						} else {
-							operatorNode.remove();
-							newExpressionNode = this.moduloExpression(source,
-									operatorNode, unsignedBound);
-						}
-					}
-				} else if (node instanceof IntegerConstantNode) {
-					IntegerConstantNode integerNode = (IntegerConstantNode) node;
-					int intValue = integerNode.getConstantValue()
-							.getIntegerValue().intValue();
-
-					intValue = intValue % SvcompTransformer.UNSIGNED_BOUND;
-					newExpressionNode = this.nodeFactory
-							.newIntegerConstantNode(source, intValue + "U");
-				} else if (!(node instanceof IdentifierExpressionNode)) {
-					node.remove();
-					newExpressionNode = this.moduloExpression(source,
-							(ExpressionNode) node, unsignedBound);
-				}
-				if (newExpressionNode != null)
-					expressionParent.setChild(expressionIndex,
-							newExpressionNode);
-			}
-		}
-		if (!processed) {
-			for (ASTNode child : node.children()) {
-				if (child == null)
-					continue;
-				this.processUnsignedOperators(child);
-			}
-		}
-	}
-
-	private ExpressionNode moduloExpression(Source source, ExpressionNode left,
-			ExpressionNode right) {
-		if (!this.isUnsignedIntegerType(left.getInitialType())) {
-			left = this.nodeFactory.newCastNode(source,
-					this.basicType(BasicTypeKind.UNSIGNED), left);
-		}
-		return this.nodeFactory.newOperatorNode(source, Operator.MOD, left,
-				right);
-	};
-
-	private ExpressionNode unsigned_bound_in_pow(Source source)
-			throws SyntaxException {
-		// return this.nodeFactory.newFunctionCallNode(
-		// source,
-		// this.identifierExpression(POWER),
-		// Arrays.asList(this.integerConstant(2),
-		// this.identifierExpression(this.UNSIGINED_BOUNT)), null);
-		return this.identifierExpression(this.UNSIGINED_BOUND);
-	}
-
-	private boolean isUnsignedIntegerType(Type type) {
-		if (type instanceof StandardBasicType) {
-			StandardBasicType basicType = (StandardBasicType) type;
-
-			return (basicType.getBasicTypeKind() == BasicTypeKind.UNSIGNED);
-		}
-		if (type instanceof QualifiedObjectType) {
-			return this.isUnsignedIntegerType(
-					((QualifiedObjectType) type).getBaseType());
-		}
-		return false;
-	}
+	// private boolean isUnsignedIntegerType(Type type) {
+	// if (type instanceof StandardBasicType) {
+	// StandardBasicType basicType = (StandardBasicType) type;
+	//
+	// return (basicType.getBasicTypeKind() == BasicTypeKind.UNSIGNED);
+	// }
+	// if (type instanceof QualifiedObjectType) {
+	// return this.isUnsignedIntegerType(
+	// ((QualifiedObjectType) type).getBaseType());
+	// }
+	// return false;
+	// }
 
 	/**
 	 * insert input variables at the beginning the given root node

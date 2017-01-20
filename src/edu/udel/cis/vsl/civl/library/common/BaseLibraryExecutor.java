@@ -276,7 +276,8 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 					argumentValues, msgOffset, argumentValues.length);
 
 			state = this.primaryExecutor.execute_printf(source, state, pid,
-					process, pArguments, pArgumentValues).state;
+					process, pArguments, pArgumentValues,
+					this.civlConfig.svcomp()).state;
 			civlConfig.out().println();
 		}
 		state = errorLogger.logError(source, state, process,

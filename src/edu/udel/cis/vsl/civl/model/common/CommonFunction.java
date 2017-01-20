@@ -472,12 +472,13 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	public String toString() {
 		String result = name.name() + "(";
 
-		for (int i = 0; i < parameters.size(); i++) {
-			if (i != 0) {
-				result += ",";
+		if (parameters != null)
+			for (int i = 0; i < parameters.size(); i++) {
+				if (i != 0) {
+					result += ",";
+				}
+				result += parameters.get(i);
 			}
-			result += parameters.get(i);
-		}
 		result += ")";
 		return result;
 	}

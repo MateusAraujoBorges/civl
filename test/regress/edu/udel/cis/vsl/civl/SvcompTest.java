@@ -95,6 +95,8 @@ public class SvcompTest {
 				filename("10_fmaxsym_cas_true-unreach-call.i")));
 	}
 
+	// needs to be made a big test
+	@Ignore
 	@Test
 	public void free_pthread_pool_test() {
 		assertFalse(ui.run("verify", "-svcomp16", 

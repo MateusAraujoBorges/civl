@@ -3,6 +3,7 @@
  */
 package edu.udel.cis.vsl.civl.model.IF;
 
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.common.CommonModelBuilder;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
@@ -21,8 +22,9 @@ public class Models {
 	 *            The symbolic universe to be used.
 	 * @return The new model builder created.
 	 */
-	public static ModelBuilder newModelBuilder(SymbolicUniverse universe) {
-		return new CommonModelBuilder(universe);
+	public static ModelBuilder newModelBuilder(SymbolicUniverse universe,
+			CIVLConfiguration config) {
+		return new CommonModelBuilder(universe, config);
 	}
 
 	/**

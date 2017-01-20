@@ -1,0 +1,64 @@
+#include <stdio.h>
+#include <math.h>
+#ifdef _CIVL
+$input double JB_INPUT;
+$input double alphad[10];
+
+#endif
+void func(double* alpha, int n, double* J) {
+  for(int i=0;i<n;i++) {
+    *J += sin(alpha[i]);
+  }
+}
+void func_d(double *alpha, double *alphad, int n, double *J, double *Jd) {
+    for (int i = 0; i < n; ++i) {
+        *Jd = *Jd + alphad[i]*cos(alpha[i]);
+        *J += sin(alpha[i]);
+    }
+}
+void func_b(double *alpha, double *alphab, int n, double *J, double *Jb) {
+    for (int i = n-1; i > -1; --i) {
+        alphab[i] = alphab[i] + cos(alpha[i])*(*Jb);
+    }
+}
+
+
+int main(int argc, char** argv) {
+    // dot product test: alphad*alphab == Jd*Jb
+    const int n = 10;
+    double alpha[n], alphad[n], alphab[n];
+    double J, Jd, Jb;
+
+
+    for(int i=0; i<n; i++) {
+      alpha[i] = 1.5*i;
+      alphab[i] = 0.0;
+    }
+    J = 0.0;
+    Jd = 0.0;
+
+
+    #ifdef _CIVL
+    Jb = JB_INPUT;
+    for(int i=0; i<n; i++) {
+      alphad[i] = 0.0;
+    }
+    alphad[3] += 1;
+    #else
+    Jb = 1.0
+    #endif
+
+
+    func(&alpha[0],n,&J);
+    func_d(&alpha[0],&alphad[0],n,&J,&Jd);
+    func_b(&alpha[0],&alphab[0],n,&J,&Jb);
+
+
+    double dp = 0.0;
+    for(int i=0;i<n;i++) {
+      dp += alphad[i]*alphab[i];
+    }
+
+
+    printf("%f %f\n",dp, Jd*Jb);
+}

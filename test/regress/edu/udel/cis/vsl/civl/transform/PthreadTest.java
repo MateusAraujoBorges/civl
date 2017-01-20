@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 
 import org.junit.AfterClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -59,6 +60,7 @@ public class PthreadTest {
 				filename("fib_bench_true-unreach-call.c")));
 	}
 
+	@Ignore
 	@Test
 	public void indexer_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16", "-inputSIZE=2", "-inputMAX=4",

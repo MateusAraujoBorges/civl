@@ -21,6 +21,7 @@ import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -397,8 +398,9 @@ public class CommonModelFactory implements ModelFactory {
 	 * @param universe
 	 *            The symbolic universe
 	 */
-	public CommonModelFactory(SymbolicUniverse universe) {
-		this.typeFactory = new CommonCIVLTypeFactory(universe);
+	public CommonModelFactory(SymbolicUniverse universe,
+			CIVLConfiguration config) {
+		this.typeFactory = new CommonCIVLTypeFactory(universe, config);
 		this.universe = universe;
 		this.identifiers = new HashMap<String, Identifier>();
 
@@ -2497,9 +2499,9 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public CIVLFunction nondetFunction(CIVLSource source, Identifier name,
 			CIVLType returnType, Scope containingScope) {
-		return new CommonNondetFunction(source, name, 
-				 returnType, containingScope,
+		return new CommonNondetFunction(source, name, returnType,
+				containingScope,
 				containingScope != null ? containingScope.numFunctions() : -1,
-				 this);
+				this);
 	}
 }

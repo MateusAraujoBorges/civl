@@ -979,7 +979,7 @@ public class CommonExecutor implements Executor {
 	@Override
 	public Evaluation execute_printf(CIVLSource source, State state, int pid,
 			String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues)
+			SymbolicExpression[] argumentValues, boolean forcePrint)
 			throws UnsatisfiablePathConditionException {
 		StringBuffer stringOfSymbolicExpression;
 		StringBuffer formatBuffer;
@@ -1033,7 +1033,7 @@ public class CommonExecutor implements Executor {
 						.symbolicExpressionToString(arguments[i].getSource(),
 								state, argumentType, argumentValue)));
 		}
-		if (!civlConfig.isQuiet() && civlConfig.enablePrintf())
+		if (!civlConfig.isQuiet() && (civlConfig.enablePrintf() || forcePrint))
 			this.printf(civlConfig.out(), arguments[0].getSource(), process,
 					formats, printedContents);
 		return new Evaluation(state, null);

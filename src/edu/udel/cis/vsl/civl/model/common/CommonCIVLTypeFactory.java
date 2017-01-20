@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
@@ -195,6 +196,8 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 
 	SymbolicType voidSymbolicType;
 
+	CIVLConfiguration config;
+
 	/* *************************** Private Fields ************************** */
 
 	/**
@@ -210,12 +213,14 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 	 * @param universe
 	 *            The symbolic universe to be used.
 	 */
-	public CommonCIVLTypeFactory(SymbolicUniverse universe) {
+	public CommonCIVLTypeFactory(SymbolicUniverse universe,
+			CIVLConfiguration config) {
 		Iterable<SymbolicType> intTypeSingleton = new Singleton<SymbolicType>(
 				universe.integerType());
 		LinkedList<SymbolicType> pointerComponents = new LinkedList<>();
 		LinkedList<SymbolicType> fpointerComponents = new LinkedList<>();
 
+		this.config = config;
 		this.universe = universe;
 		scopeSymbolicType = (SymbolicTupleType) universe.canonic(universe
 				.tupleType(universe.stringObject("scope"), intTypeSingleton));
@@ -591,8 +596,13 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 	 * @return The numeric expression of the sizeof expression.
 	 */
 	private NumericExpression sizeofPrimitiveType(PrimitiveTypeKind kind) {
+
 		if (kind == PrimitiveTypeKind.CHAR)
 			return universe.oneInt();
+
+		if (kind == PrimitiveTypeKind.INT && config.svcomp()) {
+			return universe.integer(this.config.getIntBit());
+		}
 
 		String name = "SIZEOF_" + kind;
 		SymbolicConstant result = universe.symbolicConstant(
