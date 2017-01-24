@@ -1,26 +1,43 @@
-/* Commandline execution:
- *		civl verify -inputrows=3 -inputcols=3 laplace.cvl
- * */
-#include <civlc.cvh>
+/* 2-dimensional Laplace equation solver with constant boundaries.
+ * This operation 2nd order accurate.  To verify with CIVL:
+ *		civl verify laplace.cvl
+ */
 
-$input double h;
-$input int rows = 3;
-$input int cols = 3;
-$input double u[rows][cols];
-double result[rows][cols];
-$assume(h > 0);
-$abstract $contin(4) $real phi($real x, $real y);
-$assume($forall {m=0 .. rows-1} $forall {n=0 .. cols-1} u[m][n] == phi(m*h, n*h));
+$input int rows; // the number of rows
+$assume(rows >= 1);
+$input int cols; // the number of columns
+$assume(cols >= 1);
+$input double h; // distance between two consecutive points in horizontal or vertical direction
+$assume(0<h && h<1);
+$input double u[rows][cols]; // initial state
+double result[rows][cols]; // new state after update
+// assume phi:R^2->R has 4 continuous derivatives in [-1,1]x[-1,1]:
+$abstract $differentiable(4, [-1,1][-1,1]) $real phi($real x, $real y);
 
+/* Performs one update step */
 void laplace() {
+  /*@ loop invariant 1<=i && i<=rows-1;
+    @ loop invariant $forall (int i0 : 1..i-1)
+    @   $forall (int j:1..cols-1)
+    @      result[i0][j] = (u[i0-1][j]+u[i0][j-1]-4*u[i0][j]+u[i0+1][j]+u[i0][j+1])/(h*h);
+    @ loop assigns i, result[1..rows-2][1..cols-2];
+    @*/
   for (int i = 1; i < rows-1; i++) {
+    /*@ loop invariant 1<=j && j<=cols-1;
+      @ loop invariant $forall (int j0 : 1..j-1)
+      @   result[i][j0] = (u[i-1][j0]+u[i][j0-1]-4*u[i][j0]+u[i+1][j0]+u[i][j0+1])/(h*h);
+      @ loop assigns j, result[i][1..cols-2];
+      @*/
     for (int j = 1; j < cols-1; j++) {
       result[i][j] = (u[i-1][j]+u[i][j-1]-4*u[i][j]+u[i+1][j]+u[i][j+1])/(h*h);
     }
   }
-  $assert($uniform {i=1 .. rows-2} $uniform {j=1 .. cols-2} result[i][j] - ($D[phi,{x,2}](i*h,j*h)+$D[phi,{y,2}](i*h,j*h)) == $O(h*h));
 }
 
 void main() {
+  $assume($forall (int i,j:($domain(2)){0..rows-1, 0..cols-1}) u[i][j] == phi(i*h, j*h));
+  $assume(rows*h<=1 && cols*h<=1);
   laplace();
+  $assert($uniform (int i,j:($domain(2)){1..rows-2, 1..cols-2})
+    result[i][j] - $D[phi,{x,2}](i*h,j*h) - $D[phi,{y,2}](i*h,j*h) == $O(h*h));
 }

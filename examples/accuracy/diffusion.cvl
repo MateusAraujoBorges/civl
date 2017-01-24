@@ -1,36 +1,68 @@
-/* Commandline execution:
- *		civl verify -inputn=4 diffusion.cvl
- * */
-#include<civlc.cvh>
+/* 1-dimension diffusion equation solver with constant boundaries.
+ * Accuracy is first-order in time and second order in space.
+ * To verify with CIVL, type:
+ *		civl verify diffusion.cvl
+ */
 
-$input int n = 4; /* Number of points */
-$input double h;  /* Distance between points */
-$input double dt; /* Size of a time step */
-$input double k;  /* Constant for rate of diffusion */
-$input double u1[n];
-$abstract $contin(4) $real u($real x, $real t);
-$assume(h > 0);
-$assume(dt > 0);
+$input int n; // number of discrete spatial points
+$assume(n >= 1);
+$input double dx;  // distance between two consecutive points
+$assume(0<dx && dx<1);
+$input double dt; // duration of one time step
+$assume(0<dt && dt<1);
+$input double k;  // diffusivity constant
 $assume(k > 0);
-double v[n];
-double v_new[n];
-int iter;
+$input double u_init[n]; // initial temperatures
+// assume u:R^2->R has 4 continuous derivatives in [-1,1]x[0,100]:
+$abstract $differentiable(4, [-1,1][0,100]) $real u($real x, $real t);
+$input int step; // some arbitrary time step
+$assume(step >= 0);
+double v[n]; // values at this time step
+double v_new[n]; // values at next time step
 
+/* Updates the array v.  The new values of v are computed from the old
+ * values of v, and the constants dt, dx, and k.
+ */  
 void update() {
-	$assume($forall {j=0 .. n-1} v[j] == u(j*h, iter*dt));
-	for (int i = 1; i < n-1; i++) {
-	  v_new[i] = v[i]+dt*k*(v[i+1]-2*v[i]+v[i-1])/(h*h);
-	}
-	for (int i = 1; i < n-1; i++) {
-	  v[i] = v_new[i];
-	}	
-	$assert($uniform{m=1 .. n-2} (u(m*h, (iter+1)*dt)-v[m])/dt-$D[u, {t, 1}](m*h, iter*dt)+k*$D[u,{x,2}](m*h, iter*dt) ==$O(dt)+$O(h*h));
+  // compute the new values in v_new:
+  /*@ loop invariant 1<=i && i<=n-1;
+    @ loop invariant $forall (int j:1..i-1)
+    @   v_new[j] == v[j] + dt*k*(v[j+1] - 2*v[j] + v[j-1])/(dx*dx);
+    @ loop assigns i, v_new[1..n-2];
+    @*/
+  for (int i=1; i<n-1; i++) {
+    v_new[i] = v[i] + dt*k*(v[i+1] - 2*v[i] + v[i-1])/(dx*dx);
+  }
+  // copy v_new back to v:
+  /*@ loop invariant 1<=i && i<=n-1;
+    @ loop invariant $forall (int j:1..i-1) v[j] == v_new[j];
+    @ loop assigns i, v[1..n-2];
+    @*/
+  for (int i=1; i<n-1; i++) {
+    v[i] = v_new[i];
+  }	
 }
 
+/* This main function is the driver.
+ * The annotations assume v[i] is exactly u(i*dx,step*dt) just before
+ * updating, and claim that the new v[i] is a very good approximation to
+ * u(i*dx,(step+1)*dt).  Specifically, the approximation is
+ * O(dt)+O(dx^2) accurate in the interior spatial region. (The endpoints
+ * are held constant.)
+ */
 void main() {
+  /*@ loop invariant 0<=i && i<=n;
+    @ loop invariant $forall (int j:0..i-1) v[j] == u_init[j];
+    @ loop assigns i, v[0..n-1];
+    @*/
   for (int i = 0; i < n; i++) {
-    v[i] = u1[i];
+    v[i] = u_init[i];
   }
-  iter = 0;
+  $assume(n*dx < 1);
+  $assume(step*dt < 100);
+  $assume($forall (int i=0..n-1) v[i] == u(i*dx, step*dt));
   update();
+  $assert($uniform (int i=1..n-2) 
+    (u(i*dx, (step+1)*dt) - v[i])/dt - $D[u,{t,1}](i*dx, step*dt) + k*$D[u,{x,2}](i*dx, step*dt)
+    == $O(dt) + $O(dx*dx));
 }
