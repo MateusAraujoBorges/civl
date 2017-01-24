@@ -29,6 +29,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.CharLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DerivativeCallExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.DifferentiableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DynamicTypeOfExpression;
@@ -722,6 +723,23 @@ public interface ModelFactory {
 			AbstractFunction function,
 			List<Pair<Variable, IntegerLiteralExpression>> partials,
 			List<Expression> arguments);
+
+	/**
+	 * An expression representing the claim that some function is
+	 * differentiable. Specifically, the function has <code>degree</code>
+	 * continuous derivatives on the Cartesian product of the closed intervals
+	 * specified by the lower and upper bounds.
+	 * 
+	 * @param source
+	 * @param function
+	 * @param degree
+	 * @param lowerBounds
+	 * @param upperBounds
+	 * @return
+	 */
+	DifferentiableExpression differentiableExpression(CIVLSource source,
+			AbstractFunction function, int degree, Expression[] lowerBounds,
+			Expression[] upperBounds);
 
 	/*
 	 * ************************************************************************
