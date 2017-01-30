@@ -1,0 +1,9 @@
+#include <pointer.cvh>
+
+int main(){
+    int x;
+    int y;
+
+    $copy(&x, &y);
+    return 0;
+}
