@@ -1,49 +1,75 @@
-/* Commandline execution:
- *		civl verify -inputn=4 upwindFirstOrder.cvl
- * */
-#include<civlc.cvh>
+/* First-order "upwind" scheme for 1-dim. advection. 
+ * Uses forward differencing in time and makes a choice of forward
+ * or backward differencing in space based on the direction of the fluid flow.
+ * First-order accurate in space and time.
+ * To verify with CIVL:
+ *		civl verify upwindFirstOrder.cvl
+ */
 
-$input int n = 4; /* Number of points */
-$input double h;  /* Distance between points */
-$input double dt; /* Size of a time step */
-$input double a;  /* Constant for wave velocity */
-$input double u1[n];
-$abstract $contin(2) $real u($real x, $real t);
-$assume(h > 0);
-$assume(dt > 0);
+$input int n; // Number of points
+$assume(n >= 1);
+$input double h;  // Distance between points
+$assume(0<h && h<1);
+$input double dt; // Duration of a time step
+$assume(0<dt && dt<1);
+$input double a;  // Constant for wave velocity
 $assume(a != 0);
+$input double u1[n]; // initial values
+// u:R^2->R has 2 continuous derivatives in [-1,1]x[0,100]
+$abstract $differentiable(2, [-1,1],[0,100]) $real u($real x, $real t);
+$input int step; // some arbitrary time step
+$assume(step >= 0);
+
 double v[n];
 double v_new[n];
-int iter;
 
 void upwindForward() {
+  /*@ loop invariant $forall (int j:1..i-1) v_new[j] == v[j] - dt*a*(v[j+1]-v[j])/h;
+    @ loop invariant 1<=i && i<=n-1;
+    @ loop assigns i, v_new[1..n-2];
+    @*/
   for (int i = 1; i < n-1; i++) {
-	  v_new[i] = v[i]-dt*a*(v[i+1]-v[i])/h;
+	  v_new[i] = v[i] - dt*a*(v[i+1] - v[i])/h;
   }
 }
 
 void upwindBackward() {
+  /*@ loop invariant $forall (int j:1..i-1) v_new[j] == v[j] - dt*a*(v[j]-v[j-1])/h;
+    @ loop invariant 1<=i && i<=n-1;
+    @ loop assigns i, v_new[1..n-2];
+    @*/
   for (int i = 1; i < n-1; i++) {
-	  v_new[i] = v[i]-dt*a*(v[i]-v[i-1])/h;
+	  v_new[i] = v[i] - dt*a*(v[i] - v[i-1])/h;
   }
 }
 
 void upwind() {
-  $assume($forall {j=0 .. n-1} v[j] == u(j*h, iter*dt));
   if (a > 0)
     upwindBackward();
   else 
     upwindForward();
+  /*@ loop invariant 1<=i && i<=n-1;
+    @ loop invariant $forall (int j:1..i-1) v[j] == v_new[j];
+    @ loop assigns i, v[1..n-2];
+    @*/
   for (int i = 1; i < n-1; i++) {
 	  v[i] = v_new[i];
   }	
-  $assert($uniform{m=1 .. n-2} (u(m*h, (iter+1)*dt)-v[m])/dt-($D[u, {t, 1}](m*h, iter*dt)+a*$D[u,{x,1}](m*h, iter*dt)) ==$O(dt)+$O(h));
 }
 
 void main() {
+  $assume(n*h <= 1);
+  $assume(step*dt < 100);
+  $assume($forall (int i:0..n-1) v[i] == u(i*h, step*dt));
+  /*@ loop invariant 0<=i && i<=n;
+    @ loop invariant $forall (int j:0..i-1) v[j] == u1[j];
+    @ loop assigns i, v[0..n-1];
+    @*/
   for (int i = 0; i < n; i++) {
     v[i] = u1[i];
   }
-  iter = 0;
   upwind();
+  $assert($uniform (int i:1..n-2) 
+    (u(i*h, (step+1)*dt)-v[i])/dt - $D[u,{t,1}](i*h, step*dt) - a*$D[u,{x,1}](i*h, step*dt) 
+    == $O(dt) + $O(h));
 }
