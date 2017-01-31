@@ -186,9 +186,12 @@ public class ImmutableState implements State {
 	 */
 	ImmutableState simplifiedState = null;
 
-	int[] collectibleCounts;
+	/**
+	 * True iff all successors during search are on the search stack.
+	 */
+	private boolean allSuccessorsOnStack = true;
 
-	private boolean allNextOnStack = true;
+	int[] collectibleCounts;
 
 	/* *************************** Static Methods ************************** */
 
@@ -998,13 +1001,13 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public void setAllNextOnStack(boolean value) {
-		allNextOnStack = value;
+	public void setAllSuccessorsOnStack(boolean value) {
+		allSuccessorsOnStack = value;
 	}
 
 	@Override
-	public boolean getAllNextOnStack() {
-		return allNextOnStack;
+	public boolean getAllSuccessorsOnStack() {
+		return allSuccessorsOnStack;
 	}
 
 }

@@ -354,7 +354,19 @@ public interface State {
 	 */
 	boolean isFinalState();
 
-	void setAllNextOnStack(boolean value);
+	/**
+	 * Set the "all-successors-on-stack" flag of a state to a certain value.
+	 * 
+	 * @param value
+	 *            The value that is going to be assigned to the
+	 *            "all-successors-on-stack" flag of a state.
+	 */
+	void setAllSuccessorsOnStack(boolean value);
 
-	boolean getAllNextOnStack();
+	/**
+	 * Get the "all-successors-on-stack" flag of a state.
+	 * 
+	 * @return The value of the "all-successors-on-stack".
+	 */
+	boolean getAllSuccessorsOnStack();
 }
