@@ -85,7 +85,6 @@ import edu.udel.cis.vsl.civl.util.IF.Triple;
  * 
  * for documentation on this transformation.
  * 
- * @author siegel
  *
  */
 public class OpenMP2CIVLWorker extends BaseWorker {
