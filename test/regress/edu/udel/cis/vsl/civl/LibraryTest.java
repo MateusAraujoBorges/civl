@@ -328,6 +328,13 @@ public class LibraryTest {
 //				QUIET, 
 				filename(POINTER, "simpleCopyTest.cvl")));
 	}
+	
+	@Test
+	public void undefinedVarTest() {
+		assertFalse(ui.run("verify", 
+//				QUIET, 
+				filename(POINTER, "undefinedVar.cvl")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
