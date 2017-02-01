@@ -61,7 +61,7 @@ public class LibpthreadEvaluator extends BaseLibraryEvaluator
 		int numThreads;
 
 		eval = this.evaluator.dereference(source, state, process, arguments[0],
-				gpool, false);
+				gpool, false, true);
 		gpoolObj = eval.value;
 		state = eval.state;
 		threads = this.universe.tupleRead(gpoolObj, zeroObject);

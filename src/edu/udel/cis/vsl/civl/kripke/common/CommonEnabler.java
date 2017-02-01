@@ -803,7 +803,7 @@ public abstract class CommonEnabler implements Enabler {
 				.tupleRead(colStateComp, universe.intObject(0)));
 		gstateHandle = universe.tupleRead(colStateComp, universe.intObject(1));
 		eval = this.evaluator.dereference(csSource, state, "p" + pid,
-				colStateExpr, gstateHandle, false);
+				colStateExpr, gstateHandle, false, true);
 		state = eval.state;
 		colStateID = this.modelFactory.getStateRef(csSource,
 				universe.tupleRead(eval.value, universe.intObject(1)));
@@ -870,7 +870,7 @@ public abstract class CommonEnabler implements Enabler {
 			state = eval.state;
 		}
 		eval = this.evaluator.dereference(collator.getSource(), state, process,
-				collator, collatorHandle, false);
+				collator, collatorHandle, false, true);
 		collatorComp = eval.value;
 		state = eval.state;
 		place = (NumericExpression) universe.tupleRead(collatorComp,
@@ -879,7 +879,7 @@ public abstract class CommonEnabler implements Enabler {
 		gcollatorHandle = universe.tupleRead(collatorComp,
 				universe.intObject(1));
 		eval = this.evaluator.dereference(collator.getSource(), state, process,
-				collator, gcollatorHandle, false);
+				collator, gcollatorHandle, false, true);
 		gcollatorComp = eval.value;
 		state = eval.state;
 		gqueueLength = (NumericExpression) universe.tupleRead(gcollatorComp,
@@ -973,7 +973,7 @@ public abstract class CommonEnabler implements Enabler {
 			ResultType result;
 
 			eval = this.evaluator.dereference(source, state, process, collator,
-					gstateHandle, false);
+					gstateHandle, false, true);
 			gstate = eval.value;
 			state = eval.state;
 			mystatus = universe.arrayRead(

@@ -131,12 +131,12 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 		int srcInt, destInt;
 
 		eval = evaluator.dereference(civlsource, state, process, arguments[0],
-				commHandle, false);
+				commHandle, false, true);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
 		eval = evaluator.dereference(civlsource, state, process, null,
-				gcommHandle, false);
+				gcommHandle, false, true);
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
@@ -357,7 +357,7 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 
 		gcommHandle = universe.tupleRead(comm, oneObject);
 		eval = evaluator.dereference(civlsource, state, process, null,
-				gcommHandle, false);
+				gcommHandle, false, true);
 		return eval;
 	}
 
@@ -385,7 +385,7 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 		eval = evaluator.evaluate(state, pid, commHandleExpr);
 		commHandle = eval.value;
 		eval = evaluator.dereference(commHandleExpr.getSource(), eval.state,
-				process, commHandleExpr, commHandle, false);
+				process, commHandleExpr, commHandle, false, true);
 		return eval;
 	}
 

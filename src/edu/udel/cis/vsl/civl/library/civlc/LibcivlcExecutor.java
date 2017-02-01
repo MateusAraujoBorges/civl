@@ -296,7 +296,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression pointer = argumentValues[0], result = trueValue;
 		Evaluation eval = this.evaluator.dereference(arguments[0].getSource(),
-				state, process, arguments[0], pointer, false);
+				state, process, arguments[0], pointer, false, true);
 
 		state = eval.state;
 		if (eval.value.isNull()) {
@@ -385,7 +385,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		IntegerNumber number_size = (IntegerNumber) reasoner
 				.extractNumber((NumericExpression) size);
 		Evaluation eval = evaluator.dereference(source, state, process,
-				arguments[1], arrayPointer, false);
+				arguments[1], arrayPointer, false, true);
 		CIVLSource arrayPointerSource = arrayPointerExpression.getSource();
 
 		state = eval.state;
@@ -410,7 +410,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			state = eval.state;
 			arrayElePointer = eval.value;
 			eval = evaluator.dereference(arrayPointerSource, state, process,
-					pointerAdditionExpression, arrayElePointer, false);
+					pointerAdditionExpression, arrayElePointer, false, true);
 			state = eval.state;
 			intArrayComponents.add(eval.value);
 		}
@@ -462,7 +462,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		SymbolicExpression hasNext;
 
 		eval = evaluator.dereference(civlsource, state, process, arguments[0],
-				iterHandle, false);
+				iterHandle, false, true);
 		state = eval.state;
 		iterObj = eval.value;
 		size = (NumericExpression) universe.tupleRead(iterObj, zeroObject);
@@ -506,7 +506,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		SymbolicExpression nextInt;
 
 		eval = evaluator.dereference(civlsource, state, process, arguments[0],
-				iterHandle, false);
+				iterHandle, false, true);
 		state = eval.state;
 		iterObj = eval.value;
 		array = universe.tupleRead(iterObj, oneObject);
@@ -646,7 +646,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				procPointer = eval.value;
 				state = eval.state;
 				eval = evaluator.dereference(procsSource, state, process,
-						pointerAdd, procPointer, false);
+						pointerAdd, procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
 				pidValue = modelFactory.getProcessId(procsSource, proc);

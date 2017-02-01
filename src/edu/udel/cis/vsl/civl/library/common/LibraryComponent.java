@@ -781,7 +781,7 @@ public abstract class LibraryComponent {
 		// here "startPtr" is already updated as the pointer to the common sub
 		// array.
 		eval = evaluator.dereference(source, state, process, ptrExpr, startPtr,
-				false);
+				false, true);
 		state = eval.state;
 		if (eval.value.type().typeKind().equals(SymbolicTypeKind.ARRAY)) {
 			eval = this.setDataBetween(state, process, eval.value,
@@ -834,7 +834,7 @@ public abstract class LibraryComponent {
 		// If "count" == 1:
 		if (reasoner.isValid(universe.equals(count, one))) {
 			eval = evaluator.dereference(source, state, process, pointerExpr,
-					pointer, true);
+					pointer, true, true);
 			if (eval.value.isNull())
 				reportUndefinedValueError(state, pid,
 						symbolicUtil.getSymRef(pointer).isIdentityReference(),
@@ -861,7 +861,7 @@ public abstract class LibraryComponent {
 		}
 		rootPointer = symbolicUtil.makePointer(pointer, symref);
 		eval = evaluator.dereference(source, state, process, pointerExpr,
-				rootPointer, false);
+				rootPointer, false, true);
 		state = eval.state;
 		rootArray = eval.value;
 		if (rootArray.isNull())
