@@ -718,19 +718,6 @@ public class CommonStateManager implements StateManager {
 		state.setSeen(value);
 	}
 
-	@Override
-	// TODO change
-	public boolean setseen(State state) {
-		synchronized (this) {
-			if (state.seen())
-				return false;
-			else {
-				state.setSeen(true);
-				return true;
-			}
-		}
-	}
-
 	/* ****************** Public Methods from StateManager ***************** */
 
 	@Override
@@ -773,6 +760,16 @@ public class CommonStateManager implements StateManager {
 		if (outputCollector != null)
 			return this.outputCollector.outptutNames;
 		return null;
+	}
+
+	@Override
+	public void setAllSuccessorsOnStack(State state, boolean value) {
+		state.setAllSuccessorsOnStack(value);
+	}
+
+	@Override
+	public boolean allSuccessorsOnStack(State state) {
+		return state.getAllSuccessorsOnStack();
 	}
 
 	// @Override
