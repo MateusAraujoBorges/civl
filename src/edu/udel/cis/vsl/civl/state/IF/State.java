@@ -16,10 +16,12 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * <li>a path condition</li>
  * </ul>
  * 
+ * <p>
  * The data listed above comprise the "intrinsic data" of the state. A State may
  * have additional "extrinsic data" but they should not affect the equals or
  * hashCode methods. Those methods should depend only on the three intrinsic
  * data listed above.
+ * </p>
  * 
  * States should be immutable (or something in between). The contract for the
  * state modules does not specify this. However, states must supply a "commit"
