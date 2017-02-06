@@ -25,8 +25,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
-public class LibtimeExecutor extends BaseLibraryExecutor implements
-		LibraryExecutor {
+public class LibtimeExecutor extends BaseLibraryExecutor implements LibraryExecutor {
 
 	private SymbolicConstant localtimeFunc;
 	private CIVLType tmType;
@@ -35,62 +34,49 @@ public class LibtimeExecutor extends BaseLibraryExecutor implements
 	private SymbolicArrayType stringSymbolicType;
 	private SymbolicConstant tmToStrSizeFunc;
 
-	public LibtimeExecutor(String name, Executor primaryExecutor,
-			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
-			SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
-			LibraryExecutorLoader libExecutorLoader,
-			LibraryEvaluatorLoader libEvaluatorLoader) {
-		super(name, primaryExecutor, modelFactory, symbolicUtil,
-				symbolicAnalyzer, civlConfig, libExecutorLoader,
+	public LibtimeExecutor(String name, Executor primaryExecutor, ModelFactory modelFactory,
+			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
+			LibraryExecutorLoader libExecutorLoader, LibraryEvaluatorLoader libEvaluatorLoader) {
+		super(name, primaryExecutor, modelFactory, symbolicUtil, symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
 		this.tmType = this.typeFactory.systemType(ModelConfiguration.TM_TYPE);
 		if (tmType != null)
 			this.tmSymbolicType = tmType.getDynamicType(universe);
-		this.stringSymbolicType = (SymbolicArrayType) universe.canonic(universe
-				.arrayType(universe.characterType()));
+		this.stringSymbolicType = (SymbolicArrayType) universe.canonic(universe.arrayType(universe.characterType()));
 		if (tmType != null)
-			this.localtimeFunc = (SymbolicConstant) universe.canonic(universe
-					.symbolicConstant(universe.stringObject("localtime"),
-							universe.functionType(
-									Arrays.asList(universe.realType()),
-									this.tmSymbolicType)));
+			this.localtimeFunc = (SymbolicConstant) universe
+					.canonic(universe.symbolicConstant(universe.stringObject("localtime"),
+							universe.functionType(Arrays.asList(universe.realType()), this.tmSymbolicType)));
 		if (tmType != null)
-			this.tmToStrFunc = (SymbolicConstant) universe.canonic(universe
-					.symbolicConstant(universe.stringObject("strftime"),
-							universe.functionType(Arrays.asList(
-									universe.integerType(),
-									typeFactory.pointerSymbolicType(),
-									this.tmSymbolicType),
-									this.stringSymbolicType)));
+			this.tmToStrFunc = (SymbolicConstant) universe
+					.canonic(
+							universe.symbolicConstant(universe.stringObject("strftime"),
+									universe.functionType(Arrays.asList(universe.integerType(),
+											typeFactory.pointerSymbolicType(), this.tmSymbolicType),
+											this.stringSymbolicType)));
 		if (tmType != null)
-			this.tmToStrSizeFunc = (SymbolicConstant) universe.canonic(universe
-					.symbolicConstant(universe.stringObject("strftimeSize"),
-							universe.functionType(Arrays.asList(
-									universe.integerType(),
-									typeFactory.pointerSymbolicType(),
-									this.tmSymbolicType), universe
-									.integerType())));
+			this.tmToStrSizeFunc = (SymbolicConstant) universe
+					.canonic(
+							universe.symbolicConstant(universe.stringObject("strftimeSize"),
+									universe.functionType(Arrays.asList(universe.integerType(),
+											typeFactory.pointerSymbolicType(), this.tmSymbolicType),
+											universe.integerType())));
 	}
 
 	@Override
-	protected Evaluation executeValue(State state, int pid, String process,
-			CIVLSource source, String functionName, Expression[] arguments,
-			SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
+	protected Evaluation executeValue(State state, int pid, String process, CIVLSource source, String functionName,
+			Expression[] arguments, SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
 		Evaluation callEval = null;
 
 		switch (functionName) {
 		case "localtime":
-			callEval = this.executeLocalTime(state, pid, arguments,
-					argumentValues);
+			callEval = this.executeLocalTime(state, pid, arguments, argumentValues);
 			break;
 		case "strftime":
-			callEval = this.executeStrftime(state, pid, arguments,
-					argumentValues);
+			callEval = this.executeStrftime(state, pid, arguments, argumentValues);
 			break;
 		default:
-			throw new CIVLUnimplementedFeatureException(
-					"execution of function " + name + " in time library");
+			throw new CIVLUnimplementedFeatureException("execution of function " + name + " in time library");
 		}
 		return callEval;
 	}
@@ -111,25 +97,20 @@ public class LibtimeExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeStrftime(State state, int pid,
-			Expression[] arguments, SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation executeStrftime(State state, int pid, Expression[] arguments,
+			SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
 		SymbolicExpression resultPointer = argumentValues[0];
 		String process = state.getProcessState(pid).name();
-		Evaluation eval = this.evaluator.dereference(arguments[3].getSource(),
-				state, process, arguments[3], argumentValues[3], false);
+		Evaluation eval = this.evaluator.dereference(arguments[3].getSource(), state, process, arguments[3],
+				argumentValues[3], false, true);
 		SymbolicExpression tmValue, sizeValue, tmStr;
 
-		resultPointer = this.symbolicUtil.parentPointer(
-				arguments[0].getSource(), resultPointer);
+		resultPointer = this.symbolicUtil.parentPointer(arguments[0].getSource(), resultPointer);
 		state = eval.state;
 		tmValue = eval.value;
-		tmStr = universe.apply(tmToStrFunc,
-				Arrays.asList(argumentValues[1], argumentValues[2], tmValue));
-		state = this.primaryExecutor.assign(arguments[0].getSource(), state,
-				process, resultPointer, tmStr);
-		sizeValue = universe.apply(tmToStrSizeFunc,
-				Arrays.asList(argumentValues[1], argumentValues[2], tmValue));
+		tmStr = universe.apply(tmToStrFunc, Arrays.asList(argumentValues[1], argumentValues[2], tmValue));
+		state = this.primaryExecutor.assign(arguments[0].getSource(), state, process, resultPointer, tmStr);
+		sizeValue = universe.apply(tmToStrSizeFunc, Arrays.asList(argumentValues[1], argumentValues[2], tmValue));
 		return new Evaluation(state, sizeValue);
 	}
 
@@ -156,22 +137,19 @@ public class LibtimeExecutor extends BaseLibraryExecutor implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeLocalTime(State state, int pid,
-			Expression[] arguments, SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation executeLocalTime(State state, int pid, Expression[] arguments,
+			SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
 		String process = state.getProcessState(pid).name();
-		Evaluation eval = this.evaluator.dereference(arguments[0].getSource(),
-				state, process, arguments[0], argumentValues[0], false);
+		Evaluation eval = this.evaluator.dereference(arguments[0].getSource(), state, process, arguments[0],
+				argumentValues[0], false, true);
 		SymbolicExpression result;
 		Variable brokenTimeVar = this.modelFactory.brokenTimeVariable();
 		SymbolicExpression brokenTimePointer;
 
 		state = eval.state;
 		result = universe.apply(localtimeFunc, Arrays.asList(eval.value));
-		state = this.stateFactory
-				.setVariable(state, brokenTimeVar, pid, result);
-		brokenTimePointer = this.symbolicUtil.makePointer(
-				state.getDyscope(pid, brokenTimeVar.scope()),
+		state = this.stateFactory.setVariable(state, brokenTimeVar, pid, result);
+		brokenTimePointer = this.symbolicUtil.makePointer(state.getDyscope(pid, brokenTimeVar.scope()),
 				brokenTimeVar.vid(), universe.identityReference());
 		return new Evaluation(state, brokenTimePointer);
 	}
