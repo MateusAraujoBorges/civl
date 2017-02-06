@@ -59,4 +59,11 @@ public class SvcompBigTest {
 		assertFalse(ui.run("verify", "-svcomp16", TestConstants.QUIET,
 				filename("mix000_power.opt_false-unreach-call.i")));
 	}
+
+	// safestack_relacy_false-unreach-call
+	@Test
+	public void free_pthread_pool_test() {
+		assertFalse(ui.run("verify", "-svcomp16", 
+				filename("safestack_relacy_false-unreach-call.i")));
+	}
 }
