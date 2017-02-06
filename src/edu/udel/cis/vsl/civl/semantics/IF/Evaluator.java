@@ -4,6 +4,7 @@ import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.library.pointer.LibpointerExecutor;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -55,6 +56,11 @@ public interface Evaluator {
 	 * @param checkedOutput
 	 *            If this dereference operation is to read the variable (opposed
 	 *            to write).
+	 * @param strict
+	 *            this method will report "undefined value" only when the value
+	 *            of strict is true and the value pointed by the pointer is
+	 *            null. Currently, this value is false only when this method is
+	 *            called by LibpointerExecutor.executeCopy.
 	 * @return the value pointed to
 	 * @throws UnsatisfiablePathConditionException
 	 */
