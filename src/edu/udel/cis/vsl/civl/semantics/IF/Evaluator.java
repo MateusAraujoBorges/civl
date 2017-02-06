@@ -58,7 +58,7 @@ public interface Evaluator {
 	 *            to write).
 	 * @param strict
 	 *            this method will report "undefined value" only when the value
-	 *            of strict is true and the value pointed by the pointer is
+	 *            of strict is true and the value pointed to by the pointer is
 	 *            null. Currently, this value is false only when this method is
 	 *            called by LibpointerExecutor.executeCopy.
 	 * @return the value pointed to
