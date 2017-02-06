@@ -9,7 +9,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -64,6 +63,7 @@ import edu.udel.cis.vsl.sarl.IF.number.Number;
  * 
  * @author Manchun Zheng (zmanchun)
  * @author Timothy K. Zirkel (zirkel)
+ * @author yanyihao
  */
 public abstract class CommonEnabler implements Enabler {
 
@@ -152,12 +152,6 @@ public abstract class CommonEnabler implements Enabler {
 	protected CIVLConfiguration civlConfig;
 
 	private CollateExecutor collateExecutor;
-
-	/**
-	 * Set of canonical IDs of all canonic states which have been fully
-	 * expanded.
-	 */
-	private Set<Integer> expandedStateIDs = ConcurrentHashMap.newKeySet();
 
 	/* ***************************** Constructor *************************** */
 
@@ -1027,9 +1021,8 @@ public abstract class CommonEnabler implements Enabler {
 
 	@Override
 	public void expandTransitionSequence(TransitionSequence sequence) {
-		State state = sequence.state();
-
 		if (!sequence.containsAllEnabled()) {
+			State state = sequence.state();
 			TransitionSequence ampleSet = this.enabledTransitionsPOR(state);
 			TransitionSequence enabledSet = this.enabledTransitionsOfAllProcesses(state);
 			@SuppressWarnings("unchecked")
@@ -1038,13 +1031,13 @@ public abstract class CommonEnabler implements Enabler {
 
 			sequence.setContainingAllEnabled(true);
 			sequence.addAll(difference);
+			sequence.setContainingAllEnabled(true);
 		}
-		expandedStateIDs.add(state.getCanonicId());
 	}
 
 	@Override
 	public boolean expanded(TransitionSequence sequence) {
-		return expandedStateIDs.contains(sequence.state().getCanonicId());
+		return sequence.containsAllEnabled();
 	}
 }
 
