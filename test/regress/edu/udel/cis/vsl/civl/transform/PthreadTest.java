@@ -59,7 +59,7 @@ public class PthreadTest {
 		assertTrue(ui.run("verify", "-svcomp16", "-inputNUM=5", QUIET,
 				filename("fib_bench_true-unreach-call.c")));
 	}
-
+	
 	@Ignore
 	@Test
 	public void indexer_true() throws ABCException {
