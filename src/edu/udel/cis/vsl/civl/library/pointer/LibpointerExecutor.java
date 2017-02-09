@@ -279,7 +279,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers) {
 			eval = this.evaluator.dereference(source, state, process, null,
-					leafPtr, false);
+					leafPtr, false, true);
 			state = eval.state;
 			if (universe.equals(eval.value, argumentValues[1]).isTrue()) {
 				result = trueValue;
@@ -313,7 +313,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers) {
 			eval = this.evaluator.dereference(source, state, process, null,
-					leafPtr, false);
+					leafPtr, false, true);
 			state = eval.state;
 			if (universe.equals(eval.value, argumentValues[1]).isFalse()) {
 				result = falseValue;
@@ -527,7 +527,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 				throw new UnsatisfiablePathConditionException();
 			}
 			eval = evaluator.dereference(sourceRight, state, process,
-					arguments[1], right, false);
+					arguments[1], right, false, false);
 			state = eval.state;
 			rightValue = eval.value;
 			state = primaryExecutor.assign(source, state, process, left,
@@ -556,13 +556,13 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression first, second, rhs;
 		Evaluation eval = evaluator.dereference(arguments[0].getSource(), state,
-				process, arguments[0], argumentValues[0], false);
+				process, arguments[0], argumentValues[0], false, true);
 		int invalidArg = -1;
 
 		state = eval.state;
 		first = eval.value;
 		eval = evaluator.dereference(arguments[1].getSource(), state, process,
-				arguments[1], argumentValues[1], false);
+				arguments[1], argumentValues[1], false, true);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))
@@ -646,11 +646,11 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			return new Evaluation(state, null);
 		}
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				arguments[0], argumentValues[0], false);
+				arguments[0], argumentValues[0], false, true);
 		state = eval.state;
 		first = eval.value;
 		eval = evaluator.dereference(arguments[1].getSource(), state, process,
-				arguments[1], argumentValues[1], false);
+				arguments[1], argumentValues[1], false, true);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))
@@ -934,7 +934,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 				baseType);
 		newCount = universe.divide(newSize, elementTypeSize);
 		eval = evaluator.dereference(source, teval.state, process, arguments[0],
-				heapPtr, false);
+				heapPtr, false, true);
 		state = eval.state;
 		heap = eval.value;
 		heapCount = universe.length(eval.value);

@@ -250,7 +250,7 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		Evaluation eval;
 
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				arguments[0], gcheckerHandle, false);
+				arguments[0], gcheckerHandle, false, true);
 		state = eval.state;
 		gchecker = eval.value;
 		records_length = (NumericExpression) universe.tupleRead(gchecker,
@@ -317,12 +317,12 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		// Decides "numTypes", it must be a concrete number.
 		reasoner = universe.reasoner(state.getPathCondition());
 		eval = evaluator.dereference(source, state, process, arguments[0],
-				checkhandle, false);
+				checkhandle, false, true);
 		state = eval.state;
 		check = eval.value;
 		gcheckHandle = universe.tupleRead(check, zeroObject);
 		eval = evaluator.dereference(source, state, process, null,
-				gcheckHandle, false);
+				gcheckHandle, false, true);
 		state = eval.state;
 		gcheck = eval.value;
 		// ------Step 1: Check if the process is the first process for a new

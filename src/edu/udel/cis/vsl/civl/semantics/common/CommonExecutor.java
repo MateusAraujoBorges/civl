@@ -1329,11 +1329,11 @@ public class CommonExecutor implements Executor {
 		ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
 		State result;
 		Variable variable;
-		Evaluation eval;
+//		Evaluation eval;
 
-		eval = evaluator.dereference(source, state, process, null, pointer,
-				false);
-		state = eval.state;
+//		eval = evaluator.dereference(source, state, process, null, pointer,
+//				false);
+//		state = eval.state;
 		if (sid < 0) {
 			errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
