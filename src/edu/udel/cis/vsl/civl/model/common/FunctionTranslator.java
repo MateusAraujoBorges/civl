@@ -40,6 +40,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FieldDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.OrdinaryDeclarationNode.OrdinaryDeclarationKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ArrayLambdaNode;
@@ -485,85 +486,87 @@ public class FunctionTranslator {
 
 		modelFactory.addConditionalExpressionQueue();
 		switch (statementNode.statementKind()) {
-		// case ASSUME:
-		// result = translateAssumeNode(scope, (AssumeNode) statementNode);
-		// break;
-		// case ASSERT:
-		// result = translateAssertNode(scope, (AssertNode) statementNode);
-		// break;
-		case ATOMIC:
-			result = translateAtomicNode(scope, (AtomicNode) statementNode);
-			break;
-		case CHOOSE:
-			result = translateChooseNode(scope,
-					(ChooseStatementNode) statementNode);
-			break;
-		case CIVL_FOR: {
-			CivlForNode forNode = (CivlForNode) statementNode;
+			// case ASSUME:
+			// result = translateAssumeNode(scope, (AssumeNode) statementNode);
+			// break;
+			// case ASSERT:
+			// result = translateAssertNode(scope, (AssertNode) statementNode);
+			// break;
+			case ATOMIC :
+				result = translateAtomicNode(scope, (AtomicNode) statementNode);
+				break;
+			case CHOOSE :
+				result = translateChooseNode(scope,
+						(ChooseStatementNode) statementNode);
+				break;
+			case CIVL_FOR : {
+				CivlForNode forNode = (CivlForNode) statementNode;
 
-			if (forNode.isParallel())
-				result = translateParForNode(scope, forNode);
-			else
-				result = translateCivlForNode(scope, forNode);
-			break;
-		}
-		case COMPOUND:
-			result = translateCompoundStatementNode(scope,
-					(CompoundStatementNode) statementNode);
-			break;
-		case EXPRESSION:
-			if (((ExpressionStatementNode) statementNode)
-					.getExpression() == null)
-				result = new CommonFragment();
-			else
-				result = translateExpressionStatementNode(scope,
-						((ExpressionStatementNode) statementNode)
-								.getExpression());
-			break;
-		// case FOR:
-		// result = translateForLoopNode(scope, (ForLoopNode)
-		// statementNode);
-		// break;
-		// case GOTO:
-		// result = translateGotoNode(scope, (GotoNode) statementNode);
-		// break;
-		case IF:
-			result = translateIfNode(scope, (IfNode) statementNode);
-			break;
-		case JUMP:
-			result = translateJumpNode(scope, (JumpNode) statementNode);
-			break;
-		case LABELED:
-			result = translateLabelStatementNode(scope,
-					(LabeledStatementNode) statementNode);
-			break;
-		case LOOP:// either WHILE loop or DO_WHILE loop
-			result = translateLoopNode(scope, (LoopNode) statementNode);
-			break;
-		case NULL:
-			result = translateNullStatementNode(scope,
-					(NullStatementNode) statementNode);
-			break;
-		case RUN:
-			result = translateRunStatementNode(scope, (RunNode) statementNode);
-			break;
-		case SWITCH:
-			result = translateSwitchNode(scope, (SwitchNode) statementNode);
-			break;
-		case UPDATE:
-			result = translateUpdateNodeNew(scope, (UpdateNode) statementNode);
-			break;
-		case WHEN:
-			result = translateWhenNode(scope, (WhenNode) statementNode);
-			break;
-		case WITH:
-			result = translateWithNodeNew(scope, (WithNode) statementNode);
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"translating statement nodes of type "
-							+ statementNode.statementKind(),
-					modelFactory.sourceOf(statementNode));
+				if (forNode.isParallel())
+					result = translateParForNode(scope, forNode);
+				else
+					result = translateCivlForNode(scope, forNode);
+				break;
+			}
+			case COMPOUND :
+				result = translateCompoundStatementNode(scope,
+						(CompoundStatementNode) statementNode);
+				break;
+			case EXPRESSION :
+				if (((ExpressionStatementNode) statementNode)
+						.getExpression() == null)
+					result = new CommonFragment();
+				else
+					result = translateExpressionStatementNode(scope,
+							((ExpressionStatementNode) statementNode)
+									.getExpression());
+				break;
+			// case FOR:
+			// result = translateForLoopNode(scope, (ForLoopNode)
+			// statementNode);
+			// break;
+			// case GOTO:
+			// result = translateGotoNode(scope, (GotoNode) statementNode);
+			// break;
+			case IF :
+				result = translateIfNode(scope, (IfNode) statementNode);
+				break;
+			case JUMP :
+				result = translateJumpNode(scope, (JumpNode) statementNode);
+				break;
+			case LABELED :
+				result = translateLabelStatementNode(scope,
+						(LabeledStatementNode) statementNode);
+				break;
+			case LOOP :// either WHILE loop or DO_WHILE loop
+				result = translateLoopNode(scope, (LoopNode) statementNode);
+				break;
+			case NULL :
+				result = translateNullStatementNode(scope,
+						(NullStatementNode) statementNode);
+				break;
+			case RUN :
+				result = translateRunStatementNode(scope,
+						(RunNode) statementNode);
+				break;
+			case SWITCH :
+				result = translateSwitchNode(scope, (SwitchNode) statementNode);
+				break;
+			case UPDATE :
+				result = translateUpdateNodeNew(scope,
+						(UpdateNode) statementNode);
+				break;
+			case WHEN :
+				result = translateWhenNode(scope, (WhenNode) statementNode);
+				break;
+			case WITH :
+				result = translateWithNodeNew(scope, (WithNode) statementNode);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"translating statement nodes of type "
+								+ statementNode.statementKind(),
+						modelFactory.sourceOf(statementNode));
 		}
 		if (modelFactory.hasConditionalExpressions() == true) {
 			result = modelFactory.refineConditionalExpressionOfStatement(
@@ -808,7 +811,8 @@ public class FunctionTranslator {
 		Statement elaborateCall;
 		SequenceNode<ContractNode> loopContractNode = civlForNode
 				.loopContracts();
-		LoopContract loopContract = loopContractNode == null ? null
+		LoopContract loopContract = loopContractNode == null
+				? null
 				: this.translateLoopInvariants(scope, null, loopContractNode,
 						modelFactory.sourceOf(loopContractNode));
 
@@ -939,7 +943,8 @@ public class FunctionTranslator {
 				stmts = translateFunctionCall(scope, tmpLhs, functionCallNode,
 						isCall, source);
 				assert stmts.length == 1 || stmts.length == 2;
-				result = stmts.length == 1 ? new CommonFragment(stmts[0])
+				result = stmts.length == 1
+						? new CommonFragment(stmts[0])
 						: new CommonFragment(stmts[0], stmts[1]);
 				tmpLhs = this.modelFactory.variableExpression(source, tmpVar);
 				castTmp = this.applyConversions(scope, functionCallNode,
@@ -953,7 +958,8 @@ public class FunctionTranslator {
 				stmts = translateFunctionCall(scope, lhs, functionCallNode,
 						isCall, source);
 				assert stmts.length == 1 || stmts.length == 2;
-				return stmts.length == 1 ? new CommonFragment(stmts[0])
+				return stmts.length == 1
+						? new CommonFragment(stmts[0])
 						: new CommonFragment(stmts[0], stmts[1]);
 			}
 
@@ -1005,31 +1011,31 @@ public class FunctionTranslator {
 					.getIdentifier().getEntity();
 
 			switch (entity.getEntityKind()) {
-			case FUNCTION:
-				callee = (Function) entity;
-				result = modelFactory.callOrSpawnStatement(source, location,
-						isCall, null, arguments, null);
-				break;
-			case VARIABLE:
-				Expression function = this.translateExpressionNode(
-						functionExpression, scope, true);
+				case FUNCTION :
+					callee = (Function) entity;
+					result = modelFactory.callOrSpawnStatement(source, location,
+							isCall, null, arguments, null);
+					break;
+				case VARIABLE :
+					Expression function = this.translateExpressionNode(
+							functionExpression, scope, true);
 
-				callee = null;
-				result = modelFactory.callOrSpawnStatement(source, location,
-						isCall, function, arguments, null);
-				// added function guard expression since the function could
-				// be a
-				// system function which has an outstanding guard, only when
-				// it
-				// is a call statement
-				if (isCall)
-					result.setGuard(modelFactory.functionGuardExpression(source,
-							function, arguments));
-				break;
-			default:
-				throw new CIVLUnimplementedFeatureException(
-						"Function call must use identifier of variables or functions for now: "
-								+ functionExpression.getSource());
+					callee = null;
+					result = modelFactory.callOrSpawnStatement(source, location,
+							isCall, function, arguments, null);
+					// added function guard expression since the function could
+					// be a
+					// system function which has an outstanding guard, only when
+					// it
+					// is a call statement
+					if (isCall)
+						result.setGuard(modelFactory.functionGuardExpression(
+								source, function, arguments));
+					break;
+				default :
+					throw new CIVLUnimplementedFeatureException(
+							"Function call must use identifier of variables or functions for now: "
+									+ functionExpression.getSource());
 			}
 		} else {
 			Expression function = this
@@ -1221,43 +1227,45 @@ public class FunctionTranslator {
 					.primitiveTypeKind();
 
 			switch (kind) {
-			case BOOL:
-				if (constant instanceof Boolean)
-					return modelFactory.booleanLiteralExpression(source,
-							(boolean) constant);
-				else
-					throw new CommandLineException(
-							"Expected boolean value for variable " + variable
-									+ " but saw " + constant);
-			case INT:
-				if (constant instanceof BigInteger)
-					return modelFactory.integerLiteralExpression(source,
-							(BigInteger) constant);
-				if (constant instanceof Integer)
-					return modelFactory.integerLiteralExpression(source,
-							new BigInteger(((Integer) constant).toString()));
-				if (constant instanceof String)
-					return modelFactory.integerLiteralExpression(source,
-							new BigInteger((String) constant));
-				else
-					throw new CommandLineException(
-							"Expected integer value for variable " + variable
-									+ " but saw " + constant);
-			case REAL:
-				if (constant instanceof Integer)
-					return modelFactory.realLiteralExpression(source,
-							new BigDecimal(((Integer) constant).toString()));
-				if (constant instanceof Double)
-					return modelFactory.realLiteralExpression(source,
-							new BigDecimal(((Double) constant).toString()));
-				if (constant instanceof String)
-					return modelFactory.realLiteralExpression(source,
-							new BigDecimal((String) constant));
-				else
-					throw new CommandLineException(
-							"Expected real value for variable " + variable
-									+ " but saw " + constant);
-			default:
+				case BOOL :
+					if (constant instanceof Boolean)
+						return modelFactory.booleanLiteralExpression(source,
+								(boolean) constant);
+					else
+						throw new CommandLineException(
+								"Expected boolean value for variable "
+										+ variable + " but saw " + constant);
+				case INT :
+					if (constant instanceof BigInteger)
+						return modelFactory.integerLiteralExpression(source,
+								(BigInteger) constant);
+					if (constant instanceof Integer)
+						return modelFactory.integerLiteralExpression(source,
+								new BigInteger(
+										((Integer) constant).toString()));
+					if (constant instanceof String)
+						return modelFactory.integerLiteralExpression(source,
+								new BigInteger((String) constant));
+					else
+						throw new CommandLineException(
+								"Expected integer value for variable "
+										+ variable + " but saw " + constant);
+				case REAL :
+					if (constant instanceof Integer)
+						return modelFactory.realLiteralExpression(source,
+								new BigDecimal(
+										((Integer) constant).toString()));
+					if (constant instanceof Double)
+						return modelFactory.realLiteralExpression(source,
+								new BigDecimal(((Double) constant).toString()));
+					if (constant instanceof String)
+						return modelFactory.realLiteralExpression(source,
+								new BigDecimal((String) constant));
+					else
+						throw new CommandLineException(
+								"Expected real value for variable " + variable
+										+ " but saw " + constant);
+				default :
 			}
 		} else {
 			if (type.isArrayType()) {
@@ -1587,74 +1595,76 @@ public class FunctionTranslator {
 		Fragment result = null;
 
 		switch (node.nodeKind()) {
-		case VARIABLE_DECLARATION:
-			try {
-				result = translateVariableDeclarationNode(location, scope,
-						(VariableDeclarationNode) node);
-				if (!modelFactory.anonFragment().isEmpty()) {
-					result = modelFactory.anonFragment().combineWith(result);
-					modelFactory.clearAnonFragment();
+			case VARIABLE_DECLARATION :
+				try {
+					result = translateVariableDeclarationNode(location, scope,
+							(VariableDeclarationNode) node);
+					if (!modelFactory.anonFragment().isEmpty()) {
+						result = modelFactory.anonFragment()
+								.combineWith(result);
+						modelFactory.clearAnonFragment();
+					}
+				} catch (CommandLineException e) {
+					throw new CIVLInternalException(
+							"Saw input variable outside of root scope",
+							modelFactory.sourceOf(node));
 				}
-			} catch (CommandLineException e) {
-				throw new CIVLInternalException(
-						"Saw input variable outside of root scope",
-						modelFactory.sourceOf(node));
-			}
-			break;
-		case PRAGMA:// ignored pragma
-			result = new CommonFragment();
-			break;
-		case TYPEDEF:
-			// TypedefDeclarationNode node has to be processed separately
-			// from
-			// StructureOrUnionTypeNode, because TypedefDeclarationNode is
-			// not a
-			// sub-type of TypeNode but the one returned by
-			// TypedefDeclarationNode.getTypeNode() is.
-			result = translateCompoundTypeNode(location, scope,
-					((TypedefDeclarationNode) node).getTypeNode());
-			break;
-		case FUNCTION_DEFINITION:
-			FunctionDefinitionNode functionDefinitionNode = (FunctionDefinitionNode) node;
-			if (functionDefinitionNode.getName().equals("main")) {
-				// TODO arguments to main() become arguments to the system
-				// function; specified by command line, after the .cvl file
-				// name; think about how to initialize them.
-				modelBuilder.mainFunctionNode = functionDefinitionNode;
-			} else
-				translateFunctionDeclarationNode(functionDefinitionNode, scope,
-						null);
-			break;
-		case FUNCTION_DECLARATION:
-			result = translateFunctionDeclarationNode(
-					(FunctionDeclarationNode) node, scope, null);
-			break;
-		case STATEMENT:
-			result = translateStatementNode(scope, (StatementNode) node);
-			break;
-		case TYPE:
-			TypeNode typeNode = (TypeNode) node;
-
-			switch (typeNode.kind()) {
-			case STRUCTURE_OR_UNION:
-			case ENUMERATION:
+				break;
+			case PRAGMA :// ignored pragma
+				result = new CommonFragment();
+				break;
+			case TYPEDEF :
+				// TypedefDeclarationNode node has to be processed separately
+				// from
+				// StructureOrUnionTypeNode, because TypedefDeclarationNode is
+				// not a
+				// sub-type of TypeNode but the one returned by
+				// TypedefDeclarationNode.getTypeNode() is.
 				result = translateCompoundTypeNode(location, scope,
-						(TypeNode) node);
-				return result;
-			default:
-			}
-			// if not structure or union type or enumeration type, then
-			// execute
-			// default
-			// case to throw an exception
-		default:
-			if (scope.id() == modelBuilder.rootScope.id())
-				throw new CIVLInternalException("Unsupported declaration type",
-						modelFactory.sourceOf(node));
-			else
-				throw new CIVLUnimplementedFeatureException(
-						"Unsupported block element",
-						modelFactory.sourceOf(node));
+						((TypedefDeclarationNode) node).getTypeNode());
+				break;
+			case FUNCTION_DEFINITION :
+				FunctionDefinitionNode functionDefinitionNode = (FunctionDefinitionNode) node;
+				if (functionDefinitionNode.getName().equals("main")) {
+					// TODO arguments to main() become arguments to the system
+					// function; specified by command line, after the .cvl file
+					// name; think about how to initialize them.
+					modelBuilder.mainFunctionNode = functionDefinitionNode;
+				} else
+					translateFunctionDeclarationNode(functionDefinitionNode,
+							scope);
+				break;
+			case FUNCTION_DECLARATION :
+				result = translateFunctionDeclarationNode(
+						(FunctionDeclarationNode) node, scope);
+				break;
+			case STATEMENT :
+				result = translateStatementNode(scope, (StatementNode) node);
+				break;
+			case TYPE :
+				TypeNode typeNode = (TypeNode) node;
+
+				switch (typeNode.kind()) {
+					case STRUCTURE_OR_UNION :
+					case ENUMERATION :
+						result = translateCompoundTypeNode(location, scope,
+								(TypeNode) node);
+						return result;
+					default :
+				}
+				// if not structure or union type or enumeration type, then
+				// execute
+				// default
+				// case to throw an exception
+			default :
+				if (scope.id() == modelBuilder.rootScope.id())
+					throw new CIVLInternalException(
+							"Unsupported declaration type",
+							modelFactory.sourceOf(node));
+				else
+					throw new CIVLUnimplementedFeatureException(
+							"Unsupported block element",
+							modelFactory.sourceOf(node));
 		}
 		return result;
 	}
@@ -1733,7 +1743,8 @@ public class FunctionTranslator {
 		while (firstStmtsIter.hasNext()) {
 			Statement currStmt = firstStmtsIter.next();
 
-			guard = (guard == null) ? currStmt.guard()
+			guard = (guard == null)
+					? currStmt.guard()
 					: modelFactory.binaryExpression(currStmt.getSource(),
 							BINARY_OPERATOR.AND, guard, currStmt.guard());
 		}
@@ -2068,95 +2079,98 @@ public class FunctionTranslator {
 				modelFactory.sourceOfBeginning(expressionNode), scope);
 
 		switch (expressionNode.expressionKind()) {
-		// case CAST: {
-		// CastNode castNode = (CastNode) expressionNode;
-		// CIVLType castType = translateABCType(
-		// modelFactory.sourceOf(castNode.getCastType()), scope,
-		// castNode.getCastType().getType());
-		//
-		// if (castType.isVoidType()) {
-		// Statement noopStatement = modelFactory.noopStatement(
-		// modelFactory.sourceOf(castNode), location);
-		//
-		// result = new CommonFragment(noopStatement);
-		// } else
-		// throw new CIVLUnimplementedFeatureException(
-		// "expression statement of a cast expression with the cast type "
-		// + castType,
-		// modelFactory.sourceOf(expressionNode));
-		// break;
-		// }
-		case OPERATOR: {
-			OperatorNode operatorNode = (OperatorNode) expressionNode;
+			// case CAST: {
+			// CastNode castNode = (CastNode) expressionNode;
+			// CIVLType castType = translateABCType(
+			// modelFactory.sourceOf(castNode.getCastType()), scope,
+			// castNode.getCastType().getType());
+			//
+			// if (castType.isVoidType()) {
+			// Statement noopStatement = modelFactory.noopStatement(
+			// modelFactory.sourceOf(castNode), location);
+			//
+			// result = new CommonFragment(noopStatement);
+			// } else
+			// throw new CIVLUnimplementedFeatureException(
+			// "expression statement of a cast expression with the cast type "
+			// + castType,
+			// modelFactory.sourceOf(expressionNode));
+			// break;
+			// }
+			case OPERATOR : {
+				OperatorNode operatorNode = (OperatorNode) expressionNode;
 
-			switch (operatorNode.getOperator()) {
-			case ASSIGN:
-				result = translateAssignNode(scope, operatorNode);
-				break;
-			case COMMA: {
-				int number = operatorNode.getNumberOfArguments();
-				result = new CommonFragment();
+				switch (operatorNode.getOperator()) {
+					case ASSIGN :
+						result = translateAssignNode(scope, operatorNode);
+						break;
+					case COMMA : {
+						int number = operatorNode.getNumberOfArguments();
+						result = new CommonFragment();
 
-				for (int i = 0; i < number; i++) {
-					ExpressionNode argument = operatorNode.getArgument(i);
-					Fragment current = this
-							.translateExpressionStatementNode(scope, argument);
+						for (int i = 0; i < number; i++) {
+							ExpressionNode argument = operatorNode
+									.getArgument(i);
+							Fragment current = this
+									.translateExpressionStatementNode(scope,
+											argument);
 
-					result = result.combineWith(current);
+							result = result.combineWith(current);
+						}
+						break;
+					}
+					case POSTINCREMENT :
+					case PREINCREMENT :
+					case POSTDECREMENT :
+					case PREDECREMENT :
+						throw new CIVLInternalException(
+								"Side-effect not removed: ",
+								modelFactory.sourceOf(operatorNode));
+					default : {// since side-effects have been removed,
+								// the only expressions remaining with
+								// side-effects
+								// are assignments. all others are equivalent to
+								// no-op
+						Expression expression = this.translateExpressionNode(
+								expressionNode, scope, true);
+						Statement noopStatement = modelFactory.noopStatement(
+								modelFactory.sourceOf(operatorNode), location,
+								expression);
+
+						result = new CommonFragment(noopStatement);
+					}
 				}
 				break;
 			}
-			case POSTINCREMENT:
-			case PREINCREMENT:
-			case POSTDECREMENT:
-			case PREDECREMENT:
-				throw new CIVLInternalException("Side-effect not removed: ",
-						modelFactory.sourceOf(operatorNode));
-			default: {// since side-effects have been removed,
-						// the only expressions remaining with
-						// side-effects
-						// are assignments. all others are equivalent to
-						// no-op
+			case SPAWN :
+				result = translateSpawnNode(scope, (SpawnNode) expressionNode);
+				break;
+			case FUNCTION_CALL :
+				result = translateFunctionCallNode(scope,
+						(FunctionCallNode) expressionNode,
+						modelFactory.sourceOf(expressionNode));
+				break;
+			case CONSTANT :
+				// case IDENTIFIER_EXPRESSION: {
+				// Statement noopStatement = modelFactory.noopStatement(
+				// modelFactory.sourceOf(expressionNode), location, null);
+				//
+				// result = new CommonFragment(noopStatement);
+				// }
+				// break;
+			default : {
 				Expression expression = this
 						.translateExpressionNode(expressionNode, scope, true);
 				Statement noopStatement = modelFactory.noopStatement(
-						modelFactory.sourceOf(operatorNode), location,
+						modelFactory.sourceOf(expressionNode), location,
 						expression);
 
 				result = new CommonFragment(noopStatement);
+				// throw new CIVLUnimplementedFeatureException(
+				// "expression statement of this kind "
+				// + expressionNode.expressionKind(),
+				// modelFactory.sourceOf(expressionNode));
 			}
-			}
-			break;
-		}
-		case SPAWN:
-			result = translateSpawnNode(scope, (SpawnNode) expressionNode);
-			break;
-		case FUNCTION_CALL:
-			result = translateFunctionCallNode(scope,
-					(FunctionCallNode) expressionNode,
-					modelFactory.sourceOf(expressionNode));
-			break;
-		case CONSTANT:
-			// case IDENTIFIER_EXPRESSION: {
-			// Statement noopStatement = modelFactory.noopStatement(
-			// modelFactory.sourceOf(expressionNode), location, null);
-			//
-			// result = new CommonFragment(noopStatement);
-			// }
-			// break;
-		default: {
-			Expression expression = this.translateExpressionNode(expressionNode,
-					scope, true);
-			Statement noopStatement = modelFactory.noopStatement(
-					modelFactory.sourceOf(expressionNode), location,
-					expression);
-
-			result = new CommonFragment(noopStatement);
-			// throw new CIVLUnimplementedFeatureException(
-			// "expression statement of this kind "
-			// + expressionNode.expressionKind(),
-			// modelFactory.sourceOf(expressionNode));
-		}
 		}
 		return result;
 	}
@@ -2207,41 +2221,41 @@ public class FunctionTranslator {
 		List<Variable> variables = new ArrayList<>();
 
 		switch (initNode.nodeKind()) {
-		case EXPRESSION:
-			ExpressionNode initExpression = (ExpressionNode) initNode;
+			case EXPRESSION :
+				ExpressionNode initExpression = (ExpressionNode) initNode;
 
-			location = modelFactory.location(
-					modelFactory.sourceOfBeginning(initNode), newScope);
-			initFragment = translateExpressionStatementNode(newScope,
-					initExpression);
-			break;
-		case DECLARATION_LIST:
-			newScope = modelFactory.scope(modelFactory.sourceOf(initNode),
-					newScope, new ArrayList<>(0), functionInfo.function());
-			for (int i = 0; i < ((DeclarationListNode) initNode)
-					.numChildren(); i++) {
-				VariableDeclarationNode declaration = ((DeclarationListNode) initNode)
-						.getSequenceChild(i);
-
-				if (declaration == null)
-					continue;
-
-				Variable variable = translateVariableDeclarationNode(
-						declaration, newScope);
-				Fragment fragment;
-
-				variables.add(variable);
 				location = modelFactory.location(
 						modelFactory.sourceOfBeginning(initNode), newScope);
-				fragment = translateVariableInitializationNode(declaration,
-						variable, location, newScope);
-				initFragment = initFragment.combineWith(fragment);
-			}
-			break;
-		default:
-			throw new CIVLInternalException(
-					"A for loop initializer must be an expression or a declaration list.",
-					modelFactory.sourceOf(initNode));
+				initFragment = translateExpressionStatementNode(newScope,
+						initExpression);
+				break;
+			case DECLARATION_LIST :
+				newScope = modelFactory.scope(modelFactory.sourceOf(initNode),
+						newScope, new ArrayList<>(0), functionInfo.function());
+				for (int i = 0; i < ((DeclarationListNode) initNode)
+						.numChildren(); i++) {
+					VariableDeclarationNode declaration = ((DeclarationListNode) initNode)
+							.getSequenceChild(i);
+
+					if (declaration == null)
+						continue;
+
+					Variable variable = translateVariableDeclarationNode(
+							declaration, newScope);
+					Fragment fragment;
+
+					variables.add(variable);
+					location = modelFactory.location(
+							modelFactory.sourceOfBeginning(initNode), newScope);
+					fragment = translateVariableInitializationNode(declaration,
+							variable, location, newScope);
+					initFragment = initFragment.combineWith(fragment);
+				}
+				break;
+			default :
+				throw new CIVLInternalException(
+						"A for loop initializer must be an expression or a declaration list.",
+						modelFactory.sourceOf(initNode));
 		}
 		return new Triple<>(newScope, initFragment, variables);
 	}
@@ -2303,7 +2317,8 @@ public class FunctionTranslator {
 				assert arguments.size() == 2;
 
 				BINARY_OPERATOR op = functionName.equals("$quotient")
-						? BINARY_OPERATOR.DIVIDE : BINARY_OPERATOR.MODULO;
+						? BINARY_OPERATOR.DIVIDE
+						: BINARY_OPERATOR.MODULO;
 				Expression binary = modelFactory.binaryExpression(source, op,
 						arguments.get(0), arguments.get(1));
 
@@ -2393,34 +2408,34 @@ public class FunctionTranslator {
 	 *            the scope in which the function declaration occurs
 	 */
 	private Fragment translateFunctionDeclarationNode(
-			FunctionDeclarationNode node, Scope scope,
-			ArrayList<Variable> scopedParameters) {
+			FunctionDeclarationNode node, Scope scope) {
 		Function entity = node.getEntity();
 		SequenceNode<ContractNode> contract = node.getContract();
 		CIVLFunction result;
 		Fragment fragment = null;
+		// Flag: True if and only if the given node represents a regular
+		// function definition:
+		boolean isRegularDefinition = node
+				.ordinaryDeclarationKind() == OrdinaryDeclarationKind.FUNCTION_DEFINITION;
 
 		if (entity == null)
 			throw new CIVLInternalException("Unresolved function declaration",
 					modelFactory.sourceOf(node));
-		// ignore pure function declarations for functions that have its
-		// corresponding definition node.
-		if ((entity.getDefinition() != null)
-				&& (!(node instanceof FunctionDefinitionNode))) {
-			// Since function definition hasn't be translated, find out the
-			// definition node, translate it.
-			FunctionDefinitionNode defNode = entity.getDefinition();
-
-			translateASTNode(defNode, scope, null);
-		}
 		result = modelBuilder.functionMap.get(entity);
-		if (result == null) {
+		// Create or update the CIVLFunction object in two cases:
+		// 1. It is the first time encountering the function declaration or
+		// definition.
+		// 2. It is a regular function definition, then the CIVLFunction should
+		// be updated in case parameter names are different from previous
+		// declarations.
+		if (result == null || isRegularDefinition) {
 			CIVLSource nodeSource = modelFactory.sourceOf(node);
-			String functionName = entity.getName();
+			Scope parameterScope = modelFactory.scope(nodeSource, scope,
+					new ArrayList<>(0), null);
 			CIVLSource identifierSource = modelFactory
 					.sourceOf(node.getIdentifier());
 			Identifier functionIdentifier = modelFactory
-					.identifier(identifierSource, functionName);
+					.identifier(identifierSource, entity.getName());
 			ArrayList<Variable> parameters = new ArrayList<Variable>();
 			// type should come from entity, not this type node.
 			// if it has a definition node, should probably use that one.
@@ -2433,27 +2448,20 @@ public class FunctionTranslator {
 			SequenceNode<VariableDeclarationNode> abcParameters = functionTypeNode
 					.getParameters();
 			int numParameters = abcParameters.numChildren();
-			Scope parameterScope;
 
-			if (scopedParameters != null) {
-				parameters.addAll(0, scopedParameters);
-			}
-			parameterScope = modelFactory.scope(nodeSource, scope,
-					new ArrayList<>(0), null);
 			for (int i = 0; i < numParameters; i++) {
 				VariableDeclarationNode decl = abcParameters
 						.getSequenceChild(i);
 
 				// Don't process void types. Should only happen in the prototype
 				// of a function with no parameters.
-				if (decl.getTypeNode().kind() == TypeNodeKind.VOID)
-					continue;
-				else {
+				if (decl.getTypeNode().kind() != TypeNodeKind.VOID) {
 					CIVLType type = translateABCType(
 							modelFactory.sourceOf(decl), parameterScope,
 							functionType.getParameterType(i));
 					CIVLSource source = modelFactory.sourceOf(decl);
-					String varName = decl.getName() == null ? "_arg" + i
+					String varName = decl.getName() == null
+							? "_arg" + i
 							: decl.getName();
 					Identifier variableName = modelFactory.identifier(source,
 							varName);
@@ -2466,81 +2474,22 @@ public class FunctionTranslator {
 					parameterScope.addVariable(parameter);
 				}
 			}
-			if (entity.getDefinition() != null) {
-				// regular function
-				result = modelFactory.function(nodeSource, entity.isAtomic(),
-						functionIdentifier, parameterScope, parameters,
-						returnType, scope, null);
-				modelBuilder.unprocessedFunctions.add(entity.getDefinition());
-			} else if (entity.isSystemFunction()) {
-				Source declSource = node.getIdentifier().getSource();
-				CivlcToken token = declSource.getFirstToken();
-				File file = token.getSourceFile().getFile();
-				// fileName will be something like "stdlib.h" or "civlc.h"
-				String fileName = file.getName();
-				String libName;
-
-				switch (functionIdentifier.name()) {
-				case "$assert":
-				case "$assume":
-				case "$defined":
-				case "$havoc":
-					libName = "civlc";
-					break;
-				case "$assert_equals":
-				case "$equals":
-					libName = "pointer";
-					break;
-				default: {
-					libName = entity.systemLibrary();
-
-					if (libName == null) {
-						if (!fileName.contains("."))
-							throw new CIVLInternalException(
-									"Malformed file name " + fileName
-											+ " containing system function "
-											+ functionName,
-									nodeSource);
-						libName = fileNameWithoutExtension(fileName);
-					}
-				}
-				}
-				result = modelFactory.systemFunction(nodeSource,
-						functionIdentifier, parameterScope, parameters,
-						returnType, scope, libName);
-			} else if (node instanceof AbstractFunctionDefinitionNode) {
-				int continuity = ((AbstractFunctionDefinitionNode) node)
-						.continuity();
-
-				if (parameters.isEmpty())
-					throw new CIVLSyntaxException(
-							"$abstract functions must have at least one input.\n"
-									+ "An abstract function with 0 inputs is a constant.\n"
-									+ "It can be declared as an unconstrained input variable instead, e.g.\n"
-									+ "$input int N;",
-							node.getSource());
-				result = modelFactory.abstractFunction(nodeSource,
-						functionIdentifier, parameterScope, parameters,
-						returnType, scope, continuity, modelFactory);
-
-				// TODO: create this statement and make it a Fragment...
-
-				// assume(differentiable(f, degree, {a1, a2}, {b1, b2}))
-				// a1, a2, ... are the lower bounds of the intervals
-				// b1, b2, ... are the upper bounds of the intervals
-				// degree = continuity
-
-			} else if (this.civlConfig.svcomp()) {
-				result = modelFactory.nondetFunction(nodeSource,
-						functionIdentifier, returnType, scope);
-			} else {
-				throw new CIVLSyntaxException(
-						"missing the definition of function " + functionName,
-						node.getSource());
-			}
+			if (entity.getDefinition() != null)
+				result = buildRegularCIVLFunction(entity, node, scope,
+						parameterScope, parameters, functionIdentifier,
+						functionType, returnType, nodeSource);
+			else if (entity.isSystemFunction())
+				result = buildSystemCIVLFunction(entity, node, scope,
+						parameterScope, parameters, functionIdentifier,
+						functionType, returnType, nodeSource);
+			else if (entity.isAbstract())
+				result = buildAbstractCIVLFunction(entity, node, scope,
+						parameterScope, parameters, functionIdentifier,
+						functionType, returnType, nodeSource);
 			result.setStateFunction(node.hasStatefFunctionSpecifier());
 			result.setPureFunction(node.hasPureFunctionSpecifier());
-			scope.addFunction(result);
+			if (scope.getFunction(result.name()) == null)
+				scope.addFunction(result);
 			parameterScope.setFunction(result);
 			modelBuilder.functionMap.put(entity, result);
 		}
@@ -2551,6 +2500,186 @@ public class FunctionTranslator {
 			contractTranslator.translateFunctionContract(contract);
 		}
 		return fragment;
+	}
+
+	/**
+	 * <p>
+	 * Creates or update a {@link CIVLFunction} object for a regular function
+	 * entity. The CIVLFunction will be created at the first time the translator
+	 * encounters either the declaration or the definition of a function; The
+	 * CIVLFunction will be updated with its parameters and parameter scope when
+	 * the definition of it is encountered after being created.
+	 * </p>
+	 * 
+	 * <p>
+	 * The CIVLFunction will be added to "modelBuilder.unprocessedFunctions"
+	 * once its definition is encountered.
+	 * </p>
+	 * 
+	 * @param entity
+	 *            An entity associates to a regular function.
+	 * @param node
+	 *            An instance of a {@link FunctionDeclarationNode}
+	 * @param scope
+	 *            The {@link Scope} where the function is located
+	 * @param parameterScope
+	 *            The {@link Scope} where the function parameters are located
+	 * @param parameters
+	 *            An {@link ArrayList} of {@link Variable}s which are formal
+	 *            parameters
+	 * @param functionIdentifier
+	 *            The {@link Identifier} of the function
+	 * @param functionType
+	 *            The {@link FunctionType} of the function
+	 * @param returnType
+	 *            The function return type
+	 * @param functionSource
+	 *            The {@link CIVLSource} associated to the function declaration
+	 *            (or definition).
+	 * @return The created (or updated) CIVLFunction object.
+	 */
+	private CIVLFunction buildRegularCIVLFunction(Function entity,
+			FunctionDeclarationNode node, Scope scope, Scope parameterScope,
+			ArrayList<Variable> parameters, Identifier functionIdentifier,
+			FunctionType functionType, CIVLType returnType,
+			CIVLSource functionSource) {
+		CIVLFunction result = modelBuilder.functionMap.get(entity);
+		boolean isDefinition = node
+				.ordinaryDeclarationKind() == OrdinaryDeclarationKind.FUNCTION_DEFINITION;
+
+		// If it's the first time encountering either the function declaration
+		// or definition, create the CIVLFunction object, else if it encounters
+		// a function definition, update the parameters:
+		if (result == null)
+			result = modelFactory.function(functionSource, entity.isAtomic(),
+					functionIdentifier, parameterScope, parameters, returnType,
+					scope, null);
+		else if (isDefinition) {
+			result.setOuterScope(parameterScope);
+			result.setParameters(parameters);
+		}
+		// add to the unprocessedFunctions:
+		if (isDefinition)
+			modelBuilder.unprocessedFunctions.add(entity.getDefinition());
+		return result;
+	}
+
+	/**
+	 * <p>
+	 * Create a {@link CIVLFunction} object for a CIVL system function. This
+	 * method should only be called once per entity. The CIVLFunction object
+	 * should be created when the first time the translator encounters a
+	 * declaration.
+	 * <p>
+	 * 
+	 * @param entity
+	 *            An entity associates to a regular function.
+	 * @param node
+	 *            An instance of a {@link FunctionDeclarationNode}
+	 * @param scope
+	 *            The {@link Scope} where the function is located
+	 * @param parameterScope
+	 *            The {@link Scope} where the function parameters are located
+	 * @param parameters
+	 *            An {@link ArrayList} of {@link Variable}s which are formal
+	 *            parameters
+	 * @param functionIdentifier
+	 *            The {@link Identifier} of the function
+	 * @param functionType
+	 *            The {@link FunctionType} of the function
+	 * @param returnType
+	 *            The function return type
+	 * @param functionSource
+	 *            The {@link CIVLSource} associated to the function declaration
+	 * @return The created CIVLFunction object.
+	 */
+	private CIVLFunction buildSystemCIVLFunction(Function entity,
+			FunctionDeclarationNode node, Scope scope, Scope parameterScope,
+			ArrayList<Variable> parameters, Identifier functionIdentifier,
+			FunctionType functionType, CIVLType returnType,
+			CIVLSource functionSource) {
+		Source declSource = node.getIdentifier().getSource();
+		CivlcToken token = declSource.getFirstToken();
+		File file = token.getSourceFile().getFile();
+		String functionName = functionIdentifier.name();
+		// fileName will be something like "stdlib.h" or "civlc.h"
+		String fileName = file.getName();
+		String libName;
+
+		switch (functionIdentifier.name()) {
+			case "$assert" :
+			case "$assume" :
+			case "$defined" :
+			case "$havoc" :
+				libName = "civlc";
+				break;
+			case "$assert_equals" :
+			case "$equals" :
+				libName = "pointer";
+				break;
+			default : {
+				libName = entity.systemLibrary();
+
+				if (libName == null) {
+					if (!fileName.contains("."))
+						throw new CIVLInternalException("Malformed file name "
+								+ fileName + " containing system function "
+								+ functionName, functionSource);
+					libName = fileNameWithoutExtension(fileName);
+				}
+			}
+		}
+		return modelFactory.systemFunction(functionSource, functionIdentifier,
+				parameterScope, parameters, returnType, scope, libName);
+	}
+
+	/**
+	 * <p>
+	 * Create a {@link CIVLFunction} object for an abstract function. An
+	 * abstract function declaration is a function definition as well. So this
+	 * method should only be called once per entity. The CIVLFunction object
+	 * should be created when the first time the translator encounters a
+	 * declaration.
+	 * </p>
+	 * 
+	 * @param entity
+	 *            An entity associates to a regular function.
+	 * @param node
+	 *            An instance of a {@link FunctionDeclarationNode}
+	 * @param scope
+	 *            The {@link Scope} where the function is located
+	 * @param parameterScope
+	 *            The {@link Scope} where the function parameters are located
+	 * @param parameters
+	 *            An {@link ArrayList} of {@link Variable}s which are formal
+	 *            parameters
+	 * @param functionIdentifier
+	 *            The {@link Identifier} of the function
+	 * @param functionType
+	 *            The {@link FunctionType} of the function
+	 * @param returnType
+	 *            The function return type
+	 * @param functionSource
+	 *            The {@link CIVLSource} associated to the function declaration
+	 * @return The created CIVLFunction object.
+	 */
+	private CIVLFunction buildAbstractCIVLFunction(Function entity,
+			FunctionDeclarationNode node, Scope scope, Scope parameterScope,
+			ArrayList<Variable> parameters, Identifier functionIdentifier,
+			FunctionType functionType, CIVLType returnType,
+			CIVLSource functionSource) {
+		int continuity = ((AbstractFunctionDefinitionNode) node).continuity();
+
+		if (parameters.isEmpty())
+			throw new CIVLSyntaxException(
+					"$abstract functions must have at least one input.\n"
+							+ "An abstract function with 0 inputs is a constant.\n"
+							+ "It can be declared as an unconstrained input variable instead, e.g.\n"
+							+ "$input int N;",
+					node.getSource());
+		return modelFactory.abstractFunction(functionSource, functionIdentifier,
+				parameterScope, parameters, returnType, scope, continuity,
+				modelFactory);
 	}
 
 	/**
@@ -2679,16 +2808,16 @@ public class FunctionTranslator {
 		JumpKind kind = jumpNode.getKind();
 
 		switch (kind) {
-		case BREAK:
-			functionInfo.peekBreakStack().add(result);
-			break;
-		case CONTINUE:
-			functionInfo.peekContinueStack().add(result);
-			break;
-		case GOTO:
-			return translateGotoNode(scope, (GotoNode) jumpNode);
-		default:// RETURN
-			return translateReturnNode(scope, (ReturnNode) jumpNode);
+			case BREAK :
+				functionInfo.peekBreakStack().add(result);
+				break;
+			case CONTINUE :
+				functionInfo.peekContinueStack().add(result);
+				break;
+			case GOTO :
+				return translateGotoNode(scope, (GotoNode) jumpNode);
+			default :// RETURN
+				return translateReturnNode(scope, (ReturnNode) jumpNode);
 		}
 		// if (jumpNode.getKind() == JumpKind.CONTINUE) {
 		// functionInfo.peekContinueStack().add(result);
@@ -2737,22 +2866,23 @@ public class FunctionTranslator {
 		// Translate loop invariants, loop invariants can be used in both
 		// contracts system mode and regular CIVL mode:
 		SequenceNode<ContractNode> loopContractNode = loopNode.loopContracts();
-		LoopContract loopContract = loopContractNode == null ? null
+		LoopContract loopContract = loopContractNode == null
+				? null
 				: translateLoopInvariants(scope, null, loopNode.loopContracts(),
 						modelFactory.sourceOf(loopContractNode));
 
 		switch (loopNode.getKind()) {
-		case DO_WHILE:
-			result = composeLoopFragment(scope, loopNode.getCondition(),
-					loopNode.getBody(), null, true, loopContract);
-			break;
-		case FOR:
-			result = translateForLoopNode(scope, (ForLoopNode) loopNode,
-					loopContract);
-			break;
-		default:// case WHILE:
-			result = composeLoopFragment(scope, loopNode.getCondition(),
-					loopNode.getBody(), null, false, loopContract);
+			case DO_WHILE :
+				result = composeLoopFragment(scope, loopNode.getCondition(),
+						loopNode.getBody(), null, true, loopContract);
+				break;
+			case FOR :
+				result = translateForLoopNode(scope, (ForLoopNode) loopNode,
+						loopContract);
+				break;
+			default :// case WHILE:
+				result = composeLoopFragment(scope, loopNode.getCondition(),
+						loopNode.getBody(), null, false, loopContract);
 		}
 		if (result.startLocation().getNumOutgoing() > 1)
 			result = this.insertNoopAtBeginning(
@@ -2769,33 +2899,33 @@ public class FunctionTranslator {
 
 		for (ContractNode contract : loopContractsNode) {
 			switch (contract.contractKind()) {
-			case INVARIANT:
-				InvariantNode invariant = (InvariantNode) contract;
-				Expression invariantExpression = translateExpressionNode(
-						invariant.getExpression(), scope, true);
+				case INVARIANT :
+					InvariantNode invariant = (InvariantNode) contract;
+					Expression invariantExpression = translateExpressionNode(
+							invariant.getExpression(), scope, true);
 
-				if (!invariantExpression.getExpressionType().isBoolType())
+					if (!invariantExpression.getExpressionType().isBoolType())
+						throw new CIVLSyntaxException(
+								"Expressions specified by loop invariant must be boolean expressions",
+								invariantExpression.getSource());
+					loopInvariants.add(invariantExpression);
+					break;
+				case ASSIGNS_READS :
+					AssignsOrReadsNode assigns = (AssignsOrReadsNode) contract;
+
+					assert assigns.isAssigns();
+					for (ExpressionNode memoryLoc : assigns.getMemoryList()) {
+						Expression memLocExpr = translateExpressionNode(
+								memoryLoc, scope, true);
+
+						assert memLocExpr instanceof LHSExpression;
+						loopAssigns.add((LHSExpression) memLocExpr);
+					}
+					break;
+				default :
 					throw new CIVLSyntaxException(
-							"Expressions specified by loop invariant must be boolean expressions",
-							invariantExpression.getSource());
-				loopInvariants.add(invariantExpression);
-				break;
-			case ASSIGNS_READS:
-				AssignsOrReadsNode assigns = (AssignsOrReadsNode) contract;
-
-				assert assigns.isAssigns();
-				for (ExpressionNode memoryLoc : assigns.getMemoryList()) {
-					Expression memLocExpr = translateExpressionNode(memoryLoc,
-							scope, true);
-
-					assert memLocExpr instanceof LHSExpression;
-					loopAssigns.add((LHSExpression) memLocExpr);
-				}
-				break;
-			default:
-				throw new CIVLSyntaxException(
-						"Non support contract clause for loop statements: "
-								+ contract.contractKind());
+							"Non support contract clause for loop statements: "
+									+ contract.contractKind());
 			}
 		}
 		return modelFactory.loopContract(civlSource, loopLocation,
@@ -3529,55 +3659,24 @@ public class FunctionTranslator {
 		Expression result;
 
 		switch (convertedType.kind()) {
-		case SCOPE:
-			HereOrRootNode scopeConstantNode = (HereOrRootNode) constantNode;
+			case SCOPE :
+				HereOrRootNode scopeConstantNode = (HereOrRootNode) constantNode;
 
-			result = modelFactory.hereOrRootExpression(source,
-					scopeConstantNode.isRootNode());
-			break;
-		case STATE:
-			result = modelFactory.statenullExpression(source);
-			break;
-		case PROCESS:
-			String procValue = constantNode.getStringRepresentation();
+				result = modelFactory.hereOrRootExpression(source,
+						scopeConstantNode.isRootNode());
+				break;
+			case STATE :
+				result = modelFactory.statenullExpression(source);
+				break;
+			case PROCESS :
+				String procValue = constantNode.getStringRepresentation();
 
-			if (procValue.equals("$self"))
-				result = modelFactory.selfExpression(source);
-			else
-				result = modelFactory.procnullExpression(source);
-			break;
-		case OTHER_INTEGER:
-			if (constantNode instanceof EnumerationConstantNode) {
-				BigInteger value = ((IntegerValue) ((EnumerationConstantNode) constantNode)
-						.getConstantValue()).getIntegerValue();
-
-				result = modelFactory.integerLiteralExpression(source, value);
-			} else {
-				Value value = constantNode.getConstantValue();
-
-				if (value instanceof IntegerValue)
-					result = modelFactory.integerLiteralExpression(source,
-							((IntegerValue) value).getIntegerValue());
-				else if (value instanceof RealFloatingValue)
-					result = modelFactory.integerLiteralExpression(source,
-							((RealFloatingValue) value).getWholePartValue());
-				else if (value instanceof CharacterValue)
-					result = translateCharacterValue(source, constantNode);
+				if (procValue.equals("$self"))
+					result = modelFactory.selfExpression(source);
 				else
-					throw new CIVLSyntaxException(
-							"Invalid constant for integers", source);
-			}
-			break;
-		case BASIC: {
-			switch (((StandardBasicType) convertedType).getBasicTypeKind()) {
-			case SHORT:
-			case UNSIGNED_SHORT:
-			case INT:
-			case UNSIGNED:
-			case LONG:
-			case UNSIGNED_LONG:
-			case LONG_LONG:
-			case UNSIGNED_LONG_LONG:
+					result = modelFactory.procnullExpression(source);
+				break;
+			case OTHER_INTEGER :
 				if (constantNode instanceof EnumerationConstantNode) {
 					BigInteger value = ((IntegerValue) ((EnumerationConstantNode) constantNode)
 							.getConstantValue()).getIntegerValue();
@@ -3594,150 +3693,192 @@ public class FunctionTranslator {
 						result = modelFactory.integerLiteralExpression(source,
 								((RealFloatingValue) value)
 										.getWholePartValue());
+					else if (value instanceof CharacterValue)
+						result = translateCharacterValue(source, constantNode);
 					else
 						throw new CIVLSyntaxException(
 								"Invalid constant for integers", source);
 				}
 				break;
-			case FLOAT:
-			case DOUBLE:
-			case LONG_DOUBLE:
-				Value constVal = constantNode.getConstantValue();
+			case BASIC : {
+				switch (((StandardBasicType) convertedType)
+						.getBasicTypeKind()) {
+					case SHORT :
+					case UNSIGNED_SHORT :
+					case INT :
+					case UNSIGNED :
+					case LONG :
+					case UNSIGNED_LONG :
+					case LONG_LONG :
+					case UNSIGNED_LONG_LONG :
+						if (constantNode instanceof EnumerationConstantNode) {
+							BigInteger value = ((IntegerValue) ((EnumerationConstantNode) constantNode)
+									.getConstantValue()).getIntegerValue();
 
-				if (constVal instanceof IntegerValue) {
-					result = modelFactory.realLiteralExpression(source,
-							BigDecimal.valueOf(((IntegerValue) constVal)
-									.getIntegerValue().doubleValue()));
-				} else if (constVal instanceof RealFloatingValue) {
-					result = modelFactory.realLiteralExpression(source,
-							BigDecimal.valueOf(((RealFloatingValue) constVal)
-									.getDoubleValue()));
-				} else {
-					// Original default solution
-					String doubleString = constantNode
-							.getStringRepresentation();
+							result = modelFactory
+									.integerLiteralExpression(source, value);
+						} else {
+							Value value = constantNode.getConstantValue();
 
-					if (doubleString.endsWith("l") || doubleString.endsWith("L")
-							|| doubleString.endsWith("f")
-							|| doubleString.endsWith("F")) {
-						doubleString = doubleString.substring(0,
-								doubleString.length() - 1);
-					}
-					result = modelFactory.realLiteralExpression(source,
-							BigDecimal
-									.valueOf(Double.parseDouble(doubleString)));
+							if (value instanceof IntegerValue)
+								result = modelFactory.integerLiteralExpression(
+										source, ((IntegerValue) value)
+												.getIntegerValue());
+							else if (value instanceof RealFloatingValue)
+								result = modelFactory.integerLiteralExpression(
+										source, ((RealFloatingValue) value)
+												.getWholePartValue());
+							else
+								throw new CIVLSyntaxException(
+										"Invalid constant for integers",
+										source);
+						}
+						break;
+					case FLOAT :
+					case DOUBLE :
+					case LONG_DOUBLE :
+						Value constVal = constantNode.getConstantValue();
+
+						if (constVal instanceof IntegerValue) {
+							result = modelFactory.realLiteralExpression(source,
+									BigDecimal.valueOf(((IntegerValue) constVal)
+											.getIntegerValue().doubleValue()));
+						} else if (constVal instanceof RealFloatingValue) {
+							result = modelFactory.realLiteralExpression(source,
+									BigDecimal.valueOf(
+											((RealFloatingValue) constVal)
+													.getDoubleValue()));
+						} else {
+							// Original default solution
+							String doubleString = constantNode
+									.getStringRepresentation();
+
+							if (doubleString.endsWith("l")
+									|| doubleString.endsWith("L")
+									|| doubleString.endsWith("f")
+									|| doubleString.endsWith("F")) {
+								doubleString = doubleString.substring(0,
+										doubleString.length() - 1);
+							}
+							result = modelFactory.realLiteralExpression(source,
+									BigDecimal.valueOf(
+											Double.parseDouble(doubleString)));
+						}
+						break;
+					case BOOL :
+						boolean value;
+
+						if (constantNode instanceof IntegerConstantNode) {
+							BigInteger integerValue = ((IntegerConstantNode) constantNode)
+									.getConstantValue().getIntegerValue();
+
+							if (integerValue.intValue() == 0) {
+								value = false;
+							} else {
+								value = true;
+							}
+						} else {
+							value = Boolean.parseBoolean(
+									constantNode.getStringRepresentation());
+						}
+						result = modelFactory.booleanLiteralExpression(source,
+								value);
+						break;
+					case CHAR :
+					case UNSIGNED_CHAR :
+						return translateCharacterValue(source, constantNode);
+					default :
+						throw new CIVLUnimplementedFeatureException(
+								"type " + convertedType, source);
 				}
 				break;
-			case BOOL:
-				boolean value;
+			}
+			case ENUMERATION :
+				if (constantNode instanceof EnumerationConstantNode) {
+					BigInteger value = ((IntegerValue) ((EnumerationConstantNode) constantNode)
+							.getConstantValue()).getIntegerValue();
 
-				if (constantNode instanceof IntegerConstantNode) {
-					BigInteger integerValue = ((IntegerConstantNode) constantNode)
-							.getConstantValue().getIntegerValue();
-
-					if (integerValue.intValue() == 0) {
-						value = false;
-					} else {
-						value = true;
-					}
-				} else {
-					value = Boolean.parseBoolean(
-							constantNode.getStringRepresentation());
-				}
-				result = modelFactory.booleanLiteralExpression(source, value);
+					result = modelFactory.integerLiteralExpression(source,
+							value);
+				} else
+					result = modelFactory.integerLiteralExpression(source,
+							BigInteger.valueOf(Long.parseLong(
+									constantNode.getStringRepresentation())));
 				break;
-			case CHAR:
-			case UNSIGNED_CHAR:
-				return translateCharacterValue(source, constantNode);
-			default:
+			case POINTER :
+			case ARRAY :
+				boolean isSupportedChar = false;
+
+				if (constantNode.getStringRepresentation().equals("0")) {
+					result = modelFactory.nullPointerExpression(
+							typeFactory.pointerType(typeFactory.voidType()),
+							source);
+					break;
+				} else if (convertedType.kind() == TypeKind.POINTER
+						&& constantNode instanceof IntegerConstantNode) {
+					result = modelFactory.integerLiteralExpression(source,
+							((IntegerConstantNode) constantNode)
+									.getConstantValue().getIntegerValue());
+					break;
+				} else if (constantNode instanceof StringLiteralNode) {
+					Type elementType = null;
+
+					if (convertedType.kind() == TypeKind.POINTER) {
+						elementType = ((PointerType) convertedType)
+								.referencedType();
+					} else {// convertedType.kind() == ARRAY
+						elementType = ((ArrayType) convertedType)
+								.getElementType();
+					}
+					if (elementType.kind() == TypeKind.QUALIFIED) {
+						elementType = ((QualifiedObjectType) elementType)
+								.getBaseType();
+					}
+					if (elementType != null
+							&& elementType.kind() == TypeKind.BASIC) {
+						if (((StandardBasicType) elementType)
+								.getBasicTypeKind() == BasicTypeKind.CHAR)
+							isSupportedChar = true;
+					}
+					if (isSupportedChar) {
+						StringLiteralNode stringLiteralNode = (StringLiteralNode) constantNode;
+						StringLiteral stringValue = stringLiteralNode
+								.getConstantValue().getLiteral();
+						CIVLArrayType arrayType = typeFactory.completeArrayType(
+								typeFactory.charType(),
+								modelFactory.integerLiteralExpression(source,
+										BigInteger.valueOf(stringValue
+												.getNumCharacters())));
+						ArrayList<Expression> chars = new ArrayList<>();
+						// ArrayLiteralExpression stringLiteral;
+						// VariableExpression anonVariable = modelFactory
+						// .variableExpression(source, modelFactory
+						// .newAnonymousVariableForArrayLiteral(
+						// source, arrayType));
+						// Statement anonAssign;
+
+						for (int i = 0; i < stringValue
+								.getNumCharacters(); i++) {
+							for (char c : stringValue.getCharacter(i)
+									.getCharacters()) {
+								chars.add(modelFactory
+										.charLiteralExpression(source, c));
+							}
+						}
+						result = modelFactory.arrayLiteralExpression(source,
+								arrayType, chars);
+						// anonAssign = modelFactory.assignStatement(source,
+						// modelFactory.location(source, scope), anonVariable,
+						// stringLiteral, true);
+						// modelFactory.addAnonStatement(anonAssign);
+						// result = arrayToPointer(anonVariable);
+						// result = anonVariable;
+						break;
+					}
+				}
+			default :
 				throw new CIVLUnimplementedFeatureException(
 						"type " + convertedType, source);
-			}
-			break;
-		}
-		case ENUMERATION:
-			if (constantNode instanceof EnumerationConstantNode) {
-				BigInteger value = ((IntegerValue) ((EnumerationConstantNode) constantNode)
-						.getConstantValue()).getIntegerValue();
-
-				result = modelFactory.integerLiteralExpression(source, value);
-			} else
-				result = modelFactory.integerLiteralExpression(source,
-						BigInteger.valueOf(Long.parseLong(
-								constantNode.getStringRepresentation())));
-			break;
-		case POINTER:
-		case ARRAY:
-			boolean isSupportedChar = false;
-
-			if (constantNode.getStringRepresentation().equals("0")) {
-				result = modelFactory.nullPointerExpression(
-						typeFactory.pointerType(typeFactory.voidType()),
-						source);
-				break;
-			} else if (convertedType.kind() == TypeKind.POINTER
-					&& constantNode instanceof IntegerConstantNode) {
-				result = modelFactory.integerLiteralExpression(source,
-						((IntegerConstantNode) constantNode).getConstantValue()
-								.getIntegerValue());
-				break;
-			} else if (constantNode instanceof StringLiteralNode) {
-				Type elementType = null;
-
-				if (convertedType.kind() == TypeKind.POINTER) {
-					elementType = ((PointerType) convertedType)
-							.referencedType();
-				} else {// convertedType.kind() == ARRAY
-					elementType = ((ArrayType) convertedType).getElementType();
-				}
-				if (elementType.kind() == TypeKind.QUALIFIED) {
-					elementType = ((QualifiedObjectType) elementType)
-							.getBaseType();
-				}
-				if (elementType != null
-						&& elementType.kind() == TypeKind.BASIC) {
-					if (((StandardBasicType) elementType)
-							.getBasicTypeKind() == BasicTypeKind.CHAR)
-						isSupportedChar = true;
-				}
-				if (isSupportedChar) {
-					StringLiteralNode stringLiteralNode = (StringLiteralNode) constantNode;
-					StringLiteral stringValue = stringLiteralNode
-							.getConstantValue().getLiteral();
-					CIVLArrayType arrayType = typeFactory.completeArrayType(
-							typeFactory.charType(),
-							modelFactory.integerLiteralExpression(source,
-									BigInteger.valueOf(
-											stringValue.getNumCharacters())));
-					ArrayList<Expression> chars = new ArrayList<>();
-					// ArrayLiteralExpression stringLiteral;
-					// VariableExpression anonVariable = modelFactory
-					// .variableExpression(source, modelFactory
-					// .newAnonymousVariableForArrayLiteral(
-					// source, arrayType));
-					// Statement anonAssign;
-
-					for (int i = 0; i < stringValue.getNumCharacters(); i++) {
-						for (char c : stringValue.getCharacter(i)
-								.getCharacters()) {
-							chars.add(modelFactory.charLiteralExpression(source,
-									c));
-						}
-					}
-					result = modelFactory.arrayLiteralExpression(source,
-							arrayType, chars);
-					// anonAssign = modelFactory.assignStatement(source,
-					// modelFactory.location(source, scope), anonVariable,
-					// stringLiteral, true);
-					// modelFactory.addAnonStatement(anonAssign);
-					// result = arrayToPointer(anonVariable);
-					// result = anonVariable;
-					break;
-				}
-			}
-		default:
-			throw new CIVLUnimplementedFeatureException("type " + convertedType,
-					source);
 		}
 		return result;
 	}
@@ -3825,97 +3966,103 @@ public class FunctionTranslator {
 		Expression result;
 
 		switch (expressionNode.expressionKind()) {
-		case ARRAY_LAMBDA:
-			result = translateArrayLambdaNode((ArrayLambdaNode) expressionNode,
-					scope);
-			break;
-		case LAMBDA:
-			result = translateLambdaNode((LambdaNode) expressionNode, scope);
-			break;
-		case ARROW:
-			result = translateArrowNode((ArrowNode) expressionNode, scope);
-			break;
-		case CAST:
-			result = translateCastNode((CastNode) expressionNode, scope);
-			break;
-		case COMPOUND_LITERAL:
-			result = translateCompoundLiteralNode(
-					(CompoundLiteralNode) expressionNode, scope);
-			break;
-		case CONSTANT:
-			result = translateConstantNode(scope,
-					(ConstantNode) expressionNode);
-			break;
-		case DERIVATIVE_EXPRESSION:
-			result = translateDerivativeExpressionNode(
-					(DerivativeExpressionNode) expressionNode, scope);
-			break;
-		case DOT:
-			result = translateDotNode((DotNode) expressionNode, scope);
-			break;
-		case FUNCTION_CALL:
-			result = translateFunctionCallExpression(
-					(FunctionCallNode) expressionNode, scope);
-			break;
-		case IDENTIFIER_EXPRESSION:
-			result = translateIdentifierNode(
-					(IdentifierExpressionNode) expressionNode, scope);
-			break;
-		case OPERATOR:
-			result = translateOperatorNode((OperatorNode) expressionNode,
-					scope);
-			break;
-		case QUANTIFIED_EXPRESSION:
-			result = translateQuantifiedExpressionNode(
-					(QuantifiedExpressionNode) expressionNode, scope);
-			break;
-		case REGULAR_RANGE:
-			result = translateRegularRangeNode(
-					(RegularRangeNode) expressionNode, scope);
-			break;
-		case SCOPEOF:
-			result = translateScopeofNode((ScopeOfNode) expressionNode, scope);
-			break;
-		// TODO: check this, but this case does not exist, it is handled
-		// as a constant expression:
-		// case SELF:
-		// result = modelFactory.selfExpression(modelFactory
-		// .sourceOf(expressionNode));
-		// break;
-		case SIZEOF:
-			result = translateSizeofNode((SizeofNode) expressionNode, scope);
-			break;
-		case RESULT:
-			result = translateResultNode((ResultNode) expressionNode, scope);
-			break;
-		case MPI_CONTRACT_EXPRESSION:
-			return translateMPIContractExpression(
-					(MPIContractExpressionNode) expressionNode, scope);
-		case NOTHING:
-			return this.modelFactory
-					.nothing(modelFactory.sourceOf(expressionNode));
-		case WILDCARD: {
-			return this.modelFactory
-					.wildcardExpression(modelFactory.sourceOf(expressionNode),
-							this.translateABCType(
-									modelFactory.sourceOf(expressionNode),
-									scope, expressionNode.getConvertedType()));
-		}
-		case REMOTE_REFERENCE:
-			return translateRemoteReferenceNode(
-					(RemoteOnExpressionNode) expressionNode, scope);
-		case EXTENDED_QUANTIFIED:
-			result = translateExtendedQuantifiedExpression(
-					(ExtendedQuantifiedExpressionNode) expressionNode, scope);
-			break;
-		case VALUE_AT:
-			result = translateValueAtExpression((ValueAtNode) expressionNode,
-					scope);
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"expressions of kind " + expressionNode.expressionKind(),
-					modelFactory.sourceOf(expressionNode));
+			case ARRAY_LAMBDA :
+				result = translateArrayLambdaNode(
+						(ArrayLambdaNode) expressionNode, scope);
+				break;
+			case LAMBDA :
+				result = translateLambdaNode((LambdaNode) expressionNode,
+						scope);
+				break;
+			case ARROW :
+				result = translateArrowNode((ArrowNode) expressionNode, scope);
+				break;
+			case CAST :
+				result = translateCastNode((CastNode) expressionNode, scope);
+				break;
+			case COMPOUND_LITERAL :
+				result = translateCompoundLiteralNode(
+						(CompoundLiteralNode) expressionNode, scope);
+				break;
+			case CONSTANT :
+				result = translateConstantNode(scope,
+						(ConstantNode) expressionNode);
+				break;
+			case DERIVATIVE_EXPRESSION :
+				result = translateDerivativeExpressionNode(
+						(DerivativeExpressionNode) expressionNode, scope);
+				break;
+			case DOT :
+				result = translateDotNode((DotNode) expressionNode, scope);
+				break;
+			case FUNCTION_CALL :
+				result = translateFunctionCallExpression(
+						(FunctionCallNode) expressionNode, scope);
+				break;
+			case IDENTIFIER_EXPRESSION :
+				result = translateIdentifierNode(
+						(IdentifierExpressionNode) expressionNode, scope);
+				break;
+			case OPERATOR :
+				result = translateOperatorNode((OperatorNode) expressionNode,
+						scope);
+				break;
+			case QUANTIFIED_EXPRESSION :
+				result = translateQuantifiedExpressionNode(
+						(QuantifiedExpressionNode) expressionNode, scope);
+				break;
+			case REGULAR_RANGE :
+				result = translateRegularRangeNode(
+						(RegularRangeNode) expressionNode, scope);
+				break;
+			case SCOPEOF :
+				result = translateScopeofNode((ScopeOfNode) expressionNode,
+						scope);
+				break;
+			// TODO: check this, but this case does not exist, it is handled
+			// as a constant expression:
+			// case SELF:
+			// result = modelFactory.selfExpression(modelFactory
+			// .sourceOf(expressionNode));
+			// break;
+			case SIZEOF :
+				result = translateSizeofNode((SizeofNode) expressionNode,
+						scope);
+				break;
+			case RESULT :
+				result = translateResultNode((ResultNode) expressionNode,
+						scope);
+				break;
+			case MPI_CONTRACT_EXPRESSION :
+				return translateMPIContractExpression(
+						(MPIContractExpressionNode) expressionNode, scope);
+			case NOTHING :
+				return this.modelFactory
+						.nothing(modelFactory.sourceOf(expressionNode));
+			case WILDCARD : {
+				return this.modelFactory.wildcardExpression(
+						modelFactory.sourceOf(expressionNode),
+						this.translateABCType(
+								modelFactory.sourceOf(expressionNode), scope,
+								expressionNode.getConvertedType()));
+			}
+			case REMOTE_REFERENCE :
+				return translateRemoteReferenceNode(
+						(RemoteOnExpressionNode) expressionNode, scope);
+			case EXTENDED_QUANTIFIED :
+				result = translateExtendedQuantifiedExpression(
+						(ExtendedQuantifiedExpressionNode) expressionNode,
+						scope);
+				break;
+			case VALUE_AT :
+				result = translateValueAtExpression(
+						(ValueAtNode) expressionNode, scope);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"expressions of kind "
+								+ expressionNode.expressionKind(),
+						modelFactory.sourceOf(expressionNode));
 		}
 		if (translateConversions) {
 			result = this.applyConversions(scope, expressionNode, result);
@@ -3963,35 +4110,36 @@ public class FunctionTranslator {
 		int numArgs = 0;
 
 		switch (kind) {
-		case MPI_INTEGER_CONSTANT:
-			return translateMPIIntegerConstantNode((CommonMPIConstantNode) node,
-					scope);
-		case MPI_EQUALS:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EQUALS;
-			numArgs = 4;
-			break;
-		case MPI_REGION:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_REGION;
-			numArgs = 3;
-			break;
-		case MPI_AGREE:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE;
-			numArgs = 1;
-			break;
-		case MPI_EXTENT:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EXTENT;
-			numArgs = 1;
-			break;
-		case MPI_OFFSET:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_OFFSET;
-			numArgs = 3;
-			break;
-		case MPI_VALID:
-			civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_VALID;
-			numArgs = 3;
-			break;
-		default:
-			throw new CIVLInternalException("Unreachable", node.getSource());
+			case MPI_INTEGER_CONSTANT :
+				return translateMPIIntegerConstantNode(
+						(CommonMPIConstantNode) node, scope);
+			case MPI_EQUALS :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EQUALS;
+				numArgs = 4;
+				break;
+			case MPI_REGION :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_REGION;
+				numArgs = 3;
+				break;
+			case MPI_AGREE :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE;
+				numArgs = 1;
+				break;
+			case MPI_EXTENT :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EXTENT;
+				numArgs = 1;
+				break;
+			case MPI_OFFSET :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_OFFSET;
+				numArgs = 3;
+				break;
+			case MPI_VALID :
+				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_VALID;
+				numArgs = 3;
+				break;
+			default :
+				throw new CIVLInternalException("Unreachable",
+						node.getSource());
 		}
 		// if (currentMPICollectiveTitle.left == null
 		// || currentMPICollectiveTitle.right == null) {
@@ -4036,16 +4184,17 @@ public class FunctionTranslator {
 		Variable result;
 
 		switch (kind) {
-		case MPI_COMM_RANK:
-			variableIdent = modelFactory.identifier(source,
-					ModelConfiguration.ContractMPICommRankName);
-			break;
-		case MPI_COMM_SIZE:
-			variableIdent = modelFactory.identifier(source,
-					ModelConfiguration.ContractMPICommSizeName);
-			break;
-		default:
-			throw new CIVLInternalException("Unreachable", (CIVLSource) null);
+			case MPI_COMM_RANK :
+				variableIdent = modelFactory.identifier(source,
+						ModelConfiguration.ContractMPICommRankName);
+				break;
+			case MPI_COMM_SIZE :
+				variableIdent = modelFactory.identifier(source,
+						ModelConfiguration.ContractMPICommSizeName);
+				break;
+			default :
+				throw new CIVLInternalException("Unreachable",
+						(CIVLSource) null);
 		}
 		result = scope.variable(variableIdent);
 		return modelFactory.variableExpression(source, result);
@@ -4232,114 +4381,118 @@ public class FunctionTranslator {
 			ConversionKind kind = conversion.conversionKind();
 
 			switch (kind) {
-			case ARITHMETIC: {
-				CIVLType oldCIVLType = translateABCType(source, scope, oldType);
-				CIVLType newCIVLType = translateABCType(source, scope, newType);
+				case ARITHMETIC : {
+					CIVLType oldCIVLType = translateABCType(source, scope,
+							oldType);
+					CIVLType newCIVLType = translateABCType(source, scope,
+							newType);
 
-				// need equals on Types
-				if (oldCIVLType.isIntegerType() && newCIVLType.isIntegerType()
-						|| oldCIVLType.isRealType()
-								&& newCIVLType.isRealType()) {
-					// nothing to do
-				} else {
-					// Sometimes the conversion might have been done during
-					// the translating the expression node, for example,
-					// when translating a constant node, so only create a
-					// cast expression if necessary.
-					if (!expression.getExpressionType().equals(newCIVLType))
-						expression = modelFactory.castExpression(source,
-								newCIVLType, expression);
+					// need equals on Types
+					if (oldCIVLType.isIntegerType()
+							&& newCIVLType.isIntegerType()
+							|| oldCIVLType.isRealType()
+									&& newCIVLType.isRealType()) {
+						// nothing to do
+					} else {
+						// Sometimes the conversion might have been done during
+						// the translating the expression node, for example,
+						// when translating a constant node, so only create a
+						// cast expression if necessary.
+						if (!expression.getExpressionType().equals(newCIVLType))
+							expression = modelFactory.castExpression(source,
+									newCIVLType, expression);
+					}
+					break;
 				}
-				break;
-			}
-			case ARRAY: {
-				Expression.ExpressionKind expressionKind = expression
-						.expressionKind();
+				case ARRAY : {
+					Expression.ExpressionKind expressionKind = expression
+							.expressionKind();
 
-				if (expression instanceof LHSExpression) {
-					expression = modelFactory.addressOfExpression(
-							source, modelFactory.subscriptExpression(source,
-									(LHSExpression) expression, modelFactory
-											.integerLiteralExpression(source,
-													BigInteger.ZERO)));
-				} else if (expressionKind == Expression.ExpressionKind.ARRAY_LITERAL
-						|| expressionKind == Expression.ExpressionKind.ARRAY_LAMBDA) {
-					// creates anonymous variable in the root scope for this
-					// literal
-					// and return the address to this variable
-					VariableExpression anonVariable = createAnonymousVariableForArrayConstant(
-							scope, expression);
+					if (expression instanceof LHSExpression) {
+						expression = modelFactory.addressOfExpression(source,
+								modelFactory.subscriptExpression(source,
+										(LHSExpression) expression, modelFactory
+												.integerLiteralExpression(
+														source,
+														BigInteger.ZERO)));
+					} else if (expressionKind == Expression.ExpressionKind.ARRAY_LITERAL
+							|| expressionKind == Expression.ExpressionKind.ARRAY_LAMBDA) {
+						// creates anonymous variable in the root scope for this
+						// literal
+						// and return the address to this variable
+						VariableExpression anonVariable = createAnonymousVariableForArrayConstant(
+								scope, expression);
 
-					expression = arrayToPointer(anonVariable);
-					expression.setErrorFree(true);
+						expression = arrayToPointer(anonVariable);
+						expression.setErrorFree(true);
+					}
+					break;
 				}
-				break;
-			}
-			case COMPATIBLE_POINTER:// nothing to do
-				break;
-			case COMPATIBLE_STRUCT_UNION: {
-				// TODO think about how to implement this
-				throw new CIVLUnimplementedFeatureException(
-						"compatible structure or union conversion", source);
-			}
-			case FUNCTION:
-				break;
-			case LVALUE:
-				break;
-			case MEMORY:
-				break;
-			case NULL_POINTER: {
-				// result is a null pointer to new type
-				CIVLType tmpType = translateABCType(source, scope, newType);
-				CIVLPointerType newCIVLType = (CIVLPointerType) tmpType;
+				case COMPATIBLE_POINTER :// nothing to do
+					break;
+				case COMPATIBLE_STRUCT_UNION : {
+					// TODO think about how to implement this
+					throw new CIVLUnimplementedFeatureException(
+							"compatible structure or union conversion", source);
+				}
+				case FUNCTION :
+					break;
+				case LVALUE :
+					break;
+				case MEMORY :
+					break;
+				case NULL_POINTER : {
+					// result is a null pointer to new type
+					CIVLType tmpType = translateABCType(source, scope, newType);
+					CIVLPointerType newCIVLType = (CIVLPointerType) tmpType;
 
-				expression = modelFactory.nullPointerExpression(newCIVLType,
-						source);
-				break;
-			}
-			case POINTER_BOOL: {
-				// pointer type to boolean type: p!=NULL
-				expression = modelFactory
-						.binaryExpression(source, BINARY_OPERATOR.NOT_EQUAL,
-								expression,
-								modelFactory
-										.nullPointerExpression(
-												(CIVLPointerType) expression
-														.getExpressionType(),
-												source));
-				break;
-			}
-			case REG_RANGE_DOMAIN: {
-				// $range -> $domain(1)
-				expression = modelFactory.recDomainLiteralExpression(source,
-						Arrays.asList(expression),
-						typeFactory.completeDomainType(
-								expression.getExpressionType(), 1));
-				break;
-			}
-			case POINTER_INTEGER: {
-				expression = modelFactory.castExpression(source,
-						this.typeFactory.integerType(), expression);
-				break;
-			}
-			// case INTEGER_POINTER:{
-			//
-			// }
-			case VOID_POINTER:
-				// void*->T* or T*->void*
-				// ignore, pointer types are all the same
-				// all pointer types are using the same symbolic object type
-				break;
-			case INTEGER_POINTER: {
-				expression = modelFactory.castExpression(source,
-						this.translateABCType(source, scope,
-								conversion.getNewType()),
-						expression);
-				break;
-			}
-			default:
-				throw new CIVLUnimplementedFeatureException(
-						"applying " + conversion + " conversion", source);
+					expression = modelFactory.nullPointerExpression(newCIVLType,
+							source);
+					break;
+				}
+				case POINTER_BOOL : {
+					// pointer type to boolean type: p!=NULL
+					expression = modelFactory
+							.binaryExpression(source, BINARY_OPERATOR.NOT_EQUAL,
+									expression,
+									modelFactory.nullPointerExpression(
+											(CIVLPointerType) expression
+													.getExpressionType(),
+											source));
+					break;
+				}
+				case REG_RANGE_DOMAIN : {
+					// $range -> $domain(1)
+					expression = modelFactory.recDomainLiteralExpression(source,
+							Arrays.asList(expression),
+							typeFactory.completeDomainType(
+									expression.getExpressionType(), 1));
+					break;
+				}
+				case POINTER_INTEGER : {
+					expression = modelFactory.castExpression(source,
+							this.typeFactory.integerType(), expression);
+					break;
+				}
+				// case INTEGER_POINTER:{
+				//
+				// }
+				case VOID_POINTER :
+					// void*->T* or T*->void*
+					// ignore, pointer types are all the same
+					// all pointer types are using the same symbolic object type
+					break;
+				case INTEGER_POINTER : {
+					expression = modelFactory
+							.castExpression(source,
+									this.translateABCType(source, scope,
+											conversion.getNewType()),
+									expression);
+					break;
+				}
+				default :
+					throw new CIVLUnimplementedFeatureException(
+							"applying " + conversion + " conversion", source);
 			}
 
 			// if (conversion instanceof ArithmeticConversion) {
@@ -4630,285 +4783,298 @@ public class FunctionTranslator {
 					+ numArgs + " in expression " + operatorNode);
 		}
 		switch (operatorNode.getOperator()) {
-		case ADDRESSOF: {
-			Expression operand = arguments.get(0);
-			Expression.ExpressionKind operandKind = operand.expressionKind();
+			case ADDRESSOF : {
+				Expression operand = arguments.get(0);
+				Expression.ExpressionKind operandKind = operand
+						.expressionKind();
 
-			if (operand instanceof FunctionIdentifierExpression)
-				result = operand;
-			else if (operand instanceof LHSExpression)
-				result = modelFactory.addressOfExpression(source,
-						(LHSExpression) operand);
-			else if (operandKind == Expression.ExpressionKind.ARRAY_LITERAL
-					|| operandKind == Expression.ExpressionKind.ARRAY_LAMBDA) {
-				VariableExpression anonVariable = createAnonymousVariableForArrayConstant(
-						scope, operand);
+				if (operand instanceof FunctionIdentifierExpression)
+					result = operand;
+				else if (operand instanceof LHSExpression)
+					result = modelFactory.addressOfExpression(source,
+							(LHSExpression) operand);
+				else if (operandKind == Expression.ExpressionKind.ARRAY_LITERAL
+						|| operandKind == Expression.ExpressionKind.ARRAY_LAMBDA) {
+					VariableExpression anonVariable = createAnonymousVariableForArrayConstant(
+							scope, operand);
 
-				result = modelFactory.addressOfExpression(source, anonVariable);
-				result.setErrorFree(true);
+					result = modelFactory.addressOfExpression(source,
+							anonVariable);
+					result.setErrorFree(true);
+				}
+				break;
 			}
-			break;
-		}
-		case HASH:
-			return modelFactory.binaryExpression(source, BINARY_OPERATOR.REMOTE,
-					arguments.get(0), arguments.get(1));
-		case BIG_O:
-			result = modelFactory.unaryExpression(source, UNARY_OPERATOR.BIG_O,
-					arguments.get(0));
-			break;
-		case BITAND:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.BIT_AND, arguments.get(0),
-					arguments.get(1));
-			break;
-		case BITCOMPLEMENT:
-			result = modelFactory.unaryExpression(source,
-					UNARY_OPERATOR.BIT_NOT, arguments.get(0));
-			break;
-		case BITOR:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.BIT_OR, arguments.get(0), arguments.get(1));
-			break;
-		case BITXOR:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.BIT_XOR, arguments.get(0),
-					arguments.get(1));
-			break;
-		case SHIFTLEFT:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.SHIFTLEFT, arguments.get(0),
-					arguments.get(1));
-			break;
-		case SHIFTRIGHT:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.SHIFTRIGHT, arguments.get(0),
-					arguments.get(1));
-			break;
-		case DEREFERENCE:
-			Expression pointer = arguments.get(0);
+			case HASH :
+				return modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.REMOTE, arguments.get(0),
+						arguments.get(1));
+			case BIG_O :
+				result = modelFactory.unaryExpression(source,
+						UNARY_OPERATOR.BIG_O, arguments.get(0));
+				break;
+			case BITAND :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.BIT_AND, arguments.get(0),
+						arguments.get(1));
+				break;
+			case BITCOMPLEMENT :
+				result = modelFactory.unaryExpression(source,
+						UNARY_OPERATOR.BIT_NOT, arguments.get(0));
+				break;
+			case BITOR :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.BIT_OR, arguments.get(0),
+						arguments.get(1));
+				break;
+			case BITXOR :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.BIT_XOR, arguments.get(0),
+						arguments.get(1));
+				break;
+			case SHIFTLEFT :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.SHIFTLEFT, arguments.get(0),
+						arguments.get(1));
+				break;
+			case SHIFTRIGHT :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.SHIFTRIGHT, arguments.get(0),
+						arguments.get(1));
+				break;
+			case DEREFERENCE :
+				Expression pointer = arguments.get(0);
 
-			if (!pointer.getExpressionType().isPointerType()) {
-				pointer = this.arrayToPointer(pointer);
-			}
-			result = modelFactory.dereferenceExpression(source, pointer);
-			break;
-		case CONDITIONAL:
-			try {
-				booleanArg0 = modelFactory.booleanExpression(arguments.get(0));
-			} catch (ModelFactoryException err) {
-				throw new CIVLSyntaxException(
-						"The first argument of the conditional expression "
-								+ arguments.get(0) + " is of "
-								+ arguments.get(0).getExpressionType()
-								+ "type which cannot be converted to "
-								+ "boolean type.",
-						arguments.get(0).getSource());
-			}
-			result = modelFactory.conditionalExpression(source, booleanArg0,
-					arguments.get(1), arguments.get(2));
-			modelFactory
-					.addConditionalExpression((ConditionalExpression) result);
-			break;
-		case DIV:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.DIVIDE,
-					modelFactory.numericExpression(arguments.get(0)),
-					modelFactory.numericExpression(arguments.get(1)));
-			break;
-		case GT:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.LESS_THAN,
-					modelFactory.numericExpression(arguments.get(1)),
-					modelFactory.numericExpression(arguments.get(0)));
-			break;
-		case GTE:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.LESS_THAN_EQUAL,
-					modelFactory.numericExpression(arguments.get(1)),
-					modelFactory.numericExpression(arguments.get(0)));
-			break;
-		case IMPLIES:
-			try {
-				booleanArg0 = modelFactory.booleanExpression(arguments.get(0));
-			} catch (ModelFactoryException err) {
-				throw new CIVLSyntaxException(
-						"The first argument of the implies expression "
-								+ arguments.get(0) + " is of "
-								+ arguments.get(0).getExpressionType()
-								+ "type which cannot be converted to "
-								+ "boolean type.",
-						arguments.get(0).getSource());
-			}
-			try {
-				booleanArg1 = modelFactory.booleanExpression(arguments.get(1));
-			} catch (ModelFactoryException err) {
-				throw new CIVLSyntaxException(
-						"The second argument of the implies expression "
-								+ arguments.get(1) + " is of "
-								+ arguments.get(1).getExpressionType()
-								+ "type which cannot be converted to "
-								+ "boolean type.",
-						arguments.get(1).getSource());
-			}
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.IMPLIES, booleanArg0, booleanArg1);
-			break;
-		case LAND:
-			try {
-				booleanArg0 = modelFactory.booleanExpression(arguments.get(0));
-			} catch (ModelFactoryException err) {
-				throw new CIVLSyntaxException(
-						"The first argument of the logical and expression "
-								+ arguments.get(0) + " is of "
-								+ arguments.get(0).getExpressionType()
-								+ "type which cannot be converted to "
-								+ "boolean type.",
-						arguments.get(0).getSource());
-			}
-			try {
-				booleanArg1 = modelFactory.booleanExpression(arguments.get(1));
-			} catch (ModelFactoryException err) {
-				throw new CIVLSyntaxException(
-						"The first argument of the logical and expression "
-								+ arguments.get(1) + " is of "
-								+ arguments.get(1).getExpressionType()
-								+ "type which cannot be converted to "
-								+ "boolean type.",
-						arguments.get(1).getSource());
-			}
-			result = modelFactory.binaryExpression(source, BINARY_OPERATOR.AND,
-					booleanArg0, booleanArg1);
-			break;
-		case LOR:
-			try {
-				booleanArg0 = modelFactory.booleanExpression(arguments.get(0));
-			} catch (ModelFactoryException err) {
-				throw new CIVLSyntaxException(
-						"The first argument of the logical or expression "
-								+ arguments.get(0) + " is of "
-								+ arguments.get(0).getExpressionType()
-								+ "type which cannot be converted to "
-								+ "boolean type.",
-						arguments.get(0).getSource());
-			}
-			try {
-				booleanArg1 = modelFactory.booleanExpression(arguments.get(1));
-			} catch (ModelFactoryException err) {
-				throw new CIVLSyntaxException(
-						"The first argument of the conditional expression "
-								+ arguments.get(1) + " is of "
-								+ arguments.get(1).getExpressionType()
-								+ "type which cannot be converted to "
-								+ "boolean type.",
-						arguments.get(1).getSource());
-			}
-			result = modelFactory.binaryExpression(source, BINARY_OPERATOR.OR,
-					booleanArg0, booleanArg1);
-			break;
-		case LT:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.LESS_THAN,
-					modelFactory.numericExpression(arguments.get(0)),
-					modelFactory.numericExpression(arguments.get(1)));
-			break;
-		case LTE:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.LESS_THAN_EQUAL,
-					modelFactory.numericExpression(arguments.get(0)),
-					modelFactory.numericExpression(arguments.get(1)));
-			break;
-		case MINUS:
-			result = translateMinusOperation(source,
-					modelFactory.numericExpression(arguments.get(0)),
-					modelFactory.numericExpression(arguments.get(1)));
-			break;
-		case MOD:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.MODULO,
-					modelFactory.numericExpression(arguments.get(0)),
-					modelFactory.numericExpression(arguments.get(1)));
-			break;
-		case EQUALS:
-		case NEQ: {
-			Expression arg0 = arguments.get(0), arg1 = arguments.get(1);
-			CIVLType arg0Type = arg0.getExpressionType(),
-					arg1Type = arg1.getExpressionType();
-
-			if (arg0Type.isNumericType() && arg1Type.isBoolType())
-				arg1 = modelFactory.numericExpression(arg1);
-			else if (arg0Type.isBoolType() && arg1Type.isNumericType())
-				arg0 = modelFactory.numericExpression(arg0);
-			result = modelFactory.binaryExpression(source,
-					operatorNode.getOperator() == Operator.EQUALS
-							? BINARY_OPERATOR.EQUAL : BINARY_OPERATOR.NOT_EQUAL,
-					arg0, arg1);
-			break;
-		}
-		case NOT: {
-			// CIVLType argType = arguments.get(0).getExpressionType();
-			try {
-				booleanArg0 = modelFactory.booleanExpression(arguments.get(0));
-			} catch (ModelFactoryException err) {
-				throw new CIVLSyntaxException(
-						"The argument of the logical not expression "
-								+ arguments.get(0) + " is of "
-								+ arguments.get(0).getExpressionType()
-								+ "type which cannot be converted to "
-								+ "boolean type.",
-						arguments.get(0).getSource());
-			}
-			result = modelFactory.unaryExpression(source, UNARY_OPERATOR.NOT,
-					booleanArg0);
-			// if (argType.isIntegerType()) {
-			// result = modelFactory.castExpression(source, argType,
-			// result);
-			// }
-		}
-			break;
-		case PLUS: {
-			ExpressionNode arg0, arg1;
-
-			arg0 = operatorNode.getArgument(0);
-			arg1 = operatorNode.getArgument(1);
-			if (arg0.expressionKind().equals(ExpressionKind.REGULAR_RANGE)
-					|| arg1.expressionKind()
-							.equals(ExpressionKind.REGULAR_RANGE))
-				result = translatePointerSet(
-						modelFactory.sourceOf(operatorNode),
-						this.translateExpressionNode(arg0, scope, true),
-						this.translateExpressionNode(arg1, scope, true),
-						BINARY_OPERATOR.PLUS, scope);
-			else
-				result = translatePlusOperation(source,
+				if (!pointer.getExpressionType().isPointerType()) {
+					pointer = this.arrayToPointer(pointer);
+				}
+				result = modelFactory.dereferenceExpression(source, pointer);
+				break;
+			case CONDITIONAL :
+				try {
+					booleanArg0 = modelFactory
+							.booleanExpression(arguments.get(0));
+				} catch (ModelFactoryException err) {
+					throw new CIVLSyntaxException(
+							"The first argument of the conditional expression "
+									+ arguments.get(0) + " is of "
+									+ arguments.get(0).getExpressionType()
+									+ "type which cannot be converted to "
+									+ "boolean type.",
+							arguments.get(0).getSource());
+				}
+				result = modelFactory.conditionalExpression(source, booleanArg0,
+						arguments.get(1), arguments.get(2));
+				modelFactory.addConditionalExpression(
+						(ConditionalExpression) result);
+				break;
+			case DIV :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.DIVIDE,
 						modelFactory.numericExpression(arguments.get(0)),
 						modelFactory.numericExpression(arguments.get(1)));
-			break;
-		}
-		case SUBSCRIPT:
-			throw new CIVLInternalException("unreachable", source);
-		case TIMES:
-			result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.TIMES,
-					modelFactory.numericExpression(arguments.get(0)),
-					modelFactory.numericExpression(arguments.get(1)));
-			break;
-		case UNARYMINUS:
-			result = modelFactory.unaryExpression(source,
-					UNARY_OPERATOR.NEGATIVE,
-					modelFactory.numericExpression(arguments.get(0)));
-			break;
-		case UNARYPLUS:
-			result = modelFactory.numericExpression(arguments.get(0));
-			break;
-		case VALID:
-			Expression arg = translateExpressionNode(
-					operatorNode.getArgument(0), scope, true);
-			return translateValidOperator(modelFactory.sourceOf(operatorNode),
-					arg, scope);
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"Unsupported operator: " + operatorNode.getOperator()
-							+ " in expression " + operatorNode);
+				break;
+			case GT :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.LESS_THAN,
+						modelFactory.numericExpression(arguments.get(1)),
+						modelFactory.numericExpression(arguments.get(0)));
+				break;
+			case GTE :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.LESS_THAN_EQUAL,
+						modelFactory.numericExpression(arguments.get(1)),
+						modelFactory.numericExpression(arguments.get(0)));
+				break;
+			case IMPLIES :
+				try {
+					booleanArg0 = modelFactory
+							.booleanExpression(arguments.get(0));
+				} catch (ModelFactoryException err) {
+					throw new CIVLSyntaxException(
+							"The first argument of the implies expression "
+									+ arguments.get(0) + " is of "
+									+ arguments.get(0).getExpressionType()
+									+ "type which cannot be converted to "
+									+ "boolean type.",
+							arguments.get(0).getSource());
+				}
+				try {
+					booleanArg1 = modelFactory
+							.booleanExpression(arguments.get(1));
+				} catch (ModelFactoryException err) {
+					throw new CIVLSyntaxException(
+							"The second argument of the implies expression "
+									+ arguments.get(1) + " is of "
+									+ arguments.get(1).getExpressionType()
+									+ "type which cannot be converted to "
+									+ "boolean type.",
+							arguments.get(1).getSource());
+				}
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.IMPLIES, booleanArg0, booleanArg1);
+				break;
+			case LAND :
+				try {
+					booleanArg0 = modelFactory
+							.booleanExpression(arguments.get(0));
+				} catch (ModelFactoryException err) {
+					throw new CIVLSyntaxException(
+							"The first argument of the logical and expression "
+									+ arguments.get(0) + " is of "
+									+ arguments.get(0).getExpressionType()
+									+ "type which cannot be converted to "
+									+ "boolean type.",
+							arguments.get(0).getSource());
+				}
+				try {
+					booleanArg1 = modelFactory
+							.booleanExpression(arguments.get(1));
+				} catch (ModelFactoryException err) {
+					throw new CIVLSyntaxException(
+							"The first argument of the logical and expression "
+									+ arguments.get(1) + " is of "
+									+ arguments.get(1).getExpressionType()
+									+ "type which cannot be converted to "
+									+ "boolean type.",
+							arguments.get(1).getSource());
+				}
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.AND, booleanArg0, booleanArg1);
+				break;
+			case LOR :
+				try {
+					booleanArg0 = modelFactory
+							.booleanExpression(arguments.get(0));
+				} catch (ModelFactoryException err) {
+					throw new CIVLSyntaxException(
+							"The first argument of the logical or expression "
+									+ arguments.get(0) + " is of "
+									+ arguments.get(0).getExpressionType()
+									+ "type which cannot be converted to "
+									+ "boolean type.",
+							arguments.get(0).getSource());
+				}
+				try {
+					booleanArg1 = modelFactory
+							.booleanExpression(arguments.get(1));
+				} catch (ModelFactoryException err) {
+					throw new CIVLSyntaxException(
+							"The first argument of the conditional expression "
+									+ arguments.get(1) + " is of "
+									+ arguments.get(1).getExpressionType()
+									+ "type which cannot be converted to "
+									+ "boolean type.",
+							arguments.get(1).getSource());
+				}
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.OR, booleanArg0, booleanArg1);
+				break;
+			case LT :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.LESS_THAN,
+						modelFactory.numericExpression(arguments.get(0)),
+						modelFactory.numericExpression(arguments.get(1)));
+				break;
+			case LTE :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.LESS_THAN_EQUAL,
+						modelFactory.numericExpression(arguments.get(0)),
+						modelFactory.numericExpression(arguments.get(1)));
+				break;
+			case MINUS :
+				result = translateMinusOperation(source,
+						modelFactory.numericExpression(arguments.get(0)),
+						modelFactory.numericExpression(arguments.get(1)));
+				break;
+			case MOD :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.MODULO,
+						modelFactory.numericExpression(arguments.get(0)),
+						modelFactory.numericExpression(arguments.get(1)));
+				break;
+			case EQUALS :
+			case NEQ : {
+				Expression arg0 = arguments.get(0), arg1 = arguments.get(1);
+				CIVLType arg0Type = arg0.getExpressionType(),
+						arg1Type = arg1.getExpressionType();
+
+				if (arg0Type.isNumericType() && arg1Type.isBoolType())
+					arg1 = modelFactory.numericExpression(arg1);
+				else if (arg0Type.isBoolType() && arg1Type.isNumericType())
+					arg0 = modelFactory.numericExpression(arg0);
+				result = modelFactory.binaryExpression(source,
+						operatorNode.getOperator() == Operator.EQUALS
+								? BINARY_OPERATOR.EQUAL
+								: BINARY_OPERATOR.NOT_EQUAL,
+						arg0, arg1);
+				break;
+			}
+			case NOT : {
+				// CIVLType argType = arguments.get(0).getExpressionType();
+				try {
+					booleanArg0 = modelFactory
+							.booleanExpression(arguments.get(0));
+				} catch (ModelFactoryException err) {
+					throw new CIVLSyntaxException(
+							"The argument of the logical not expression "
+									+ arguments.get(0) + " is of "
+									+ arguments.get(0).getExpressionType()
+									+ "type which cannot be converted to "
+									+ "boolean type.",
+							arguments.get(0).getSource());
+				}
+				result = modelFactory.unaryExpression(source,
+						UNARY_OPERATOR.NOT, booleanArg0);
+				// if (argType.isIntegerType()) {
+				// result = modelFactory.castExpression(source, argType,
+				// result);
+				// }
+			}
+				break;
+			case PLUS : {
+				ExpressionNode arg0, arg1;
+
+				arg0 = operatorNode.getArgument(0);
+				arg1 = operatorNode.getArgument(1);
+				if (arg0.expressionKind().equals(ExpressionKind.REGULAR_RANGE)
+						|| arg1.expressionKind()
+								.equals(ExpressionKind.REGULAR_RANGE))
+					result = translatePointerSet(
+							modelFactory.sourceOf(operatorNode),
+							this.translateExpressionNode(arg0, scope, true),
+							this.translateExpressionNode(arg1, scope, true),
+							BINARY_OPERATOR.PLUS, scope);
+				else
+					result = translatePlusOperation(source,
+							modelFactory.numericExpression(arguments.get(0)),
+							modelFactory.numericExpression(arguments.get(1)));
+				break;
+			}
+			case SUBSCRIPT :
+				throw new CIVLInternalException("unreachable", source);
+			case TIMES :
+				result = modelFactory.binaryExpression(source,
+						BINARY_OPERATOR.TIMES,
+						modelFactory.numericExpression(arguments.get(0)),
+						modelFactory.numericExpression(arguments.get(1)));
+				break;
+			case UNARYMINUS :
+				result = modelFactory.unaryExpression(source,
+						UNARY_OPERATOR.NEGATIVE,
+						modelFactory.numericExpression(arguments.get(0)));
+				break;
+			case UNARYPLUS :
+				result = modelFactory.numericExpression(arguments.get(0));
+				break;
+			case VALID :
+				Expression arg = translateExpressionNode(
+						operatorNode.getArgument(0), scope, true);
+				return translateValidOperator(
+						modelFactory.sourceOf(operatorNode), arg, scope);
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"Unsupported operator: " + operatorNode.getOperator()
+								+ " in expression " + operatorNode);
 		}
 		return result;
 	}
@@ -5112,18 +5278,18 @@ public class FunctionTranslator {
 		boundVariableList = translateBoundVaraibleSequence(
 				quantifiedNode.boundVariableList(), scope);
 		switch (quantifiedNode.quantifier()) {
-		case EXISTS:
-			quantifier = Quantifier.EXISTS;
-			break;
-		case FORALL:
-			quantifier = Quantifier.FORALL;
-			break;
-		case UNIFORM:
-			quantifier = Quantifier.UNIFORM;
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"quantifier " + quantifiedNode.quantifier(), source);
+			case EXISTS :
+				quantifier = Quantifier.EXISTS;
+				break;
+			case FORALL :
+				quantifier = Quantifier.FORALL;
+				break;
+			case UNIFORM :
+				quantifier = Quantifier.UNIFORM;
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"quantifier " + quantifiedNode.quantifier(), source);
 		}
 		if (quantifiedNode.restriction() != null)
 			restriction = translateExpressionNode(quantifiedNode.restriction(),
@@ -5153,22 +5319,24 @@ public class FunctionTranslator {
 		Expression result;
 
 		switch (argNode.nodeKind()) {
-		case TYPE:
-			TypeNode typeNode = (TypeNode) argNode;
-			CIVLType type = translateABCType(modelFactory.sourceOf(typeNode),
-					scope, typeNode.getType());
+			case TYPE :
+				TypeNode typeNode = (TypeNode) argNode;
+				CIVLType type = translateABCType(
+						modelFactory.sourceOf(typeNode), scope,
+						typeNode.getType());
 
-			result = modelFactory.sizeofTypeExpression(source, type);
-			break;
-		case EXPRESSION:
-			Expression argument = translateExpressionNode(
-					(ExpressionNode) argNode, scope, true);
+				result = modelFactory.sizeofTypeExpression(source, type);
+				break;
+			case EXPRESSION :
+				Expression argument = translateExpressionNode(
+						(ExpressionNode) argNode, scope, true);
 
-			result = modelFactory.sizeofExpressionExpression(source, argument);
-			break;
-		default:
-			throw new CIVLInternalException(
-					"Unknown kind of SizeofNode: " + sizeofNode, source);
+				result = modelFactory.sizeofExpressionExpression(source,
+						argument);
+				break;
+			default :
+				throw new CIVLInternalException(
+						"Unknown kind of SizeofNode: " + sizeofNode, source);
 		}
 		return result;
 	}
@@ -5315,32 +5483,33 @@ public class FunctionTranslator {
 	private CIVLType translateABCBasicType(CIVLSource source,
 			StandardBasicType basicType) {
 		switch (basicType.getBasicTypeKind()) {
-		case SIGNED_CHAR:
-		case SHORT:
-		case UNSIGNED_SHORT:
-		case INT:
-		case UNSIGNED:
-		case LONG:
-		case UNSIGNED_LONG:
-		case LONG_LONG:
-		case UNSIGNED_LONG_LONG:
-			return typeFactory.integerType();
-		case FLOAT:
-		case DOUBLE:
-		case LONG_DOUBLE:
-		case REAL:
-			return typeFactory.realType();
-		case BOOL:
-			return typeFactory.booleanType();
-		case CHAR:
-		case UNSIGNED_CHAR:
-			return typeFactory.charType();
-		case DOUBLE_COMPLEX:
-		case FLOAT_COMPLEX:
-		case LONG_DOUBLE_COMPLEX:
-		default:
-			throw new CIVLUnimplementedFeatureException(
-					"types of kind " + basicType.getBasicTypeKind(), source);
+			case SIGNED_CHAR :
+			case SHORT :
+			case UNSIGNED_SHORT :
+			case INT :
+			case UNSIGNED :
+			case LONG :
+			case UNSIGNED_LONG :
+			case LONG_LONG :
+			case UNSIGNED_LONG_LONG :
+				return typeFactory.integerType();
+			case FLOAT :
+			case DOUBLE :
+			case LONG_DOUBLE :
+			case REAL :
+				return typeFactory.realType();
+			case BOOL :
+				return typeFactory.booleanType();
+			case CHAR :
+			case UNSIGNED_CHAR :
+				return typeFactory.charType();
+			case DOUBLE_COMPLEX :
+			case FLOAT_COMPLEX :
+			case LONG_DOUBLE_COMPLEX :
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"types of kind " + basicType.getBasicTypeKind(),
+						source);
 		}
 	}
 
@@ -5380,7 +5549,8 @@ public class FunctionTranslator {
 				Field field = type.getField(i);
 				CIVLType civlFieldType = translateABCTypeNode(source, scope,
 						fields.getSequenceChild(i).getTypeNode());
-				String name = field.getName() == null ? "f" + i
+				String name = field.getName() == null
+						? "f" + i
 						: field.getName();
 				Identifier identifier = modelFactory.identifier(
 						modelFactory.sourceOf(field.getDefinition()), name);
@@ -5403,111 +5573,111 @@ public class FunctionTranslator {
 
 		assert tag != null;
 		switch (tag) {
-		case ModelConfiguration.PROC_TYPE:
-			result = typeFactory.processType();
-			break;
-		case ModelConfiguration.HEAP_TYPE:
-			result = modelBuilder.heapType;
-			break;
-		case ModelConfiguration.DYNAMIC_TYPE:
-			result = typeFactory.dynamicType();
-			break;
-		case ModelConfiguration.BUNDLE_TYPE:
-			result = modelBuilder.bundleType;
-			break;
-		case ModelConfiguration.SCOPE_TYPE:
-			result = typeFactory.scopeType();
-			break;
-		default:
-			structType = typeFactory.structOrUnionType(
-					modelFactory.identifier(source, tag), type.isStruct());
-			result = structType;
-			isSystemType = false;
+			case ModelConfiguration.PROC_TYPE :
+				result = typeFactory.processType();
+				break;
+			case ModelConfiguration.HEAP_TYPE :
+				result = modelBuilder.heapType;
+				break;
+			case ModelConfiguration.DYNAMIC_TYPE :
+				result = typeFactory.dynamicType();
+				break;
+			case ModelConfiguration.BUNDLE_TYPE :
+				result = modelBuilder.bundleType;
+				break;
+			case ModelConfiguration.SCOPE_TYPE :
+				result = typeFactory.scopeType();
+				break;
+			default :
+				structType = typeFactory.structOrUnionType(
+						modelFactory.identifier(source, tag), type.isStruct());
+				result = structType;
+				isSystemType = false;
 		}
 		modelBuilder.typeMap.put(type, result);
 		if (!isSystemType) {
 			switch (tag) {
-			case ModelConfiguration.MESSAGE_TYPE:
-				modelBuilder.messageType = result;
-				break;
-			case ModelConfiguration.QUEUE_TYPE:
-				modelBuilder.queueType = result;
-				break;
-			case ModelConfiguration.PTHREAD_POOL:
-			case ModelConfiguration.PTHREAD_GPOOL:
-				structType.setHandleObjectType(true);
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.BARRIER_TYPE:
-				structType.setHandleObjectType(true);
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.barrierType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.GBARRIER_TYPE:
-				structType.setHandleObjectType(true);
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.gbarrierType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.INT_ITER_TYPE:
-				typeFactory.addSystemType(tag, result);
-				// result.setHandleObjectType(true);
-				modelBuilder.intIterType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.COMM_TYPE:
-				typeFactory.addSystemType(tag, result);
-				structType.setHandleObjectType(true);
-				modelBuilder.commType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.GCOMM_TYPE:
-				typeFactory.addSystemType(tag, result);
-				structType.setHandleObjectType(true);
-				modelBuilder.gcommType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.FILE_SYSTEM_TYPE:
-				// result.setHandleObjectType(true);
-				modelBuilder.basedFilesystemType = structType;
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.REAL_FILE_TYPE:
-				modelBuilder.fileType = structType;
-				typeFactory.addSystemType(tag, result);
-				break;
-			case ModelConfiguration.FILE_STREAM_TYPE:
-				typeFactory.addSystemType(tag, result);
-				modelBuilder.FILEtype = structType;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.TM_TYPE:
-				// modelBuilder.handledObjectTypes.add(result);
-				typeFactory.addSystemType(tag, result);
-				break;
-			case ModelConfiguration.COLLECT_RECORD_TYPE:
-				typeFactory.addSystemType(tag, result);
-				structType.setHandleObjectType(false);
-				modelBuilder.collectRecordType = result;
-				// modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.GCOLLECT_CHECKER_TYPE:
-				typeFactory.addSystemType(tag, result);
-				structType.setHandleObjectType(true);
-				modelBuilder.gcollectCheckerType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			case ModelConfiguration.COLLECT_CHECKER_TYPE:
-				typeFactory.addSystemType(tag, result);
-				structType.setHandleObjectType(true);
-				modelBuilder.collectCheckerType = result;
-				modelBuilder.handledObjectTypes.add(result);
-				break;
-			default:
-				// TODO: set default case
+				case ModelConfiguration.MESSAGE_TYPE :
+					modelBuilder.messageType = result;
+					break;
+				case ModelConfiguration.QUEUE_TYPE :
+					modelBuilder.queueType = result;
+					break;
+				case ModelConfiguration.PTHREAD_POOL :
+				case ModelConfiguration.PTHREAD_GPOOL :
+					structType.setHandleObjectType(true);
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.BARRIER_TYPE :
+					structType.setHandleObjectType(true);
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.barrierType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.GBARRIER_TYPE :
+					structType.setHandleObjectType(true);
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.gbarrierType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.INT_ITER_TYPE :
+					typeFactory.addSystemType(tag, result);
+					// result.setHandleObjectType(true);
+					modelBuilder.intIterType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.COMM_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.commType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.GCOMM_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.gcommType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.FILE_SYSTEM_TYPE :
+					// result.setHandleObjectType(true);
+					modelBuilder.basedFilesystemType = structType;
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.REAL_FILE_TYPE :
+					modelBuilder.fileType = structType;
+					typeFactory.addSystemType(tag, result);
+					break;
+				case ModelConfiguration.FILE_STREAM_TYPE :
+					typeFactory.addSystemType(tag, result);
+					modelBuilder.FILEtype = structType;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.TM_TYPE :
+					// modelBuilder.handledObjectTypes.add(result);
+					typeFactory.addSystemType(tag, result);
+					break;
+				case ModelConfiguration.COLLECT_RECORD_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(false);
+					modelBuilder.collectRecordType = result;
+					// modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.GCOLLECT_CHECKER_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.gcollectCheckerType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.COLLECT_CHECKER_TYPE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.collectCheckerType = result;
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				default :
+					// TODO: set default case
 			}
 		}
 		return result;
@@ -5543,60 +5713,61 @@ public class FunctionTranslator {
 			TypeKind kind = abcType.kind();
 
 			switch (kind) {
-			case STRUCTURE_OR_UNION:
-				// type already entered into map, so just return:
-				return translateABCStructureOrUnionTypeNode(source, scope,
-						(StructureOrUnionTypeNode) abcTypeNode,
-						(CIVLStructOrUnionType) result);
-			case ENUMERATION:
-				return translateABCEnumerationType(source, scope,
-						(EnumerationType) abcType);
-			case POINTER: {
-				PointerTypeNode pointerTypeNode = (PointerTypeNode) abcTypeNode;
-				CIVLType baseType = this.translateABCTypeNode(source, scope,
-						pointerTypeNode.referencedType());
+				case STRUCTURE_OR_UNION :
+					// type already entered into map, so just return:
+					return translateABCStructureOrUnionTypeNode(source, scope,
+							(StructureOrUnionTypeNode) abcTypeNode,
+							(CIVLStructOrUnionType) result);
+				case ENUMERATION :
+					return translateABCEnumerationType(source, scope,
+							(EnumerationType) abcType);
+				case POINTER : {
+					PointerTypeNode pointerTypeNode = (PointerTypeNode) abcTypeNode;
+					CIVLType baseType = this.translateABCTypeNode(source, scope,
+							pointerTypeNode.referencedType());
 
-				result = this.typeFactory.pointerType(baseType);
-				this.modelBuilder.typeMap.put(abcType, result);
-				break;
-			}
-			case ARRAY:
-			case BASIC:
-			case HEAP:
-			case OTHER_INTEGER:
-			case PROCESS:
-			case SCOPE:
-			case STATE:
-			case QUALIFIED:
-			case VOID:
-			case FUNCTION:
-			case RANGE:
-			case DOMAIN:
-				return translateABCType(source, scope, abcType);
-			case ATOMIC:
-				throw new CIVLUnimplementedFeatureException("Type " + abcType,
-						source);
-			default:
-				throw new CIVLInternalException("Unknown type: " + abcType,
-						source);
+					result = this.typeFactory.pointerType(baseType);
+					this.modelBuilder.typeMap.put(abcType, result);
+					break;
+				}
+				case ARRAY :
+				case BASIC :
+				case HEAP :
+				case OTHER_INTEGER :
+				case PROCESS :
+				case SCOPE :
+				case STATE :
+				case QUALIFIED :
+				case VOID :
+				case FUNCTION :
+				case RANGE :
+				case DOMAIN :
+					return translateABCType(source, scope, abcType);
+				case ATOMIC :
+					throw new CIVLUnimplementedFeatureException(
+							"Type " + abcType, source);
+				default :
+					throw new CIVLInternalException("Unknown type: " + abcType,
+							source);
 			}
 		} else {
 			CIVLType.TypeKind typeKind = result.typeKind();
 
 			switch (typeKind) {
-			case STRUCT_OR_UNION: {
-				if (abcTypeNode instanceof StructureOrUnionTypeNode) {
-					CIVLStructOrUnionType structUnionType = (CIVLStructOrUnionType) result;
-					StructureOrUnionTypeNode structUnionTypeNode = (StructureOrUnionTypeNode) abcTypeNode;
+				case STRUCT_OR_UNION : {
+					if (abcTypeNode instanceof StructureOrUnionTypeNode) {
+						CIVLStructOrUnionType structUnionType = (CIVLStructOrUnionType) result;
+						StructureOrUnionTypeNode structUnionTypeNode = (StructureOrUnionTypeNode) abcTypeNode;
 
-					if (structUnionType.numFields() < 1
-							&& structUnionTypeNode.getStructDeclList() != null)
-						result = this.translateABCStructureOrUnionTypeNode(
-								source, scope, structUnionTypeNode,
-								structUnionType);
+						if (structUnionType.numFields() < 1
+								&& structUnionTypeNode
+										.getStructDeclList() != null)
+							result = this.translateABCStructureOrUnionTypeNode(
+									source, scope, structUnionTypeNode,
+									structUnionType);
+					}
 				}
-			}
-			default:
+				default :
 			}
 		}
 		return result;
@@ -5621,78 +5792,79 @@ public class FunctionTranslator {
 			TypeKind kind = abcType.kind();
 
 			switch (kind) {
-			case ARRAY: {
-				ArrayType arrayType = (ArrayType) abcType;
-				CIVLType elementType = translateABCType(source, scope,
-						arrayType.getElementType());
-				Expression extent = arrayExtent(source, arrayType, scope);
+				case ARRAY : {
+					ArrayType arrayType = (ArrayType) abcType;
+					CIVLType elementType = translateABCType(source, scope,
+							arrayType.getElementType());
+					Expression extent = arrayExtent(source, arrayType, scope);
 
-				if (extent != null)
-					result = typeFactory.completeArrayType(elementType, extent);
-				else
-					result = typeFactory.incompleteArrayType(elementType);
-				break;
-			}
-			case BASIC:
-				result = translateABCBasicType(source,
-						(StandardBasicType) abcType);
-				break;
-			case HEAP:
-				result = typeFactory.pointerType(modelBuilder.heapType);
-				break;
-			case OTHER_INTEGER:
-				result = typeFactory.integerType();
-				break;
-			case POINTER: {
-				PointerType pointerType = (PointerType) abcType;
-				Type referencedType = pointerType.referencedType();
-				CIVLType baseType = translateABCType(source, scope,
-						referencedType);
+					if (extent != null)
+						result = typeFactory.completeArrayType(elementType,
+								extent);
+					else
+						result = typeFactory.incompleteArrayType(elementType);
+					break;
+				}
+				case BASIC :
+					result = translateABCBasicType(source,
+							(StandardBasicType) abcType);
+					break;
+				case HEAP :
+					result = typeFactory.pointerType(modelBuilder.heapType);
+					break;
+				case OTHER_INTEGER :
+					result = typeFactory.integerType();
+					break;
+				case POINTER : {
+					PointerType pointerType = (PointerType) abcType;
+					Type referencedType = pointerType.referencedType();
+					CIVLType baseType = translateABCType(source, scope,
+							referencedType);
 
-				// if (baseType.isFunction())
-				// result = baseType;
-				// else
-				result = typeFactory.pointerType(baseType);
-				break;
-			}
-			case PROCESS:
-				result = typeFactory.processType();
-				break;
-			case SCOPE:
-				result = typeFactory.scopeType();
-				break;
-			case STATE:
-				result = typeFactory.stateType();
-				break;
-			case QUALIFIED:
-				result = translateABCType(source, scope,
-						((QualifiedObjectType) abcType).getBaseType());
-				break;
-			case STRUCTURE_OR_UNION:
-				result = translateABCStructureOrUnionType(source, scope,
-						(StructureOrUnionType) abcType);
-				// type already entered into map, so just return:
-				return result;
-			case VOID:
-				result = typeFactory.voidType();
-				break;
-			case ENUMERATION:
-				return translateABCEnumerationType(source, scope,
-						(EnumerationType) abcType);
-			case FUNCTION:
-				return translateABCFunctionType(source, scope,
-						(FunctionType) abcType);
-			case RANGE:
-				return typeFactory.rangeType();
-			case DOMAIN:
-				return translateABCDomainType(source, scope,
-						(DomainType) abcType);
-			case ATOMIC:
-				throw new CIVLUnimplementedFeatureException("Type " + abcType,
-						source);
-			default:
-				throw new CIVLInternalException("Unknown type: " + abcType,
-						source);
+					// if (baseType.isFunction())
+					// result = baseType;
+					// else
+					result = typeFactory.pointerType(baseType);
+					break;
+				}
+				case PROCESS :
+					result = typeFactory.processType();
+					break;
+				case SCOPE :
+					result = typeFactory.scopeType();
+					break;
+				case STATE :
+					result = typeFactory.stateType();
+					break;
+				case QUALIFIED :
+					result = translateABCType(source, scope,
+							((QualifiedObjectType) abcType).getBaseType());
+					break;
+				case STRUCTURE_OR_UNION :
+					result = translateABCStructureOrUnionType(source, scope,
+							(StructureOrUnionType) abcType);
+					// type already entered into map, so just return:
+					return result;
+				case VOID :
+					result = typeFactory.voidType();
+					break;
+				case ENUMERATION :
+					return translateABCEnumerationType(source, scope,
+							(EnumerationType) abcType);
+				case FUNCTION :
+					return translateABCFunctionType(source, scope,
+							(FunctionType) abcType);
+				case RANGE :
+					return typeFactory.rangeType();
+				case DOMAIN :
+					return translateABCDomainType(source, scope,
+							(DomainType) abcType);
+				case ATOMIC :
+					throw new CIVLUnimplementedFeatureException(
+							"Type " + abcType, source);
+				default :
+					throw new CIVLInternalException("Unknown type: " + abcType,
+							source);
 			}
 			modelBuilder.typeMap.put(abcType, result);
 		}
