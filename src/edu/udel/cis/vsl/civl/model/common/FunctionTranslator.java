@@ -2127,10 +2127,10 @@ public class FunctionTranslator {
 								"Side-effect not removed: ",
 								modelFactory.sourceOf(operatorNode));
 					default : {// since side-effects have been removed,
-								// the only expressions remaining with
-								// side-effects
-								// are assignments. all others are equivalent to
-								// no-op
+						// the only expressions remaining with
+						// side-effects
+						// are assignments. all others are equivalent to
+						// no-op
 						Expression expression = this.translateExpressionNode(
 								expressionNode, scope, true);
 						Statement noopStatement = modelFactory.noopStatement(
