@@ -1034,7 +1034,6 @@ public abstract class CommonEnabler implements Enabler {
 			Collection<Transition> difference = (Collection<Transition>) Utils.difference(enabledSet.transitions(),
 					ampleSet.transitions());
 
-			sequence.setContainingAllEnabled(true);
 			sequence.addAll(difference);
 			sequence.setContainingAllEnabled(true);
 		}
