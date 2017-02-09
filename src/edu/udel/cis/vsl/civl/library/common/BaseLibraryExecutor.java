@@ -211,7 +211,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 
 			if (checkDerefable.right == ResultType.YES) {
 				eval = this.evaluator.dereference(source, state, process, null,
-						firstElementPointer, false);
+						firstElementPointer, false, true);
 				heapObject = eval.value;
 				state = eval.state;
 			}

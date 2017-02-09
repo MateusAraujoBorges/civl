@@ -753,7 +753,8 @@ public abstract class CommonEnabler implements Enabler {
 		place = symbolicUtil.extractInt(csSource,
 				(NumericExpression) universe.tupleRead(colStateComp, universe.intObject(0)));
 		gstateHandle = universe.tupleRead(colStateComp, universe.intObject(1));
-		eval = this.evaluator.dereference(csSource, state, "p" + pid, colStateExpr, gstateHandle, false);
+		eval = this.evaluator.dereference(csSource, state, "p" + pid,
+				colStateExpr, gstateHandle, false, true);
 		state = eval.state;
 		colStateID = this.modelFactory.getStateRef(csSource, universe.tupleRead(eval.value, universe.intObject(1)));
 		colState = stateFactory.getStateByReference(colStateID);
@@ -809,13 +810,16 @@ public abstract class CommonEnabler implements Enabler {
 			argumentValues[i] = eval.value;
 			state = eval.state;
 		}
-		eval = this.evaluator.dereference(collator.getSource(), state, process, collator, collatorHandle, false);
+		eval = this.evaluator.dereference(collator.getSource(), state, process,
+				collator, collatorHandle, false, true);
 		collatorComp = eval.value;
 		state = eval.state;
 		place = (NumericExpression) universe.tupleRead(collatorComp, universe.intObject(0));
 		placeID = symbolicUtil.extractInt(source, place);
-		gcollatorHandle = universe.tupleRead(collatorComp, universe.intObject(1));
-		eval = this.evaluator.dereference(collator.getSource(), state, process, collator, gcollatorHandle, false);
+		gcollatorHandle = universe.tupleRead(collatorComp,
+				universe.intObject(1));
+		eval = this.evaluator.dereference(collator.getSource(), state, process,
+				collator, gcollatorHandle, false, true);
 		gcollatorComp = eval.value;
 		state = eval.state;
 		gqueueLength = (NumericExpression) universe.tupleRead(gcollatorComp, universe.intObject(2));
@@ -895,7 +899,8 @@ public abstract class CommonEnabler implements Enabler {
 			BooleanExpression isIdleState;
 			ResultType result;
 
-			eval = this.evaluator.dereference(source, state, process, collator, gstateHandle, false);
+			eval = this.evaluator.dereference(source, state, process, collator,
+					gstateHandle, false, true);
 			gstate = eval.value;
 			state = eval.state;
 			mystatus = universe.arrayRead(universe.tupleRead(gstate, universe.intObject(0)), place);

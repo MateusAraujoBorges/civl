@@ -69,7 +69,8 @@ public class OpenMP2CIVLTransformerTest {
 	@Test
 	public void parallelforSimplify() {
 		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
-				TestConstants.QUIET, filename("parallelfor.c")));
+//				TestConstants.QUIET, 
+				filename("parallelfor.c")));
 	}
 
 	@AfterClass
