@@ -191,6 +191,12 @@ public class ImmutableState implements State {
 	 */
 	private boolean allSuccessorsOnStack = true;
 
+	/**
+	 * True iff all successors resulting from the enabled transitions have been
+	 * visited during the search.
+	 */
+	private boolean allSuccessorsVisited = false;
+
 	int[] collectibleCounts;
 
 	/* *************************** Static Methods ************************** */
@@ -1008,6 +1014,16 @@ public class ImmutableState implements State {
 	@Override
 	public boolean getAllSuccessorsOnStack() {
 		return allSuccessorsOnStack;
+	}
+
+	@Override
+	public boolean allSuccessorsVisited() {
+		return allSuccessorsVisited;
+	}
+
+	@Override
+	public void setAllSuccessorsVisited(boolean value) {
+		this.allSuccessorsVisited = value;
 	}
 
 }
