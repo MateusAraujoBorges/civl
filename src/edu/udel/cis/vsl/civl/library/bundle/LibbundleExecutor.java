@@ -494,7 +494,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		// If data size is zero, do nothing.
 		if (reasoner.isValid(universe.equals(dataSize, zero))) {
 			eval = evaluator.dereference(civlsource, state, process, null,
-					pointer, false);
+					pointer, false, true);
 			return new Pair<Evaluation, SymbolicExpression>(eval, pointer);
 		}
 		// If data size larger than one, return an array and the corresponding

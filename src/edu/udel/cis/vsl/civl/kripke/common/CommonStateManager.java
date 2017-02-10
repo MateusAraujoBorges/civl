@@ -752,4 +752,5 @@ public class CommonStateManager implements StateManager {
 	public boolean allSuccessorsOnStack(State state) {
 		return state.getAllSuccessorsOnStack();
 	}
+
 }

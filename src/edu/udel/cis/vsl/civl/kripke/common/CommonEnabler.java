@@ -9,7 +9,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -65,6 +64,7 @@ import edu.udel.cis.vsl.sarl.IF.number.Number;
  * 
  * @author Manchun Zheng (zmanchun)
  * @author Timothy K. Zirkel (zirkel)
+ * @author yanyihao
  */
 public abstract class CommonEnabler implements Enabler {
 
@@ -153,8 +153,6 @@ public abstract class CommonEnabler implements Enabler {
 	protected CIVLConfiguration civlConfig;
 
 	private CollateExecutor collateExecutor;
-
-	private Set<Integer> expandedStateIDs = ConcurrentHashMap.newKeySet();
 
 	/* ***************************** Constructor *************************** */
 
