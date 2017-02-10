@@ -10,7 +10,7 @@ import edu.udel.cis.vsl.civl.predicate.IF.CIVLStatePredicate;
 import edu.udel.cis.vsl.civl.predicate.IF.Predicates;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
+import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.DfsSearcher;
@@ -79,7 +79,7 @@ public class CollateExecutor {
 			CIVLConfiguration oldConfig) {
 		ColStateManager colStateManager = new ColStateManager(enabler, executor,
 				executor.evaluator().symbolicAnalyzer(), errorLogger, config);
-		DfsSearcher<State, Transition, TransitionSequence> searcher = new DfsSearcher<State, Transition, TransitionSequence>(
+		DfsSearcher<State, Transition, TransitionSet> searcher = new DfsSearcher<State, Transition, TransitionSet>(
 				enabler, colStateManager, predicate);
 
 		executor.stateFactory().setConfiguration(this.config);

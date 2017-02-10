@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -12,7 +13,8 @@ import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
+import edu.udel.cis.vsl.civl.semantics.IF.Transition;
+import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -28,9 +30,7 @@ import edu.udel.cis.vsl.gmc.EnablerIF;
  * @author Manchun Zheng (zmanchun)
  */
 public class PointeredEnabler extends CommonEnabler implements Enabler {
-
-	// private boolean testNewAmpleSet = false;
-
+	
 	private MemoryUnitFactory memUnitFactory;
 
 	/* ***************************** Constructors ************************** */
@@ -77,8 +77,8 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 	 * @return The enabled transitions as an instance of TransitionSequence.
 	 */
 	@Override
-	protected TransitionSequence enabledTransitionsPOR(State state) {
-		TransitionSequence transitions;
+	protected TransitionSet enabledTransitionsPOR(State state) {
+		List<Transition> transitions = new ArrayList<>();
 		List<ProcessState> processStates;
 		AmpleSetWorker ampleWorker = new AmpleSetWorker(state, this, evaluator,
 				memUnitFactory, this.config);
@@ -86,8 +86,6 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 				.ampleProcesses();
 
 		processStates = new LinkedList<>(ampleSetResult.right);
-		transitions = Semantics.newTransitionSequence(state,
-				ampleSetResult.left);
 		if (debugging || showAmpleSet) {
 			if (processStates.size() > 1) {
 				debugOut.print("\nample processes at state "
@@ -105,6 +103,6 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 			transitions.addAll(enabledTransitionsOfProcess(state, p.getPid(),
 					ampleWorker.newGuards));
 		}
-		return transitions;
+		return Semantics.newTransitionSet(state, transitions, ampleSetResult.left);
 	}
 }

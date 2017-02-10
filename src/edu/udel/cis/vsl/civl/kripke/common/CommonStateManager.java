@@ -4,7 +4,6 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.io.PrintStream;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.NoopTransition;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition.TransitionKind;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
@@ -397,24 +395,7 @@ public class CommonStateManager implements StateManager {
 			this.outputCollector.collectOutputs(state);
 		return traceStep;
 	}
-
-	void expandTransitionSequence(TransitionSequence transitionSequence) {
-		// TODO mark all processes of the source state for backtracking
-		if (!transitionSequence.containsAllEnabled()) {
-			State state = transitionSequence.state();
-			TransitionSequence ampleSet = enabler.enabledTransitionsPOR(state);
-			TransitionSequence enabledSet = enabler
-					.enabledTransitionsOfAllProcesses(state);
-			@SuppressWarnings("unchecked")
-			Collection<Transition> difference = (Collection<Transition>) Utils
-					.difference(enabledSet.transitions(),
-							ampleSet.transitions());
-
-			transitionSequence.setContainingAllEnabled(true);
-			transitionSequence.addAll(difference);
-		}
-	}
-
+	
 	/**
 	 * Analyzes if the current process has a single (deterministic) enabled
 	 * transition at the given state. The point of this is that a sequence of
@@ -771,9 +752,4 @@ public class CommonStateManager implements StateManager {
 	public boolean allSuccessorsOnStack(State state) {
 		return state.getAllSuccessorsOnStack();
 	}
-
-	// @Override
-	// public void setStack(Stack<TransitionSequence> stack) {
-	// this.stack = stack;
-	// }
 }

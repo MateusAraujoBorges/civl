@@ -11,7 +11,7 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
+import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.CIVLStateException;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.CommandLineException;
@@ -47,7 +47,7 @@ public class TracePlayer extends Player {
 			throws CommandLineException, IOException,
 			MisguidedExecutionException {
 		TracePlayer result = new TracePlayer(config, model, out, err);
-		GuidedTransitionChooser<State, Transition, TransitionSequence> guidedChooser = new GuidedTransitionChooser<>(
+		GuidedTransitionChooser<State, Transition> guidedChooser = new GuidedTransitionChooser<>(
 				result.enabler, traceFile);
 
 		result.civlConfig.setReplay(true);
@@ -63,7 +63,7 @@ public class TracePlayer extends Player {
 		TracePlayer result = new TracePlayer(config, model, out, err);
 		BigInteger seedValue = (BigInteger) config.getAnonymousSection()
 				.getValue(seedO);
-		RandomTransitionChooser<State, Transition, TransitionSequence> chooser;
+		RandomTransitionChooser<State, Transition, TransitionSet> chooser;
 
 		if (seedValue == null)
 			chooser = new RandomTransitionChooser<>(result.enabler);
@@ -120,7 +120,7 @@ public class TracePlayer extends Player {
 			PrintStream out, PrintStream err) throws CommandLineException,
 			IOException, MisguidedExecutionException {
 		this(config, model, out, err);
-		this.chooser = new GuidedTransitionChooser<State, Transition, TransitionSequence>(
+		this.chooser = new GuidedTransitionChooser<State, Transition>(
 				enabler, traceFile);
 	}
 
