@@ -40,6 +40,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FieldDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.OrdinaryDeclarationNode.OrdinaryDeclarationKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ArrayLambdaNode;
@@ -1631,11 +1632,11 @@ public class FunctionTranslator {
 					modelBuilder.mainFunctionNode = functionDefinitionNode;
 				} else
 					translateFunctionDeclarationNode(functionDefinitionNode,
-							scope, null);
+							scope);
 				break;
 			case FUNCTION_DECLARATION :
 				result = translateFunctionDeclarationNode(
-						(FunctionDeclarationNode) node, scope, null);
+						(FunctionDeclarationNode) node, scope);
 				break;
 			case STATEMENT :
 				result = translateStatementNode(scope, (StatementNode) node);
@@ -2126,10 +2127,10 @@ public class FunctionTranslator {
 								"Side-effect not removed: ",
 								modelFactory.sourceOf(operatorNode));
 					default : {// since side-effects have been removed,
-								// the only expressions remaining with
-								// side-effects
-								// are assignments. all others are equivalent to
-								// no-op
+						// the only expressions remaining with
+						// side-effects
+						// are assignments. all others are equivalent to
+						// no-op
 						Expression expression = this.translateExpressionNode(
 								expressionNode, scope, true);
 						Statement noopStatement = modelFactory.noopStatement(
@@ -2407,34 +2408,34 @@ public class FunctionTranslator {
 	 *            the scope in which the function declaration occurs
 	 */
 	private Fragment translateFunctionDeclarationNode(
-			FunctionDeclarationNode node, Scope scope,
-			ArrayList<Variable> scopedParameters) {
+			FunctionDeclarationNode node, Scope scope) {
 		Function entity = node.getEntity();
 		SequenceNode<ContractNode> contract = node.getContract();
 		CIVLFunction result;
 		Fragment fragment = null;
+		// Flag: True if and only if the given node represents a regular
+		// function definition:
+		boolean isRegularDefinition = node
+				.ordinaryDeclarationKind() == OrdinaryDeclarationKind.FUNCTION_DEFINITION;
 
 		if (entity == null)
 			throw new CIVLInternalException("Unresolved function declaration",
 					modelFactory.sourceOf(node));
-		// ignore pure function declarations for functions that have its
-		// corresponding definition node.
-		if ((entity.getDefinition() != null)
-				&& (!(node instanceof FunctionDefinitionNode))) {
-			// Since function definition hasn't be translated, find out the
-			// definition node, translate it.
-			FunctionDefinitionNode defNode = entity.getDefinition();
-
-			translateASTNode(defNode, scope, null);
-		}
 		result = modelBuilder.functionMap.get(entity);
-		if (result == null) {
+		// Create or update the CIVLFunction object in two cases:
+		// 1. It is the first time encountering the function declaration or
+		// definition.
+		// 2. It is a regular function definition, then the CIVLFunction should
+		// be updated in case parameter names are different from previous
+		// declarations.
+		if (result == null || isRegularDefinition) {
 			CIVLSource nodeSource = modelFactory.sourceOf(node);
-			String functionName = entity.getName();
+			Scope parameterScope = modelFactory.scope(nodeSource, scope,
+					new ArrayList<>(0), null);
 			CIVLSource identifierSource = modelFactory
 					.sourceOf(node.getIdentifier());
 			Identifier functionIdentifier = modelFactory
-					.identifier(identifierSource, functionName);
+					.identifier(identifierSource, entity.getName());
 			ArrayList<Variable> parameters = new ArrayList<Variable>();
 			// type should come from entity, not this type node.
 			// if it has a definition node, should probably use that one.
@@ -2447,22 +2448,14 @@ public class FunctionTranslator {
 			SequenceNode<VariableDeclarationNode> abcParameters = functionTypeNode
 					.getParameters();
 			int numParameters = abcParameters.numChildren();
-			Scope parameterScope;
 
-			if (scopedParameters != null) {
-				parameters.addAll(0, scopedParameters);
-			}
-			parameterScope = modelFactory.scope(nodeSource, scope,
-					new ArrayList<>(0), null);
 			for (int i = 0; i < numParameters; i++) {
 				VariableDeclarationNode decl = abcParameters
 						.getSequenceChild(i);
 
 				// Don't process void types. Should only happen in the prototype
 				// of a function with no parameters.
-				if (decl.getTypeNode().kind() == TypeNodeKind.VOID)
-					continue;
-				else {
+				if (decl.getTypeNode().kind() != TypeNodeKind.VOID) {
 					CIVLType type = translateABCType(
 							modelFactory.sourceOf(decl), parameterScope,
 							functionType.getParameterType(i));
@@ -2481,81 +2474,22 @@ public class FunctionTranslator {
 					parameterScope.addVariable(parameter);
 				}
 			}
-			if (entity.getDefinition() != null) {
-				// regular function
-				result = modelFactory.function(nodeSource, entity.isAtomic(),
-						functionIdentifier, parameterScope, parameters,
-						returnType, scope, null);
-				modelBuilder.unprocessedFunctions.add(entity.getDefinition());
-			} else if (entity.isSystemFunction()) {
-				Source declSource = node.getIdentifier().getSource();
-				CivlcToken token = declSource.getFirstToken();
-				File file = token.getSourceFile().getFile();
-				// fileName will be something like "stdlib.h" or "civlc.h"
-				String fileName = file.getName();
-				String libName;
-
-				switch (functionIdentifier.name()) {
-					case "$assert" :
-					case "$assume" :
-					case "$defined" :
-					case "$havoc" :
-						libName = "civlc";
-						break;
-					case "$assert_equals" :
-					case "$equals" :
-						libName = "pointer";
-						break;
-					default : {
-						libName = entity.systemLibrary();
-
-						if (libName == null) {
-							if (!fileName.contains("."))
-								throw new CIVLInternalException(
-										"Malformed file name " + fileName
-												+ " containing system function "
-												+ functionName,
-										nodeSource);
-							libName = fileNameWithoutExtension(fileName);
-						}
-					}
-				}
-				result = modelFactory.systemFunction(nodeSource,
-						functionIdentifier, parameterScope, parameters,
-						returnType, scope, libName);
-			} else if (node instanceof AbstractFunctionDefinitionNode) {
-				int continuity = ((AbstractFunctionDefinitionNode) node)
-						.continuity();
-
-				if (parameters.isEmpty())
-					throw new CIVLSyntaxException(
-							"$abstract functions must have at least one input.\n"
-									+ "An abstract function with 0 inputs is a constant.\n"
-									+ "It can be declared as an unconstrained input variable instead, e.g.\n"
-									+ "$input int N;",
-							node.getSource());
-				result = modelFactory.abstractFunction(nodeSource,
-						functionIdentifier, parameterScope, parameters,
-						returnType, scope, continuity, modelFactory);
-
-				// TODO: create this statement and make it a Fragment...
-
-				// assume(differentiable(f, degree, {a1, a2}, {b1, b2}))
-				// a1, a2, ... are the lower bounds of the intervals
-				// b1, b2, ... are the upper bounds of the intervals
-				// degree = continuity
-
-			} else if (this.civlConfig.svcomp()) {
-				result = modelFactory.nondetFunction(nodeSource,
-						functionIdentifier, returnType, scope);
-			} else {
-				throw new CIVLSyntaxException(
-						"missing the definition of function " + functionName,
-						node.getSource());
-			}
+			if (entity.getDefinition() != null)
+				result = buildRegularCIVLFunction(entity, node, scope,
+						parameterScope, parameters, functionIdentifier,
+						functionType, returnType, nodeSource);
+			else if (entity.isSystemFunction())
+				result = buildSystemCIVLFunction(entity, node, scope,
+						parameterScope, parameters, functionIdentifier,
+						functionType, returnType, nodeSource);
+			else if (entity.isAbstract())
+				result = buildAbstractCIVLFunction(entity, node, scope,
+						parameterScope, parameters, functionIdentifier,
+						functionType, returnType, nodeSource);
 			result.setStateFunction(node.hasStatefFunctionSpecifier());
 			result.setPureFunction(node.hasPureFunctionSpecifier());
-			scope.addFunction(result);
+			if (scope.getFunction(result.name()) == null)
+				scope.addFunction(result);
 			parameterScope.setFunction(result);
 			modelBuilder.functionMap.put(entity, result);
 		}
@@ -2566,6 +2500,186 @@ public class FunctionTranslator {
 			contractTranslator.translateFunctionContract(contract);
 		}
 		return fragment;
+	}
+
+	/**
+	 * <p>
+	 * Creates or update a {@link CIVLFunction} object for a regular function
+	 * entity. The CIVLFunction will be created at the first time the translator
+	 * encounters either the declaration or the definition of a function; The
+	 * CIVLFunction will be updated with its parameters and parameter scope when
+	 * the definition of it is encountered after being created.
+	 * </p>
+	 * 
+	 * <p>
+	 * The CIVLFunction will be added to "modelBuilder.unprocessedFunctions"
+	 * once its definition is encountered.
+	 * </p>
+	 * 
+	 * @param entity
+	 *            An entity associates to a regular function.
+	 * @param node
+	 *            An instance of a {@link FunctionDeclarationNode}
+	 * @param scope
+	 *            The {@link Scope} where the function is located
+	 * @param parameterScope
+	 *            The {@link Scope} where the function parameters are located
+	 * @param parameters
+	 *            An {@link ArrayList} of {@link Variable}s which are formal
+	 *            parameters
+	 * @param functionIdentifier
+	 *            The {@link Identifier} of the function
+	 * @param functionType
+	 *            The {@link FunctionType} of the function
+	 * @param returnType
+	 *            The function return type
+	 * @param functionSource
+	 *            The {@link CIVLSource} associated to the function declaration
+	 *            (or definition).
+	 * @return The created (or updated) CIVLFunction object.
+	 */
+	private CIVLFunction buildRegularCIVLFunction(Function entity,
+			FunctionDeclarationNode node, Scope scope, Scope parameterScope,
+			ArrayList<Variable> parameters, Identifier functionIdentifier,
+			FunctionType functionType, CIVLType returnType,
+			CIVLSource functionSource) {
+		CIVLFunction result = modelBuilder.functionMap.get(entity);
+		boolean isDefinition = node
+				.ordinaryDeclarationKind() == OrdinaryDeclarationKind.FUNCTION_DEFINITION;
+
+		// If it's the first time encountering either the function declaration
+		// or definition, create the CIVLFunction object, else if it encounters
+		// a function definition, update the parameters:
+		if (result == null)
+			result = modelFactory.function(functionSource, entity.isAtomic(),
+					functionIdentifier, parameterScope, parameters, returnType,
+					scope, null);
+		else if (isDefinition) {
+			result.setOuterScope(parameterScope);
+			result.setParameters(parameters);
+		}
+		// add to the unprocessedFunctions:
+		if (isDefinition)
+			modelBuilder.unprocessedFunctions.add(entity.getDefinition());
+		return result;
+	}
+
+	/**
+	 * <p>
+	 * Create a {@link CIVLFunction} object for a CIVL system function. This
+	 * method should only be called once per entity. The CIVLFunction object
+	 * should be created when the first time the translator encounters a
+	 * declaration.
+	 * <p>
+	 * 
+	 * @param entity
+	 *            An entity associates to a regular function.
+	 * @param node
+	 *            An instance of a {@link FunctionDeclarationNode}
+	 * @param scope
+	 *            The {@link Scope} where the function is located
+	 * @param parameterScope
+	 *            The {@link Scope} where the function parameters are located
+	 * @param parameters
+	 *            An {@link ArrayList} of {@link Variable}s which are formal
+	 *            parameters
+	 * @param functionIdentifier
+	 *            The {@link Identifier} of the function
+	 * @param functionType
+	 *            The {@link FunctionType} of the function
+	 * @param returnType
+	 *            The function return type
+	 * @param functionSource
+	 *            The {@link CIVLSource} associated to the function declaration
+	 * @return The created CIVLFunction object.
+	 */
+	private CIVLFunction buildSystemCIVLFunction(Function entity,
+			FunctionDeclarationNode node, Scope scope, Scope parameterScope,
+			ArrayList<Variable> parameters, Identifier functionIdentifier,
+			FunctionType functionType, CIVLType returnType,
+			CIVLSource functionSource) {
+		Source declSource = node.getIdentifier().getSource();
+		CivlcToken token = declSource.getFirstToken();
+		File file = token.getSourceFile().getFile();
+		String functionName = functionIdentifier.name();
+		// fileName will be something like "stdlib.h" or "civlc.h"
+		String fileName = file.getName();
+		String libName;
+
+		switch (functionIdentifier.name()) {
+			case "$assert" :
+			case "$assume" :
+			case "$defined" :
+			case "$havoc" :
+				libName = "civlc";
+				break;
+			case "$assert_equals" :
+			case "$equals" :
+				libName = "pointer";
+				break;
+			default : {
+				libName = entity.systemLibrary();
+
+				if (libName == null) {
+					if (!fileName.contains("."))
+						throw new CIVLInternalException("Malformed file name "
+								+ fileName + " containing system function "
+								+ functionName, functionSource);
+					libName = fileNameWithoutExtension(fileName);
+				}
+			}
+		}
+		return modelFactory.systemFunction(functionSource, functionIdentifier,
+				parameterScope, parameters, returnType, scope, libName);
+	}
+
+	/**
+	 * <p>
+	 * Create a {@link CIVLFunction} object for an abstract function. An
+	 * abstract function declaration is a function definition as well. So this
+	 * method should only be called once per entity. The CIVLFunction object
+	 * should be created when the first time the translator encounters a
+	 * declaration.
+	 * </p>
+	 * 
+	 * @param entity
+	 *            An entity associates to a regular function.
+	 * @param node
+	 *            An instance of a {@link FunctionDeclarationNode}
+	 * @param scope
+	 *            The {@link Scope} where the function is located
+	 * @param parameterScope
+	 *            The {@link Scope} where the function parameters are located
+	 * @param parameters
+	 *            An {@link ArrayList} of {@link Variable}s which are formal
+	 *            parameters
+	 * @param functionIdentifier
+	 *            The {@link Identifier} of the function
+	 * @param functionType
+	 *            The {@link FunctionType} of the function
+	 * @param returnType
+	 *            The function return type
+	 * @param functionSource
+	 *            The {@link CIVLSource} associated to the function declaration
+	 * @return The created CIVLFunction object.
+	 */
+	private CIVLFunction buildAbstractCIVLFunction(Function entity,
+			FunctionDeclarationNode node, Scope scope, Scope parameterScope,
+			ArrayList<Variable> parameters, Identifier functionIdentifier,
+			FunctionType functionType, CIVLType returnType,
+			CIVLSource functionSource) {
+		int continuity = ((AbstractFunctionDefinitionNode) node).continuity();
+
+		if (parameters.isEmpty())
+			throw new CIVLSyntaxException(
+					"$abstract functions must have at least one input.\n"
+							+ "An abstract function with 0 inputs is a constant.\n"
+							+ "It can be declared as an unconstrained input variable instead, e.g.\n"
+							+ "$input int N;",
+					node.getSource());
+		return modelFactory.abstractFunction(functionSource, functionIdentifier,
+				parameterScope, parameters, returnType, scope, continuity,
+				modelFactory);
 	}
 
 	/**
