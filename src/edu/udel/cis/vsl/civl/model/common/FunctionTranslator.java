@@ -2486,6 +2486,11 @@ public class FunctionTranslator {
 				result = buildAbstractCIVLFunction(entity, node, scope,
 						parameterScope, parameters, functionIdentifier,
 						functionType, returnType, nodeSource);
+			else
+				throw new CIVLSyntaxException(
+						"Function " + entity.getName()
+								+ " doesn't have a definition.",
+						identifierSource);
 			result.setStateFunction(node.hasStatefFunctionSpecifier());
 			result.setPureFunction(node.hasPureFunctionSpecifier());
 			if (scope.getFunction(result.name()) == null)
