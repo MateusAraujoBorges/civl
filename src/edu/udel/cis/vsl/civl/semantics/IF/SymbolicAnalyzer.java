@@ -245,12 +245,18 @@ public interface SymbolicAnalyzer {
 	 * </ul>
 	 * For the latter two cases, the pointer is called underefable pointer.
 	 * 
+	 * @param state
+	 *            The current state
 	 * @param pointer
 	 *            The pointer.
+	 * @param civlSource
+	 *            The source related with the pointer
 	 * @return True iff the given pointer is defined.
+	 * @throws CIVLUnimplementedFeatureException 
+	 * 			  If the given pointer is a non-concrete one.
 	 */
 	Pair<BooleanExpression, ResultType> isDefinedPointer(State state,
-			SymbolicExpression pointer);
+			SymbolicExpression pointer, CIVLSource civlSource);
 
 	/**
 	 * Is this a derefable pointer? In other words, check if the pointer can be

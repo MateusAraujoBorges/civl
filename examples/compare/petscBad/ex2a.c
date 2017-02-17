@@ -20,6 +20,10 @@
 
 #include "petsc.h"
 
+PetscErrorCode PetscLogFlops(double ){return 0;}
+PetscErrorCode CHKERRQ(PetscErrorCode ){return 0;}
+
+
 typedef struct {
    PassiveReal param;          /* test problem parameter */
 } AppCtx;
