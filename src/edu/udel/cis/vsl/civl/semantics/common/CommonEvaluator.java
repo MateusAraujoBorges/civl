@@ -3360,7 +3360,7 @@ public class CommonEvaluator implements Evaluator {
 
 		}
 
-		Pair<BooleanExpression, ResultType> checkPointer = this.symbolicAnalyzer.isDefinedPointer(state, pointer);
+		Pair<BooleanExpression, ResultType> checkPointer = this.symbolicAnalyzer.isDefinedPointer(state, pointer, expression.getSource());
 
 		if (checkPointer.right != ResultType.YES) {
 			errorLogger.logError(expression.getSource(), state, process, symbolicAnalyzer.stateInformation(state),
@@ -3938,7 +3938,7 @@ public class CommonEvaluator implements Evaluator {
 	@Override
 	public Evaluation havoc(State state, SymbolicType type) {
 		Pair<State, SymbolicConstant> freshSymbol = this.stateFactory.getFreshSymbol(state,
-				ModelConfiguration.HAVOC_PREFIX_INDEX, type);
+						ModelConfiguration.HAVOC_PREFIX_INDEX, type);
 
 		return new Evaluation(freshSymbol.left, freshSymbol.right);
 	}
