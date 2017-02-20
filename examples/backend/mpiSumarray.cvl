@@ -296,8 +296,8 @@ struct _barrier{
 $atomic_f $gbarrier $gbarrier_create($scope scope, int size) {
   $gbarrier gbarrier = ($gbarrier)($malloc(scope, sizeof(struct _gbarrier)));
   (gbarrier)->nprocs = size;
-  (gbarrier)->proc_map = ($proc[size]) $lambda (int i) $proc_null;
-  (gbarrier)->in_barrier = (_Bool[size]) $lambda (int i) 0;
+  (gbarrier)->proc_map = (($proc[size]) $lambda (int i) $proc_null);
+  (gbarrier)->in_barrier = ((_Bool[size]) $lambda (int i) 0);
   (gbarrier)->num_in_barrier = 0;
   return gbarrier;
 }
@@ -456,9 +456,9 @@ $atomic_f $gcomm $gcomm_create($scope scope, int size) {
   empty.length = 0;
   $seq_init(&(empty.messages), 0, (void*)0);
   (gcomm)->nprocs = size;
-  (gcomm)->procs = ($proc[size]) $lambda (int i) $proc_null;
-  (gcomm)->isInit = (_Bool[size]) $lambda (int i) 0;
-  (gcomm)->buf = ($queue[size][size]) $lambda (int i, j) empty;
+  (gcomm)->procs = (($proc[size]) $lambda (int i) $proc_null);
+  (gcomm)->isInit = ((_Bool[size]) $lambda (int i) 0);
+  (gcomm)->buf = (($queue[size][size]) $lambda (int i, j) empty);
   return gcomm;
 }
 $atomic_f int $gcomm_destroy($gcomm gcomm, void* junkMsgs) {
@@ -519,10 +519,10 @@ struct _gcollate_state{
 $gcollator $gcollator_create($scope scope, int nprocs) {
   $gcollator gcollator = ($gcollator)($malloc(scope, sizeof(struct _gcollator)));
   (gcollator)->nprocs = nprocs;
-  (gcollator)->procs = ($proc[nprocs]) $lambda (int i) $proc_null;
+  (gcollator)->procs = (($proc[nprocs]) $lambda (int i) $proc_null);
   (gcollator)->queue_length = 0;
   $seq_init(&((gcollator)->queue), 0, (void*)0);
-  (gcollator)->entered = (_Bool[nprocs]) $lambda (int i) 0;
+  (gcollator)->entered = ((_Bool[nprocs]) $lambda (int i) 0);
   return gcollator;
 }
 $collator $collator_create($gcollator gcollator, $scope scope, int place) {
@@ -793,7 +793,7 @@ void _mpi_process(int _mpi_rank) {
     return 0;
   }
   {
-    _civl_main(_civl_argc, (char*[_civl_argc]) $lambda (int i) _civl_argv[i]);
+    _civl_main(_civl_argc, ((char*[_civl_argc]) $lambda (int i) _civl_argv[i]));
   }
   $mpi_comm_destroy(MPI_COMM_WORLD, _mpi_state);
 }
