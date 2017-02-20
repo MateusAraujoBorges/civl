@@ -110,7 +110,9 @@ public class IntOperationWorker extends BaseWorker {
 			intDivProcessed = true;
 		}
 		if (unsignedAddEntity != null || unsignedSubstractEntity != null
-				|| unsignedMultiplyEntity != null) {
+				|| unsignedMultiplyEntity != null
+				|| signedToUnsignedEntity != null
+				|| unsignedNegEntity != null) {
 			unsignedArithProcessed = true;
 		}
 
