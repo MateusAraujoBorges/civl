@@ -196,8 +196,8 @@ public class ErrorAutomaton {
 	private List<ErrorCfaLoc> constructErrorTrace (Trace<Transition, State> trace) {
 		
 		List<ErrorCfaLoc> errorTrace = new ArrayList<>();
-		List<TraceStepIF<Transition, State>> steps = trace.traceSteps();
-		Iterator<TraceStepIF<Transition, State>> it = steps.iterator();
+		List<TraceStepIF<State>> steps = trace.traceSteps();
+		Iterator<TraceStepIF<State>> it = steps.iterator();
 		State preState = trace.init();
 		
 		/* Extract Location->Statement pairs from TraceStep Iterator */

@@ -64,7 +64,7 @@ import edu.udel.cis.vsl.sarl.IF.number.Number;
  * 
  * @author Manchun Zheng (zmanchun)
  * @author Timothy K. Zirkel (zirkel)
- * @author yanyihao
+ * @author Yihao Yan (yihaoyan)
  */
 public abstract class CommonEnabler implements Enabler {
 
@@ -222,26 +222,22 @@ public abstract class CommonEnabler implements Enabler {
 	}
 
 	@Override
-	public TransitionSetIF<State, Transition> ampleSetComplement(State source) {
-		// State state = sequence.state();
-		//
-		// if (!sequence.containsAllEnabled()) {
-
+	public TransitionSetIF<State, Transition> ampleSetComplement(TransitionSetIF<State, Transition> transitionSet) {
+		TransitionSet ts = (TransitionSet) transitionSet;
+		State source = ts.source();
 		TransitionSet ampleSet = this.enabledTransitionsPOR(source);
 		TransitionSet enabledSet = this.enabledTransitionsOfAllProcesses(source);
 		@SuppressWarnings("unchecked")
 		Collection<Transition> difference = (Collection<Transition>) Utils.difference(enabledSet.transitions(),
 				ampleSet.transitions());
 		List<Transition> transitions = new ArrayList<>();
+		TransitionSet complementSet;
 
 		transitions.addAll(difference);
+		complementSet = Semantics.newTransitionSet(source, transitions, false);
+		complementSet.setOffSet(ts.size());
 
-		return Semantics.newTransitionSet(source, transitions, false);
-
-		// sequence.setContainingAllEnabled(true);
-		// sequence.addAll(difference);
-		// }
-		// expandedStateIDs.add(state.getCanonicId());
+		return complementSet;
 	}
 
 	@Override
@@ -277,18 +273,6 @@ public abstract class CommonEnabler implements Enabler {
 	}
 
 	@Override
-	public void print(PrintStream out, TransitionSetIF<State, Transition> arg1) {
-	}
-
-	@Override
-	public void printFirstTransition(PrintStream arg0, TransitionSetIF<State, Transition> arg1) {
-	}
-
-	@Override
-	public void printRemaining(PrintStream arg0, TransitionSetIF<State, Transition> transitionSet) {
-	}
-
-	@Override
 	public void setDebugOut(PrintStream debugOut) {
 		this.debugOut = debugOut;
 	}
@@ -321,7 +305,7 @@ public abstract class CommonEnabler implements Enabler {
 		for (ProcessState process : processes) {
 			transitions.addAll(this.enabledTransitionsOfProcess(state, process.getPid()));
 		}
-		
+
 		return Semantics.newTransitionSet(state, transitions, true);
 	}
 

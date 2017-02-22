@@ -12,8 +12,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
  * @author Manchun Zheng
  * 
  */
-public interface Enabler extends
-		EnablerIF<State, Transition> {
+public interface Enabler extends EnablerIF<State, Transition> {
 
 	/**
 	 * Computes the guard of a statement. Since we have SystemGuardExpression

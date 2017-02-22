@@ -7,7 +7,7 @@ import edu.udel.cis.vsl.gmc.TransitionIteratorIF;
  * This class defines the iterator which is used to iterate a
  * {@link TransitionIteratorIF}
  * 
- * @author yanyihao
+ * @author Yihao Yan (yanyihao)
  *
  */
 public interface TransitionIterator extends TransitionIteratorIF<State, Transition> {

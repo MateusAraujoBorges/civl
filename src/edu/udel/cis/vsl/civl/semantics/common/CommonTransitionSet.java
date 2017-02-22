@@ -9,11 +9,12 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.TransitionIteratorIF;
 
 /**
- * A transition set contains a list of transitions and the state from which
- * they emanate.
+ * A transition set contains a list of transitions and the state from which they
+ * emanate.
  * 
  * @author Timothy K. Zirkel (zirkel)
  * @author Manchun Zheng (zmanchun)
+ * @author Yihao Yan (yanyihao)
  */
 public class CommonTransitionSet implements TransitionSet {
 
@@ -25,16 +26,23 @@ public class CommonTransitionSet implements TransitionSet {
 	private List<Transition> transitions;
 
 	/**
-	 * This is the state from which all the transitions in the sequence emanate.
+	 * This is the state from which all the transitions in the set emanate.
 	 */
 	private State state;
 
 	/**
-	 * The number of elements executed from this set since it is created.
+	 * true iff the transition set contains the full enabled set.
 	 */
-	private int numExecuted = 0;
-
 	private boolean containingAllEnabled = false;
+
+	/**
+	 * <ul>
+	 * <li>offSet = 0 when this transition set is ample set;</li>
+	 * <li>offSet = sizeof(ampleset) when this transition set is ample set
+	 * complement;</li>
+	 * </ul>
+	 */
+	private int offSet = 0;
 
 	/* ***************************** Constructors ************************** */
 
@@ -43,6 +51,8 @@ public class CommonTransitionSet implements TransitionSet {
 	 * 
 	 * @param state
 	 *            The state that all transitions of this set emanate from.
+	 * @param allEnabled
+	 *            Does the set contains all the enabled transitions?
 	 */
 	public CommonTransitionSet(State state, boolean allEnabled) {
 		this.state = state;
@@ -50,12 +60,22 @@ public class CommonTransitionSet implements TransitionSet {
 		this.containingAllEnabled = allEnabled;
 	}
 
+	/**
+	 * Create a transition set from a given list of transitions.
+	 * 
+	 * @param state
+	 *            The state that all transitions of this set emanate from.
+	 * @param transitions
+	 *            The list of transitions to initialize the transition set.
+	 * @param allEnabled
+	 *            Does the set contains all the enabled transitions?
+	 */
 	public CommonTransitionSet(State state, List<Transition> transitions, boolean allEnabled) {
 		this.state = state;
 		this.transitions = transitions;
 		this.containingAllEnabled = allEnabled;
 	}
-	
+
 	@Override
 	public int size() {
 		return this.transitions.size();
@@ -65,7 +85,6 @@ public class CommonTransitionSet implements TransitionSet {
 	public boolean isEmpty() {
 		return this.transitions.isEmpty();
 	}
-	
 
 	@Override
 	public boolean containsAllEnabled() {
@@ -89,35 +108,33 @@ public class CommonTransitionSet implements TransitionSet {
 
 	@Override
 	public TransitionIteratorIF<State, Transition> randomIterator() {
-		// TODO Auto-generated method stub
+		// TODO this method is for multi-core model checking.
 		return null;
 	}
 
 	@Override
 	public TransitionIteratorIF<State, Transition> iterator() {
-		return new CommonTransitionIterator(this);
+		CommonTransitionIterator transitionIterator = new CommonTransitionIterator(this);
+		transitionIterator.setOffSet(offSet);
+
+		return transitionIterator;
 	}
 
 	@Override
 	public Transition get(int i) {
 		return transitions.get(i);
 	}
-
+	
 	@Override
 	public boolean hasMultiple() {
 		return transitions.size() > 1;
 	}
+	
+	@Override
+	public void setOffSet(int offSet) {
+		this.offSet = offSet;
+	}
 
-	@Override
-	public int numExecuted() {
-		return numExecuted;
-	}
-	
-	@Override
-	public void incrementNumExecuted(){
-		numExecuted++;
-	}
-	
 	/* ************************* Methods from Object *********************** */
 
 	@Override

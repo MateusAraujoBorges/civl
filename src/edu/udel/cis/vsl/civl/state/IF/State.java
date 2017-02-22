@@ -46,6 +46,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * @author Stephen F. Siegel (siegel)
  * @author Timothy K. Zirkel (zirkel)
  * @author Tim McClory (tmcclory)
+ * @author Yihao Yan (yanyihao)
  * 
  */
 public interface State {
@@ -180,9 +181,6 @@ public interface State {
 	 * @return
 	 */
 	SymbolicExpression valueOf(int pid, Variable variable);
-
-	@Override
-	String toString();
 
 	/**
 	 * Gets the call stack information (function, location, but no dyscope) of
@@ -387,4 +385,7 @@ public interface State {
 	 *            flag.
 	 */
 	public void setAllSuccessorsVisited(boolean value);
+	
+	@Override
+	String toString();
 }

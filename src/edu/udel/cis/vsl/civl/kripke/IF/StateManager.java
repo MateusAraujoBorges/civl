@@ -71,7 +71,4 @@ public interface StateManager extends StateManagerIF<State, Transition> {
 	 * @return the names of output variables
 	 */
 	String[] outptutNames();
-
-//	void setStack(Stack<TransitionSequence> stack);
-
 }

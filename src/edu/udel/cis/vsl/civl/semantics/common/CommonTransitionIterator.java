@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.semantics.common;
 
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionIterator;
@@ -25,6 +26,20 @@ public class CommonTransitionIterator implements TransitionIterator {
 	 */
 	private LinkedList<Integer> indexes;
 
+	/**
+	 * The number of transitions that have been consumed.
+	 */
+	private int numConsumed = 0;
+
+	/**
+	 * <ul>
+	 * <li>offSet = 0 when this iterator iterates an ample set;</li>
+	 * <li>offSet = sizeof(ampleSet) when this iterator iterates an ample set
+	 * complement;</li>
+	 * </ul>
+	 */
+	private int offSet = 0;
+
 	public CommonTransitionIterator(TransitionSet transitionSet) {
 		this.transitionSet = transitionSet;
 		indexes = new LinkedList<>();
@@ -43,6 +58,9 @@ public class CommonTransitionIterator implements TransitionIterator {
 
 	@Override
 	public Transition peek() {
+		if (indexes.size() == 0)
+			throw new NoSuchElementException();
+
 		return transitionSet.get(indexes.peek());
 	}
 
@@ -53,8 +71,20 @@ public class CommonTransitionIterator implements TransitionIterator {
 
 	@Override
 	public Transition next() {
-		transitionSet.incrementNumExecuted();
+		if (indexes.size() == 0)
+			throw new NoSuchElementException();
+
+		numConsumed++;
 		return transitionSet.get(indexes.pop());
+	}
+
+	@Override
+	public int numConsumed() {
+		return numConsumed + offSet;
+	}
+
+	public void setOffSet(int offSet) {
+		this.offSet = offSet;
 	}
 
 }

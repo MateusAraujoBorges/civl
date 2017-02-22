@@ -89,8 +89,8 @@ public class WitnessGenerator {
 	
 	public WitnessGenerator (Model model, Trace<Transition, State> trace) throws IOException {
 		
-		List<TraceStepIF<Transition, State>> steps = trace.traceSteps();
-		Iterator<TraceStepIF<Transition, State>> it = steps.iterator();
+		List<TraceStepIF<State>> steps = trace.traceSteps();
+		Iterator<TraceStepIF<State>> it = steps.iterator();
 		List<Pair<Location,Statement>> traceStepLocStmt = traceLocStmtPairs(it);
 
 		try {
@@ -170,7 +170,7 @@ public class WitnessGenerator {
 	
 	/* Extract Location-Statement pairs from TraceStep Iterator */
 	private List<Pair<Location, Statement>> traceLocStmtPairs(
-			Iterator<TraceStepIF<Transition, State>> it) {
+			Iterator<TraceStepIF<State>> it) {
 		List<Pair<Location, Statement>> tracePairs = new ArrayList<Pair<Location, Statement>>();
 		while(it.hasNext()) {
 			TraceStep step = ((TraceStep) it.next());

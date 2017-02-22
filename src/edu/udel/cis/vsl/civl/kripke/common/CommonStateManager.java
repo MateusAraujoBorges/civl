@@ -105,10 +105,6 @@ public class CommonStateManager implements StateManager {
 
 	private OutputCollector outputCollector;
 
-	// private Stack<TransitionSequence> stack;
-
-	// private Set<Integer> expandedStateIDs = new HashSet<>();
-
 	private boolean printTransitions;
 
 	private boolean printAllStates;
@@ -167,7 +163,7 @@ public class CommonStateManager implements StateManager {
 	 * @return the resulting trace step after executing the state.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	protected TraceStepIF<Transition, State> nextStateWork(State state, Transition transition)
+	protected TraceStepIF<State> nextStateWork(State state, Transition transition)
 			throws UnsatisfiablePathConditionException {
 		int pid;
 		int numProcs;
@@ -278,42 +274,7 @@ public class CommonStateManager implements StateManager {
 					ignoredErrorSet.add(hex.heapErrorKind());
 				}
 			} while (!finished);
-			// if (state.onStack()) {
-			// // this is a back-edge, we need to fulfill ample set condition
-			// // C3 cycle)
-			// TransitionSequence transitionSequence = stack.peek();
-			// State sourceState = transitionSequence.state();
-			//
-			// // if (expandedStateIDs.contains(sourceState.getCanonicId())
-			// // || expandedStateIDs.contains(state.getCanonicId()))
-			// // System.out.println("State " + state.getCanonicId()
-			// // + " is on stack but has been expanded before.");
-			// if (!expandedStateIDs.contains(sourceState.getCanonicId())
-			// && !expandedStateIDs.contains(state.getCanonicId())
-			// && !transitionSequence.containsAllEnabled()) {
-			// // int onStackID = state.getCanonicId();
-			// // Stack<TransitionSequence> tmp = new Stack<>();
-			// // TransitionSequence current = stack.pop();
-			// // State currentState = current.state();
-			// //
-			// // while (currentState.getCanonicId() != onStackID) {
-			// // tmp.push(current);
-			// // expandedStateIDs.add(currentState.getCanonicId());
-			// // current = stack.pop();
-			// // currentState = current.state();
-			// // }
-			// // expandedStateIDs.add(currentState.getCanonicId());
-			// // stack.push(current);
-			// // while (!tmp.isEmpty()) {
-			// // current = tmp.pop();
-			// // stack.push(current);
-			// // }
-			// expandedStateIDs.add(state.getCanonicId());
-			// expandedStateIDs.add(sourceState.getCanonicId());
-			// this.expandTransitionSequence(transitionSequence);
-			// ampleSetUpdated = true;
-			// }
-			// }
+			
 			traceStep.complete(state);
 			newCanonicId = state.getCanonicId();
 			if (newCanonicId > oldMaxCanonicId) {
@@ -580,8 +541,8 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public TraceStepIF<Transition, State> nextState(State state, Transition transition) {
-		TraceStepIF<Transition, State> result;
+	public TraceStepIF<State> nextState(State state, Transition transition) {
+		TraceStepIF<State> result;
 
 		// nextStateCalls++;
 		try {

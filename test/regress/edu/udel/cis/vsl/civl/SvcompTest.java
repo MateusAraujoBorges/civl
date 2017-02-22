@@ -4,6 +4,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -59,7 +61,8 @@ public class SvcompTest {
 		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
 				filename("stack_longest_true-unreach-call.i")));
 	}
-
+	
+	@Ignore
 	@Test
 	public void gcd_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,

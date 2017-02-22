@@ -37,6 +37,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
  * @author Timothy K. Zirkel (zirkel)
  * @author Tim McClory (tmcclory)
  * @author Ziqing Luo (ziqing)
+ * @author Yihao Yan (yanyihao)
  * 
  */
 public class ImmutableState implements State {

@@ -14,15 +14,9 @@ import edu.udel.cis.vsl.gmc.TransitionSetIF;
  * 
  * @author Timothy K. Zirkel (zirkel)
  * @author Manchun Zheng (zmanchun)
+ * @author Yihao Yan (yanyihao)
  */
 public interface TransitionSet extends TransitionSetIF<State, Transition> {
-
-	/**
-	 * Returns the number of transitions contained in this set.
-	 * 
-	 * @return The number of transitions contained in this set.
-	 */
-	int size();
 
 	/**
 	 * Returns true iff this set is empty.
@@ -32,7 +26,7 @@ public interface TransitionSet extends TransitionSetIF<State, Transition> {
 	boolean isEmpty();
 
 	/**
-	 * does this set of transitions contain all enabled transitions of the given
+	 * Does this set of transitions contain all enabled transitions of the given
 	 * state
 	 * 
 	 * @return true iff this set of transitions contain all enabled transitions
@@ -41,13 +35,13 @@ public interface TransitionSet extends TransitionSetIF<State, Transition> {
 	boolean containsAllEnabled();
 
 	/**
-	 * @return the set of transitions contained in this set as a collection.
+	 * @return the set of transitions contained in this set as a list.
 	 */
 	List<Transition> transitions();
 
 	/**
-	 * sets the flag that denotes if this transition sequence contains all
-	 * enabled transitions of the state
+	 * Sets the flag that denotes if this transition sequence contains all
+	 * enabled transitions of the state.
 	 */
 	void setContainingAllEnabled(boolean value);
 
@@ -58,8 +52,5 @@ public interface TransitionSet extends TransitionSetIF<State, Transition> {
 	 */
 	Transition get(int i);
 	
-	/**
-	 * Increment the number of transitions that are executed.
-	 */
-	void incrementNumExecuted();
+	void setOffSet(int offSet);
 }
