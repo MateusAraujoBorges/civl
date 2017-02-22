@@ -2320,11 +2320,13 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						if (i != 0)
 							result.append(", ");
-						result.append(this.symbolicExpressionToString(
-								var.getSource(), state, var.type(),
-								state.getVariableValue(
-										state.getDyscope(pid, var.scope()),
-										var.vid())));
+						result.append(
+								this.symbolicExpressionToString(var.getSource(),
+										state, var.type(),
+										state.getVariableValue(
+												state.getDyscope(pid,
+														var.scope()),
+												var.vid())));
 					}
 					result.append(")");
 					break;
@@ -2707,9 +2709,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						claim = reasoner.simplify(claim);
 						if (result == ResultType.YES) {
-							if (!derefable && reasoner
-									.valid(universe.equals(length, index))
-									.getResultType() != ResultType.NO) {
+							if (!derefable
+									&& reasoner
+											.valid(universe.equals(length,
+													index))
+											.getResultType() != ResultType.NO) {
 								return new Triple<>(null, claim, result);
 							} else {
 								return new Triple<>(
@@ -2751,7 +2755,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 								universe.unionExtract(index, targetValue),
 								universe.trueExpression(), ResultType.YES);
 				}
-			} else { 
+			} else {
 				// offset reference
 				return new Triple<>(null, universe.trueExpression(),
 						ResultType.YES);
@@ -2798,13 +2802,19 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 	@Override
 	public Pair<BooleanExpression, ResultType> isDefinedPointer(State state,
-			SymbolicExpression pointer) {
+			SymbolicExpression pointer, CIVLSource civlSource) {
 		if (this.symbolicUtil.isNullPointer(pointer))
 			return new Pair<>(universe.trueExpression(), ResultType.YES);
 		if (pointer.isNull())
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
+		if (!pointer.operator().equals(SymbolicOperator.TUPLE)
+				&& !pointer.operator().equals(SymbolicOperator.CONCRETE))
+			throw new CIVLUnimplementedFeatureException(
+					"\nAbility to deterine whether a non-concrete pointer is defined."
+							+ "\npointer value: " + pointer.toString(),
+					civlSource);
 
-		int dyscope = symbolicUtil.getDyscopeId(null, pointer);
+		int dyscope = symbolicUtil.getDyscopeId(civlSource, pointer);
 
 		if (dyscope == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE)
 			return new Pair<>(universe.trueExpression(), ResultType.YES);

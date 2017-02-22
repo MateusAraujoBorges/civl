@@ -1,10 +1,11 @@
 package edu.udel.cis.vsl.civl;
 
-import java.io.File;
 import static edu.udel.cis.vsl.civl.TestConstants.COMPARE;
 import static edu.udel.cis.vsl.civl.TestConstants.IMPL;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static edu.udel.cis.vsl.civl.TestConstants.SPEC;
+
+import java.io.File;
 
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -34,8 +35,16 @@ public class CompareDevTest {
 
 	@Test
 	public void queue() {
-		ui.run(COMPARE, QUIET, SPEC, filename("queue", "driver.cvl"), filename("queue", "queue_two_lock.c"), IMPL,
-				filename("queue", "driver.cvl"), filename("queue", "queue_non_blocking.c"));
+		ui.run(COMPARE, QUIET, SPEC, filename("queue", "driver.cvl"),
+				filename("queue", "queue_two_lock.c"), IMPL,
+				filename("queue", "driver.cvl"),
+				filename("queue", "queue_non_blocking.c"));
+	}
+
+	@Test
+	public void unableExtractInt() {
+		ui.run("verify", QUIET, filename("petscBad", "ex2Driver.c"),
+				filename("petscBad", "ex2a.c"));
 	}
 
 	@AfterClass
