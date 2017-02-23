@@ -11,7 +11,6 @@ import org.junit.Test;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
-@Ignore
 public class SvcompTest {
 	/* *************************** Static Fields *************************** */
 
