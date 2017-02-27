@@ -51,6 +51,11 @@ public interface TransitionSet extends TransitionSetIF<State, Transition> {
 	 * @return the transitions at certain index.
 	 */
 	Transition get(int i);
-	
+
+	/**
+	 * @param offSet
+	 *            The value that will be assigned to the offset of a transition
+	 *            set.
+	 */
 	void setOffSet(int offSet);
 }

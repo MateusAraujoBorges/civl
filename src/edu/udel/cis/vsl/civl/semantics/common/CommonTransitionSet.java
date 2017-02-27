@@ -108,7 +108,7 @@ public class CommonTransitionSet implements TransitionSet {
 
 	@Override
 	public TransitionIteratorIF<State, Transition> randomIterator() {
-		// TODO this method is for multi-core model checking.
+		// TODO this method will be removed later.
 		return null;
 	}
 

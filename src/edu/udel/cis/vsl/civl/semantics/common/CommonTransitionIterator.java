@@ -11,9 +11,9 @@ import edu.udel.cis.vsl.gmc.TransitionSetIF;
 
 /**
  * This class defines the regular transition iterator of {@link TransitionSetIF}
- * , the iterator will iterate the {@link TransitionSetIF} in an order manner.
+ * , the iterator will iterate the {@link TransitionSetIF} in a fix order.
  * 
- * @author yanyihao
+ * @author Yihao Yan (yihaoyan)
  *
  */
 public class CommonTransitionIterator implements TransitionIterator {
