@@ -1,0 +1,5 @@
+1. Create a listener class which implements edu.udel.cis.vsl.gmc.DfsListener<STATE>
+   interface.
+2. Go to edu.udel.cis.vsl.civl.run.IF.UserInterface. In method 
+   DfsListener<State> makeListener(CIVLConfiguration config), construct an object
+   of your listener and return the listener object. Then the listener if applied. 
