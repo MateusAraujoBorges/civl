@@ -614,23 +614,19 @@ public class CommonStateManager implements StateManager {
 	 */
 	private void reportErrorForAtom(EnabledStatus enabled, State state,
 			Location location, String process)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		switch (enabled) {
 			case NONDETERMINISTIC :
-				errorLogger
-						.logSimpleError(location.getSource(), state, process,
-								symbolicAnalyzer.stateInformation(
-										state),
-								ErrorKind.OTHER,
-								"nondeterminism is encountered in $atom block.");
+				errorLogger.logSimpleError(location.getSource(), state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.OTHER,
+						"nondeterminism is encountered in $atom block.");
 				throw new UnsatisfiablePathConditionException();
 			case BLOCKED :
-				errorLogger
-						.logSimpleError(location.getSource(), state, process,
-								symbolicAnalyzer.stateInformation(
-										state),
-								ErrorKind.OTHER,
-								"blocked location is encountered in $atom block.");
+				errorLogger.logSimpleError(location.getSource(), state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.OTHER,
+						"blocked location is encountered in $atom block.");
 				throw new UnsatisfiablePathConditionException();
 			default :
 		}
@@ -647,7 +643,7 @@ public class CommonStateManager implements StateManager {
 	public TraceStepIF<Transition, State> nextState(State state,
 			Transition transition) {
 		TraceStepIF<Transition, State> result;
-		
+
 		// nextStateCalls++;
 		try {
 			result = nextStateWork(state, transition);
