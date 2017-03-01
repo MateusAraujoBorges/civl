@@ -26,8 +26,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
 
-public class LibcommEvaluator extends BaseLibraryEvaluator implements
-		LibraryEvaluator {
+public class LibcommEvaluator extends BaseLibraryEvaluator
+		implements
+			LibraryEvaluator {
 
 	public static final int messageBufferField = 3;
 	public static final int gcommHandleInCommField = 1;
@@ -149,8 +150,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 		destNum = reasoner.extractNumber(dest);
 		assert destNum != null : "destionation of comm_dequeue cannot be null.";
 		destInt = ((IntegerNumber) destNum).intValue();
-		guard = dequeueGuardGenerator(civlsource, state, gcomm, srcInt,
-				destInt, (NumericExpression) tag);
+		guard = dequeueGuardGenerator(civlsource, state, gcomm, srcInt, destInt,
+				(NumericExpression) tag);
 		return guard;
 	}
 
@@ -234,7 +235,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 		List<NumericExpression> results = new LinkedList<>();
 
 		buf = universe.tupleRead(gcomm, threeObject);
-		assert (source == -1 || source >= 0) : "Message source is neither wild-card nor valid positive integer.\n";
+		assert (source == -1
+				|| source >= 0) : "Message source is neither wild-card nor valid positive integer.\n";
 		// non-wild card source and tag
 		if (source >= 0 && !isWildTag) {
 			Number numQueLength;
@@ -251,8 +253,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 			intQueLength = ((IntegerNumber) numQueLength).intValue();
 			for (int i = 0; i < intQueLength; i++) {
 				message = universe.arrayRead(messages, universe.integer(i));
-				if (reasoner.isValid(universe.equals(
-						universe.tupleRead(message, twoObject), tag))) {
+				if (reasoner.isValid(universe
+						.equals(universe.tupleRead(message, twoObject), tag))) {
 					results.add(src);
 					return results;
 				}
@@ -264,16 +266,16 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 			messages = universe.tupleRead(queue, oneObject);
 			queueLength = (NumericExpression) universe.tupleRead(queue,
 					zeroObject);
-			if (reasoner.isValid(universe.lessThan(zero,
-					(NumericExpression) queueLength)))
+			if (reasoner.isValid(
+					universe.lessThan(zero, (NumericExpression) queueLength)))
 				results.add(src);
 			return results;
 		} // any source and non-wild card tag
 		else if (source == -1 && !isWildTag) {
 			Number numNprocs, numQueLength;
 			int intNumNprocs, intNumQueLength;
-			NumericExpression nprocs = (NumericExpression) universe.tupleRead(
-					gcomm, zeroObject);
+			NumericExpression nprocs = (NumericExpression) universe
+					.tupleRead(gcomm, zeroObject);
 
 			numNprocs = reasoner.extractNumber(nprocs);
 			assert numNprocs != null : "The number of processes in communicator is expected to be concrete.\n";
@@ -308,8 +310,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 		else if (source == -1 && isWildTag) {
 			Number numNprocs;
 			int intNumNprocs;
-			NumericExpression nprocs = (NumericExpression) universe.tupleRead(
-					gcomm, zeroObject);
+			NumericExpression nprocs = (NumericExpression) universe
+					.tupleRead(gcomm, zeroObject);
 
 			numNprocs = reasoner.extractNumber(nprocs);
 			assert numNprocs != null : "The number of processes in communicator is expected to be concrete.\n";
@@ -420,18 +422,10 @@ public class LibcommEvaluator extends BaseLibraryEvaluator implements
 		claim = universe.lessThan(index, universe.length(procArray));
 		resultType = reasoner.valid(claim).getResultType();
 		if (!resultType.equals(ResultType.YES)) {
-			state = this.errorLogger
-					.logError(
-							source,
-							state,
-							process,
-							symbolicAnalyzer.stateInformation(state),
-							claim,
-							resultType,
-							ErrorKind.OUT_OF_BOUNDS,
-							"The place of "
-									+ process
-									+ " in a communicator is out of the bound of the total number of processes");
+			state = this.errorLogger.logError(source, state, process,
+					symbolicAnalyzer.stateInformation(state), claim, resultType,
+					ErrorKind.OUT_OF_BOUNDS, "The place of " + process
+							+ " in a communicator is out of the bound of the total number of processes");
 			throw new UnsatisfiablePathConditionException();
 		}
 		return universe.arrayRead(procArray, index);

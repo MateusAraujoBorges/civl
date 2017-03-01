@@ -50,16 +50,16 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 
-public class LibcommEnabler extends BaseLibraryEnabler implements
-		LibraryEnabler {
+public class LibcommEnabler extends BaseLibraryEnabler
+		implements
+			LibraryEnabler {
 
 	/* **************************** Constructors *************************** */
 
 	public LibcommEnabler(String name, Enabler primaryEnabler,
 			Evaluator evaluator, ModelFactory modelFactory,
 			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
-			CIVLConfiguration civlConfig,
-			LibraryEnablerLoader libEnablerLoader,
+			CIVLConfiguration civlConfig, LibraryEnablerLoader libEnablerLoader,
 			LibraryEvaluatorLoader libEvaluatorLoader) {
 		super(name, primaryEnabler, evaluator, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libEnablerLoader,
@@ -69,8 +69,7 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 	/* ********************* Methods from LibraryEnabler ******************* */
 
 	@Override
-	public BitSet ampleSet(State state, int pid,
-			CallOrSpawnStatement statement,
+	public BitSet ampleSet(State state, int pid, CallOrSpawnStatement statement,
 			MemoryUnitSet[] reachablePtrWritableMap,
 			MemoryUnitSet[] reachablePtrReadonlyMap,
 			MemoryUnitSet[] reachableNonPtrWritableMap,
@@ -86,32 +85,32 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 		call = (CallOrSpawnStatement) statement;
 		name = call.function().name();
 		switch (name.name()) {
-		case "$comm_enqueue":
-		case "$comm_dequeue":
-			return ampleSetWork(state, pid, call, reachablePtrWritableMap,
-					reachablePtrReadonlyMap, reachableNonPtrWritableMap,
-					reachableNonPtrReadonlyMap);
-		default:
-			return super.ampleSet(state, pid, statement,
-					reachablePtrWritableMap, reachablePtrReadonlyMap,
-					reachableNonPtrWritableMap, reachableNonPtrReadonlyMap);
+			case "$comm_enqueue" :
+			case "$comm_dequeue" :
+				return ampleSetWork(state, pid, call, reachablePtrWritableMap,
+						reachablePtrReadonlyMap, reachableNonPtrWritableMap,
+						reachableNonPtrReadonlyMap);
+			default :
+				return super.ampleSet(state, pid, statement,
+						reachablePtrWritableMap, reachablePtrReadonlyMap,
+						reachableNonPtrWritableMap, reachableNonPtrReadonlyMap);
 		}
 	}
 
 	@Override
 	public List<Transition> enabledTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, AtomicLockAction atomicLockAction)
+			CallOrSpawnStatement call, BooleanExpression pathCondition, int pid,
+			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		String functionName = call.function().name().name();
 
 		switch (functionName) {
-		case "$comm_dequeue":
-			return this.enabledCommDequeueTransitions(state, call,
-					pathCondition, pid, atomicLockAction);
-		default:
-			return super.enabledTransitions(state, call, pathCondition, pid,
-					atomicLockAction);
+			case "$comm_dequeue" :
+				return this.enabledCommDequeueTransitions(state, call,
+						pathCondition, pid, atomicLockAction);
+			default :
+				return super.enabledTransitions(state, call, pathCondition, pid,
+						atomicLockAction);
 		}
 	}
 
@@ -133,8 +132,8 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 	 * @throws UnsatisfiablePathConditionException
 	 * @throws LibraryLoaderException
 	 */
-	private BitSet ampleSetWork(State state, int pid,
-			CallOrSpawnStatement call, MemoryUnitSet[] reachablePtrWritableMap,
+	private BitSet ampleSetWork(State state, int pid, CallOrSpawnStatement call,
+			MemoryUnitSet[] reachablePtrWritableMap,
 			MemoryUnitSet[] reachablePtrReadonlyMap,
 			MemoryUnitSet[] reachableNonPtrWritableMap,
 			MemoryUnitSet[] reachableNonPtrReadonlyMap)
@@ -164,43 +163,47 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 		}
 
 		switch (function) {
-		case "$comm_dequeue":
-			NumericExpression argSrc = (NumericExpression) argumentValues[1];
-			Reasoner reasoner = universe.reasoner(state.getPathCondition());
+			case "$comm_dequeue" :
+				NumericExpression argSrc = (NumericExpression) argumentValues[1];
+				Reasoner reasoner = universe.reasoner(state.getPathCondition());
 
-			if (reasoner.isValid(universe.lessThanEquals(zero, argSrc))) {
-				return this.computeAmpleSetByHandleObject(state, pid,
-						arguments[0], argumentValues[0],
-						reachablePtrWritableMap, reachablePtrReadonlyMap,
-						reachableNonPtrWritableMap, reachableNonPtrReadonlyMap);
-			} else {
-				for (int otherPid : procIdsInComm(state, pid, process,
-						arguments, argumentValues))
-					ampleSet.set(otherPid);
-			}
-			return ampleSet;
-		case "$comm_enqueue":
-			// Because we don't know if other processes will call an wild card
-			// receive(dequeue), we have to put all processes into ample set.
-			ampleSet = this.computeAmpleSetByHandleObject(state, pid,
-					arguments[0], argumentValues[0], reachablePtrWritableMap,
-					reachablePtrReadonlyMap, reachableNonPtrWritableMap,
-					reachableNonPtrReadonlyMap);
-
-			if (this.civlConfig.deadlock().equals(DeadlockKind.POTENTIAL)) {
-				BooleanExpression hasMatchedDequeue;
-
-				hasMatchedDequeue = this.hasMatchedDequeue(state, pid, process,
-						call, false);
-				if (hasMatchedDequeue.isFalse()) {
-					for (int otherPid : this.procIdsInComm(state, pid, process,
+				if (reasoner.isValid(universe.lessThanEquals(zero, argSrc))) {
+					return this.computeAmpleSetByHandleObject(state, pid,
+							arguments[0], argumentValues[0],
+							reachablePtrWritableMap, reachablePtrReadonlyMap,
+							reachableNonPtrWritableMap,
+							reachableNonPtrReadonlyMap);
+				} else {
+					for (int otherPid : procIdsInComm(state, pid, process,
 							arguments, argumentValues))
 						ampleSet.set(otherPid);
 				}
-			}
-			return ampleSet;
-		default:
-			throw new CIVLInternalException("Unreachable" + function, source);
+				return ampleSet;
+			case "$comm_enqueue" :
+				// Because we don't know if other processes will call an wild
+				// card
+				// receive(dequeue), we have to put all processes into ample
+				// set.
+				ampleSet = this.computeAmpleSetByHandleObject(state, pid,
+						arguments[0], argumentValues[0],
+						reachablePtrWritableMap, reachablePtrReadonlyMap,
+						reachableNonPtrWritableMap, reachableNonPtrReadonlyMap);
+
+				if (this.civlConfig.deadlock().equals(DeadlockKind.POTENTIAL)) {
+					BooleanExpression hasMatchedDequeue;
+
+					hasMatchedDequeue = this.hasMatchedDequeue(state, pid,
+							process, call, false);
+					if (hasMatchedDequeue.isFalse()) {
+						for (int otherPid : this.procIdsInComm(state, pid,
+								process, arguments, argumentValues))
+							ampleSet.set(otherPid);
+					}
+				}
+				return ampleSet;
+			default :
+				throw new CIVLInternalException("Unreachable" + function,
+						source);
 		}
 	}
 
@@ -225,8 +228,8 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private List<Transition> enabledCommDequeueTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, AtomicLockAction atomicLockAction)
+			CallOrSpawnStatement call, BooleanExpression pathCondition, int pid,
+			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		List<Expression> arguments = call.arguments();
 		List<Transition> localTransitions = new LinkedList<>();
@@ -268,8 +271,8 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 		sourceExpr = arguments.get(1);
 		tagExpr = arguments.get(2);
 		commHandle = evaluator.evaluate(state, pid, commHandleExpr).value;
-		comm = evaluator.dereference(commHandleExpr.getSource(), state,
-				process, commHandleExpr, commHandle, false, true).value;
+		comm = evaluator.dereference(commHandleExpr.getSource(), state, process,
+				commHandleExpr, commHandle, false, true).value;
 		dest = this.universe.tupleRead(comm, zeroObject);
 		gcommHandle = this.universe.tupleRead(comm, oneObject);
 		gcomm = evaluator.dereference(commHandleExpr.getSource(), state,
@@ -290,9 +293,9 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 						.getLibraryEvaluator(this.name, evaluator,
 								this.modelFactory, symbolicUtil,
 								symbolicAnalyzer);
-				possibleSources = libevaluator.getAllPossibleSources(
-						eval.state, reasoner, gcomm, intSource, intDest, tag,
-						isWildcardTag, call.getSource());
+				possibleSources = libevaluator.getAllPossibleSources(eval.state,
+						reasoner, gcomm, intSource, intDest, tag, isWildcardTag,
+						call.getSource());
 			} catch (LibraryLoaderException e) {
 				throw new CIVLInternalException(
 						"LibraryLoader exception happens when loading library comm evaluator.\n",
@@ -300,12 +303,12 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 			}
 			callWorkers = (List<Statement>) this.dequeueStatementGenerator(
 					sourceExpr, tagExpr, possibleSources, call.getSource(),
-					call.function().parameters(), arguments, call.function()
-							.returnType(), call.statementScope(), call.guard(),
-					call.target(), call.lhs());
+					call.function().parameters(), arguments,
+					call.function().returnType(), call.statementScope(),
+					call.guard(), call.target(), call.lhs());
 			for (int j = 0; j < callWorkers.size(); j++)
-				localTransitions.add(Semantics.newTransition(pathCondition,
-						pid, callWorkers.get(j), atomicLockAction));
+				localTransitions.add(Semantics.newTransition(pathCondition, pid,
+						callWorkers.get(j), atomicLockAction));
 		} else
 			localTransitions.add(Semantics.newTransition(pathCondition, pid,
 					call, atomicLockAction));
@@ -348,13 +351,12 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Iterable<Statement> dequeueStatementGenerator(
-			Expression sourceExpr, Expression tagExpr,
-			List<NumericExpression> possibleSources, CIVLSource civlsource,
-			List<Variable> parameters, List<Expression> arguments,
-			CIVLType returnType, Scope containingScope, Expression callGuard,
-			Location callTarget, LHSExpression lhs)
-			throws UnsatisfiablePathConditionException {
+	private Iterable<Statement> dequeueStatementGenerator(Expression sourceExpr,
+			Expression tagExpr, List<NumericExpression> possibleSources,
+			CIVLSource civlsource, List<Variable> parameters,
+			List<Expression> arguments, CIVLType returnType,
+			Scope containingScope, Expression callGuard, Location callTarget,
+			LHSExpression lhs) throws UnsatisfiablePathConditionException {
 		CallOrSpawnStatement callWorker;
 		List<Statement> transitionStatements = new LinkedList<>();
 		List<Expression> newArgs;
@@ -376,11 +378,11 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 		}
 		dequeueWorkFunction = modelFactory.systemFunction(civlsource,
 				modelFactory.identifier(civlsource, dequeueWork),
-				parameterScopeCopy, parametersCopy, returnType,
-				containingScope, this.name);
+				parameterScopeCopy, parametersCopy, returnType, containingScope,
+				this.name);
 		parameterScopeCopy.setFunction(dequeueWorkFunction);
-		dequeueWorkPointer = modelFactory.functionIdentifierExpression(
-				civlsource, dequeueWorkFunction);
+		dequeueWorkPointer = modelFactory
+				.functionIdentifierExpression(civlsource, dequeueWorkFunction);
 		newArgs = new LinkedList<Expression>(arguments);
 		// dummy location:
 		newLocation = modelFactory.location(civlsource, containingScope);
@@ -396,9 +398,10 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 						civlsource);
 			}
 			newArgs = new LinkedList<Expression>(arguments);
-			newArgs.set(1, modelFactory.integerLiteralExpression(
-					arguments.get(1).getSource(),
-					BigInteger.valueOf(int_newSource)));
+			newArgs.set(1,
+					modelFactory.integerLiteralExpression(
+							arguments.get(1).getSource(),
+							BigInteger.valueOf(int_newSource)));
 			callWorker = modelFactory.callOrSpawnStatement(civlsource,
 					newLocation, true, dequeueWorkPointer, newArgs, callGuard);
 			callWorker.setTargetTemp(callTarget);
@@ -459,8 +462,8 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 		eval = libevaluator.getCommByCommHandleExpr(state, pid, process,
 				commHandleExpr);
 		comm = eval.value;
-		eval = libevaluator.getGcommByComm(eval.state, pid, process,
-				eval.value, commHandleExpr.getSource());
+		eval = libevaluator.getGcommByComm(eval.state, pid, process, eval.value,
+				commHandleExpr.getSource());
 		gcomm = eval.value;
 		eval = evaluator.evaluate(state, pid, msgExpr);
 		msg = eval.value;
@@ -487,8 +490,8 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 				while (iter.hasNext()) {
 					Statement procCall = iter.next();
 
-					if (procCall.statementKind().equals(
-							StatementKind.CALL_OR_SPAWN)) {
+					if (procCall.statementKind()
+							.equals(StatementKind.CALL_OR_SPAWN)) {
 						BooleanExpression hasMatched = this
 								.isMatchedDequeueStatement(state,
 										candidateProcId, procState.getPid(),
@@ -555,7 +558,8 @@ public class LibcommEnabler extends BaseLibraryEnabler implements
 			Expression sourceExpr = call.arguments().get(1);
 			Expression tagExpr = call.arguments().get(2);
 			Evaluation eval;
-			SymbolicExpression enqueueGcommHandle, myGcommHandle, mySource, myTag;
+			SymbolicExpression enqueueGcommHandle, myGcommHandle, mySource,
+					myTag;
 			// the GcommHandles of enqueue and dequeue should be same
 
 			eval = libevaluator.getCommByCommHandleExpr(state, pid, process,
