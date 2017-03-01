@@ -543,7 +543,6 @@ public class CommonStateManager implements StateManager {
 	@Override
 	public TraceStepIF<State> nextState(State state, Transition transition) {
 		TraceStepIF<State> result;
-
 		// nextStateCalls++;
 		try {
 			result = nextStateWork(state, transition);
