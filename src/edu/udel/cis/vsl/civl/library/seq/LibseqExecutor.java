@@ -31,12 +31,17 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 
-public class LibseqExecutor extends BaseLibraryExecutor implements LibraryExecutor {
+public class LibseqExecutor extends BaseLibraryExecutor
+		implements
+			LibraryExecutor {
 
-	public LibseqExecutor(String name, Executor primaryExecutor, ModelFactory modelFactory,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
-			LibraryExecutorLoader libExecutorLoader, LibraryEvaluatorLoader libEvaluatorLoader) {
-		super(name, primaryExecutor, modelFactory, symbolicUtil, symbolicAnalyzer, civlConfig, libExecutorLoader,
+	public LibseqExecutor(String name, Executor primaryExecutor,
+			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
+			LibraryExecutorLoader libExecutorLoader,
+			LibraryEvaluatorLoader libEvaluatorLoader) {
+		super(name, primaryExecutor, modelFactory, symbolicUtil,
+				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
 	}
 
@@ -53,92 +58,122 @@ public class LibseqExecutor extends BaseLibraryExecutor implements LibraryExecut
 	 * @return The new state after executing the function call.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	protected Evaluation executeValue(State state, int pid, String process, CIVLSource source, String functionName,
-			Expression[] arguments, SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$seq_init":
-			callEval = executeSeqInit(state, pid, process, arguments, argumentValues, source);
-			break;
-		case "$seq_insert":
-			callEval = executeSeqInsert(state, pid, process, arguments, argumentValues, source);
-			break;
-		case "$seq_length":
-			callEval = executeSeqLength(state, pid, process, arguments, argumentValues, source);
-			break;
-		case "$seq_remove":
-			callEval = executeSeqRemove(state, pid, process, arguments, argumentValues, source);
-			break;
-		default:
-			throw new CIVLUnimplementedFeatureException("the function " + name + " of library seq.cvh", source);
+			case "$seq_init" :
+				callEval = executeSeqInit(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$seq_insert" :
+				callEval = executeSeqInsert(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$seq_length" :
+				callEval = executeSeqLength(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$seq_remove" :
+				callEval = executeSeqRemove(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"the function " + name + " of library seq.cvh", source);
 		}
 		return callEval;
 	}
 
-	private Evaluation executeSeqInit(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeSeqInit(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression arrayPtr = argumentValues[0];
 		NumericExpression count = (NumericExpression) argumentValues[1];
 		SymbolicExpression elePointer = argumentValues[2];
 		CIVLSource arrayPtrSource = arguments[0].getSource();
 		CIVLSource elePtrSource = arguments[2].getSource();
-		CIVLType objTypePointedByFirstArg = symbolicAnalyzer.typeOfObjByPointer(arrayPtrSource, state, arrayPtr);
+		CIVLType objTypePointedByFirstArg = symbolicAnalyzer
+				.typeOfObjByPointer(arrayPtrSource, state, arrayPtr);
 		CIVLArrayType arrayType;
 
-		if (objTypePointedByFirstArg.isArrayType() && !((CIVLArrayType) objTypePointedByFirstArg).isComplete())
+		if (objTypePointedByFirstArg.isArrayType()
+				&& !((CIVLArrayType) objTypePointedByFirstArg).isComplete())
 			arrayType = (CIVLArrayType) objTypePointedByFirstArg;
 		else
 			throw new CIVLSyntaxException("The first argument: " + arguments[0]
-					+ " should be a pointer to an imcomplete array" + arguments[0].getSource());
+					+ " should be a pointer to an imcomplete array"
+					+ arguments[0].getSource());
 		if (count.isZero()) {
-			state = primaryExecutor.assign(source, state, process, arrayPtr, universe
-					.array(arrayType.elementType().getDynamicType(universe), new LinkedList<SymbolicExpression>()));
+			state = primaryExecutor.assign(source, state, process, arrayPtr,
+					universe.array(
+							arrayType.elementType().getDynamicType(universe),
+							new LinkedList<SymbolicExpression>()));
 			return new Evaluation(state, null);
 		}
-		if (symbolicUtil.isNullPointer(arrayPtr) || symbolicUtil.isNullPointer(elePointer)) {
-			errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+		if (symbolicUtil.isNullPointer(arrayPtr)
+				|| symbolicUtil.isNullPointer(elePointer)) {
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.DEREFERENCE,
-					"both the first and the third argument of $seq_init() " + "must be non-null pointers.\n"
+					"both the first and the third argument of $seq_init() "
+							+ "must be non-null pointers.\n"
 							+ "actual value of first argument: "
-							+ symbolicAnalyzer.symbolicExpressionToString(arrayPtrSource, state, null, arrayPtr) + "\n"
-							+ "actual value of third argument: "
-							+ symbolicAnalyzer.symbolicExpressionToString(elePtrSource, state, null, elePointer));
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									arrayPtrSource, state, null, arrayPtr)
+							+ "\n" + "actual value of third argument: "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									elePtrSource, state, null, elePointer));
 			throw new UnsatisfiablePathConditionException();
 		} else {
 			if (!arrayType.isIncompleteArrayType()) {
-				String arrayPtrString = symbolicAnalyzer.symbolicExpressionToString(arrayPtrSource, state, null,
-						arrayPtr);
+				String arrayPtrString = symbolicAnalyzer
+						.symbolicExpressionToString(arrayPtrSource, state, null,
+								arrayPtr);
 
-				this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+				this.errorLogger.logSimpleError(source, state, process,
+						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.SEQUENCE,
-						"the first argument of $seq_init() must be " + "a pointer to an incomplete array.\n"
-								+ "actual first argument: " + arrayPtrString + "\n" + "actual type of " + arrayPtrString
+						"the first argument of $seq_init() must be "
+								+ "a pointer to an incomplete array.\n"
+								+ "actual first argument: " + arrayPtrString
+								+ "\n" + "actual type of " + arrayPtrString
 								+ ": pointer to " + arrayType);
 				throw new UnsatisfiablePathConditionException();
 			} else {
-				CIVLType eleType = symbolicAnalyzer.typeOfObjByPointer(elePtrSource, state, elePointer);
-				CIVLType arrayEleType = ((CIVLArrayType) arrayType).elementType();
+				CIVLType eleType = symbolicAnalyzer
+						.typeOfObjByPointer(elePtrSource, state, elePointer);
+				CIVLType arrayEleType = ((CIVLArrayType) arrayType)
+						.elementType();
 
 				if (!arrayEleType.isSuperTypeOf(eleType)) {
-					this.errorLogger.logSimpleError(elePtrSource, state, process,
-							symbolicAnalyzer.stateInformation(state), ErrorKind.DEREFERENCE,
+					this.errorLogger.logSimpleError(elePtrSource, state,
+							process, symbolicAnalyzer.stateInformation(state),
+							ErrorKind.DEREFERENCE,
 							"the element type of the array that the first argument "
 									+ "points to of $seq_init() must be a super type"
-									+ " or the same type of the object that the third " + "argument points to.\n"
-									+ "actual element type of the given array: " + arrayEleType + "\n"
-									+ "actual type of object pointed to by the third argument: " + eleType);
+									+ " or the same type of the object that the third "
+									+ "argument points to.\n"
+									+ "actual element type of the given array: "
+									+ arrayEleType + "\n"
+									+ "actual type of object pointed to by the third argument: "
+									+ eleType);
 					return new Evaluation(state, null);
 				} else {
 					SymbolicExpression eleValue, arrayValue;
-					Evaluation eval = evaluator.dereference(elePtrSource, state, process, arguments[2], elePointer,
-							false, true);
+					Evaluation eval = evaluator.dereference(elePtrSource, state,
+							process, arguments[2], elePointer, false, true);
 
 					state = eval.state;
 					eleValue = eval.value;
 					arrayValue = symbolicUtil.newArray(state.getPathCondition(),
-							arrayType.elementType().getDynamicType(universe), count, eleValue);
-					state = primaryExecutor.assign(source, state, process, arrayPtr, arrayValue);
+							arrayType.elementType().getDynamicType(universe),
+							count, eleValue);
+					state = primaryExecutor.assign(source, state, process,
+							arrayPtr, arrayValue);
 				}
 			}
 		}
@@ -183,9 +218,11 @@ public class LibseqExecutor extends BaseLibraryExecutor implements LibraryExecut
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeSeqInsert(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
-		return executeSeqInsertOrRemove(state, pid, process, arguments, argumentValues, source, true);
+	private Evaluation executeSeqInsert(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		return executeSeqInsertOrRemove(state, pid, process, arguments,
+				argumentValues, source, true);
 	}
 
 	/**
@@ -200,30 +237,38 @@ public class LibseqExecutor extends BaseLibraryExecutor implements LibraryExecut
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation executeSeqLength(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation executeSeqLength(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression seqPtr = argumentValues[0];
 		CIVLSource seqSource = arguments[0].getSource();
 		SymbolicExpression result = null;
 
 		if (symbolicUtil.isNullPointer(seqPtr)) {
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.SEQUENCE,
-					"the argument of $seq_length() must be a non-null pointer.\n" + "actual argument: "
-							+ symbolicAnalyzer.symbolicExpressionToString(seqSource, state, null, seqPtr));
+					"the argument of $seq_length() must be a non-null pointer.\n"
+							+ "actual argument: "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									seqSource, state, null, seqPtr));
 			throw new UnsatisfiablePathConditionException();
 		} else {
-			Evaluation eval = evaluator.dereference(seqSource, state, process, arguments[0], seqPtr, false, true);
+			Evaluation eval = evaluator.dereference(seqSource, state, process,
+					arguments[0], seqPtr, false, true);
 			SymbolicExpression seq;
 
 			state = eval.state;
 			seq = eval.value;
 			if (!(seq.type() instanceof SymbolicArrayType)) {
-				this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+				this.errorLogger.logSimpleError(source, state, process,
+						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.SEQUENCE,
-						"the argument of $seq_length() must be a sequence of " + "objects of the same type.\n"
+						"the argument of $seq_length() must be a sequence of "
+								+ "objects of the same type.\n"
 								+ "actual argument: "
-								+ symbolicAnalyzer.symbolicExpressionToString(seqSource, state, null, seq));
+								+ symbolicAnalyzer.symbolicExpressionToString(
+										seqSource, state, null, seq));
 				throw new UnsatisfiablePathConditionException();
 			} else
 				result = universe.length(seq);
@@ -231,19 +276,23 @@ public class LibseqExecutor extends BaseLibraryExecutor implements LibraryExecut
 		return new Evaluation(state, result);
 	}
 
-	private Evaluation executeSeqRemove(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
-		return executeSeqInsertOrRemove(state, pid, process, arguments, argumentValues, source, false);
+	private Evaluation executeSeqRemove(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		return executeSeqInsertOrRemove(state, pid, process, arguments,
+				argumentValues, source, false);
 	}
 
-	private Evaluation executeSeqInsertOrRemove(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source, boolean isInsert)
-			throws UnsatisfiablePathConditionException {
+	private Evaluation executeSeqInsertOrRemove(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues, CIVLSource source,
+			boolean isInsert) throws UnsatisfiablePathConditionException {
 		SymbolicExpression arrayPtr = argumentValues[0];
 		NumericExpression index = (NumericExpression) argumentValues[1];
 		SymbolicExpression valuesPtr = argumentValues[2];
 		NumericExpression count = (NumericExpression) argumentValues[3];
-		CIVLSource arrayPtrSource = arguments[0].getSource(), valuesPtrSource = arguments[2].getSource();
+		CIVLSource arrayPtrSource = arguments[0].getSource(),
+				valuesPtrSource = arguments[2].getSource();
 		CIVLType arrayType, arrayEleType, valueType;
 		Evaluation eval;
 		SymbolicExpression arrayValue;
@@ -254,71 +303,98 @@ public class LibseqExecutor extends BaseLibraryExecutor implements LibraryExecut
 		boolean removeToNull = false;
 
 		if (symbolicUtil.isNullPointer(arrayPtr)) {
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.DEREFERENCE,
-					"the first argument of " + functionName + " must be a non-null pointer.\n"
+					"the first argument of " + functionName
+							+ " must be a non-null pointer.\n"
 							+ "actual value of first argument: "
-							+ symbolicAnalyzer.symbolicExpressionToString(arrayPtrSource, state, null, arrayPtr));
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									arrayPtrSource, state, null, arrayPtr));
 			throw new UnsatisfiablePathConditionException();
 		}
 		if (count.isZero())// no op
 			return new Evaluation(state, null);
 		if (isInsert && symbolicUtil.isNullPointer(valuesPtr)) {
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.DEREFERENCE,
-					"the third argument of " + functionName + " must be a non-null pointer when the forth "
-							+ "argument is greater than zero.\n" + "actual value of third argument: "
-							+ symbolicAnalyzer.symbolicExpressionToString(valuesPtrSource, state, null, valuesPtr));
+					"the third argument of " + functionName
+							+ " must be a non-null pointer when the forth "
+							+ "argument is greater than zero.\n"
+							+ "actual value of third argument: "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									valuesPtrSource, state, null, valuesPtr));
 			throw new UnsatisfiablePathConditionException();
 		}
-		arrayType = symbolicAnalyzer.typeOfObjByPointer(arrayPtrSource, state, arrayPtr);
+		arrayType = symbolicAnalyzer.typeOfObjByPointer(arrayPtrSource, state,
+				arrayPtr);
 		if (!arrayType.isIncompleteArrayType()) {
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.SEQUENCE,
-					"the first argument of " + functionName + " must be of a pointer to incomplete array of type T.\n"
-							+ "actual type of the first argument: pointer to " + arrayType);
+					"the first argument of " + functionName
+							+ " must be of a pointer to incomplete array of type T.\n"
+							+ "actual type of the first argument: pointer to "
+							+ arrayType);
 			throw new UnsatisfiablePathConditionException();
 		}
 		arrayEleType = ((CIVLArrayType) arrayType).elementType();
 		if (!symbolicUtil.isNullPointer(valuesPtr)) {
-			valueType = symbolicAnalyzer.typeOfObjByPointer(valuesPtrSource, state, valuesPtr);
+			valueType = symbolicAnalyzer.typeOfObjByPointer(valuesPtrSource,
+					state, valuesPtr);
 
 			if (!arrayEleType.isSuperTypeOf(valueType)) {
-				this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+				this.errorLogger.logSimpleError(source, state, process,
+						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.SEQUENCE,
 						"the first argument of " + functionName
 								+ " must be a pointer to incomplete array of type T, and"
 								+ " the third argument must be a pointer to type T. \n"
-								+ "actual type of the first argument: pointer to " + arrayEleType + "\n"
-								+ "actual type of the third argument: pointer to " + valueType);
+								+ "actual type of the first argument: pointer to "
+								+ arrayEleType + "\n"
+								+ "actual type of the third argument: pointer to "
+								+ valueType);
 				throw new UnsatisfiablePathConditionException();
 			}
 		}
-		eval = evaluator.dereference(arrayPtrSource, state, process, arguments[0], arrayPtr, false, true);
+		eval = evaluator.dereference(arrayPtrSource, state, process,
+				arguments[0], arrayPtr, false, true);
 		state = eval.state;
 		arrayValue = eval.value;
 		if (arrayValue.operator() != SymbolicOperator.ARRAY) {
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.SEQUENCE,
-					"the first argument of " + functionName + " must be a pointer to a concrete array.\n"
+					"the first argument of " + functionName
+							+ " must be a pointer to a concrete array.\n"
 							+ "actual value of the array pointed to by the first argument: "
-							+ symbolicAnalyzer.symbolicExpressionToString(arrayPtrSource, state, null, arrayValue));
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									arrayPtrSource, state, null, arrayValue));
 			throw new UnsatisfiablePathConditionException();
 		}
 		countInt = ((IntegerNumber) universe.extractNumber(count)).intValue();
 		indexInt = ((IntegerNumber) universe.extractNumber(index)).intValue();
-		lengthInt = ((IntegerNumber) universe.extractNumber(universe.length(arrayValue))).intValue();
+		lengthInt = ((IntegerNumber) universe
+				.extractNumber(universe.length(arrayValue))).intValue();
 		isOldArrayEmpty = indexInt == 0 && lengthInt == 0;
-		if (isInsert && !isOldArrayEmpty && (indexInt < 0 || indexInt > lengthInt)) {
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.SEQUENCE, "the index for $seq_insert() is out of the range of the array index.\n"
-							+ "array length: " + lengthInt + "\n" + "index: " + indexInt);
+		if (isInsert && !isOldArrayEmpty
+				&& (indexInt < 0 || indexInt > lengthInt)) {
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.SEQUENCE,
+					"the index for $seq_insert() is out of the range of the array index.\n"
+							+ "array length: " + lengthInt + "\n" + "index: "
+							+ indexInt);
 			throw new UnsatisfiablePathConditionException();
 		} else if (!isInsert && (countInt > lengthInt - indexInt)) {
-			this.errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.SEQUENCE,
-					"insufficient data to be removed for $seq_remove().\n" + "array length: " + lengthInt + "\n"
-							+ "start index: " + indexInt + "\n" + "number of elements to be removed: " + countInt);
+					"insufficient data to be removed for $seq_remove().\n"
+							+ "array length: " + lengthInt + "\n"
+							+ "start index: " + indexInt + "\n"
+							+ "number of elements to be removed: " + countInt);
 			throw new UnsatisfiablePathConditionException();
 		}
 		removeToNull = !isInsert && symbolicUtil.isNullPointer(valuesPtr);
@@ -328,35 +404,44 @@ public class LibseqExecutor extends BaseLibraryExecutor implements LibraryExecut
 			if (i == 0)
 				valuePtr = valuesPtr;
 			else if (!removeToNull) {
-				BinaryExpression pointerAdd = modelFactory.binaryExpression(source, BINARY_OPERATOR.POINTER_ADD,
-						arguments[2], modelFactory.integerLiteralExpression(source, BigInteger.valueOf(i)));
+				BinaryExpression pointerAdd = modelFactory.binaryExpression(
+						source, BINARY_OPERATOR.POINTER_ADD, arguments[2],
+						modelFactory.integerLiteralExpression(source,
+								BigInteger.valueOf(i)));
 
-				eval = evaluator.pointerAdd(state, pid, process, pointerAdd, valuesPtr, universe.integer(i));
+				eval = evaluator.pointerAdd(state, pid, process, pointerAdd,
+						valuesPtr, universe.integer(i));
 				state = eval.state;
 				valuePtr = eval.value;
 			} else
 				valuePtr = valuesPtr;
 			if (isInsert) {
-				eval = evaluator.dereference(source, state, process, null, valuePtr, false, true);
+				eval = evaluator.dereference(source, state, process, null,
+						valuePtr, false, true);
 				state = eval.state;
 				value = eval.value;
 
 				if (isOldArrayEmpty) {
 					elements.add(value);
 				} else {
-					arrayValue = universe.insertElementAt(arrayValue, indexInt + i, value);
+					arrayValue = universe.insertElementAt(arrayValue,
+							indexInt + i, value);
 				}
 			} else {
 				value = universe.arrayRead(arrayValue, index);
 				if (!symbolicUtil.isNullPointer(valuePtr)) {
-					state = primaryExecutor.assign(valuesPtrSource, state, process, valuePtr, value);
+					state = primaryExecutor.assign(valuesPtrSource, state,
+							process, valuePtr, value);
 				}
 				arrayValue = universe.removeElementAt(arrayValue, indexInt);
 			}
 		}
 		if (isOldArrayEmpty)
-			arrayValue = universe.array(((SymbolicArrayType) arrayValue.type()).elementType(), elements);
-		state = primaryExecutor.assign(source, state, process, arrayPtr, arrayValue);
+			arrayValue = universe.array(
+					((SymbolicArrayType) arrayValue.type()).elementType(),
+					elements);
+		state = primaryExecutor.assign(source, state, process, arrayPtr,
+				arrayValue);
 		return new Evaluation(state, null);
 	}
 }

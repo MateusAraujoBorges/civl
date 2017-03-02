@@ -36,6 +36,7 @@ import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.DfsSearcher;
 import edu.udel.cis.vsl.gmc.ExcessiveErrorException;
 import edu.udel.cis.vsl.gmc.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.DfsListener;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
@@ -48,10 +49,8 @@ public class Verifier extends Player {
 	class SearchUpdater implements Printable {
 		@Override
 		public void print(PrintStream out) {
-			long time = (long) Math
-					.ceil((System.currentTimeMillis() - startTime) / 1000.0);
-			long megabytes = (long) (((double) Runtime.getRuntime()
-					.totalMemory()) / (double) 1048576.0);
+			long time = (long) Math.ceil((System.currentTimeMillis() - startTime) / 1000.0);
+			long megabytes = (long) (((double) Runtime.getRuntime().totalMemory()) / (double) 1048576.0);
 
 			out.print(time + "s: ");
 			out.print("mem=" + megabytes + "Mb");
@@ -59,8 +58,7 @@ public class Verifier extends Player {
 			out.print(" traceSteps=" + searcher.numTransitions());
 			out.print(" explored=" + stateManager.numStatesExplored());
 			out.print(" saved=" + stateManager.getNumStatesSaved());
-			out.print(
-					" prove=" + modelFactory.universe().numProverValidCalls());
+			out.print(" prove=" + modelFactory.universe().numProverValidCalls());
 			out.println();
 		}
 	}
@@ -99,15 +97,12 @@ public class Verifier extends Player {
 		}
 
 		private void fail(File file, String msg) {
-			throw new CIVLInternalException(msg + " " + file.getAbsolutePath(),
-					(CIVLSource) null);
+			throw new CIVLInternalException(msg + " " + file.getAbsolutePath(), (CIVLSource) null);
 		}
 
 		private void print(boolean isFinal) {
-			double time = Math.ceil(
-					(System.currentTimeMillis() - startTime) / 100.0) / 10.0;
-			long megabytes = (long) (((double) Runtime.getRuntime()
-					.totalMemory()) / (double) 1048576.0);
+			double time = Math.ceil((System.currentTimeMillis() - startTime) / 100.0) / 10.0;
+			long megabytes = (long) (((double) Runtime.getRuntime().totalMemory()) / (double) 1048576.0);
 			File file;
 
 			timeStep++;
@@ -128,12 +123,9 @@ public class Verifier extends Player {
 				out.println("\"steps\" : " + searcher.numTransitions() + " ,");
 				out.println("\"trans\" : " + executor.getNumSteps() + " ,");
 				out.println("\"seen\" : " + searcher.numStatesSeen() + " ,");
-				out.println("\"saved\" : " + stateManager.getNumStatesSaved()
-						+ " ,");
-				out.println("\"prove\" : "
-						+ modelFactory.universe().numProverValidCalls() + " ,");
-				out.println("\"counterexample\" : "
-						+ log.getMinimalCounterexampleSize() + ",");
+				out.println("\"saved\" : " + stateManager.getNumStatesSaved() + " ,");
+				out.println("\"prove\" : " + modelFactory.universe().numProverValidCalls() + " ,");
+				out.println("\"counterexample\" : " + log.getMinimalCounterexampleSize() + ",");
 				out.println("\"isFinal\" : " + isFinal);
 				out.println("}");
 				out.flush();
@@ -228,15 +220,12 @@ public class Verifier extends Player {
 	 */
 	private double startTime;
 
-	public Verifier(GMCConfiguration config, Model model, PrintStream out,
-			PrintStream err, double startTime, boolean collectOutputs,
-			String[] outputNames,
-			Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> specOutputs)
-					throws CommandLineException {
+	public Verifier(GMCConfiguration config, Model model, PrintStream out, PrintStream err, double startTime,
+			boolean collectOutputs, String[] outputNames,
+			Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> specOutputs) throws CommandLineException {
 		super(config, model, out, err, collectOutputs);
 		if (random) {
-			throw new CommandLineException(
-					"\"-random\" mode is incompatible with civl verify command.");
+			throw new CommandLineException("\"-random\" mode is incompatible with civl verify command.");
 		}
 		this.startTime = startTime;
 		if (outputNames != null && specOutputs != null)
@@ -264,32 +253,30 @@ public class Verifier extends Player {
 		stateManager.setUpdater(updater);
 		errorBoundExceeds = "errorBoundExceeds";
 		// this.shortFileNamesShown = shortFileNamesShown;
-		this.errorBoundExceeds = "Terminating search after finding "
-				+ this.log.errorBound() + " violation";
+		this.errorBoundExceeds = "Terminating search after finding " + this.log.errorBound() + " violation";
 		if (log.errorBound() > 1)
 			errorBoundExceeds += "s";
 		errorBoundExceeds += ".";
 	}
 
-	public Verifier(GMCConfiguration config, Model model, PrintStream out,
-			PrintStream err, double startTime, boolean collectOutputs)
-					throws CommandLineException {
+	public Verifier(GMCConfiguration config, Model model, PrintStream out, PrintStream err, double startTime,
+			boolean collectOutputs) throws CommandLineException {
 		this(config, model, out, err, startTime, collectOutputs, null, null);
 	}
 
-	public Verifier(GMCConfiguration config, Model model, PrintStream out,
-			PrintStream err, double startTime, String[] outputNames,
-			Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> specOutputs)
-					throws CommandLineException {
-		this(config, model, out, err, startTime, false, outputNames,
-				specOutputs);
+	public Verifier(GMCConfiguration config, Model model, PrintStream out, PrintStream err, double startTime,
+			String[] outputNames, Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> specOutputs)
+			throws CommandLineException {
+		this(config, model, out, err, startTime, false, outputNames, specOutputs);
 	}
 
-	public Verifier(GMCConfiguration config, Model model, PrintStream out,
-			PrintStream err, double startTime) throws CommandLineException {
-		this(config, model, out, err, startTime,
-				config.getAnonymousSection().isTrue(collectOutputO), null,
-				null);
+	public Verifier(GMCConfiguration config, Model model, PrintStream out, PrintStream err, double startTime)
+			throws CommandLineException {
+		this(config, model, out, err, startTime, config.getAnonymousSection().isTrue(collectOutputO), null, null);
+	}
+
+	public void setListener(DfsListener<State> listener) {
+		searcher.setListener(listener);
 	}
 
 	/**
@@ -314,13 +301,11 @@ public class Verifier extends Player {
 		civlConfig.out().println(searcher.numTransitions());
 	}
 
-	public boolean run() throws FileNotFoundException, InterruptedException,
-			ExecutionException {
+	public boolean run() throws FileNotFoundException, InterruptedException, ExecutionException {
 		final int timeout = this.civlConfig.timeout();
 
 		if (timeout > 0) {
-			final ScheduledExecutorService verifier_scheduler = Executors
-					.newScheduledThreadPool(2);
+			final ScheduledExecutorService verifier_scheduler = Executors.newScheduledThreadPool(2);
 			final Callable<Boolean> verify_run_work = new Callable<Boolean>() {
 				public Boolean call() {
 					try {
@@ -332,20 +317,16 @@ public class Verifier extends Player {
 					return false;
 				}
 			};
-			final ScheduledFuture<?> verify_handler = verifier_scheduler
-					.schedule(verify_run_work, 0, TimeUnit.MILLISECONDS);
+			final ScheduledFuture<?> verify_handler = verifier_scheduler.schedule(verify_run_work, 0,
+					TimeUnit.MILLISECONDS);
 			final Runnable timeOutWork = new Runnable() {
 				public void run() {
 					verify_handler.cancel(true);
 					if (result == null) {
 						result = "Time out.";
-						verificationStatus = new VerificationStatus(
-								stateManager.maxProcs(),
-								stateManager.numStatesExplored(),
-								stateManager.getNumStatesSaved(),
-								searcher.numStatesMatched(),
-								executor.getNumSteps(),
-								searcher.numTransitions());
+						verificationStatus = new VerificationStatus(stateManager.maxProcs(),
+								stateManager.numStatesExplored(), stateManager.getNumStatesSaved(),
+								searcher.numStatesMatched(), executor.getNumSteps(), searcher.numTransitions());
 					}
 					return;
 				}
@@ -369,11 +350,9 @@ public class Verifier extends Player {
 
 			updateThread = new Thread(new UpdaterRunnable(updatePeriod * 1000));
 			updateThread.start();
-			if (civlConfig.debugOrVerbose() || civlConfig.showStates()
-					|| civlConfig.showSavedStates()) {
+			if (civlConfig.debugOrVerbose() || civlConfig.showStates() || civlConfig.showSavedStates()) {
 				civlConfig.out().println();
-				civlConfig.out()
-						.print(symbolicAnalyzer.stateToString(initialState));
+				civlConfig.out().print(symbolicAnalyzer.stateToString(initialState));
 			}
 			try {
 				while (true) {
@@ -381,9 +360,7 @@ public class Verifier extends Player {
 
 					if (violationFound) {
 						// may throw ExcessiveErrorException...
-						workRemains = searcher.proceedToNewState()
-								? searcher.search()
-								: false;
+						workRemains = searcher.proceedToNewState() ? searcher.search() : false;
 					} else {
 						// may throw ExcessiveErrorException...
 						workRemains = searcher.search(initialState);
@@ -392,8 +369,7 @@ public class Verifier extends Player {
 						break;
 					violationFound = true;
 					config.setQuiet(civlConfig.isQuiet());
-					CIVLLogEntry entry = new CIVLLogEntry(civlConfig, config,
-							this.predicate.getUnreportedViolation());
+					CIVLLogEntry entry = new CIVLLogEntry(civlConfig, config, this.predicate.getUnreportedViolation());
 					log.report(entry); // may throw ExcessiveErrorException
 				}
 			} catch (ExcessiveErrorException e) {
@@ -404,28 +380,23 @@ public class Verifier extends Player {
 			}
 			terminateUpdater();
 			if (violationFound || log.numEntries() > 0) {
-				result = "The program MAY NOT be correct.  See "
-						+ log.getLogFile();
+				result = "The program MAY NOT be correct.  See " + log.getLogFile();
 				try {
 					log.save();
 				} catch (FileNotFoundException e) {
-					System.err.println(
-							"Failed to print log file " + log.getLogFile());
+					System.err.println("Failed to print log file " + log.getLogFile());
 				}
 			} else {
 				result = "The standard properties hold for all executions.";
 				// result = "No violations found.";
 			}
-			this.verificationStatus = new VerificationStatus(
-					stateManager.maxProcs(), stateManager.numStatesExplored(),
-					stateManager.getNumStatesSaved(),
-					searcher.numStatesMatched(), executor.getNumSteps(),
+			this.verificationStatus = new VerificationStatus(stateManager.maxProcs(), stateManager.numStatesExplored(),
+					stateManager.getNumStatesSaved(), searcher.numStatesMatched(), executor.getNumSteps(),
 					searcher.numTransitions());
 			return !violationFound && log.numEntries() == 0;
 		} catch (CIVLStateException stateException) {
-			throw new CIVLExecutionException(stateException.kind(),
-					stateException.certainty(), "", stateException.getMessage(),
-					stateException.state(), stateException.source());
+			throw new CIVLExecutionException(stateException.kind(), stateException.certainty(), "",
+					stateException.getMessage(), stateException.state(), stateException.source());
 		}
 
 	}

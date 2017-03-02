@@ -49,7 +49,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * @author zirkel
  * 
  */
-public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExecutor {
+public class LibstringExecutor extends BaseLibraryExecutor
+		implements
+			LibraryExecutor {
 
 	/* **************************** Constructors *************************** */
 
@@ -63,10 +65,13 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 	 * @param enablePrintf
 	 *            True iff print is enabled, reflecting command line options.
 	 */
-	public LibstringExecutor(String name, Executor primaryExecutor, ModelFactory modelFactory,
-			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
-			LibraryExecutorLoader libExecutorLoader, LibraryEvaluatorLoader libEvaluatorLoader) {
-		super(name, primaryExecutor, modelFactory, symbolicUtil, symbolicAnalyzer, civlConfig, libExecutorLoader,
+	public LibstringExecutor(String name, Executor primaryExecutor,
+			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
+			SymbolicAnalyzer symbolicAnalyzer, CIVLConfiguration civlConfig,
+			LibraryExecutorLoader libExecutorLoader,
+			LibraryEvaluatorLoader libEvaluatorLoader) {
+		super(name, primaryExecutor, modelFactory, symbolicUtil,
+				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
 	}
 
@@ -88,25 +93,32 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	@Override
-	protected Evaluation executeValue(State state, int pid, String process, CIVLSource source, String functionName,
-			Expression[] arguments, SymbolicExpression[] argumentValues) throws UnsatisfiablePathConditionException {
+	protected Evaluation executeValue(State state, int pid, String process,
+			CIVLSource source, String functionName, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "strcpy":
-			callEval = execute_strcpy(state, pid, process, arguments, argumentValues, source);
-			break;
-		case "strlen":
-			callEval = execute_strlen(state, pid, process, arguments, argumentValues, source);
-			break;
-		case "strcmp":
-			callEval = execute_strcmp(state, pid, process, arguments, argumentValues, source);
-			break;
-		case "memset":
-			callEval = execute_memset(state, pid, process, arguments, argumentValues, source);
-			break;
-		default:
-			throw new CIVLInternalException("Unknown string function: " + functionName, source);
+			case "strcpy" :
+				callEval = execute_strcpy(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "strlen" :
+				callEval = execute_strlen(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "strcmp" :
+				callEval = execute_strcmp(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "memset" :
+				callEval = execute_memset(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			default :
+				throw new CIVLInternalException(
+						"Unknown string function: " + functionName, source);
 		}
 		return callEval;
 	}
@@ -115,8 +127,9 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 
 	// TODO: this function assume the "lhsPointer" which is argument[0] is a
 	// pointer to heap object element which needs being improved.
-	private Evaluation execute_strcpy(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation execute_strcpy(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		Evaluation eval;
 		SymbolicExpression charPointer = argumentValues[1];
 		int startIndex;
@@ -126,23 +139,29 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 		int numChars;
 		int vid = symbolicUtil.getVariableId(source, lhsPointer);
 		int scopeId = symbolicUtil.getDyscopeId(source, lhsPointer);
-		ReferenceExpression symRef = ((ArrayElementReference) symbolicUtil.getSymRef(lhsPointer)).getParent();
+		ReferenceExpression symRef = ((ArrayElementReference) symbolicUtil
+				.getSymRef(lhsPointer)).getParent();
 
 		if (charPointer.operator() == SymbolicOperator.TUPLE)
 			startIndex = symbolicUtil.getArrayIndex(source, charPointer);
 		else
-			throw new CIVLUnimplementedFeatureException("Do strcpy() on a non-concrete string", source);
+			throw new CIVLUnimplementedFeatureException(
+					"Do strcpy() on a non-concrete string", source);
 		if (lhsPointer.operator() == SymbolicOperator.TUPLE)
 			lStartIndex = symbolicUtil.getArrayIndex(source, lhsPointer);
 		else
-			throw new CIVLUnimplementedFeatureException("Assign to a non-concrete string", source);
+			throw new CIVLUnimplementedFeatureException(
+					"Assign to a non-concrete string", source);
 		if (charPointer.type() instanceof SymbolicArrayType) {
 			originalArray = charPointer;
 		} else {
-			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(source, charPointer);
-			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil.getSymRef(charPointer);
+			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(source,
+					charPointer);
+			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil
+					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
-			eval = evaluator.dereference(source, state, process, null, arrayPointer, false, true);
+			eval = evaluator.dereference(source, state, process, null,
+					arrayPointer, false, true);
 
 			state = eval.state;
 			// TODO: implement getStringConcrete() as an underneath
@@ -153,12 +172,16 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 		numChars = originalArray.numArguments();
 		assert originalArray.operator() == SymbolicOperator.ARRAY;
 		for (int i = 0; i < numChars; i++) {
-			SymbolicExpression charExpr = (SymbolicExpression) originalArray.argument(i + startIndex);
+			SymbolicExpression charExpr = (SymbolicExpression) originalArray
+					.argument(i + startIndex);
 			Character theChar = universe.extractCharacter(charExpr);
-			ReferenceExpression eleRef = universe.arrayElementReference(symRef, universe.integer(i + lStartIndex));
-			SymbolicExpression pointer = symbolicUtil.makePointer(scopeId, vid, eleRef);
+			ReferenceExpression eleRef = universe.arrayElementReference(symRef,
+					universe.integer(i + lStartIndex));
+			SymbolicExpression pointer = symbolicUtil.makePointer(scopeId, vid,
+					eleRef);
 
-			state = primaryExecutor.assign(source, state, process, pointer, charExpr);
+			state = primaryExecutor.assign(source, state, process, pointer,
+					charExpr);
 			if (theChar == '\0')
 				break;
 		}
@@ -191,8 +214,9 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation execute_strcmp(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation execute_strcmp(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		int output = 0;
 		NumericExpression result;
 		SymbolicExpression charPointer1 = argumentValues[0];
@@ -202,22 +226,26 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 		StringBuffer str1, str2;
 
 		if ((charPointer1.operator() != SymbolicOperator.TUPLE)) {
-			errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.POINTER, "attempt to read/write from an invalid pointer");
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
+					"attempt to read/write from an invalid pointer");
 			throw new UnsatisfiablePathConditionException();
 		}
 		if ((charPointer2.operator() != SymbolicOperator.TUPLE)) {
-			errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.POINTER, "attempt to read/write from an invalid pointer");
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
+					"attempt to read/write from an invalid pointer");
 			throw new UnsatisfiablePathConditionException();
 		}
 		// If two pointers are same, return 0.
 		if (charPointer1.equals(charPointer2))
 			result = zero;
 		else {
-			strEval1 = evaluator.getString(source, state, process, arguments[0], charPointer1);
+			strEval1 = evaluator.getString(source, state, process, arguments[0],
+					charPointer1);
 			state = strEval1.first;
-			strEval2 = evaluator.getString(source, state, process, arguments[1], charPointer2);
+			strEval2 = evaluator.getString(source, state, process, arguments[1],
+					charPointer2);
 			state = strEval2.first;
 			if (!strEval1.third || !strEval2.third) {
 				// catch (CIVLUnimplementedFeatureException e) {
@@ -228,12 +256,12 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 				SymbolicExpression strObj1, strObj2;
 				Evaluation eval;
 
-				eval = evaluator.dereference(arguments[0].getSource(), state, process, arguments[0], charPointer1, true,
-						true);
+				eval = evaluator.dereference(arguments[0].getSource(), state,
+						process, arguments[0], charPointer1, true, true);
 				state = eval.state;
 				strObj1 = eval.value;
-				eval = evaluator.dereference(arguments[1].getSource(), state, process, arguments[1], charPointer2, true,
-						true);
+				eval = evaluator.dereference(arguments[1].getSource(), state,
+						process, arguments[1], charPointer2, true, true);
 				state = eval.state;
 				strObj2 = eval.value;
 				if (strObj1.equals(strObj2))
@@ -242,14 +270,19 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 					SymbolicFunctionType funcType;
 					SymbolicExpression func;
 
-					funcType = universe.functionType(Arrays.asList(charPointer1.type(), charPointer2.type()),
+					funcType = universe.functionType(
+							Arrays.asList(charPointer1.type(),
+									charPointer2.type()),
 							universe.integerType());
-					func = universe.canonic(universe.symbolicConstant(universe.stringObject("strcmp"), funcType));
-					symResult = universe.apply(func, Arrays.asList(charPointer1, charPointer2));
+					func = universe.canonic(universe.symbolicConstant(
+							universe.stringObject("strcmp"), funcType));
+					symResult = universe.apply(func,
+							Arrays.asList(charPointer1, charPointer2));
 				}
 				return new Evaluation(state, symResult);
 			} else {
-				assert (strEval1.second != null && strEval2.second != null) : "Evaluating String failed";
+				assert (strEval1.second != null
+						&& strEval2.second != null) : "Evaluating String failed";
 				str1 = strEval1.second;
 				str2 = strEval2.second;
 				output = str1.toString().compareTo(str2.toString());
@@ -259,8 +292,9 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 		return new Evaluation(state, result);
 	}
 
-	private Evaluation execute_strlen(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation execute_strlen(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		Evaluation eval;
 		SymbolicExpression charPointer = argumentValues[0];
 		int startIndex;
@@ -271,14 +305,18 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 		if (charPointer.operator() == SymbolicOperator.TUPLE)
 			startIndex = symbolicUtil.getArrayIndex(source, charPointer);
 		else
-			throw new CIVLUnimplementedFeatureException("Do strlen() on a non-concrete string", source);
+			throw new CIVLUnimplementedFeatureException(
+					"Do strlen() on a non-concrete string", source);
 		if (charPointer.type() instanceof SymbolicArrayType) {
 			originalArray = charPointer;
 		} else {
-			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(source, charPointer);
-			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil.getSymRef(charPointer);
+			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(source,
+					charPointer);
+			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil
+					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
-			eval = evaluator.dereference(source, state, process, null, arrayPointer, false, true);
+			eval = evaluator.dereference(source, state, process, null,
+					arrayPointer, false, true);
 
 			state = eval.state;
 			originalArray = eval.value;
@@ -286,7 +324,8 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 		}
 		numChars = originalArray.numArguments();
 		for (int i = 0; i < numChars - startIndex; i++) {
-			SymbolicExpression charExpr = (SymbolicExpression) originalArray.argument(i + startIndex);
+			SymbolicExpression charExpr = (SymbolicExpression) originalArray
+					.argument(i + startIndex);
 			Character theChar = universe.extractCharacter(charExpr);
 
 			if (theChar == '\0')
@@ -318,8 +357,9 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 	 * @throws UnsatisfiablePathConditionException
 	 * @author ziqing luo
 	 */
-	private Evaluation execute_memset(State state, int pid, String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source) throws UnsatisfiablePathConditionException {
+	private Evaluation execute_memset(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression pointer, c;
 		NumericExpression size, length, dataTypeSize;
 		SymbolicExpression zerosArray;
@@ -340,8 +380,9 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 		c = argumentValues[1];
 		// check if pointer is valid first
 		if (pointer.operator() != SymbolicOperator.TUPLE) {
-			errorLogger.logSimpleError(source, state, process, symbolicAnalyzer.stateInformation(state),
-					ErrorKind.POINTER, "attempt to read/write from an invalid pointer");
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
+					"attempt to read/write from an invalid pointer");
 			throw new UnsatisfiablePathConditionException();
 		}
 		// check if c == 0, because that's the only case we support
@@ -349,12 +390,15 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 		resultType = reasoner.valid(claim).getResultType();
 		if (resultType != ResultType.YES) {
 			throw new CIVLUnimplementedFeatureException(
-					"memset() is not support copy a non-zero: " + c + " value to the given address");
+					"memset() is not support copy a non-zero: " + c
+							+ " value to the given address");
 		}
 		size = (NumericExpression) argumentValues[2];
-		objectElementTypeStatic = symbolicAnalyzer.getArrayBaseType(state, arguments[0].getSource(), pointer);
+		objectElementTypeStatic = symbolicAnalyzer.getArrayBaseType(state,
+				arguments[0].getSource(), pointer);
 		objectElementType = objectElementTypeStatic.getDynamicType(universe);
-		dataTypeSize = symbolicUtil.sizeof(arguments[0].getSource(), objectElementTypeStatic, objectElementType);
+		dataTypeSize = symbolicUtil.sizeof(arguments[0].getSource(),
+				objectElementTypeStatic, objectElementType);
 
 		// TODO: what is the point of looping over all arguments of size?
 		// Shouldn't this only look for the case of one argument?
@@ -369,40 +413,45 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 				 * size contains any "SIZEOF(CHAR) or SIZEOF(BOOLEAN)", never
 				 * simplify SIZEOF(CHAR)(or SIZEOF(BOOLEAN) to one
 				 */
-				if (obj.equals(symbolicUtil.sizeof(null, typeFactory.charType(), universe.characterType())) || obj
-						.equals(symbolicUtil.sizeof(null, this.typeFactory.booleanType(), universe.booleanType())))
+				if (obj.equals(symbolicUtil.sizeof(null, typeFactory.charType(),
+						universe.characterType()))
+						|| obj.equals(symbolicUtil.sizeof(null,
+								this.typeFactory.booleanType(),
+								universe.booleanType())))
 					byteIsUnit = false;
 			}
 		}
 		switch (objectElementType.typeKind()) {
-		case REAL:
-			zeroVar = universe.rational(0);
-			break;
-		case INTEGER:
-			zeroVar = universe.integer(0);
-			break;
-		case CHAR:
-			zeroVar = universe.character('\0');
-			if (byteIsUnit)
-				dataTypeSize = one;
-			break;
-		case BOOLEAN:
-			zeroVar = universe.bool(false);
-			if (byteIsUnit)
-				dataTypeSize = one;
-			break;
-		default:
-			if (objectElementType == this.modelFactory.typeFactory().pointerSymbolicType()) {
-				zeroVar = this.symbolicUtil.nullPointer();
+			case REAL :
+				zeroVar = universe.rational(0);
+				break;
+			case INTEGER :
+				zeroVar = universe.integer(0);
+				break;
+			case CHAR :
+				zeroVar = universe.character('\0');
 				if (byteIsUnit)
 					dataTypeSize = one;
 				break;
-			}
-			throw new CIVLUnimplementedFeatureException(
-					"Any datatype other than REAL, INTEGER, CHAR and BOOLEAN is not supported yet");
+			case BOOLEAN :
+				zeroVar = universe.bool(false);
+				if (byteIsUnit)
+					dataTypeSize = one;
+				break;
+			default :
+				if (objectElementType == this.modelFactory.typeFactory()
+						.pointerSymbolicType()) {
+					zeroVar = this.symbolicUtil.nullPointer();
+					if (byteIsUnit)
+						dataTypeSize = one;
+					break;
+				}
+				throw new CIVLUnimplementedFeatureException(
+						"Any datatype other than REAL, INTEGER, CHAR and BOOLEAN is not supported yet");
 		}
 		length = universe.divide(size, dataTypeSize);
-		ptrAddRet = evaluator.evaluatePointerAdd(state, process, pointer, length, false, arguments[0].getSource());
+		ptrAddRet = evaluator.evaluatePointerAdd(state, process, pointer,
+				length, false, arguments[0].getSource());
 		eval = ptrAddRet.left;
 		state = eval.state;
 		// create a set of zeros to set to the pointed object.
@@ -415,13 +464,16 @@ public class LibstringExecutor extends BaseLibraryExecutor implements LibraryExe
 				zeros.add(zeroVar);
 			zerosArray = universe.array(objectElementType, zeros);
 		} else {
-			zerosArray = symbolicUtil.newArray(state.getPathCondition(), objectElementType, length, zeroVar);
+			zerosArray = symbolicUtil.newArray(state.getPathCondition(),
+					objectElementType, length, zeroVar);
 		}
 		// Calling setDataFrom to set the pointed object to zero
-		setDataRet = setDataFrom(state, pid, process, arguments[0], pointer, length, zerosArray, false, source);
+		setDataRet = setDataFrom(state, pid, process, arguments[0], pointer,
+				length, zerosArray, false, source);
 		eval = setDataRet.left;
 		state = eval.state;
-		state = this.primaryExecutor.assign(source, state, process, setDataRet.right, eval.value);
+		state = this.primaryExecutor.assign(source, state, process,
+				setDataRet.right, eval.value);
 		return new Evaluation(state, pointer);
 	}
 }
