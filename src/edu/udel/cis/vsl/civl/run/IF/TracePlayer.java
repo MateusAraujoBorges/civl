@@ -42,8 +42,8 @@ public class TracePlayer extends Player {
 
 	private long seed = 0;
 
-	public static TracePlayer guidedPlayer(GMCConfiguration config,
-			Model model, File traceFile, PrintStream out, PrintStream err)
+	public static TracePlayer guidedPlayer(GMCConfiguration config, Model model,
+			File traceFile, PrintStream out, PrintStream err)
 			throws CommandLineException, IOException,
 			MisguidedExecutionException {
 		TracePlayer result = new TracePlayer(config, model, out, err);
@@ -56,10 +56,9 @@ public class TracePlayer extends Player {
 		return result;
 	}
 
-	public static TracePlayer randomPlayer(GMCConfiguration config,
-			Model model, PrintStream out, PrintStream err)
-			throws CommandLineException, IOException,
-			MisguidedExecutionException {
+	public static TracePlayer randomPlayer(GMCConfiguration config, Model model,
+			PrintStream out, PrintStream err) throws CommandLineException,
+			IOException, MisguidedExecutionException {
 		TracePlayer result = new TracePlayer(config, model, out, err);
 		BigInteger seedValue = (BigInteger) config.getAnonymousSection()
 				.getValue(seedO);
@@ -93,8 +92,8 @@ public class TracePlayer extends Player {
 		// stateManager.setShowStates(false);
 		// stateManager.setShowSavedStates(false);
 		// civlConfig.setShowStates(false);
-		civlConfig.setShowSavedStates(config.getAnonymousSection().isTrue(
-				CIVLConstants.showSavedStatesO));
+		civlConfig.setShowSavedStates(config.getAnonymousSection()
+				.isTrue(CIVLConstants.showSavedStatesO));
 		// if
 		// (config.getAnonymousSection().getValue(CIVLConstants.showTransitionsO)
 		// == null)
@@ -120,8 +119,8 @@ public class TracePlayer extends Player {
 			PrintStream out, PrintStream err) throws CommandLineException,
 			IOException, MisguidedExecutionException {
 		this(config, model, out, err);
-		this.chooser = new GuidedTransitionChooser<State, Transition>(
-				enabler, traceFile);
+		this.chooser = new GuidedTransitionChooser<State, Transition>(enabler,
+				traceFile);
 	}
 
 	public Trace<Transition, State> run() throws MisguidedExecutionException {
@@ -140,15 +139,14 @@ public class TracePlayer extends Player {
 			return trace;
 		} catch (CIVLStateException stateException) {
 			throw new CIVLExecutionException(stateException.kind(),
-					stateException.certainty(), "",
-					stateException.getMessage(), stateException.state(),
-					stateException.source());
+					stateException.certainty(), "", stateException.getMessage(),
+					stateException.state(), stateException.source());
 		}
 	}
 
 	public void printStats() {
-		civlConfig.out().println(
-				"   max process count   : " + stateManager.maxProcs());
+		civlConfig.out()
+				.println("   max process count   : " + stateManager.maxProcs());
 		civlConfig.out().print("   states              : ");
 		civlConfig.out().println(stateManager.numStatesExplored());
 		civlConfig.out().print("   states Saved        : ");

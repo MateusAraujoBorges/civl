@@ -10,6 +10,8 @@ import edu.udel.cis.vsl.gmc.TransitionIteratorIF;
  * @author Yihao Yan (yanyihao)
  *
  */
-public interface TransitionIterator extends TransitionIteratorIF<State, Transition> {
+public interface TransitionIterator
+		extends
+			TransitionIteratorIF<State, Transition> {
 
 }

@@ -385,7 +385,7 @@ public interface State {
 	 *            flag.
 	 */
 	public void setAllSuccessorsVisited(boolean value);
-	
+
 	@Override
 	String toString();
 }

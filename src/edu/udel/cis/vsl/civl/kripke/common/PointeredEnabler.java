@@ -30,7 +30,7 @@ import edu.udel.cis.vsl.gmc.EnablerIF;
  * @author Manchun Zheng (zmanchun)
  */
 public class PointeredEnabler extends CommonEnabler implements Enabler {
-	
+
 	private MemoryUnitFactory memUnitFactory;
 
 	/* ***************************** Constructors ************************** */
@@ -103,6 +103,7 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 			transitions.addAll(enabledTransitionsOfProcess(state, p.getPid(),
 					ampleWorker.newGuards));
 		}
-		return Semantics.newTransitionSet(state, transitions, ampleSetResult.left);
+		return Semantics.newTransitionSet(state, transitions,
+				ampleSetResult.left);
 	}
 }

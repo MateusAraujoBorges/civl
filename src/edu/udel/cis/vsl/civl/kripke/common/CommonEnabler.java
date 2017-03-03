@@ -227,14 +227,16 @@ public abstract class CommonEnabler implements Enabler {
 	}
 
 	@Override
-	public TransitionSetIF<State, Transition> ampleSetComplement(TransitionSetIF<State, Transition> transitionSet) {
+	public TransitionSetIF<State, Transition> ampleSetComplement(
+			TransitionSetIF<State, Transition> transitionSet) {
 		TransitionSet ts = (TransitionSet) transitionSet;
 		State source = ts.source();
 		TransitionSet ampleSet = this.enabledTransitionsPOR(source);
-		TransitionSet enabledSet = this.enabledTransitionsOfAllProcesses(source);
+		TransitionSet enabledSet = this
+				.enabledTransitionsOfAllProcesses(source);
 		@SuppressWarnings("unchecked")
-		Collection<Transition> difference = (Collection<Transition>) Utils.difference(enabledSet.transitions(),
-				ampleSet.transitions());
+		Collection<Transition> difference = (Collection<Transition>) Utils
+				.difference(enabledSet.transitions(), ampleSet.transitions());
 		List<Transition> transitions = new ArrayList<>();
 		TransitionSet complementSet;
 
@@ -624,7 +626,8 @@ public abstract class CommonEnabler implements Enabler {
 	 *         process, and an optional boolean expression representing the
 	 *         condition when the process in atomic is blocked.
 	 */
-	private Pair<BooleanExpression, TransitionSet> enabledAtomicTransitions(State state) {
+	private Pair<BooleanExpression, TransitionSet> enabledAtomicTransitions(
+			State state) {
 		int pidInAtomic;
 
 		pidInAtomic = stateFactory.processInAtomic(state);
@@ -634,7 +637,8 @@ public abstract class CommonEnabler implements Enabler {
 			// TransitionSequence localTransitions =
 			// Semantics.newTransitionSequence(state, false);
 			List<Transition> localTransitions = new ArrayList<>();
-			Location location = state.getProcessState(pidInAtomic).getLocation();
+			Location location = state.getProcessState(pidInAtomic)
+					.getLocation();
 
 			if (location.isGuardedLocation()) {
 				Statement statement = location.getOutgoing(0);
@@ -665,13 +669,15 @@ public abstract class CommonEnabler implements Enabler {
 							statement, newPathCondition, pidInAtomic, false,
 							AtomicLockAction.NONE));
 				}
-				return new Pair<>(otherAssumption, Semantics.newTransitionSet(state, localTransitions, false));
+				return new Pair<>(otherAssumption, Semantics
+						.newTransitionSet(state, localTransitions, false));
 			} else {
 				localTransitions.addAll(
 						enabledTransitionsOfProcess(state, pidInAtomic, null));
 			}
 			if (!localTransitions.isEmpty())
-				return new Pair<>(null, Semantics.newTransitionSet(state, localTransitions, false));
+				return new Pair<>(null, Semantics.newTransitionSet(state,
+						localTransitions, false));
 		}
 		return null;
 	}
@@ -773,7 +779,8 @@ public abstract class CommonEnabler implements Enabler {
 		place = symbolicUtil.extractInt(csSource, (NumericExpression) universe
 				.tupleRead(colStateComp, universe.intObject(0)));
 		gstateHandle = universe.tupleRead(colStateComp, universe.intObject(1));
-		eval = this.evaluator.dereference(csSource, state, "p" + pid, colStateExpr, gstateHandle, false, true);
+		eval = this.evaluator.dereference(csSource, state, "p" + pid,
+				colStateExpr, gstateHandle, false, true);
 		state = eval.state;
 		colStateID = this.modelFactory.getStateRef(csSource,
 				universe.tupleRead(eval.value, universe.intObject(1)));
@@ -839,14 +846,17 @@ public abstract class CommonEnabler implements Enabler {
 			argumentValues[i] = eval.value;
 			state = eval.state;
 		}
-		eval = this.evaluator.dereference(collator.getSource(), state, process, collator, collatorHandle, false, true);
+		eval = this.evaluator.dereference(collator.getSource(), state, process,
+				collator, collatorHandle, false, true);
 		collatorComp = eval.value;
 		state = eval.state;
 		place = (NumericExpression) universe.tupleRead(collatorComp,
 				universe.intObject(0));
 		placeID = symbolicUtil.extractInt(source, place);
-		gcollatorHandle = universe.tupleRead(collatorComp, universe.intObject(1));
-		eval = this.evaluator.dereference(collator.getSource(), state, process, collator, gcollatorHandle, false, true);
+		gcollatorHandle = universe.tupleRead(collatorComp,
+				universe.intObject(1));
+		eval = this.evaluator.dereference(collator.getSource(), state, process,
+				collator, gcollatorHandle, false, true);
 		gcollatorComp = eval.value;
 		state = eval.state;
 		gqueueLength = (NumericExpression) universe.tupleRead(gcollatorComp,
@@ -939,7 +949,8 @@ public abstract class CommonEnabler implements Enabler {
 			BooleanExpression isIdleState;
 			ResultType result;
 
-			eval = this.evaluator.dereference(source, state, process, collator, gstateHandle, false, true);
+			eval = this.evaluator.dereference(source, state, process, collator,
+					gstateHandle, false, true);
 			gstate = eval.value;
 			state = eval.state;
 			mystatus = universe.arrayRead(

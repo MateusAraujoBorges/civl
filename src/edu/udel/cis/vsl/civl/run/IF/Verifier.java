@@ -243,8 +243,8 @@ public class Verifier extends Player {
 			this.addPredicate(
 					Predicates.newFunctionalEquivalence(modelFactory.universe(),
 							symbolicAnalyzer, outputNames, specOutputs));
-		searcher = new DfsSearcher<State, Transition>(
-				enabler, stateManager, predicate);
+		searcher = new DfsSearcher<State, Transition>(enabler, stateManager,
+				predicate);
 		if (civlConfig.debug())
 			searcher.setDebugOut(out);
 		searcher.setName(sessionName);

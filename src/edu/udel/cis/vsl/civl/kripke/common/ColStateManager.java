@@ -76,8 +76,7 @@ public class ColStateManager extends CommonStateManager
 	// }
 
 	@Override
-	public TraceStepIF<State> nextState(State state,
-			Transition transition) {
+	public TraceStepIF<State> nextState(State state, Transition transition) {
 		TraceStepIF<State> result;
 
 		try {
