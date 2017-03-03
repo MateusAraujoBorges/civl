@@ -37,7 +37,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition.AtomicLockAction;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
+import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
@@ -45,6 +45,7 @@ import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Utils;
 import edu.udel.cis.vsl.gmc.EnablerIF;
+import edu.udel.cis.vsl.gmc.TransitionSetIF;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
@@ -63,7 +64,7 @@ import edu.udel.cis.vsl.sarl.IF.number.Number;
  * 
  * @author Manchun Zheng (zmanchun)
  * @author Timothy K. Zirkel (zirkel)
- * @author yanyihao
+ * @author Yihao Yan (yihaoyan)
  */
 public abstract class CommonEnabler implements Enabler {
 
@@ -201,14 +202,13 @@ public abstract class CommonEnabler implements Enabler {
 	/* ************************ Methods from EnablerIF ********************* */
 
 	@Override
-	public TransitionSequence enabledTransitions(State state) {
-		Pair<BooleanExpression, TransitionSequence> transitionsAssumption;
-		TransitionSequence transitions = Semantics.newTransitionSequence(state,
-				false);
+	public TransitionSet ampleSet(State state) {
+		Pair<BooleanExpression, TransitionSet> transitionsAssumption;
+		List<Transition> transitions = new ArrayList<>();
 
 		if (state.getPathCondition().isFalse())
 			// return empty set of transitions.
-			return Semantics.newTransitionSequence(state, true);
+			return Semantics.newTransitionSet(state, true);
 		// return resumable atomic transitions.
 		transitionsAssumption = enabledAtomicTransitions(state);
 		if (transitionsAssumption != null && transitionsAssumption.left != null)
@@ -223,7 +223,28 @@ public abstract class CommonEnabler implements Enabler {
 			// return ample transitions.
 			transitions.addAll(enabledTransitionsPOR(state).transitions());
 		}
-		return transitions;
+		return Semantics.newTransitionSet(state, transitions, false);
+	}
+
+	@Override
+	public TransitionSetIF<State, Transition> ampleSetComplement(
+			TransitionSetIF<State, Transition> transitionSet) {
+		TransitionSet ts = (TransitionSet) transitionSet;
+		State source = ts.source();
+		TransitionSet ampleSet = this.enabledTransitionsPOR(source);
+		TransitionSet enabledSet = this
+				.enabledTransitionsOfAllProcesses(source);
+		@SuppressWarnings("unchecked")
+		Collection<Transition> difference = (Collection<Transition>) Utils
+				.difference(enabledSet.transitions(), ampleSet.transitions());
+		List<Transition> transitions = new ArrayList<>();
+		TransitionSet complementSet;
+
+		transitions.addAll(difference);
+		complementSet = Semantics.newTransitionSet(source, transitions, false);
+		complementSet.setOffSet(ts.size());
+
+		return complementSet;
 	}
 
 	@Override
@@ -260,44 +281,6 @@ public abstract class CommonEnabler implements Enabler {
 	}
 
 	@Override
-	public boolean hasMultiple(TransitionSequence sequence) {
-		return sequence.numRemoved() + sequence.size() > 1;
-	}
-
-	@Override
-	public boolean hasNext(TransitionSequence transitionSequence) {
-		return !transitionSequence.isEmpty();
-	}
-
-	@Override
-	public Transition next(TransitionSequence transitionSequence) {
-		return transitionSequence.remove();
-	}
-
-	@Override
-	public int numRemoved(TransitionSequence sequence) {
-		return sequence.numRemoved();
-	}
-
-	@Override
-	public Transition peek(TransitionSequence transitionSequence) {
-		return transitionSequence.peek();
-	}
-
-	@Override
-	public void print(PrintStream out, TransitionSequence transitionSequence) {
-	}
-
-	@Override
-	public void printFirstTransition(PrintStream arg0,
-			TransitionSequence arg1) {
-	}
-
-	@Override
-	public void printRemaining(PrintStream arg0, TransitionSequence arg1) {
-	}
-
-	@Override
 	public void setDebugOut(PrintStream debugOut) {
 		this.debugOut = debugOut;
 	}
@@ -305,11 +288,6 @@ public abstract class CommonEnabler implements Enabler {
 	@Override
 	public void setDebugging(boolean debugging) {
 		this.debugging = debugging;
-	}
-
-	@Override
-	public State source(TransitionSequence transitionSequence) {
-		return transitionSequence.state();
 	}
 
 	/* ************************ Package-private Methods ******************** */
@@ -322,24 +300,22 @@ public abstract class CommonEnabler implements Enabler {
 	 *            The current state.
 	 * @return The enabled transitions computed by a certain POR approach.
 	 */
-	abstract TransitionSequence enabledTransitionsPOR(State state);
+	abstract TransitionSet enabledTransitionsPOR(State state);
 
 	List<Transition> enabledTransitionsOfProcess(State state, int pid) {
 		return this.enabledTransitionsOfProcess(state, pid, null);
 	}
 
-	TransitionSequence enabledTransitionsOfAllProcesses(State state) {
+	TransitionSet enabledTransitionsOfAllProcesses(State state) {
 		Iterable<? extends ProcessState> processes = state.getProcessStates();
-		List<Transition> transitions = new LinkedList<>();
-		TransitionSequence result = Semantics.newTransitionSequence(state,
-				true);
+		List<Transition> transitions = new ArrayList<>();
 
 		for (ProcessState process : processes) {
 			transitions.addAll(
 					this.enabledTransitionsOfProcess(state, process.getPid()));
 		}
-		result.addAll(transitions);
-		return result;
+
+		return Semantics.newTransitionSet(state, transitions, true);
 	}
 
 	/**
@@ -650,7 +626,7 @@ public abstract class CommonEnabler implements Enabler {
 	 *         process, and an optional boolean expression representing the
 	 *         condition when the process in atomic is blocked.
 	 */
-	private Pair<BooleanExpression, TransitionSequence> enabledAtomicTransitions(
+	private Pair<BooleanExpression, TransitionSet> enabledAtomicTransitions(
 			State state) {
 		int pidInAtomic;
 
@@ -658,8 +634,9 @@ public abstract class CommonEnabler implements Enabler {
 		if (pidInAtomic >= 0) {
 			// execute a transition in an atomic block of a certain process
 			// without interleaving with other processes
-			TransitionSequence localTransitions = Semantics
-					.newTransitionSequence(state, false);
+			// TransitionSequence localTransitions =
+			// Semantics.newTransitionSequence(state, false);
+			List<Transition> localTransitions = new ArrayList<>();
 			Location location = state.getProcessState(pidInAtomic)
 					.getLocation();
 
@@ -692,13 +669,15 @@ public abstract class CommonEnabler implements Enabler {
 							statement, newPathCondition, pidInAtomic, false,
 							AtomicLockAction.NONE));
 				}
-				return new Pair<>(otherAssumption, localTransitions);
+				return new Pair<>(otherAssumption, Semantics
+						.newTransitionSet(state, localTransitions, false));
 			} else {
 				localTransitions.addAll(
 						enabledTransitionsOfProcess(state, pidInAtomic, null));
 			}
 			if (!localTransitions.isEmpty())
-				return new Pair<>(null, localTransitions);
+				return new Pair<>(null, Semantics.newTransitionSet(state,
+						localTransitions, false));
 		}
 		return null;
 	}
@@ -1112,28 +1091,6 @@ public abstract class CommonEnabler implements Enabler {
 			return pathCondition;
 		return (BooleanExpression) universe
 				.canonic(universe.and(pathCondition, guard));
-	}
-
-	@Override
-	public void expandTransitionSequence(TransitionSequence sequence) {
-		if (!sequence.containsAllEnabled()) {
-			State state = sequence.state();
-			TransitionSequence ampleSet = this.enabledTransitionsPOR(state);
-			TransitionSequence enabledSet = this
-					.enabledTransitionsOfAllProcesses(state);
-			@SuppressWarnings("unchecked")
-			Collection<Transition> difference = (Collection<Transition>) Utils
-					.difference(enabledSet.transitions(),
-							ampleSet.transitions());
-
-			sequence.addAll(difference);
-			sequence.setContainingAllEnabled(true);
-		}
-	}
-
-	@Override
-	public boolean expanded(TransitionSequence sequence) {
-		return sequence.containsAllEnabled();
 	}
 }
 

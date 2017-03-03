@@ -76,9 +76,8 @@ public class ColStateManager extends CommonStateManager
 	// }
 
 	@Override
-	public TraceStepIF<Transition, State> nextState(State state,
-			Transition transition) {
-		TraceStepIF<Transition, State> result;
+	public TraceStepIF<State> nextState(State state, Transition transition) {
+		TraceStepIF<State> result;
 
 		try {
 			// reuse the general method, since only one process (the external

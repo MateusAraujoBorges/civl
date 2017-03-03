@@ -2,7 +2,6 @@ package edu.udel.cis.vsl.civl.kripke.IF;
 
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.EnablerIF;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -13,8 +12,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
  * @author Manchun Zheng
  * 
  */
-public interface Enabler extends
-		EnablerIF<State, Transition, TransitionSequence> {
+public interface Enabler extends EnablerIF<State, Transition> {
 
 	/**
 	 * Computes the guard of a statement. Since we have SystemGuardExpression

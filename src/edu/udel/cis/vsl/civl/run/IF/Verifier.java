@@ -28,7 +28,6 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.predicate.IF.Predicates;
 import edu.udel.cis.vsl.civl.run.common.VerificationStatus;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
 import edu.udel.cis.vsl.civl.state.IF.CIVLStateException;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -220,7 +219,7 @@ public class Verifier extends Player {
 	 * The object used to perform the depth-first search of the state space.
 	 * 
 	 */
-	private DfsSearcher<State, Transition, TransitionSequence> searcher;
+	private DfsSearcher<State, Transition> searcher;
 
 	// private boolean shortFileNamesShown;
 
@@ -244,8 +243,8 @@ public class Verifier extends Player {
 			this.addPredicate(
 					Predicates.newFunctionalEquivalence(modelFactory.universe(),
 							symbolicAnalyzer, outputNames, specOutputs));
-		searcher = new DfsSearcher<State, Transition, TransitionSequence>(
-				enabler, stateManager, predicate);
+		searcher = new DfsSearcher<State, Transition>(enabler, stateManager,
+				predicate);
 		if (civlConfig.debug())
 			searcher.setDebugOut(out);
 		searcher.setName(sessionName);

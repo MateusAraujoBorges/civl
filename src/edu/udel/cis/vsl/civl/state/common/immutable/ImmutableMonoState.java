@@ -146,11 +146,17 @@ public class ImmutableMonoState implements State {
 	 */
 	private boolean allSuccessorsOnStack = true;
 
+	/**
+	 * True iff all successors resulting from the enabled transitions have been
+	 * visited during the search.
+	 */
+	private boolean allSuccessorsVisited = false;
+
 	/* ****************** End of instance fields ****************** */
 
 	/* ************************ Constructors ************************ */
-	ImmutableMonoState(ImmutableProcessState processState, ImmutableDynamicScope[] dyscopes,
-			BooleanExpression pathCondition) {
+	ImmutableMonoState(ImmutableProcessState processState,
+			ImmutableDynamicScope[] dyscopes, BooleanExpression pathCondition) {
 		assert processState != null;
 		assert dyscopes != null;
 		assert pathCondition != null;
@@ -235,7 +241,8 @@ public class ImmutableMonoState implements State {
 
 	@Override
 	public int getDyscopeID(int pid, Variable variable) {
-		assert this.processState.getPid() == pid : ImmutableMonoState.inconsistentMsg;
+		assert this.processState
+				.getPid() == pid : ImmutableMonoState.inconsistentMsg;
 		int dyscopeId = this.processState.getDyscopeId();
 		Scope variableScope = variable.scope();
 		DynamicScope dyscope;
@@ -258,7 +265,8 @@ public class ImmutableMonoState implements State {
 
 	@Override
 	public SymbolicExpression valueOf(int pid, Variable variable) {
-		assert this.processState.getPid() == pid : ImmutableMonoState.inconsistentMsg;
+		assert this.processState
+				.getPid() == pid : ImmutableMonoState.inconsistentMsg;
 		return this.getVariableValue(pid, variable.vid());
 	}
 
@@ -284,7 +292,8 @@ public class ImmutableMonoState implements State {
 
 	@Override
 	public ProcessState getProcessState(int pid) {
-		assert this.processState.getPid() == pid : ImmutableMonoState.inconsistentMsg;
+		assert this.processState
+				.getPid() == pid : ImmutableMonoState.inconsistentMsg;
 		return this.processState;
 	}
 
@@ -295,14 +304,16 @@ public class ImmutableMonoState implements State {
 
 	@Override
 	public int getDyscope(int pid, Scope scope) {
-		assert this.processState.getPid() == pid : ImmutableMonoState.inconsistentMsg;
+		assert this.processState
+				.getPid() == pid : ImmutableMonoState.inconsistentMsg;
 		this.getDyscope(pid, scope.id());
 		return 0;
 	}
 
 	@Override
 	public int getDyscope(int pid, int scopeID) {
-		Iterator<StackEntry> stackIter = processState.getStackEntries().iterator();
+		Iterator<StackEntry> stackIter = processState.getStackEntries()
+				.iterator();
 		int currentDyscopeID = -1;
 		DynamicScope currentDyscope;
 
@@ -334,8 +345,10 @@ public class ImmutableMonoState implements State {
 	}
 
 	@Override
-	public ImmutableMonoState setPathCondition(BooleanExpression pathCondition) {
-		ImmutableMonoState result = new ImmutableMonoState(processState, dyscopes, pathCondition);
+	public ImmutableMonoState setPathCondition(
+			BooleanExpression pathCondition) {
+		ImmutableMonoState result = new ImmutableMonoState(processState,
+				dyscopes, pathCondition);
 
 		if (scopeHashed) {
 			result.scopeHashed = true;
@@ -379,7 +392,8 @@ public class ImmutableMonoState implements State {
 		out.println("| Process states");
 
 		if (processState == null)
-			out.println("| | process - (id=" + processState.getPid() + "): null");
+			out.println(
+					"| | process - (id=" + processState.getPid() + "): null");
 		else
 			processState.print(out, "| | ");
 		out.flush();
@@ -402,7 +416,8 @@ public class ImmutableMonoState implements State {
 	 * @return the unique representative of the dyscope's equivalence class
 	 */
 	private ImmutableDynamicScope canonic(ImmutableDynamicScope dyscope,
-			Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap, SymbolicUniverse universe) {
+			Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap,
+			SymbolicUniverse universe) {
 		ImmutableDynamicScope canonicScope = scopeMap.get(dyscope);
 
 		if (canonicScope == null) {
@@ -429,7 +444,8 @@ public class ImmutableMonoState implements State {
 	 */
 	private ImmutableProcessState canonic(ImmutableProcessState processState,
 			Map<ImmutableProcessState, ImmutableProcessState> processMap) {
-		ImmutableProcessState canonicProcessState = processMap.get(processState);
+		ImmutableProcessState canonicProcessState = processMap
+				.get(processState);
 
 		if (canonicProcessState == null) {
 			processState.makeCanonic();
@@ -451,15 +467,16 @@ public class ImmutableMonoState implements State {
 	 * @param prefix
 	 *            The line prefix of the printing result.
 	 */
-	private void printImmutableDynamicScope(PrintStream out, ImmutableDynamicScope dyscope, String id, String prefix) {
+	private void printImmutableDynamicScope(PrintStream out,
+			ImmutableDynamicScope dyscope, String id, String prefix) {
 		Scope lexicalScope = dyscope.lexicalScope();
 		int numVars = lexicalScope.numVariables();
 		BitSet reachers = dyscope.getReachers();
 		int bitSetLength = reachers.length();
 		boolean first = true;
 
-		out.println(prefix + "dyscope d" + id + " (parent ID=" + dyscope.getParent() + ", static=" + lexicalScope.id()
-				+ ")");
+		out.println(prefix + "dyscope d" + id + " (parent ID="
+				+ dyscope.getParent() + ", static=" + lexicalScope.id() + ")");
 		out.print(prefix + "| reachers = {");
 		for (int j = 0; j < bitSetLength; j++) {
 			if (reachers.get(j)) {
@@ -544,7 +561,8 @@ public class ImmutableMonoState implements State {
 	 * @return a new {@link ImmutableMonoState}
 	 */
 	ImmutableMonoState setDyscopes(ImmutableDynamicScope[] dyscopes) {
-		ImmutableMonoState newState = new ImmutableMonoState(processState, dyscopes, pathCondition);
+		ImmutableMonoState newState = new ImmutableMonoState(processState,
+				dyscopes, pathCondition);
 
 		newState.depth = this.depth;
 		return newState;
@@ -567,7 +585,8 @@ public class ImmutableMonoState implements State {
 			return false;
 		if (!pathCondition.equals(other.pathCondition))
 			return false;
-		if (scopeHashed && other.scopeHashed && scopeHashCode != other.scopeHashCode)
+		if (scopeHashed && other.scopeHashed
+				&& scopeHashCode != other.scopeHashCode)
 			return false;
 		if (!processState.equals(other.processState))
 			return false;
@@ -588,7 +607,8 @@ public class ImmutableMonoState implements State {
 				scopeHashCode = Arrays.hashCode(dyscopes);
 				scopeHashed = true;
 			}
-			hashCode = pathCondition.hashCode() ^ scopeHashCode ^ this.processState.getPid();
+			hashCode = pathCondition.hashCode() ^ scopeHashCode
+					^ this.processState.getPid();
 			hashed = true;
 		}
 		return hashCode;
@@ -614,5 +634,15 @@ public class ImmutableMonoState implements State {
 	@Override
 	public boolean getAllSuccessorsOnStack() {
 		return allSuccessorsOnStack;
+	}
+
+	@Override
+	public boolean allSuccessorsVisited() {
+		return allSuccessorsVisited;
+	}
+
+	@Override
+	public void setAllSuccessorsVisited(boolean value) {
+		this.allSuccessorsVisited = value;
 	}
 }

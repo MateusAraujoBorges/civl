@@ -37,6 +37,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
  * @author Timothy K. Zirkel (zirkel)
  * @author Tim McClory (tmcclory)
  * @author Ziqing Luo (ziqing)
+ * @author Yihao Yan (yanyihao)
  * 
  */
 public class ImmutableState implements State {
@@ -191,6 +192,12 @@ public class ImmutableState implements State {
 	 */
 	private boolean allSuccessorsOnStack = true;
 
+	/**
+	 * True iff all successors resulting from the enabled transitions have been
+	 * visited during the search.
+	 */
+	private boolean allSuccessorsVisited = false;
+
 	int[] collectibleCounts;
 
 	/* *************************** Static Methods ************************** */
@@ -219,9 +226,11 @@ public class ImmutableState implements State {
 	 *            {@link ModelConfiguration#SYMBOL_PREFIXES}
 	 * @return new ImmutableState with fields as specified
 	 */
-	static ImmutableState newState(ImmutableState state, ImmutableProcessState[] processStates,
+	static ImmutableState newState(ImmutableState state,
+			ImmutableProcessState[] processStates,
 			ImmutableDynamicScope[] dyscopes, BooleanExpression pathCondition) {
-		ImmutableState result = new ImmutableState(processStates == null ? state.processStates : processStates,
+		ImmutableState result = new ImmutableState(
+				processStates == null ? state.processStates : processStates,
 				dyscopes == null ? state.dyscopes : dyscopes,
 				pathCondition == null ? state.pathCondition : pathCondition);
 
@@ -255,8 +264,8 @@ public class ImmutableState implements State {
 	 *            the path condition, a boolean-valued symbolic expression which
 	 *            is assumed to hold in this state
 	 */
-	ImmutableState(ImmutableProcessState[] processStates, ImmutableDynamicScope[] dyscopes,
-			BooleanExpression pathCondition) {
+	ImmutableState(ImmutableProcessState[] processStates,
+			ImmutableDynamicScope[] dyscopes, BooleanExpression pathCondition) {
 		assert processStates != null;
 		assert dyscopes != null;
 		assert pathCondition != null;
@@ -283,7 +292,8 @@ public class ImmutableState implements State {
 	 * @return the unique representative of the dyscope's equivalence class
 	 */
 	private ImmutableDynamicScope canonic(ImmutableDynamicScope dyscope,
-			Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap, SymbolicUniverse universe) {
+			Map<ImmutableDynamicScope, ImmutableDynamicScope> scopeMap,
+			SymbolicUniverse universe) {
 		ImmutableDynamicScope canonicScope = scopeMap.get(dyscope);
 
 		if (canonicScope == null) {
@@ -310,7 +320,8 @@ public class ImmutableState implements State {
 	 */
 	private ImmutableProcessState canonic(ImmutableProcessState processState,
 			Map<ImmutableProcessState, ImmutableProcessState> processMap) {
-		ImmutableProcessState canonicProcessState = processMap.get(processState);
+		ImmutableProcessState canonicProcessState = processMap
+				.get(processState);
 
 		if (canonicProcessState == null) {
 			processState.makeCanonic();
@@ -332,15 +343,16 @@ public class ImmutableState implements State {
 	 * @param prefix
 	 *            The line prefix of the printing result.
 	 */
-	private void printImmutableDynamicScope(PrintStream out, ImmutableDynamicScope dyscope, String id, String prefix) {
+	private void printImmutableDynamicScope(PrintStream out,
+			ImmutableDynamicScope dyscope, String id, String prefix) {
 		Scope lexicalScope = dyscope.lexicalScope();
 		int numVars = lexicalScope.numVariables();
 		BitSet reachers = dyscope.getReachers();
 		int bitSetLength = reachers.length();
 		boolean first = true;
 
-		out.println(prefix + "dyscope d" + id + " (parent ID=" + dyscope.getParent() + ", static=" + lexicalScope.id()
-				+ ")");
+		out.println(prefix + "dyscope d" + id + " (parent ID="
+				+ dyscope.getParent() + ", static=" + lexicalScope.id() + ")");
 		out.print(prefix + "| reachers = {");
 		for (int j = 0; j < bitSetLength; j++) {
 			if (reachers.get(j)) {
@@ -432,9 +444,11 @@ public class ImmutableState implements State {
 	 *         null
 	 */
 	ImmutableProcessState[] copyAndExpandProcesses() {
-		ImmutableProcessState[] newProcesses = new ImmutableProcessState[processStates.length + 1];
+		ImmutableProcessState[] newProcesses = new ImmutableProcessState[processStates.length
+				+ 1];
 
-		System.arraycopy(processStates, 0, newProcesses, 0, processStates.length);
+		System.arraycopy(processStates, 0, newProcesses, 0,
+				processStates.length);
 		return newProcesses;
 	}
 
@@ -447,7 +461,8 @@ public class ImmutableState implements State {
 	 *         null
 	 */
 	ImmutableDynamicScope[] copyAndExpandScopes() {
-		ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[dyscopes.length + 1];
+		ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[dyscopes.length
+				+ 1];
 
 		System.arraycopy(dyscopes, 0, newScopes, 0, dyscopes.length);
 		return newScopes;
@@ -461,7 +476,8 @@ public class ImmutableState implements State {
 	ImmutableProcessState[] copyProcessStates() {
 		ImmutableProcessState[] newProcesses = new ImmutableProcessState[processStates.length];
 
-		System.arraycopy(processStates, 0, newProcesses, 0, processStates.length);
+		System.arraycopy(processStates, 0, newProcesses, 0,
+				processStates.length);
 		return newProcesses;
 	}
 
@@ -505,8 +521,10 @@ public class ImmutableState implements State {
 	 * @param newQueues
 	 * @return
 	 */
-	ImmutableState setSnapshotsQueues(ImmutableCollectiveSnapshotsEntry[][] newQueues) {
-		ImmutableState newState = newState(this, processStates, dyscopes, pathCondition);
+	ImmutableState setSnapshotsQueues(
+			ImmutableCollectiveSnapshotsEntry[][] newQueues) {
+		ImmutableState newState = newState(this, processStates, dyscopes,
+				pathCondition);
 		int queueLength = newQueues.length;
 
 		newState.snapshotsQueues = newQueues.clone();
@@ -544,7 +562,8 @@ public class ImmutableState implements State {
 				scopeId = getParentId(scopeId);
 			}
 		}
-		throw new IllegalArgumentException("Variable not in scope: " + variable);
+		throw new IllegalArgumentException(
+				"Variable not in scope: " + variable);
 	}
 
 	/**
@@ -565,7 +584,8 @@ public class ImmutableState implements State {
 	 * @return new state with new dyscopes
 	 */
 	ImmutableState setScopes(ImmutableDynamicScope[] dyscopes) {
-		ImmutableState result = new ImmutableState(processStates, dyscopes, pathCondition);
+		ImmutableState result = new ImmutableState(processStates, dyscopes,
+				pathCondition);
 
 		if (procHashed) {
 			result.procHashed = true;
@@ -588,7 +608,8 @@ public class ImmutableState implements State {
 	 *            PID of process
 	 * @return new state with new process state
 	 */
-	ImmutableState setProcessState(int index, ImmutableProcessState processState) {
+	ImmutableState setProcessState(int index,
+			ImmutableProcessState processState) {
 		int n = processStates.length;
 		ImmutableProcessState[] newProcessStates = new ImmutableProcessState[n];
 		ImmutableState result;
@@ -614,7 +635,8 @@ public class ImmutableState implements State {
 	 * @return new immutable state with process states field as given
 	 */
 	ImmutableState setProcessStates(ImmutableProcessState[] processStates) {
-		ImmutableState result = new ImmutableState(processStates, dyscopes, pathCondition);
+		ImmutableState result = new ImmutableState(processStates, dyscopes,
+				pathCondition);
 
 		if (scopeHashed) {
 			result.scopeHashed = true;
@@ -655,14 +677,16 @@ public class ImmutableState implements State {
 	 *            The updated snapshot queue
 	 * @return
 	 */
-	ImmutableState updateQueue(int id, ImmutableCollectiveSnapshotsEntry[] queue) {
+	ImmutableState updateQueue(int id,
+			ImmutableCollectiveSnapshotsEntry[] queue) {
 		ImmutableState newState;
 		int newLength;
 
 		assert queue != null;
 		newState = newState(this, processStates, dyscopes, pathCondition);
 		if (newState.snapshotsQueues.length <= id)
-			newState.snapshotsQueues = new ImmutableCollectiveSnapshotsEntry[id + 1][];
+			newState.snapshotsQueues = new ImmutableCollectiveSnapshotsEntry[id
+					+ 1][];
 		else
 			newState.snapshotsQueues = this.snapshotsQueues.clone();
 		newLength = snapshotsQueues.length;
@@ -687,9 +711,11 @@ public class ImmutableState implements State {
 	ImmutableState updateCollectibleCount(int index, int newCount) {
 		int length = this.collectibleCounts.length;
 		int[] newCollectibleCounts = new int[length];
-		ImmutableState newState = newState(this, processStates, dyscopes, pathCondition);
+		ImmutableState newState = newState(this, processStates, dyscopes,
+				pathCondition);
 
-		System.arraycopy(this.collectibleCounts, 0, newCollectibleCounts, 0, length);
+		System.arraycopy(this.collectibleCounts, 0, newCollectibleCounts, 0,
+				length);
 		newCollectibleCounts[index] = newCount;
 		newState.collectibleCounts = newCollectibleCounts;
 		return newState;
@@ -886,7 +912,8 @@ public class ImmutableState implements State {
 
 	@Override
 	public ImmutableState setPathCondition(BooleanExpression pathCondition) {
-		ImmutableState result = new ImmutableState(processStates, dyscopes, pathCondition);
+		ImmutableState result = new ImmutableState(processStates, dyscopes,
+				pathCondition);
 
 		if (scopeHashed) {
 			result.scopeHashed = true;
@@ -929,9 +956,11 @@ public class ImmutableState implements State {
 				return false;
 			if (!pathCondition.equals(that.pathCondition))
 				return false;
-			if (procHashed && that.procHashed && procHashCode != that.procHashCode)
+			if (procHashed && that.procHashed
+					&& procHashCode != that.procHashCode)
 				return false;
-			if (scopeHashed && that.scopeHashed && scopeHashCode != that.scopeHashCode)
+			if (scopeHashed && that.scopeHashed
+					&& scopeHashCode != that.scopeHashCode)
 				return false;
 			if (!Arrays.equals(processStates, that.processStates))
 				return false;
@@ -1008,6 +1037,16 @@ public class ImmutableState implements State {
 	@Override
 	public boolean getAllSuccessorsOnStack() {
 		return allSuccessorsOnStack;
+	}
+
+	@Override
+	public boolean allSuccessorsVisited() {
+		return allSuccessorsVisited;
+	}
+
+	@Override
+	public void setAllSuccessorsVisited(boolean value) {
+		this.allSuccessorsVisited = value;
 	}
 
 }
