@@ -158,6 +158,7 @@ public class CIVLConstants {
 	public static String COLLECT_OUTPUT = "collectOutput";
 	public static String COLLECT_PROCESSES = "collectProcesses";
 	public static String COLLECT_SCOPES = "collectScopes";
+	public static String COLLECT_SYMBOLIC_CONSTANTS = "collectSymbolicConstants";
 	public static String COLLECT_HEAPS = "collectHeaps";
 	public static String LINK = "link";
 	public static String MACRO = "D";
@@ -289,7 +290,7 @@ public class CIVLConstants {
 	 */
 	public final static Option seedO = Option.newScalarOption(SEED, INTEGER,
 			"set the random seed; applies only to run", null);
-	
+
 	/**
 	 * Set the upper bound of integers.
 	 */
@@ -522,6 +523,13 @@ public class CIVLConstants {
 			COLLECT_SCOPES, BOOLEAN, "collect dyscopes?", true);
 
 	/**
+	 * Collect symbolic constants ? false by default.
+	 */
+	public final static Option collectSymbolicConstantsO = Option
+			.newScalarOption(COLLECT_SYMBOLIC_CONSTANTS, BOOLEAN,
+					"collect symbolic constant?", false);
+
+	/**
 	 * Collect heaps? true by default.
 	 */
 	public final static Option collectHeapsO = Option
@@ -599,17 +607,18 @@ public class CIVLConstants {
 	 */
 	public final static Option[] getAllOptions() {
 		return new Option[]{astO, collectHeapsO, collectProcessesO,
-				collectScopesO, deadlockO, debugO, enablePrintfO, errorBoundO,
-				errorStateEquivO, guiO, guidedO, idO, inputO, linkO, macroO,
-				maxdepthO, minO, mpiContractO, ompLoopDecompO, ompNoSimplifyO,
-				preprocO, procBoundO, randomO, saveStatesO, seedO,
-				showAmpleSetO, showAmpleSetWtStatesO, showInputVarsO,
-				showMemoryUnitsO, showModelO, showPathConditionO, showProgramO,
-				showProverQueriesO, showQueriesO, showSavedStatesO, showStatesO,
-				showTimeO, showTransitionsO, showUnreachedCodeO, simplifyO,
-				solveO, statelessPrintfO, svcomp16O, svcomp17O, quietO,
-				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
-				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
+				collectScopesO, collectSymbolicConstantsO, deadlockO, debugO,
+				enablePrintfO, errorBoundO, errorStateEquivO, guiO, guidedO,
+				idO, inputO, linkO, macroO, maxdepthO, minO, mpiContractO,
+				ompLoopDecompO, ompNoSimplifyO, preprocO, procBoundO, randomO,
+				saveStatesO, seedO, showAmpleSetO, showAmpleSetWtStatesO,
+				showInputVarsO, showMemoryUnitsO, showModelO,
+				showPathConditionO, showProgramO, showProverQueriesO,
+				showQueriesO, showSavedStatesO, showStatesO, showTimeO,
+				showTransitionsO, showUnreachedCodeO, simplifyO, solveO,
+				statelessPrintfO, svcomp16O, svcomp17O, quietO, sysIncludePathO,
+				traceO, userIncludePathO, verboseO, webO, CIVLMacroO,
+				analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
 				sliceAnalysisO, witnessO, direct0, intBit};
 	}

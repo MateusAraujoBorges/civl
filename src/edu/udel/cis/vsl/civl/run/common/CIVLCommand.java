@@ -8,6 +8,7 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.collectHeapsO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.collectOutputO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.collectProcessesO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.collectScopesO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.collectSymbolicConstantsO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.deadlockO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.debugO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.direct0;
@@ -17,6 +18,7 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.guiO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.guidedO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.idO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.inputO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.intBit;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.macroO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.maxdepthO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.minO;
@@ -57,7 +59,6 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.unpreprocO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.userIncludePathO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.verboseO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.witnessO;
-import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.intBit;
 
 import java.io.PrintStream;
 import java.util.Collection;
@@ -93,10 +94,11 @@ public class CIVLCommand {
 				showAmpleSetWtStatesO, statelessPrintfO, deadlockO, svcomp16O,
 				svcomp17O, showProgramO, showPathConditionO, ompNoSimplifyO,
 				ompLoopDecompO, collectProcessesO, collectScopesO,
-				collectHeapsO, macroO, preprocO, astO, showTimeO,
-				showMemoryUnitsO, CIVLMacroO, showUnreachedCodeO, analyzeAbsO,
-				collectOutputO, checkDivisionByZeroO, checkMemoryLeakO,
-				timeoutO, quietO, unpreprocO, direct0, intBit);
+				collectSymbolicConstantsO, collectHeapsO, macroO, preprocO,
+				astO, showTimeO, showMemoryUnitsO, CIVLMacroO,
+				showUnreachedCodeO, analyzeAbsO, collectOutputO,
+				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, quietO,
+				unpreprocO, direct0, intBit);
 		CIVLCommand.addCompareOption(errorBoundO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO, showProverQueriesO,
@@ -115,7 +117,8 @@ public class CIVLCommand {
 				showAmpleSetWtStatesO, statelessPrintfO, guiO, showProgramO,
 				showPathConditionO, preprocO, astO, showMemoryUnitsO,
 				collectOutputO, checkDivisionByZeroO, checkMemoryLeakO, quietO,
-				unpreprocO, svcomp16O, svcomp17O, sliceAnalysisO, witnessO, intBit);
+				unpreprocO, svcomp16O, svcomp17O, sliceAnalysisO, witnessO,
+				intBit);
 		CIVLCommand.addRunOption(errorBoundO, verboseO, randomO, guidedO, seedO,
 				debugO, userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO, showProverQueriesO,
