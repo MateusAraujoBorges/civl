@@ -371,8 +371,8 @@ public class CIVLConfiguration {
 				(String) config.getValueOrDefault(CIVLConstants.mpiContractO));
 		if (this.isEnableMpiContract())
 			this.enableIntDivTransformation = false;
-		if (this.mpiContractFunction != null)
-			this.collectSymbolicNames = false;
+		this.collectSymbolicNames = config
+				.isTrue(CIVLConstants.collectSymbolicConstantsO);
 		this.setCheckDivisionByZero(
 				config.isTrue(CIVLConstants.checkDivisionByZeroO));
 		this.checkMemoryLeak = config.isTrue(CIVLConstants.checkMemoryLeakO);

@@ -34,7 +34,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
@@ -68,7 +67,7 @@ public abstract class Player {
 
 	protected Evaluator evaluator;
 
-	protected EnablerIF<State, Transition, TransitionSequence> enabler;
+	protected EnablerIF<State, Transition> enabler;
 
 	protected CIVLStatePredicate predicate = null;
 

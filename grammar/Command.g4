@@ -118,6 +118,7 @@ OPTION_NAME
     | '-collectOutput'
     | '-collectProcesses'
     | '-collectScopes'
+    | '-collectSymbolicConstants'
     | '-deadlock'
     | '-debug'
     | '-enablePrintf'

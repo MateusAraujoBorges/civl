@@ -32,13 +32,12 @@ public class Predicates {
 			LibraryEnablerLoader loader, Evaluator evaluator,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
 			SymbolicAnalyzer symbolicAnalyzer) {
-		return new CommonPotentialDeadlock(universe, enabler, loader,
-				evaluator, modelFactory, symbolicUtil, symbolicAnalyzer);
+		return new CommonPotentialDeadlock(universe, enabler, loader, evaluator,
+				modelFactory, symbolicUtil, symbolicAnalyzer);
 	}
 
 	public static FunctionalEquivalence newFunctionalEquivalence(
-			SymbolicUniverse universe,
-			SymbolicAnalyzer symbolicAnalyzer,
+			SymbolicUniverse universe, SymbolicAnalyzer symbolicAnalyzer,
 			String[] outputNames,
 			Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> specOutputs) {
 		return new CommonFunctionalEquivalence(universe, symbolicAnalyzer,

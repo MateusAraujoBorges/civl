@@ -46,9 +46,7 @@ public class VerifyThisTest {
 
 	@Test
 	public void relaxedPrefix_2015_1() {
-		assertTrue(ui.run(VERIFY, 
-				QUIET, 
-				filename("relaxedPrefix.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("relaxedPrefix.c")));
 	}
 
 	@Test
@@ -57,8 +55,14 @@ public class VerifyThisTest {
 	}
 
 	@Test
+	public void mm4() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("mm4.cvl")));
+	}
+
+	@Test
 	public void binaryTreeTraversal() {
-		assertTrue(ui.run(VERIFY, QUIET, "-inputDB=4", filename("binaryTreeTraversal.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, "-inputDB=4",
+				filename("binaryTreeTraversal.cvl")));
 	}
 
 	@Test

@@ -4,7 +4,6 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.io.PrintStream;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.NoopTransition;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition.TransitionKind;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSequence;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
@@ -107,10 +105,6 @@ public class CommonStateManager implements StateManager {
 
 	private OutputCollector outputCollector;
 
-	// private Stack<TransitionSequence> stack;
-
-	// private Set<Integer> expandedStateIDs = new HashSet<>();
-
 	private boolean printTransitions;
 
 	private boolean printAllStates;
@@ -173,7 +167,7 @@ public class CommonStateManager implements StateManager {
 	 * @return the resulting trace step after executing the state.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	protected TraceStepIF<Transition, State> nextStateWork(State state,
+	protected TraceStepIF<State> nextStateWork(State state,
 			Transition transition) throws UnsatisfiablePathConditionException {
 		int pid;
 		int numProcs;
@@ -298,42 +292,7 @@ public class CommonStateManager implements StateManager {
 					ignoredErrorSet.add(hex.heapErrorKind());
 				}
 			} while (!finished);
-			// if (state.onStack()) {
-			// // this is a back-edge, we need to fulfill ample set condition
-			// // C3 cycle)
-			// TransitionSequence transitionSequence = stack.peek();
-			// State sourceState = transitionSequence.state();
-			//
-			// // if (expandedStateIDs.contains(sourceState.getCanonicId())
-			// // || expandedStateIDs.contains(state.getCanonicId()))
-			// // System.out.println("State " + state.getCanonicId()
-			// // + " is on stack but has been expanded before.");
-			// if (!expandedStateIDs.contains(sourceState.getCanonicId())
-			// && !expandedStateIDs.contains(state.getCanonicId())
-			// && !transitionSequence.containsAllEnabled()) {
-			// // int onStackID = state.getCanonicId();
-			// // Stack<TransitionSequence> tmp = new Stack<>();
-			// // TransitionSequence current = stack.pop();
-			// // State currentState = current.state();
-			// //
-			// // while (currentState.getCanonicId() != onStackID) {
-			// // tmp.push(current);
-			// // expandedStateIDs.add(currentState.getCanonicId());
-			// // current = stack.pop();
-			// // currentState = current.state();
-			// // }
-			// // expandedStateIDs.add(currentState.getCanonicId());
-			// // stack.push(current);
-			// // while (!tmp.isEmpty()) {
-			// // current = tmp.pop();
-			// // stack.push(current);
-			// // }
-			// expandedStateIDs.add(state.getCanonicId());
-			// expandedStateIDs.add(sourceState.getCanonicId());
-			// this.expandTransitionSequence(transitionSequence);
-			// ampleSetUpdated = true;
-			// }
-			// }
+
 			traceStep.complete(state);
 			newCanonicId = state.getCanonicId();
 			if (newCanonicId > oldMaxCanonicId) {
@@ -396,23 +355,6 @@ public class CommonStateManager implements StateManager {
 		if (config.collectOutputs())
 			this.outputCollector.collectOutputs(state);
 		return traceStep;
-	}
-
-	void expandTransitionSequence(TransitionSequence transitionSequence) {
-		// TODO mark all processes of the source state for backtracking
-		if (!transitionSequence.containsAllEnabled()) {
-			State state = transitionSequence.state();
-			TransitionSequence ampleSet = enabler.enabledTransitionsPOR(state);
-			TransitionSequence enabledSet = enabler
-					.enabledTransitionsOfAllProcesses(state);
-			@SuppressWarnings("unchecked")
-			Collection<Transition> difference = (Collection<Transition>) Utils
-					.difference(enabledSet.transitions(),
-							ampleSet.transitions());
-
-			transitionSequence.setContainingAllEnabled(true);
-			transitionSequence.addAll(difference);
-		}
 	}
 
 	/**
@@ -614,23 +556,19 @@ public class CommonStateManager implements StateManager {
 	 */
 	private void reportErrorForAtom(EnabledStatus enabled, State state,
 			Location location, String process)
-					throws UnsatisfiablePathConditionException {
+			throws UnsatisfiablePathConditionException {
 		switch (enabled) {
 			case NONDETERMINISTIC :
-				errorLogger
-						.logSimpleError(location.getSource(), state, process,
-								symbolicAnalyzer.stateInformation(
-										state),
-								ErrorKind.OTHER,
-								"nondeterminism is encountered in $atom block.");
+				errorLogger.logSimpleError(location.getSource(), state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.OTHER,
+						"nondeterminism is encountered in $atom block.");
 				throw new UnsatisfiablePathConditionException();
 			case BLOCKED :
-				errorLogger
-						.logSimpleError(location.getSource(), state, process,
-								symbolicAnalyzer.stateInformation(
-										state),
-								ErrorKind.OTHER,
-								"blocked location is encountered in $atom block.");
+				errorLogger.logSimpleError(location.getSource(), state, process,
+						symbolicAnalyzer.stateInformation(state),
+						ErrorKind.OTHER,
+						"blocked location is encountered in $atom block.");
 				throw new UnsatisfiablePathConditionException();
 			default :
 		}
@@ -644,10 +582,8 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public TraceStepIF<Transition, State> nextState(State state,
-			Transition transition) {
-		TraceStepIF<Transition, State> result;
-		
+	public TraceStepIF<State> nextState(State state, Transition transition) {
+		TraceStepIF<State> result;
 		// nextStateCalls++;
 		try {
 			result = nextStateWork(state, transition);
@@ -772,8 +708,14 @@ public class CommonStateManager implements StateManager {
 		return state.getAllSuccessorsOnStack();
 	}
 
-	// @Override
-	// public void setStack(Stack<TransitionSequence> stack) {
-	// this.stack = stack;
-	// }
+	@Override
+	public boolean allSuccessorsVisited(State state) {
+		return state.allSuccessorsVisited();
+	}
+
+	@Override
+	public void setAllSuccessorsVisited(State state, boolean value) {
+		state.setAllSuccessorsVisited(value);
+	}
+
 }

@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.kripke.IF;
 
-import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.TraceStepIF;
 
@@ -14,7 +13,7 @@ import edu.udel.cis.vsl.gmc.TraceStepIF;
  * @author Manchun Zheng
  * 
  */
-public interface TraceStep extends TraceStepIF<Transition, State> {
+public interface TraceStep extends TraceStepIF<State> {
 
 	/**
 	 * Adds an atomic step to the trace step.

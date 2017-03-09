@@ -11,7 +11,6 @@ import org.junit.Test;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
-@Ignore
 public class SvcompTest {
 	/* *************************** Static Fields *************************** */
 
@@ -30,7 +29,6 @@ public class SvcompTest {
 
 	// Yes
 	// None
-	@Ignore
 	@Test
 	public void sync01_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
@@ -64,6 +62,7 @@ public class SvcompTest {
 				filename("stack_longest_true-unreach-call.i")));
 	}
 
+	@Ignore
 	@Test
 	public void gcd_true() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
@@ -89,7 +88,6 @@ public class SvcompTest {
 				filename("threadLocal.c")));
 	}
 
-	@Ignore
 	@Test
 	public void fmaxsym_cas_true() {
 		assertTrue(ui.run("verify  -svcomp16", TestConstants.QUIET,
@@ -98,7 +96,7 @@ public class SvcompTest {
 
 	@Test
 	public void wwh_test() {
-		assertFalse(ui.run("verify", "-svcomp16",TestConstants.SHOW_PROGRAM,
+		assertFalse(ui.run("verify", "-svcomp16", TestConstants.SHOW_PROGRAM,
 				filename("pthread-numerical-integration_true-unreach-call.i")));
 	}
 }

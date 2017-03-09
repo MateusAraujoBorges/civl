@@ -18,8 +18,9 @@ import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
  * @author Manchun Zheng (zmanchun)
  * 
  */
-public class LibstdioEnabler extends BaseLibraryEnabler implements
-		LibraryEnabler {
+public class LibstdioEnabler extends BaseLibraryEnabler
+		implements
+			LibraryEnabler {
 
 	/* **************************** Constructors *************************** */
 
@@ -36,8 +37,7 @@ public class LibstdioEnabler extends BaseLibraryEnabler implements
 	public LibstdioEnabler(String name, Enabler primaryEnabler,
 			Evaluator evaluator, ModelFactory modelFactory,
 			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
-			CIVLConfiguration civlConfig,
-			LibraryEnablerLoader libEnablerLoader,
+			CIVLConfiguration civlConfig, LibraryEnablerLoader libEnablerLoader,
 			LibraryEvaluatorLoader libEvaluatorLoader) {
 		super(name, primaryEnabler, evaluator, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libEnablerLoader,

@@ -1,5 +1,7 @@
 package edu.udel.cis.vsl.civl.semantics.IF;
 
+import java.util.List;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
@@ -14,7 +16,7 @@ import edu.udel.cis.vsl.civl.semantics.common.CommonMemoryUnitEvaluator;
 import edu.udel.cis.vsl.civl.semantics.common.CommonNoopTransition;
 import edu.udel.cis.vsl.civl.semantics.common.CommonSymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.common.CommonTransition;
-import edu.udel.cis.vsl.civl.semantics.common.CommonTransitionSequence;
+import edu.udel.cis.vsl.civl.semantics.common.CommonTransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
@@ -183,18 +185,34 @@ public class Semantics {
 	}
 
 	/**
-	 * Create a new transition sequence.
+	 * Create a new transition set.
 	 * 
 	 * @param state
-	 *            The state of the program before this transition sequence
-	 *            departs.
+	 *            The target state.
 	 * @param containingAllEnabled
 	 *            does this contain all enabled transitions
-	 * @return A new transition sequence.
+	 * @return A new transition set.
 	 */
-	public static TransitionSequence newTransitionSequence(State state,
+	public static TransitionSet newTransitionSet(State state,
 			boolean containingAllEnabled) {
-		return new CommonTransitionSequence(state, containingAllEnabled);
+		return new CommonTransitionSet(state, containingAllEnabled);
+	}
+
+	/**
+	 * Create a new transition set initialized with a set of transitions.
+	 * 
+	 * @param state
+	 *            The target state.
+	 * @param transitions
+	 *            The list of transitions used to initialize the transition set.
+	 * @param containingAllEnabled
+	 *            does this contain all enabled transitions
+	 * @return A new transition set.
+	 */
+	public static TransitionSet newTransitionSet(State state,
+			List<Transition> transitions, boolean containingAllEnabled) {
+		return new CommonTransitionSet(state, transitions,
+				containingAllEnabled);
 	}
 
 	public static MemoryUnitExpressionEvaluator newMemoryUnitEvaluator(
