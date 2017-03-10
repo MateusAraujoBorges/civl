@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl;
 
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -8,6 +9,7 @@ import java.io.File;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class Svcomp17PthreadsTest {
@@ -195,5 +197,12 @@ public class Svcomp17PthreadsTest {
 	public void collect_symbolic_constant() {
 		assertTrue(ui.run("verify -svcomp17 -timeout=20",
 				filename("collectSymConstant.cvl")));
+	}
+
+	@Test
+	public void indexer_true() throws ABCException {
+		assertTrue(ui.run("verify", "-svcomp16", "-inputSIZE=2", "-inputMAX=4",
+				"-inputNUM_THREADS=2", QUIET,
+				filename("indexer_true-unreach-call.c")));
 	}
 }
