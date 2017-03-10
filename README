@@ -50,9 +50,9 @@ licenses.  See directory licenses for the license of each component.
 - Fixed a side-effect remover defect in Struct initialization.
 - Fixed a bug which will lead to a null pointer exception in quantified expressions.
 - Fixed a bug of making assumptions on sizeof primitive types.
-- Improved the interpretation of "unsigned char" type
-- Improve the detection of dereferencing pointers to undefined values
-- Fixed bugs in SARL's Interval objects
+- Improved the interpretation of "unsigned char" type.
+- Improve the detection of dereferencing pointers to undefined values.
+- Fixed bugs in SARL's Interval objects.
 
    
 ------------------------- Binary Installation -------------------------
