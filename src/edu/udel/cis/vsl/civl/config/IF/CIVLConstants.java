@@ -166,6 +166,7 @@ public class CIVLConstants {
 	public static String OMP_LOOP_DECOMP = "ompLoopDecomp";
 	public static String CIVL_MACRO = "_CIVL";
 	public static String QUIET = "quiet";
+	public static String INT_OPERATION_TRANSFORMER = "intOperationTransformer";
 	public static String SLICE_ANALYSIS = "sliceAnalysis";
 	public static String WITNESS = "witness";
 	public static String DIRECT = "direct";
@@ -575,6 +576,13 @@ public class CIVLConstants {
 			"ignore output?", false);
 
 	/**
+	 * apply int operation transformer? true by default.
+	 */
+	public final static Option intOperationTransformer = Option.newScalarOption(
+			INT_OPERATION_TRANSFORMER, BOOLEAN,
+			"apply int operation transformer?", true);
+
+	/**
 	 * Perform slice analysis on trace? false by default.
 	 */
 	public final static Option sliceAnalysisO = Option.newScalarOption(
@@ -620,7 +628,8 @@ public class CIVLConstants {
 				traceO, userIncludePathO, verboseO, webO, CIVLMacroO,
 				analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
-				sliceAnalysisO, witnessO, direct0, intBit};
+				sliceAnalysisO, witnessO, direct0, intBit,
+				intOperationTransformer};
 	}
 
 	// headers...

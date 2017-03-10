@@ -42,12 +42,6 @@ public class CIVLConfiguration {
 	private boolean enablePrintf = true;
 
 	/**
-	 * Should CIVL apply integer division/modulus transformation? True by
-	 * default.
-	 */
-	private boolean enableIntDivTransformation = true;
-
-	/**
 	 * Should CIVL save some states as it searches, as opposed to doing a
 	 * "stateless" search? Even if this is true, CIVL will not necessarily save
 	 * every state, only important ones that have a chance of being encountered
@@ -200,6 +194,11 @@ public class CIVLConfiguration {
 	private int intBit = 32;
 
 	/**
+	 * apply int operation transformer? Default true.
+	 */
+	private boolean intOperationTransiformer = true;
+
+	/**
 	 * Should CIVL perform a slice analysis on the error trace.
 	 */
 	private boolean sliceAnalysis = false;
@@ -329,6 +328,8 @@ public class CIVLConfiguration {
 									+ errorStateEquivString,
 							(CIVLSource) null);
 			}
+		this.intOperationTransiformer = config
+				.isTrue(CIVLConstants.intOperationTransformer);
 		this.setShowMemoryUnits(config.isTrue(CIVLConstants.showMemoryUnitsO));
 		this.debug = config.isTrue(CIVLConstants.debugO);
 		this.enablePrintf = config.isTrue(CIVLConstants.enablePrintfO);
@@ -370,7 +371,7 @@ public class CIVLConfiguration {
 		this.setMpiContractFunction(
 				(String) config.getValueOrDefault(CIVLConstants.mpiContractO));
 		if (this.isEnableMpiContract())
-			this.enableIntDivTransformation = false;
+			this.intOperationTransiformer = false;
 		this.collectSymbolicNames = config
 				.isTrue(CIVLConstants.collectSymbolicConstantsO);
 		this.setCheckDivisionByZero(
@@ -453,6 +454,7 @@ public class CIVLConfiguration {
 		this.witness = config.witness;
 		this.directSymEx = config.directSymEx;
 		this.intBit = config.intBit;
+		this.intOperationTransiformer = config.intOperationTransiformer;
 	}
 
 	public CIVLConfiguration() {
@@ -917,22 +919,6 @@ public class CIVLConfiguration {
 	}
 
 	/**
-	 * @return the enableIntDivTransformation
-	 */
-	public boolean isEnableIntDivTransformation() {
-		return enableIntDivTransformation;
-	}
-
-	/**
-	 * @param enableIntDivTransformation
-	 *            the enableIntDivTransformation to set
-	 */
-	public void setEnableIntDivTransformation(
-			boolean enableIntDivTransformation) {
-		this.enableIntDivTransformation = enableIntDivTransformation;
-	}
-
-	/**
 	 * @return the svcomp17
 	 */
 	public boolean svcomp17() {
@@ -954,4 +940,13 @@ public class CIVLConfiguration {
 	public void setIntBit(int intBit) {
 		this.intBit = intBit;
 	}
+
+	public boolean isIntOperationTransiformer() {
+		return intOperationTransiformer;
+	}
+
+	public void setIntOperationTransiformer(boolean intOperationTransiformer) {
+		this.intOperationTransiformer = intOperationTransiformer;
+	}
+
 }
