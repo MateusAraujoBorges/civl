@@ -15,8 +15,9 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLCompleteDomainType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
-public class CommonCivlParForSpawnStatement extends CommonStatement implements
-		CivlParForSpawnStatement {
+public class CommonCivlParForSpawnStatement extends CommonStatement
+		implements
+			CivlParForSpawnStatement {
 
 	private Expression domain;
 
@@ -104,5 +105,22 @@ public class CommonCivlParForSpawnStatement extends CommonStatement implements
 	@Override
 	public void setParProcFunction(CIVLFunction function) {
 		this.parProcFunction = function;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			if (obj instanceof CommonCivlParForSpawnStatement) {
+				CommonCivlParForSpawnStatement other = (CommonCivlParForSpawnStatement) obj;
+
+				if (other.domain.equals(domain))
+					if (other.domSizeVar.equals(domSizeVar))
+						if (other.parProcsVar.equals(parProcsVar))
+							if (other.parProcFunction == parProcFunction)
+								return true;
+
+			}
+		}
+		return false;
 	}
 }

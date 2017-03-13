@@ -16,7 +16,8 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 public class CommonParallelAssignStatement extends CommonStatement
-		implements ParallelAssignStatement {
+		implements
+			ParallelAssignStatement {
 
 	private List<Pair<LHSExpression, Expression>> assignPairs;
 
@@ -61,6 +62,17 @@ public class CommonParallelAssignStatement extends CommonStatement
 	protected void calculateConstantValueWork(SymbolicUniverse universe) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj))
+			if (obj instanceof CommonParallelAssignStatement) {
+				CommonParallelAssignStatement other = (CommonParallelAssignStatement) obj;
+
+				return other.assignPairs.equals(assignPairs);
+			}
+		return false;
 	}
 
 }

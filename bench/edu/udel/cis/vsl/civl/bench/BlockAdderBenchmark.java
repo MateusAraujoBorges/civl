@@ -19,7 +19,7 @@ public class BlockAdderBenchmark {
 		if (args.length > 0)
 			civlDir = args[0];
 		System.out.println(">>>>>>>> Block adder <<<<<<<<");
-		ui.run("verify -echo -inputB=10 -inputW=4 " + civlDir
+		ui.run("verify -inputB=10 -inputW=4 " + civlDir
 				+ "/examples/concurrency/blockAdder.cvl");
 	}
 

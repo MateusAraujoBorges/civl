@@ -49,4 +49,15 @@ public class CommonGotoBranchStatement extends CommonNoopStatement {
 		return "GOTO_" + labelName;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			if (obj instanceof CommonGotoBranchStatement) {
+				CommonGotoBranchStatement other = (CommonGotoBranchStatement) obj;
+
+				return other.labelName.equals(labelName);
+			}
+		}
+		return false;
+	}
 }

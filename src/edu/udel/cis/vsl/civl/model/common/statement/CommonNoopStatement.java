@@ -21,8 +21,9 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public class CommonNoopStatement extends CommonStatement implements
-		NoopStatement {
+public class CommonNoopStatement extends CommonStatement
+		implements
+			NoopStatement {
 
 	protected NoopKind noopKind;
 
@@ -73,7 +74,8 @@ public class CommonNoopStatement extends CommonStatement implements
 	 *            The source location for this noop.
 	 */
 	public CommonNoopStatement(CIVLSource civlSource, Location source,
-			Expression guard, boolean isTemporary, boolean isVariableDeclaration) {
+			Expression guard, boolean isTemporary,
+			boolean isVariableDeclaration) {
 		super(civlSource, null, null, source, guard);
 		noopKind = NoopKind.NONE;
 		this.isTemporary = isTemporary;
@@ -156,5 +158,17 @@ public class CommonNoopStatement extends CommonStatement implements
 	@Override
 	public boolean isVariableDeclaration() {
 		return this.isVariableDeclaration;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			CommonNoopStatement other = (CommonNoopStatement) obj;
+
+			if (other.noopKind == noopKind) {
+				return this.nullableObjectEquals(expression, other.expression);
+			}
+		}
+		return false;
 	}
 }

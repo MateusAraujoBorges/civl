@@ -19,7 +19,7 @@ public class BarrierBenchmark {
 		if (args.length > 0)
 			civlDir = args[0];
 		System.out.println(">>>>>>>> Barrier <<<<<<<<");
-		ui.run("verify -echo -inputB=7 " + civlDir
+		ui.run("verify -inputB=7 " + civlDir
 				+ "/examples/concurrency/barrier.cvl");
 	}
 

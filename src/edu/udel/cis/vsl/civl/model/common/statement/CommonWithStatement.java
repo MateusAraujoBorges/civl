@@ -15,7 +15,8 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 public class CommonWithStatement extends CommonStatement
-		implements WithStatement {
+		implements
+			WithStatement {
 
 	private Expression colStateExpr;
 
@@ -100,5 +101,18 @@ public class CommonWithStatement extends CommonStatement
 	@Override
 	public CIVLFunction function() {
 		return this.function;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!super.equals(obj))
+			return false;
+		if (obj instanceof CommonWithStatement) {
+			CommonWithStatement withStatement = (CommonWithStatement) obj;
+
+			if (isEnter == withStatement.isEnter)
+				return function == withStatement.function;
+		}
+		return false;
 	}
 }

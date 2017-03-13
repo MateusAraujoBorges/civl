@@ -24,7 +24,9 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public abstract class CommonStatement extends CommonSourceable implements Statement {
+public abstract class CommonStatement extends CommonSourceable
+		implements
+			Statement {
 
 	private Location source;
 	private Location target;
@@ -55,7 +57,8 @@ public abstract class CommonStatement extends CommonSourceable implements Statem
 	 * @param source
 	 *            The location that is the source of this statement.
 	 */
-	public CommonStatement(CIVLSource civlSource, Scope hscope, Scope lscope, Location source, Expression guard) {
+	public CommonStatement(CIVLSource civlSource, Scope hscope, Scope lscope,
+			Location source, Expression guard) {
 		super(civlSource);
 		this.source = source;
 		this.guard = guard;
@@ -236,7 +239,8 @@ public abstract class CommonStatement extends CommonSourceable implements Statem
 	}
 
 	@Override
-	public void replaceWith(ConditionalExpression oldExpression, VariableExpression newExpression) {
+	public void replaceWith(ConditionalExpression oldExpression,
+			VariableExpression newExpression) {
 		this.guard.replaceWith(oldExpression, newExpression);
 	}
 
@@ -251,42 +255,44 @@ public abstract class CommonStatement extends CommonSourceable implements Statem
 	 * @return Null if guard doesn't contain the given conditional expression,
 	 *         otherwise return the new guard
 	 */
-	protected Expression guardReplaceWith(ConditionalExpression oldExpression, Expression newExpression) {
+	protected Expression guardReplaceWith(ConditionalExpression oldExpression,
+			Expression newExpression) {
 		Expression newGuard = guard.replaceWith(oldExpression, newExpression);
 
 		return newGuard;
 	}
 
 	@Override
-	public String toStepString(AtomicKind atomicKind, int atomCount, boolean atomicLockVarChanged) {
+	public String toStepString(AtomicKind atomicKind, int atomCount,
+			boolean atomicLockVarChanged) {
 		String result = "  " + this.locationStepString();
 
 		result += ": ";
 		switch (atomicKind) {
-		case ATOMIC_ENTER:
-			if (atomicLockVarChanged) {
+			case ATOMIC_ENTER :
+				if (atomicLockVarChanged) {
+					result += toString() + " ";
+				} else
+					result += "ENTER_ATOMIC (atomicCount++) ";
+				result += Integer.toString(atomCount - 1);
+				break;
+			case ATOMIC_EXIT :
+				if (atomicLockVarChanged) {
+					result += toString() + " ";
+				} else
+					result += "LEAVE_ATOMIC (atomicCount--) ";
+				result += Integer.toString(atomCount);
+				break;
+			case ATOM_ENTER :
 				result += toString() + " ";
-			} else
-				result += "ENTER_ATOMIC (atomicCount++) ";
-			result += Integer.toString(atomCount - 1);
-			break;
-		case ATOMIC_EXIT:
-			if (atomicLockVarChanged) {
+				result += Integer.toString(atomCount - 1);
+				break;
+			case ATOM_EXIT :
 				result += toString() + " ";
-			} else
-				result += "LEAVE_ATOMIC (atomicCount--) ";
-			result += Integer.toString(atomCount);
-			break;
-		case ATOM_ENTER:
-			result += toString() + " ";
-			result += Integer.toString(atomCount - 1);
-			break;
-		case ATOM_EXIT:
-			result += toString() + " ";
-			result += Integer.toString(atomCount);
-			break;
-		default:
-			result += toString();
+				result += Integer.toString(atomCount);
+				break;
+			default :
+				result += toString();
 		}
 		result += " at ";
 		result += this.summaryOfSource();
@@ -324,7 +330,8 @@ public abstract class CommonStatement extends CommonSourceable implements Statem
 		return this.lowestScope;
 	}
 
-	protected abstract void calculateConstantValueWork(SymbolicUniverse universe);
+	protected abstract void calculateConstantValueWork(
+			SymbolicUniverse universe);
 
 	@Override
 	public void reached() {
@@ -341,6 +348,52 @@ public abstract class CommonStatement extends CommonSourceable implements Statem
 		if (guard.containsHere())
 			return true;
 		return containsHereWork();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof CommonStatement) {
+			CommonStatement other = (CommonStatement) obj;
+
+			if (other.source.id() == source.id()) {
+				if (statementScopeEquals(other))
+					if (target == null)
+						return other.target == null;
+					else if (other.target != null)
+						return target.id() == other.target.id();
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @param other
+	 *            Another instance of CommonStatement
+	 * @return True if and only if the 'other' instance has a equivalent
+	 *         statement scope as this ones.
+	 */
+	private boolean statementScopeEquals(CommonStatement other) {
+		if (other.statementScope == statementScope)
+			return true;
+		else if (other.statementScope != null && statementScope != null)
+			return other.statementScope.id() == statementScope.id();
+		return false;
+	}
+
+	/**
+	 * Compare two objects, both of them can be null.
+	 * 
+	 * @param o0
+	 * @param o1
+	 * @return True if and only if o0 is equivalent to o1 or both of them are
+	 *         null.
+	 */
+	protected boolean nullableObjectEquals(Object o0, Object o1) {
+		if (o0 == o1)
+			return true;
+		if (o0 != null && o1 != null)
+			return o0.equals(o1);
+		return false;
 	}
 
 	protected boolean containsHereWork() {
