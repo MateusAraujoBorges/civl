@@ -344,9 +344,7 @@ public class ImmutableMonoState implements State {
 		return new ProcessStateIterable();
 	}
 
-	@Override
-	public ImmutableMonoState setPathCondition(
-			BooleanExpression pathCondition) {
+	ImmutableMonoState setPathCondition(BooleanExpression pathCondition) {
 		ImmutableMonoState result = new ImmutableMonoState(processState,
 				dyscopes, pathCondition);
 

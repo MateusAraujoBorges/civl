@@ -224,7 +224,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				.isDerefablePointer(state, pointer);
 
 		if (checkPointer.right != ResultType.YES)
-			state = this.errorLogger.logError(source, state, process,
+			state = this.errorLogger.logError(source, state, pid,
 					this.symbolicAnalyzer.stateInformation(state),
 					checkPointer.left, checkPointer.right,
 					ErrorKind.MEMORY_MANAGE,
@@ -238,7 +238,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		type = this.symbolicAnalyzer.typeOfObjByPointer(source, state, pointer);
 		teval = evaluator.getDynamicType(state, pid, type, source, false);
 		havocEval = this.evaluator.havoc(teval.state, teval.type);
-		state = this.primaryExecutor.assign(source, havocEval.state, process,
+		state = this.primaryExecutor.assign(source, havocEval.state, pid,
 				pointer, havocEval.value);
 		return new Evaluation(state, null);
 	}
@@ -309,12 +309,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) {
 		BooleanExpression assumeValue = (BooleanExpression) argumentValues[0];
-		BooleanExpression oldPathCondition, newPathCondition;
 
-		oldPathCondition = state.getPathCondition();
-		newPathCondition = (BooleanExpression) universe
-				.canonic(universe.and(oldPathCondition, assumeValue));
-		state = state.setPathCondition(newPathCondition);
+		state = stateFactory.addToPathcondition(state, pid, assumeValue);
 		return new Evaluation(state, null);
 	}
 
@@ -515,8 +511,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		// updates iterator object
 		index = universe.add(index, one);
 		iterObj = universe.tupleWrite(iterObj, twoObject, index);
-		state = primaryExecutor.assign(source, state, process, iterHandle,
-				iterObj);
+		state = primaryExecutor.assign(source, state, pid, iterHandle, iterObj);
 		return new Evaluation(state, nextInt);
 	}
 

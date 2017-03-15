@@ -494,7 +494,7 @@ public class CommonStateManager implements StateManager {
 		config.out().print(symbolicAnalyzer.statementEvaluation(currentState,
 				newState, transition.pid(), stmt));
 		if (transition.transitionKind() == TransitionKind.NOOP) {
-			BooleanExpression assumption = transition.clause();
+			BooleanExpression assumption = transition.constraint();
 
 			if (assumption != null) {
 				config.out().print(" [$assume(");
@@ -592,7 +592,8 @@ public class CommonStateManager implements StateManager {
 			// since the error has been logged, just return
 			// some state with false path condition, so there
 			// will be no next state...
-			result = new NullTraceStep(state.setPathCondition(falseExpr));
+			result = new NullTraceStep(stateFactory.addToPathcondition(state,
+					transition.pid(), falseExpr));
 		}
 		return result;
 	}

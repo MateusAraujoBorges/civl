@@ -149,9 +149,8 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 			state = this.reportAssertionFailure(state, pid, process, resultType,
 					message.toString(), arguments, argumentValues, source,
 					assertValue, 1);
-			state = state.setPathCondition(
-					this.universe.and(state.getPathCondition(),
-							(BooleanExpression) argumentValues[0]));
+			state = stateFactory.addToPathcondition(state, pid,
+					(BooleanExpression) argumentValues[0]);
 		}
 		return state;
 	}
@@ -183,7 +182,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 				.isDefinedPointer(state, firstElementPointer, source);
 
 		if (checkPointer.right != ResultType.YES) {
-			state = this.errorLogger.logError(source, state, process,
+			state = this.errorLogger.logError(source, state, pid,
 					symbolicAnalyzer.stateInformation(state), checkPointer.left,
 					checkPointer.right, ErrorKind.MEMORY_MANAGE,
 					"attempt to deallocate memory space through an undefined pointer");
@@ -193,19 +192,16 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 		} else if (!this.symbolicUtil.isHeapPointer(firstElementPointer)
 				|| !this.symbolicUtil.isMallocPointer(source,
 						firstElementPointer)) {
-			this.errorLogger
-					.logSimpleError(source, state, process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.MEMORY_MANAGE,
-							"the argument of free "
-									+ symbolicAnalyzer
-											.symbolicExpressionToString(source,
-													state,
-													arguments[0]
-															.getExpressionType(),
-													firstElementPointer)
-									+ " is not a pointer returned by a memory "
-									+ "management method");
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.MEMORY_MANAGE,
+					"the argument of free "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									source, state,
+									arguments[0].getExpressionType(),
+									firstElementPointer)
+							+ " is not a pointer returned by a memory "
+							+ "management method");
 		} else {
 			Evaluation eval;
 			SymbolicExpression heapObject = null;
@@ -283,7 +279,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 					this.civlConfig.svcomp()).state;
 			civlConfig.out().println();
 		}
-		state = errorLogger.logError(source, state, process,
+		state = errorLogger.logError(source, state, pid,
 				this.symbolicAnalyzer.stateInformation(state), claim,
 				resultType, ErrorKind.ASSERTION_VIOLATION, message);
 		return state;

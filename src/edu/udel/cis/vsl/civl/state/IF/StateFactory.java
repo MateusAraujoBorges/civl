@@ -21,6 +21,7 @@ import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableMonoState;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableState;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -178,6 +179,46 @@ public interface StateFactory {
 	State addProcess(State state, CIVLFunction function,
 			SymbolicExpression[] arguments, int callerPid,
 			boolean isSelfDestructable);
+
+	/**
+	 * <p>
+	 * Add a boolean value clause to the path condition of the given state. The
+	 * new path condition is the conjunction of the old path condition of the
+	 * given state and the given clause.
+	 * 
+	 * Returns a new state which is same as the given one but owns the new path
+	 * condition.
+	 * </p>
+	 * 
+	 * <p>
+	 * Based on the semantics of symbolic execution, this is the one of the only
+	 * two ways to update a path condition (1. conjunction with a new clause; 2.
+	 * simplification).
+	 * </p>
+	 * 
+	 * @param state
+	 *            The state before the path condition being updated.
+	 * @param pid
+	 *            The PID of the calling process.
+	 * @param clause
+	 *            The boolean value symbolic expression which will be added to
+	 *            the path condition.
+	 * @return A new state which is same as the given one but owns the new path
+	 *         condition.
+	 */
+	State addToPathcondition(State state, int pid, BooleanExpression clause);
+
+	/**
+	 * Temporary interface, should be removed after a short-circuit transformer
+	 * being applied.
+	 * 
+	 * @param state
+	 * @param pid
+	 * @param clause
+	 * @return
+	 */
+	State disjointWTPathcondition(State state, int pid,
+			BooleanExpression clause);
 
 	/**
 	 * <p>

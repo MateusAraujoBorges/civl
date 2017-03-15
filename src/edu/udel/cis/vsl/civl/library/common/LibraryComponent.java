@@ -710,8 +710,8 @@ public abstract class LibraryComponent {
 			claim = universe.lessThan(dataSeqLength, count);
 			resultType = reasoner.valid(claim).getResultType();
 			if (resultType.equals(ResultType.YES))
-				reportOutOfBoundError(state, process, claim, resultType,
-						pointer, dataSeqLength, count, source);
+				reportOutOfBoundError(state, pid, claim, resultType, pointer,
+						dataSeqLength, count, source);
 		}
 		// If count is one:
 		if (reasoner.isValid(universe.equals(count, one))) {
@@ -750,7 +750,7 @@ public abstract class LibraryComponent {
 									source, state, integerType, count)
 							+ "\n");
 		}
-		eval_and_slices = evaluator.evaluatePointerAdd(state, process, startPtr,
+		eval_and_slices = evaluator.evaluatePointerAdd(state, pid, startPtr,
 				count, checkOutput, source);
 		eval = eval_and_slices.left;
 		endPtr = eval.value;
@@ -784,12 +784,11 @@ public abstract class LibraryComponent {
 				false, true);
 		state = eval.state;
 		if (eval.value.type().typeKind().equals(SymbolicTypeKind.ARRAY)) {
-			eval = this.setDataBetween(state, process, eval.value,
-					arraySlicesSizes, startPos, count, pointer, dataArray,
-					source);
+			eval = this.setDataBetween(state, pid, eval.value, arraySlicesSizes,
+					startPos, count, pointer, dataArray, source);
 		} else {
-			reportOutOfBoundError(state, process, null, null, startPtr, one,
-					count, source);
+			reportOutOfBoundError(state, pid, null, null, startPtr, one, count,
+					source);
 		}
 		return new Pair<>(eval, startPtr);
 	}
@@ -841,7 +840,7 @@ public abstract class LibraryComponent {
 						pointerExpr);
 			eval.value = universe.array(eval.value.type(),
 					Arrays.asList(eval.value));
-			eval.value = arrayFlatten(state, process, eval.value,
+			eval.value = arrayFlatten(state, pid, eval.value,
 					new ArrayMeasurement(eval.value), source);
 			return eval;
 		}
@@ -954,22 +953,19 @@ public abstract class LibraryComponent {
 			throws UnsatisfiablePathConditionException {
 		NumericExpression pos = zero, step = one;
 		SymbolicExpression flattenArray;
-		String process = state.getProcessState(pid).name();
 		ArrayMeasurement arrayMeasure = new ArrayMeasurement(array);
 		NumericExpression sliceSizes[] = arrayMeasure.sliceSizes;
 		int i;
 
-		flattenArray = arrayFlatten(state, process, array, arrayMeasure,
-				source);
+		flattenArray = arrayFlatten(state, pid, array, arrayMeasure, source);
 		for (i = 0; i < indices.length; i++)
 			pos = universe.add(pos,
 					universe.multiply(indices[i], sliceSizes[i]));
 		// valid subscript: d < indices.length <= dimension && sliceSizes.length
 		// == dimension
 		step = i > 0 ? sliceSizes[i - 1] : sliceSizes[0];
-		return symbolicAnalyzer.getSubArray(flattenArray, pos,
-				universe.add(pos, universe.multiply(count, step)), state,
-				process, source);
+		return symbolicAnalyzer.getSubArray(state, pid, flattenArray, pos,
+				universe.add(pos, universe.multiply(count, step)), source);
 	}
 
 	/**
@@ -1054,8 +1050,8 @@ public abstract class LibraryComponent {
 	 * @author Ziqing Luo
 	 * @param state
 	 *            The current state
-	 * @param process
-	 *            The information of the process
+	 * @param pid
+	 *            The PID of the calling process
 	 * @param oldArray
 	 *            The array before casting
 	 * @param targetTypeArray
@@ -1065,7 +1061,7 @@ public abstract class LibraryComponent {
 	 * @return casted array
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public SymbolicExpression arrayCasting(State state, String process,
+	public SymbolicExpression arrayCasting(State state, int pid,
 			SymbolicExpression oldArray, SymbolicCompleteArrayType typeTemplate,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		BooleanExpression claim;
@@ -1084,7 +1080,7 @@ public abstract class LibraryComponent {
 		assert typeTemplate.isComplete() : "arrayCasting internal exception";
 		if (oldArray.type().equals(typeTemplate))
 			return oldArray;
-		flattenOldArray = arrayFlatten(state, process, oldArray,
+		flattenOldArray = arrayFlatten(state, pid, oldArray,
 				new ArrayMeasurement(oldArray), source);
 		flattenLength = (IntegerNumber) reasoner
 				.extractNumber(universe.length(flattenOldArray));
@@ -1116,11 +1112,11 @@ public abstract class LibraryComponent {
 		numElements = flattenLength.intValue();
 		for (int j = 0, i = 0; j < flattenLength
 				.intValue(); j += dimensionalSpace.intValue()) {
-			arraySlices[i++] = symbolicAnalyzer
-					.getSubArray(flattenOldArray, universe.integer(j),
-							universe.add(universe.integer(j),
-									coordinatesSizes[dim - 1]),
-							state, process, source);
+			arraySlices[i++] = symbolicAnalyzer.getSubArray(state, pid,
+					flattenOldArray, universe.integer(j),
+					universe.add(universe.integer(j),
+							coordinatesSizes[dim - 1]),
+					source);
 		}
 		numElements /= dimensionalSpace.intValue();
 		elementType = universe.arrayType(elementType,
@@ -1161,8 +1157,8 @@ public abstract class LibraryComponent {
 	 * 
 	 * @param state
 	 *            The current state when this method is called
-	 * @param process
-	 *            The String identifier of the process
+	 * @param pid
+	 *            The PID of the calling process.
 	 * @param array
 	 *            The complete array object
 	 * @param arrayMeasurement
@@ -1172,7 +1168,7 @@ public abstract class LibraryComponent {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public SymbolicExpression arrayFlatten(State state, String process,
+	public SymbolicExpression arrayFlatten(State state, int pid,
 			SymbolicExpression array, ArrayMeasurement arrayMeasurement,
 			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
 		Queue<SymbolicExpression> subTreeQueue = new LinkedList<>();
@@ -1239,8 +1235,8 @@ public abstract class LibraryComponent {
 	 * 
 	 * @param state
 	 *            The current state
-	 * @param process
-	 *            The information of the process
+	 * @param pid
+	 *            The PID of the calling process
 	 * @param startPtr
 	 *            The pointer to the start position
 	 * @param endPtr
@@ -1264,7 +1260,7 @@ public abstract class LibraryComponent {
 	 * @throws UnsatisfiablePathConditionException
 	 * @author Ziqing Luo
 	 */
-	private Evaluation setDataBetween(State state, String process,
+	private Evaluation setDataBetween(State state, int pid,
 			SymbolicExpression array, NumericExpression[] arraySlicesSizes,
 			NumericExpression startPos, NumericExpression count,
 			SymbolicExpression pointer, SymbolicExpression dataSequence,
@@ -1290,7 +1286,7 @@ public abstract class LibraryComponent {
 				return new Evaluation(state, dataSequence);
 		} // TODO: what if the length of dataSize is non-concrete and cannot be
 			// decided by reasoner?
-		flattenArray = arrayFlatten(state, process, array,
+		flattenArray = arrayFlatten(state, pid, array,
 				new ArrayMeasurement(array), source);
 		i = startPos;
 
@@ -1326,7 +1322,7 @@ public abstract class LibraryComponent {
 					elementInDataArray);
 			i = universe.add(i, one);
 		}
-		flattenArray = arrayCasting(state, process, flattenArray,
+		flattenArray = arrayCasting(state, pid, flattenArray,
 				(SymbolicCompleteArrayType) array.type(), source);
 		return new Evaluation(state, flattenArray);
 	}
@@ -1405,7 +1401,7 @@ public abstract class LibraryComponent {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private void reportOutOfBoundError(State state, String process,
+	private void reportOutOfBoundError(State state, int pid,
 			BooleanExpression claim, ResultType resultType,
 			SymbolicExpression pointer, NumericExpression arrayLength,
 			NumericExpression offset, CIVLSource source)
@@ -1422,11 +1418,12 @@ public abstract class LibraryComponent {
 						null, arrayLength);
 
 		if (claim != null && resultType != null)
-			state = errorLogger.logError(source, state, process,
+			state = errorLogger.logError(source, state, pid,
 					symbolicAnalyzer.stateInformation(state), claim, resultType,
 					ErrorKind.OUT_OF_BOUNDS, message);
 		else
-			errorLogger.logSimpleError(source, state, process,
+			errorLogger.logSimpleError(source, state,
+					state.getProcessState(pid).name(),
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.OUT_OF_BOUNDS, message);
 		throw new UnsatisfiablePathConditionException();

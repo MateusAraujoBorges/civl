@@ -381,7 +381,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor
 					universe.tupleComponentReference(
 							symbolicUtil.getSymRef(threadPointer),
 							this.twoObject));
-			state = this.primaryExecutor.assign(source, state, process,
+			state = this.primaryExecutor.assign(source, state, pid,
 					threadTermPointer, trueValue);
 			if (!argumentValues[1].type().isInteger()) {
 				threadExitValuePointer = this.symbolicUtil.makePointer(
@@ -389,7 +389,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor
 						universe.tupleComponentReference(
 								symbolicUtil.getSymRef(threadPointer),
 								this.threeObject));
-				state = this.primaryExecutor.assign(source, state, process,
+				state = this.primaryExecutor.assign(source, state, pid,
 						threadExitValuePointer, argumentValues[1]);
 			}
 		}
@@ -458,7 +458,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor
 		threads = universe.tupleRead(gpoolObj, this.zeroObject);
 		threads = universe.append(threads, threadObj);
 		gpoolObj = universe.tupleWrite(gpoolObj, zeroObject, threads);
-		state = this.primaryExecutor.assign(source, state, process, gpool,
+		state = this.primaryExecutor.assign(source, state, pid, gpool,
 				gpoolObj);
 		return new Evaluation(state, null);
 	}
@@ -589,7 +589,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor
 		len = universe.add(len, one);
 		pool = universe.tupleWrite(pool, zeroObject, threads);
 		pool = universe.tupleWrite(pool, oneObject, len);
-		state = primaryExecutor.assign(poolPointerSource, state, process,
+		state = primaryExecutor.assign(poolPointerSource, state, pid,
 				poolPointer, pool);
 		return new Evaluation(state, null);
 	}

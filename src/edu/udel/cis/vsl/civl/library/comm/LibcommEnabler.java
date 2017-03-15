@@ -99,17 +99,17 @@ public class LibcommEnabler extends BaseLibraryEnabler
 
 	@Override
 	public List<Transition> enabledTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition, int pid,
+			CallOrSpawnStatement call, BooleanExpression clause, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		String functionName = call.function().name().name();
 
 		switch (functionName) {
 			case "$comm_dequeue" :
-				return this.enabledCommDequeueTransitions(state, call,
-						pathCondition, pid, atomicLockAction);
+				return this.enabledCommDequeueTransitions(state, call, clause,
+						pid, atomicLockAction);
 			default :
-				return super.enabledTransitions(state, call, pathCondition, pid,
+				return super.enabledTransitions(state, call, clause, pid,
 						atomicLockAction);
 		}
 	}
@@ -228,14 +228,15 @@ public class LibcommEnabler extends BaseLibraryEnabler
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private List<Transition> enabledCommDequeueTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition, int pid,
+			CallOrSpawnStatement call, BooleanExpression clause, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		List<Expression> arguments = call.arguments();
 		List<Transition> localTransitions = new LinkedList<>();
 		Evaluation eval;
 		String process = "p" + pid;
-		Reasoner reasoner = universe.reasoner(pathCondition);
+		Reasoner reasoner = universe
+				.reasoner(universe.and(state.getPathCondition(), clause));
 		IntegerNumber argSourceNumber; // numeric object of the value of source
 		int intSource, intDest;
 		// set of all available sources
@@ -249,8 +250,9 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		boolean isWildcardTag = false;
 
 		// evaluate the second argument: source
-		eval = this.evaluator.evaluate(state.setPathCondition(pathCondition),
-				pid, arguments.get(1));
+		eval = evaluator.evaluate(
+				stateFactory.addToPathcondition(state, pid, clause), pid,
+				arguments.get(1));
 		state = eval.state;
 		argSourceNumber = (IntegerNumber) reasoner
 				.extractNumber((NumericExpression) eval.value);
@@ -307,11 +309,11 @@ public class LibcommEnabler extends BaseLibraryEnabler
 					call.function().returnType(), call.statementScope(),
 					call.guard(), call.target(), call.lhs());
 			for (int j = 0; j < callWorkers.size(); j++)
-				localTransitions.add(Semantics.newTransition(pathCondition, pid,
+				localTransitions.add(Semantics.newTransition(pid, clause,
 						callWorkers.get(j), atomicLockAction));
 		} else
-			localTransitions.add(Semantics.newTransition(pathCondition, pid,
-					call, atomicLockAction));
+			localTransitions.add(Semantics.newTransition(pid, clause, call,
+					atomicLockAction));
 		return localTransitions;
 	}
 

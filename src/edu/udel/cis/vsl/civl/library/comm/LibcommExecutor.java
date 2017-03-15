@@ -245,7 +245,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 
 		if (result.right != ResultType.YES)
 			state = this.errorLogger.logError(arguments[0].getSource(), state,
-					process, this.symbolicAnalyzer.stateInformation(state),
+					pid, this.symbolicAnalyzer.stateInformation(state),
 					result.left, result.right, ErrorKind.DEREFERENCE,
 					"attempt to access a memory location that can't be dereferenced: "
 							+ symbolicAnalyzer.symbolicExpressionToString(
@@ -311,8 +311,8 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		message = msg_buf.left;
 		buf = msg_buf.right;
 		gcomm = universe.tupleWrite(gcomm, threeObject, buf);
-		state = this.primaryExecutor.assign(civlsource, state, process,
-				gcommHandle, gcomm);
+		state = this.primaryExecutor.assign(civlsource, state, pid, gcommHandle,
+				gcomm);
 		return new Evaluation(state, message);
 	}
 
@@ -361,8 +361,8 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		buf = putMsgInChannel(buf, newMessage, civlsource);
 		// TODO checks if source is equal to the place of comm.
 		gcomm = universe.tupleWrite(gcomm, threeObject, buf);
-		state = this.primaryExecutor.assign(civlsource, state, process,
-				gcommHandle, gcomm);
+		state = this.primaryExecutor.assign(civlsource, state, pid, gcommHandle,
+				gcomm);
 		return new Evaluation(state, null);
 	}
 
@@ -487,11 +487,8 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
-		queue = universe
-				.arrayRead(
-						universe.arrayRead(
-								universe.tupleRead(gcomm, threeObject), source),
-						dest);
+		queue = universe.arrayRead(universe.arrayRead(
+				universe.tupleRead(gcomm, threeObject), source), dest);
 		queueLength = universe.tupleRead(queue, zeroObject);
 		messages = universe.tupleRead(queue, oneObject);
 		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages,
@@ -731,8 +728,8 @@ public class LibcommExecutor extends BaseLibraryExecutor
 			SymbolicExpression junkMsgArray = universe.array(msgType,
 					remainMsgs);
 
-			state = primaryExecutor.assign(arguments[1].getSource(), state,
-					process, junkMsgPtr, junkMsgArray);
+			state = primaryExecutor.assign(arguments[1].getSource(), state, pid,
+					junkMsgPtr, junkMsgArray);
 		}
 		// Return the number of remaining messages (junk messages):
 		state = this.executeFree(state, pid, process, arguments, argumentValues,
@@ -741,11 +738,11 @@ public class LibcommExecutor extends BaseLibraryExecutor
 	}
 
 	/**
-	 * Read matched message index from the given messages array. Here
-	 * "matched message" means if the given tag is wild card tag, then read the
-	 * first message inside the messages array, otherwise the tag should be a
-	 * specific tag then read the first message has the same tag inside the
-	 * messages array.
+	 * Read matched message index from the given messages array. Here "matched
+	 * message" means if the given tag is wild card tag, then read the first
+	 * message inside the messages array, otherwise the tag should be a specific
+	 * tag then read the first message has the same tag inside the messages
+	 * array.
 	 * 
 	 * Other cases like failure of finding a matched message or the tag is
 	 * neither a wild card tag nor a valid specific tag will be an execution
@@ -928,8 +925,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages,
 				queueLength, tag, civlsource);
 		if (msgIdx == -1) {
-			state = errorLogger.logError(civlsource, state,
-					state.getProcessState(pid).name(),
+			state = errorLogger.logError(civlsource, state, pid,
 					symbolicAnalyzer.stateInformation(state),
 					universe.trueExpression(), ResultType.NO,
 					ErrorKind.COMMUNICATION,

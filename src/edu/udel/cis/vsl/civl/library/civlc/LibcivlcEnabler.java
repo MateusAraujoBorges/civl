@@ -93,7 +93,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 
 	@Override
 	public List<Transition> enabledTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition, int pid,
+			CallOrSpawnStatement call, BooleanExpression clause, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		String functionName = call.function().name().name();
@@ -106,11 +106,12 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 		call.arguments().toArray(arguments);
 		switch (functionName) {
 			case "$assume" : {
-				localTransitions.add(Semantics.newTransition(pathCondition, pid,
+				localTransitions.add(Semantics.newTransition(pid, trueValue,
 						call, true, atomicLockAction));
 				return localTransitions;
 			}
 			case "$choose_int" :
+				// TODO: implement this in CIVL-C:
 				argumentsEval = this.evaluateArguments(state, pid, arguments);
 				state = argumentsEval.left;
 
@@ -119,7 +120,6 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 								(NumericExpression) argumentsEval.right[0]);
 				int upper;
 
-				// TODO: can it be solved by symbolic execution?
 				if (upperNumber == null) {
 					this.errorLogger.logSimpleError(arguments[0].getSource(),
 							state, process,
@@ -142,8 +142,8 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 					assignmentCall.setTargetTemp(call.target());
 					assignmentCall.setTarget(call.target());
 					assignmentCall.source().removeOutgoing(assignmentCall);
-					localTransitions.add(Semantics.newTransition(pathCondition,
-							pid, assignmentCall, atomicLockAction));
+					localTransitions.add(Semantics.newTransition(pid, clause,
+							assignmentCall, atomicLockAction));
 				}
 				return localTransitions;
 			case "$elaborate" :
@@ -157,7 +157,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 						pid, call, call.getSource(), arguments,
 						argumentsEval.right, atomicLockAction);
 			default :
-				return super.enabledTransitions(state, call, pathCondition, pid,
+				return super.enabledTransitions(state, call, clause, pid,
 						atomicLockAction);
 		}
 	}
@@ -341,8 +341,8 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 
 		if (symbolicConstants.size() < 1) {
 			// noop if no symbolic constant is contained
-			return Arrays.asList((Transition) Semantics.newNoopTransition(
-					pathCondition, pid, null, call, false, atomicLockAction));
+			return Arrays.asList((Transition) Semantics.newNoopTransition(pid,
+					trueValue, call, false, atomicLockAction));
 		}
 		for (SymbolicConstant var : symbolicConstants) {
 			// no need to elaborate non-numeric symbolic constants:
@@ -373,19 +373,15 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 		// If there is no elaborated constants, return a default unchanged
 		// transition:
 		if (constantBounds.length == 0) {
-			transitions.add(Semantics.newNoopTransition(pathCondition, pid,
-					trueValue, call, true, atomicLockAction));
+			transitions.add(Semantics.newNoopTransition(pid, trueValue, call,
+					true, atomicLockAction));
 			return transitions;
 		}
 		concreteValueClauses = this.generateConcreteValueClauses(reasoner,
 				constantBounds, 0);
-		for (BooleanExpression clause : concreteValueClauses) {
-			BooleanExpression newPathCondition = (BooleanExpression) universe
-					.canonic(universe.and(pathCondition, clause));
-
-			transitions.add(Semantics.newNoopTransition(newPathCondition, pid,
-					clause, call, true, atomicLockAction));
-		}
+		for (BooleanExpression clause : concreteValueClauses)
+			transitions.add(Semantics.newNoopTransition(pid, clause, call, true,
+					atomicLockAction));
 		return transitions;
 	}
 

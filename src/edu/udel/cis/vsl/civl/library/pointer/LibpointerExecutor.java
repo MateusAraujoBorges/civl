@@ -166,7 +166,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		else
 			throw new CIVLUnimplementedFeatureException("Argument of "
 					+ objectTypeByPointer + " type for $set_default()", source);
-		state = this.primaryExecutor.assign(source, state, process,
+		state = this.primaryExecutor.assign(source, state, pid,
 				argumentValues[0], value);
 		return new Evaluation(state, null);
 	}
@@ -234,7 +234,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		writtenRet = setDataFrom(state, pid, process, arguments[3],
 				argumentValues[3], operandCount, result, false, source);
 		eval = writtenRet.left;
-		state = primaryExecutor.assign(source, eval.state, process,
+		state = primaryExecutor.assign(source, eval.state, pid,
 				writtenRet.right, eval.value);
 		eval.state = state;
 		eval.value = null;
@@ -356,7 +356,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		for (ReferenceExpression ref : leafs)
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers)
-			state = this.primaryExecutor.assign(source, state, process, leafPtr,
+			state = this.primaryExecutor.assign(source, state, pid, leafPtr,
 					argumentValues[1]);
 		return new Evaluation(state, null);
 	}
@@ -426,7 +426,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		}
 		result = universe.array(typeFactory.pointerSymbolicType(),
 				leafPointers);
-		state = this.primaryExecutor.assign(source, state, process,
+		state = this.primaryExecutor.assign(source, state, pid,
 				argumentValues[0], result);
 		return new Evaluation(state, null);
 	}
@@ -530,7 +530,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 					arguments[1], right, false, false);
 			state = eval.state;
 			rightValue = eval.value;
-			state = primaryExecutor.assign(source, state, process, left,
+			state = primaryExecutor.assign(source, state, pid, left,
 					rightValue);
 		}
 		return new Evaluation(state, null);
@@ -842,7 +842,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			reasoner = universe.reasoner(state.getPathCondition());
 			resultType = reasoner.valid(claim).getResultType();
 			if (!resultType.equals(ResultType.YES)) {
-				state = this.errorLogger.logError(source, state, process,
+				state = this.errorLogger.logError(source, state, pid,
 						this.symbolicAnalyzer.stateInformation(state), claim,
 						resultType, ErrorKind.POINTER,
 						"the primitive type of the object pointed by input pointer:"
@@ -855,7 +855,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			offset = universe.multiply(offset,
 					universe.divide(type_size, ptr_primType_size));
 		}
-		eval = evaluator.evaluatePointerAdd(state, process, ptr, offset, true,
+		eval = evaluator.evaluatePointerAdd(state, pid, ptr, offset, true,
 				source).left;
 		state = eval.state;
 		output_ptr = eval.value;
@@ -968,7 +968,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 					"Attempt to shrink an exsiting memory heap by re-allocation.");
 			return new Evaluation(state, null);// no-op
 		}
-		eval.state = primaryExecutor.assign(source, state, process, heapPtr,
+		eval.state = primaryExecutor.assign(source, state, pid, heapPtr,
 				newHeap);
 		eval.value = null;
 		return eval;

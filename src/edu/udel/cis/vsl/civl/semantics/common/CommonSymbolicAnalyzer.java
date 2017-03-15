@@ -192,9 +192,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public SymbolicExpression getSubArray(SymbolicExpression array,
-			NumericExpression startIndex, NumericExpression endIndex,
-			State state, String process, CIVLSource source)
+	public SymbolicExpression getSubArray(State state, int pid,
+			SymbolicExpression array, NumericExpression startIndex,
+			NumericExpression endIndex, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		// if startIndex is zero and endIndex is length, return array
 		// verify startIndex >=0 and endIndex<= Length
@@ -215,7 +215,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			ResultType valid = reasoner.valid(claim).getResultType();
 
 			if (valid != ResultType.YES) {
-				state = errorLogger.logError(source, state, process,
+				state = errorLogger.logError(source, state, pid,
 						this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS, "negative start index");
 				pathCondition = state.getPathCondition();
@@ -224,7 +224,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			claim = universe.lessThanEquals(endIndex, length);
 			valid = reasoner.valid(claim).getResultType();
 			if (valid != ResultType.YES) {
-				state = errorLogger.logError(source, state, process,
+				state = errorLogger.logError(source, state, pid,
 						this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS,
 						"end index exceeds length of array");
@@ -234,7 +234,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			claim = universe.lessThanEquals(startIndex, endIndex);
 			valid = reasoner.valid(claim).getResultType();
 			if (valid != ResultType.YES) {
-				state = errorLogger.logError(source, state, process,
+				state = errorLogger.logError(source, state, pid,
 						this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS,
 						"start index greater than end index");

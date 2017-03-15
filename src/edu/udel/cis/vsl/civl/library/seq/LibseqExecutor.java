@@ -108,7 +108,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 					+ " should be a pointer to an imcomplete array"
 					+ arguments[0].getSource());
 		if (count.isZero()) {
-			state = primaryExecutor.assign(source, state, process, arrayPtr,
+			state = primaryExecutor.assign(source, state, pid, arrayPtr,
 					universe.array(
 							arrayType.elementType().getDynamicType(universe),
 							new LinkedList<SymbolicExpression>()));
@@ -172,8 +172,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 					arrayValue = symbolicUtil.newArray(state.getPathCondition(),
 							arrayType.elementType().getDynamicType(universe),
 							count, eleValue);
-					state = primaryExecutor.assign(source, state, process,
-							arrayPtr, arrayValue);
+					state = primaryExecutor.assign(source, state, pid, arrayPtr,
+							arrayValue);
 				}
 			}
 		}
@@ -430,8 +430,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			} else {
 				value = universe.arrayRead(arrayValue, index);
 				if (!symbolicUtil.isNullPointer(valuePtr)) {
-					state = primaryExecutor.assign(valuesPtrSource, state,
-							process, valuePtr, value);
+					state = primaryExecutor.assign(valuesPtrSource, state, pid,
+							valuePtr, value);
 				}
 				arrayValue = universe.removeElementAt(arrayValue, indexInt);
 			}
@@ -440,7 +440,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			arrayValue = universe.array(
 					((SymbolicArrayType) arrayValue.type()).elementType(),
 					elements);
-		state = primaryExecutor.assign(source, state, process, arrayPtr,
+		state = primaryExecutor.assign(source, state, pid, arrayPtr,
 				arrayValue);
 		return new Evaluation(state, null);
 	}

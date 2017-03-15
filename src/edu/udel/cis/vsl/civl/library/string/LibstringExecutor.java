@@ -180,7 +180,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			SymbolicExpression pointer = symbolicUtil.makePointer(scopeId, vid,
 					eleRef);
 
-			state = primaryExecutor.assign(source, state, process, pointer,
+			state = primaryExecutor.assign(source, state, pid, pointer,
 					charExpr);
 			if (theChar == '\0')
 				break;
@@ -450,8 +450,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 						"Any datatype other than REAL, INTEGER, CHAR and BOOLEAN is not supported yet");
 		}
 		length = universe.divide(size, dataTypeSize);
-		ptrAddRet = evaluator.evaluatePointerAdd(state, process, pointer,
-				length, false, arguments[0].getSource());
+		ptrAddRet = evaluator.evaluatePointerAdd(state, pid, pointer, length,
+				false, arguments[0].getSource());
 		eval = ptrAddRet.left;
 		state = eval.state;
 		// create a set of zeros to set to the pointed object.
@@ -472,7 +472,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				length, zerosArray, false, source);
 		eval = setDataRet.left;
 		state = eval.state;
-		state = this.primaryExecutor.assign(source, state, process,
+		state = this.primaryExecutor.assign(source, state, pid,
 				setDataRet.right, eval.value);
 		return new Evaluation(state, pointer);
 	}

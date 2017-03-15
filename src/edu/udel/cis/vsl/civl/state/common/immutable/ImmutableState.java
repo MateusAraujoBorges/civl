@@ -721,6 +721,33 @@ public class ImmutableState implements State {
 		return newState;
 	}
 
+	/**
+	 * <p>
+	 * Set new path condition on this state, returns a new state who has the new
+	 * path condition against this one.
+	 * </p>
+	 * 
+	 * @param newPathCondition
+	 *            A boolean-value symbolic expression.
+	 * @return A new state who has the new path condition against this one.
+	 */
+	ImmutableState setPathCondition(BooleanExpression newPathCondition) {
+		ImmutableState result = new ImmutableState(processStates, dyscopes,
+				newPathCondition);
+
+		if (scopeHashed) {
+			result.scopeHashed = true;
+			result.scopeHashCode = scopeHashCode;
+		}
+		if (procHashed) {
+			result.procHashed = true;
+			result.procHashCode = procHashCode;
+		}
+		result.collectibleCounts = this.collectibleCounts;
+		result.snapshotsQueues = snapshotsQueues;
+		return result;
+	}
+
 	/* ************************ Methods from State ************************* */
 
 	@Override
@@ -908,24 +935,6 @@ public class ImmutableState implements State {
 	@Override
 	public void setOnStack(boolean onStack) {
 		this.onStack = onStack;
-	}
-
-	@Override
-	public ImmutableState setPathCondition(BooleanExpression pathCondition) {
-		ImmutableState result = new ImmutableState(processStates, dyscopes,
-				pathCondition);
-
-		if (scopeHashed) {
-			result.scopeHashed = true;
-			result.scopeHashCode = scopeHashCode;
-		}
-		if (procHashed) {
-			result.procHashed = true;
-			result.procHashCode = procHashCode;
-		}
-		result.collectibleCounts = this.collectibleCounts;
-		result.snapshotsQueues = snapshotsQueues;
-		return result;
 	}
 
 	@Override

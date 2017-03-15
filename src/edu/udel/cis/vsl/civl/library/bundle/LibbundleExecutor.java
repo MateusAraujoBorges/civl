@@ -331,7 +331,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		targetObject = eval.value;
 		// If it's assigned to an array or an object
 		if (bufPointer != null && targetObject != null)
-			state = primaryExecutor.assign(source, state, process, bufPointer,
+			state = primaryExecutor.assign(source, state, pid, bufPointer,
 					targetObject);
 		else
 			throw new CIVLInternalException(

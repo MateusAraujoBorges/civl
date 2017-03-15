@@ -512,11 +512,11 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 				BooleanExpression positiveLength = universe.lessThan(zero,
 						(NumericExpression) length);
 
-				state = state.setPathCondition(
-						universe.and(state.getPathCondition(), positiveLength));
+				state = stateFactory.addToPathcondition(state, pid,
+						positiveLength);
 			}
 			state = primaryExecutor.assign(expressions[1].getSource(), state,
-					process, filesystemPointer, fileSystemStructure);
+					pid, filesystemPointer, fileSystemStructure);
 		}
 		// now theFile is the new file and fileIndex is its index
 		// malloc a new FILE object with appropriate pointers
@@ -690,7 +690,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			fileSystemStructure = universe.tupleWrite(fileSystemStructure,
 					oneObject, fileArray);
 			state = primaryExecutor.assign(fileSystemExpression.getSource(),
-					state, process, filesystemPointer, fileSystemStructure);
+					state, pid, filesystemPointer, fileSystemStructure);
 		} else {
 			SymbolicExpression isBinary = universe.tupleRead(theFile,
 					universe.intObject(4));
@@ -739,8 +739,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		outputArray = universe.array(this.fileSymbolicType, files);
 		arrayPointer = universe.tuple(typeFactory.pointerSymbolicType(), Arrays
 				.asList(scopeField, varField, universe.identityReference()));
-		state = primaryExecutor.assign(arraySource, state, process,
-				arrayPointer, outputArray);
+		state = primaryExecutor.assign(arraySource, state, pid, arrayPointer,
+				outputArray);
 		return new Evaluation(state, null);
 	}
 
@@ -907,13 +907,13 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 												exceedLength);
 
 								count++;
-								data = symbolicAnalyzer.getSubArray(data, zero,
-										realDataLength, state, process, source);
+								data = symbolicAnalyzer.getSubArray(state, pid,
+										data, zero, realDataLength, source);
 								setOutputArgument(state, pid, process, data,
 										origOutputArgPtrExpr, origOutputArgPtr,
 										realDataLength, source);
 								state = primaryExecutor.assign(source, state,
-										process, assignedOutputArgPtr, data);
+										pid, assignedOutputArgPtr, data);
 								position = fileLength;
 								break;
 							} else {
@@ -928,7 +928,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 							}
 						}
 					}
-					state = primaryExecutor.assign(source, state, process,
+					state = primaryExecutor.assign(source, state, pid,
 							assignedOutputArgPtr, data);
 					count++;
 					dataPointerIndex++;
@@ -937,10 +937,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			}
 			fileObject = universe.tupleWrite(fileObject, oneObject,
 					fileContents);
-			state = primaryExecutor.assign(source, state, process, filePointer,
+			state = primaryExecutor.assign(source, state, pid, filePointer,
 					fileObject);
 			fileStream = universe.tupleWrite(fileStream, twoObject, position);
-			state = primaryExecutor.assign(source, state, process,
+			state = primaryExecutor.assign(source, state, pid,
 					argumentValues[0], fileStream);
 			return new Evaluation(state, universe.integer(count));
 		}
@@ -1094,7 +1094,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			}
 			fileObject = universe.tupleWrite(fileObject, oneObject,
 					fileContents);
-			state = primaryExecutor.assign(source, state, process, filePointer,
+			state = primaryExecutor.assign(source, state, pid, filePointer,
 					fileObject);
 		}
 		return new Evaluation(state, null);

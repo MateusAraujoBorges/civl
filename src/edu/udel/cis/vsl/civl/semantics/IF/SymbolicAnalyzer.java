@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.semantics.IF;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -38,9 +39,9 @@ public interface SymbolicAnalyzer {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	SymbolicExpression getSubArray(SymbolicExpression array,
-			NumericExpression startIndex, NumericExpression endIndex,
-			State state, String process, CIVLSource source)
+	SymbolicExpression getSubArray(State state, int pid,
+			SymbolicExpression array, NumericExpression startIndex,
+			NumericExpression endIndex, CIVLSource source)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -252,8 +253,8 @@ public interface SymbolicAnalyzer {
 	 * @param civlSource
 	 *            The source related with the pointer
 	 * @return True iff the given pointer is defined.
-	 * @throws CIVLUnimplementedFeatureException 
-	 * 			  If the given pointer is a non-concrete one.
+	 * @throws CIVLUnimplementedFeatureException
+	 *             If the given pointer is a non-concrete one.
 	 */
 	Pair<BooleanExpression, ResultType> isDefinedPointer(State state,
 			SymbolicExpression pointer, CIVLSource civlSource);

@@ -56,28 +56,21 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 									Arrays.asList(universe.realType()),
 									this.tmSymbolicType)));
 		if (tmType != null)
-			this.tmToStrFunc = (SymbolicConstant) universe
-					.canonic(universe
-							.symbolicConstant(universe.stringObject("strftime"),
-									universe.functionType(
-											Arrays.asList(
-													universe.integerType(),
-													typeFactory
-															.pointerSymbolicType(),
-													this.tmSymbolicType),
-											this.stringSymbolicType)));
+			this.tmToStrFunc = (SymbolicConstant) universe.canonic(
+					universe.symbolicConstant(universe.stringObject("strftime"),
+							universe.functionType(
+									Arrays.asList(universe.integerType(),
+											typeFactory.pointerSymbolicType(),
+											this.tmSymbolicType),
+									this.stringSymbolicType)));
 		if (tmType != null)
-			this.tmToStrSizeFunc = (SymbolicConstant) universe
-					.canonic(
-							universe.symbolicConstant(
-									universe.stringObject("strftimeSize"),
-									universe.functionType(
-											Arrays.asList(
-													universe.integerType(),
-													typeFactory
-															.pointerSymbolicType(),
-													this.tmSymbolicType),
-											universe.integerType())));
+			this.tmToStrSizeFunc = (SymbolicConstant) universe.canonic(universe
+					.symbolicConstant(universe.stringObject("strftimeSize"),
+							universe.functionType(
+									Arrays.asList(universe.integerType(),
+											typeFactory.pointerSymbolicType(),
+											this.tmSymbolicType),
+									universe.integerType())));
 	}
 
 	@Override
@@ -135,7 +128,7 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 		tmStr = universe.apply(tmToStrFunc,
 				Arrays.asList(argumentValues[1], argumentValues[2], tmValue));
 		state = this.primaryExecutor.assign(arguments[0].getSource(), state,
-				process, resultPointer, tmStr);
+				pid, resultPointer, tmStr);
 		sizeValue = universe.apply(tmToStrSizeFunc,
 				Arrays.asList(argumentValues[1], argumentValues[2], tmValue));
 		return new Evaluation(state, sizeValue);

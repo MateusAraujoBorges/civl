@@ -398,7 +398,7 @@ public class LibconcurrencyExecutor extends BaseLibraryExecutor implements
 		}
 		gcheck = universe.tupleWrite(gcheck, this.zeroObject, records_length);
 		gcheck = universe.tupleWrite(gcheck, oneObject, records);
-		state = primaryExecutor.assign(source, state, process, gcheckHandle,
+		state = primaryExecutor.assign(source, state, pid, gcheckHandle,
 				gcheck);
 		return new Evaluation(state, universe.tupleRead(modifiedRecord,
 				this.zeroObject));

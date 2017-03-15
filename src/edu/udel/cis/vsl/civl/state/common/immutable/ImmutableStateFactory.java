@@ -993,8 +993,11 @@ public class ImmutableStateFactory implements StateFactory {
 						if (stateID >= 0) {
 							State refState = this.getStateByReference(stateID);
 
-							refState = refState.setPathCondition(universe
-									.and(context, refState.getPathCondition()));
+							// TODO: is this necessary ?
+							refState = ((ImmutableState) refState)
+									.setPathCondition(universe.and(
+											refState.getPathCondition(),
+											context));
 							refState = this.simplify(refState);
 							newStateID = this.saveState(refState, 0).left;
 							if (newStateID != stateID) {
@@ -2696,5 +2699,23 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public void setConfiguration(CIVLConfiguration config) {
 		this.config = config;
+	}
+
+	@Override
+	public ImmutableState addToPathcondition(State state, int pid,
+			BooleanExpression clause) {
+		BooleanExpression newPathCondition = universe
+				.and(state.getPathCondition(), clause);
+
+		return ((ImmutableState) state).setPathCondition(newPathCondition);
+	}
+
+	@Override
+	public State disjointWTPathcondition(State state, int pid,
+			BooleanExpression clause) {
+		BooleanExpression newPathCondition = universe
+				.or(state.getPathCondition(), clause);
+
+		return ((ImmutableState) state).setPathCondition(newPathCondition);
 	}
 }

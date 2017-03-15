@@ -271,7 +271,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		symStateRef = modelFactory.stateValue(resultRef);
 		gcollateState = universe.tupleWrite(gcollateState, gcollate_state_state,
 				symStateRef);
-		state = this.primaryExecutor.assign(source, state, process,
+		state = this.primaryExecutor.assign(source, state, pid,
 				gcollateStateHandle, gcollateState);
 		return new Evaluation(state, null);
 	}

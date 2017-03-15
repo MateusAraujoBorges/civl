@@ -302,19 +302,19 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 				.getResultType() == ResultType.YES) {
 			// invalid range restriction
 			switch (expression.quantifier()) {
-			case EXISTS:
-				result = new Evaluation(state, universe.falseExpression());
-				break;
-			default:// FORALL UNIFORM
-				result = new Evaluation(state, universe.trueExpression());
+				case EXISTS :
+					result = new Evaluation(state, universe.falseExpression());
+					break;
+				default :// FORALL UNIFORM
+					result = new Evaluation(state, universe.trueExpression());
 			}
 		} else {
-			BooleanExpression context = universe.and(restriction,
-					state.getPathCondition());
-			State stateWithRestriction = state.setPathCondition(context);
+			State stateWithRestriction = stateFactory.addToPathcondition(state,
+					pid, restriction);
+			BooleanExpression context = stateWithRestriction.getPathCondition();
 			Evaluation quantifiedExpression = evaluate(stateWithRestriction,
 					pid, expression.expression());
-			
+
 			context = quantifiedExpression.state.getPathCondition();
 			reasoner = universe.reasoner(context);
 
@@ -332,34 +332,39 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 						.add(universe.number(interval.upper()), this.one);
 
 				switch (expression.quantifier()) {
-				case EXISTS:
-					quantifiedExpressionNew = universe.existsInt(
-							(NumericSymbolicConstant) innermostBoundVar, lower,
-							upper, (BooleanExpression) simplifiedExpression);
-					break;
-				case FORALL:
-				case UNIFORM:
-					quantifiedExpressionNew = universe.forallInt(
-							(NumericSymbolicConstant) innermostBoundVar, lower,
-							upper, (BooleanExpression) simplifiedExpression);
-					break;
-				default:
-					throw new CIVLInternalException("unreachable", expression);
+					case EXISTS :
+						quantifiedExpressionNew = universe.existsInt(
+								(NumericSymbolicConstant) innermostBoundVar,
+								lower, upper,
+								(BooleanExpression) simplifiedExpression);
+						break;
+					case FORALL :
+					case UNIFORM :
+						quantifiedExpressionNew = universe.forallInt(
+								(NumericSymbolicConstant) innermostBoundVar,
+								lower, upper,
+								(BooleanExpression) simplifiedExpression);
+						break;
+					default :
+						throw new CIVLInternalException("unreachable",
+								expression);
 				}
 			} else {
 				switch (expression.quantifier()) {
-				case EXISTS:
-					quantifiedExpressionNew = universe.exists(innermostBoundVar,
-							universe.and(restriction, simplifiedExpression));
-					break;
-				case FORALL:
-				case UNIFORM:
-					quantifiedExpressionNew = universe.forall(innermostBoundVar,
-							universe.implies(restriction,
-									simplifiedExpression));
-					break;
-				default:
-					throw new CIVLInternalException("unreachable", expression);
+					case EXISTS :
+						quantifiedExpressionNew = universe.exists(
+								innermostBoundVar, universe.and(restriction,
+										simplifiedExpression));
+						break;
+					case FORALL :
+					case UNIFORM :
+						quantifiedExpressionNew = universe.forall(
+								innermostBoundVar, universe.implies(restriction,
+										simplifiedExpression));
+						break;
+					default :
+						throw new CIVLInternalException("unreachable",
+								expression);
 				}
 			}
 
@@ -367,18 +372,18 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 				SymbolicConstant boundVar = boundVariables[i];
 
 				switch (expression.quantifier()) {
-				case EXISTS:
-					quantifiedExpressionNew = universe.exists(boundVar,
-							quantifiedExpressionNew);
-					break;
-				case FORALL:
-				case UNIFORM:
-					quantifiedExpressionNew = universe.forall(boundVar,
-							quantifiedExpressionNew);
-					break;
-				default:
-					throw new CIVLException("Unknown quantifier ",
-							expression.getSource());
+					case EXISTS :
+						quantifiedExpressionNew = universe.exists(boundVar,
+								quantifiedExpressionNew);
+						break;
+					case FORALL :
+					case UNIFORM :
+						quantifiedExpressionNew = universe.forall(boundVar,
+								quantifiedExpressionNew);
+						break;
+					default :
+						throw new CIVLException("Unknown quantifier ",
+								expression.getSource());
 				}
 			}
 			result = new Evaluation(state, quantifiedExpressionNew);
@@ -530,9 +535,8 @@ public class QuantifiedExpressionEvaluator extends CommonEvaluator {
 					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
 					"invalid process ID");
 		}
-		colState = colState
-				.setPathCondition(universe.and(colState.getPathCondition(),
-						getPredicateOnBoundVariables(state)));
+		stateFactory.addToPathcondition(colState, newPID,
+				getPredicateOnBoundVariables(state));
 		enterValueAtOrRemote(state, pid);
 		eval = this.evaluate(colState, newPID, valueAt.expression());
 		exitValueAtOrRemote();

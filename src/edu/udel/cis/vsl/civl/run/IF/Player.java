@@ -130,15 +130,15 @@ public abstract class Player {
 		universe = modelFactory.universe();
 		this.solve = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(solveO);
-		this.log = new CIVLErrorLogger(new File("CIVLREP"), sessionName, out,
-				civlConfig, gmcConfig, universe, solve);
-		this.log.setErrorBound((int) gmcConfig.getAnonymousSection()
-				.getValueOrDefault(errorBoundO));
 		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory);
 		this.memUnitFactory = States.newImmutableMemoryUnitFactory(universe,
 				modelFactory);
 		this.stateFactory = States.newImmutableStateFactory(modelFactory,
 				symbolicUtil, memUnitFactory, civlConfig);
+		this.log = new CIVLErrorLogger(new File("CIVLREP"), sessionName, out,
+				civlConfig, gmcConfig, this.stateFactory, universe, solve);
+		this.log.setErrorBound((int) gmcConfig.getAnonymousSection()
+				.getValueOrDefault(errorBoundO));
 		this.libraryEvaluatorLoader = Semantics
 				.newLibraryEvaluatorLoader(this.civlConfig);
 		this.symbolicAnalyzer = Semantics.newSymbolicAnalyzer(this.civlConfig,
