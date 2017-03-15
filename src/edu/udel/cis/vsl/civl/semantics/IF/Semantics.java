@@ -13,10 +13,10 @@ import edu.udel.cis.vsl.civl.semantics.common.CommonExecutor;
 import edu.udel.cis.vsl.civl.semantics.common.CommonLibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.common.CommonLibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.common.CommonMemoryUnitEvaluator;
-import edu.udel.cis.vsl.civl.semantics.common.CommonNoopTransition;
 import edu.udel.cis.vsl.civl.semantics.common.CommonSymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.common.CommonTransition;
 import edu.udel.cis.vsl.civl.semantics.common.CommonTransitionSet;
+import edu.udel.cis.vsl.civl.semantics.common.NoopTransition;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
@@ -180,7 +180,7 @@ public class Semantics {
 			BooleanExpression pathCondition, int pid,
 			BooleanExpression assumption, Statement statement,
 			boolean symplifyState, AtomicLockAction atomicLockAction) {
-		return new CommonNoopTransition(pathCondition, pid, assumption,
+		return new NoopTransition(pathCondition, pid, assumption,
 				statement, symplifyState, atomicLockAction);
 	}
 

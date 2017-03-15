@@ -62,7 +62,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.Format.ConversionType;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
-import edu.udel.cis.vsl.civl.semantics.IF.NoopTransition;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition.AtomicLockAction;
@@ -1552,7 +1551,7 @@ public class CommonExecutor implements Executor {
 								+ atomicLockAction.toString(),
 						transition.statement().getSource());
 		}
-		state = state.setPathCondition(transition.pathCondition());
+		state = state.setPathCondition(transition.clause());
 		if (transition.simpifyState()
 				&& (civlConfig.svcomp() || this.civlConfig.simplify()))
 			state = this.stateFactory.simplify(state);

@@ -24,9 +24,10 @@ public class CommonTransition implements Transition {
 	/* *************************** Instance Fields ************************* */
 
 	/**
-	 * The path condition of the new state after this transition is executed.
+	 * The boolean-value clause which will be conjuncted with the path condition
+	 * of the source state.
 	 */
-	private BooleanExpression pathCondition;
+	private BooleanExpression clause;
 
 	/**
 	 * The PID of the process that this transition belongs to.
@@ -56,18 +57,19 @@ public class CommonTransition implements Transition {
 	 * statement enabled.
 	 * </p>
 	 * 
-	 * @param pathCondition
-	 *            The path condition of the new state after the transition being
-	 *            executed.
+	 * @param clause
+	 *            The boolean-value clause which will be conjuncted with the
+	 *            path condition of the source state to form a new state
+	 *            immediately before the execution of this transition starts.
 	 * @param pid
 	 *            The PID of the process that the transition belongs to.
 	 * @param statement
 	 *            The statement of the transition.
 	 */
-	public CommonTransition(BooleanExpression pathCondition, int pid,
+	public CommonTransition(BooleanExpression clause, int pid,
 			Statement statement, boolean symplifyState,
 			AtomicLockAction atomicLockAction) {
-		this.pathCondition = pathCondition;
+		this.clause = clause;
 		this.pid = pid;
 		this.statement = statement;
 		this.atomicLockAction = atomicLockAction;
@@ -94,8 +96,7 @@ public class CommonTransition implements Transition {
 		if (object instanceof Transition) {
 			Transition that = (Transition) object;
 
-			if (this.pid == that.pid()
-					&& this.pathCondition.equals(that.pathCondition())
+			if (this.pid == that.pid() && this.clause.equals(that.clause())
 					&& this.statement.equals(that.statement()))
 				return true;
 		}
@@ -113,8 +114,8 @@ public class CommonTransition implements Transition {
 	}
 
 	@Override
-	public BooleanExpression pathCondition() {
-		return this.pathCondition;
+	public BooleanExpression clause() {
+		return this.clause;
 	}
 
 	@Override
