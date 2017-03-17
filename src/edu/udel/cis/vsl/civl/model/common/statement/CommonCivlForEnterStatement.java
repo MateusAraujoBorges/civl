@@ -13,8 +13,9 @@ import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
-public class CommonCivlForEnterStatement extends CommonStatement implements
-		DomainIteratorStatement {
+public class CommonCivlForEnterStatement extends CommonStatement
+		implements
+			DomainIteratorStatement {
 
 	private Expression domain;
 
@@ -47,9 +48,9 @@ public class CommonCivlForEnterStatement extends CommonStatement implements
 					newExpression);
 
 			if (newDomain != null) {
-				newStatement = new CommonCivlForEnterStatement(
-						this.getSource(), this.source(), this.guard(),
-						newDomain, this.loopVariables, this.literalDomCounter);
+				newStatement = new CommonCivlForEnterStatement(this.getSource(),
+						this.source(), this.guard(), newDomain,
+						this.loopVariables, this.literalDomCounter);
 			}
 		}
 		return newStatement;
@@ -102,6 +103,20 @@ public class CommonCivlForEnterStatement extends CommonStatement implements
 		string.append(") in ");
 		string.append(domain);
 		return string.toString();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			if (obj instanceof CommonCivlForEnterStatement) {
+				CommonCivlForEnterStatement other = (CommonCivlForEnterStatement) obj;
+
+				if (other.domain.equals(domain))
+					if (other.loopVariables.equals(loopVariables))
+						return other.literalDomCounter == literalDomCounter;
+			}
+		}
+		return false;
 	}
 
 	@Override

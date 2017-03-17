@@ -19,8 +19,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
-public class CommonMallocStatement extends CommonStatement implements
-		MallocStatement {
+public class CommonMallocStatement extends CommonStatement
+		implements
+			MallocStatement {
 
 	private int id;
 
@@ -176,8 +177,8 @@ public class CommonMallocStatement extends CommonStatement implements
 					dynamicElementType, dynamicObjectType, this.sizeExpression,
 					undefinedObject, lhs);
 		} else {
-			Expression newSizeExpression = sizeExpression.replaceWith(
-					oldExpression, newExpression);
+			Expression newSizeExpression = sizeExpression
+					.replaceWith(oldExpression, newExpression);
 
 			if (newSizeExpression != null) {
 				newStatement = new CommonMallocStatement(this.getSource(),
@@ -250,4 +251,13 @@ public class CommonMallocStatement extends CommonStatement implements
 		this.undefinedObject = undefinedObject;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			CommonMallocStatement other = (CommonMallocStatement) obj;
+
+			return other.id == id;
+		}
+		return false;
+	}
 }

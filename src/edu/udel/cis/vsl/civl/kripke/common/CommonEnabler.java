@@ -231,12 +231,11 @@ public abstract class CommonEnabler implements Enabler {
 			TransitionSetIF<State, Transition> transitionSet) {
 		TransitionSet ts = (TransitionSet) transitionSet;
 		State source = ts.source();
-		TransitionSet ampleSet = this.enabledTransitionsPOR(source);
-		TransitionSet enabledSet = this
-				.enabledTransitionsOfAllProcesses(source);
+		TransitionSet ampleSet = enabledTransitionsPOR(source);
+		TransitionSet enabledSet = enabledTransitionsOfAllProcesses(source);
 		@SuppressWarnings("unchecked")
 		Collection<Transition> difference = (Collection<Transition>) Utils
-				.difference(enabledSet.transitions(), ampleSet.transitions());
+				.subtract(enabledSet.transitions(), ampleSet.transitions());
 		List<Transition> transitions = new ArrayList<>();
 		TransitionSet complementSet;
 

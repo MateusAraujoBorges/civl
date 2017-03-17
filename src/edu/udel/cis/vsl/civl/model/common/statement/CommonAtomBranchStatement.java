@@ -59,4 +59,15 @@ public class CommonAtomBranchStatement extends CommonNoopStatement {
 		return "LEAVE_ATOM";
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			if (obj instanceof CommonAtomBranchStatement) {
+				CommonAtomBranchStatement other = (CommonAtomBranchStatement) obj;
+
+				return other.enter == enter;
+			}
+		}
+		return false;
+	}
 }

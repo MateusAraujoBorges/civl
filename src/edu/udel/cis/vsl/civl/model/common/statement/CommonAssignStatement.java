@@ -24,8 +24,9 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public class CommonAssignStatement extends CommonStatement implements
-		AssignStatement {
+public class CommonAssignStatement extends CommonStatement
+		implements
+			AssignStatement {
 
 	private LHSExpression lhs;
 	private Expression rhs;
@@ -129,8 +130,8 @@ public class CommonAssignStatement extends CommonStatement implements
 					newGuard, lhs, this.rhs, this.isInitialization);
 		} else {
 
-			LHSExpression newLhs = (LHSExpression) lhs.replaceWith(
-					oldExpression, newExpression);
+			LHSExpression newLhs = (LHSExpression) lhs
+					.replaceWith(oldExpression, newExpression);
 
 			if (newLhs != null) {
 				newStatement = new CommonAssignStatement(this.getSource(),
@@ -208,5 +209,19 @@ public class CommonAssignStatement extends CommonStatement implements
 	@Override
 	public boolean containsHereWork() {
 		return lhs.containsHere() || rhs.containsHere();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			if (obj instanceof CommonAssignStatement) {
+				CommonAssignStatement other = (CommonAssignStatement) obj;
+
+				if (other.lhs.equals(lhs))
+					if (other.rhs.equals(rhs))
+						return other.isInitialization == isInitialization;
+			}
+		}
+		return false;
 	}
 }

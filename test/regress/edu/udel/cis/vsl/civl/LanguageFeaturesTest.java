@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.junit.AfterClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -131,15 +130,6 @@ public class LanguageFeaturesTest {
 	@Test
 	public void badGuard() throws ABCException {
 		assertFalse(ui.run(VERIFY, QUIET, filename("badGuard.cvl")));
-	}
-
-	/**
-	 * This should be moved to test/dev.
-	 */
-	@Ignore
-	@Test
-	public void bigO() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("bigO.cvl")));
 	}
 
 	@Test

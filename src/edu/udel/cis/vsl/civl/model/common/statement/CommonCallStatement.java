@@ -29,7 +29,8 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
  * 
  */
 public class CommonCallStatement extends CommonStatement
-		implements CallOrSpawnStatement {
+		implements
+			CallOrSpawnStatement {
 
 	private static final BitSet EMPTY_BITSET = new BitSet();
 
@@ -391,5 +392,20 @@ public class CommonCallStatement extends CommonStatement
 	public void setAsRun(boolean isRun) {
 		assert !isCall;
 		this.isRun = isRun;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			if (obj instanceof CommonCallStatement) {
+				CommonCallStatement other = (CommonCallStatement) obj;
+
+				if (other.functionExpression.equals(functionExpression))
+					if (other.arguments.equals(arguments))
+						if (other.lhs == lhs)
+							return other.isCall == isCall;
+			}
+		}
+		return false;
 	}
 }
