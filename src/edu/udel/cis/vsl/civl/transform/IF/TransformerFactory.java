@@ -53,7 +53,7 @@ public class TransformerFactory {
 
 	private ContractTransformer contractTransformer;
 
-//	private IntOperationTransformer intOpTransformer;
+	// private IntOperationTransformer intOpTransformer;
 
 	private DirectingTransformer directingTransformer;
 
@@ -213,6 +213,18 @@ public class TransformerFactory {
 			@Override
 			public Transformer create(ASTFactory astFactory) {
 				return new SvcompTransformer(astFactory, config);
+			}
+		};
+	}
+
+	public TransformRecord getShortCircuitTransformerRecord(
+			CIVLConfiguration config) {
+		return new TransformRecord(ShortCircuitTransformer.CODE,
+				ShortCircuitTransformer.LONG_NAME,
+				ShortCircuitTransformer.SHORT_DESCRIPTION) {
+			@Override
+			public Transformer create(ASTFactory astFactory) {
+				return new ShortCircuitTransformer(astFactory);
 			}
 		};
 	}

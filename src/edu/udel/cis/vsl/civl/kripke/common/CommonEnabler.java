@@ -566,12 +566,12 @@ public abstract class CommonEnabler implements Enabler {
 		}
 		if (theOtherGuard.isTrue() || reasoner.isValid(theOtherGuard)) {
 			assert !reasoner.isValid(oneGuard);
-			return enabledTransitionsOfStatement(state, oneStmt, theOtherGuard,
-					pid, false, atomicLockAction);
+			return enabledTransitionsOfStatement(state, theOtherStmt,
+					theOtherGuard, pid, false, atomicLockAction);
 		}
 		transitions.addAll(enabledTransitionsOfStatement(state, oneStmt,
 				oneGuard, pid, false, atomicLockAction));
-		transitions.addAll(enabledTransitionsOfStatement(state, oneStmt,
+		transitions.addAll(enabledTransitionsOfStatement(state, theOtherStmt,
 				theOtherGuard, pid, false, atomicLockAction));
 		return transitions;
 	}

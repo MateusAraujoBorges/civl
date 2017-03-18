@@ -209,16 +209,34 @@ public interface StateFactory {
 	State addToPathcondition(State state, int pid, BooleanExpression clause);
 
 	/**
-	 * Temporary interface, should be removed after a short-circuit transformer
-	 * being applied.
+	 * <p>
+	 * Modify the path condition pc in the given state to a disjunction of pc
+	 * and the given boolean expression. Returns a new state which has the
+	 * modified path condition.
+	 * </p>
+	 * 
+	 * <p>
+	 * This interface is suppose to be used for evaluating expressions with
+	 * short circuiting operators. For example, to evaluate <code>A && B</code>,
+	 * suppose the value of A is satisfiable, the path condition after
+	 * evaluation would be <code>pc' || pc'' && A'</code>, where
+	 * <code>pc'</code> is the the path condition after evaluating A and
+	 * <code>pc'' && A'</code> is the path condition after evaluating B>
+	 * </p>
 	 * 
 	 * @param state
+	 *            The state before the path condition being updated.
 	 * @param pid
-	 * @param clause
+	 *            The PID of the calling process.
+	 * @param boolExpression
+	 *            The boolean value symbolic expression which will disjoint with
+	 *            the path condition.
+	 * @return A new state which is same as the given one but owns the new path
+	 *         condition.
 	 * @return
 	 */
 	State disjointWTPathcondition(State state, int pid,
-			BooleanExpression clause);
+			BooleanExpression boolExpression);
 
 	/**
 	 * <p>
