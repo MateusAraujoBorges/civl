@@ -1861,12 +1861,6 @@ public class CommonEvaluator implements Evaluator {
 		} else {
 			State s1 = stateFactory.addToPathcondition(eval.state, pid,
 					universe.not(p));
-
-			// IMMPORTANT for performance: simplify the state so that the new
-			// path condition could be simplified
-			if (this.civlConfig.simplify())
-				s1 = this.stateFactory.simplify(s1);
-
 			Evaluation eval1 = evaluate(s1, pid, expression.right());
 
 			eval.state = stateFactory.addToPathcondition(eval.state, pid, p);
