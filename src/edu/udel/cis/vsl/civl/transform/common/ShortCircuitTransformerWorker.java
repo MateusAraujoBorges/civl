@@ -1,13 +1,16 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.OrdinaryDeclarationNode;
@@ -18,11 +21,15 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
+import edu.udel.cis.vsl.abc.ast.node.IF.label.LabelNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode.BlockItemKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.IfNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode.LoopKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode.StatementKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -87,9 +94,13 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
  */
 public class ShortCircuitTransformerWorker extends BaseWorker {
 
-	static private final String HOLDER_PREFIX = "_scc";
+	static private final String SCTransformer_PREFIX = "_scc";
 
-	static private int holderCounter = 0;
+	static private final String HOLDER_PREFIX = SCTransformer_PREFIX + "_h";
+
+	static private final String LABEL_PREFIX = SCTransformer_PREFIX + "_label";
+
+	private int generatedVariableCounter = 0;
 
 	private class ShortCircuitRemover {
 		/**
@@ -110,7 +121,7 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		 * evaluation (with short-circuit semantics) of the original expression.
 		 * None of the node in this list is a part of the old ASTree.
 		 */
-		List<BlockItemNode> statements = null;
+		LinkedList<BlockItemNode> statements = null;
 
 		/**
 		 * The name of the identifier of a temporary variable which will hold
@@ -124,9 +135,19 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 			this.expressionOwner = location;
 		}
 
-		void complete(List<BlockItemNode> statements, String identifierName) {
+		void complete(LinkedList<BlockItemNode> statements,
+				String identifierName) {
 			this.statements = statements;
 			this.identifierName = identifierName;
+		}
+
+		boolean isInLoopCondition() {
+			if (this.expressionOwner
+					.blockItemKind() == BlockItemKind.STATEMENT) {
+				return ((StatementNode) expressionOwner)
+						.statementKind() == StatementKind.LOOP;
+			}
+			return false;
 		}
 
 		@Override
@@ -149,8 +170,21 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 				|| kind == ExpressionKind.ARRAY_LAMBDA;
 	}
 
-	static private String nextHolderName() {
-		return HOLDER_PREFIX + holderCounter++;
+	static private boolean isArgumentOfWhen(ExpressionNode expr) {
+		if (expr.parent().nodeKind() == NodeKind.STATEMENT) {
+			StatementNode stmt = (StatementNode) expr.parent();
+
+			return stmt.statementKind() == StatementKind.WHEN;
+		}
+		return false;
+	}
+
+	private String nextHolderName() {
+		return HOLDER_PREFIX + generatedVariableCounter++;
+	}
+
+	private String nextLabelName() {
+		return LABEL_PREFIX + generatedVariableCounter++;
 	}
 
 	public ShortCircuitTransformerWorker(String transformerName,
@@ -171,44 +205,55 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		// semantics:
 		for (ShortCircuitRemover remover : removers)
 			transformShortCircuitExpression(remover);
+
+		// Special transformation for loop condition:
+		Map<BlockItemNode, BlockItemNode> seenLoops = new HashMap<>();
+
+		for (ShortCircuitRemover remover : removers)
+			if (remover.isInLoopCondition()) {
+				transformShortCircuitLoopCondition(remover, seenLoops);
+			}
 		// Inserts transformed statements and replaces expressions with
 		// temporary variables:
-		for (ShortCircuitRemover remover : removers) {
-			BlockItemNode location = remover.expressionOwner;
-			ExpressionNode holderExpression = identifierExpression(
-					remover.identifierName);
-			ExpressionNode originalExpression = remover.originalExpression;
-			ASTNode locationParent = location.parent();
-			int locationChildIdx = location.childIndex();
-
-			if (locationParent.nodeKind() == NodeKind.SEQUENCE) {
-				@SuppressWarnings("unchecked")
-				SequenceNode<BlockItemNode> seqNode = (SequenceNode<BlockItemNode>) locationParent;
-
-				seqNode.insertChildren(locationChildIdx, remover.statements);
-			} else if (locationParent instanceof CompoundStatementNode) {
-				CompoundStatementNode compound = (CompoundStatementNode) locationParent;
-
-				compound.insertChildren(locationChildIdx, remover.statements);
-			} else {
-				StatementNode locationReplacer;
-
-				location.remove();
-				remover.statements.add(location);
-				locationReplacer = nodeFactory.newCompoundStatementNode(
-						location.getSource(), remover.statements);
-				locationParent.setChild(locationChildIdx, locationReplacer);
-			}
-			ASTNode oriExprParent = originalExpression.parent();
-			int oriExprChildIdx = originalExpression.childIndex();
-
-			originalExpression.remove();
-			oriExprParent.setChild(oriExprChildIdx, holderExpression);
-		}
+		for (ShortCircuitRemover remover : removers)
+			mountTransformedSCExpressions(remover);
 		ast = astFactory.newAST(rootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		ast.prettyPrint(System.out, true);
+		// ast.prettyPrint(System.out, true);
 		return ast;
+	}
+
+	void mountTransformedSCExpressions(ShortCircuitRemover remover) {
+		BlockItemNode location = remover.expressionOwner;
+		ExpressionNode holderExpression = identifierExpression(
+				remover.identifierName);
+		ExpressionNode originalExpression = remover.originalExpression;
+		ASTNode locationParent = location.parent();
+		int locationChildIdx = location.childIndex();
+
+		if (locationParent.nodeKind() == NodeKind.SEQUENCE) {
+			@SuppressWarnings("unchecked")
+			SequenceNode<BlockItemNode> seqNode = (SequenceNode<BlockItemNode>) locationParent;
+
+			seqNode.insertChildren(locationChildIdx, remover.statements);
+		} else if (locationParent instanceof CompoundStatementNode) {
+			CompoundStatementNode compound = (CompoundStatementNode) locationParent;
+
+			compound.insertChildren(locationChildIdx, remover.statements);
+		} else {
+			StatementNode locationReplacer;
+
+			location.remove();
+			remover.statements.add(location);
+			locationReplacer = nodeFactory.newCompoundStatementNode(
+					location.getSource(), remover.statements);
+			locationParent.setChild(locationChildIdx, locationReplacer);
+		}
+		ASTNode oriExprParent = originalExpression.parent();
+		int oriExprChildIdx = originalExpression.childIndex();
+
+		originalExpression.remove();
+		oriExprParent.setChild(oriExprChildIdx, holderExpression);
 	}
 
 	private List<ShortCircuitRemover> searchSCInBlockItem(
@@ -272,10 +317,12 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		if (expression.expressionKind() == ExpressionKind.OPERATOR) {
 			Operator oprt = ((OperatorNode) expression).getOperator();
 
-			if (isShortCircuitOperator(oprt))
+			if (isShortCircuitOperator(oprt)) {
 				output.add(new ShortCircuitRemover(expression, location));
+				// Never search sub-expressions
+				return;
+			}
 		}
-
 		SCExpressionSearcher(expression, location, output);
 	}
 
@@ -286,9 +333,11 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 				continue;
 			if (child.nodeKind() == NodeKind.STATEMENT)
 				SCExpressionSearcher(child, (StatementNode) child, output);
-			else if (child.nodeKind() == NodeKind.EXPRESSION)
-				searchSCInExpression((ExpressionNode) child, location, output);
-			else {
+			else if (child.nodeKind() == NodeKind.EXPRESSION) {
+				if (!isArgumentOfWhen((ExpressionNode) child))
+					searchSCInExpression((ExpressionNode) child, location,
+							output);
+			} else {
 				if (child instanceof BlockItemNode)
 					SCExpressionSearcher(child, (BlockItemNode) child, output);
 				else
@@ -297,10 +346,98 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		}
 	}
 
+	/* *********** Special Transformation for SC loop conditions **************/
+	private void transformShortCircuitLoopCondition(ShortCircuitRemover remover,
+			Map<BlockItemNode, BlockItemNode> seenLoops) {
+		LoopNode loop = (LoopNode) remover.expressionOwner;
+		BlockItemNode newOwner;
+
+		// Manipulate while loop and for loop as follows:
+		// while (cond) stmt ==> while (true) if (!cond) break; else stmt
+		// for (cond) stmt ==> for (true) if (!cond) break; else stmt
+		// do_while doen't need transformation.
+		// For the first two cases, the evaluation of the short-circuit
+		// expression will be inserted immediately before the if-statements; For
+		// the third one, usually it will be inserted at the end of the loop.
+		// However, if the loop contains continue, the transformation will
+		// non-trivially make it be as follows:
+		// do stmt while(cond) ==> stmt while(true) if (!cond) break; else
+		// stmt;
+		if (seenLoops.containsKey(loop)) {
+			newOwner = seenLoops.get(loop);
+
+			remover.expressionOwner = newOwner;
+			return;
+		}
+		if (loop.getKind() != LoopKind.DO_WHILE)
+			newOwner = transformConditionFirstLoop(loop, remover);
+		else
+			newOwner = transformBodyFirstLoop(loop, remover);
+		seenLoops.put(loop, newOwner);
+	}
+
+	// while, for loops
+	private BlockItemNode transformConditionFirstLoop(LoopNode loop,
+			ShortCircuitRemover remover) {
+		ExpressionNode loopCondition = loop.getCondition();
+		StatementNode body = loop.getBody();
+		StatementNode ifElseNode;
+
+		loopCondition.remove();
+		body.remove();
+		ifElseNode = nodeFactory.newIfNode(loopCondition.getSource(),
+				loopCondition, body,
+				nodeFactory.newBreakNode(loop.getSource()));
+		loop.setBody(ifElseNode);
+		loop.setCondition(nodeFactory
+				.newBooleanConstantNode(loopCondition.getSource(), true));
+		remover.expressionOwner = ifElseNode;
+		return ifElseNode;
+	}
+
+	// do-while loop
+	private BlockItemNode transformBodyFirstLoop(LoopNode loop,
+			ShortCircuitRemover remover) {
+		// Non-trivial transformation, unrolling the first iteration:
+		// do stmt while (cond) ==>
+		// stmt do if (cond) stmt else break while(true);
+		StatementNode body = loop.getBody();
+		ExpressionNode loopCondition = loop.getCondition();
+		StatementNode ifElseNode;
+		StatementNode skipConditionEvaluation;
+		StatementNode newBlock; // unrolled iteration followed by the loop.
+		StatementNode newLoop;
+		Source source = loop.getSource();
+		IdentifierNode labelName = identifier(nextLabelName());
+		LabelNode label;
+
+		loopCondition.remove();
+		body.remove();
+		label = nodeFactory.newStandardLabelDeclarationNode(source, labelName,
+				body);
+		body = nodeFactory.newLabeledStatementNode(source, label, body);
+		ifElseNode = nodeFactory.newIfNode(loopCondition.getSource(),
+				loopCondition, body, nodeFactory.newBreakNode(source));
+		skipConditionEvaluation = nodeFactory.newGotoNode(source,
+				labelName.copy());
+		newLoop = nodeFactory.newWhileLoopNode(source,
+				nodeFactory.newBooleanConstantNode(source, true), ifElseNode,
+				null);
+		remover.expressionOwner = ifElseNode;
+
+		ASTNode parent = loop.parent();
+		int loopIdx = loop.childIndex();
+
+		loop.remove();
+		newBlock = nodeFactory.newCompoundStatementNode(source,
+				Arrays.asList(skipConditionEvaluation, newLoop));
+		parent.setChild(loopIdx, newBlock);
+		return ifElseNode;
+	}
 	/* **************** generating transformation statements ******************/
 	private void transformShortCircuitExpression(ShortCircuitRemover remover) {
 		String holderName = nextHolderName();
-		List<BlockItemNode> transfromStatements = new LinkedList<>();
+		LinkedList<BlockItemNode> transfromStatements = new LinkedList<>();
 		VariableDeclarationNode holderDecl = nodeFactory
 				.newVariableDeclarationNode(
 						remover.originalExpression.getSource(),
@@ -309,7 +446,7 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 				remover.originalExpression, holderName);
 
 		transfromStatements.add(holderDecl);
-		for (StatementNode evalStmt : evaluationStatements)
+		for (BlockItemNode evalStmt : evaluationStatements)
 			transfromStatements.add(evalStmt);
 		remover.complete(transfromStatements, holderName);
 	}
@@ -318,9 +455,6 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 			ExpressionNode expression, String holderName) {
 		if (isBoundedExpression(expression))
 			return Arrays.asList();
-
-		List<StatementNode> result = new LinkedList<>();
-
 		if (expression.expressionKind() == ExpressionKind.OPERATOR) {
 			OperatorNode oprtNode = (OperatorNode) expression;
 
@@ -340,10 +474,31 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 							right, holderName, source);
 			}
 		}
+
+		List<StatementNode> result = new LinkedList<>();
+		ExpressionNode expressionClone = expression.copy();
+
 		for (ASTNode child : expression.children())
-			if (child != null && child.nodeKind() == NodeKind.EXPRESSION)
-				result.addAll(transformShortCircuitExpressionWorker(
-						(ExpressionNode) child, holderName));
+			if (child != null && child.nodeKind() == NodeKind.EXPRESSION) {
+				List<StatementNode> subResult = transformShortCircuitExpressionWorker(
+						(ExpressionNode) child, holderName);
+
+				if (!subResult.isEmpty()) {
+					result.addAll(subResult);
+
+					expressionClone.setChild(child.childIndex(),
+							identifierExpression(holderName));
+				}
+			}
+		if (!result.isEmpty()) {
+			ExpressionNode assignSubExpression2Holder = nodeFactory
+					.newOperatorNode(expression.getSource(), Operator.ASSIGN,
+							Arrays.asList(identifierExpression(holderName),
+									expressionClone));
+
+			result.add(nodeFactory
+					.newExpressionStatementNode(assignSubExpression2Holder));
+		}
 		return result;
 	}
 

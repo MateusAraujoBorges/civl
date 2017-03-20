@@ -1,0 +1,13 @@
+#include <assert.h>
+int main() {
+  int x = 1;
+  int y = 2;
+  int z = 3;
+
+  while (( x == y+1 && y > z ) + 1 >= 1 && z < 5) {
+    z++;
+  }
+  assert(z == 5);
+  return 0;
+
+}
