@@ -3,10 +3,10 @@ $input int N=3;
 int y = 0;
 
 int proc(int pid) {
- L1:  y = $choose_int(2);  //p1 and p3
-  $atomic{ //p2
+ L1:  y = $choose_int(2); 
+  $atomic{ 
     y++;
-    //$assert(y!=N+1);
+    $assert(y!=N+1);
   }
   goto L1;
   return 0;
