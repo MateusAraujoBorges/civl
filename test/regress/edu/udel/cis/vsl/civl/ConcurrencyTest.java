@@ -93,6 +93,16 @@ public class ConcurrencyTest {
 	}
 
 	@Test
+	public void civl172miss() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("civl172miss.cvl")));
+	}
+
+	@Test
+	public void civl174miss() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("civl174miss.cvl")));
+	}
+
+	@Test
 	public void dining() {
 		assertTrue(
 				ui.run(VERIFY, "-inputBOUND=4", QUIET, filename("dining.cvl")));
