@@ -281,6 +281,9 @@ public class MemoryUnitExpressionAnalyzer {
 				for (Expression argument : call.arguments())
 					computeImpactMemoryUnitsOfExpression(writableVars, argument,
 							result);
+				if (call.lhs() != null)
+					computeImpactMemoryUnitsOfExpression(writableVars,
+							call.lhs(), result);
 				break;
 			}
 			case DOMAIN_ITERATOR :

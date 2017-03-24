@@ -57,9 +57,8 @@ public class ConcurrencyTest {
 
 	@Test
 	public void barrier2() {
-		assertTrue(ui.run(VERIFY,
-				// QUIET,
-				"-inputB=4", filename("barrier2.cvl")));
+		assertTrue(
+				ui.run(VERIFY, QUIET, "-inputB=4", filename("barrier2.cvl")));
 	}
 
 	@Test
@@ -90,6 +89,16 @@ public class ConcurrencyTest {
 	@Test
 	public void boundedBufferBad() {
 		assertFalse(ui.run(VERIFY, QUIET, filename("boundedBuffer_bad.cvl")));
+	}
+
+	@Test
+	public void civl172miss() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("civl172miss.cvl")));
+	}
+
+	@Test
+	public void civl174miss() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("civl174miss.cvl")));
 	}
 
 	@Test
