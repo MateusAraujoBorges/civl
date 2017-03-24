@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 
 import java.io.File;
 
@@ -30,7 +31,7 @@ public class CompareTest {
 	 */
 	@Test
 	public void unableExtractInt() {
-		assertFalse(ui.run("verify", filename("petscBad/ex2Driver.c"),
+		assertFalse(ui.run("verify", QUIET, filename("petscBad/ex2Driver.c"),
 				filename("petscBad/ex2a.c")));
 	}
 
