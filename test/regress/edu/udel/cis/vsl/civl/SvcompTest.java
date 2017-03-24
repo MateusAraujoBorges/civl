@@ -85,10 +85,4 @@ public class SvcompTest {
 		assertTrue(ui.run("verify  -svcomp16", TestConstants.QUIET,
 				filename("10_fmaxsym_cas_true-unreach-call.i")));
 	}
-
-	@Test
-	public void wwh_test() {
-		assertFalse(ui.run("verify", "-svcomp16", TestConstants.SHOW_PROGRAM,
-				filename("pthread-numerical-integration_true-unreach-call.i")));
-	}
 }
