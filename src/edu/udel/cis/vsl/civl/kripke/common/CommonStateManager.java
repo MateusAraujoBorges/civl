@@ -699,13 +699,13 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public void setAllSuccessorsOnStack(State state, boolean value) {
-		state.setAllSuccessorsOnStack(value);
+	public void setExpand(State state, boolean value) {
+		state.setExpand(value);
 	}
 
 	@Override
-	public boolean allSuccessorsOnStack(State state) {
-		return state.getAllSuccessorsOnStack();
+	public boolean expand(State state) {
+		return state.getExpand();
 	}
 
 	@Override
