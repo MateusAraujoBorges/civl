@@ -626,12 +626,15 @@ public class UserInterface {
 										+ " kind");
 				}
 			} catch (ABCException e) {
-				err.println(e);
+				if (!quiet)
+					err.println(e);
 			} catch (ABCRuntimeException e) {
 				// not supposed to happen, so show the gory details...
-				e.printStackTrace(err);
+				if (!quiet)
+					e.printStackTrace(err);
 			} catch (IOException e) {
-				err.println(e);
+				if (!quiet)
+					err.println(e);
 			} catch (MisguidedExecutionException e) {
 				// this is almost definitely a bug, so throw it:
 				throw new CIVLInternalException(
@@ -641,7 +644,9 @@ public class UserInterface {
 				// Something went wrong, report with full stack trace.
 				throw e;
 			} catch (CIVLException e) {
-				err.println(e);
+				if (!quiet) {
+					err.println(e);
+				}
 			}
 			err.flush();
 			return false;
@@ -765,6 +770,7 @@ public class UserInterface {
 	private boolean runVerify(String command, ModelTranslator modelTranslator)
 			throws CommandLineException, ABCException, IOException {
 		boolean result = false;
+		boolean isQuiet = modelTranslator.config.isQuiet();
 		Model model;
 		Verifier verifier;
 
@@ -781,13 +787,16 @@ public class UserInterface {
 			try {
 				result = verifier.run();
 			} catch (CIVLUnimplementedFeatureException unimplemented) {
-				verifier.terminateUpdater();
-				out.println();
-				out.println("Error: " + unimplemented.toString());
+				if (!isQuiet) {
+					verifier.terminateUpdater();
+					out.println();
+					out.println("Error: " + unimplemented.toString());
+				}
 				return false;
 			} catch (CIVLSyntaxException syntax) {
 				verifier.terminateUpdater();
-				err.println(syntax);
+				if (!isQuiet)
+					err.println(syntax);
 				return false;
 			} catch (CancellationException | ExecutionException
 					| InterruptedException e) {
@@ -814,7 +823,7 @@ public class UserInterface {
 					}
 				}
 			}
-			if (!modelTranslator.config.isQuiet()) {
+			if (!isQuiet) {
 				this.printCommand(out, command);
 				verifier.printStats();
 				printUniverseStats(out, modelTranslator.universe);
@@ -936,9 +945,11 @@ public class UserInterface {
 		try {
 			result = verifier.run_work();
 		} catch (CIVLUnimplementedFeatureException unimplemented) {
-			verifier.terminateUpdater();
-			out.println();
-			out.println("Error: " + unimplemented.toString());
+			if (!quiet) {
+				verifier.terminateUpdater();
+				out.println();
+				out.println("Error: " + unimplemented.toString());
+			}
 			return false;
 		} catch (Exception e) {
 			verifier.terminateUpdater();

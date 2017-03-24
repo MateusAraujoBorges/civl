@@ -67,8 +67,8 @@ public class BackendTest {
 
 	@Test
 	public void mpiSumArray() {
-		assertTrue(ui.run("show -showInputs", "-input_mpi_nprocs=3",
-				filename("mpiSumarray.cvl")));
+		assertTrue(ui.run("show", "-input_mpi_nprocs=3", QUIET,
+				NO_PRINTF, filename("mpiSumarray.cvl")));
 	}
 
 	@Test
