@@ -30,7 +30,7 @@ public class MPITranslationTest {
 
 	@Test
 	public void ring1() {
-		assertTrue(ui.run("verify", "-input_mpi_nprocs=2", // TestConstants.QUIET,
+		assertTrue(ui.run("verify", "-input_mpi_nprocs=2", TestConstants.QUIET,
 				filename("ring1.c")));
 	}
 
