@@ -1726,7 +1726,12 @@ public interface ModelFactory {
 	VariableExpression parProcsVariable(CIVLSource source, CIVLType type,
 			Scope scope);
 
-	FunctionIdentifierExpression waitallFunctionPointer();
+	/**
+	 * @return a {@link FunctionIdentifierExpression} for the system function
+	 *         <code>$wait</code>
+	 * 
+	 */
+	FunctionIdentifierExpression waitFunctionPointer();
 
 	FunctionIdentifierExpression elaborateDomainPointer();
 
