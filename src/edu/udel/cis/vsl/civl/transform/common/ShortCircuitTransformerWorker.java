@@ -37,11 +37,31 @@ import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 
+// TODO: it is suppose to be combined with side-effect remover but it reuses on
+// many methods in the BaseWork, so I make it separate from the side-effect 
+// remover.
 /**
  * <p>
- * This class is a program transformer for getting rid of short circuit
- * evaluations. i.e. Transform away the following three operators: logical AND,
- * logical OR and logical IMPLIES:
+ * <strong>Pre-condition:</strong> This transformer should be applied after the
+ * side-effect remover, so that non-error side effects are gone already.
+ * </p>
+ * <p>
+ * This class is a program transformer for getting rid of short circuit (SC)
+ * evaluations. i.e. If the evaluation of the first operand suffices to
+ * determine the result of the operation, the second operand will not evaluate.
+ * </p>
+ *
+ * <p>
+ * However, there is no difference between the short circuit evaluation and the
+ * evaluate-both-always evaluation IF there is no side-effects in the second
+ * operand. CIVL prefers the latter one because short circuit evaluation may
+ * exacerbate path explosion problem.
+ * </p>
+ * 
+ * <p>
+ * Thus, this transformer is responsible to transform away the following three
+ * operators: logical AND, logical OR and logical IMPLIES when necessary, i.e
+ * there is side effects in the second operand.
  * </p>
  *
  * <p>
@@ -61,33 +81,9 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
  * if (!_tmp_) _tmp_ = b;
  * </code>.
  * </p>
- * 
+ *
  * <p>
- * Defines a function
- * <code>stmt-sequence  transform(expr e, identifier var)</code>, it takes an
- * expression e which contains short-circuit operators and an identifier var,
- * transforms e into a sequence of statements S and guarantees the var holds the
- * evaluation of e after executing S.
- * 
- * <br>
- * Example: <code>
- * $assert( (a && b && !c) || d ==> e && a ); </code>will be transformed
- * as<code> 
- * let P0 denotes  (a && b && !c)
- * let P1 denotes d
- * let P2 denotes e && a
- * then it becomes 
- * $assert( P0 || P1 ==> P2 );
- * 
- *  _Bool tmp;
- *  
- *  transform(P0, &tmp);
- *  if (!tmp) transform(P1, &tmp);
- *  tmp = !tmp;
- *  if (!tmp)
- *     transform(P2, &tmp);
- *  $assert( tmp );
- * </code>
+ * <strong>The algorithm:</strong>
  *
  * </p>
  * 
@@ -98,25 +94,33 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 
 	static private final String SCTransformer_PREFIX = "_scc";
 
-	static private final String HOLDER_PREFIX = SCTransformer_PREFIX + "_h";
+	static private final String HOLDER_PREFIX = SCTransformer_PREFIX + "_var";
 
 	static private final String LABEL_PREFIX = SCTransformer_PREFIX + "_label";
 
 	private int generatedVariableCounter = 0;
 
-	private class ShortCircuitRemover {
+	/**
+	 * <p>
+	 * This class is a short-circuit operation that will be transformed into a
+	 * sequence of statements which contains no short circuit operations whose
+	 * second operand ha side effects.
+	 * </p>
+	 * 
+	 * @author ziqingluo
+	 *
+	 */
+	private class ShortCircuitOperation {
 		/**
-		 * The original expression in the old ASTree. it must refer to its'
-		 * parent.
+		 * The original short circuit operation ON the old ASTree.
 		 */
-		ExpressionNode originalExpression;
+		ExpressionNode scOperationExpression;
 
 		/**
-		 * The {@link BlockItemNode} who owns the original expression and marks
-		 * the position before where the transformed statements should be
-		 * inserted in.
+		 * The {@link BlockItemNode} which represents the position the in
+		 * program before where the transformed statements will be inserted.
 		 */
-		BlockItemNode expressionOwner;
+		BlockItemNode scExpressionOwner;
 
 		/**
 		 * A list of transformed statements, execution of which delivers the
@@ -132,21 +136,35 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		 */
 		String identifierName = null;
 
-		ShortCircuitRemover(ExpressionNode expression, BlockItemNode location) {
-			this.originalExpression = expression;
-			this.expressionOwner = location;
+		ShortCircuitOperation(ExpressionNode expression,
+				BlockItemNode location) {
+			this.scOperationExpression = expression;
+			this.scExpressionOwner = location;
 		}
 
+		/**
+		 * Set the transformed statements and the identifier name of the
+		 * variable which holds the evaluation.
+		 * 
+		 * @param statements
+		 *            The transformed statements.
+		 * @param identifierName
+		 *            The identifier name of the holder.
+		 */
 		void complete(LinkedList<BlockItemNode> statements,
 				String identifierName) {
 			this.statements = statements;
 			this.identifierName = identifierName;
 		}
 
+		/**
+		 * 
+		 * @return True iff the original short-circuit operation is a part of a
+		 *         loop condition.
+		 */
 		boolean isInLoopCondition() {
-			if (this.expressionOwner
-					.blockItemKind() == BlockItemKind.STATEMENT) {
-				return ((StatementNode) expressionOwner)
+			if (scExpressionOwner.blockItemKind() == BlockItemKind.STATEMENT) {
+				return ((StatementNode) scExpressionOwner)
 						.statementKind() == StatementKind.LOOP;
 			}
 			return false;
@@ -154,15 +172,28 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 
 		@Override
 		public String toString() {
-			return this.originalExpression.toString();
+			return this.scOperationExpression.toString();
 		}
 	}
 
+	/**
+	 * @param oprt
+	 *            An instance of a {@link Operator}
+	 * @return True iff the given {@link Operator} is a short circuit operator :
+	 *         logical AND, logical OR or IMPLIES.
+	 */
 	static private boolean isShortCircuitOperator(Operator oprt) {
 		return oprt == Operator.LAND || oprt == Operator.LOR
 				|| oprt == Operator.IMPLIES;
 	}
 
+	/**
+	 * @param expr
+	 *            An instance of a {@link ExpressionNode}.
+	 * @return True iff the given expression is either a quantified expression
+	 *         (exist or forall) or a lambda expression (lambda or array
+	 *         lambda).
+	 */
 	static private boolean isBoundedExpression(ExpressionNode expr) {
 		ExpressionKind kind = expr.expressionKind();
 
@@ -172,7 +203,13 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 				|| kind == ExpressionKind.ARRAY_LAMBDA;
 	}
 
-	static private boolean isArgumentOfWhen(ExpressionNode expr) {
+	/**
+	 * @param expr
+	 *            An instance of a {@link ExpressionNode}.
+	 * @return True if and only if the expression is a part of a guard in the
+	 *         program.
+	 */
+	static private boolean isGuard(ExpressionNode expr) {
 		if (expr.parent().nodeKind() == NodeKind.STATEMENT) {
 			StatementNode stmt = (StatementNode) expr.parent();
 
@@ -181,10 +218,16 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		return false;
 	}
 
+	/**
+	 * @return The next unique name for an artificial variable.
+	 */
 	private String nextHolderName() {
 		return HOLDER_PREFIX + generatedVariableCounter++;
 	}
 
+	/**
+	 * @return The next unique name for an artificial label.
+	 */
 	private String nextLabelName() {
 		return LABEL_PREFIX + generatedVariableCounter++;
 	}
@@ -194,42 +237,53 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		super(transformerName, astFactory);
 	}
 
+	/* ***************** The public interface ******************* */
 	@Override
 	public AST transform(AST ast) throws SyntaxException {
-		List<ShortCircuitRemover> removers = new LinkedList<>();
+		List<ShortCircuitOperation> scOperations = new LinkedList<>();
 		SequenceNode<BlockItemNode> rootNode = ast.getRootNode();
 
 		ast.release();
 		// Find out all expressions containing short-circuit operators:
 		for (BlockItemNode subTree : rootNode)
-			removers.addAll(searchSCInBlockItem(subTree));
+			scOperations.addAll(searchSCExpressionInSubTree(subTree));
 		// Generating transformed statements to deliver the short-circuit
-		// semantics:
-		for (ShortCircuitRemover remover : removers)
+		// evaluation:
+		for (ShortCircuitOperation remover : scOperations)
 			transformShortCircuitExpression(remover);
 
 		// Special transformation for loop condition:
+		// a map caches all loops whose conditions are transformed already:
 		Map<BlockItemNode, BlockItemNode> seenLoops = new HashMap<>();
 
-		for (ShortCircuitRemover remover : removers)
-			if (remover.isInLoopCondition()) {
+		for (ShortCircuitOperation remover : scOperations)
+			if (remover.isInLoopCondition())
 				transformShortCircuitLoopCondition(remover, seenLoops);
-			}
+
 		// Inserts transformed statements and replaces expressions with
 		// temporary variables:
-		for (ShortCircuitRemover remover : removers)
-			mountTransformedSCExpressions(remover);
+		for (ShortCircuitOperation remover : scOperations)
+			mountTransformedSCOperation(remover);
 		ast = astFactory.newAST(rootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
 		// ast.prettyPrint(System.out, true);
 		return ast;
 	}
 
-	void mountTransformedSCExpressions(ShortCircuitRemover remover) {
-		BlockItemNode location = remover.expressionOwner;
+	/**
+	 * <p>
+	 * Put the transformed statements of the given short circuit operation in
+	 * the appropriate position in the ASTree.
+	 * </p>
+	 * 
+	 * @param scOperation
+	 *            An instance of {@link ShortCircuitOperation}
+	 */
+	void mountTransformedSCOperation(ShortCircuitOperation scOperation) {
+		BlockItemNode location = scOperation.scExpressionOwner;
 		ExpressionNode holderExpression = identifierExpression(
-				remover.identifierName);
-		ExpressionNode originalExpression = remover.originalExpression;
+				scOperation.identifierName);
+		ExpressionNode originalExpression = scOperation.scOperationExpression;
 		ASTNode locationParent = location.parent();
 		int locationChildIdx = location.childIndex();
 
@@ -237,18 +291,18 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 			@SuppressWarnings("unchecked")
 			SequenceNode<BlockItemNode> seqNode = (SequenceNode<BlockItemNode>) locationParent;
 
-			seqNode.insertChildren(locationChildIdx, remover.statements);
+			seqNode.insertChildren(locationChildIdx, scOperation.statements);
 		} else if (locationParent instanceof CompoundStatementNode) {
 			CompoundStatementNode compound = (CompoundStatementNode) locationParent;
 
-			compound.insertChildren(locationChildIdx, remover.statements);
+			compound.insertChildren(locationChildIdx, scOperation.statements);
 		} else {
 			StatementNode locationReplacer;
 
 			location.remove();
-			remover.statements.add(location);
+			scOperation.statements.add(location);
 			locationReplacer = nodeFactory.newCompoundStatementNode(
-					location.getSource(), remover.statements);
+					location.getSource(), scOperation.statements);
 			locationParent.setChild(locationChildIdx, locationReplacer);
 		}
 		ASTNode oriExprParent = originalExpression.parent();
@@ -258,46 +312,65 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		oriExprParent.setChild(oriExprChildIdx, holderExpression);
 	}
 
-	private List<ShortCircuitRemover> searchSCInBlockItem(
+	/* *********** Short-circuit expression searching methods **************/
+	/**
+	 * <p>
+	 * Recursively searching the "biggest" short circuit operations, in a given
+	 * sub-tree of the ASTree. Here "biggest" means, in terms of a tree
+	 * structure, any returned short circuit operation is NOT a sub-tree of
+	 * another short circuit operation. (Of course it can have short circuit
+	 * operations as its descendant trees.)
+	 * </p>
+	 * 
+	 * @param subTree
+	 *            An instance of {@link BlockItemNode}, a sub-tree of the
+	 *            ASTree.
+	 * @return A list of short-circuit operations that needs to be transformed.
+	 */
+	private List<ShortCircuitOperation> searchSCExpressionInSubTree(
 			BlockItemNode subTree) {
 		if (subTree == null)
 			return Arrays.asList();
 
 		BlockItemKind kind = subTree.blockItemKind();
-		List<ShortCircuitRemover> SCRemovers = new LinkedList<>();
+		List<ShortCircuitOperation> SCRemovers = new LinkedList<>();
 
 		switch (kind) {
 			case STATEMENT :
-				SCExpressionSearcher(subTree, subTree, SCRemovers);
+				searchSCExpressionInSubTreeWorker(subTree, subTree, SCRemovers);
 				break;
 			case STRUCT_OR_UNION :
 				StructureOrUnionTypeNode typeNode = (StructureOrUnionTypeNode) subTree;
 
-				SCExpressionSearcher(typeNode, subTree, SCRemovers);
+				searchSCExpressionInSubTreeWorker(typeNode, subTree,
+						SCRemovers);
 				break;
 			case TYPEDEF :
 				TypedefDeclarationNode typedefNode = (TypedefDeclarationNode) subTree;
 
-				SCExpressionSearcher(typedefNode.getTypeNode(), subTree,
-						SCRemovers);
+				searchSCExpressionInSubTreeWorker(typedefNode.getTypeNode(),
+						subTree, SCRemovers);
 				break;
 			case ORDINARY_DECLARATION :
 				OrdinaryDeclarationNode declNode = (OrdinaryDeclarationNode) subTree;
 
-				SCExpressionSearcher(declNode.getTypeNode(), subTree,
-						SCRemovers);
+				searchSCExpressionInSubTreeWorker(declNode.getTypeNode(),
+						subTree, SCRemovers);
 				if (declNode
 						.ordinaryDeclarationKind() == OrdinaryDeclarationKind.FUNCTION_DEFINITION) {
 					FunctionDefinitionNode funcDefiNode = (FunctionDefinitionNode) declNode;
 
 					// No need to look at formal parameters because they will be
-					// treated as if expressions were replaced by *:
-					SCExpressionSearcher(funcDefiNode.getBody(), subTree,
-							SCRemovers);
+					// treated as if expressions were replaced by * (C11,
+					// 6.7.6.2, semantics 5):
+					searchSCExpressionInSubTreeWorker(funcDefiNode.getBody(),
+							subTree, SCRemovers);
 				}
 				break;
 			case PRAGMA :
-				// when are pragma nodes translated away ?
+				// TODO: when are pragma nodes translated away ?
+				// TODO: following kinds of block item nodes haven't been
+				// carefullt considered.
 			case STATIC_ASSERTION :
 				// no-op
 			case ENUMERATION :
@@ -310,8 +383,57 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		return SCRemovers;
 	}
 
+	/**
+	 * <p>
+	 * {@linkplain #searchSCExpressionInSubTree(BlockItemNode)}
+	 * </p>
+	 * 
+	 * @param subTree
+	 *            The root node of a sub ASTree.
+	 * @param location
+	 *            A {@link BlockItemNode} represents the current program
+	 *            location
+	 * @param output
+	 *            The output collection of {@link ShortCircuitOperation}s.
+	 */
+	private void searchSCExpressionInSubTreeWorker(ASTNode subTree,
+			BlockItemNode location, List<ShortCircuitOperation> output) {
+		for (ASTNode child : subTree.children()) {
+			if (child == null)
+				continue;
+			if (child.nodeKind() == NodeKind.STATEMENT)
+				searchSCExpressionInSubTreeWorker(child, (StatementNode) child,
+						output);
+			else if (child.nodeKind() == NodeKind.EXPRESSION) {
+				if (!isGuard((ExpressionNode) child))
+					searchSCInExpression((ExpressionNode) child, location,
+							output);
+			} else {
+				if (child instanceof BlockItemNode)
+					searchSCExpressionInSubTreeWorker(child,
+							(BlockItemNode) child, output);
+				else
+					searchSCExpressionInSubTreeWorker(child, location, output);
+			}
+		}
+	}
+
+	/**
+	 * <p>
+	 * BFSearch the first encountered,and should be transformed, short-circuit
+	 * operation, in the given expression. Add it into the output collection if
+	 * it exists.
+	 * </p>
+	 * 
+	 * @param expression
+	 *            The expression that will be searched.
+	 * @param location
+	 *            The program location where the expression belongs to.
+	 * @param output
+	 *            The output collection of {@link ShortCircuitOperation}s.
+	 */
 	private void searchSCInExpression(ExpressionNode expression,
-			BlockItemNode location, List<ShortCircuitRemover> output) {
+			BlockItemNode location, List<ShortCircuitOperation> output) {
 		if (isBoundedExpression(expression))
 			// Cannot transform quantified expressions.
 			return;
@@ -320,67 +442,82 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 			Operator oprt = ((OperatorNode) expression).getOperator();
 
 			if (isShortCircuitOperator(oprt)) {
-				output.add(new ShortCircuitRemover(expression, location));
-				// Never search sub-expressions
+				output.add(new ShortCircuitOperation(expression, location));
+				// Never search sub-expressions of a saved operation
 				return;
 			}
 		}
-		SCExpressionSearcher(expression, location, output);
+		searchSCExpressionInSubTreeWorker(expression, location, output);
 	}
 
-	private void SCExpressionSearcher(ASTNode node, BlockItemNode location,
-			List<ShortCircuitRemover> output) {
-		for (ASTNode child : node.children()) {
-			if (child == null)
-				continue;
-			if (child.nodeKind() == NodeKind.STATEMENT)
-				SCExpressionSearcher(child, (StatementNode) child, output);
-			else if (child.nodeKind() == NodeKind.EXPRESSION) {
-				if (!isArgumentOfWhen((ExpressionNode) child))
-					searchSCInExpression((ExpressionNode) child, location,
-							output);
-			} else {
-				if (child instanceof BlockItemNode)
-					SCExpressionSearcher(child, (BlockItemNode) child, output);
-				else
-					SCExpressionSearcher(child, location, output);
-			}
-		}
-	}
-
-	/* *********** Special Transformation for SC loop conditions **************/
-	private void transformShortCircuitLoopCondition(ShortCircuitRemover remover,
+	/* ******* Short circuit in loop conditions transformation method *********/
+	/**
+	 * <p>
+	 * The transformed statements for short-circuit expressions in loop
+	 * conditions are required be placed in appropriate locations so that it
+	 * will be executed in each iteration. This method will transform a loop
+	 * (referred by a short circuit operation) into another form so that
+	 * eventually after the short-circuit transformation, it conforms the
+	 * aforementioned requirements.
+	 * </p>
+	 * 
+	 * <p>
+	 * See:<br>
+	 * {@link #transformConditionFirstLoop(LoopNode, ShortCircuitOperation)}<br>
+	 * {@link #transformBodyFirstLoop(LoopNode, ShortCircuitOperation)}
+	 * </p>
+	 * 
+	 * @param scOp
+	 *            An instance of {@link ShortCircuitOperation}.
+	 * @param seenLoops
+	 *            A cache for transformed loops. A loop referred by multiple
+	 *            short circuit operations shall only be transformed once.
+	 */
+	private void transformShortCircuitLoopCondition(ShortCircuitOperation scOp,
 			Map<BlockItemNode, BlockItemNode> seenLoops) {
-		LoopNode loop = (LoopNode) remover.expressionOwner;
+		LoopNode loop = (LoopNode) scOp.scExpressionOwner;
 		BlockItemNode newOwner;
 
-		// Manipulate while loop and for loop as follows:
-		// while (cond) stmt ==> while (true) if (!cond) break; else stmt
-		// for (cond) stmt ==> for (true) if (!cond) break; else stmt
-		// do_while doen't need transformation.
-		// For the first two cases, the evaluation of the short-circuit
-		// expression will be inserted immediately before the if-statements; For
-		// the third one, usually it will be inserted at the end of the loop.
-		// However, if the loop contains continue, the transformation will
-		// non-trivially make it be as follows:
-		// do stmt while(cond) ==> stmt while(true) if (!cond) break; else
-		// stmt;
 		if (seenLoops.containsKey(loop)) {
 			newOwner = seenLoops.get(loop);
 
-			remover.expressionOwner = newOwner;
+			scOp.scExpressionOwner = newOwner;
 			return;
 		}
 		if (loop.getKind() != LoopKind.DO_WHILE)
-			newOwner = transformConditionFirstLoop(loop, remover);
+			newOwner = transformConditionFirstLoop(loop, scOp);
 		else
-			newOwner = transformBodyFirstLoop(loop, remover);
+			newOwner = transformBodyFirstLoop(loop, scOp);
 		seenLoops.put(loop, newOwner);
 	}
 
-	// while, for loops
+	/**
+	 * <p>
+	 * For "for" and "while" loops, the transformation follows such an idea:
+	 * <code>Before: 
+	 * loop ( condition; increment ) stmt
+	 * </code>
+	 * 
+	 * <code>After:
+	 * loop ( true ) {
+	 *   if (condition) {stmt increment}
+	 *   else break;
+	 * }
+	 * </code> <br>
+	 * After the transformation, the short circuit expression is a part of a
+	 * branch condition instead of a loop condition.
+	 * </p>
+	 * 
+	 * @param loop
+	 *            The loop whose condition is referred by a
+	 *            {@link ShortCircuitOperation}.
+	 * @param scOp
+	 *            An instance of {@link ShortCircuitOperation}.
+	 * @return The if-else branch node that the short circuit operation refers
+	 *         to.
+	 */
 	private BlockItemNode transformConditionFirstLoop(LoopNode loop,
-			ShortCircuitRemover remover) {
+			ShortCircuitOperation scOp) {
 		ExpressionNode loopCondition = loop.getCondition();
 		StatementNode body = loop.getBody();
 		StatementNode ifElseNode;
@@ -393,21 +530,45 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		loop.setBody(ifElseNode);
 		loop.setCondition(nodeFactory
 				.newBooleanConstantNode(loopCondition.getSource(), true));
-		remover.expressionOwner = ifElseNode;
+		scOp.scExpressionOwner = ifElseNode;
 		return ifElseNode;
 	}
 
-	// do-while loop
+	/**
+	 * <p>
+	 * For "do-while" loops, the transformation follows such an idea:
+	 * <code>Before: 
+	 * do stmt while (cond);
+	 * </code>
+	 * 
+	 * <code>After:
+	 * goto L;
+	 * while (true) 
+	 *    if (cond) 
+	 *     L: stmt
+	 *    else break;  
+	 * </code> <br>
+	 * After the transformation, the short circuit expression is a part of a
+	 * branch condition instead of a loop condition. Note that here we don't
+	 * unroll the first iteration of the body in case there is any loop jumpers
+	 * inside the body.
+	 * </p>
+	 * 
+	 * @param loop
+	 *            The loop whose condition is referred by a
+	 *            {@link ShortCircuitOperation}.
+	 * @param scOp
+	 *            An instance of {@link ShortCircuitOperation}.
+	 * @return The if-else branch node that the short circuit operation refers
+	 *         to.
+	 */
 	private BlockItemNode transformBodyFirstLoop(LoopNode loop,
-			ShortCircuitRemover remover) {
-		// Non-trivial transformation, unrolling the first iteration:
-		// do stmt while (cond) ==>
-		// stmt do if (cond) stmt else break while(true);
+			ShortCircuitOperation remover) {
 		StatementNode body = loop.getBody();
 		ExpressionNode loopCondition = loop.getCondition();
 		StatementNode ifElseNode;
 		StatementNode skipConditionEvaluation;
-		StatementNode newBlock; // unrolled iteration followed by the loop.
+		StatementNode newBlock;
 		StatementNode newLoop;
 		Source source = loop.getSource();
 		IdentifierNode labelName = identifier(nextLabelName());
@@ -425,7 +586,7 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		newLoop = nodeFactory.newWhileLoopNode(source,
 				nodeFactory.newBooleanConstantNode(source, true), ifElseNode,
 				null);
-		remover.expressionOwner = ifElseNode;
+		remover.scExpressionOwner = ifElseNode;
 
 		ASTNode parent = loop.parent();
 		int loopIdx = loop.childIndex();
@@ -436,24 +597,44 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		parent.setChild(loopIdx, newBlock);
 		return ifElseNode;
 	}
-	/* **************** generating transformation statements ******************/
-	private void transformShortCircuitExpression(ShortCircuitRemover remover) {
+
+	/* **************** Short circuit transformation methods ******************/
+	/**
+	 * <p>
+	 * Transform a short-circuit operation into a sequence of statements which
+	 * deliver the evaluation of it.
+	 * 
+	 * @param scOp
+	 *            An instance of {@link ShortCircuitOperation}
+	 */
+	private void transformShortCircuitExpression(ShortCircuitOperation scOp) {
 		String holderName = nextHolderName();
 		LinkedList<BlockItemNode> transfromStatements = new LinkedList<>();
 		VariableDeclarationNode holderDecl = nodeFactory
 				.newVariableDeclarationNode(
-						remover.originalExpression.getSource(),
+						scOp.scOperationExpression.getSource(),
 						identifier(holderName), basicType(BasicTypeKind.BOOL));
-		List<StatementNode> evaluationStatements = transformShortCircuitExpressionWorker(
-				remover.originalExpression, holderName);
+		List<BlockItemNode> evaluationStatements = transformShortCircuitExpressionWorker(
+				scOp.scOperationExpression, holderName);
 
 		transfromStatements.add(holderDecl);
 		for (BlockItemNode evalStmt : evaluationStatements)
 			transfromStatements.add(evalStmt);
-		remover.complete(transfromStatements, holderName);
+		scOp.complete(transfromStatements, holderName);
 	}
 
-	private List<StatementNode> transformShortCircuitExpressionWorker(
+	/**
+	 * 
+	 * {@linkplain #transformShortCircuitExpression(ShortCircuitOperation)}.
+	 * 
+	 * @param expression
+	 *            An expression in the short circuit operation.
+	 * @param holderName
+	 *            The identifier name of the artificial variable which evetually
+	 *            will hold the evaluation of the short circuit operation.
+	 * @return A sequence of the transformed statements.
+	 */
+	private List<BlockItemNode> transformShortCircuitExpressionWorker(
 			ExpressionNode expression, String holderName) {
 		if (isBoundedExpression(expression))
 			return Arrays.asList();
@@ -477,37 +658,65 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 			}
 		}
 
-		List<StatementNode> result = new LinkedList<>();
-		ExpressionNode expressionClone = expression.copy();
+		// If the expression is not a short circuit expression, a new artificial
+		// variable is needed to hold the evaluation of it.
+		List<BlockItemNode> result = new LinkedList<>();
+		Source source = expression.getSource();
 
 		for (ASTNode child : expression.children())
 			if (child != null && child.nodeKind() == NodeKind.EXPRESSION) {
-				List<StatementNode> subResult = transformShortCircuitExpressionWorker(
-						(ExpressionNode) child, holderName);
+				String subHolderName = nextHolderName();
+				List<BlockItemNode> subResult = transformShortCircuitExpressionWorker(
+						(ExpressionNode) child, subHolderName);
 
 				if (!subResult.isEmpty()) {
-					result.addAll(subResult);
+					VariableDeclarationNode subHolderDecl = nodeFactory
+							.newVariableDeclarationNode(source,
+									identifier(subHolderName),
+									nodeFactory.newBasicTypeNode(source,
+											BasicTypeKind.BOOL));
+					StatementNode assignHolder = nodeFactory
+							.newExpressionStatementNode(nodeFactory
+									.newOperatorNode(source, Operator.ASSIGN,
+											Arrays.asList(
+													identifierExpression(
+															holderName),
+													identifierExpression(
+															subHolderName))));
 
-					expressionClone.setChild(child.childIndex(),
-							identifierExpression(holderName));
+					result.add(subHolderDecl);
+					result.addAll(subResult);
+					result.add(assignHolder);
 				}
 			}
-		if (!result.isEmpty()) {
-			ExpressionNode assignSubExpression2Holder = nodeFactory
-					.newOperatorNode(expression.getSource(), Operator.ASSIGN,
-							Arrays.asList(identifierExpression(holderName),
-									expressionClone));
-
-			result.add(nodeFactory
-					.newExpressionStatementNode(assignSubExpression2Holder));
-		}
 		return result;
 	}
 
-	private List<StatementNode> transformShortCircuitExpressionWorker_LAND(
+	/**
+	 * <p>
+	 * Transform a logical AND expression <code>A && B</code> to <code>
+	 * tmp = A;
+	 * if (tmp)
+	 *    tmp = B;
+	 * </code>
+	 * </p>
+	 * 
+	 * @param left
+	 *            The left operand of the LAND operation
+	 * @param right
+	 *            The right operand of the LAND operation
+	 * @param holderName
+	 *            The identifier name of an artificial variable which will hold
+	 *            the evaluation of the LAND operation
+	 * @param source
+	 *            The {@link Source} related to the LAND operation
+	 * @return A sequence statements which deliver the evaluation of the LAND
+	 *         operation.
+	 */
+	private List<BlockItemNode> transformShortCircuitExpressionWorker_LAND(
 			ExpressionNode left, ExpressionNode right, String holderName,
 			Source source) {
-		List<StatementNode> results;
+		List<BlockItemNode> results;
 		ExpressionNode holderExpr = identifierExpression(holderName);
 		StatementNode rightEvaluation;
 		IfNode ifNode;
@@ -530,10 +739,31 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		return results;
 	}
 
-	private List<StatementNode> transformShortCircuitExpressionWorker_LOR(
+	/**
+	 * <p>
+	 * Transform a logical OR expression <code>A || B</code> to <code>
+	 * tmp = A;
+	 * if (!tmp)
+	 *    tmp = B;
+	 * </code>
+	 * </p>
+	 * 
+	 * @param left
+	 *            The left operand of the LOR operation
+	 * @param right
+	 *            The right operand of the LOR operation
+	 * @param holderName
+	 *            The identifier name of an artificial variable which will hold
+	 *            the evaluation of the LOR operation
+	 * @param source
+	 *            The {@link Source} related to the LOR operation
+	 * @return A sequence statements which deliver the evaluation of the LOR
+	 *         operation.
+	 */
+	private List<BlockItemNode> transformShortCircuitExpressionWorker_LOR(
 			ExpressionNode left, ExpressionNode right, String holderName,
 			Source source) {
-		List<StatementNode> result;
+		List<BlockItemNode> result;
 		StatementNode rightEvaluation;
 		ExpressionNode holderExpr = identifierExpression(holderName);
 		IfNode ifNode;
@@ -559,10 +789,31 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 
 	}
 
-	private List<StatementNode> transformShortCircuitExpressionWorker_IMPLIES(
+	/**
+	 * <p>
+	 * Transform a logical IMPLIES expression <code>A => B</code> to <code>
+	 * tmp = !A;
+	 * if (!tmp)
+	 *    tmp = B;
+	 * </code>
+	 * </p>
+	 * 
+	 * @param left
+	 *            The left operand of the IMPLIES operation
+	 * @param right
+	 *            The right operand of the IMPLIES operation
+	 * @param holderName
+	 *            The identifier name of an artificial variable which will hold
+	 *            the evaluation of the IMPLIES operation
+	 * @param source
+	 *            The {@link Source} related to the IMPLIES operation
+	 * @return A sequence statements which deliver the evaluation of the IMPLIES
+	 *         operation.
+	 */
+	private List<BlockItemNode> transformShortCircuitExpressionWorker_IMPLIES(
 			ExpressionNode left, ExpressionNode right, String holderName,
 			Source source) {
-		List<StatementNode> result;
+		List<BlockItemNode> result;
 		StatementNode rightEvaluation;
 		ExpressionNode holderExpr = identifierExpression(holderName);
 		ExpressionNode notHolder = nodeFactory.newOperatorNode(
@@ -593,17 +844,31 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		return result;
 	}
 
+	/**
+	 * <p>
+	 * Transform the right operand of a short circuit operation. Wraps the
+	 * translated statements with a pair of curly braces iff there are more than
+	 * one statements. Return one {@link StatementNode}.
+	 * </p>
+	 * 
+	 * @param operand
+	 *            The right operand of a short circuit operation.
+	 * @param holderName
+	 *            The identifier name of an artificial variable which holds the
+	 *            evaluation of the operand.
+	 * @return A statement which delivers the evaluation of the operand.
+	 */
 	private StatementNode transformSCRightOperand(ExpressionNode operand,
 			String holderName) {
 		Source source = operand.getSource();
-		List<StatementNode> result = transformShortCircuitExpressionWorker(
+		List<BlockItemNode> result = transformShortCircuitExpressionWorker(
 				operand, holderName);
 		StatementNode evaluation;
 
 		if (result.isEmpty())
 			return null;
 		else if (result.size() == 1)
-			evaluation = result.get(0);
+			evaluation = (StatementNode) result.get(0);
 		else {
 			List<BlockItemNode> cast = new LinkedList<>();
 
@@ -614,10 +879,24 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		return evaluation;
 	}
 
-	private List<StatementNode> transformSCLeftOperand(ExpressionNode operand,
+	/**
+	 * <p>
+	 * Transform a left operand of a short circuit operation. If the left
+	 * operand contains no short circuit operations, assign it to the holder
+	 * variable.
+	 * </p>
+	 * 
+	 * @param operand
+	 *            The left operand of a short circuit operation.
+	 * @param holderName
+	 *            The identifier name of an artificial variable which holds the
+	 *            evaluation of the operand.
+	 * @return A statement which delivers the evaluation of the operand.
+	 */
+	private List<BlockItemNode> transformSCLeftOperand(ExpressionNode operand,
 			String holderName) {
 		Source source = operand.getSource();
-		List<StatementNode> results = new LinkedList<>();
+		List<BlockItemNode> results = new LinkedList<>();
 
 		results.addAll(
 				transformShortCircuitExpressionWorker(operand, holderName));
