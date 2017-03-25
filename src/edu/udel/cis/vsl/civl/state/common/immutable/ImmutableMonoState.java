@@ -144,7 +144,7 @@ public class ImmutableMonoState implements State {
 	 * True iff all successors of the state during search are on the search
 	 * stack.
 	 */
-	private boolean allSuccessorsOnStack = true;
+	private boolean expand = true;
 
 	/**
 	 * True iff all successors resulting from the enabled transitions have been
@@ -625,13 +625,13 @@ public class ImmutableMonoState implements State {
 	}
 
 	@Override
-	public void setAllSuccessorsOnStack(boolean value) {
-		allSuccessorsOnStack = value;
+	public void setExpand(boolean value) {
+		expand = value;
 	}
 
 	@Override
-	public boolean getAllSuccessorsOnStack() {
-		return allSuccessorsOnStack;
+	public boolean getExpand() {
+		return expand;
 	}
 
 	@Override

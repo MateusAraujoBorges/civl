@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -62,13 +61,6 @@ public class SvcompTest {
 				filename("stack_longest_true-unreach-call.i")));
 	}
 
-	@Ignore
-	@Test
-	public void gcd_true() throws ABCException {
-		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
-				filename("gcd_true-unreach-call_true-termination.i")));
-	}
-
 	// 28_buggy_simple_loop1_vf_false-unreach-call.i
 	@Test
 	public void buggy_simple_28() throws ABCException {
@@ -92,11 +84,5 @@ public class SvcompTest {
 	public void fmaxsym_cas_true() {
 		assertTrue(ui.run("verify  -svcomp16", TestConstants.QUIET,
 				filename("10_fmaxsym_cas_true-unreach-call.i")));
-	}
-
-	@Test
-	public void wwh_test() {
-		assertFalse(ui.run("verify", "-svcomp16", TestConstants.SHOW_PROGRAM,
-				filename("pthread-numerical-integration_true-unreach-call.i")));
 	}
 }

@@ -170,4 +170,15 @@ public class CommonReturnStatement extends CommonStatement
 			return expression.containsHere();
 		return false;
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj))
+			if (obj instanceof CommonReturnStatement) {
+				CommonReturnStatement ret = (CommonReturnStatement) obj;
+
+				return this.nullableObjectEquals(expression, ret.expression);
+			}
+		return false;
+	}
 }

@@ -7,6 +7,7 @@ import java.io.File;
 
 import org.junit.Test;
 
+import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class Svcomp17Test {
@@ -132,6 +133,12 @@ public class Svcomp17Test {
 		assertTrue(
 				ui.run("verify -svcomp17 -showProgram=false -errorBound=10 -errorStateEquiv=FULL",
 						filename("gcd_1_true-unreach-call.i")));
+	}
+
+	@Test
+	public void gcd_true() throws ABCException {
+		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
+				filename("gcd_true-unreach-call_true-termination.i")));
 	}
 
 	@Test

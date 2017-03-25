@@ -706,7 +706,7 @@ public class ModelBuilderWorker {
 		for (CIVLFunction f : this.runProcFunctions.keySet())
 			model.addFunction(f);
 		if (this.parProcFunctions.size() > 0 && !hasWaitall) {
-			model.addFunction(factory.waitallFunctionPointer().function());
+			model.addFunction(factory.waitFunctionPointer().function());
 		}
 		// if (this.elaborateDomainFunction.size() > 0
 		// && needToAddElaborateDomainFunction) {

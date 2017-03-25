@@ -53,4 +53,15 @@ public class CommonIfElseBranchStatement extends CommonNoopStatement {
 			return "FALSE_BRANCH_IF";
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			if (obj instanceof CommonIfElseBranchStatement) {
+				CommonIfElseBranchStatement other = (CommonIfElseBranchStatement) obj;
+
+				return isIfBranch == other.isIfBranch;
+			}
+		}
+		return false;
+	}
 }

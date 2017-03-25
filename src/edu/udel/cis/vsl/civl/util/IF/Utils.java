@@ -2,7 +2,7 @@ package edu.udel.cis.vsl.civl.util.IF;
 
 import java.math.BigInteger;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Utils {
@@ -104,22 +104,28 @@ public class Utils {
 	}
 
 	/**
-	 * returns the difference of first and second (first-second)
 	 * 
-	 * @param first
-	 * @param second
-	 * @return
+	 * @param minuend
+	 * @param subtrahend
+	 * @return A collection subtraction: <code>{minuend} - {subtrahend}</code>
 	 */
-	public static Collection<? extends Object> difference(
-			Collection<? extends Object> first,
-			Collection<? extends Object> second) {
-		Collection<Object> set = new HashSet<>();
+	public static Collection<? extends Object> subtract(
+			Collection<? extends Object> minuend,
+			Collection<? extends Object> subtrahend) {
+		Collection<Object> result = new LinkedList<>();
 
-		for (Object element : first) {
-			if (!second.contains(element))
-				set.add(element);
+		for (Object minuendEle : minuend) {
+			boolean contains = false;
+
+			for (Object subtrahendEle : subtrahend)
+				if (minuendEle.equals(subtrahendEle)) {
+					contains = true;
+					break;
+				}
+			if (!contains)
+				result.add(minuendEle);
 		}
-		return set;
+		return result;
 	}
 
 	/**
@@ -153,9 +159,9 @@ public class Utils {
 
 	public static BigInteger myMathPower(int base, int exponent) {
 		if (exponent == 0)
-			return new BigInteger(1+ "");
+			return new BigInteger(1 + "");
 		if (exponent == 1)
-			return new BigInteger(base+ "");
+			return new BigInteger(base + "");
 
 		BigInteger half = myMathPower(base, exponent / 2);
 

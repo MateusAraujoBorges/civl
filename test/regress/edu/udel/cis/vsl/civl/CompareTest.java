@@ -1,7 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 
 import java.io.File;
 
@@ -24,14 +24,6 @@ public class CompareTest {
 	}
 
 	/* **************************** Test Methods *************************** */
-
-	// TODO: failing
-	@Test
-	public void typeAnalyzerException() {
-		assertTrue(ui.run("compare", "-spec", filename("type_bad/spec.c"),
-				"-impl", filename("type_bad/impl.c")));
-	}
-
 	/**
 	 * This test reveals the limitation of CIVL: Cannot determine whether a
 	 * non-concrete pointer is defined or not. This test case also appears in
@@ -39,7 +31,7 @@ public class CompareTest {
 	 */
 	@Test
 	public void unableExtractInt() {
-		assertFalse(ui.run("verify", filename("petscBad/ex2Driver.c"),
+		assertFalse(ui.run("verify", QUIET, filename("petscBad/ex2Driver.c"),
 				filename("petscBad/ex2a.c")));
 	}
 

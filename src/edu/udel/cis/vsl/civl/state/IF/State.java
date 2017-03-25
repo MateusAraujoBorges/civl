@@ -351,14 +351,14 @@ public interface State {
 	 *            The value that is going to be assigned to the
 	 *            "all-successors-on-stack" flag of a state.
 	 */
-	void setAllSuccessorsOnStack(boolean value);
+	void setExpand(boolean value);
 
 	/**
 	 * Get the "all-successors-on-stack" flag of a state.
 	 * 
 	 * @return The value of the "all-successors-on-stack".
 	 */
-	boolean getAllSuccessorsOnStack();
+	boolean getExpand();
 
 	/**
 	 * Get the "all-successors-on-stack" flag of a state.

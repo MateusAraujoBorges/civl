@@ -17,6 +17,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.OrdinaryDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.OrdinaryDeclarationNode.OrdinaryDeclarationKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.TypedefDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
@@ -32,6 +33,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode.StatementKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
+import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 
@@ -629,5 +631,68 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 			results.add(initHolder);
 		}
 		return results;
+	}
+
+	/* **************** Error side-effect over-approximation ******************/
+	private boolean errorSideEffectOverapproximantion(
+			ExpressionNode expression) {
+		return false;
+	}
+
+	private boolean divByZeroOverapproximantion(ExpressionNode expression) {
+		boolean divByZero = false;
+
+		if (expression.expressionKind() == ExpressionKind.OPERATOR) {
+			Operator oprt = ((OperatorNode) expression).getOperator();
+
+			if (oprt == Operator.DIV || oprt == Operator.MOD) {
+				ExpressionNode denominator = ((OperatorNode) expression)
+						.getArgument(1);
+
+				if (denominator.isConstantExpression()) {
+					ConstantNode constant = (ConstantNode) denominator;
+
+					divByZero = constant.getConstantValue()
+							.isZero() != Answer.NO;
+				}
+			}
+		}
+		if (divByZero)
+			return true;
+		for (ASTNode node : expression.children())
+			if (node.nodeKind() == NodeKind.EXPRESSION) {
+				divByZero = divByZeroOverapproximantion((ExpressionNode) node);
+				if (divByZero)
+					return true;
+			}
+		return false;
+	}
+
+	private boolean pointerAdditionOverapproximation(
+			ExpressionNode expression) {
+		boolean pointerAddition = false;
+
+		return false;
+	}
+
+	private boolean castOverapproximation(ExpressionNode expression) {
+		boolean pointerAddition = false;
+
+		return false;
+	}
+
+	private static boolean containsPointerAdd(ExpressionNode expression) {
+		ExpressionKind kind = expression.expressionKind();
+
+		switch (kind) {
+			case ARROW :
+				break;
+			case OPERATOR :
+				break;
+			default :
+				break;
+
+		}
+		return false;
 	}
 }

@@ -64,4 +64,16 @@ public class CommonSwitchBranchStatement extends CommonNoopStatement {
 			return "CASE_" + label.toString();
 		}
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			if (obj instanceof CommonSwitchBranchStatement) {
+				CommonSwitchBranchStatement other = (CommonSwitchBranchStatement) obj;
+
+				return this.nullableObjectEquals(label, other.label);
+			}
+		}
+		return false;
+	}
 }

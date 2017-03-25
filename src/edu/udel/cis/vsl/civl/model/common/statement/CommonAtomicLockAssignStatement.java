@@ -25,7 +25,8 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
  * 
  */
 public class CommonAtomicLockAssignStatement extends CommonAssignStatement
-		implements AtomicLockAssignStatement {
+		implements
+			AtomicLockAssignStatement {
 
 	/* *************************** Instance Fields ************************* */
 
@@ -51,8 +52,8 @@ public class CommonAtomicLockAssignStatement extends CommonAssignStatement
 	 *            The atomic kind of this statement
 	 */
 	public CommonAtomicLockAssignStatement(CIVLSource civlSource, Scope hscope,
-			Scope lscope, Location source, Expression guard,
-			boolean isEntering, LHSExpression lhs, Expression rhs) {
+			Scope lscope, Location source, Expression guard, boolean isEntering,
+			LHSExpression lhs, Expression rhs) {
 		super(civlSource, hscope, lscope, source, guard, lhs, rhs, false);
 		this.enter = isEntering;
 	}
@@ -94,4 +95,15 @@ public class CommonAtomicLockAssignStatement extends CommonAssignStatement
 		return !this.enter;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			if (obj instanceof CommonAtomicLockAssignStatement) {
+				CommonAtomicLockAssignStatement other = (CommonAtomicLockAssignStatement) obj;
+
+				return other.enter == enter;
+			}
+		}
+		return false;
+	}
 }

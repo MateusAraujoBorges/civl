@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.7.2
+                               v1.7.4
 
 ------------------------------ Overview -------------------------------
 
@@ -46,8 +46,14 @@ General Public License.  However, the libraries used by CIVL
 (and incorporated into the complete distribution) use various
 licenses.  See directory licenses for the license of each component.
 
--------------------------- Updates from v1.7.1 -------------------------
-- This is a minor release for VMCAI17 paper
+-------------------------- Updates from v1.7.3 -------------------------
+- Fixed a side-effect remover defect in Struct initialization.
+- Fixed a bug which will lead to a null pointer exception in quantified expressions.
+- Fixed a bug of making assumptions on sizeof primitive types.
+- Improved the interpretation of "unsigned char" type.
+- Improve the detection of dereferencing pointers to undefined values.
+- Fixed bugs in SARL's Interval objects.
+
    
 ------------------------- Binary Installation -------------------------
 

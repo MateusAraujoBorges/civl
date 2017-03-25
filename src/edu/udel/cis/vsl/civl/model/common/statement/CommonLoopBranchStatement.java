@@ -6,8 +6,9 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.LoopBranchStatement;
 
-public class CommonLoopBranchStatement extends CommonNoopStatement implements
-		LoopBranchStatement {
+public class CommonLoopBranchStatement extends CommonNoopStatement
+		implements
+			LoopBranchStatement {
 
 	/* *************************** Instance Fields ************************* */
 
@@ -65,5 +66,15 @@ public class CommonLoopBranchStatement extends CommonNoopStatement implements
 	@Override
 	public LoopContract getLoopContract() {
 		return loopContract;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (super.equals(obj)) {
+			CommonLoopBranchStatement other = (CommonLoopBranchStatement) obj;
+
+			return other.isTrueBranch == isTrueBranch;
+		}
+		return false;
 	}
 }

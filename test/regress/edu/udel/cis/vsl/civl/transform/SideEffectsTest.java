@@ -54,7 +54,8 @@ public class SideEffectsTest {
 
 	@Test
 	public void structWithDiv() {
-		assertTrue(ui.run("verify", filename("structWithDiv.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				filename("structWithDiv.cvl")));
 	}
 
 	@Test

@@ -137,6 +137,7 @@ OPTION_NAME
     | '-preproc'
     | '-procBound'
     | '-quiet'
+    | '-intOperationTransformer'
     | '-random'
     | '-saveStates'
     | '-seed'
