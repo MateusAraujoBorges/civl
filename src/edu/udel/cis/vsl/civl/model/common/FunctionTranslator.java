@@ -1073,6 +1073,14 @@ public class FunctionTranslator {
 			Expression rhs;
 
 			rhs = translateExpressionNode(rhsNode, scope, true);
+			// The bool->int conversion is something ABC don't do because there
+			// is no bool type in C language. But CIVL model builder should take
+			// care of this:
+			if (rhs.getExpressionType().isBoolType()
+					&& lhs.getExpressionType().isIntegerType()) {
+				rhs = modelFactory.castExpression(rhs.getSource(),
+						lhs.getExpressionType(), rhs);
+			}
 			location = modelFactory.location(lhs.getSource(), scope);
 			assign = modelFactory.assignStatement(source, location, lhs, rhs,
 					isInitializer);
@@ -1581,9 +1589,7 @@ public class FunctionTranslator {
 		ExpressionNode rhs = assignNode.getArgument(1);
 		Expression leftExpression;
 
-		// this.isLHS = true;
 		leftExpression = translateExpressionNode(lhs, scope, true);
-		// this.isLHS = false;
 		assert assignNode.getOperator() == Operator.ASSIGN;
 		if (!(leftExpression instanceof LHSExpression))
 			throw new CIVLInternalException(

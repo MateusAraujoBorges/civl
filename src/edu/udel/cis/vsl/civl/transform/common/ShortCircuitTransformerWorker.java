@@ -33,6 +33,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode.StatementKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
+import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -83,8 +84,55 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
  * </p>
  *
  * <p>
- * <strong>The algorithm:</strong>
+ * <strong>The algorithm:</strong> <code>
+ * input : an expression e, a boolean variable v. 
+ * output : a sequence of statements S.
+ * 
+ * transform (e, v) : S 
+ *    requires: e is an expression, v has boolean type;
+ *    ensures:  if e contains any short-circuit operator, S is non-empty;
+ *              and after the execution of S, v will hold the value of e;
+ *              otherwise S is empty;
+ * {
+ *   stmt-seq S;
+ *   
+ *   if e is short circuit operation "A op B" then {
+ *     S += transformOperand(A, v);
+ *     S += branch(op, v, transformOperand(B, v));  
+ *   } else {
+ *     stmt-seq S';
+ *     var v';
+ *            
+ *     foreach(child : e) {
+ *       stmt-seq S'' = transform(child, v');
+ *       
+ *       if (S'' is NOT empty) {
+ *         S' += S'';
+ *         S' += decl-v';
+ *         S' += {v' = e[child/v'];} 
+ *       }
+ *     }
+ *     if (S' is not empty) {
+ *       S += S';
+ *       S += {v = v';};
+ *     }
+ *   }
+ *   return S;
+ * }
+ * 
+ * transformOperand (operand, v) : S 
+ *   requires: operand is a operand of a short-circuit operation. Both operand and v have boolean type;
+ *   ensures:  S is non-empty; After execution of S, v holds the value of operand.
+ * {
+ *   stmt-seq S;
+ *   
+ *   S = transform(operand, v);
+ *   if (S is empty) 
+ *     S = {v = operand;}
+ *   return S;
+ * }
  *
+ * </code>
  * </p>
  * 
  * @author ziqingluo
@@ -618,8 +666,7 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 				scOp.scOperationExpression, holderName);
 
 		transfromStatements.add(holderDecl);
-		for (BlockItemNode evalStmt : evaluationStatements)
-			transfromStatements.add(evalStmt);
+		transfromStatements.addAll(evaluationStatements);
 		scOp.complete(transfromStatements, holderName);
 	}
 
@@ -660,35 +707,43 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 
 		// If the expression is not a short circuit expression, a new artificial
 		// variable is needed to hold the evaluation of it.
-		List<BlockItemNode> result = new LinkedList<>();
 		Source source = expression.getSource();
+		String subHolderName = nextHolderName();
+		List<BlockItemNode> result = new LinkedList<>();
 
 		for (ASTNode child : expression.children())
 			if (child != null && child.nodeKind() == NodeKind.EXPRESSION) {
-				String subHolderName = nextHolderName();
-				List<BlockItemNode> subResult = transformShortCircuitExpressionWorker(
+				List<BlockItemNode> subChildResult = transformShortCircuitExpressionWorker(
 						(ExpressionNode) child, subHolderName);
+				Type type = ((ExpressionNode) child).getType();
 
-				if (!subResult.isEmpty()) {
+				if (!subChildResult.isEmpty()) {
 					VariableDeclarationNode subHolderDecl = nodeFactory
 							.newVariableDeclarationNode(source,
-									identifier(subHolderName),
-									nodeFactory.newBasicTypeNode(source,
-											BasicTypeKind.BOOL));
+									identifier(subHolderName), typeNode(type));
+					ExpressionNode newExpression = expression.copy();
 					StatementNode assignHolder = nodeFactory
 							.newExpressionStatementNode(nodeFactory
 									.newOperatorNode(source, Operator.ASSIGN,
 											Arrays.asList(
 													identifierExpression(
-															holderName),
-													identifierExpression(
-															subHolderName))));
+															subHolderName),
+													newExpression)));
+					int childIdx = child.childIndex();
 
+					// replace child with subHolder:
+					newExpression.setChild(childIdx,
+							identifierExpression(subHolderName));
 					result.add(subHolderDecl);
-					result.addAll(subResult);
+					result.addAll(subChildResult);
 					result.add(assignHolder);
 				}
 			}
+		if (!result.isEmpty())
+			result.add(nodeFactory.newExpressionStatementNode(
+					nodeFactory.newOperatorNode(source, Operator.ASSIGN,
+							Arrays.asList(identifierExpression(holderName),
+									identifierExpression(subHolderName)))));
 		return result;
 	}
 
