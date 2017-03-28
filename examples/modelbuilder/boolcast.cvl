@@ -1,0 +1,26 @@
+#include <assert.h>
+#include <stdbool.h>
+
+int f1(int a) {
+	return a + 1;
+}
+
+int f2(bool b) {
+	return b + 1;
+}
+
+int main() {
+  int x1 = 0;
+  int z1 = x1 + 1 == 4;
+  assert(z1 + 1 == 1);
+  
+  int x2 = 0;
+  bool z2 = x2;
+  
+  assert(z2 + 1 == 1);
+  
+  int x3 = f1(x1 + 1 == 4);
+  int z3 = f2(x3);
+  
+  return 0;
+}

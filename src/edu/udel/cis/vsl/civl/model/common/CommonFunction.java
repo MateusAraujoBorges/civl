@@ -115,6 +115,10 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 			int number = parameters.size();
 			CIVLType[] types = new CIVLType[number];
 
+			for (int i = 0; i < number; i++) {
+				types[i] = parameters.get(i).type();
+			}
+
 			this.functionType = new CommonFunctionType(returnType, types,
 					factory.typeFactory().functionPointerSymbolicType());
 		} else {
