@@ -10,14 +10,28 @@ int f2(bool b) {
 }
 
 int main() {
+	
   int x1 = 0;
   int z1 = x1 + 1 == 4;
+  assert((x1 + 1 == 4) + 1 == 1);
   assert(z1 + 1 == 1);
   
+  _Bool z2 = x1 + 1;
+  
+  if (x1 + 1) {
+  }
+  
+  bool z4 = false;
+  x1 = z4;
+  
   int x2 = 0;
-  bool z2 = x2;
+  z2 = x2;
   
   assert(z2 + 1 == 1);
+  
+  if (z2) {
+  	
+  }
   
   int x3 = f1(x1 + 1 == 4);
   int z3 = f2(x3);

@@ -1071,11 +1071,11 @@ public class FunctionTranslator {
 
 		} else {
 			Expression rhs;
+			CIVLType leftType;
 
 			rhs = translateExpressionNode(rhsNode, scope, true);
 			location = modelFactory.location(lhs.getSource(), scope);
-
-			CIVLType leftType = lhs.getExpressionType();
+			leftType = lhs.getExpressionType();
 
 			if (leftType.isIntegerType()
 					&& rhs.getExpressionType().isBoolType()) {
@@ -2428,7 +2428,7 @@ public class FunctionTranslator {
 			typesLen = types.length;
 			// functionType.
 		}
-		
+
 		for (int i = 0; i < numOfArgs; i++) {
 			Expression actual = translateExpressionNode(
 					functionCallNode.getArgument(i), scope, true);
@@ -3479,6 +3479,7 @@ public class FunctionTranslator {
 			Statement assignStatement, anonStatement = null;
 			Expression rhs;
 			CIVLSource initSource = modelFactory.sourceOf(init);
+			
 			if (!(init instanceof ExpressionNode)
 					&& !(init instanceof CompoundInitializerNode))
 				throw new CIVLUnimplementedFeatureException(
@@ -5184,10 +5185,11 @@ public class FunctionTranslator {
 							this.translateExpressionNode(arg0, scope, true),
 							this.translateExpressionNode(arg1, scope, true),
 							BINARY_OPERATOR.PLUS, scope);
-				else
+				else {
 					result = translatePlusOperation(source,
 							modelFactory.numericExpression(arguments.get(0)),
 							modelFactory.numericExpression(arguments.get(1)));
+				}
 				break;
 			}
 			case SUBSCRIPT :
@@ -5302,10 +5304,12 @@ public class FunctionTranslator {
 		CIVLType type1 = arg1.getExpressionType();
 		boolean isNumeric0 = type0.isNumericType() || type0.isScopeType();
 		boolean isNumeric1 = type1.isNumericType() || type1.isScopeType();
-
+		
 		if (isNumeric0 && isNumeric1) {
-			return modelFactory.binaryExpression(source, BINARY_OPERATOR.PLUS,
-					arg0, arg1);
+			Expression result = modelFactory.binaryExpression(source,
+					BINARY_OPERATOR.PLUS, arg0, arg1);
+
+			return result;
 		} else {
 			Expression pointer, offset;
 

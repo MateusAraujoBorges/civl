@@ -59,8 +59,7 @@ public class ModelBuilderTest {
 
 	@Test
 	public void boolcast() {
-		assertTrue(ui.run(VERIFY, "-showProgram", QUIET,
-				filename("boolcast.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("boolcast.cvl")));
 	}
 
 	@AfterClass
