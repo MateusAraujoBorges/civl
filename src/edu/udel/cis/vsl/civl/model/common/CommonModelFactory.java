@@ -307,13 +307,6 @@ public class CommonModelFactory implements ModelFactory {
 	/** A list of nulls of length CACHE_INCREMENT */
 	private List<SymbolicExpression> nullList = new LinkedList<SymbolicExpression>();
 
-	/**
-	 * The list of canonicalized symbolic expressions of process IDs, will be
-	 * used in Executor, Evaluator and State factory to obtain symbolic process
-	 * ID's.
-	 */
-	private List<SymbolicExpression> processValues = new ArrayList<SymbolicExpression>();
-
 	/** Keep a unique number to identify scopes. */
 	private int scopeID = 0;
 
@@ -1653,26 +1646,6 @@ public class CommonModelFactory implements ModelFactory {
 					.variableExpression(source, variable);
 		}
 		return variable;
-	}
-
-	@Override
-	public SymbolicExpression processValue(int pid) {
-		SymbolicExpression result;
-
-		if (pid == -2)
-			return this.nullProcessValue;
-		if (pid < 0)
-			return undefinedProcessValue;
-		while (pid >= processValues.size())
-			processValues.addAll(nullList);
-		result = processValues.get(pid);
-		if (result == null) {
-			result = universe.canonic(universe.tuple(
-					typeFactory.processSymbolicType,
-					new Singleton<SymbolicExpression>(universe.integer(pid))));
-			processValues.set(pid, result);
-		}
-		return result;
 	}
 
 	@Override

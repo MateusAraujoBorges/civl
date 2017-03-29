@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.Certainty;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -41,6 +42,7 @@ import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.CanonicalRenamer;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SARLException;
@@ -129,6 +131,21 @@ public class ImmutableStateFactory implements StateFactory {
 	private CIVLConfiguration config;
 
 	/**
+	 * The unique symbolic expression for the null process value, which has the
+	 * integer value -2.
+	 */
+	private SymbolicExpression nullProcessValue;
+
+	/**
+	 * The list of canonicalized symbolic expressions of process IDs, will be
+	 * used in Executor, Evaluator and State factory to obtain symbolic process
+	 * ID's.
+	 */
+	private SymbolicExpression[] processValues;
+
+	private int maxProcs;
+
+	/**
 	 * Class used to wrap integer arrays so they can be used as keys in hash
 	 * maps. This is used to map dyscope ID substitution maps to SARL
 	 * substituters, in order to reuse substituters when the same substitution
@@ -202,8 +219,19 @@ public class ImmutableStateFactory implements StateFactory {
 				.undefinedValue(typeFactory.processSymbolicType());
 		isReservedSymbolicConstant = new ReservedConstant();
 		this.config = config;
+		this.nullProcessValue = universe.canonic(universe.tuple(
+				typeFactory.processSymbolicType(),
+				new Singleton<SymbolicExpression>(universe.integer(-2))));
+		this.maxProcs = config.getMaxProcs();
+		this.processValues = new SymbolicExpression[maxProcs];
 		for (HeapErrorKind kind : HeapErrorKind.class.getEnumConstants())
 			fullHeapErrorSet.add(kind);
+		for (int i = 0; i < maxProcs; i++) {
+			processValues[i] = (universe.canonic(universe.tuple(
+					typeFactory.processSymbolicType(),
+					new Singleton<SymbolicExpression>(universe.integer(i)))));
+		}
+
 	}
 
 	/* ********************** Methods from StateFactory ******************** */
@@ -431,7 +459,7 @@ public class ImmutableStateFactory implements StateFactory {
 
 			if (substituter == null) {
 				substituter = universe.mapSubstituter(scopeSubMap(oldToNew));
-				dyscopeSubMap.put(key, substituter);
+				dyscopeSubMap.putIfAbsent(key, substituter);
 			}
 
 			ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[newNumScopes];
@@ -482,8 +510,7 @@ public class ImmutableStateFactory implements StateFactory {
 				.variable();
 
 		// assert state.getVariableValue(0, atomicVar.vid())
-		return this.setVariable(state, atomicVar.vid(), 0,
-				modelFactory.processValue(pid));
+		return this.setVariable(state, atomicVar.vid(), 0, processValue(pid));
 	}
 
 	@Override
@@ -705,8 +732,7 @@ public class ImmutableStateFactory implements StateFactory {
 		Variable atomicVar = modelFactory.atomicLockVariableExpression()
 				.variable();
 
-		return this.setVariable(state, atomicVar.vid(), 0,
-				modelFactory.processValue(-1));
+		return this.setVariable(state, atomicVar.vid(), 0, processValue(-1));
 	}
 
 	/**
@@ -1388,9 +1414,8 @@ public class ImmutableStateFactory implements StateFactory {
 				size);
 
 		for (int i = 0; i < size; i++) {
-			SymbolicExpression oldVal = modelFactory.processValue(i);
-			SymbolicExpression newVal = modelFactory
-					.processValue(oldToNewPidMap[i]);
+			SymbolicExpression oldVal = processValue(i);
+			SymbolicExpression newVal = processValue(oldToNewPidMap[i]);
 
 			result.put(oldVal, newVal);
 		}
@@ -2235,7 +2260,7 @@ public class ImmutableStateFactory implements StateFactory {
 
 		if (null == substituter) {
 			substituter = universe.mapSubstituter(scopeSubMap(oldToNew));
-			dyscopeSubMap.put(key, substituter);
+			dyscopeSubMap.putIfAbsent(key, substituter);
 		}
 		for (int i = 0; i < numOldDyscopes; i++) {
 			int newId = oldToNew[i];
@@ -2696,5 +2721,22 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public void setConfiguration(CIVLConfiguration config) {
 		this.config = config;
+	}
+
+	@Override
+	public SymbolicExpression processValue(int pid) {
+		if (pid == -2)
+			return this.nullProcessValue;
+		if (pid < 0)
+			return undefinedProcessValue;
+		if (pid < maxProcs) {
+			return processValues[pid];
+		} else {
+			String errorMessage = "pid is " + pid
+					+ " which is greater the upper bound " + maxProcs
+					+ ". So you need to specify a larger maxProcs(-maxProcs=num) through command line";
+
+			throw new CIVLException(errorMessage, null);
+		}
 	}
 }

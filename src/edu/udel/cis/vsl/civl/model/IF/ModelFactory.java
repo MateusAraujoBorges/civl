@@ -1606,16 +1606,6 @@ public interface ModelFactory {
 	boolean isProcessIdNull(int pid);
 
 	/**
-	 * Translate a process id into symbolic expression. When
-	 * <code>pid < 0</code>, returns undefinedProcessValue.
-	 * 
-	 * @param pid
-	 *            The process id to be translated
-	 * @return The symbolic expression of the process id
-	 */
-	SymbolicExpression processValue(int pid);
-
-	/**
 	 * generate undefined value of a certain type
 	 * 
 	 * @param type

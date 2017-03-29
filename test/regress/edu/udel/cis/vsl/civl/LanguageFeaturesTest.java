@@ -233,7 +233,9 @@ public class LanguageFeaturesTest {
 	@Test
 	public void divisionByZero() throws ABCException {
 
-		assertFalse(ui.run(VERIFY, QUIET, errorBound(2),
+		assertFalse(ui.run(VERIFY, 
+//				QUIET, 
+				errorBound(2),
 				filename("divisionByZero.cvl")));
 	}
 
