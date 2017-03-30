@@ -44,7 +44,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * @author zmanchun
  *
  */
-public class AbsCallAnalyzer extends CommonCodeAnalyzer implements CodeAnalyzer {
+public class AbsCallAnalyzer extends CommonCodeAnalyzer
+		implements
+			CodeAnalyzer {
 	/**
 	 * result of absolute call analysis.
 	 * 
@@ -62,16 +64,16 @@ public class AbsCallAnalyzer extends CommonCodeAnalyzer implements CodeAnalyzer 
 		@Override
 		public String toString() {
 			switch (this) {
-			case YES:
-				return "Y";
-			case NEVER:
-				return "N";
-			case MAYBE:
-				return "?";
-			case NONE:
-				return "NA";
-			default:
-				return "";
+				case YES :
+					return "Y";
+				case NEVER :
+					return "N";
+				case MAYBE :
+					return "?";
+				case NONE :
+					return "NA";
+				default :
+					return "";
 			}
 		}
 	}
@@ -120,8 +122,8 @@ public class AbsCallAnalyzer extends CommonCodeAnalyzer implements CodeAnalyzer 
 
 			if (function == null)
 				this.unpreprocessedStatements.add(call);
-			else if (function.name().name().equals(Analysis.ABS)
-					&& function.getSource().getFileName().equals("stdlib.cvl")) {
+			else if (function.name().name().equals(Analysis.ABS) && function
+					.getSource().getFileName().equals("stdlib.cvl")) {
 				result.put(call, new AbsStatus());
 			}
 		}
@@ -163,7 +165,8 @@ public class AbsCallAnalyzer extends CommonCodeAnalyzer implements CodeAnalyzer 
 			out.println("?: unknown");
 			// out.println("*: argument could be anything");
 		} else
-			out.println("The program doesn't have any reachable abs function call.");
+			out.println(
+					"The program doesn't have any reachable abs function call.");
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -203,7 +206,7 @@ public class AbsCallAnalyzer extends CommonCodeAnalyzer implements CodeAnalyzer 
 	/**
 	 * (pc -> arg != 0) is valid: equivalent to (pc -> arg != 0) with certainty
 	 * YES.
-	 * */
+	 */
 	private ResultType neverZero(BooleanExpression pathCondition,
 			NumericExpression value) {
 		BooleanExpression notZero = universe.neq(value, zero);
@@ -233,46 +236,48 @@ public class AbsCallAnalyzer extends CommonCodeAnalyzer implements CodeAnalyzer 
 		ResultType newResult;
 
 		switch (status.zero) {
-		case YES:// no need to check any more
-			break;
-		case NEVER: {
-			newResult = this.neverZero(pathCondition, argValue);
-			switch (newResult) {
-			case YES:
+			case YES :// no need to check any more
 				break;
-			case NO:
-				status.zero = AbsType.YES;
-				break;
-			case MAYBE:
-				status.zero = AbsType.MAYBE;
-				break;
-			default:
-			}
-			break;
-		}
-		case MAYBE: {
-			newResult = this.isSatisfiable(canBeZero(pathCondition, argValue));
-
-			if (newResult == ResultType.YES)
-				status.zero = AbsType.YES;
-			break;
-		}
-		case NONE: {
-			newResult = this.isSatisfiable(canBeZero(pathCondition, argValue));
-
-			if (newResult == ResultType.YES)
-				status.zero = AbsType.YES;
-			else {
+			case NEVER : {
 				newResult = this.neverZero(pathCondition, argValue);
+				switch (newResult) {
+					case YES :
+						break;
+					case NO :
+						status.zero = AbsType.YES;
+						break;
+					case MAYBE :
+						status.zero = AbsType.MAYBE;
+						break;
+					default :
+				}
+				break;
+			}
+			case MAYBE : {
+				newResult = this
+						.isSatisfiable(canBeZero(pathCondition, argValue));
 
 				if (newResult == ResultType.YES)
-					status.zero = AbsType.NEVER;
-				else
-					status.zero = AbsType.MAYBE;
+					status.zero = AbsType.YES;
+				break;
 			}
-			break;
-		}
-		default:
+			case NONE : {
+				newResult = this
+						.isSatisfiable(canBeZero(pathCondition, argValue));
+
+				if (newResult == ResultType.YES)
+					status.zero = AbsType.YES;
+				else {
+					newResult = this.neverZero(pathCondition, argValue);
+
+					if (newResult == ResultType.YES)
+						status.zero = AbsType.NEVER;
+					else
+						status.zero = AbsType.MAYBE;
+				}
+				break;
+			}
+			default :
 		}
 	}
 
@@ -281,48 +286,48 @@ public class AbsCallAnalyzer extends CommonCodeAnalyzer implements CodeAnalyzer 
 		ResultType newResult;
 
 		switch (status.positive) {
-		case YES:// no need to check any more
-			break;
-		case NEVER: {
-			newResult = this.neverPositive(pathCondition, argValue);
-			switch (newResult) {
-			case YES:
+			case YES :// no need to check any more
 				break;
-			case NO:
-				status.positive = AbsType.YES;
-				break;
-			case MAYBE:
-				status.positive = AbsType.MAYBE;
-				break;
-			default:
-			}
-			break;
-		}
-		case MAYBE: {
-			newResult = this.isSatisfiable(canBePositive(pathCondition,
-					argValue));
-
-			if (newResult == ResultType.YES)
-				status.positive = AbsType.YES;
-			break;
-		}
-		case NONE: {
-			newResult = this.isSatisfiable(canBePositive(pathCondition,
-					argValue));
-
-			if (newResult == ResultType.YES)
-				status.positive = AbsType.YES;
-			else {
+			case NEVER : {
 				newResult = this.neverPositive(pathCondition, argValue);
+				switch (newResult) {
+					case YES :
+						break;
+					case NO :
+						status.positive = AbsType.YES;
+						break;
+					case MAYBE :
+						status.positive = AbsType.MAYBE;
+						break;
+					default :
+				}
+				break;
+			}
+			case MAYBE : {
+				newResult = this
+						.isSatisfiable(canBePositive(pathCondition, argValue));
 
 				if (newResult == ResultType.YES)
-					status.positive = AbsType.NEVER;
-				else
-					status.positive = AbsType.MAYBE;
+					status.positive = AbsType.YES;
+				break;
 			}
-			break;
-		}
-		default:
+			case NONE : {
+				newResult = this
+						.isSatisfiable(canBePositive(pathCondition, argValue));
+
+				if (newResult == ResultType.YES)
+					status.positive = AbsType.YES;
+				else {
+					newResult = this.neverPositive(pathCondition, argValue);
+
+					if (newResult == ResultType.YES)
+						status.positive = AbsType.NEVER;
+					else
+						status.positive = AbsType.MAYBE;
+				}
+				break;
+			}
+			default :
 		}
 	}
 
@@ -331,48 +336,48 @@ public class AbsCallAnalyzer extends CommonCodeAnalyzer implements CodeAnalyzer 
 		ResultType newResult;
 
 		switch (status.negative) {
-		case YES:// no need to check any more
-			break;
-		case NEVER: {
-			newResult = this.neverNegative(pathCondition, argValue);
-			switch (newResult) {
-			case YES:
+			case YES :// no need to check any more
 				break;
-			case NO:
-				status.negative = AbsType.YES;
-				break;
-			case MAYBE:
-				status.negative = AbsType.MAYBE;
-				break;
-			default:
-			}
-			break;
-		}
-		case MAYBE: {
-			newResult = this.isSatisfiable(canBeNegative(pathCondition,
-					argValue));
-
-			if (newResult == ResultType.YES)
-				status.negative = AbsType.YES;
-			break;
-		}
-		case NONE: {
-			newResult = this.isSatisfiable(canBeNegative(pathCondition,
-					argValue));
-
-			if (newResult == ResultType.YES)
-				status.negative = AbsType.YES;
-			else {
+			case NEVER : {
 				newResult = this.neverNegative(pathCondition, argValue);
+				switch (newResult) {
+					case YES :
+						break;
+					case NO :
+						status.negative = AbsType.YES;
+						break;
+					case MAYBE :
+						status.negative = AbsType.MAYBE;
+						break;
+					default :
+				}
+				break;
+			}
+			case MAYBE : {
+				newResult = this
+						.isSatisfiable(canBeNegative(pathCondition, argValue));
 
 				if (newResult == ResultType.YES)
-					status.negative = AbsType.NEVER;
-				else
-					status.negative = AbsType.MAYBE;
+					status.negative = AbsType.YES;
+				break;
 			}
-			break;
-		}
-		default:
+			case NONE : {
+				newResult = this
+						.isSatisfiable(canBeNegative(pathCondition, argValue));
+
+				if (newResult == ResultType.YES)
+					status.negative = AbsType.YES;
+				else {
+					newResult = this.neverNegative(pathCondition, argValue);
+
+					if (newResult == ResultType.YES)
+						status.negative = AbsType.NEVER;
+					else
+						status.negative = AbsType.MAYBE;
+				}
+				break;
+			}
+			default :
 		}
 	}
 
