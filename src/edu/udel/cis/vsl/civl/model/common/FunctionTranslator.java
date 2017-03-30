@@ -2412,7 +2412,6 @@ public class FunctionTranslator {
 		CIVLType[] types = null;
 		int typesLen = 0;
 		int numOfArgs = functionCallNode.getNumberOfArguments();
-		boolean fixedNumOfPara = true;
 
 		if (functionExpression instanceof IdentifierExpressionNode) {
 			civlFunction = getFunction(
@@ -2423,14 +2422,11 @@ public class FunctionTranslator {
 			types = functionType.parameterTypes();
 			typesLen = types.length;
 		}
-		fixedNumOfPara = (typesLen == numOfArgs);
 		for (int i = 0; i < numOfArgs; i++) {
 			Expression actual = translateExpressionNode(
 					functionCallNode.getArgument(i), scope, true);
 
-			if (fixedNumOfPara) {
-				// I only consider those methods with fixed number of
-				// parameters.
+			if (i < typesLen) {
 				if (types[i].isIntegerType()
 						&& actual.getExpressionType().isBoolType())
 					actual = modelFactory.castExpression(actual.getSource(),
