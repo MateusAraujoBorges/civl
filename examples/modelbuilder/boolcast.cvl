@@ -10,7 +10,6 @@ int f2(bool b) {
 }
 
 int main() {
-	
   int x1 = 0;
   int z1 = x1 + 1 == 4;
   assert((x1 + 1 == 4) + 1 == 1);
@@ -35,6 +34,6 @@ int main() {
   
   int x3 = f1(x1 + 1 == 4);
   int z3 = f2(x3);
-  
+
   return 0;
 }

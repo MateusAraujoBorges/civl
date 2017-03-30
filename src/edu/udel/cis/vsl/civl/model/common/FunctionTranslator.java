@@ -1076,13 +1076,10 @@ public class FunctionTranslator {
 			rhs = translateExpressionNode(rhsNode, scope, true);
 			location = modelFactory.location(lhs.getSource(), scope);
 			leftType = lhs.getExpressionType();
-
 			if (leftType.isIntegerType()
-					&& rhs.getExpressionType().isBoolType()) {
+					&& rhs.getExpressionType().isBoolType())
 				rhs = modelFactory.castExpression(rhs.getSource(), leftType,
 						rhs);
-			}
-
 			assign = modelFactory.assignStatement(source, location, lhs, rhs,
 					isInitializer);
 			this.normalizeAssignment((AssignStatement) assign);
@@ -2403,7 +2400,6 @@ public class FunctionTranslator {
 	private Statement[] translateFunctionCall(Scope scope, LHSExpression lhs,
 			FunctionCallNode functionCallNode, boolean isCall,
 			CIVLSource source) {
-
 		// CIVLSource source =
 		// modelFactory.sourceOfBeginning(functionCallNode);TODO:Changed
 		ArrayList<Expression> arguments = new ArrayList<Expression>();
@@ -2416,32 +2412,30 @@ public class FunctionTranslator {
 		CIVLType[] types = null;
 		int typesLen = 0;
 		int numOfArgs = functionCallNode.getNumberOfArguments();
+		boolean fixedNumOfPara = true;
 
 		if (functionExpression instanceof IdentifierExpressionNode) {
 			civlFunction = getFunction(
 					(IdentifierExpressionNode) functionExpression).right;
 		}
-
 		if (civlFunction != null) {
 			functionType = civlFunction.functionType();
 			types = functionType.parameterTypes();
 			typesLen = types.length;
-			// functionType.
 		}
-
+		fixedNumOfPara = (typesLen == numOfArgs);
 		for (int i = 0; i < numOfArgs; i++) {
 			Expression actual = translateExpressionNode(
 					functionCallNode.getArgument(i), scope, true);
-			// I don't cover those methods who have a variable number of
-			// parameters
-			if (types != null && typesLen == numOfArgs) {
+
+			if (fixedNumOfPara) {
+				// I only consider those methods with fixed number of
+				// parameters.
 				if (types[i].isIntegerType()
-						&& actual.getExpressionType().isBoolType()) {
+						&& actual.getExpressionType().isBoolType())
 					actual = modelFactory.castExpression(actual.getSource(),
 							typeFactory.integerType(), actual);
-				}
 			}
-
 			actual = arrayToPointer(actual);
 			arguments.add(actual);
 		}
@@ -2693,11 +2687,11 @@ public class FunctionTranslator {
 		// If it's the first time encountering either the function declaration
 		// or definition, create the CIVLFunction object, else if it encounters
 		// a function definition, update the parameters:
-		if (result == null) {
+		if (result == null)
 			result = modelFactory.function(functionSource, entity.isAtomic(),
 					functionIdentifier, parameterScope, parameters, returnType,
 					scope, null);
-		} else if (isDefinition) {
+		else if (isDefinition) {
 			result.setOuterScope(parameterScope);
 			result.setParameters(parameters);
 		}
@@ -3346,6 +3340,7 @@ public class FunctionTranslator {
 		IdentifierNode identifier = node.getIdentifier();
 		CIVLSource source = modelFactory.sourceOf(node);
 		boolean initializerTranslated = false;
+
 		if (sourceLocation == null)
 			sourceLocation = modelFactory
 					.location(modelFactory.sourceOfBeginning(node), scope);
@@ -3355,6 +3350,7 @@ public class FunctionTranslator {
 				|| type instanceof CIVLArrayType
 				|| type instanceof CIVLStructOrUnionType || type.isHeapType()) {
 			Expression rhs = null;
+
 			if (variable.isInput() && modelBuilder.inputInitMap != null) {
 				String name = variable.name().name();
 				Object value = modelBuilder.inputInitMap.get(name);
@@ -3479,7 +3475,7 @@ public class FunctionTranslator {
 			Statement assignStatement, anonStatement = null;
 			Expression rhs;
 			CIVLSource initSource = modelFactory.sourceOf(init);
-			
+
 			if (!(init instanceof ExpressionNode)
 					&& !(init instanceof CompoundInitializerNode))
 				throw new CIVLUnimplementedFeatureException(
@@ -5304,12 +5300,10 @@ public class FunctionTranslator {
 		CIVLType type1 = arg1.getExpressionType();
 		boolean isNumeric0 = type0.isNumericType() || type0.isScopeType();
 		boolean isNumeric1 = type1.isNumericType() || type1.isScopeType();
-		
-		if (isNumeric0 && isNumeric1) {
-			Expression result = modelFactory.binaryExpression(source,
-					BINARY_OPERATOR.PLUS, arg0, arg1);
 
-			return result;
+		if (isNumeric0 && isNumeric1) {
+			return modelFactory.binaryExpression(source, BINARY_OPERATOR.PLUS,
+					arg0, arg1);
 		} else {
 			Expression pointer, offset;
 
