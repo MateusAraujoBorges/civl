@@ -1076,6 +1076,12 @@ public class FunctionTranslator {
 			rhs = translateExpressionNode(rhsNode, scope, true);
 			location = modelFactory.location(lhs.getSource(), scope);
 			leftType = lhs.getExpressionType();
+			/*
+			 * When assigning a boolean to an variable with integer type, wrap
+			 * an cast expression on the right hand side to explicitly cast the
+			 * right hand side to an integer. We need to do that because in c,
+			 * _Bool is a subtype of integer and there will be no conversion.
+			 */
 			if (leftType.isIntegerType()
 					&& rhs.getExpressionType().isBoolType())
 				rhs = modelFactory.castExpression(rhs.getSource(), leftType,
@@ -2426,6 +2432,11 @@ public class FunctionTranslator {
 			Expression actual = translateExpressionNode(
 					functionCallNode.getArgument(i), scope, true);
 
+			/*
+			 * for each actual argument of a function call, if the formal type
+			 * is integer but the actual type is a boolean, we need to add a
+			 * cast expression to cast the boolean into an integer.
+			 */
 			if (i < typesLen) {
 				if (types[i].isIntegerType()
 						&& actual.getExpressionType().isBoolType())
