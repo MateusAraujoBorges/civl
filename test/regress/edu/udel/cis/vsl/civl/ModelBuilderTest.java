@@ -57,6 +57,11 @@ public class ModelBuilderTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("stateFunction.cvl")));
 	}
 
+	@Test
+	public void boolcast() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("boolcast.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
