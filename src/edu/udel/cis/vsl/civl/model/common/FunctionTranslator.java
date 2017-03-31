@@ -1071,6 +1071,7 @@ public class FunctionTranslator {
 
 		} else {
 			Expression rhs;
+			CIVLType leftType;
 
 			rhs = translateExpressionNode(rhsNode, scope, true);
 			// The bool->int conversion is something ABC don't do because there
@@ -1082,6 +1083,17 @@ public class FunctionTranslator {
 						lhs.getExpressionType(), rhs);
 			}
 			location = modelFactory.location(lhs.getSource(), scope);
+			leftType = lhs.getExpressionType();
+			/*
+			 * When assigning a boolean to an variable with integer type, wrap
+			 * an cast expression on the right hand side to explicitly cast the
+			 * right hand side to an integer. We need to do that because in c,
+			 * _Bool is a subtype of integer and there will be no conversion.
+			 */
+			if (leftType.isIntegerType()
+					&& rhs.getExpressionType().isBoolType())
+				rhs = modelFactory.castExpression(rhs.getSource(), leftType,
+						rhs);
 			assign = modelFactory.assignStatement(source, location, lhs, rhs,
 					isInitializer);
 			this.normalizeAssignment((AssignStatement) assign);
@@ -1610,6 +1622,7 @@ public class FunctionTranslator {
 								+ leftExpression,
 						modelFactory.sourceOf(lhs));
 		}
+
 		return assignStatement(modelFactory.sourceOfSpan(lhs, rhs),
 				(LHSExpression) leftExpression, rhs, false, scope);
 	}
@@ -2407,15 +2420,35 @@ public class FunctionTranslator {
 		ExpressionNode functionExpression = functionCallNode.getFunction();
 		CallOrSpawnStatement callStmt;
 		Statement result[] = new Statement[1];
+		CIVLFunctionType functionType = null;
+		CIVLType[] types = null;
+		int typesLen = 0;
+		int numOfArgs = functionCallNode.getNumberOfArguments();
 
 		if (functionExpression instanceof IdentifierExpressionNode) {
 			civlFunction = getFunction(
 					(IdentifierExpressionNode) functionExpression).right;
 		}
-		for (int i = 0; i < functionCallNode.getNumberOfArguments(); i++) {
+		if (civlFunction != null) {
+			functionType = civlFunction.functionType();
+			types = functionType.parameterTypes();
+			typesLen = types.length;
+		}
+		for (int i = 0; i < numOfArgs; i++) {
 			Expression actual = translateExpressionNode(
 					functionCallNode.getArgument(i), scope, true);
 
+			/*
+			 * for each actual argument of a function call, if the formal type
+			 * is integer but the actual type is a boolean, we need to add a
+			 * cast expression to cast the boolean into an integer.
+			 */
+			if (i < typesLen) {
+				if (types[i].isIntegerType()
+						&& actual.getExpressionType().isBoolType())
+					actual = modelFactory.castExpression(actual.getSource(),
+							typeFactory.integerType(), actual);
+			}
 			actual = arrayToPointer(actual);
 			arguments.add(actual);
 		}
@@ -5161,10 +5194,11 @@ public class FunctionTranslator {
 							this.translateExpressionNode(arg0, scope, true),
 							this.translateExpressionNode(arg1, scope, true),
 							BINARY_OPERATOR.PLUS, scope);
-				else
+				else {
 					result = translatePlusOperation(source,
 							modelFactory.numericExpression(arguments.get(0)),
 							modelFactory.numericExpression(arguments.get(1)));
+				}
 				break;
 			}
 			case SUBSCRIPT :

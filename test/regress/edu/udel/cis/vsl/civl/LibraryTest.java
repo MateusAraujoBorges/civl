@@ -87,6 +87,12 @@ public class LibraryTest {
 	}
 
 	@Test
+	public void fprintf() throws ABCException {
+		assertTrue(ui.run("verify", NO_PRINTF, QUIET,
+				filename(STDIO, "fprintf.cvl")));
+	}
+
+	@Test
 	public void printfBad() throws ABCException {
 		assertFalse(ui.run("verify", QUIET, filename(STDIO, "printfBad.cvl")));
 	}

@@ -34,6 +34,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode.StatementKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
+import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
 import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
@@ -482,17 +483,25 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 	 */
 	private void searchSCInExpression(ExpressionNode expression,
 			BlockItemNode location, List<ShortCircuitOperation> output) {
+		// Cannot transform quantified expressions:
 		if (isBoundedExpression(expression))
-			// Cannot transform quantified expressions.
 			return;
 
 		if (expression.expressionKind() == ExpressionKind.OPERATOR) {
-			Operator oprt = ((OperatorNode) expression).getOperator();
+			OperatorNode oprtNode = (OperatorNode) expression;
 
-			if (isShortCircuitOperator(oprt)) {
-				output.add(new ShortCircuitOperation(expression, location));
-				// Never search sub-expressions of a saved operation
-				return;
+			if (isShortCircuitOperator(oprtNode.getOperator())) {
+				// Optimization: for a short-circuit operation 'arg0 op arg1',
+				// if arg1 has no error side-effect, leave it there.
+				if (hasErrorSideEffectApprox(oprtNode.getArgument(1))) {
+					output.add(new ShortCircuitOperation(expression, location));
+					// Never search sub-expressions of a saved operation
+					return;
+				} else {
+					// If the right-hand side operand is error side-effect free,
+					// keep searching in the left-hand side operand:
+					expression = oprtNode.getArgument(0);
+				}
 			}
 		}
 		searchSCExpressionInSubTreeWorker(expression, location, output);
@@ -968,64 +977,159 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 	}
 
 	/* **************** Error side-effect over-approximation ******************/
-	private boolean errorSideEffectOverapproximantion(
-			ExpressionNode expression) {
-		return false;
+	/**
+	 * <p>
+	 * Over approximates if the given expression contains error side effects.
+	 * </p>
+	 * 
+	 * @param expression
+	 *            The expression will be tested if it contains error
+	 *            side-effects
+	 * @return True iff the given expression contains error side-effects.
+	 */
+	private boolean hasErrorSideEffectApprox(ExpressionNode expression) {
+		boolean result = false;
+
+		if (hasDivByZeroApprox(expression))
+			result = true;
+		if (hasPointerErrorSideEffectApprox(expression))
+			result = true;
+		// Debug:
+		// if (!result) {
+		// System.out.print("||");
+		// expression.prettyPrint(System.out);
+		// System.out.println();
+		// }
+		return result;
 	}
 
-	private boolean divByZeroOverapproximantion(ExpressionNode expression) {
-		boolean divByZero = false;
+	/**
+	 * <p>
+	 * Over approximates if the the given expression or any of its descendants
+	 * contains division or modulo operation.
+	 * </p>
+	 * 
+	 * @param expression
+	 *            The expression will be tested if it contains division or
+	 *            modulo.
+	 * @return True iff the given expression contains division or modulo.
+	 */
+	private boolean hasDivByZeroApprox(ExpressionNode expression) {
+		boolean constantNonZeroDenominator = false;
 
 		if (expression.expressionKind() == ExpressionKind.OPERATOR) {
 			Operator oprt = ((OperatorNode) expression).getOperator();
 
-			if (oprt == Operator.DIV || oprt == Operator.MOD) {
+			if (oprt == Operator.DIV || oprt == Operator.MOD
+					|| oprt == Operator.DIVEQ) {
 				ExpressionNode denominator = ((OperatorNode) expression)
 						.getArgument(1);
 
 				if (denominator.isConstantExpression()) {
 					ConstantNode constant = (ConstantNode) denominator;
 
-					divByZero = constant.getConstantValue()
+					constantNonZeroDenominator = constant.getConstantValue()
 							.isZero() != Answer.NO;
 				}
 			}
 		}
-		if (divByZero)
+		if (constantNonZeroDenominator)
 			return true;
 		for (ASTNode node : expression.children())
-			if (node.nodeKind() == NodeKind.EXPRESSION) {
-				divByZero = divByZeroOverapproximantion((ExpressionNode) node);
-				if (divByZero)
+			if (node != null && node.nodeKind() == NodeKind.EXPRESSION) {
+				constantNonZeroDenominator = hasDivByZeroApprox(
+						(ExpressionNode) node);
+				if (constantNonZeroDenominator)
 					return true;
 			}
 		return false;
 	}
 
-	private boolean pointerAdditionOverapproximation(
+	/**
+	 * <p>
+	 * Over approximates if the the given expression or any of its descendants
+	 * expresses either pointer addition or dereference operation. (see.
+	 * {@link #isPointerAdditionOrDereference(ExpressionNode)} ).
+	 * </p>
+	 * 
+	 * @param expression
+	 *            The expression will be tested if it contains pointer-related
+	 *            error side-effects.
+	 * @return True iff the given expression contains pointer-related error
+	 *         side-effects.
+	 */
+	private boolean hasPointerErrorSideEffectApprox(ExpressionNode expression) {
+		if (isPointerAdditionOrDereference(expression))
+			return true;
+		else
+			for (ASTNode child : expression.children())
+				if (child != null && child.nodeKind() == NodeKind.EXPRESSION)
+					if (hasPointerErrorSideEffectApprox((ExpressionNode) child))
+						return true;
+		return false;
+	}
+
+	/**
+	 * <p>
+	 * Returns true iff the given expression is one of the following kinds of
+	 * expressions:
+	 * <ul>
+	 * <li>arrow</li>
+	 * <li>pointer addition</li>
+	 * <li>subscript</li>
+	 * <li>dereference</li>
+	 * </ul>
+	 * </p>
+	 * 
+	 * @param expression
+	 *            A given expression which will be tested if it is possible to
+	 *            have error side-effects.
+	 * @return Returns true iff the given expression is possible to have error
+	 *         side-effects.
+	 */
+	private static boolean isPointerAdditionOrDereference(
 			ExpressionNode expression) {
-		boolean pointerAddition = false;
-
-		return false;
-	}
-
-	private boolean castOverapproximation(ExpressionNode expression) {
-		boolean pointerAddition = false;
-
-		return false;
-	}
-
-	private static boolean containsPointerAdd(ExpressionNode expression) {
 		ExpressionKind kind = expression.expressionKind();
 
 		switch (kind) {
 			case ARROW :
-				break;
+				return true;
 			case OPERATOR :
-				break;
+				OperatorNode operatorNode = (OperatorNode) expression;
+				Operator operator = operatorNode.getOperator();
+				ExpressionNode arg0 = operatorNode.getArgument(0);
+				ExpressionNode arg1;
+				switch (operator) {
+					case DEREFERENCE :
+						return true;
+					case PLUS :
+						arg1 = operatorNode.getArgument(1);
+						if (!(arg0.getType().kind() == TypeKind.POINTER
+								&& arg1.getType().kind() == TypeKind.BASIC)) {
+							if (arg0.getType().kind() == TypeKind.BASIC && arg1
+									.getType().kind() == TypeKind.POINTER)
+								return true;
+							return false;
+						} else
+							return true;
+					case PLUSEQ :
+						arg1 = operatorNode.getArgument(1);
+						if (arg0.getType().kind() == TypeKind.POINTER
+								&& arg1.getType().kind() == TypeKind.BASIC)
+							return true;
+						return false;
+					case POSTDECREMENT :
+					case POSTINCREMENT :
+					case PREDECREMENT :
+					case PREINCREMENT :
+						if (arg0.getType().kind() == TypeKind.POINTER)
+							return true;
+						return false;
+					case SUBSCRIPT :
+						return true;
+					default :
+				}
 			default :
-				break;
-
 		}
 		return false;
 	}
