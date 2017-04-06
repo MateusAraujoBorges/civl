@@ -1206,9 +1206,30 @@ public class ImmutableStateFactory implements StateFactory {
 			if (result == null) {
 				result = theState;
 				// result = reachableMemoryAnalysis(theState);
-				result.makeCanonic(stateCount, universe, scopeMap, processMap);
+				result.makeCanonic(universe, scopeMap, processMap);
 				// stateCount++;
-				stateMap.put(result, result);
+
+				ImmutableState canonicalState = stateMap.putIfAbsent(result,
+						result);
+
+				if (canonicalState == null) {
+					canonicalState = result;
+
+					synchronized (canonicalState) {
+						canonicalState.setCanonicId(
+								this.stateCount.getAndIncrement());
+						canonicalState.notifyAll();
+					}
+				} else {
+					synchronized (canonicalState) {
+						while (canonicalState.getCanonicId() < 0)
+							try {
+								canonicalState.wait();
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+					}
+				}
 			}
 			return result;
 		}
