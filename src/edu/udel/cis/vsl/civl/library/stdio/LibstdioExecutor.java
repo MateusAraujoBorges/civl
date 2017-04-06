@@ -38,11 +38,13 @@ import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
@@ -1089,7 +1091,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 							Arrays.asList(
 									universe.stringExpression(formatString),
 									argumentValues[dataIndex++]));
-				fileContents = universe.append(fileContents,
+				fileContents = appendStringToArray(fileContents,
 						newStringExpression);
 			}
 			fileObject = universe.tupleWrite(fileObject, oneObject,
@@ -1216,5 +1218,51 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 				.canonic(universe.symbolicConstant(
 						universe.stringObject("charsToString"), funcType));
 		return charsToString;
+	}
+
+	/**
+	 * <p>
+	 * Append a string (i.e. an array of char) on a string array (i.e. an array
+	 * of array of char).
+	 * </p>
+	 * 
+	 * @param strArray
+	 *            An array of strings.
+	 * @param newString
+	 *            A new string that will be appended on the string array.
+	 * @return A new array a which has same elements from cell 0 to
+	 *         <code>extent(a) - 2</code> as strArray, cell
+	 *         <code>extent(a) - 1</code> stores the element newString.
+	 */
+	private SymbolicExpression appendStringToArray(SymbolicExpression strArray,
+			SymbolicExpression newString) {
+		// If the string array is non-concrete, use array lambda and conditional
+		// expression to represent the result:
+		if (strArray.operator() != SymbolicOperator.ARRAY) {
+			NumericExpression oldLength = universe.length(strArray);
+			NumericExpression newLength = universe.add(one,
+					universe.length(strArray));
+			NumericSymbolicConstant i = (NumericSymbolicConstant) universe
+					.symbolicConstant(universe.stringObject("i"),
+							universe.integerType());
+			BooleanExpression cond = universe.lessThan(i, oldLength);
+			// Here is a trick: The SARL conditional operation requires that the
+			// trueExpression has the same value as the falseExpression. But the
+			// array read expression on strArray always have type "char []"
+			// while the new string has type "char[m]". Thus I played a trick
+			// here to put strArray[0] at the last cell then use array write to
+			// over-write it.
+			SymbolicExpression lambdaFunc = universe.cond(cond,
+					universe.arrayRead(strArray, i),
+					universe.arrayRead(strArray, zero));
+			SymbolicCompleteArrayType newArrayType = universe
+					.arrayType(stringSymbolicType, newLength);
+
+			lambdaFunc = universe.lambda(i, lambdaFunc);
+			return universe.arrayWrite(
+					universe.arrayLambda(newArrayType, lambdaFunc), oldLength,
+					newString);
+		} else
+			return universe.append(strArray, newString);
 	}
 }

@@ -198,6 +198,8 @@ import edu.udel.cis.vsl.gmc.CommandLineException;
  * 
  */
 public class FunctionTranslator {
+	private static final String ARTIFICIAL_VAR_NAME = "_civl_ir";
+
 	private static final String PAR_FUNC_NAME = "_par_proc";
 
 	private static final String RUN_FUNC_NAME = "_run_proc";
@@ -732,18 +734,19 @@ public class FunctionTranslator {
 		CIVLSource parForBeginSource = modelFactory
 				.sourceOfBeginning(civlForNode);
 		CIVLSource parForEndSource = modelFactory.sourceOfEnd(civlForNode);
+		Scope parForScope = modelFactory.scope(source, scope, Arrays.asList(),
+				scope.function());
 		VariableExpression domSizeVar = modelFactory.domSizeVariable(source,
-				scope);
+				parForScope);
 		CIVLArrayType procsType = typeFactory
 				.completeArrayType(typeFactory.processType(), domSizeVar);
 		VariableExpression parProcs = modelFactory.parProcsVariable(source,
-				procsType, scope);
+				procsType, parForScope);
 		StatementNode bodyNode = civlForNode.getBody();
 		// FunctionCallNode bodyFuncCall = this.isFunctionCall(bodyNode);
 		CIVLFunction procFunc;
 		CivlParForSpawnStatement parForEnter;
 		Fragment result;
-		CallOrSpawnStatement callWaitAll;
 		Location location;
 		Expression domain;
 
@@ -756,8 +759,8 @@ public class FunctionTranslator {
 				.sourceOfBeginning(bodyNode);
 		List<Variable> loopVars = initResults.third;
 		int numOfLoopVars = loopVars.size();
-		Scope parameterScope = this.modelFactory.scope(procFuncSource, scope,
-				new ArrayList<>(0), null);
+		Scope parameterScope = this.modelFactory.scope(procFuncSource,
+				parForScope, new ArrayList<>(0), null);
 		List<Variable> procFuncParameters = new ArrayList<>(numOfLoopVars);
 
 		for (int i = 0; i < numOfLoopVars; i++) {
@@ -776,21 +779,124 @@ public class FunctionTranslator {
 		scope.addFunction(procFunc);
 		parameterScope.setFunction(procFunc);
 		modelBuilder.parProcFunctions.put(procFunc, bodyNode);
-		domain = this.translateExpressionNode(civlForNode.getDomain(), scope,
-				true);
-		result = new CommonFragment(this.elaborateDomainCall(scope, domain));
-		location = modelFactory.location(parForBeginSource, scope);
+		domain = this.translateExpressionNode(civlForNode.getDomain(),
+				parForScope, true);
+		result = new CommonFragment(
+				this.elaborateDomainCall(parForScope, domain));
+		location = modelFactory.location(parForBeginSource, parForScope);
 		parForEnter = modelFactory.civlParForEnterStatement(parForBeginSource,
 				location, domain, domSizeVar, parProcs, procFunc);
 		assert procFunc != null;
 		parForEnter.setParProcFunction(procFunc);
 		result = result.combineWith(new CommonFragment(parForEnter));
-		location = modelFactory.location(parForEndSource, scope);
-		callWaitAll = modelFactory.callOrSpawnStatement(parForEndSource,
-				location, true, modelFactory.waitallFunctionPointer(),
-				Arrays.asList(this.arrayToPointer(parProcs), domSizeVar), null);
-		callWaitAll.setGuard(modelFactory.systemGuardExpression(callWaitAll));
-		result = result.combineWith(new CommonFragment(callWaitAll));
+		result = result.combineWith(parForProcessesTerminationFragment(
+				domSizeVar, parProcs, parForScope, parForEndSource));
+		return result;
+	}
+
+	/**
+	 * <p>
+	 * Returns a {@link Fragment} which contains the generated statements of
+	 * terminating the processes spawned by a <code>$parfor</code> statement.
+	 * </p>
+	 * 
+	 * <p>
+	 * The fragment is described roughly by the following pseudo code: <code>
+	 * int _tmp = 0;
+	 * 
+	 * while (_tmp < domain_size) {
+	 *   $wait(procs[_tmp]);
+	 *   _tmp++;
+	 * }
+	 * </code>
+	 * </p>
+	 * 
+	 * @param domSize
+	 *            The {@link Expression} represents the size of the domain in a
+	 *            <code>$parfor</code> statement.
+	 * @param processArray
+	 *            The {@link Expression} represents an array of processes which
+	 *            are spawned by a <code>$parfor</code> statement
+	 * @param scope
+	 *            The {@link Scope} in where the corresponding
+	 *            <code>$parfor</code> statement locates.
+	 * @param source
+	 *            The {@link CIVLSource} associates to a <code>$parfor</code>
+	 *            statement.
+	 * @return a {@link Fragment} which contains the generated statements of
+	 *         terminating the processes spawned by a <code>$parfor</code>
+	 *         statement.
+	 */
+	private Fragment parForProcessesTerminationFragment(Expression domSize,
+			LHSExpression processArray, Scope scope, CIVLSource source) {
+		Scope loopConditionScope = modelFactory.scope(source, scope,
+				Arrays.asList(), scope.function());
+		Scope loopBodyScope = modelFactory.scope(source, loopConditionScope,
+				Arrays.asList(), scope.function());
+		// Use numVariable in scope to identify artificial variables which can
+		// guarantee same name will never appear in the same scope:
+		String artificiatialVarName = ARTIFICIAL_VAR_NAME
+				+ loopConditionScope.numVariables();
+		Variable loopIdentifierVar = modelFactory.variable(source,
+				typeFactory.integerType(),
+				modelFactory.identifier(source, artificiatialVarName),
+				loopConditionScope.numVariables());
+		Location initLocation = modelFactory.location(source,
+				loopConditionScope);
+		Location loopLocation = modelFactory.location(source,
+				loopConditionScope);
+		Location waitLocation = modelFactory.location(source, loopBodyScope);
+		Location incrementLocation = modelFactory.location(source,
+				loopBodyScope);
+		LHSExpression loopIdentifier = modelFactory.variableExpression(source,
+				loopIdentifierVar);
+
+		loopConditionScope.addVariable(loopIdentifierVar);
+
+		Statement initStmt, loopEnter, loopExit, increment;
+		CallOrSpawnStatement waitStmt;
+		Expression loopCondition, terminateCondition, proc;
+		Fragment result;
+
+		loopCondition = modelFactory.binaryExpression(domSize.getSource(),
+				BINARY_OPERATOR.LESS_THAN, loopIdentifier, domSize);
+		terminateCondition = modelFactory.unaryExpression(source,
+				UNARY_OPERATOR.NOT, loopCondition);
+		// loop identifier initialization:
+		initStmt = modelFactory.assignStatement(source, initLocation,
+				loopIdentifier,
+				modelFactory.integerLiteralExpression(source, BigInteger.ZERO),
+				true);
+		loopEnter = modelFactory.loopBranchStatement(source, loopLocation,
+				loopCondition, true, null);
+		loopExit = modelFactory.loopBranchStatement(source, loopLocation,
+				terminateCondition, false, null);
+		// The argument of the $wait: procArray[loopIdentifier]:
+		proc = modelFactory.subscriptExpression(processArray.getSource(),
+				processArray, loopIdentifier);
+		waitStmt = modelFactory.callOrSpawnStatement(source, waitLocation, true,
+				modelFactory.waitFunctionPointer(), Arrays.asList(proc), null);
+		// I thought CIVL can figure out the guard of system functions by itself
+		// (at runtime, the older version CIVL did that and changes happened
+		// after POR contracts I believe) but it seems not the case. Not
+		// setting guard here will cause CIVL to use the default guard "true"
+		// which will break things down. Deciding the guard at model building
+		// time definitely is better than what I thought. So I just write down
+		// this comment to tell who reads this code about this point.
+		waitStmt.setGuard(modelFactory.systemGuardExpression(waitStmt));
+		increment = modelFactory
+				.assignStatement(source, incrementLocation, loopIdentifier,
+						modelFactory
+								.binaryExpression(source, BINARY_OPERATOR.PLUS,
+										loopIdentifier,
+										modelFactory.integerLiteralExpression(
+												source, BigInteger.ONE)),
+						false);
+		result = new CommonFragment(initStmt);
+		result.addNewStatement(loopEnter);
+		result.addNewStatement(waitStmt);
+		result.addNewStatement(increment);
+		result.addNewStatement(loopExit);
 		return result;
 	}
 
@@ -965,9 +1071,21 @@ public class FunctionTranslator {
 
 		} else {
 			Expression rhs;
+			CIVLType leftType;
 
 			rhs = translateExpressionNode(rhsNode, scope, true);
 			location = modelFactory.location(lhs.getSource(), scope);
+			leftType = lhs.getExpressionType();
+			/*
+			 * When assigning a boolean to an variable with integer type, wrap
+			 * an cast expression on the right hand side to explicitly cast the
+			 * right hand side to an integer. We need to do that because in c,
+			 * _Bool is a subtype of integer and there will be no conversion.
+			 */
+			if (leftType.isIntegerType()
+					&& rhs.getExpressionType().isBoolType())
+				rhs = modelFactory.castExpression(rhs.getSource(), leftType,
+						rhs);
 			assign = modelFactory.assignStatement(source, location, lhs, rhs,
 					isInitializer);
 			this.normalizeAssignment((AssignStatement) assign);
@@ -1498,6 +1616,7 @@ public class FunctionTranslator {
 								+ leftExpression,
 						modelFactory.sourceOf(lhs));
 		}
+
 		return assignStatement(modelFactory.sourceOfSpan(lhs, rhs),
 				(LHSExpression) leftExpression, rhs, false, scope);
 	}
@@ -2295,15 +2414,35 @@ public class FunctionTranslator {
 		ExpressionNode functionExpression = functionCallNode.getFunction();
 		CallOrSpawnStatement callStmt;
 		Statement result[] = new Statement[1];
+		CIVLFunctionType functionType = null;
+		CIVLType[] types = null;
+		int typesLen = 0;
+		int numOfArgs = functionCallNode.getNumberOfArguments();
 
 		if (functionExpression instanceof IdentifierExpressionNode) {
 			civlFunction = getFunction(
 					(IdentifierExpressionNode) functionExpression).right;
 		}
-		for (int i = 0; i < functionCallNode.getNumberOfArguments(); i++) {
+		if (civlFunction != null) {
+			functionType = civlFunction.functionType();
+			types = functionType.parameterTypes();
+			typesLen = types.length;
+		}
+		for (int i = 0; i < numOfArgs; i++) {
 			Expression actual = translateExpressionNode(
 					functionCallNode.getArgument(i), scope, true);
 
+			/*
+			 * for each actual argument of a function call, if the formal type
+			 * is integer but the actual type is a boolean, we need to add a
+			 * cast expression to cast the boolean into an integer.
+			 */
+			if (i < typesLen) {
+				if (types[i].isIntegerType()
+						&& actual.getExpressionType().isBoolType())
+					actual = modelFactory.castExpression(actual.getSource(),
+							typeFactory.integerType(), actual);
+			}
 			actual = arrayToPointer(actual);
 			arguments.add(actual);
 		}
@@ -5049,10 +5188,11 @@ public class FunctionTranslator {
 							this.translateExpressionNode(arg0, scope, true),
 							this.translateExpressionNode(arg1, scope, true),
 							BINARY_OPERATOR.PLUS, scope);
-				else
+				else {
 					result = translatePlusOperation(source,
 							modelFactory.numericExpression(arguments.get(0)),
 							modelFactory.numericExpression(arguments.get(1)));
+				}
 				break;
 			}
 			case SUBSCRIPT :
