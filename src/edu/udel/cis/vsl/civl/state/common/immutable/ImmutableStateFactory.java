@@ -2709,13 +2709,4 @@ public class ImmutableStateFactory implements StateFactory {
 
 		return ((ImmutableState) state).setPathCondition(newPathCondition);
 	}
-
-	@Override
-	public State disjointWTPathcondition(State state, int pid,
-			BooleanExpression clause) {
-		BooleanExpression newPathCondition = universe
-				.or(state.getPathCondition(), clause);
-
-		return ((ImmutableState) state).setPathCondition(newPathCondition);
-	}
 }

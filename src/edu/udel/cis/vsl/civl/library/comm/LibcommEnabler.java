@@ -601,29 +601,5 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		for (int procid = 0; procid < state.numProcs(); procid++)
 			procs.add(procid);
 		return procs;
-		// eval = evaluator.dereference(commHandleExpr.getSource(), state,
-		// process, commHandle, false);
-		// state = eval.state;
-		// comm = eval.value;
-		// gcommHandle = universe.tupleRead(comm, oneObject);
-		// eval = evaluator.dereference(commHandleExpr.getSource(), state,
-		// process, gcommHandle, false);
-		// state = eval.state;
-		// gcomm = eval.value;
-		// procArray = universe.tupleRead(gcomm, oneObject);
-		// nprocs = universe.tupleRead(gcomm, zeroObject);
-		// reasoner = universe.reasoner(state.getPathCondition());
-		// nprocsInt = (IntegerNumber) reasoner
-		// .extractNumber((NumericExpression) nprocs);
-		// for (int i = 0; i < nprocsInt.intValue(); i++) {
-		// SymbolicExpression currProcSym = universe.arrayRead(procArray,
-		// universe.integer(i));
-		// int curr_pid = modelFactory.getProcessId((CIVLSource) null,
-		// currProcSym);
-		// if (curr_pid == -1)
-		// curr_pid = state.numProcs();
-		// procs.add(curr_pid);
-		// }
-		// return procs;
 	}
 }

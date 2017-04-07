@@ -449,7 +449,9 @@ public class CommonEvaluator implements Evaluator {
 	 *            The process name for error report.
 	 * @param resultType
 	 *            The {@link CIVLType} of the result of the dereference
-	 *            operation.
+	 *            operation. For cases that there is no lexical information
+	 *            referred, the type should be acquired by calling
+	 *            {@link SymbolicAnalyzer#typeOfObjByPointer(CIVLSource, State, SymbolicExpression)}.
 	 * @param pointer
 	 *            The pointer to be dereferenced.
 	 * @param checkOutput

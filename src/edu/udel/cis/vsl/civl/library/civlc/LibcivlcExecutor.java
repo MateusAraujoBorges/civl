@@ -1,7 +1,5 @@
 package edu.udel.cis.vsl.civl.library.civlc;
 
-import java.math.BigInteger;
-
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
@@ -9,8 +7,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
@@ -400,21 +396,16 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			throw new UnsatisfiablePathConditionException();
 		} else {
 			int numOfProcs_int = number_nprocs.intValue();
-			BinaryExpression pointerAdd;
 			CIVLSource procsSource = arguments[0].getSource();
 			Evaluation eval;
 
 			for (int i = 0; i < numOfProcs_int; i++) {
-				Expression offSet = modelFactory.integerLiteralExpression(
-						procsSource, BigInteger.valueOf(i));
 				NumericExpression offSetV = universe.integer(i);
 				SymbolicExpression procPointer, proc;
 				int pidValue;
 
-				pointerAdd = modelFactory.binaryExpression(procsSource,
-						BINARY_OPERATOR.POINTER_ADD, arguments[0], offSet);
-				eval = evaluator.evaluatePointerAdd(state, pid, process,
-						pointerAdd, procsPointer, offSetV);
+				eval = evaluator.pointerAdd(state, pid, procsPointer, offSetV,
+						false, procsSource).left;
 				procPointer = eval.value;
 				state = eval.state;
 				eval = evaluator.dereference(procsSource, state, process,

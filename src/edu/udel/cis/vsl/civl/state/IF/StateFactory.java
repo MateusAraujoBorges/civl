@@ -210,36 +210,6 @@ public interface StateFactory {
 
 	/**
 	 * <p>
-	 * Modify the path condition pc in the given state to a disjunction of pc
-	 * and the given boolean expression. Returns a new state which has the
-	 * modified path condition.
-	 * </p>
-	 * 
-	 * <p>
-	 * This interface is suppose to be used for evaluating expressions with
-	 * short circuiting operators. For example, to evaluate <code>A && B</code>,
-	 * suppose the value of A is satisfiable, the path condition after
-	 * evaluation would be <code>pc' || pc'' && A'</code>, where
-	 * <code>pc'</code> is the the path condition after evaluating A and
-	 * <code>pc'' && A'</code> is the path condition after evaluating B>
-	 * </p>
-	 * 
-	 * @param state
-	 *            The state before the path condition being updated.
-	 * @param pid
-	 *            The PID of the calling process.
-	 * @param boolExpression
-	 *            The boolean value symbolic expression which will disjoint with
-	 *            the path condition.
-	 * @return A new state which is same as the given one but owns the new path
-	 *         condition.
-	 * @return
-	 */
-	State disjointWTPathcondition(State state, int pid,
-			BooleanExpression boolExpression);
-
-	/**
-	 * <p>
 	 * Adds a new process. The new process is created and one entry is pushed
 	 * onto its call stack. That entry will have a dynamic scope whose parent is
 	 * determined by the calling process (the process that is executing the

@@ -494,7 +494,7 @@ public class CommonStateManager implements StateManager {
 		config.out().print(symbolicAnalyzer.statementEvaluation(currentState,
 				newState, transition.pid(), stmt));
 		if (transition.transitionKind() == TransitionKind.NOOP) {
-			BooleanExpression assumption = transition.constraint();
+			BooleanExpression assumption = transition.clause();
 
 			if (assumption != null) {
 				config.out().print(" [$assume(");

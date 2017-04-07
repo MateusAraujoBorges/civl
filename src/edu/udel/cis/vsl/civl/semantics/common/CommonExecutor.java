@@ -1560,7 +1560,7 @@ public class CommonExecutor implements Executor {
 						transition.statement().getSource());
 		}
 		state = stateFactory.addToPathcondition(state, pid,
-				transition.constraint());
+				transition.clause());
 		if (transition.simpifyState()
 				&& (civlConfig.svcomp() || this.civlConfig.simplify()))
 			state = this.stateFactory.simplify(state);

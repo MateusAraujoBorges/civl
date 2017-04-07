@@ -96,7 +96,7 @@ public class CommonTransition implements Transition {
 		if (object instanceof Transition) {
 			Transition that = (Transition) object;
 
-			if (this.pid == that.pid() && this.clause.equals(that.constraint())
+			if (this.pid == that.pid() && this.clause.equals(that.clause())
 					&& this.statement.equals(that.statement()))
 				return true;
 		}
@@ -114,7 +114,7 @@ public class CommonTransition implements Transition {
 	}
 
 	@Override
-	public BooleanExpression constraint() {
+	public BooleanExpression clause() {
 		return this.clause;
 	}
 

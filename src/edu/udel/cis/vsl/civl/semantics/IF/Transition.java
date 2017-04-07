@@ -32,7 +32,7 @@ public interface Transition {
 	 *         from a new state, which is obtained via conjunction of this
 	 *         clause and the path condition of the source state.
 	 */
-	BooleanExpression constraint();
+	BooleanExpression clause();
 
 	/**
 	 * The statement that this transition is to execute, which should be atomic,

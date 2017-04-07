@@ -18,6 +18,7 @@ import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -751,7 +752,8 @@ public abstract class CommonEnabler implements Enabler {
 				.tupleRead(colStateComp, universe.intObject(0)));
 		gstateHandle = universe.tupleRead(colStateComp, universe.intObject(1));
 		eval = evaluator.dereference(csSource, state, "p" + pid,
-				modelFactory.typeFactory().systemType("$gcollate_state"),
+				modelFactory.typeFactory()
+						.systemType(ModelConfiguration.GCOLLATOR_TYPE),
 				gstateHandle, false, true);
 		state = eval.state;
 		colStateID = this.modelFactory.getStateRef(csSource,

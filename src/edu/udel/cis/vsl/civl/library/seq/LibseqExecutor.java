@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.library.seq;
 
-import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,8 +11,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -404,13 +401,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			if (i == 0)
 				valuePtr = valuesPtr;
 			else if (!removeToNull) {
-				BinaryExpression pointerAdd = modelFactory.binaryExpression(
-						source, BINARY_OPERATOR.POINTER_ADD, arguments[2],
-						modelFactory.integerLiteralExpression(source,
-								BigInteger.valueOf(i)));
-
-				eval = evaluator.evaluatePointerAdd(state, pid, process,
-						pointerAdd, valuesPtr, universe.integer(i));
+				eval = evaluator.pointerAdd(state, pid, valuesPtr,
+						universe.integer(i), false, source).left;
 				state = eval.state;
 				valuePtr = eval.value;
 			} else
