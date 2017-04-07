@@ -7,7 +7,7 @@
 #include <domain.cvh>
 
 $input int BOUND = 4; // upper bound on number of philosophers
-$input int n = BOUND;         // number of philosophers
+$input int n;         // number of philosophers
 $assume(2<=n && n<=BOUND);
 
 // Each fork will be on the table (-1) or in a hand (0-(n-1)).
