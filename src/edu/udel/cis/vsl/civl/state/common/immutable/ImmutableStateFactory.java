@@ -455,12 +455,10 @@ public class ImmutableStateFactory implements StateFactory {
 		if (change) {
 			IntArray key = new IntArray(oldToNew);
 			UnaryOperator<SymbolicExpression> substituter = dyscopeSubMap
-					.get(key);
+					.getOrDefault(key,
+							universe.mapSubstituter(scopeSubMap(oldToNew)));
 
-			if (substituter == null) {
-				substituter = universe.mapSubstituter(scopeSubMap(oldToNew));
-				dyscopeSubMap.putIfAbsent(key, substituter);
-			}
+			dyscopeSubMap.putIfAbsent(key, substituter);
 
 			ImmutableDynamicScope[] newScopes = new ImmutableDynamicScope[newNumScopes];
 			int numProcs = theState.numProcs();
@@ -2276,13 +2274,12 @@ public class ImmutableStateFactory implements StateFactory {
 			ImmutableDynamicScope[] outputDyscopes,
 			BooleanExpression oldPathCondition) {
 		IntArray key = new IntArray(oldToNew);
-		UnaryOperator<SymbolicExpression> substituter = dyscopeSubMap.get(key);
+		UnaryOperator<SymbolicExpression> substituter = dyscopeSubMap
+				.getOrDefault(key,
+						universe.mapSubstituter(scopeSubMap(oldToNew)));
 		int numOldDyscopes = oldDyscopes.length;
 
-		if (null == substituter) {
-			substituter = universe.mapSubstituter(scopeSubMap(oldToNew));
-			dyscopeSubMap.putIfAbsent(key, substituter);
-		}
+		dyscopeSubMap.putIfAbsent(key, substituter);
 		for (int i = 0; i < numOldDyscopes; i++) {
 			int newId = oldToNew[i];
 
