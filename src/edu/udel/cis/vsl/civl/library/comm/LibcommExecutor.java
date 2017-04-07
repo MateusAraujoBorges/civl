@@ -10,6 +10,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Model;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
@@ -40,6 +41,16 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		implements
 			LibraryExecutor {
 	private LibcommEvaluator libEvaluator;
+
+	/**
+	 * The {@link CIVLType} of the object pointed by $comm
+	 */
+	private final CIVLType commType;
+
+	/**
+	 * The {@link CIVLType} of the object pointed by $gcomm
+	 */
+	private final CIVLType gcommType;
 	/* **************************** Constructors *************************** */
 
 	public LibcommExecutor(String name, Executor primaryExecutor,
@@ -52,6 +63,8 @@ public class LibcommExecutor extends BaseLibraryExecutor
 				libEvaluatorLoader);
 		this.libEvaluator = new LibcommEvaluator(name, evaluator, modelFactory,
 				symbolicUtil, symbolicAnalyzer, civlConfig, libEvaluatorLoader);
+		commType = typeFactory.systemType(ModelConfiguration.COMM_TYPE);
+		gcommType = typeFactory.systemType(ModelConfiguration.GCOMM_TYPE);
 	}
 
 	/* ******************** Methods from LibraryExecutor ******************* */
@@ -295,12 +308,12 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		Evaluation eval;
 		Pair<SymbolicExpression, SymbolicExpression> msg_buf;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+		eval = evaluator.dereference(civlsource, state, process, commType,
 				commHandle, false, true);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null,
+		eval = evaluator.dereference(civlsource, state, process, gcommType,
 				gcommHandle, false, true);
 		state = eval.state;
 		gcomm = eval.value;
@@ -348,7 +361,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		SymbolicExpression buf;
 		Evaluation eval;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+		eval = evaluator.dereference(civlsource, state, process, commType,
 				commHandle, false, true);
 		state = eval.state;
 		comm = eval.value;
@@ -405,7 +418,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		Reasoner reasoner;
 		Number number;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+		eval = evaluator.dereference(civlsource, state, process, commType,
 				commHandle, false, true);
 		state = eval.state;
 		comm = eval.value;
@@ -477,7 +490,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		Evaluation eval;
 		int msgIdx = -1;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+		eval = evaluator.dereference(civlsource, state, process, commType,
 				commHandle, false, true);
 		state = eval.state;
 		comm = eval.value;
@@ -534,7 +547,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		CIVLSource civlsource = arguments[0].getSource();
 		Evaluation eval;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+		eval = evaluator.dereference(civlsource, state, process, commType,
 				commHandle, false, true);
 		state = eval.state;
 		comm = eval.value;
@@ -683,7 +696,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 
 		gcommHandle = argumentValues[0];
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				gcommHandleExpr, gcommHandle, false, true);
+				gcommType, gcommHandle, false, true);
 		state = eval.state;
 		gcomm = eval.value;
 		nprocs = (NumericExpression) universe.tupleRead(gcomm, zeroObject);
@@ -979,12 +992,12 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		Evaluation eval;
 
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				arguments[0], commHandle, false, true);
+				commType, commHandle, false, true);
 		state = eval.state;
 		gcommHandle = universe.tupleRead(eval.value, oneObject);
 		place = (NumericExpression) universe.tupleRead(eval.value, zeroObject);
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				arguments[0], gcommHandle, false, true);
+				gcommType, gcommHandle, false, true);
 		state = eval.state;
 		messageBuffer = universe.tupleRead(eval.value, threeObject);
 		nprocs = (NumericExpression) universe.tupleRead(eval.value, zeroObject);

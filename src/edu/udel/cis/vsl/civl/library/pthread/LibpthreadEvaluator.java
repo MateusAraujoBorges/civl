@@ -4,8 +4,10 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluator;
@@ -59,8 +61,10 @@ public class LibpthreadEvaluator extends BaseLibraryEvaluator
 		SymbolicExpression gpoolObj, threads;
 		String process = state.getProcessState(pid).name();
 		int numThreads;
+		CIVLType gpoolType = typeFactory
+				.systemType(ModelConfiguration.PTHREAD_GPOOL);
 
-		eval = this.evaluator.dereference(source, state, process, arguments[0],
+		eval = this.evaluator.dereference(source, state, process, gpoolType,
 				gpool, false, true);
 		gpoolObj = eval.value;
 		state = eval.state;

@@ -293,7 +293,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 							+ "] of"
 							+ " MPI routines is not consistent with the specified MPI_Datatype.");
 		}
-		eval = evaluator.dereference(source, state, process, arguments[0],
+		eval = evaluator.dereference(source, state, process, mpiType2Civl.left,
 				pointer, false, true);
 		state = eval.state;
 		count = universe.multiply(primitiveTypeCount, count);
@@ -368,8 +368,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 		Evaluation eval;
 		int sid;
 
-		eval = evaluator.dereference(source, state, process, arguments[0],
-				commHandle, false, true);
+		eval = evaluator.dereference(source, state, process,
+				typeFactory.scopeType(), commHandle, false, true);
 		state = eval.state;
 		gcommHandle = universe.tupleRead(eval.value, oneObject);
 		sid = symbolicUtil.getDyscopeId(source, gcommHandle);

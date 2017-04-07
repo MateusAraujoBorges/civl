@@ -246,7 +246,8 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 				zeroObject);
 		gcollateStateHandle = universe.tupleRead(collateState,
 				collate_state_gstate);
-		eval = evaluator.dereference(source, state, process, arguments[0],
+		eval = evaluator.dereference(source, state, process,
+				LibcollateConstants.gcollate_state(typeFactory),
 				gcollateStateHandle, false, true);
 		state = eval.state;
 		gcollateState = eval.value;
@@ -306,8 +307,9 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression gstate, statusArray;
 		Evaluation eval;
 
-		eval = evaluator.dereference(source, state, process, arguments[0],
-				gstateHanlde, false, true);
+		eval = evaluator.dereference(source, state, process,
+				LibcollateConstants.gcollate_state(typeFactory), gstateHanlde,
+				false, true);
 		gstate = eval.value;
 		statusArray = universe.tupleRead(gstate, gcollate_state_status);
 		nprocs = universe.length(statusArray);
@@ -358,8 +360,9 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression gstate, statusArray;
 		Evaluation eval;
 
-		eval = evaluator.dereference(source, state, process, arguments[0],
-				gstateHanlde, false, true);
+		eval = evaluator.dereference(source, state, process,
+				LibcollateConstants.gcollate_state(typeFactory), gstateHanlde,
+				false, true);
 		gstate = eval.value;
 		statusArray = universe.tupleRead(gstate, gcollate_state_status);
 

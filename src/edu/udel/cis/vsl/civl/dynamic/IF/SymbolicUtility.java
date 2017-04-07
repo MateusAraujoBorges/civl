@@ -305,7 +305,44 @@ public interface SymbolicUtility {
 	 * 
 	 * @return True iff the pointer points to a certain part of some heap.
 	 */
-	boolean isHeapPointer(SymbolicExpression pointer);
+	boolean isPointerToHeap(SymbolicExpression pointer);
+
+	/**
+	 * <p>
+	 * Returns true iff the given pointer is <strong>heap-obejct
+	 * pointer</strong>, i.e. a pointer to a heap object. A "malloc" statement
+	 * allocates a sequence of heap objects. A heap-object pointer shall point
+	 * to one the heap object in that sequence.
+	 * </p>
+	 * 
+	 * <p>
+	 * FYI, given a pointer, {@link #isHeapObjectPointer(SymbolicExpression)}
+	 * implies {@link #isPointerToHeap(SymbolicExpression)}, but not vice versa.
+	 * </p>
+	 * 
+	 * @param pointer
+	 *            A {@link SymbolicExpression} which represents a concrete
+	 *            pointer.
+	 * @return Returns true iff the given pointer is <strong>heap-obejct
+	 *         pointer</strong>.
+	 */
+	boolean isHeapObjectPointer(SymbolicExpression pointer);
+
+	/**
+	 * <p>
+	 * Returns true iff the two pointers are pointing to the same memory block.
+	 * </p>
+	 * 
+	 * @param ptr0
+	 *            A concrete pointer which is an operand of pointer subtraction
+	 *            operation.
+	 * @param ptr1
+	 *            A concrete pointer which is another operand of pointer
+	 *            subtraction operation.
+	 * @return True iff the two pointers are pointing to the same memory block.
+	 */
+	boolean arePointersToHeapSubtractable(SymbolicExpression ptr0,
+			SymbolicExpression ptr1);
 
 	/**
 	 * Checks if the given reference is valid for a certain object or a
@@ -401,14 +438,11 @@ public interface SymbolicUtility {
 	 * object, returns the parent pointer. For example, a pointer to an array
 	 * element returns the pointer to the array.
 	 * 
-	 * @param source
-	 *            the source information of the pointer
 	 * @param pointer
 	 *            non-trivial pointer
 	 * @return pointer to parent
 	 */
-	SymbolicExpression parentPointer(CIVLSource source,
-			SymbolicExpression pointer);
+	SymbolicExpression parentPointer(SymbolicExpression pointer);
 
 	/**
 	 * Computes the reference expression of a pointer. If the pointer is
@@ -610,11 +644,13 @@ public interface SymbolicUtility {
 	/**
 	 * 
 	 * <p>
-	 * pre-condition:
+	 * <strong>pre-condition:</strong>
 	 * <li>length(array_extents) > 0</li>
 	 * </p>
+	 * <p>
 	 * Computing sizes of all slices of the given array. Here an array slice is
 	 * a sub-array with a lower dimension of the given array.
+	 * </p>
 	 * 
 	 * @param array_extents
 	 *            Sizes of coordinates representing an array. e.g. {2,3,4}
@@ -626,49 +662,48 @@ public interface SymbolicUtility {
 	NumericExpression[] arraySlicesSizes(NumericExpression[] array_extents);
 
 	/**
-	 * pre-condition:
-	 * <ol>
-	 * <li>"arrayPtr" must not be "null"</li>
-	 * </ol>
-	 * post-condition:
-	 * <ol>
-	 * <li>the returned object must not be "null"</li>
-	 * </ol>
-	 * Get the most ancestor pointer of the given array element reference
-	 * pointer.
+	 * <p>
+	 * Given a pointer to an element of an array object, returns a pointer to
+	 * the whole array object.
+	 * </p>
 	 * 
 	 * @param arrayPtr
-	 *            An array element reference pointer or a pointer to an array
-	 * @param source
-	 *            The CIVL source of the pointer
-	 * @return the most ancestor pointer of the given array element reference
-	 *         pointer.
+	 *            A pointer refers to an array object.
+	 * @return a pointer to the whole array object which is referred by the
+	 *         given pointer.
 	 */
-	SymbolicExpression arrayRootPtr(SymbolicExpression arrayPtr,
-			CIVLSource source);
+	SymbolicExpression arrayRootPtr(SymbolicExpression arrayPtr);
 
 	/**
+	 * <p>
 	 * Returns an array of indices in the given {@link ArrayElementReference}.
-	 * Note: The order of indices is from right to left which is same as the
-	 * visual expression order.
+	 * Note: The <b>order</b> of indices is from right to left which is same as
+	 * the lexical subscript order.
+	 * </p>
 	 * 
-	 * @param eleRef
-	 *            A reference of element of an array
+	 * @param pointerToArrayElement
+	 *            A concrete pointer to an array element.
 	 * @return an array of indices with the given reference
 	 */
-	NumericExpression[] stripIndicesFromReference(ArrayElementReference eleRef);
+	NumericExpression[] extractArrayIndicesFrom(
+			SymbolicExpression pointerToArrayElement);
 
 	/**
-	 * Computes size of each coordinate of a given array. Returns an Java Array
-	 * of those coordinate sizes which are in the same order as the array being
-	 * declared.<br>
+	 * <p>
+	 * <strong>Pre-condition:</strong> For all the descendant types of the array
+	 * type, if it is an array type, it must be complete.
+	 * </p>
+	 * <p>
+	 * Computes extent of each dimension of a given array. Returns an Java Array
+	 * of extents which are in the same order as the array being declared.<br>
 	 * For example, giving an array "int a[2][3][4]" returns {2, 3, 4}.
+	 * </p>
 	 * 
 	 * @param arrayType
 	 *            The type of the target array.
 	 * @return The Java Array contains array extents information.
 	 */
-	NumericExpression[] arrayCoordinateSizes(
+	NumericExpression[] arrayDimensionExtents(
 			SymbolicCompleteArrayType arrayType);
 
 	/**

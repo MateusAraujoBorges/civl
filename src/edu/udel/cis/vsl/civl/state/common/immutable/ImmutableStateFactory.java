@@ -1760,7 +1760,7 @@ public class ImmutableStateFactory implements StateFactory {
 			}
 		} else if (value.operator() != SymbolicOperator.TUPLE) {
 			return;
-		} else if (symbolicUtil.isHeapPointer(value)) {
+		} else if (symbolicUtil.isPointerToHeap(value)) {
 			SymbolicExpression heapObjPtr = this.symbolicUtil
 					.heapMemUnit(value);
 
@@ -1883,7 +1883,7 @@ public class ImmutableStateFactory implements StateFactory {
 						}
 				}
 			}
-		} else if (symbolicUtil.isHeapPointer(value)) {
+		} else if (symbolicUtil.isPointerToHeap(value)) {
 			SymbolicExpression heapObjPtr = this.symbolicUtil
 					.heapMemUnit(value);
 			SymbolicExpression newHeapObjPtr = heapMemUnitsMap.get(heapObjPtr);

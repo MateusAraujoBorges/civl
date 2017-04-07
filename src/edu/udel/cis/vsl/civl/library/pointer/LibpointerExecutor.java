@@ -381,7 +381,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		SymbolicExpression result = falseValue,
 				objetPointer = argumentValues[0];
 
-		if (!symbolicUtil.isHeapPointer(objetPointer)) {
+		if (!symbolicUtil.isPointerToHeap(objetPointer)) {
 			if (symbolicUtil.getSymRef(objetPointer).isIdentityReference())
 				result = trueValue;
 		}
@@ -527,7 +527,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 				throw new UnsatisfiablePathConditionException();
 			}
 			eval = evaluator.dereference(sourceRight, state, process,
-					arguments[1], right, false, false);
+					objTypeRight, right, false, false);
 			state = eval.state;
 			rightValue = eval.value;
 			state = primaryExecutor.assign(source, state, pid, left,
@@ -556,13 +556,14 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression first, second, rhs;
 		Evaluation eval = evaluator.dereference(arguments[0].getSource(), state,
-				process, arguments[0], argumentValues[0], false, true);
+				process, typeFactory.voidType(), argumentValues[0], false,
+				true);
 		int invalidArg = -1;
 
 		state = eval.state;
 		first = eval.value;
 		eval = evaluator.dereference(arguments[1].getSource(), state, process,
-				arguments[1], argumentValues[1], false, true);
+				typeFactory.voidType(), argumentValues[1], false, true);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))
@@ -646,11 +647,11 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			return new Evaluation(state, null);
 		}
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				arguments[0], argumentValues[0], false, true);
+				typeFactory.voidType(), argumentValues[0], false, true);
 		state = eval.state;
 		first = eval.value;
 		eval = evaluator.dereference(arguments[1].getSource(), state, process,
-				arguments[1], argumentValues[1], false, true);
+				typeFactory.voidType(), argumentValues[1], false, true);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))
@@ -855,8 +856,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			offset = universe.multiply(offset,
 					universe.divide(type_size, ptr_primType_size));
 		}
-		eval = evaluator.evaluatePointerAdd(state, pid, ptr, offset, true,
-				source).left;
+		eval = evaluator.pointerAdd(state, pid, ptr, offset, true, source).left;
 		state = eval.state;
 		output_ptr = eval.value;
 		return new Evaluation(state, output_ptr);
@@ -933,8 +933,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		elementTypeSize = symbolicUtil.sizeof(source, elementStaticType,
 				baseType);
 		newCount = universe.divide(newSize, elementTypeSize);
-		eval = evaluator.dereference(source, teval.state, process, arguments[0],
-				heapPtr, false, true);
+		eval = evaluator.dereference(source, teval.state, process,
+				typeFactory.heapType(), heapPtr, false, true);
 		state = eval.state;
 		heap = eval.value;
 		heapCount = universe.length(eval.value);

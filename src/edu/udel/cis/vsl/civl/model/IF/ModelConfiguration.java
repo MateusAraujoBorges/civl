@@ -241,19 +241,14 @@ public final class ModelConfiguration {
 	public static final String TM_TYPE = "tm";
 
 	/**
-	 * The <code>__collect_record__</code> type
+	 * The <code>_gcollator</code> type
 	 */
-	public static final String COLLECT_RECORD_TYPE = "_collator_entry";
+	public static final String GCOLLATOR_TYPE = "_gcollator";
 
 	/**
-	 * The <code>__gcollect_checker__</code> type
+	 * The <code>_collator</code> type
 	 */
-	public static final String GCOLLECT_CHECKER_TYPE = "_gcollator";
-
-	/**
-	 * The <code>__collect_checker__</code> type
-	 */
-	public static final String COLLECT_CHECKER_TYPE = "_collator";
+	public static final String COLLATOR_TYPE = "_collator";
 
 	/* libraries */
 

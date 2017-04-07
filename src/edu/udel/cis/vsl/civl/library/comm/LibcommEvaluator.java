@@ -9,8 +9,10 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluator;
@@ -126,12 +128,14 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		NumericExpression dest;
 		BooleanExpression guard;
 		CIVLSource civlsource = arguments[0].getSource();
+		CIVLType commType = typeFactory
+				.systemType(ModelConfiguration.COMM_TYPE);
 		Evaluation eval;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 		Number srcNum, destNum;
 		int srcInt, destInt;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+		eval = evaluator.dereference(civlsource, state, process, commType,
 				commHandle, false, true);
 		state = eval.state;
 		comm = eval.value;
@@ -383,11 +387,13 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression commHandle;
 		Evaluation eval;
+		CIVLType commType = typeFactory
+				.systemType(ModelConfiguration.COMM_TYPE);
 
 		eval = evaluator.evaluate(state, pid, commHandleExpr);
 		commHandle = eval.value;
 		eval = evaluator.dereference(commHandleExpr.getSource(), eval.state,
-				process, commHandleExpr, commHandle, false, true);
+				process, commType, commHandle, false, true);
 		return eval;
 	}
 

@@ -189,7 +189,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 			// dont report unsatisfiable path condition exception
 		} else if (this.symbolicUtil.isNullPointer(firstElementPointer)) {
 			// does nothing for null pointer.
-		} else if (!this.symbolicUtil.isHeapPointer(firstElementPointer)
+		} else if (!this.symbolicUtil.isPointerToHeap(firstElementPointer)
 				|| !this.symbolicUtil.isMallocPointer(source,
 						firstElementPointer)) {
 			this.errorLogger.logSimpleError(source, state, process,

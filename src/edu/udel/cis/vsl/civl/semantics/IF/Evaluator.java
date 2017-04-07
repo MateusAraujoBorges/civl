@@ -48,7 +48,9 @@ public interface Evaluator {
 	 *            The state where the operation happens.
 	 * @param process
 	 *            The process information (name, PID) for error report.
-	 * @param pointerExpression
+	 * @param resultType
+	 *            The {@link CIVLType} of the result of the dereference
+	 *            operation.
 	 * @param pointer
 	 *            A pointer value which refers to some sub-structure in the
 	 *            state, and is to dereferenced.
@@ -64,7 +66,7 @@ public interface Evaluator {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	Evaluation dereference(CIVLSource source, State state, String process,
-			Expression pointerExpression, SymbolicExpression pointer,
+			CIVLType resultType, SymbolicExpression pointer,
 			boolean checkedOutput, boolean strict)
 			throws UnsatisfiablePathConditionException;
 
@@ -219,7 +221,7 @@ public interface Evaluator {
 	 * Note: The given pointer for this function won't be casted to the deepest
 	 * array element reference which is the only difference from the other
 	 * function
-	 * {@link #evaluatePointerAdd(State, String, SymbolicExpression, NumericExpresion, boolean, CIVLSource)}
+	 * {@link #pointerAdd(State, String, SymbolicExpression, NumericExpresion, boolean, CIVLSource)}
 	 * . <br>
 	 * e.g. for <code>int a[2][2]</code>, passing pointer "a[0] + 1" will turn
 	 * out a new pointer "a[1]".
@@ -240,7 +242,7 @@ public interface Evaluator {
 	 * @return the result of evaluating the sum of the pointer and the integer
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	Evaluation pointerAdd(State state, int pid, String process,
+	Evaluation evaluatePointerAdd(State state, int pid, String process,
 			BinaryExpression expression, SymbolicExpression pointer,
 			NumericExpression offset)
 			throws UnsatisfiablePathConditionException;
@@ -355,7 +357,7 @@ public interface Evaluator {
 	 *         pointed by the given pointer which helps saving computing time
 	 *         for caller functions.
 	 */
-	public Pair<Evaluation, NumericExpression[]> evaluatePointerAdd(State state,
+	public Pair<Evaluation, NumericExpression[]> pointerAdd(State state,
 			int pid, SymbolicExpression ptr, NumericExpression offset,
 			boolean ifCheckOutput, CIVLSource source)
 			throws UnsatisfiablePathConditionException;

@@ -50,7 +50,9 @@ import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
 
-public class QuantifiedExpressionEvaluator extends CommonEvaluator {
+public class QuantifiedExpressionEvaluator
+		extends
+			ErrorSideEffectFreeEvaluator {
 
 	/**
 	 * LinkedList used to store a stack of bound variables during evaluation of

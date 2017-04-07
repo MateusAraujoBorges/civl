@@ -8,6 +8,7 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.NTReferenceExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -24,8 +25,10 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * heap field is composed of a dynamic number of heap objects of type array of
  * type T.
  * <ul>
- * <li>each dyscope has a heap by default, as the 0 variable of that dyscope;</li>
- * <li>the initial value of a heap is a SARL NULL expression (not JAVA's NULL);</li>
+ * <li>each dyscope has a heap by default, as the 0 variable of that
+ * dyscope;</li>
+ * <li>the initial value of a heap is a SARL NULL expression (not JAVA's
+ * NULL);</li>
  * <li>a heap has the type &lt;array-of-array-of-T1, array-of-array-of-T2, ...>,
  * corresponding to malloc statements and handle objects used in the model;</li>
  * <li>a heap field has the type array-of-array-of-T;</li>
@@ -49,6 +52,57 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * 
  */
 public class HeapAnalyzer {
+
+	/**
+	 * <p>
+	 * This is a representation of a CIVL memory block. A CIVL memory block is a
+	 * sequence of heap objects allocated by once execution of a
+	 * <code>$malloc</code> statement. A CIVL memory block is identified by a
+	 * pair: <code>{mallocID : executionRecord}</code>, where the mallocID is a
+	 * unique integer associates to a lexical $malloc statement in CIVL model
+	 * and a executionRecord is a unique integer for the times of a $malloc
+	 * statement being executed.
+	 * </p>
+	 * 
+	 * @author ziqingluo
+	 *
+	 */
+	class CIVLMemoryBlock {
+		/**
+		 * A part of a memory block identifier: the lexical 'malloc' statement
+		 * ID.
+		 */
+		private IntObject mallocID;
+		/**
+		 * A part of a memory block identifier: the execution record.
+		 */
+		private NumericExpression execRecord;
+
+		private CIVLMemoryBlock(IntObject mallocRecord,
+				NumericExpression execRecord) {
+			this.mallocID = mallocRecord;
+			this.execRecord = execRecord;
+		}
+
+		/**
+		 * Compares if this memory block and the 'other' are the same memory
+		 * block.
+		 * 
+		 * @param other
+		 *            Another {@link CIVLMemoryBlock}
+		 * @return True iff this this memory block and the 'other' are the same
+		 *         memory block
+		 */
+		public boolean compare(CIVLMemoryBlock other) {
+			return mallocID.equals(other.mallocID)
+					&& execRecord.equals(other.execRecord);
+		}
+
+		@Override
+		public String toString() {
+			return mallocID + ":" + execRecord;
+		}
+	}
 
 	/* *************************** Instance Fields ************************* */
 
@@ -219,9 +273,9 @@ public class HeapAnalyzer {
 	}
 
 	/**
-	 * TODO never called? Is the given pointer pointing to the first element of
-	 * a heap object, i.e., a heap atomic object? A pointer to a heap atomic
-	 * object shall have the form of: <code>&<dn,i,j>[0]</code>
+	 * Is the given pointer pointing to the first element of a heap object,
+	 * i.e., a heap atomic object? A pointer to a heap atomic object shall have
+	 * the form of: <code>&<dn,i,j>[0]</code>
 	 * 
 	 * @param source
 	 *            The source code information for error report.
@@ -250,6 +304,79 @@ public class HeapAnalyzer {
 		if (ref.isIdentityReference())
 			return true;
 		return false;
+	}
+
+	/**
+	 * <p>
+	 * Returns true iff the given pointer is a <strong>heap-object
+	 * pointer</strong>, i.e. a pointer to a heap object. A "malloc" statement
+	 * allocates a sequence of heap objects. A heap-object pointer shall point
+	 * to one the heap object in that sequence.
+	 * </p>
+	 * 
+	 * <p>
+	 * Pointer arithmetic on heap object pointers are invalid.
+	 * </p>
+	 * 
+	 * @param pointer
+	 *            A {@link SymbolicExpression} which is a concrete pointer.
+	 * @return true iff the given pointer is a <strong>heap-object
+	 *         pointer</strong>
+	 */
+	boolean isHeapObjectPointer(SymbolicExpression pointer) {
+		if (pointer.operator() != SymbolicOperator.TUPLE)
+			return false;
+		if (!isPointerToHeap(pointer))
+			return false;
+		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
+
+		if (!ref.isArrayElementReference())
+			return false;
+		ref = ((ArrayElementReference) ref).getParent();
+		if (!ref.isTupleComponentReference())
+			return false;
+		ref = ((TupleComponentReference) ref).getParent();
+		if (!ref.isIdentityReference())
+			return false;
+		return true;
+	}
+
+	/**
+	 * <p>
+	 * <strong>pre-condition:</strong> the given pointer is a pointer to
+	 * somewhere in heap.
+	 * </p>
+	 * <p>
+	 * Return the memory block ({@link CIVLMemoryBlock}) pointed by the given
+	 * pointer.
+	 * </p>
+	 * 
+	 * @param pointerToHeap
+	 * @return
+	 */
+	CIVLMemoryBlock memoryBlock(SymbolicExpression pointerToHeap) {
+		ReferenceExpression refQueue[] = new ReferenceExpression[2];
+		ReferenceExpression ref = symbolicUtil.getSymRef(pointerToHeap);
+		int head = 0;
+
+		// The last 2 NTReferenceExpression in the given stores the
+		// identification info of a memory block, thus maintain a cyclic queue
+		// with length 2 whose invariant is "contains the last 2 explored
+		// non-trivial references in the pointer":
+		assert !ref.isNull() && !ref.isIdentityReference();
+		do {
+			NTReferenceExpression ntRef;
+
+			refQueue[head] = ref;
+			head = 1 - head; // switch head
+			ntRef = (NTReferenceExpression) ref;
+			ref = ntRef.getParent();
+		} while (!ref.isNull() && !ref.isIdentityReference());
+		assert refQueue[1 - head].isTupleComponentReference()
+				&& refQueue[head].isArrayElementReference();
+		return new CIVLMemoryBlock(
+				((TupleComponentReference) refQueue[1 - head]).getIndex(),
+				((ArrayElementReference) refQueue[head]).getIndex());
 	}
 
 	/**
@@ -299,8 +426,8 @@ public class HeapAnalyzer {
 	 *         corresponding heap memory unit.
 	 */
 	ReferenceExpression referenceToHeapMemUnit(SymbolicExpression pointer) {
-		ReferenceExpression ref = (ReferenceExpression) universe.tupleRead(
-				pointer, twoObj);
+		ReferenceExpression ref = (ReferenceExpression) universe
+				.tupleRead(pointer, twoObj);
 		Pair<ReferenceExpression, Integer> refResult;
 
 		assert this.isPointerToHeap(pointer);
@@ -310,5 +437,4 @@ public class HeapAnalyzer {
 		else
 			return refResult.left;
 	}
-
 }

@@ -1414,7 +1414,7 @@ public class AmpleSetWorker {
 					if (symbolicUtil.getSymRef(expr)
 							.isArrayElementReference()) {
 						SymbolicExpression arrayPointer = symbolicUtil
-								.parentPointer(null, expr);
+								.parentPointer(expr);
 
 						try {
 							eval = this.dereference(state, arrayPointer);

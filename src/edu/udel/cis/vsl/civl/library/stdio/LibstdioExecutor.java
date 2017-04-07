@@ -415,7 +415,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression filesystemPointer = argumentValues[0];
 		Evaluation eval = evaluator.dereference(expressions[0].getSource(),
-				state, process, expressions[0], filesystemPointer, false, true);
+				state, process, filesystemStructType, filesystemPointer, false,
+				true);
 		CIVLSource modeSource = expressions[2].getSource();
 		int mode = symbolicUtil.extractInt(modeSource,
 				(NumericExpression) argumentValues[2]);
@@ -650,7 +651,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		filesystemPointer = eval.value;
 		state = eval.state;
 		eval = evaluator.dereference(fileSystemExpression.getSource(), state,
-				process, fileSystemExpression, filesystemPointer, false, true);
+				process, filesystemStructType, filesystemPointer, false, true);
 		state = eval.state;
 		fileSystemStructure = eval.value;
 		fileArray = universe.tupleRead(fileSystemStructure, oneObject);
@@ -727,7 +728,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		SymbolicExpression outputArray;
 
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				arguments[0], civlFileSystemPointer, false, true);
+				filesystemStructType, civlFileSystemPointer, false, true);
 		state = eval.state;
 		fileArray = universe.tupleRead(eval.value, oneObject);
 		length = universe.length(fileArray);
@@ -785,7 +786,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		// TODO: position is never cleared if another process open and read the
 		// file.
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				arguments[0], argumentValues[0], false, true);
+				FILEtype, argumentValues[0], false, true);
 		fileStream = eval.value;
 		state = eval.state;
 		filePointer = universe.tupleRead(fileStream, zeroObject);
@@ -990,7 +991,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		List<Format> formats;
 
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				arguments[0], argumentValues[0], false, true);
+				FILEtype, argumentValues[0], false, true);
 		fileStream = eval.value;
 		state = eval.state;
 		filePointer = universe.tupleRead(fileStream, zeroObject);

@@ -750,8 +750,8 @@ public abstract class LibraryComponent {
 									source, state, integerType, count)
 							+ "\n");
 		}
-		eval_and_slices = evaluator.evaluatePointerAdd(state, pid, startPtr,
-				count, checkOutput, source);
+		eval_and_slices = evaluator.pointerAdd(state, pid, startPtr, count,
+				checkOutput, source);
 		eval = eval_and_slices.left;
 		endPtr = eval.value;
 		state = eval.state;
@@ -767,21 +767,27 @@ public abstract class LibraryComponent {
 		startPos = zero;
 		if (symref.isArrayElementReference()) {
 			NumericExpression[] startIndices = symbolicUtil
-					.stripIndicesFromReference((ArrayElementReference) symref);
+					.extractArrayIndicesFrom(startPtr);
 			int numIndices = startIndices.length;
 
+			// If stratPtr is not pointing to a leaf element, the number of
+			// indices will be less than the dimension:
+			if (startIndices.length < dim) {
+				startIndices = Arrays.copyOf(startIndices, dim);
+				for (int i = numIndices; i < dim; i++)
+					startIndices[i] = zero;
+			}
 			for (int i = 1; !startPtr.equals(endPtr); i++) {
-				startPtr = symbolicUtil.parentPointer(source, startPtr);
-				endPtr = symbolicUtil.parentPointer((CIVLSource) null, endPtr);
-				startPos = universe.add(startPos,
-						universe.multiply(startIndices[numIndices - i],
-								arraySlicesSizes[dim - i]));
+				startPtr = symbolicUtil.parentPointer(startPtr);
+				endPtr = symbolicUtil.parentPointer(endPtr);
+				startPos = universe.add(startPos, universe.multiply(
+						startIndices[dim - i], arraySlicesSizes[dim - i]));
 			}
 		}
 		// here "startPtr" is already updated as the pointer to the common sub
 		// array.
-		eval = evaluator.dereference(source, state, process, ptrExpr, startPtr,
-				false, true);
+		eval = evaluator.dereference(source, state, process,
+				typeFactory.voidType(), startPtr, false, true);
 		state = eval.state;
 		if (eval.value.type().typeKind().equals(SymbolicTypeKind.ARRAY)) {
 			eval = this.setDataBetween(state, pid, eval.value, arraySlicesSizes,
@@ -832,8 +838,8 @@ public abstract class LibraryComponent {
 
 		// If "count" == 1:
 		if (reasoner.isValid(universe.equals(count, one))) {
-			eval = evaluator.dereference(source, state, process, pointerExpr,
-					pointer, true, true);
+			eval = evaluator.dereference(source, state, process,
+					typeFactory.voidType(), pointer, true, true);
 			if (eval.value.isNull())
 				reportUndefinedValueError(state, pid,
 						symbolicUtil.getSymRef(pointer).isIdentityReference(),
@@ -848,7 +854,7 @@ public abstract class LibraryComponent {
 		SymbolicExpression rootPointer, rootArray;
 		List<NumericExpression> indicesList = new LinkedList<>();
 		NumericExpression indices[];
-		boolean isHeap = symbolicUtil.isHeapPointer(pointer);
+		boolean isHeap = symbolicUtil.isPointerToHeap(pointer);
 
 		symref = symbolicUtil.getSymRef(pointer);
 		while (symref.isArrayElementReference()) {
@@ -859,8 +865,8 @@ public abstract class LibraryComponent {
 				break;
 		}
 		rootPointer = symbolicUtil.makePointer(pointer, symref);
-		eval = evaluator.dereference(source, state, process, pointerExpr,
-				rootPointer, false, true);
+		eval = evaluator.dereference(source, state, process,
+				typeFactory.voidType(), rootPointer, false, true);
 		state = eval.state;
 		rootArray = eval.value;
 		if (rootArray.isNull())
@@ -1088,7 +1094,7 @@ public abstract class LibraryComponent {
 			throw new CIVLUnimplementedFeatureException(
 					"Transform arrays with non-concrete sizes");
 		arraySlices = new SymbolicExpression[flattenLength.intValue()];
-		coordinatesSizes = symbolicUtil.arrayCoordinateSizes(typeTemplate);
+		coordinatesSizes = symbolicUtil.arrayDimensionExtents(typeTemplate);
 		arraySlicesSizes = symbolicUtil.arraySlicesSizes(coordinatesSizes);
 		elementType = ((SymbolicArrayType) flattenOldArray.type())
 				.elementType();
@@ -1607,13 +1613,13 @@ public abstract class LibraryComponent {
 		// pointer points to heap locations, the ReferenceExpression of the
 		// returned pointer p'must starts with a
 		// tupleComponentRef(ArrayElementRef i), j):
-		if (symbolicUtil.isHeapPointer(pointer)) {
+		if (symbolicUtil.isPointerToHeap(pointer)) {
 			if (ref.isArrayElementReference()) {
 				ref = symbolicUtil
-						.getSymRef(symbolicUtil.parentPointer(source, pointer));
+						.getSymRef(symbolicUtil.parentPointer(pointer));
 				if (ref.isTupleComponentReference()) {
-					ref = symbolicUtil.getSymRef(
-							symbolicUtil.parentPointer(source, pointer));
+					ref = symbolicUtil
+							.getSymRef(symbolicUtil.parentPointer(pointer));
 					if (ref.isIdentityReference())
 						return null;
 				}
@@ -1623,7 +1629,7 @@ public abstract class LibraryComponent {
 			case ARRAY_ELEMENT :
 			case TUPLE_COMPONENT :
 			case UNION_MEMBER :
-				return symbolicUtil.parentPointer(source, pointer);
+				return symbolicUtil.parentPointer(pointer);
 			default :
 				return null;
 		}

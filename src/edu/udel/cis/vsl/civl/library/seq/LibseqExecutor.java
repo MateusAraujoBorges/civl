@@ -165,7 +165,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 				} else {
 					SymbolicExpression eleValue, arrayValue;
 					Evaluation eval = evaluator.dereference(elePtrSource, state,
-							process, arguments[2], elePointer, false, true);
+							process, eleType, elePointer, false, true);
 
 					state = eval.state;
 					eleValue = eval.value;
@@ -255,7 +255,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			throw new UnsatisfiablePathConditionException();
 		} else {
 			Evaluation eval = evaluator.dereference(seqSource, state, process,
-					arguments[0], seqPtr, false, true);
+					typeFactory.voidType(), seqPtr, false, true);
 			SymbolicExpression seq;
 
 			state = eval.state;
@@ -358,8 +358,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 				throw new UnsatisfiablePathConditionException();
 			}
 		}
-		eval = evaluator.dereference(arrayPtrSource, state, process,
-				arguments[0], arrayPtr, false, true);
+		eval = evaluator.dereference(arrayPtrSource, state, process, arrayType,
+				arrayPtr, false, true);
 		state = eval.state;
 		arrayValue = eval.value;
 		if (arrayValue.operator() != SymbolicOperator.ARRAY) {
@@ -409,8 +409,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 						modelFactory.integerLiteralExpression(source,
 								BigInteger.valueOf(i)));
 
-				eval = evaluator.pointerAdd(state, pid, process, pointerAdd,
-						valuesPtr, universe.integer(i));
+				eval = evaluator.evaluatePointerAdd(state, pid, process,
+						pointerAdd, valuesPtr, universe.integer(i));
 				state = eval.state;
 				valuePtr = eval.value;
 			} else

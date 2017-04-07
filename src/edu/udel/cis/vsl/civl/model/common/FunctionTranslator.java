@@ -5809,19 +5809,13 @@ public class FunctionTranslator {
 					// modelBuilder.handledObjectTypes.add(result);
 					typeFactory.addSystemType(tag, result);
 					break;
-				case ModelConfiguration.COLLECT_RECORD_TYPE :
-					typeFactory.addSystemType(tag, result);
-					structType.setHandleObjectType(false);
-					modelBuilder.collectRecordType = result;
-					// modelBuilder.handledObjectTypes.add(result);
-					break;
-				case ModelConfiguration.GCOLLECT_CHECKER_TYPE :
+				case ModelConfiguration.GCOLLATOR_TYPE :
 					typeFactory.addSystemType(tag, result);
 					structType.setHandleObjectType(true);
 					modelBuilder.gcollectCheckerType = result;
 					modelBuilder.handledObjectTypes.add(result);
 					break;
-				case ModelConfiguration.COLLECT_CHECKER_TYPE :
+				case ModelConfiguration.COLLATOR_TYPE :
 					typeFactory.addSystemType(tag, result);
 					structType.setHandleObjectType(true);
 					modelBuilder.collectCheckerType = result;

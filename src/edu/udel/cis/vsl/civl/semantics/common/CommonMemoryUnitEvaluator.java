@@ -297,7 +297,7 @@ public class CommonMemoryUnitEvaluator
 						if (symbolicUtil.getSymRef(expr)
 								.isArrayElementReference()) {
 							SymbolicExpression arrayPointer = symbolicUtil
-									.parentPointer(null, expr);
+									.parentPointer(expr);
 
 							eval = evaluator.dereference(null, state, process,
 									null, arrayPointer, false, true);

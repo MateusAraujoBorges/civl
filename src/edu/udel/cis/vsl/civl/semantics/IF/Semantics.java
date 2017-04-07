@@ -16,6 +16,7 @@ import edu.udel.cis.vsl.civl.semantics.common.CommonMemoryUnitEvaluator;
 import edu.udel.cis.vsl.civl.semantics.common.CommonSymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.common.CommonTransition;
 import edu.udel.cis.vsl.civl.semantics.common.CommonTransitionSet;
+import edu.udel.cis.vsl.civl.semantics.common.ErrorSideEffectFreeEvaluator;
 import edu.udel.cis.vsl.civl.semantics.common.NoopTransition;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -108,6 +109,36 @@ public class Semantics {
 		return new CommonEvaluator(modelFactory, stateFactory, loader,
 				loaderExec, symbolicUtil, symbolicAnalyzer, memUnitFactory,
 				errLogger, config);
+	}
+
+	/**
+	 * Creates a new instance of {@link ErrorSideEffectFreeEvaluator}.
+	 * 
+	 * @param modelFactory
+	 *            The model factory of the system.
+	 * @param stateFactory
+	 *            The state factory of the system.
+	 * @param loader
+	 *            The library evaluator loader for evaluating the guards of
+	 *            system functions.
+	 * @param symbolicUtil
+	 *            The symbolic utility for manipulations of symbolic
+	 *            expressions.
+	 * @param symbolicAnalyzer
+	 *            The symbolic analyzer used in the system.
+	 * @param errLogger
+	 *            The error logger for reporting execution errors.
+	 * @return The new CIVL evaluator.
+	 */
+	public static Evaluator newErrorSideEffectFreeEvaluator(
+			ModelFactory modelFactory, StateFactory stateFactory,
+			LibraryEvaluatorLoader loader, LibraryExecutorLoader loaderExec,
+			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
+			MemoryUnitFactory memUnitFactory, CIVLErrorLogger errLogger,
+			CIVLConfiguration config) {
+		return new ErrorSideEffectFreeEvaluator(modelFactory, stateFactory,
+				loader, loaderExec, symbolicUtil, symbolicAnalyzer,
+				memUnitFactory, errLogger, config);
 	}
 
 	/**

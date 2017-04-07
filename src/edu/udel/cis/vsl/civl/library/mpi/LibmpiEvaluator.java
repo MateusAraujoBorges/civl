@@ -414,7 +414,7 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		// ptr + (real_count - 1):
 		realOffset = universe.subtract(
 				universe.multiply(count, mpiPtr_datatypeSize.right), one);
-		eval = evaluator.evaluatePointerAdd(state, pid,
+		eval = evaluator.pointerAdd(state, pid,
 				mpiPtr_datatypeSize.left, realOffset, false,
 				expression.getSource()).left;
 		state = eval.state;
@@ -497,7 +497,7 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 
 		mpiPtr_datatypeSize = processMPIPointer(state, pid, process, ptrExpr,
 				ptr, datatypeExpr, datatype, expression.getSource());
-		return evaluator.evaluatePointerAdd(state, pid,
+		return evaluator.pointerAdd(state, pid,
 				mpiPtr_datatypeSize.left,
 				universe.multiply(count, mpiPtr_datatypeSize.right), false,
 				expression.getSource()).left;

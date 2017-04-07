@@ -155,8 +155,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		if (charPointer.type() instanceof SymbolicArrayType) {
 			originalArray = charPointer;
 		} else {
-			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(source,
-					charPointer);
+			SymbolicExpression arrayPointer = symbolicUtil
+					.parentPointer(charPointer);
 			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil
 					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
@@ -257,11 +257,13 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				Evaluation eval;
 
 				eval = evaluator.dereference(arguments[0].getSource(), state,
-						process, arguments[0], charPointer1, true, true);
+						process, typeFactory.charType(), charPointer1, true,
+						true);
 				state = eval.state;
 				strObj1 = eval.value;
 				eval = evaluator.dereference(arguments[1].getSource(), state,
-						process, arguments[1], charPointer2, true, true);
+						process, typeFactory.charType(), charPointer2, true,
+						true);
 				state = eval.state;
 				strObj2 = eval.value;
 				if (strObj1.equals(strObj2))
@@ -310,8 +312,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		if (charPointer.type() instanceof SymbolicArrayType) {
 			originalArray = charPointer;
 		} else {
-			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(source,
-					charPointer);
+			SymbolicExpression arrayPointer = symbolicUtil
+					.parentPointer(charPointer);
 			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil
 					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
@@ -450,8 +452,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 						"Any datatype other than REAL, INTEGER, CHAR and BOOLEAN is not supported yet");
 		}
 		length = universe.divide(size, dataTypeSize);
-		ptrAddRet = evaluator.evaluatePointerAdd(state, pid, pointer, length,
-				false, arguments[0].getSource());
+		ptrAddRet = evaluator.pointerAdd(state, pid, pointer, length, false,
+				arguments[0].getSource());
 		eval = ptrAddRet.left;
 		state = eval.state;
 		// create a set of zeros to set to the pointed object.

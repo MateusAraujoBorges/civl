@@ -1797,9 +1797,17 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			}
 			parentType = typeOfObjByRef(type, parent);
 			if (parentType.isHeapType()) {
+				MallocStatement malloc = ((CIVLHeapType) parentType)
+						.getMalloc(index);
+				CIVLType elementType = malloc.getStaticElementType();
+				Expression sizeExpr = malloc.getSizeExpression();
+				Expression sizeofType = modelFactory
+						.sizeofTypeExpression(malloc.getSource(), elementType);
+				Expression numHeapObjects = modelFactory.binaryExpression(
+						malloc.getSource(), BINARY_OPERATOR.DIVIDE, sizeExpr,
+						sizeofType);
 				CIVLArrayType heapTupleType = typeFactory
-						.incompleteArrayType(((CIVLHeapType) parentType)
-								.getMalloc(index).getStaticElementType());
+						.completeArrayType(elementType, numHeapObjects);
 
 				heapTupleType = typeFactory.incompleteArrayType(heapTupleType);
 				return heapTupleType;
