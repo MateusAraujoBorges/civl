@@ -107,6 +107,8 @@ public class CIVLConstants {
 
 	public static String ERROR_BOUND = "errorBound";
 
+	public static String MAX_PROCS = "maxProcs";
+
 	public static String ERROR_STATE_EQUIV = "errorStateEquiv";
 
 	public static String GUIDED = "guided";
@@ -209,6 +211,9 @@ public class CIVLConstants {
 	 */
 	public final static Option errorBoundO = Option.newScalarOption(ERROR_BOUND,
 			INTEGER, "stop after finding this many errors", 1);
+
+	public final static Option maxProcsO = Option.newScalarOption(
+			MAX_PROCS, INTEGER, "the maximum number of processes", 1000);
 
 	/**
 	 * The semantics for used to determine when error states are equivalent;
@@ -629,7 +634,7 @@ public class CIVLConstants {
 				analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
 				sliceAnalysisO, witnessO, direct0, intBit,
-				intOperationTransformer};
+				intOperationTransformer, maxProcsO};
 	}
 
 	// headers...
