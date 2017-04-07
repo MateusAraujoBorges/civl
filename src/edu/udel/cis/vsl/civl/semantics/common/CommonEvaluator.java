@@ -148,7 +148,7 @@ public class CommonEvaluator implements Evaluator {
 
 	private MemoryUnitFactory memUnitFactory;
 
-	private CIVLConfiguration civlConfig;
+	protected CIVLConfiguration civlConfig;
 
 	/**
 	 * The library evaluator loader. This is used to location and obtain the
@@ -698,31 +698,9 @@ public class CommonEvaluator implements Evaluator {
 			eval.value = universe.falseExpression();
 			return eval;
 		} else {
-			BooleanExpression assumptionAndp = universe.and(assumption,
-					leftValue);
-			State s1 = stateFactory.addToPathcondition(eval.state, pid,
-					leftValue);
-			Evaluation eval1 = evaluate(s1, pid, expression.right());
-			BooleanExpression pcTemp = eval1.state.getPathCondition();
-
-			if (!assumptionAndp.equals(pcTemp)) {
-				eval.state = stateFactory.addToPathcondition(eval.state, pid,
-						universe.not(leftValue));
-				eval.state = stateFactory.disjointWTPathcondition(eval.state,
-						pid, pcTemp);
-			}
-			// Reason for above: In the common case where there
-			// are no side effects, this would set the path condition to
-			// (assumption && p) || (assumption && !p),
-			// which does not get simplified to just "assumption",
-			// as one would like. So it is handled as a special case:
-			// check whether pcTemp equals (assumption && p)
-			// (i.e., the evaluation of expression.right() did not
-			// add any side-effects). If this holds, then pc is just
-			// assumption.
-			// TODO check if assign to left
+			eval = evaluate(eval.state, pid, expression.right());
 			eval.value = universe.and(leftValue,
-					(BooleanExpression) eval1.value);
+					(BooleanExpression) eval.value);
 			return eval;
 		}
 	}
@@ -1478,16 +1456,8 @@ public class CommonEvaluator implements Evaluator {
 			eval.value = universe.trueExpression();
 			return eval;
 		} else {
-			State s1 = stateFactory.addToPathcondition(eval.state, pid, p);
-			Evaluation eval1 = evaluate(s1, pid, expression.right());
-			BooleanExpression pc = universe.or(eval1.state.getPathCondition(),
-					universe.and(assumption, universe.not(p)));
-
-			eval.state = stateFactory.addToPathcondition(eval.state, pid,
-					universe.not(p));
-			eval.state = stateFactory.disjointWTPathcondition(eval.state, pid,
-					eval1.state.getPathCondition());
-			eval.value = universe.implies(p, (BooleanExpression) eval1.value);
+			eval = evaluate(eval.state, pid, expression.right());
+			eval.value = universe.implies(p, (BooleanExpression) eval.value);
 			return eval;
 		}
 	}
@@ -1725,42 +1695,10 @@ public class CommonEvaluator implements Evaluator {
 				eval.value = universe.neq(left, right);
 				break;
 			}
-			case MODULO : {
-				BooleanExpression assumption = eval.state.getPathCondition();
-				NumericExpression denominator = (NumericExpression) right;
-
-				if (this.civlConfig.svcomp()) {
-					BooleanExpression leftPositive = universe.lessThan(zero,
-							(NumericExpression) left);
-					ResultType resultType = universe.reasoner(assumption)
-							.valid(leftPositive).getResultType();
-
-					if (resultType != ResultType.YES) {
-						left = universe.add(universe
-								.modulo((NumericExpression) left, denominator),
-								denominator);
-					}
-				} else {
-					BooleanExpression claim = universe.neq(
-							zeroOf(expression.getSource(),
-									expression.getExpressionType()),
-							denominator);
-					ResultType resultType = universe.reasoner(assumption)
-							.valid(claim).getResultType();
-
-					if (resultType != ResultType.YES) {
-						eval.state = errorLogger.logError(
-								expression.getSource(), eval.state, pid,
-								this.symbolicAnalyzer
-										.stateInformation(eval.state),
-								claim, resultType, ErrorKind.DIVISION_BY_ZERO,
-								"Modulus denominator is zero");
-					}
-				}
-				eval.value = universe.modulo((NumericExpression) left,
-						denominator);
+			case MODULO :
+				eval = evaluateModulo(eval.state, pid, expression,
+						(NumericExpression) left, (NumericExpression) right);
 				break;
-			}
 			case POINTER_ADD :
 				eval = evaluatePointerAdd(eval.state, pid, process, expression,
 						left, (NumericExpression) right);
@@ -1786,6 +1724,57 @@ public class CommonEvaluator implements Evaluator {
 						expression);
 		}
 		return eval;
+	}
+
+	/**
+	 * <p>
+	 * Evaluates a modulo operation.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the calling process
+	 * @param expression
+	 *            A {@link BinaryExpression} which represents a division
+	 *            operation.
+	 * @param numerator
+	 *            The value of the numerator
+	 * @param denominator
+	 *            The value of the denominator
+	 * @return The evaluation of this operation.
+	 * @throws UnsatisfiablePathConditionException
+	 *             When the denominator equals to zero.
+	 */
+	protected Evaluation evaluateModulo(State state, int pid,
+			BinaryExpression expression, NumericExpression numerator,
+			NumericExpression denominator)
+			throws UnsatisfiablePathConditionException {
+		BooleanExpression assumption = state.getPathCondition();
+
+		if (this.civlConfig.svcomp()) {
+			BooleanExpression leftPositive = universe.lessThan(zero, numerator);
+			ResultType resultType = universe.reasoner(assumption)
+					.valid(leftPositive).getResultType();
+
+			if (resultType != ResultType.YES) {
+				numerator = universe.add(
+						universe.modulo(numerator, denominator), denominator);
+			}
+		} else {
+			BooleanExpression claim = universe
+					.neq(zeroOf(expression.getSource(),
+							expression.getExpressionType()), denominator);
+			ResultType resultType = universe.reasoner(assumption).valid(claim)
+					.getResultType();
+
+			if (resultType != ResultType.YES)
+				state = errorLogger.logError(expression.getSource(), state, pid,
+						symbolicAnalyzer.stateInformation(state), claim,
+						resultType, ErrorKind.DIVISION_BY_ZERO,
+						"Modulus denominator is zero");
+		}
+		return new Evaluation(state, universe.modulo(numerator, denominator));
 	}
 
 	/**
@@ -1884,14 +1873,8 @@ public class CommonEvaluator implements Evaluator {
 		if (reasoner.isValid(universe.not(p))) {
 			return evaluate(eval.state, pid, expression.right());
 		} else {
-			State s1 = stateFactory.addToPathcondition(eval.state, pid,
-					universe.not(p));
-			Evaluation eval1 = evaluate(s1, pid, expression.right());
-
-			eval.state = stateFactory.addToPathcondition(eval.state, pid, p);
-			eval.state = stateFactory.disjointWTPathcondition(eval.state, pid,
-					eval1.state.getPathCondition());
-			eval.value = universe.or(p, (BooleanExpression) eval1.value);
+			eval = evaluate(eval.state, pid, expression.right());
+			eval.value = universe.or(p, (BooleanExpression) eval.value);
 			return eval;
 		}
 	}
@@ -2904,7 +2887,7 @@ public class CommonEvaluator implements Evaluator {
 	 * @param type
 	 * @return
 	 */
-	private NumericExpression zeroOf(CIVLSource source, CIVLType type) {
+	protected NumericExpression zeroOf(CIVLSource source, CIVLType type) {
 		if (type instanceof CIVLPrimitiveType) {
 			if (((CIVLPrimitiveType) type)
 					.primitiveTypeKind() == PrimitiveTypeKind.INT)

@@ -676,9 +676,9 @@ public interface SymbolicUtility {
 
 	/**
 	 * <p>
-	 * Returns an array of indices in the given {@link ArrayElementReference}.
-	 * Note: The <b>order</b> of indices is from right to left which is same as
-	 * the lexical subscript order.
+	 * Returns an array of indices in the given concrete pointer. Note: The
+	 * <b>order</b> of indices is from right to left which is same as the
+	 * lexical subscript order.
 	 * </p>
 	 * 
 	 * @param pointerToArrayElement

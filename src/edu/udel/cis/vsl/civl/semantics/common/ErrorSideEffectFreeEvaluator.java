@@ -232,6 +232,8 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 			NumericExpression denominator)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression result;
+		NumericExpression zero = zeroOf(expression.getSource(),
+				expression.getExpressionType());
 		BooleanExpression denoEqZero = universe.equals(denominator, zero);
 
 		if (denominator.isZero() || universe.reasoner(state.getPathCondition())
@@ -240,6 +242,26 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 					expression.getExpressionType().getDynamicType(universe));
 		result = universe.divide((NumericExpression) numerator, denominator);
 		return new Evaluation(state, result);
+	}
+
+	@Override
+	protected Evaluation evaluateModulo(State state, int pid,
+			BinaryExpression expression, NumericExpression numerator,
+			NumericExpression denominator)
+			throws UnsatisfiablePathConditionException {
+		BooleanExpression assumption = state.getPathCondition();
+
+		if (civlConfig.svcomp()) {
+			BooleanExpression leftPositive = universe.lessThan(zero, numerator);
+			ResultType resultType = universe.reasoner(assumption)
+					.valid(leftPositive).getResultType();
+
+			if (resultType != ResultType.YES) {
+				numerator = universe.add(
+						universe.modulo(numerator, denominator), denominator);
+			}
+		}
+		return new Evaluation(state, universe.modulo(numerator, denominator));
 	}
 
 	@Override
