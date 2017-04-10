@@ -300,13 +300,13 @@ public class CommonMemoryUnitEvaluator
 									.parentPointer(expr);
 
 							eval = evaluator.dereference(null, state, process,
-									null, arrayPointer, false, true);
+									arrayPointer, false, true);
 							/* Check if it's length == 0 */
 							if (universe.length(eval.value).isZero())
 								return;
 						}
-						eval = evaluator.dereference(null, state, process, null,
-								expr, false, true);
+						eval = evaluator.dereference(null, state, process, expr,
+								false, true);
 						pointerValue = eval.value;
 						state = eval.state;
 						if (pointerValue.operator() == SymbolicOperator.TUPLE

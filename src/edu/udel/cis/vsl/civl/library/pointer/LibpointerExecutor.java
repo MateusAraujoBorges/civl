@@ -9,7 +9,6 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
@@ -20,7 +19,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -29,12 +27,9 @@ import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
-import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType.SymbolicTypeKind;
 
@@ -116,10 +111,6 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 				callEval = executePointer_add(state, pid, process, arguments,
 						argumentValues, source);
 				break;
-			case "$pointer_realloc" :
-				callEval = executePointer_realloc(state, pid, process,
-						arguments, argumentValues, source);
-				break;
 			default :
 				throw new CIVLUnimplementedFeatureException(
 						"the function " + name + " of library pointer.cvh",
@@ -147,8 +138,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 	private Evaluation executeSetDefault(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
-		// TODO Auto-generated method stub
-		CIVLType objectTypeByPointer = symbolicAnalyzer.typeOfObjByPointer(
+		CIVLType objectTypeByPointer = symbolicAnalyzer.civlTypeOfObjByPointer(
 				arguments[0].getSource(), state, argumentValues[0]);
 		SymbolicExpression value;
 
@@ -265,7 +255,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(
+		CIVLType objectType = symbolicAnalyzer.civlTypeOfObjByPointer(
 				arguments[1].getSource(), state, argumentValues[0]);
 		List<ReferenceExpression> leafs = this.evaluator
 				.leafNodeReferencesOfType(arguments[0].getSource(), state, pid,
@@ -278,8 +268,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		for (ReferenceExpression ref : leafs)
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers) {
-			eval = this.evaluator.dereference(source, state, process, null,
-					leafPtr, false, true);
+			eval = evaluator.dereference(source, state, process, leafPtr, false,
+					true);
 			state = eval.state;
 			if (universe.equals(eval.value, argumentValues[1]).isTrue()) {
 				result = trueValue;
@@ -299,11 +289,10 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(
+		CIVLType objectType = symbolicAnalyzer.civlTypeOfObjByPointer(
 				arguments[1].getSource(), state, argumentValues[0]);
-		List<ReferenceExpression> leafs = this.evaluator
-				.leafNodeReferencesOfType(arguments[0].getSource(), state, pid,
-						objectType);
+		List<ReferenceExpression> leafs = evaluator.leafNodeReferencesOfType(
+				arguments[0].getSource(), state, pid, objectType);
 		List<SymbolicExpression> leafPointers = new ArrayList<>();
 		SymbolicExpression objectPointer = argumentValues[0];
 		Evaluation eval;
@@ -312,8 +301,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		for (ReferenceExpression ref : leafs)
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers) {
-			eval = this.evaluator.dereference(source, state, process, null,
-					leafPtr, false, true);
+			eval = this.evaluator.dereference(source, state, process, leafPtr,
+					false, true);
 			state = eval.state;
 			if (universe.equals(eval.value, argumentValues[1]).isFalse()) {
 				result = falseValue;
@@ -345,7 +334,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(
+		CIVLType objectType = symbolicAnalyzer.civlTypeOfObjByPointer(
 				arguments[1].getSource(), state, argumentValues[0]);
 		List<ReferenceExpression> leafs = this.evaluator
 				.leafNodeReferencesOfType(arguments[0].getSource(), state, pid,
@@ -412,7 +401,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		// TODO check null or invalid pointers.
-		CIVLType objectType = symbolicAnalyzer.typeOfObjByPointer(
+		CIVLType objectType = symbolicAnalyzer.civlTypeOfObjByPointer(
 				arguments[1].getSource(), state, argumentValues[1]);
 		List<ReferenceExpression> leafs = this.evaluator
 				.leafNodeReferencesOfType(arguments[1].getSource(), state, pid,
@@ -488,17 +477,12 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		} else {
 			SymbolicExpression rightValue;
 			CIVLType objTypeLeft = symbolicAnalyzer
-					.typeOfObjByPointer(sourceLeft, state, left);
+					.civlTypeOfObjByPointer(sourceLeft, state, left);
 			CIVLType objTypeRight = symbolicAnalyzer
-					.typeOfObjByPointer(sourceRight, state, right);
-			TypeEvaluation leftTypeEval = evaluator.getDynamicType(state, pid,
-					objTypeLeft, sourceLeft, false);
-			TypeEvaluation rightTypeEval = evaluator.getDynamicType(
-					leftTypeEval.state, pid, objTypeRight, sourceRight, false);
-			SymbolicType dynObjTypeLeft = leftTypeEval.type,
-					dynObjTypeRight = rightTypeEval.type;
-
-			state = rightTypeEval.state;
+					.civlTypeOfObjByPointer(sourceRight, state, right);
+			SymbolicType dynObjTypeLeft = objTypeLeft.getDynamicType(universe);
+			SymbolicType dynObjTypeRight = objTypeRight
+					.getDynamicType(universe);
 			if (!dynObjTypeLeft.equals(dynObjTypeRight)) {
 				StringBuffer msg = new StringBuffer();
 
@@ -526,8 +510,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 						ErrorKind.DEREFERENCE, msg.toString());
 				throw new UnsatisfiablePathConditionException();
 			}
-			eval = evaluator.dereference(sourceRight, state, process,
-					objTypeRight, right, false, false);
+			eval = evaluator.dereference(sourceRight, state, process, right,
+					false, false);
 			state = eval.state;
 			rightValue = eval.value;
 			state = primaryExecutor.assign(source, state, pid, left,
@@ -556,14 +540,13 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression first, second, rhs;
 		Evaluation eval = evaluator.dereference(arguments[0].getSource(), state,
-				process, typeFactory.voidType(), argumentValues[0], false,
-				true);
+				process, argumentValues[0], false, true);
 		int invalidArg = -1;
 
 		state = eval.state;
 		first = eval.value;
 		eval = evaluator.dereference(arguments[1].getSource(), state, process,
-				typeFactory.voidType(), argumentValues[1], false, true);
+				argumentValues[1], false, true);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))
@@ -647,11 +630,11 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			return new Evaluation(state, null);
 		}
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				typeFactory.voidType(), argumentValues[0], false, true);
+				argumentValues[0], false, true);
 		state = eval.state;
 		first = eval.value;
 		eval = evaluator.dereference(arguments[1].getSource(), state, process,
-				typeFactory.voidType(), argumentValues[1], false, true);
+				argumentValues[1], false, true);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))
@@ -856,121 +839,10 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			offset = universe.multiply(offset,
 					universe.divide(type_size, ptr_primType_size));
 		}
-		eval = evaluator.pointerAdd(state, pid, ptr, offset, true, source).left;
+		eval = evaluator.arrayElementReferenceAdd(state, pid, ptr, offset,
+				source).left;
 		state = eval.state;
 		output_ptr = eval.value;
 		return new Evaluation(state, output_ptr);
-	}
-
-	/**
-	 * <p>
-	 * Pre-condition: 1. Pointer must be a dereferable pointer to a memory block
-	 * which was allocated by malloc or calloc; <br>
-	 * 2. new_size must be greater than zero;
-	 * </p>
-	 * 
-	 * <p>
-	 * Attempts to resize the memory block pointed to by the first argument
-	 * "pointer" that was previously allocated with a call to malloc or calloc
-	 * with the new size given by the second argument. <br>
-	 * 
-	 * <code>void $poiter_realloc(void *ptr, size_t new_size)</code>
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state when this method is called
-	 * @param pid
-	 *            The PID of the process calling this method
-	 * @param process
-	 *            The String identifier of the process
-	 * @param arguments
-	 *            The argument expression array
-	 * @param argumentValues
-	 *            The symbolic expression array for arguments
-	 * @param source
-	 *            The {@link CIVLSource} related to this method call
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation executePointer_realloc(State state, int pid,
-			String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
-		SymbolicExpression ptr = argumentValues[0];
-		SymbolicExpression heap, newHeap, heapPtr;
-		NumericExpression newSize = (NumericExpression) argumentValues[1];
-		// count == totalSize / elementTypeSize:
-		NumericExpression heapCount, elementTypeSize, newCount;
-		SymbolicType baseType;
-		Evaluation eval;
-
-		// The pointer must be dereferable and to a memory block from a malloc
-		// call:
-		if (ptr.equals(symbolicUtil.undefinedPointer())) {
-			errorLogger.logSimpleError(source, state, process,
-					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
-					"Attempt to do re-allocation for an undefined pointer.");
-			return new Evaluation(state, null); // no-op
-		}
-		if (!symbolicUtil.isMallocPointer(source, ptr)) {
-			errorLogger.logSimpleError(source, state, process,
-					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
-					"Attempt to do re-allocation for an pointer which is not returned by malloc.");
-			return new Evaluation(state, null);// no-op
-		}
-		// get static type from mallocID:
-		IntObject mallocID;
-		CIVLType elementStaticType;
-		TypeEvaluation teval;
-
-		heapPtr = symbolicUtil.heapMemUnit(ptr);
-		mallocID = symbolicUtil.getMallocID(heapPtr);
-		elementStaticType = modelFactory.model().getMalloc(mallocID.getInt())
-				.getStaticElementType();
-		teval = evaluator.getDynamicType(state, pid, elementStaticType, source,
-				false);
-		baseType = teval.type;
-		elementTypeSize = symbolicUtil.sizeof(source, elementStaticType,
-				baseType);
-		newCount = universe.divide(newSize, elementTypeSize);
-		eval = evaluator.dereference(source, teval.state, process,
-				typeFactory.heapType(), heapPtr, false, true);
-		state = eval.state;
-		heap = eval.value;
-		heapCount = universe.length(eval.value);
-
-		Pair<State, SymbolicConstant> havocRet;
-		BooleanExpression isExpand = universe.lessThanEquals(heapCount,
-				newCount);
-		BooleanExpression isShrink = universe.lessThan(newCount, heapCount);
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-
-		// Assertion for pre-condition:
-		assert !reasoner.isValid(universe.equals(newSize, zero));
-		if (reasoner.isValid(isExpand)) {
-			SymbolicCompleteArrayType newHeapType = universe.arrayType(baseType,
-					newCount);
-
-			// TODO: change the heap prefix name:
-			havocRet = stateFactory.getFreshSymbol(state,
-					ModelConfiguration.HEAP_OBJECT_PREFIX_INDEX, newHeapType);
-			state = havocRet.left;
-			newHeap = havocRet.right;
-			newHeap = arraySliceWrite1d(state, pid, newHeap, heap, zero,
-					source);
-		} else if (reasoner.isValid(isShrink)) {
-			NumericExpression idx[] = {zero};
-
-			newHeap = arraySliceRead(state, pid, heap, idx, newCount, source);
-		} else {
-			errorLogger.logSimpleError(source, state, process,
-					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
-					"Attempt to shrink an exsiting memory heap by re-allocation.");
-			return new Evaluation(state, null);// no-op
-		}
-		eval.state = primaryExecutor.assign(source, state, pid, heapPtr,
-				newHeap);
-		eval.value = null;
-		return eval;
 	}
 }

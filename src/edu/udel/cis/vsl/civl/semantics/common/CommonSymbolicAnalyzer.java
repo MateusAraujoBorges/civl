@@ -183,7 +183,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		// different.
 		if (vid == 0)
 			return ref;
-		objType = typeOfObjByPointer(source, state, pointer);
+		objType = civlTypeOfObjByPointer(source, state, pointer);
 		while (objType.isArrayType()) {
 			ref = universe.arrayElementReference(ref, zero);
 			objType = ((CIVLArrayType) objType).elementType();
@@ -336,7 +336,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public CIVLType typeOfObjByPointer(CIVLSource soruce, State state,
+	public CIVLType civlTypeOfObjByPointer(CIVLSource soruce, State state,
 			SymbolicExpression pointer) {
 		ReferenceExpression reference = this.symbolicUtil.getSymRef(pointer);
 		int dyscopeId = symbolicUtil.getDyscopeId(soruce, pointer);
@@ -353,9 +353,25 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
+	public SymbolicType dynamicTypeOfObjByPointer(CIVLSource soruce,
+			State state, SymbolicExpression pointer) {
+		ReferenceExpression reference = symbolicUtil.getSymRef(pointer);
+		int dyscopeId = symbolicUtil.getDyscopeId(soruce, pointer);
+		int vid = symbolicUtil.getVariableId(soruce, pointer);
+		SymbolicExpression varValue;
+
+		if (dyscopeId == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE) {
+			varValue = modelFactory.model().staticConstantScope().variable(vid)
+					.constantValue();
+		} else
+			varValue = state.getDyscope(dyscopeId).getValue(vid);
+		return universe.dereference(varValue, reference).type();
+	}
+
+	@Override
 	public CIVLType getArrayBaseType(State state, CIVLSource source,
 			SymbolicExpression arrayPtr) {
-		CIVLType type = this.typeOfObjByPointer(source, state, arrayPtr);
+		CIVLType type = this.civlTypeOfObjByPointer(source, state, arrayPtr);
 
 		while (type instanceof CIVLArrayType)
 			type = ((CIVLArrayType) type).elementType();
@@ -2811,8 +2827,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			return new Pair<>(universe.trueExpression(), ResultType.YES);
 		if (pointer.isNull())
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
-		if (!pointer.operator().equals(SymbolicOperator.TUPLE)
-				&& !pointer.operator().equals(SymbolicOperator.CONCRETE))
+		if (!SymbolicAnalyzer.isConcretePointer(pointer))
 			throw new CIVLUnimplementedFeatureException(
 					"\nAbility to deterine whether a non-concrete pointer is defined."
 							+ "\npointer value: " + pointer.toString(),

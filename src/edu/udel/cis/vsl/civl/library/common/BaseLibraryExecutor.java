@@ -209,7 +209,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 					.isDerefablePointer(state, firstElementPointer);
 
 			if (checkDerefable.right == ResultType.YES) {
-				eval = this.evaluator.dereference(source, state, process, null,
+				eval = evaluator.dereference(source, state, process,
 						firstElementPointer, false, true);
 				heapObject = eval.value;
 				state = eval.state;
@@ -333,34 +333,6 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 			state = this.stateFactory.setLocation(state, pid, target);
 		eval.state = state;
 		return eval;
-	}
-
-	@Override
-	public State executeWithValue(State state, int pid,
-			CallOrSpawnStatement call, String functionName,
-			SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
-		Evaluation eval;
-		LHSExpression lhs = call.lhs();
-		Location target = call.target();
-		Expression[] arguments;
-		int numArgs;
-		String process = state.getProcessState(pid).name();
-
-		numArgs = call.arguments().size();
-		arguments = new Expression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			arguments[i] = call.arguments().get(i);
-		}
-		eval = this.executeValue(state, pid, process, call.getSource(),
-				functionName, arguments, argumentValues);
-		state = eval.state;
-		if (lhs != null && eval.value != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					eval.value);
-		if (target != null && !state.getProcessState(pid).hasEmptyStack())
-			state = this.stateFactory.setLocation(state, pid, target);
-		return state;
 	}
 
 	abstract protected Evaluation executeValue(State state, int pid,

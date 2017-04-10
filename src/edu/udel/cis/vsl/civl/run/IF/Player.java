@@ -105,6 +105,7 @@ public abstract class Player {
 			PrintStream err, boolean collectOutputs)
 			throws CommandLineException {
 		SymbolicUniverse universe;
+		Evaluator errorSideEffectFreeEvaluator;
 
 		this.config = gmcConfig;
 		this.model = model;
@@ -155,16 +156,14 @@ public abstract class Player {
 		this.executor = Semantics.newExecutor(modelFactory, stateFactory,
 				libraryExecutorLoader, evaluator, symbolicAnalyzer, log,
 				civlConfig);
-
-		Evaluator errorSideEffectFreeEvaluator = Semantics
+		errorSideEffectFreeEvaluator = Semantics
 				.newErrorSideEffectFreeEvaluator(modelFactory, stateFactory,
 						libraryEvaluatorLoader, libraryExecutorLoader,
 						symbolicUtil, symbolicAnalyzer, memUnitFactory, log,
 						civlConfig);
-
-		enabler = Kripkes.newEnabler(stateFactory, errorSideEffectFreeEvaluator,
-				executor, symbolicAnalyzer, memUnitFactory,
-				this.libraryEnablerLoader, log, civlConfig);
+		this.enabler = Kripkes.newEnabler(stateFactory,
+				errorSideEffectFreeEvaluator, executor, symbolicAnalyzer,
+				memUnitFactory, this.libraryEnablerLoader, log, civlConfig);
 		this.random = gmcConfig.getAnonymousSection().isTrue(randomO);
 		this.minimize = gmcConfig.getAnonymousSection().isTrue(minO);
 		this.maxdepth = (int) gmcConfig.getAnonymousSection()

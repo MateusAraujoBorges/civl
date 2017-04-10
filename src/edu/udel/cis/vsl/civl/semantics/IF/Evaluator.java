@@ -52,7 +52,7 @@ public interface Evaluator {
 	 *            The {@link CIVLType} of the result of the dereference
 	 *            operation. For cases that there is no lexical information
 	 *            referred, the type should be acquired by calling
-	 *            {@link SymbolicAnalyzer#typeOfObjByPointer(CIVLSource, State, SymbolicExpression)}.
+	 *            {@link SymbolicAnalyzer#civlTypeOfObjByPointer(CIVLSource, State, SymbolicExpression)}.
 	 * @param pointer
 	 *            A pointer value which refers to some sub-structure in the
 	 *            state, and is to dereferenced.
@@ -68,8 +68,7 @@ public interface Evaluator {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	Evaluation dereference(CIVLSource source, State state, String process,
-			CIVLType resultType, SymbolicExpression pointer,
-			boolean checkedOutput, boolean strict)
+			SymbolicExpression pointer, boolean checkedOutput, boolean strict)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -359,10 +358,9 @@ public interface Evaluator {
 	 *         pointed by the given pointer which helps saving computing time
 	 *         for caller functions.
 	 */
-	public Pair<Evaluation, NumericExpression[]> pointerAdd(State state,
+	public Pair<Evaluation, NumericExpression[]> arrayElementReferenceAdd(State state,
 			int pid, SymbolicExpression ptr, NumericExpression offset,
-			boolean ifCheckOutput, CIVLSource source)
-			throws UnsatisfiablePathConditionException;
+			CIVLSource source) throws UnsatisfiablePathConditionException;
 
 	List<ReferenceExpression> leafNodeReferencesOfType(CIVLSource source,
 			State state, int pid, CIVLType type)

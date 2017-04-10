@@ -160,8 +160,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil
 					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
-			eval = evaluator.dereference(source, state, process, null,
-					arrayPointer, false, true);
+			eval = evaluator.dereference(source, state, process, arrayPointer,
+					false, true);
 
 			state = eval.state;
 			// TODO: implement getStringConcrete() as an underneath
@@ -257,13 +257,11 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				Evaluation eval;
 
 				eval = evaluator.dereference(arguments[0].getSource(), state,
-						process, typeFactory.charType(), charPointer1, true,
-						true);
+						process, charPointer1, true, true);
 				state = eval.state;
 				strObj1 = eval.value;
 				eval = evaluator.dereference(arguments[1].getSource(), state,
-						process, typeFactory.charType(), charPointer2, true,
-						true);
+						process, charPointer2, true, true);
 				state = eval.state;
 				strObj2 = eval.value;
 				if (strObj1.equals(strObj2))
@@ -317,8 +315,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil
 					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
-			eval = evaluator.dereference(source, state, process, null,
-					arrayPointer, false, true);
+			eval = evaluator.dereference(source, state, process, arrayPointer,
+					false, true);
 
 			state = eval.state;
 			originalArray = eval.value;
@@ -452,7 +450,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 						"Any datatype other than REAL, INTEGER, CHAR and BOOLEAN is not supported yet");
 		}
 		length = universe.divide(size, dataTypeSize);
-		ptrAddRet = evaluator.pointerAdd(state, pid, pointer, length, false,
+		ptrAddRet = evaluator.arrayElementReferenceAdd(state, pid, pointer, length,
 				arguments[0].getSource());
 		eval = ptrAddRet.left;
 		state = eval.state;

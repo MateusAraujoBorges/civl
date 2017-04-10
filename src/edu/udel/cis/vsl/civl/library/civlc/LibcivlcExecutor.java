@@ -194,7 +194,6 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression pointer = argumentValues[0];
-		CIVLType type;
 		Pair<BooleanExpression, ResultType> checkPointer = symbolicAnalyzer
 				.isDerefablePointer(state, pointer);
 
@@ -208,10 +207,11 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 									source, state, null, pointer));
 
 		Evaluation havocEval;
-		TypeEvaluation teval;
+		CIVLType objType = symbolicAnalyzer.civlTypeOfObjByPointer(source, state,
+				pointer);
+		TypeEvaluation teval = evaluator.getDynamicType(state, pid, objType,
+				source, false);
 
-		type = this.symbolicAnalyzer.typeOfObjByPointer(source, state, pointer);
-		teval = evaluator.getDynamicType(state, pid, type, source, false);
 		havocEval = this.evaluator.havoc(teval.state, teval.type);
 		state = this.primaryExecutor.assign(source, havocEval.state, pid,
 				pointer, havocEval.value);
@@ -404,12 +404,12 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				SymbolicExpression procPointer, proc;
 				int pidValue;
 
-				eval = evaluator.pointerAdd(state, pid, procsPointer, offSetV,
-						false, procsSource).left;
+				eval = evaluator.arrayElementReferenceAdd(state, pid, procsPointer, offSetV,
+						procsSource).left;
 				procPointer = eval.value;
 				state = eval.state;
 				eval = evaluator.dereference(procsSource, state, process,
-						typeFactory.processType(), procPointer, false, true);
+						procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
 				pidValue = modelFactory.getProcessId(procsSource, proc);

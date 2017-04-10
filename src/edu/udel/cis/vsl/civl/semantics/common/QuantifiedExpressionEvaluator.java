@@ -110,7 +110,7 @@ public class QuantifiedExpressionEvaluator
 		int dim = ((CIVLArrayType) arrayLambda.getExpressionType()).dimension(),
 				numBoundVars = 0;
 		NumericSymbolicConstant[] boundVariables = new NumericSymbolicConstant[dim];
-		TypeEvaluation typeEval = this.getDynamicType(state, pid,
+		TypeEvaluation typeEval = getDynamicType(state, pid,
 				(CIVLArrayType) arrayLambda.getExpressionType(),
 				arrayLambda.getSource(), false);
 		SymbolicCompleteArrayType arrayType = (SymbolicCompleteArrayType) typeEval.type;

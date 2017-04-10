@@ -5663,7 +5663,7 @@ public class FunctionTranslator {
 	 *            The CIVL source
 	 * @param scope
 	 *            The scope
-	 * @param type
+	 * @param dynamicType
 	 *            The ABC struct or union type
 	 * @return CIVL type of struct or union
 	 */

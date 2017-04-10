@@ -17,12 +17,10 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLType.TypeKind;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -721,13 +719,11 @@ public abstract class LibraryComponent {
 		}
 		// If the type of the object is exact same as the dataArray, then do a
 		// directly assignment:
-		CIVLType typeObj = symbolicAnalyzer
-				.typeOfObjByPointer(ptrExpr.getSource(), state, pointer);
-		TypeEvaluation teval = evaluator.getDynamicType(state, pid, typeObj,
-				source, false);
+		eval = evaluator.dereference(source, state, process, pointer, false,
+				false);
 
-		state = teval.state;
-		if (dataArray.type().equals(teval.type))
+		state = eval.state;
+		if (dataArray.type().equals(eval.state))
 			return new Pair<>(new Evaluation(state, dataArray), pointer);
 
 		// Else, count greater than one:
@@ -750,8 +746,8 @@ public abstract class LibraryComponent {
 									source, state, integerType, count)
 							+ "\n");
 		}
-		eval_and_slices = evaluator.pointerAdd(state, pid, startPtr, count,
-				checkOutput, source);
+		eval_and_slices = evaluator.arrayElementReferenceAdd(state, pid,
+				startPtr, count, source);
 		eval = eval_and_slices.left;
 		endPtr = eval.value;
 		state = eval.state;
@@ -786,8 +782,8 @@ public abstract class LibraryComponent {
 		}
 		// here "startPtr" is already updated as the pointer to the common sub
 		// array.
-		eval = evaluator.dereference(source, state, process,
-				typeFactory.voidType(), startPtr, false, true);
+		eval = evaluator.dereference(source, state, process, startPtr, false,
+				true);
 		state = eval.state;
 		if (eval.value.type().typeKind().equals(SymbolicTypeKind.ARRAY)) {
 			eval = this.setDataBetween(state, pid, eval.value, arraySlicesSizes,
@@ -838,8 +834,8 @@ public abstract class LibraryComponent {
 
 		// If "count" == 1:
 		if (reasoner.isValid(universe.equals(count, one))) {
-			eval = evaluator.dereference(source, state, process,
-					typeFactory.voidType(), pointer, true, true);
+			eval = evaluator.dereference(source, state, process, pointer, true,
+					true);
 			if (eval.value.isNull())
 				reportUndefinedValueError(state, pid,
 						symbolicUtil.getSymRef(pointer).isIdentityReference(),
@@ -865,8 +861,8 @@ public abstract class LibraryComponent {
 				break;
 		}
 		rootPointer = symbolicUtil.makePointer(pointer, symref);
-		eval = evaluator.dereference(source, state, process,
-				typeFactory.voidType(), rootPointer, false, true);
+		eval = evaluator.dereference(source, state, process, rootPointer, false,
+				true);
 		state = eval.state;
 		rootArray = eval.value;
 		if (rootArray.isNull())
@@ -1448,11 +1444,11 @@ public abstract class LibraryComponent {
 	 * 2. size > 0.
 	 * </p>
 	 * <p>
-	 * <b>Spec:</b> A sequence of objects in memory in C language can be
-	 * represented as the form <code>objs (p, s)</code> where p is a pointer
-	 * (base address) and s is the total size (in bytes) of the object sequence.
-	 * Returns the same sequence of objects in another form
-	 * <code> objs' (p', c) </code> where <code>
+	 * A sequence of heap objects in memory in C language can be represented as
+	 * the form <code>objs (p, s)</code> where p is a pointer (base address) and
+	 * s is the total size (in bytes) of the object sequence. Then given such a
+	 * pair, this method returns another pair which represents the same sequence
+	 * of objects: <code> {p', c} </code> where <code>
 	 * (void *) p' == (void *) p
 	 * &&
 	 * sizeof( typeof (*p') ) * c == s
@@ -1481,8 +1477,6 @@ public abstract class LibraryComponent {
 			State state, int pid, SymbolicExpression pointer,
 			NumericExpression size, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		CIVLType objType;
-		TypeEvaluation teval;
 		SymbolicExpression newPointer;
 		NumericExpression sizeofObj;
 		BooleanExpression query;
@@ -1497,17 +1491,18 @@ public abstract class LibraryComponent {
 		// while loop : change from recursion to loop:
 		while (!term) {
 			// update sizeofObj:
-			objType = symbolicAnalyzer.typeOfObjByPointer(source, state,
-					newPointer);
-			teval = evaluator.getDynamicType(state, pid, objType, source,
-					false);
-			sizeofObj = symbolicUtil.sizeof(source, objType, teval.type);
-			state = teval.state;
+			SymbolicType dynamicObjType = symbolicAnalyzer
+					.dynamicTypeOfObjByPointer(source, state, newPointer);
+
+			// TODO: by looking at the implementation of this
+			// symbolicUtil.sizeof method, I have no idea why a CIVLType
+			// parameter is necessary:
+			sizeofObj = symbolicUtil.sizeof(source, null, dynamicObjType);
 			// Case 1: sizeof(obj(pointer)) > size:
 			query = universe.lessThan(size, sizeofObj);
 			resultType = reasoner.valid(query).getResultType();
 			if (resultType == ResultType.YES) {
-				newPointer = typingDown(newPointer, objType);
+				newPointer = typingDown(newPointer, dynamicObjType);
 				if (newPointer != null)
 					continue;
 				else
@@ -1525,7 +1520,7 @@ public abstract class LibraryComponent {
 			}
 			// Case 3: UNKNOWN:
 			if (keepDown) {
-				newPointer = typingDown(newPointer, objType);
+				newPointer = typingDown(newPointer, dynamicObjType);
 				if (newPointer != null)
 					continue;
 			}
@@ -1535,7 +1530,7 @@ public abstract class LibraryComponent {
 			if (keepDown)
 				newPointer = pointer;
 			keepDown = false;
-			newPointer = typingUp(newPointer, source);
+			newPointer = typingUp(newPointer);
 			if (newPointer != null)
 				continue;
 			term = true;
@@ -1568,16 +1563,16 @@ public abstract class LibraryComponent {
 	 * @return A new pointer p' or null if the objType is already a scalar type.
 	 */
 	private SymbolicExpression typingDown(SymbolicExpression pointer,
-			CIVLType objType) {
-		TypeKind kind = objType.typeKind();
+			SymbolicType objType) {
+		SymbolicTypeKind kind = objType.typeKind();
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
 
 		switch (kind) {
 			case ARRAY :
-			case COMPLETE_ARRAY :
 				ref = universe.arrayElementReference(ref, zero);
 				return symbolicUtil.setSymRef(pointer, ref);
-			case STRUCT_OR_UNION :
+			case TUPLE :
+			case UNION :
 				ref = universe.tupleComponentReference(ref, zeroObject);
 				return symbolicUtil.setSymRef(pointer, ref);
 			default :
@@ -1599,13 +1594,10 @@ public abstract class LibraryComponent {
 	 * 
 	 * @param pointer
 	 *            {@link SymbolicExpression} of A valid pointer.
-	 * @param source
-	 *            The {@link CIVLSource} associates to this method call.
 	 * @return A new pointer p' or null if no parent node can be found for the
 	 *         type of the object pointed by 'pointer'.
 	 */
-	private SymbolicExpression typingUp(SymbolicExpression pointer,
-			CIVLSource source) {
+	private SymbolicExpression typingUp(SymbolicExpression pointer) {
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
 		ReferenceKind kind = ref.referenceKind();
 

@@ -94,7 +94,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 		CIVLSource arrayPtrSource = arguments[0].getSource();
 		CIVLSource elePtrSource = arguments[2].getSource();
 		CIVLType objTypePointedByFirstArg = symbolicAnalyzer
-				.typeOfObjByPointer(arrayPtrSource, state, arrayPtr);
+				.civlTypeOfObjByPointer(arrayPtrSource, state, arrayPtr);
 		CIVLArrayType arrayType;
 
 		if (objTypePointedByFirstArg.isArrayType()
@@ -142,7 +142,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 				throw new UnsatisfiablePathConditionException();
 			} else {
 				CIVLType eleType = symbolicAnalyzer
-						.typeOfObjByPointer(elePtrSource, state, elePointer);
+						.civlTypeOfObjByPointer(elePtrSource, state, elePointer);
 				CIVLType arrayEleType = ((CIVLArrayType) arrayType)
 						.elementType();
 
@@ -162,7 +162,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 				} else {
 					SymbolicExpression eleValue, arrayValue;
 					Evaluation eval = evaluator.dereference(elePtrSource, state,
-							process, eleType, elePointer, false, true);
+							process, elePointer, false, true);
 
 					state = eval.state;
 					eleValue = eval.value;
@@ -252,7 +252,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			throw new UnsatisfiablePathConditionException();
 		} else {
 			Evaluation eval = evaluator.dereference(seqSource, state, process,
-					typeFactory.voidType(), seqPtr, false, true);
+					seqPtr, false, true);
 			SymbolicExpression seq;
 
 			state = eval.state;
@@ -324,7 +324,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 									valuesPtrSource, state, null, valuesPtr));
 			throw new UnsatisfiablePathConditionException();
 		}
-		arrayType = symbolicAnalyzer.typeOfObjByPointer(arrayPtrSource, state,
+		arrayType = symbolicAnalyzer.civlTypeOfObjByPointer(arrayPtrSource, state,
 				arrayPtr);
 		if (!arrayType.isIncompleteArrayType()) {
 			this.errorLogger.logSimpleError(source, state, process,
@@ -338,7 +338,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 		}
 		arrayEleType = ((CIVLArrayType) arrayType).elementType();
 		if (!symbolicUtil.isNullPointer(valuesPtr)) {
-			valueType = symbolicAnalyzer.typeOfObjByPointer(valuesPtrSource,
+			valueType = symbolicAnalyzer.civlTypeOfObjByPointer(valuesPtrSource,
 					state, valuesPtr);
 
 			if (!arrayEleType.isSuperTypeOf(valueType)) {
@@ -355,8 +355,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 				throw new UnsatisfiablePathConditionException();
 			}
 		}
-		eval = evaluator.dereference(arrayPtrSource, state, process, arrayType,
-				arrayPtr, false, true);
+		eval = evaluator.dereference(arrayPtrSource, state, process, arrayPtr,
+				false, true);
 		state = eval.state;
 		arrayValue = eval.value;
 		if (arrayValue.operator() != SymbolicOperator.ARRAY) {
@@ -401,15 +401,15 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			if (i == 0)
 				valuePtr = valuesPtr;
 			else if (!removeToNull) {
-				eval = evaluator.pointerAdd(state, pid, valuesPtr,
-						universe.integer(i), false, source).left;
+				eval = evaluator.arrayElementReferenceAdd(state, pid, valuesPtr,
+						universe.integer(i), source).left;
 				state = eval.state;
 				valuePtr = eval.value;
 			} else
 				valuePtr = valuesPtr;
 			if (isInsert) {
-				eval = evaluator.dereference(source, state, process, null,
-						valuePtr, false, true);
+				eval = evaluator.dereference(source, state, process, valuePtr,
+						false, true);
 				state = eval.state;
 				value = eval.value;
 

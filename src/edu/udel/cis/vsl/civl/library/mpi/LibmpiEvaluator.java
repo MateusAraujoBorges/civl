@@ -414,9 +414,8 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		// ptr + (real_count - 1):
 		realOffset = universe.subtract(
 				universe.multiply(count, mpiPtr_datatypeSize.right), one);
-		eval = evaluator.pointerAdd(state, pid,
-				mpiPtr_datatypeSize.left, realOffset, false,
-				expression.getSource()).left;
+		eval = evaluator.arrayElementReferenceAdd(state, pid, mpiPtr_datatypeSize.left,
+				realOffset, expression.getSource()).left;
 		state = eval.state;
 		result = symbolicAnalyzer.isDerefablePointer(state,
 				mpiPtr_datatypeSize.left).left;
@@ -497,9 +496,8 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 
 		mpiPtr_datatypeSize = processMPIPointer(state, pid, process, ptrExpr,
 				ptr, datatypeExpr, datatype, expression.getSource());
-		return evaluator.pointerAdd(state, pid,
-				mpiPtr_datatypeSize.left,
-				universe.multiply(count, mpiPtr_datatypeSize.right), false,
+		return evaluator.arrayElementReferenceAdd(state, pid, mpiPtr_datatypeSize.left,
+				universe.multiply(count, mpiPtr_datatypeSize.right),
 				expression.getSource()).left;
 	}
 
@@ -554,11 +552,11 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		ReferenceExpression baseRef = symbolicAnalyzer
 				.getLeafNodeReference(state, ptr, source);
 		SymbolicExpression basePtr = symbolicUtil.makePointer(ptr, baseRef);
-		CIVLType leafNodeType = symbolicAnalyzer.typeOfObjByPointer(source,
-				state, basePtr);
+		CIVLType baseType = symbolicAnalyzer.civlTypeOfObjByPointer(source, state,
+				basePtr);
 		NumericExpression numPrimitives;
 		Evaluation eval = evaluator.evaluateSizeofType(source, state, pid,
-				leafNodeType);
+				baseType);
 		NumericExpression sizeof;
 		BooleanExpression typeChecking;
 		Reasoner reasoner;

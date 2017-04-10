@@ -135,13 +135,13 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		Number srcNum, destNum;
 		int srcInt, destInt;
 
-		eval = evaluator.dereference(civlsource, state, process, commType,
-				commHandle, false, true);
+		eval = evaluator.dereference(civlsource, state, process, commHandle,
+				false, true);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null,
-				gcommHandle, false, true);
+		eval = evaluator.dereference(civlsource, state, process, gcommHandle,
+				false, true);
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
@@ -362,8 +362,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		Evaluation eval;
 
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null,
-				gcommHandle, false, true);
+		eval = evaluator.dereference(civlsource, state, process, gcommHandle,
+				false, true);
 		return eval;
 	}
 
@@ -387,13 +387,11 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression commHandle;
 		Evaluation eval;
-		CIVLType commType = typeFactory
-				.systemType(ModelConfiguration.COMM_TYPE);
 
 		eval = evaluator.evaluate(state, pid, commHandleExpr);
 		commHandle = eval.value;
 		eval = evaluator.dereference(commHandleExpr.getSource(), eval.state,
-				process, commType, commHandle, false, true);
+				process, commHandle, false, true);
 		return eval;
 	}
 

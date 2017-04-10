@@ -18,7 +18,6 @@ import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -751,10 +750,8 @@ public abstract class CommonEnabler implements Enabler {
 		place = symbolicUtil.extractInt(csSource, (NumericExpression) universe
 				.tupleRead(colStateComp, universe.intObject(0)));
 		gstateHandle = universe.tupleRead(colStateComp, universe.intObject(1));
-		eval = evaluator.dereference(csSource, state, "p" + pid,
-				modelFactory.typeFactory()
-						.systemType(ModelConfiguration.GCOLLATOR_TYPE),
-				gstateHandle, false, true);
+		eval = evaluator.dereference(csSource, state, "p" + pid, gstateHandle,
+				false, true);
 		state = eval.state;
 		colStateID = this.modelFactory.getStateRef(csSource,
 				universe.tupleRead(eval.value, universe.intObject(1)));
@@ -821,8 +818,7 @@ public abstract class CommonEnabler implements Enabler {
 			argumentValues[i] = eval.value;
 			state = eval.state;
 		}
-		eval = this.evaluator.dereference(collator.getSource(), state, process,
-				modelFactory.typeFactory().systemType("$collator"),
+		eval = evaluator.dereference(collator.getSource(), state, process,
 				collatorHandle, false, true);
 		collatorComp = eval.value;
 		state = eval.state;
@@ -831,8 +827,7 @@ public abstract class CommonEnabler implements Enabler {
 		placeID = symbolicUtil.extractInt(source, place);
 		gcollatorHandle = universe.tupleRead(collatorComp,
 				universe.intObject(1));
-		eval = this.evaluator.dereference(collator.getSource(), state, process,
-				modelFactory.typeFactory().systemType("$gcollator"),
+		eval = evaluator.dereference(collator.getSource(), state, process,
 				gcollatorHandle, false, true);
 		gcollatorComp = eval.value;
 		state = eval.state;
@@ -926,9 +921,8 @@ public abstract class CommonEnabler implements Enabler {
 			BooleanExpression isIdleState;
 			ResultType result;
 
-			eval = this.evaluator.dereference(source, state, process,
-					modelFactory.typeFactory().systemType("$gcollate_state"),
-					gstateHandle, false, true);
+			eval = evaluator.dereference(source, state, process, gstateHandle,
+					false, true);
 			gstate = eval.value;
 			state = eval.state;
 			mystatus = universe.arrayRead(
