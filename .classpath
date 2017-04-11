@@ -8,10 +8,10 @@
 	<classpathentry kind="src" path="test/local"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/SARL"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/GMC"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/abc_wwu"/>
 	<classpathentry kind="var" path="VSL/lib/antlr-runtime.jar"/>
 	<classpathentry kind="var" path="VSL/lib/antlr-4.4-complete.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ABC"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/SARL"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
