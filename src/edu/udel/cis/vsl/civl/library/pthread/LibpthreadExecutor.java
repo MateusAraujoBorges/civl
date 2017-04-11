@@ -486,7 +486,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression scopeValue = argumentValues[0],
 				gpool = argumentValues[1];
-		SymbolicExpression tid = modelFactory.processValue(pid);
+		SymbolicExpression tid = stateFactory.processValue(pid);
 		SymbolicExpression gpoolObject;
 		Evaluation eval;
 		SymbolicExpression threadPointer, pool;

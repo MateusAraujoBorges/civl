@@ -639,7 +639,7 @@ public class CommonExecutor implements Executor {
 					selfDestructable);
 		if (statement.lhs() != null)
 			state = assign(state, pid, process, statement.lhs(),
-					modelFactory.processValue(newPid));
+					stateFactory.processValue(newPid));
 		state = stateFactory.setLocation(state, pid, statement.target(),
 				statement.lhs() != null);
 		// state = stateFactory.computeReachableMemUnits(state, newPid);
@@ -839,7 +839,7 @@ public class CommonExecutor implements Executor {
 			newPid = state.numProcs();
 			state = stateFactory.addProcess(state, function, arguments, pid,
 					false);
-			processes.add(modelFactory.processValue(newPid));
+			processes.add(stateFactory.processValue(newPid));
 		}
 		state = this.assign(state, pid, process, parProcsVar,
 				universe.array(

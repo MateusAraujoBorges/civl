@@ -1,0 +1,11 @@
+#include<stdio.h>
+
+int main() {
+  FILE *fpt = fopen("output","a");
+  int a[5]={1,2,3,4,5};
+  
+  for(int i=0; i<5; i++) {
+    fprintf(fpt,"%d\n",a[i]); 
+  }
+  fclose(fpt);
+}

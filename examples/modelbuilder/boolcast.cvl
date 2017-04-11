@@ -1,0 +1,55 @@
+#include <assert.h>
+
+int f1(int a) {
+	return a + 1;
+}
+
+int f2(_Bool b) {
+	return b + 1;
+}
+
+int f3(int p1, int p2, ...) {
+	return p1 + p2;
+}
+
+int main() {
+  // case1: assign boolean to a integer and use the var
+  // in an integer context.
+  int x1 = 0;
+  int z1 = x1 + 1 == 4;
+  assert(z1 + 1 == 1);
+  
+  // case2: using a boolean expression in an integer context.
+  int x2 = 0;
+  assert((x2 + 1 == 4) + 1 == 1);
+  
+  // case3: assign integer to a boolean and use the var
+  // in a boolean context.
+  int x3 = 0;
+  _Bool z3 = x3 + 1;
+  if (!z3) {
+  	assert(0);
+  }
+  
+  // case4: using integer in a boolean context
+  int x4 = 0;
+  if (!(x4+1)) { 
+  	assert(0); 
+  }
+  
+  // case5: pass a boolean to a integer parameter in a function
+  int x5 = f1(x1 + 1 == 4);
+  
+  // case6: pass an integer to a boolean parameter in a function
+  int x6 = 0;
+  int z6 = f2(x6);
+  
+  // case7: pass boolean values to integer parameters in a function 
+  // who has a variable number of arguments.
+
+  int x7 = 0;
+  _Bool x8 = 0;
+  int z7 = f3(x7 + 1 == 4, x8);
+  
+  return 0;
+}
