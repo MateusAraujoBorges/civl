@@ -709,12 +709,12 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public boolean allSuccessorsVisited(State state) {
+	public boolean fullyExpanded(State state) {
 		return state.allSuccessorsVisited();
 	}
 
 	@Override
-	public void setAllSuccessorsVisited(State state, boolean value) {
+	public void setFullyExpanded(State state, boolean value) {
 		state.setAllSuccessorsVisited(value);
 	}
 
