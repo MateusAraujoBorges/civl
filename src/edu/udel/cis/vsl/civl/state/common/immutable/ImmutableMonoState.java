@@ -643,4 +643,9 @@ public class ImmutableMonoState implements State {
 	public void setAllSuccessorsVisited(boolean value) {
 		this.allSuccessorsVisited = value;
 	}
+
+	@Override
+	public void setCanonicId(int id) {
+		this.canonicId = id;
+	}
 }

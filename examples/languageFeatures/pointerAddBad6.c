@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <civlc.cvh>
 
 $input int offset;
@@ -7,6 +6,6 @@ int main() {
   int a = 8;
   void *p = &a + 1;
   void *q = p + offset;
-  assert(p != NULL && q != NULL);
+
   return 0;
 }

@@ -2408,7 +2408,7 @@ public class CommonEvaluator implements Evaluator {
 
 	protected Evaluation evaluateSelf(State state, int pid,
 			SelfExpression expression) {
-		return new Evaluation(state, modelFactory.processValue(pid));
+		return new Evaluation(state, stateFactory.processValue(pid));
 	}
 
 	protected Evaluation evaluateProcnull(State state, int pid,

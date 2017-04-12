@@ -1,11 +1,8 @@
-#include<assert.h>
-
 int main(){
 #ifdef ARRAY
   int a[10];
 #ifdef WRONG
   int *p=a+11;
-  assert(p != NULL);
 #else
   int *p=a+10;
 #endif
@@ -13,7 +10,6 @@ int main(){
   int x = 9;
 #ifdef WRONG
   int *p=&x+2;
-  assert(p != NULL);
 #else
   int *p = &x+1;
 #endif

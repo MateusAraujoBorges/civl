@@ -1005,4 +1005,6 @@ public interface StateFactory {
 	/* ****************** End of Snapshots related method ****************** */
 
 	void setConfiguration(CIVLConfiguration config);
+	
+	public SymbolicExpression processValue(int pid);
 }

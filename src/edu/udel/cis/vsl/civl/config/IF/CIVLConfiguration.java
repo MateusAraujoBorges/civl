@@ -214,6 +214,8 @@ public class CIVLConfiguration {
 	 */
 	private int procBound = -1;
 
+	private int maxProcs = 100;
+
 	/**
 	 * The loop decomposition strategy for OpenMP transformer, round robin by
 	 * default.
@@ -368,6 +370,8 @@ public class CIVLConfiguration {
 		this.intBit = (Integer) config.getValueOrDefault(CIVLConstants.intBit);
 		this.setInputVariables(config.getMapValue(CIVLConstants.inputO));
 		this.collectOutputs = config.isTrue(CIVLConstants.collectOutputO);
+		this.maxProcs = (Integer) config
+				.getValueOrDefault(CIVLConstants.maxProcsO);
 		this.setMpiContractFunction(
 				(String) config.getValueOrDefault(CIVLConstants.mpiContractO));
 		if (this.isEnableMpiContract())
@@ -454,6 +458,7 @@ public class CIVLConfiguration {
 		this.witness = config.witness;
 		this.directSymEx = config.directSymEx;
 		this.intBit = config.intBit;
+		this.maxProcs = config.maxProcs;
 		this.intOperationTransiformer = config.intOperationTransiformer;
 	}
 
@@ -949,4 +954,11 @@ public class CIVLConfiguration {
 		this.intOperationTransiformer = intOperationTransiformer;
 	}
 
+	public int getMaxProcs() {
+		return maxProcs;
+	}
+
+	public void setMaxProcs(int maxProcs) {
+		this.maxProcs = maxProcs;
+	}
 }

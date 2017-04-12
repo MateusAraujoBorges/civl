@@ -319,6 +319,14 @@ public interface State {
 	int getCanonicId();
 
 	/**
+	 * Set the canonic id of this state.
+	 * 
+	 * @param id
+	 *            The id that is set to this state.
+	 */
+	void setCanonicId(int id);
+
+	/**
 	 * Prints the state to a given print stream.
 	 * 
 	 * @param out
