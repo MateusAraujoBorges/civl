@@ -148,7 +148,7 @@ public class ImmutableState implements State {
 	/**
 	 * Whether this state is on the DFS search stack.
 	 */
-	private boolean onStack = false;
+	private int onStack = -1;
 
 	/**
 	 * The iterable object over the process states, created once and cached here
@@ -195,7 +195,7 @@ public class ImmutableState implements State {
 	 * True iff all successors resulting from the enabled transitions have been
 	 * visited during the search.
 	 */
-	private boolean allSuccessorsVisited = false;
+	private boolean fullyExpanded = false;
 
 	int[] collectibleCounts;
 
@@ -849,7 +849,7 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public boolean onStack() {
+	public int onStack() {
 		return onStack;
 	}
 
@@ -904,8 +904,8 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public void setOnStack(boolean onStack) {
-		this.onStack = onStack;
+	public void setOnStack(int stackIndex) {
+		this.onStack = stackIndex;
 	}
 
 	@Override
@@ -1038,13 +1038,13 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public boolean allSuccessorsVisited() {
-		return allSuccessorsVisited;
+	public boolean fullyExpanded() {
+		return fullyExpanded;
 	}
 
 	@Override
-	public void setAllSuccessorsVisited(boolean value) {
-		this.allSuccessorsVisited = value;
+	public void setFullyExpanded(boolean value) {
+		this.fullyExpanded = value;
 	}
 
 	@Override

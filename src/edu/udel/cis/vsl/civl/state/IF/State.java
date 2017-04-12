@@ -111,7 +111,7 @@ public interface State {
 	 * 
 	 * @return true iff this state is on the DFS stack
 	 */
-	boolean onStack();
+	int onStack();
 
 	/**
 	 * Sets the seen bit to the given value.
@@ -127,7 +127,7 @@ public interface State {
 	 * @param onStack
 	 *            whether this state is on the DFS stack
 	 */
-	void setOnStack(boolean onStack);
+	void setOnStack(int stackIndex);
 
 	/**
 	 * Gets the dynamic scope ID (dyscope ID) of the parent of the dynamic scope
@@ -379,20 +379,20 @@ public interface State {
 	boolean getExpand();
 
 	/**
-	 * Get the "all-successors-on-stack" flag of a state.
+	 * Get the "fullyExpanded" flag of a state.
 	 * 
-	 * @return The value of the "all-successors-on-stack" flag.
+	 * @return The value of the "fullExpanded" flag.
 	 */
-	public boolean allSuccessorsVisited();
+	public boolean fullyExpanded();
 
 	/**
-	 * Set the "all-successors-on-stack" flag to a given value.
+	 * Set the "fullyExpanded" flag to a given value.
 	 * 
 	 * @param value
 	 *            The value that is assigned to the "all-successors-on-stack"
 	 *            flag.
 	 */
-	public void setAllSuccessorsVisited(boolean value);
+	public void setFullyExpanded(boolean value);
 
 	@Override
 	String toString();
