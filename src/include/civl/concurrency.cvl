@@ -7,7 +7,7 @@
 #include<civlc.cvh>
 #include<concurrency.cvh>
 #include<seq.cvh>
-
+#pragma PARSE_ACSL
 /* *********************** Types *********************** */
 
 /* A data type representing a global barrier which must be operated by local

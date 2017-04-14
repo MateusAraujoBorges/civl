@@ -28,6 +28,7 @@ import edu.udel.cis.vsl.civl.model.IF.contract.DependsEvent.DependsEventKind;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MemoryEvent;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
@@ -363,7 +364,7 @@ public class AmpleSetWorker {
 	 * When the number of active processes are greater than one, this method is
 	 * called.
 	 * 
-	 * Fixed one process, and then find out its ample set, i.e, processes that
+	 * Fixed one process, and then find out its ample set, i.e., processes that
 	 * are dependent with it. Repeat for all processes
 	 * 
 	 * Processes at a side-effect-free self-loop location are not chosen
@@ -379,40 +380,105 @@ public class AmpleSetWorker {
 
 		preprocessing();
 		for (int pid = 0; pid < this.activeProcesses.length(); pid++) {
-			BitSet ampleSet;
+			// a set of procs the transitions of which form an ample set:
+			BitSet ampleProcSet;
 			int currentSize;
 
 			pid = activeProcesses.nextSetBit(pid);
 			if (this.infiniteLoopProcesses.get(pid))
 				continue;
-			ampleSet = ampleSetOfProcess(pid, minimalAmpleSetSize);
-			this.difference(ampleSet, infiniteLoopProcesses);
-			currentSize = ampleSet.cardinality();
+			ampleProcSet = ampleSetOfProcess(pid, minimalAmpleSetSize);
+			this.difference(ampleProcSet, infiniteLoopProcesses);
+			if (!allDeadlockInvisible(ampleProcSet))
+				ampleProcSet = activeProcesses;
+			currentSize = ampleProcSet.cardinality();
 			if (currentSize == 1)
-				return ampleSet;
+				return ampleProcSet;
 			if (currentSize < minimalAmpleSetSize) {
-				result = ampleSet;
+				result = ampleProcSet;
 				minimalAmpleSetSize = currentSize;
 			}
 		}
+		// TODO: it looks like the ample set can be one of the ample sets of all
+		// processes, when all processes are at self-loop location. Does it
+		// violate the method specification given by the doc ?
 		if (result.isEmpty() && !this.infiniteLoopProcesses.isEmpty()) {
 			for (int pid = 0; pid < this.infiniteLoopProcesses
 					.length(); pid++) {
-				BitSet ampleSet;
+				BitSet ampleProcSet;
 				int currentSize;
 
 				pid = infiniteLoopProcesses.nextSetBit(pid);
-				ampleSet = ampleSetOfProcess(pid, minimalAmpleSetSize);
-				currentSize = ampleSet.cardinality();
+				ampleProcSet = ampleSetOfProcess(pid, minimalAmpleSetSize);
+				if (!allDeadlockInvisible(ampleProcSet))
+					ampleProcSet = activeProcesses;
+				currentSize = ampleProcSet.cardinality();
 				if (currentSize == 1)
-					return ampleSet;
+					return ampleProcSet;
 				if (currentSize < minimalAmpleSetSize) {
-					result = ampleSet;
+					result = ampleProcSet;
 					minimalAmpleSetSize = currentSize;
 				}
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * <p>
+	 * For each process p in a ample process set candidate, if enabled
+	 * transitions of p are NOT invisible for the deadlock property, p cannot be
+	 * in a proper ample processes set.
+	 * </p>
+	 * 
+	 * <p>
+	 * Enabled transitions of a process p are invisible for the deadlock
+	 * property, if and only if one of the following holds for the current state
+	 * and all the future states:
+	 * <li>Disjunction of the guards is true;</li>
+	 * <li>One of the guards is a system function guard.</li>
+	 * <li>The location is in the body of a function who was annotated with POR
+	 * contract</li>
+	 * </p>
+	 * 
+	 * @param ampleProcsCandidate
+	 *            A group of processes which is a candidate group to form an
+	 *            ample set.
+	 * @return True iff the aforementioned conditions are satisfied.
+	 */
+	private boolean allDeadlockInvisible(BitSet ampleProcsCandidate) {
+		if (config.deadlock() == DeadlockKind.NONE)
+			return true; // it is not invisible but deadlock is not checking
+
+		for (int pid = ampleProcsCandidate.nextSetBit(
+				0); pid >= 0; pid = ampleProcsCandidate.nextSetBit(pid + 1)) {
+			ProcessState proc = state.getProcessState(pid);
+			Location location = proc.getLocation();
+			boolean isNontrivial = true;
+
+			// optimization, disjunction of guards at binary branching location
+			// will always be true:
+			if (location.isBinaryBranching()
+					|| location.isSwitchOrChooseWithDefault())
+				continue;
+			// heuristic: if the location is in a POR-contracted function, it is
+			// invisible for deadlock property:
+			if (location.function().isContracted() && location.function()
+					.functionContract().hasDependsClause())
+				continue;
+			for (Statement stmt : location.outgoing()) {
+				Expression guard = stmt.guard();
+
+				if ((guard.hasConstantValue() && guard.constantValue().isTrue())
+						|| guard.expressionKind() == ExpressionKind.SYSTEM_GUARD) {
+					isNontrivial = false;
+					break;
+				}
+			}
+			if (isNontrivial)
+				return false;
+		}
+		return true;
 	}
 
 	private void difference(BitSet lhs, BitSet rhs) {
