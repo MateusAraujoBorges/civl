@@ -309,28 +309,30 @@ public interface SymbolicUtility {
 
 	/**
 	 * <p>
-	 * Returns true iff the given pointer is <strong>heap-obejct
-	 * pointer</strong>, i.e. a pointer to a heap object. A "malloc" statement
-	 * allocates a sequence of heap objects. A heap-object pointer shall point
-	 * to one the heap object in that sequence.
+	 * Returns true iff the given pointer is a <strong>pointer to a memory
+	 * block</strong>, where a memory block is defined as a space in heap which
+	 * is allocated by once execution of <code>$malloc</code>.
 	 * </p>
 	 * 
+	 * 
 	 * <p>
-	 * FYI, given a pointer, {@link #isHeapObjectPointer(SymbolicExpression)}
+	 * FYI, given a pointer, {@link #isPointer2MemoryBlock(SymbolicExpression)}
 	 * implies {@link #isPointerToHeap(SymbolicExpression)}, but not vice versa.
 	 * </p>
 	 * 
 	 * @param pointer
 	 *            A {@link SymbolicExpression} which represents a concrete
 	 *            pointer.
-	 * @return Returns true iff the given pointer is <strong>heap-obejct
-	 *         pointer</strong>.
+	 * @return Returns true iff the given pointer is <strong>pointer to a memory
+	 *         block</strong>.
 	 */
-	boolean isHeapObjectPointer(SymbolicExpression pointer);
+	boolean isPointer2MemoryBlock(SymbolicExpression pointer);
 
 	/**
 	 * <p>
 	 * Returns true iff the two pointers are pointing to the same memory block.
+	 * A memory block is the space in memory heap that are allocated by once
+	 * execution of a <code>$malloc</code>.
 	 * </p>
 	 * 
 	 * @param ptr0
@@ -341,7 +343,7 @@ public interface SymbolicUtility {
 	 *            subtraction operation.
 	 * @return True iff the two pointers are pointing to the same memory block.
 	 */
-	boolean arePointersToHeapSubtractable(SymbolicExpression ptr0,
+	boolean arePoint2SameMemoryBlock(SymbolicExpression ptr0,
 			SymbolicExpression ptr1);
 
 	/**
@@ -676,14 +678,14 @@ public interface SymbolicUtility {
 
 	/**
 	 * <p>
-	 * Returns an array of indices in the given concrete pointer. Note: The
-	 * <b>order</b> of indices is from right to left which is same as the
-	 * lexical subscript order.
+	 * Given a pointer to an array element, returns the indices of the element.
 	 * </p>
 	 * 
 	 * @param pointerToArrayElement
 	 *            A concrete pointer to an array element.
-	 * @return an array of indices with the given reference
+	 * @return an array of indices with the given reference. The <b>order</b> of
+	 *         indices from left to right is same as the lexical subscript
+	 *         order.
 	 */
 	NumericExpression[] extractArrayIndicesFrom(
 			SymbolicExpression pointerToArrayElement);

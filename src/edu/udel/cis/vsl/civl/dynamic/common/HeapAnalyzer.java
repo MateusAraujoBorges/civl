@@ -55,13 +55,13 @@ public class HeapAnalyzer {
 
 	/**
 	 * <p>
-	 * This is a representation of a CIVL memory block. A CIVL memory block is a
-	 * sequence of heap objects allocated by once execution of a
-	 * <code>$malloc</code> statement. A CIVL memory block is identified by a
-	 * pair: <code>{mallocID : executionRecord}</code>, where the mallocID is a
-	 * unique integer associates to a lexical $malloc statement in CIVL model
-	 * and a executionRecord is a unique integer for the times of a $malloc
-	 * statement being executed.
+	 * This is a representation of a CIVL memory block. A CIVL memory block is
+	 * space in heap which can store a sequence of heap objects allocated by
+	 * once execution of a <code>$malloc</code> statement. A CIVL memory block
+	 * is identified by a pair: <code>{mallocID : executionRecord}</code>, where
+	 * the mallocID is a unique integer associates to a lexical $malloc
+	 * statement in CIVL model and a executionRecord is a unique integer in a
+	 * state for the times of a $malloc statement being executed.
 	 * </p>
 	 * 
 	 * @author ziqingluo
@@ -96,6 +96,15 @@ public class HeapAnalyzer {
 		public boolean compare(CIVLMemoryBlock other) {
 			return mallocID.equals(other.mallocID)
 					&& execRecord.equals(other.execRecord);
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			if (this == other)
+				return true;
+			else if (other instanceof CIVLMemoryBlock)
+				return compare((CIVLMemoryBlock) other);
+			return false;
 		}
 
 		@Override
@@ -308,22 +317,22 @@ public class HeapAnalyzer {
 
 	/**
 	 * <p>
-	 * Returns true iff the given pointer is a <strong>heap-object
-	 * pointer</strong>, i.e. a pointer to a heap object. A "malloc" statement
-	 * allocates a sequence of heap objects. A heap-object pointer shall point
-	 * to one the heap object in that sequence.
+	 * Returns true iff the given pointer is a <strong>pointer to a memory
+	 * block</strong>, where a memory block is defined as a space in heap which
+	 * is allocated by once execution of <code>$malloc</code>
 	 * </p>
 	 * 
 	 * <p>
-	 * Pointer arithmetic on heap object pointers are invalid.
+	 * Pointer arithmetic with offset greater than 1 on pointer to a memory
+	 * block is invalid.
 	 * </p>
 	 * 
 	 * @param pointer
 	 *            A {@link SymbolicExpression} which is a concrete pointer.
-	 * @return true iff the given pointer is a <strong>heap-object
-	 *         pointer</strong>
+	 * @return true iff the given pointer is a <strong>pointer to a memory
+	 *         block</strong>
 	 */
-	boolean isHeapObjectPointer(SymbolicExpression pointer) {
+	boolean isPointer2MemoryBlock(SymbolicExpression pointer) {
 		if (pointer.operator() != SymbolicOperator.TUPLE)
 			return false;
 		if (!isPointerToHeap(pointer))
@@ -359,7 +368,7 @@ public class HeapAnalyzer {
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointerToHeap);
 		int head = 0;
 
-		// The last 2 NTReferenceExpression in the given stores the
+		// The last 2 NTReferenceExpression in the given pointer contain the
 		// identification info of a memory block, thus maintain a cyclic queue
 		// with length 2 whose invariant is "contains the last 2 explored
 		// non-trivial references in the pointer":

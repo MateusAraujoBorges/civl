@@ -426,11 +426,6 @@ public class CommonEvaluator implements Evaluator {
 	 *            The state where the dereference happens.
 	 * @param process
 	 *            The process name for error report.
-	 * @param resultType
-	 *            The {@link CIVLType} of the result of the dereference
-	 *            operation. For cases that there is no lexical information
-	 *            referred, the type should be acquired by calling
-	 *            {@link SymbolicAnalyzer#civlTypeOfObjByPointer(CIVLSource, State, SymbolicExpression)}.
 	 * @param pointer
 	 *            The pointer to be dereferenced.
 	 * @param checkOutput
@@ -3108,7 +3103,7 @@ public class CommonEvaluator implements Evaluator {
 			// If the parent pointer points to an element of an array object as
 			// well and it can be proved that the result of the pointer addition
 			// will point to other sub-arrays.
-			if (!symbolicUtil.isHeapObjectPointer(pointer) && symbolicUtil
+			if (!symbolicUtil.isPointer2MemoryBlock(arrayPtr) && symbolicUtil
 					.getSymRef(arrayPtr).isArrayElementReference()) {
 				resultType = reasoner.valid(inBound).getResultType();
 				if (resultType == ResultType.NO)
@@ -4089,8 +4084,8 @@ public class CommonEvaluator implements Evaluator {
 			rightPtrIndices = symbolicUtil.extractArrayIndicesFrom(rightPtr);
 			// If the two pointers are pointing to heap, check if they are
 			// pointing to the same memory block:
-			if (leftVid == 0 && !symbolicUtil
-					.arePointersToHeapSubtractable(leftPtr, rightPtr)) {
+			if (leftVid == 0 && !symbolicUtil.arePoint2SameMemoryBlock(leftPtr,
+					rightPtr)) {
 				state = errorLogger.logError(expression.getSource(), state, pid,
 						symbolicAnalyzer.stateInformation(state), null,
 						ResultType.NO, ErrorKind.POINTER,

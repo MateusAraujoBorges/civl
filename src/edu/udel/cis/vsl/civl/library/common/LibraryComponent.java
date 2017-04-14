@@ -719,11 +719,10 @@ public abstract class LibraryComponent {
 		}
 		// If the type of the object is exact same as the dataArray, then do a
 		// directly assignment:
-		eval = evaluator.dereference(source, state, process, pointer, false,
-				false);
+		SymbolicType objType = symbolicAnalyzer
+				.dynamicTypeOfObjByPointer(source, state, pointer);
 
-		state = eval.state;
-		if (dataArray.type().equals(eval.state))
+		if (dataArray.type().equals(objType))
 			return new Pair<>(new Evaluation(state, dataArray), pointer);
 
 		// Else, count greater than one:

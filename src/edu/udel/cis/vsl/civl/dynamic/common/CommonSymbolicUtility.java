@@ -934,7 +934,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			// first element of an heap memory block (i.e. the block of memory
 			// allocated by one malloc call).
 			while (getSymRef(arrayRootPtr).isArrayElementReference()
-					&& !isHeapObjectPointer(arrayRootPtr))
+					&& !isPointer2MemoryBlock(arrayRootPtr))
 				arrayRootPtr = parentPointer(arrayRootPtr);
 
 			return arrayRootPtr;
@@ -965,7 +965,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			SymbolicExpression tmpPointer = pointerToArrayElement;
 
 			while (ref.isArrayElementReference()
-					&& !isHeapObjectPointer(tmpPointer)) {
+					&& !isPointer2MemoryBlock(tmpPointer)) {
 				ArrayElementReference tmpEleRef = (ArrayElementReference) ref;
 
 				tmpStack.push(tmpEleRef.getIndex());
@@ -1500,12 +1500,12 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public boolean isHeapObjectPointer(SymbolicExpression pointer) {
-		return heapAnalyzer.isHeapObjectPointer(pointer);
+	public boolean isPointer2MemoryBlock(SymbolicExpression pointer) {
+		return heapAnalyzer.isPointer2MemoryBlock(pointer);
 	}
 
 	@Override
-	public boolean arePointersToHeapSubtractable(SymbolicExpression ptr0,
+	public boolean arePoint2SameMemoryBlock(SymbolicExpression ptr0,
 			SymbolicExpression ptr1) {
 		assert isPointerToHeap(ptr0) && isPointerToHeap(ptr1);
 		CIVLMemoryBlock blk0 = heapAnalyzer.memoryBlock(ptr0);

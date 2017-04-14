@@ -550,21 +550,17 @@ public abstract class CommonEnabler implements Enabler {
 		BooleanExpression oneGuard = getGuard(oneStmt, pid, state);
 		BooleanExpression theOtherGuard = universe.not(oneGuard);
 		BooleanExpression pathCondition = state.getPathCondition();
-		Reasoner reasoner = universe.reasoner(pathCondition);
+		Reasoner reasoner = null; // will be created when necessary
 		LinkedList<Transition> transitions = new LinkedList<>();
 
-		// property checking: the binary branching means the two guards of two
-		// outgoings are mutually exclusive and exhaustive (i.e. p and !p):
-		assert reasoner.isValid(universe.equals(theOtherGuard,
-				getGuard(theOtherStmt, pid, state)));
-		assert !reasoner.isValid(universe.and(oneGuard, theOtherGuard));
-		if (oneGuard.isTrue() || reasoner.isValid(oneGuard)) {
-			assert !reasoner.isValid(theOtherGuard);
+		if (oneGuard.isTrue() || (reasoner = universe.reasoner(pathCondition))
+				.isValid(oneGuard)) {
 			return enabledTransitionsOfStatement(state, oneStmt, oneGuard, pid,
 					false, atomicLockAction);
 		}
-		if (theOtherGuard.isTrue() || reasoner.isValid(theOtherGuard)) {
-			assert !reasoner.isValid(oneGuard);
+		if (theOtherGuard.isTrue() || (reasoner = reasoner == null
+				? universe.reasoner(pathCondition)
+				: reasoner).isValid(theOtherGuard)) {
 			return enabledTransitionsOfStatement(state, theOtherStmt,
 					theOtherGuard, pid, false, atomicLockAction);
 		}
@@ -610,20 +606,22 @@ public abstract class CommonEnabler implements Enabler {
 			BooleanExpression guardValue = this.getGuard(statement, pidInAtomic,
 					state);
 			BooleanExpression notGuardValue = universe.not(guardValue);
-			// For non-trivial guard, uses a reasoner to prove the
-			// satisfiability of the guard:
-			Reasoner reasoner = universe.reasoner(state.getPathCondition());
+			Reasoner reasoner = null; // will be created when necessary
 
 			// if guard is true, keeps the path condition and enables the
 			// transition of statements:
-			if (guardValue.isTrue() || reasoner.isValid(guardValue)) {
+			if (guardValue.isTrue()
+					|| (reasoner = universe.reasoner(state.getPathCondition()))
+							.isValid(guardValue)) {
 				List<Transition> localTransitions = enabledTransitionsOfStatement(
 						state, statement, trueExpression, pidInAtomic, false,
 						AtomicLockAction.NONE);
 
 				return new Pair<>(null, Semantics.newTransitionSet(state,
 						localTransitions, false));
-			} else if (guardValue.isFalse() || reasoner.isValid(notGuardValue))
+			} else if (guardValue.isFalse() || (reasoner = reasoner == null
+					? universe.reasoner(state.getPathCondition())
+					: reasoner).isValid(notGuardValue))
 				return null;
 			// The guard is satisfiable, returns a pair:
 			// Left: the negation of the guard which will be added to the
@@ -1052,7 +1050,6 @@ public abstract class CommonEnabler implements Enabler {
 		BooleanExpression pathCondition = state.getPathCondition();
 		Reasoner reasoner = universe.reasoner(pathCondition);
 
-		guard = (BooleanExpression) universe.canonic(guard);
 		if (reasoner.isValid(universe.not(guard)))
 			return this.falseExpression;
 		return guard;

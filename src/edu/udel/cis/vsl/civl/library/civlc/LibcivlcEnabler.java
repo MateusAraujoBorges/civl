@@ -111,8 +111,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 				return localTransitions;
 			}
 			case "$choose_int" :
-				// TODO: implement this in CIVL-C:
-				argumentsEval = this.evaluateArguments(state, pid, arguments);
+				argumentsEval = evaluateArguments(state, pid, arguments);
 				state = argumentsEval.left;
 
 				IntegerNumber upperNumber = (IntegerNumber) universe
