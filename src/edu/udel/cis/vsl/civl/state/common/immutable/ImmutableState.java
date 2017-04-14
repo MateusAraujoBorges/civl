@@ -22,7 +22,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 
 /**
  * Implementation of State based on the Immutable Pattern. This class is not
- * entirely immutable; it has certain fields such as {@link #onStack} and
+ * entirely immutable; it has certain fields such as {@link #stackPosition} and
  * {@link #depth} used by the depth first search algorithm which can be
  * modified. But it has an "observationally immutable core" consisting of the
  * path condition, dynamic scopes, and process states. While these can also
@@ -148,7 +148,7 @@ public class ImmutableState implements State {
 	/**
 	 * Whether this state is on the DFS search stack.
 	 */
-	private int onStack = -1;
+	private int stackPosition = -1;
 
 	/**
 	 * The iterable object over the process states, created once and cached here
@@ -849,8 +849,8 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public int onStack() {
-		return onStack;
+	public int stackPosition() {
+		return stackPosition;
 	}
 
 	@Override
@@ -904,8 +904,8 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public void setOnStack(int stackIndex) {
-		this.onStack = stackIndex;
+	public void setStackPosition(int stackIndex) {
+		this.stackPosition = stackIndex;
 	}
 
 	@Override

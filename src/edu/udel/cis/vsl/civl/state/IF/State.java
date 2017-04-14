@@ -106,12 +106,13 @@ public interface State {
 	boolean seen();
 
 	/**
-	 * Is this state currently on the depth-frist search stack? This is simply
-	 * the "getter" for the "setter" method {@link #setOnStack(boolean)}.
+	 * This method will return the stack position of this state. If this state
+	 * is not on the stack, this method will return -1.
 	 * 
-	 * @return true iff this state is on the DFS stack
+	 * @return -1 iff this state is not on stack, otherwise, return the stack
+	 *         position of this state.
 	 */
-	int onStack();
+	int stackPosition();
 
 	/**
 	 * Sets the seen bit to the given value.
@@ -122,12 +123,12 @@ public interface State {
 	void setSeen(boolean value);
 
 	/**
-	 * Sets the "onStack" bit to the given value.
+	 * Sets the "stack position" field of a state.
 	 * 
-	 * @param onStack
-	 *            whether this state is on the DFS stack
+	 * @param stackIndex
+	 *            the position at which the state is on stack.
 	 */
-	void setOnStack(int stackIndex);
+	void setStackPosition(int stackIndex);
 
 	/**
 	 * Gets the dynamic scope ID (dyscope ID) of the parent of the dynamic scope

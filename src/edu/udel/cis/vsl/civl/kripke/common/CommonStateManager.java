@@ -601,7 +601,7 @@ public class CommonStateManager implements StateManager {
 
 	@Override
 	public int stackPosition(State state) {
-		return state.onStack();
+		return state.stackPosition();
 	}
 
 	@Override
@@ -646,7 +646,7 @@ public class CommonStateManager implements StateManager {
 
 	@Override
 	public void setStackPosition(State state, int stackIndex) {
-		state.setOnStack(stackIndex);
+		state.setStackPosition(stackIndex);
 	}
 
 	@Override
