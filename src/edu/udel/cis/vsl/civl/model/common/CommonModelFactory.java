@@ -1215,7 +1215,8 @@ public class CommonModelFactory implements ModelFactory {
 			elseGuard = binaryExpression(
 					sourceOfSpan(guard.getSource(), elseGuard.getSource()),
 					BINARY_OPERATOR.AND, guard, elseGuard);
-		}
+		} else
+			startLocation.setBinaryBranching(true);
 
 		if (statement instanceof CallOrSpawnStatement) {
 			Function function = modelBuilder.callStatements.get(statement);
@@ -1246,7 +1247,6 @@ public class CommonModelFactory implements ModelFactory {
 					function);
 			modelBuilder.callStatements.remove(statement);
 			result = ifFragment.parallelCombineWith(elseFragment);
-
 		} else {
 			ifBranch = statement.replaceWith(expression, ifValue);
 			ifBranch.setCIVLSource(this.expandedSource(ifValue.getSource(),

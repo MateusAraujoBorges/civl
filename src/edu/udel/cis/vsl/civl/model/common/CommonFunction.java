@@ -598,8 +598,7 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	@Override
 	public boolean isContracted() {
-		return contract != null && (contract.hasRequirementsOrEnsurances()
-				|| contract.numMPICollectiveBehaviors() > 0);
+		return contract != null;
 	}
 
 	@Override

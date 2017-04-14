@@ -278,14 +278,16 @@ void $omp_flush($omp_shared shared, void *ref) {
     void *leaf_shared = (int *)$translate_ptr(leaf, gshared->original);
     
     switch(*leaf_status){
-      case EMPTY:
-        break;
-      case MODIFIED:
-        $copy(leaf_shared, leaf);
-      case FULL:
-        *leaf_status = EMPTY;
-        $set_default(leaf);
-        break;
+    case EMPTY:
+      break;
+    case MODIFIED:
+      $copy(leaf_shared, leaf);
+    case FULL:
+      *leaf_status = EMPTY;
+      $set_default(leaf);
+      break;
+    default:
+      $assert(0, "Unknown omp shared variable status: %d", *leaf_status);
     }
   }
 }
