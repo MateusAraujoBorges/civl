@@ -13,6 +13,7 @@ import edu.udel.cis.vsl.civl.model.IF.Sourceable;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.statement.NoopStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
@@ -251,18 +252,12 @@ public interface Location extends Sourceable {
 	void setLoopPossible(boolean possible);
 
 	/**
-	 * Static analysis for possible loops form by this location
-	 * 
-	 * @return
+	 * Determines whether this location lies on a cycle in which every location
+	 * has exactly one outgoing statement and that outgoing statement is a
+	 * {@link NoopStatement}, then calls {@link #setInNoopLoop(boolean)} with
+	 * appropriate boolean value.
 	 */
 	void loopAnalysis();
-
-	/**
-	 * sets the flag that denotes if the location is in a side-effect-free loop.
-	 * 
-	 * @param value
-	 */
-	void setInNoopLoop(boolean value);
 
 	/**
 	 * The impact scope of a location is required in the enabler when an
@@ -347,9 +342,14 @@ public interface Location extends Sourceable {
 	boolean isGuardedLocation();
 
 	/**
-	 * returns true iff this location is in a side-effect-free loop.
+	 * Determines if this location lies on a cycle in which every location has
+	 * exactly one outgoing statement and that outgoing statement is a
+	 * {@link NoopStatement}.
 	 * 
-	 * @return
+	 * 
+	 * @return True iff the location is in a cycle in which every location has
+	 *         exactly one outgoing statement and that outgoing statement is a
+	 *         {@link NoopStatement}.
 	 */
 	boolean isInNoopLoop();
 
@@ -377,6 +377,23 @@ public interface Location extends Sourceable {
 	 * @return
 	 */
 	boolean isBinaryBranching();
+
+	/**
+	 * Marks this location as a switch or $choose statement location who has a
+	 * 'default' case. Lets {@link #isSwitchOrChooseWithDefault()} return true.
+	 */
+	void setSwitchOrChooseWithDefault();
+
+	/**
+	 * Returns true iff this is a switch or $choose statement location where a
+	 * set of branch statements emanate from and a default case for it was
+	 * specified.
+	 * 
+	 * @return true iff this is a switch or $choose statement location where a
+	 *         set of branch statements emanate from and a default case for it
+	 *         was specified.
+	 */
+	boolean isSwitchOrChooseWithDefault();
 
 	/**
 	 * returns true iff this location has more than one incoming location and is

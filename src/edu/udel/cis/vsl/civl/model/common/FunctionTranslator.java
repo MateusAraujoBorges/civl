@@ -1941,8 +1941,10 @@ public class FunctionTranslator {
 				defaultFragment.updateStartLocation(startLocation);
 				result.addFinalStatementSet(defaultFragment.finalStatements());
 				wholeGuard = modelFactory.trueExpression(startSource);
+				startLocation.setSwitchOrChooseWithDefault();
 			}
-		}
+		} else
+			startLocation.setSwitchOrChooseWithDefault();
 		assert wholeGuard != null;
 		// insert noop at the beginning the fragment so that the guard of the
 		// start location will be true;
@@ -3277,6 +3279,7 @@ public class FunctionTranslator {
 									UNARY_OPERATOR.NOT, combinedCaseGuards)));
 
 			result = result.parallelCombineWith(defaultGoto);
+			location.setSwitchOrChooseWithDefault();
 			for (Statement stmt : defaultGoto.finalStatements())
 				functionInfo.putToGotoStatement(stmt, label);
 		} else {

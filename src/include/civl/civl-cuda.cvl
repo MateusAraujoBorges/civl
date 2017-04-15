@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <concurrency.cvh>
 #include <civl-cuda.cvh>
-
+#pragma PARSE_ACSL
 
 /* type used to represent an instance of a Cuda kernel
  */
@@ -300,6 +300,8 @@ cudaEvent_t $cuda_event_create() {
 /* block until all $cuda_kernel_instance_ts contained in this event have
  * completed
  */
+/*@ depends_on \access(e);
+  @*/	
 void $cuda_event_wait(cudaEvent_t e) {
   for (int i = 0; i < e->numInstances; i++) {
     $when (e->instances[i]->status == $cuda_kernel_status_finished) ;
