@@ -181,15 +181,14 @@ public class LibcommEnabler extends BaseLibraryEnabler
 				return ampleSet;
 			case "$comm_enqueue" :
 				// Because we don't know if other processes will call an wild
-				// card
-				// receive(dequeue), we have to put all processes into ample
-				// set.
+				// card receive(dequeue), we have to put all processes into
+				// ample process set.
 				ampleSet = this.computeAmpleSetByHandleObject(state, pid,
 						arguments[0], argumentValues[0],
 						reachablePtrWritableMap, reachablePtrReadonlyMap,
 						reachableNonPtrWritableMap, reachableNonPtrReadonlyMap);
 
-				if (this.civlConfig.deadlock().equals(DeadlockKind.POTENTIAL)) {
+				if (civlConfig.deadlock().equals(DeadlockKind.POTENTIAL)) {
 					BooleanExpression hasMatchedDequeue;
 
 					hasMatchedDequeue = this.hasMatchedDequeue(state, pid,
