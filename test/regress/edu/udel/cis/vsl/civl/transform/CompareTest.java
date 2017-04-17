@@ -70,7 +70,8 @@ public class CompareTest {
 
 	@Test
 	public void dotHybrid() {
-		assertTrue(ui.run(TestConstants.VERIFY, QUIET,
+		assertTrue(ui.run(TestConstants.VERIFY, 
+//				QUIET,
 				"-inputVECLEN=1 -input_mpi_nprocs=2 -inputMAXTHRDS=2",
 				filename("dot", "mpithreads_both.c")));
 	}
