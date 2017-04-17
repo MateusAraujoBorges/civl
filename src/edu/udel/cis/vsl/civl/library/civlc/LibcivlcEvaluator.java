@@ -1,15 +1,11 @@
 package edu.udel.cis.vsl.civl.library.civlc;
 
-import java.math.BigInteger;
-
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
@@ -173,9 +169,10 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator
 				}
 				startIndex = ((IntegerNumber) startIdxNum).intValue();
 			}
-			parentPtr = symbolicUtil.parentPointer(procsSource, procsPointer);
+			parentPtr = symbolicUtil.parentPointer(procsPointer);
 			eval = evaluator.dereference(procsSource, state, process,
-					arguments[0], parentPtr, false, true);
+					typeFactory.incompleteArrayType(typeFactory.processType()),
+					parentPtr, false, true);
 			state = eval.state;
 			procArray = eval.value;
 			stopIndex = startIndex + numOfProcs_int;
@@ -192,23 +189,17 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator
 				}
 			}
 		} else {
-			BinaryExpression pointerAdd;
-
 			for (int i = 0; i < numOfProcs_int; i++) {
-				Expression offSet = modelFactory.integerLiteralExpression(
-						procsSource, BigInteger.valueOf(i));
 				NumericExpression offSetV = universe.integer(i);
 				SymbolicExpression procPointer, proc;
 				int pidValue;
 
-				pointerAdd = modelFactory.binaryExpression(procsSource,
-						BINARY_OPERATOR.POINTER_ADD, arguments[0], offSet);
-				eval = evaluator.pointerAdd(state, pid, process, pointerAdd,
-						procsPointer, offSetV);
+				eval = evaluator.arrayElementReferenceAdd(state, pid,
+						procsPointer, offSetV, procsSource).left;
 				procPointer = eval.value;
 				state = eval.state;
 				eval = evaluator.dereference(procsSource, state, process,
-						pointerAdd, procPointer, false, true);
+						typeFactory.processType(), procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
 				pidValue = modelFactory.getProcessId(procsSource, proc);

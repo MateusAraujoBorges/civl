@@ -16,13 +16,12 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLType.TypeKind;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -710,8 +709,8 @@ public abstract class LibraryComponent {
 			claim = universe.lessThan(dataSeqLength, count);
 			resultType = reasoner.valid(claim).getResultType();
 			if (resultType.equals(ResultType.YES))
-				reportOutOfBoundError(state, process, claim, resultType,
-						pointer, dataSeqLength, count, source);
+				reportOutOfBoundError(state, pid, claim, resultType, pointer,
+						dataSeqLength, count, source);
 		}
 		// If count is one:
 		if (reasoner.isValid(universe.equals(count, one))) {
@@ -721,13 +720,10 @@ public abstract class LibraryComponent {
 		}
 		// If the type of the object is exact same as the dataArray, then do a
 		// directly assignment:
-		CIVLType typeObj = symbolicAnalyzer
-				.typeOfObjByPointer(ptrExpr.getSource(), state, pointer);
-		TypeEvaluation teval = evaluator.getDynamicType(state, pid, typeObj,
-				source, false);
+		SymbolicType objType = symbolicAnalyzer
+				.dynamicTypeOfObjByPointer(source, state, pointer);
 
-		state = teval.state;
-		if (dataArray.type().equals(teval.type))
+		if (dataArray.type().equals(objType))
 			return new Pair<>(new Evaluation(state, dataArray), pointer);
 
 		// Else, count greater than one:
@@ -750,8 +746,8 @@ public abstract class LibraryComponent {
 									source, state, integerType, count)
 							+ "\n");
 		}
-		eval_and_slices = evaluator.evaluatePointerAdd(state, process, startPtr,
-				count, checkOutput, source);
+		eval_and_slices = evaluator.arrayElementReferenceAdd(state, pid,
+				startPtr, count, source);
 		eval = eval_and_slices.left;
 		endPtr = eval.value;
 		state = eval.state;
@@ -767,29 +763,35 @@ public abstract class LibraryComponent {
 		startPos = zero;
 		if (symref.isArrayElementReference()) {
 			NumericExpression[] startIndices = symbolicUtil
-					.stripIndicesFromReference((ArrayElementReference) symref);
+					.extractArrayIndicesFrom(startPtr);
 			int numIndices = startIndices.length;
 
+			// If stratPtr is not pointing to a leaf element, the number of
+			// indices will be less than the dimension:
+			if (startIndices.length < dim) {
+				startIndices = Arrays.copyOf(startIndices, dim);
+				for (int i = numIndices; i < dim; i++)
+					startIndices[i] = zero;
+			}
 			for (int i = 1; !startPtr.equals(endPtr); i++) {
-				startPtr = symbolicUtil.parentPointer(source, startPtr);
-				endPtr = symbolicUtil.parentPointer((CIVLSource) null, endPtr);
-				startPos = universe.add(startPos,
-						universe.multiply(startIndices[numIndices - i],
-								arraySlicesSizes[dim - i]));
+				startPtr = symbolicUtil.parentPointer(startPtr);
+				endPtr = symbolicUtil.parentPointer(endPtr);
+				startPos = universe.add(startPos, universe.multiply(
+						startIndices[dim - i], arraySlicesSizes[dim - i]));
 			}
 		}
 		// here "startPtr" is already updated as the pointer to the common sub
 		// array.
-		eval = evaluator.dereference(source, state, process, ptrExpr, startPtr,
+		eval = evaluator.dereference(source, state, process, symbolicAnalyzer
+				.civlTypeOfObjByPointer(source, state, startPtr), startPtr,
 				false, true);
 		state = eval.state;
 		if (eval.value.type().typeKind().equals(SymbolicTypeKind.ARRAY)) {
-			eval = this.setDataBetween(state, process, eval.value,
-					arraySlicesSizes, startPos, count, pointer, dataArray,
-					source);
+			eval = this.setDataBetween(state, pid, eval.value, arraySlicesSizes,
+					startPos, count, pointer, dataArray, source);
 		} else {
-			reportOutOfBoundError(state, process, null, null, startPtr, one,
-					count, source);
+			reportOutOfBoundError(state, pid, null, null, startPtr, one, count,
+					source);
 		}
 		return new Pair<>(eval, startPtr);
 	}
@@ -833,15 +835,18 @@ public abstract class LibraryComponent {
 
 		// If "count" == 1:
 		if (reasoner.isValid(universe.equals(count, one))) {
-			eval = evaluator.dereference(source, state, process, pointerExpr,
-					pointer, true, true);
+			CIVLPointerType ptrType = (CIVLPointerType) pointerExpr
+					.getExpressionType();
+
+			eval = evaluator.dereference(source, state, process,
+					ptrType.baseType(), pointer, true, true);
 			if (eval.value.isNull())
 				reportUndefinedValueError(state, pid,
 						symbolicUtil.getSymRef(pointer).isIdentityReference(),
 						pointerExpr);
 			eval.value = universe.array(eval.value.type(),
 					Arrays.asList(eval.value));
-			eval.value = arrayFlatten(state, process, eval.value,
+			eval.value = arrayFlatten(state, pid, eval.value,
 					new ArrayMeasurement(eval.value), source);
 			return eval;
 		}
@@ -849,7 +854,7 @@ public abstract class LibraryComponent {
 		SymbolicExpression rootPointer, rootArray;
 		List<NumericExpression> indicesList = new LinkedList<>();
 		NumericExpression indices[];
-		boolean isHeap = symbolicUtil.isHeapPointer(pointer);
+		boolean isHeap = symbolicUtil.isPointerToHeap(pointer);
 
 		symref = symbolicUtil.getSymRef(pointer);
 		while (symref.isArrayElementReference()) {
@@ -860,7 +865,8 @@ public abstract class LibraryComponent {
 				break;
 		}
 		rootPointer = symbolicUtil.makePointer(pointer, symref);
-		eval = evaluator.dereference(source, state, process, pointerExpr,
+		eval = evaluator.dereference(source, state, process, symbolicAnalyzer
+				.civlTypeOfObjByPointer(source, state, rootPointer),
 				rootPointer, false, true);
 		state = eval.state;
 		rootArray = eval.value;
@@ -954,22 +960,19 @@ public abstract class LibraryComponent {
 			throws UnsatisfiablePathConditionException {
 		NumericExpression pos = zero, step = one;
 		SymbolicExpression flattenArray;
-		String process = state.getProcessState(pid).name();
 		ArrayMeasurement arrayMeasure = new ArrayMeasurement(array);
 		NumericExpression sliceSizes[] = arrayMeasure.sliceSizes;
 		int i;
 
-		flattenArray = arrayFlatten(state, process, array, arrayMeasure,
-				source);
+		flattenArray = arrayFlatten(state, pid, array, arrayMeasure, source);
 		for (i = 0; i < indices.length; i++)
 			pos = universe.add(pos,
 					universe.multiply(indices[i], sliceSizes[i]));
 		// valid subscript: d < indices.length <= dimension && sliceSizes.length
 		// == dimension
 		step = i > 0 ? sliceSizes[i - 1] : sliceSizes[0];
-		return symbolicAnalyzer.getSubArray(flattenArray, pos,
-				universe.add(pos, universe.multiply(count, step)), state,
-				process, source);
+		return symbolicAnalyzer.getSubArray(state, pid, flattenArray, pos,
+				universe.add(pos, universe.multiply(count, step)), source);
 	}
 
 	/**
@@ -1054,8 +1057,8 @@ public abstract class LibraryComponent {
 	 * @author Ziqing Luo
 	 * @param state
 	 *            The current state
-	 * @param process
-	 *            The information of the process
+	 * @param pid
+	 *            The PID of the calling process
 	 * @param oldArray
 	 *            The array before casting
 	 * @param targetTypeArray
@@ -1065,7 +1068,7 @@ public abstract class LibraryComponent {
 	 * @return casted array
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public SymbolicExpression arrayCasting(State state, String process,
+	public SymbolicExpression arrayCasting(State state, int pid,
 			SymbolicExpression oldArray, SymbolicCompleteArrayType typeTemplate,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		BooleanExpression claim;
@@ -1084,7 +1087,7 @@ public abstract class LibraryComponent {
 		assert typeTemplate.isComplete() : "arrayCasting internal exception";
 		if (oldArray.type().equals(typeTemplate))
 			return oldArray;
-		flattenOldArray = arrayFlatten(state, process, oldArray,
+		flattenOldArray = arrayFlatten(state, pid, oldArray,
 				new ArrayMeasurement(oldArray), source);
 		flattenLength = (IntegerNumber) reasoner
 				.extractNumber(universe.length(flattenOldArray));
@@ -1092,7 +1095,7 @@ public abstract class LibraryComponent {
 			throw new CIVLUnimplementedFeatureException(
 					"Transform arrays with non-concrete sizes");
 		arraySlices = new SymbolicExpression[flattenLength.intValue()];
-		coordinatesSizes = symbolicUtil.arrayCoordinateSizes(typeTemplate);
+		coordinatesSizes = symbolicUtil.arrayDimensionExtents(typeTemplate);
 		arraySlicesSizes = symbolicUtil.arraySlicesSizes(coordinatesSizes);
 		elementType = ((SymbolicArrayType) flattenOldArray.type())
 				.elementType();
@@ -1116,11 +1119,11 @@ public abstract class LibraryComponent {
 		numElements = flattenLength.intValue();
 		for (int j = 0, i = 0; j < flattenLength
 				.intValue(); j += dimensionalSpace.intValue()) {
-			arraySlices[i++] = symbolicAnalyzer
-					.getSubArray(flattenOldArray, universe.integer(j),
-							universe.add(universe.integer(j),
-									coordinatesSizes[dim - 1]),
-							state, process, source);
+			arraySlices[i++] = symbolicAnalyzer.getSubArray(state, pid,
+					flattenOldArray, universe.integer(j),
+					universe.add(universe.integer(j),
+							coordinatesSizes[dim - 1]),
+					source);
 		}
 		numElements /= dimensionalSpace.intValue();
 		elementType = universe.arrayType(elementType,
@@ -1161,8 +1164,8 @@ public abstract class LibraryComponent {
 	 * 
 	 * @param state
 	 *            The current state when this method is called
-	 * @param process
-	 *            The String identifier of the process
+	 * @param pid
+	 *            The PID of the calling process.
 	 * @param array
 	 *            The complete array object
 	 * @param arrayMeasurement
@@ -1172,7 +1175,7 @@ public abstract class LibraryComponent {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public SymbolicExpression arrayFlatten(State state, String process,
+	public SymbolicExpression arrayFlatten(State state, int pid,
 			SymbolicExpression array, ArrayMeasurement arrayMeasurement,
 			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
 		Queue<SymbolicExpression> subTreeQueue = new LinkedList<>();
@@ -1239,8 +1242,8 @@ public abstract class LibraryComponent {
 	 * 
 	 * @param state
 	 *            The current state
-	 * @param process
-	 *            The information of the process
+	 * @param pid
+	 *            The PID of the calling process
 	 * @param startPtr
 	 *            The pointer to the start position
 	 * @param endPtr
@@ -1264,7 +1267,7 @@ public abstract class LibraryComponent {
 	 * @throws UnsatisfiablePathConditionException
 	 * @author Ziqing Luo
 	 */
-	private Evaluation setDataBetween(State state, String process,
+	private Evaluation setDataBetween(State state, int pid,
 			SymbolicExpression array, NumericExpression[] arraySlicesSizes,
 			NumericExpression startPos, NumericExpression count,
 			SymbolicExpression pointer, SymbolicExpression dataSequence,
@@ -1290,7 +1293,7 @@ public abstract class LibraryComponent {
 				return new Evaluation(state, dataSequence);
 		} // TODO: what if the length of dataSize is non-concrete and cannot be
 			// decided by reasoner?
-		flattenArray = arrayFlatten(state, process, array,
+		flattenArray = arrayFlatten(state, pid, array,
 				new ArrayMeasurement(array), source);
 		i = startPos;
 
@@ -1326,7 +1329,7 @@ public abstract class LibraryComponent {
 					elementInDataArray);
 			i = universe.add(i, one);
 		}
-		flattenArray = arrayCasting(state, process, flattenArray,
+		flattenArray = arrayCasting(state, pid, flattenArray,
 				(SymbolicCompleteArrayType) array.type(), source);
 		return new Evaluation(state, flattenArray);
 	}
@@ -1405,7 +1408,7 @@ public abstract class LibraryComponent {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private void reportOutOfBoundError(State state, String process,
+	private void reportOutOfBoundError(State state, int pid,
 			BooleanExpression claim, ResultType resultType,
 			SymbolicExpression pointer, NumericExpression arrayLength,
 			NumericExpression offset, CIVLSource source)
@@ -1422,11 +1425,12 @@ public abstract class LibraryComponent {
 						null, arrayLength);
 
 		if (claim != null && resultType != null)
-			state = errorLogger.logError(source, state, process,
+			state = errorLogger.logError(source, state, pid,
 					symbolicAnalyzer.stateInformation(state), claim, resultType,
 					ErrorKind.OUT_OF_BOUNDS, message);
 		else
-			errorLogger.logSimpleError(source, state, process,
+			errorLogger.logSimpleError(source, state,
+					state.getProcessState(pid).name(),
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.OUT_OF_BOUNDS, message);
 		throw new UnsatisfiablePathConditionException();
@@ -1445,11 +1449,11 @@ public abstract class LibraryComponent {
 	 * 2. size > 0.
 	 * </p>
 	 * <p>
-	 * <b>Spec:</b> A sequence of objects in memory in C language can be
-	 * represented as the form <code>objs (p, s)</code> where p is a pointer
-	 * (base address) and s is the total size (in bytes) of the object sequence.
-	 * Returns the same sequence of objects in another form
-	 * <code> objs' (p', c) </code> where <code>
+	 * A sequence of heap objects in memory in C language can be represented as
+	 * the form <code>objs (p, s)</code> where p is a pointer (base address) and
+	 * s is the total size (in bytes) of the object sequence. Then given such a
+	 * pair, this method returns another pair which represents the same sequence
+	 * of objects: <code> {p', c} </code> where <code>
 	 * (void *) p' == (void *) p
 	 * &&
 	 * sizeof( typeof (*p') ) * c == s
@@ -1478,8 +1482,6 @@ public abstract class LibraryComponent {
 			State state, int pid, SymbolicExpression pointer,
 			NumericExpression size, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		CIVLType objType;
-		TypeEvaluation teval;
 		SymbolicExpression newPointer;
 		NumericExpression sizeofObj;
 		BooleanExpression query;
@@ -1494,17 +1496,18 @@ public abstract class LibraryComponent {
 		// while loop : change from recursion to loop:
 		while (!term) {
 			// update sizeofObj:
-			objType = symbolicAnalyzer.typeOfObjByPointer(source, state,
-					newPointer);
-			teval = evaluator.getDynamicType(state, pid, objType, source,
-					false);
-			sizeofObj = symbolicUtil.sizeof(source, objType, teval.type);
-			state = teval.state;
+			SymbolicType dynamicObjType = symbolicAnalyzer
+					.dynamicTypeOfObjByPointer(source, state, newPointer);
+
+			// TODO: by looking at the implementation of this
+			// symbolicUtil.sizeof method, I have no idea why a CIVLType
+			// parameter is necessary:
+			sizeofObj = symbolicUtil.sizeof(source, null, dynamicObjType);
 			// Case 1: sizeof(obj(pointer)) > size:
 			query = universe.lessThan(size, sizeofObj);
 			resultType = reasoner.valid(query).getResultType();
 			if (resultType == ResultType.YES) {
-				newPointer = typingDown(newPointer, objType);
+				newPointer = typingDown(newPointer, dynamicObjType);
 				if (newPointer != null)
 					continue;
 				else
@@ -1522,7 +1525,7 @@ public abstract class LibraryComponent {
 			}
 			// Case 3: UNKNOWN:
 			if (keepDown) {
-				newPointer = typingDown(newPointer, objType);
+				newPointer = typingDown(newPointer, dynamicObjType);
 				if (newPointer != null)
 					continue;
 			}
@@ -1532,7 +1535,7 @@ public abstract class LibraryComponent {
 			if (keepDown)
 				newPointer = pointer;
 			keepDown = false;
-			newPointer = typingUp(newPointer, source);
+			newPointer = typingUp(newPointer);
 			if (newPointer != null)
 				continue;
 			term = true;
@@ -1565,16 +1568,16 @@ public abstract class LibraryComponent {
 	 * @return A new pointer p' or null if the objType is already a scalar type.
 	 */
 	private SymbolicExpression typingDown(SymbolicExpression pointer,
-			CIVLType objType) {
-		TypeKind kind = objType.typeKind();
+			SymbolicType objType) {
+		SymbolicTypeKind kind = objType.typeKind();
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
 
 		switch (kind) {
 			case ARRAY :
-			case COMPLETE_ARRAY :
 				ref = universe.arrayElementReference(ref, zero);
 				return symbolicUtil.setSymRef(pointer, ref);
-			case STRUCT_OR_UNION :
+			case TUPLE :
+			case UNION :
 				ref = universe.tupleComponentReference(ref, zeroObject);
 				return symbolicUtil.setSymRef(pointer, ref);
 			default :
@@ -1596,13 +1599,10 @@ public abstract class LibraryComponent {
 	 * 
 	 * @param pointer
 	 *            {@link SymbolicExpression} of A valid pointer.
-	 * @param source
-	 *            The {@link CIVLSource} associates to this method call.
 	 * @return A new pointer p' or null if no parent node can be found for the
 	 *         type of the object pointed by 'pointer'.
 	 */
-	private SymbolicExpression typingUp(SymbolicExpression pointer,
-			CIVLSource source) {
+	private SymbolicExpression typingUp(SymbolicExpression pointer) {
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
 		ReferenceKind kind = ref.referenceKind();
 
@@ -1610,13 +1610,13 @@ public abstract class LibraryComponent {
 		// pointer points to heap locations, the ReferenceExpression of the
 		// returned pointer p'must starts with a
 		// tupleComponentRef(ArrayElementRef i), j):
-		if (symbolicUtil.isHeapPointer(pointer)) {
+		if (symbolicUtil.isPointerToHeap(pointer)) {
 			if (ref.isArrayElementReference()) {
 				ref = symbolicUtil
-						.getSymRef(symbolicUtil.parentPointer(source, pointer));
+						.getSymRef(symbolicUtil.parentPointer(pointer));
 				if (ref.isTupleComponentReference()) {
-					ref = symbolicUtil.getSymRef(
-							symbolicUtil.parentPointer(source, pointer));
+					ref = symbolicUtil
+							.getSymRef(symbolicUtil.parentPointer(pointer));
 					if (ref.isIdentityReference())
 						return null;
 				}
@@ -1626,7 +1626,7 @@ public abstract class LibraryComponent {
 			case ARRAY_ELEMENT :
 			case TUPLE_COMPONENT :
 			case UNION_MEMBER :
-				return symbolicUtil.parentPointer(source, pointer);
+				return symbolicUtil.parentPointer(pointer);
 			default :
 				return null;
 		}

@@ -148,6 +148,12 @@ public class CommonLocation extends CommonSourceable implements Location {
 	 */
 	private boolean isBinaryBranch = false;
 
+	/**
+	 * true iff this location is a switch or $choose statement location and it
+	 * has a 'default' case.
+	 */
+	private boolean isSwitchOrChooseWithDefault = false;
+
 	private boolean isGuarded = false;
 
 	private boolean isSleep = false;
@@ -308,8 +314,8 @@ public class CommonLocation extends CommonSourceable implements Location {
 	@Override
 	public void loopAnalysis() {
 		if (!this.isInNoopLoop) {
-			Stack<Location> visited = new Stack<>();
-			Location current = this;
+			Stack<CommonLocation> visited = new Stack<>();
+			CommonLocation current = this;
 			Location loopLocation = null;
 
 			while (current != null) {
@@ -317,7 +323,8 @@ public class CommonLocation extends CommonSourceable implements Location {
 
 				visited.push(current);
 				if (singleEnabledNoop != null) {
-					Location target = singleEnabledNoop.target();
+					CommonLocation target = (CommonLocation) singleEnabledNoop
+							.target();
 
 					if (visited.contains(target)) {
 						loopLocation = target;
@@ -330,7 +337,6 @@ public class CommonLocation extends CommonSourceable implements Location {
 					return;
 			}
 			if (loopLocation != null) {
-
 				do {
 					current = visited.pop();
 					current.setInNoopLoop(true);
@@ -799,6 +805,10 @@ public class CommonLocation extends CommonSourceable implements Location {
 		}
 	}
 
+	private void setInNoopLoop(boolean value) {
+		this.isInNoopLoop = value;
+	}
+
 	@Override
 	public Set<Variable> writableVariables() {
 		return this.writableVariables;
@@ -877,11 +887,6 @@ public class CommonLocation extends CommonSourceable implements Location {
 	}
 
 	@Override
-	public void setInNoopLoop(boolean value) {
-		this.isInNoopLoop = value;
-	}
-
-	@Override
 	public boolean isInNoopLoop() {
 		return this.isInNoopLoop;
 	}
@@ -922,5 +927,15 @@ public class CommonLocation extends CommonSourceable implements Location {
 	@Override
 	public boolean isSleep() {
 		return this.isSleep;
+	}
+
+	@Override
+	public void setSwitchOrChooseWithDefault() {
+		isSwitchOrChooseWithDefault = true;
+	}
+
+	@Override
+	public boolean isSwitchOrChooseWithDefault() {
+		return isSwitchOrChooseWithDefault;
 	}
 }

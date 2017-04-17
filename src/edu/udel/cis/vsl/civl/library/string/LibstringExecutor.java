@@ -155,14 +155,17 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		if (charPointer.type() instanceof SymbolicArrayType) {
 			originalArray = charPointer;
 		} else {
-			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(source,
-					charPointer);
+			SymbolicExpression arrayPointer = symbolicUtil
+					.parentPointer(charPointer);
 			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil
 					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
-			eval = evaluator.dereference(source, state, process, null,
-					arrayPointer, false, true);
 
+			eval = evaluator
+					.dereference(source, state, process,
+							symbolicAnalyzer.civlTypeOfObjByPointer(source,
+									state, arrayPointer),
+							arrayPointer, false, true);
 			state = eval.state;
 			// TODO: implement getStringConcrete() as an underneath
 			// implementation of getString()
@@ -180,7 +183,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			SymbolicExpression pointer = symbolicUtil.makePointer(scopeId, vid,
 					eleRef);
 
-			state = primaryExecutor.assign(source, state, process, pointer,
+			state = primaryExecutor.assign(source, state, pid, pointer,
 					charExpr);
 			if (theChar == '\0')
 				break;
@@ -257,11 +260,13 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				Evaluation eval;
 
 				eval = evaluator.dereference(arguments[0].getSource(), state,
-						process, arguments[0], charPointer1, true, true);
+						process, typeFactory.charType(), charPointer1, true,
+						true);
 				state = eval.state;
 				strObj1 = eval.value;
 				eval = evaluator.dereference(arguments[1].getSource(), state,
-						process, arguments[1], charPointer2, true, true);
+						process, typeFactory.charType(), charPointer2, true,
+						true);
 				state = eval.state;
 				strObj2 = eval.value;
 				if (strObj1.equals(strObj2))
@@ -310,14 +315,16 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		if (charPointer.type() instanceof SymbolicArrayType) {
 			originalArray = charPointer;
 		} else {
-			SymbolicExpression arrayPointer = symbolicUtil.parentPointer(source,
-					charPointer);
+			SymbolicExpression arrayPointer = symbolicUtil
+					.parentPointer(charPointer);
 			ArrayElementReference arrayRef = (ArrayElementReference) symbolicUtil
 					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
-			eval = evaluator.dereference(source, state, process, null,
-					arrayPointer, false, true);
 
+			eval = evaluator.dereference(source,
+					state, process, symbolicAnalyzer
+							.civlTypeOfObjByPointer(source, state, charPointer),
+					arrayPointer, false, true);
 			state = eval.state;
 			originalArray = eval.value;
 			startIndex = symbolicUtil.extractInt(source, arrayIndex);
@@ -450,8 +457,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 						"Any datatype other than REAL, INTEGER, CHAR and BOOLEAN is not supported yet");
 		}
 		length = universe.divide(size, dataTypeSize);
-		ptrAddRet = evaluator.evaluatePointerAdd(state, process, pointer,
-				length, false, arguments[0].getSource());
+		ptrAddRet = evaluator.arrayElementReferenceAdd(state, pid, pointer,
+				length, arguments[0].getSource());
 		eval = ptrAddRet.left;
 		state = eval.state;
 		// create a set of zeros to set to the pointed object.
@@ -472,7 +479,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				length, zerosArray, false, source);
 		eval = setDataRet.left;
 		state = eval.state;
-		state = this.primaryExecutor.assign(source, state, process,
+		state = this.primaryExecutor.assign(source, state, pid,
 				setDataRet.right, eval.value);
 		return new Evaluation(state, pointer);
 	}

@@ -1,0 +1,18 @@
+/* This is an example to test the robustness of our POR algorithm.
+ * Deadlock will not be detected if invisibility rule (C3) is not
+ * conformed. */ 
+$input double a;
+
+void process(int pid) {
+  if (!pid)
+    $when(a == 0) return;
+  else {
+    $when(1) return;
+  }
+}
+
+int main() {
+  $parfor(int i : 0..1)
+    process(i);
+  return 0;
+}

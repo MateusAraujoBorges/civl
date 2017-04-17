@@ -124,7 +124,8 @@ $atomic_f int $gcomm_destroy($gcomm gcomm, void * junkMsgs){
   return numJunks;
 }
 
-/*@ depends_on \access(comm->gcomm, newcomm->gcomm); */
+/*@ executes_when \true;
+  @ depends_on \access(comm->gcomm, newcomm->gcomm); */
 $atomic_f void $gcomm_dup($comm comm, $comm newcomm){
   $copy(newcomm->gcomm, comm->gcomm);
 }

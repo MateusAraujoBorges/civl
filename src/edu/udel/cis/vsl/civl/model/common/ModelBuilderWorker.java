@@ -175,13 +175,13 @@ public class ModelBuilderWorker {
 	 * The type __gcollect_checker__, which is the type of the handle
 	 * $gcollect_checker
 	 */
-	CIVLType gcollectCheckerType;
+	CIVLType gcollatorType;
 
 	/**
 	 * The type __collect_checker__, which is the type of the handle
 	 * $collect_checker
 	 */
-	CIVLType collectCheckerType;
+	CIVLType collatorType;
 
 	/**
 	 * The type __int_iter__, which is the base type of the handle $int_iter.

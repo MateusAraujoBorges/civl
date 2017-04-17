@@ -18,6 +18,8 @@ import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -95,6 +97,11 @@ public abstract class CommonEnabler implements Enabler {
 	protected ModelFactory modelFactory;
 
 	/**
+	 * A reference to the {@link CIVLTypeFactory}
+	 */
+	private CIVLTypeFactory typeFactory;
+
+	/**
 	 * The option to enable/disable the printing of ample sets of each state.
 	 */
 	protected boolean showAmpleSet = false;
@@ -119,6 +126,11 @@ public abstract class CommonEnabler implements Enabler {
 	 * The symbolic expression for the boolean value false.
 	 */
 	protected BooleanExpression falseExpression;
+
+	/**
+	 * The symbolic expression for the boolean value true.
+	 */
+	protected BooleanExpression trueExpression;
 
 	/**
 	 * The library enabler loader.
@@ -190,6 +202,7 @@ public abstract class CommonEnabler implements Enabler {
 		this.modelFactory = evaluator.modelFactory();
 		this.universe = modelFactory.universe();
 		falseExpression = universe.falseExpression();
+		trueExpression = universe.trueExpression();
 		this.libraryLoader = libLoader;
 		this.stateFactory = stateFactory;
 		this.showMemoryUnits = civlConfig.showMemoryUnits();
@@ -211,10 +224,13 @@ public abstract class CommonEnabler implements Enabler {
 			return Semantics.newTransitionSet(state, true);
 		// return resumable atomic transitions.
 		transitionsAssumption = enabledAtomicTransitions(state);
-		if (transitionsAssumption != null && transitionsAssumption.left != null)
-			state = state.setPathCondition((BooleanExpression) universe
-					.canonic(universe.and(state.getPathCondition(),
-							transitionsAssumption.left)));
+		if (transitionsAssumption != null
+				&& transitionsAssumption.left != null) {
+			int atomicPid = stateFactory.processInAtomic(state);
+
+			state = stateFactory.addToPathcondition(state, atomicPid,
+					transitionsAssumption.left);
+		}
 		if (transitionsAssumption != null
 				&& transitionsAssumption.right != null)
 			transitions.addAll(transitionsAssumption.right.transitions());
@@ -388,39 +404,12 @@ public abstract class CommonEnabler implements Enabler {
 
 		for (int i = 0; i < numOutgoing; i++) {
 			Statement statement = pLocation.getOutgoing(i);
-			BooleanExpression newPathCondition = newPathCondition(state, pid,
-					statement, i, newGuardMap);
+			BooleanExpression guard = getCachedGuard(state, pid, statement, i,
+					newGuardMap);
 
-			if (!newPathCondition.isFalse()) {
-				// boolean elaborated = false;
-				/*
-				 * if (this.civlConfig.svcomp() && numOutgoing == 1) { if
-				 * (statement.statementKind() == StatementKind.ASSIGN) {
-				 * AssignStatement assign = (AssignStatement) statement;
-				 * LHSExpression lhs = assign.getLhs();
-				 * 
-				 * if (lhs.lhsExpressionKind() == LHSExpressionKind.SUBSCRIPT) {
-				 * SubscriptExpression subscript = (SubscriptExpression) lhs;
-				 * Expression indexExpr = subscript.index();
-				 * 
-				 * try { SymbolicExpression indexValue = this.evaluator
-				 * .evaluate(state, pid, indexExpr).value;
-				 * List<BooleanExpression> newPCs = elaborateSymbolicConstants(
-				 * newPathCondition, pid, indexValue);
-				 * 
-				 * if (newPCs.size() > 0) { elaborated = true; for
-				 * (BooleanExpression pc : newPCs) { transitions
-				 * .addAll(enabledTransitionsOfStatement( state, statement, pc,
-				 * pid, true, atomicLockAction)); } }
-				 * 
-				 * } catch (UnsatisfiablePathConditionException e) { // ignore }
-				 * } } }
-				 */
-				// if (!elaborated)
+			if (!guard.isFalse())
 				transitions.addAll(enabledTransitionsOfStatement(state,
-						statement, newPathCondition, pid, false,
-						atomicLockAction));
-			}
+						statement, guard, pid, false, atomicLockAction));
 		}
 		return transitions;
 	}
@@ -563,47 +552,29 @@ public abstract class CommonEnabler implements Enabler {
 			AtomicLockAction atomicLockAction) {
 		assert pLocation.isBinaryBranching();
 
-		Statement first = pLocation.getOutgoing(0),
-				second = pLocation.getOutgoing(1);
-		BooleanExpression firstGuard = (BooleanExpression) this.getGuard(first,
-				pid, state);
-
-		BooleanExpression firstPc = null, secondPc = null;
+		Statement oneStmt = pLocation.getOutgoing(0),
+				theOtherStmt = pLocation.getOutgoing(1);
+		BooleanExpression oneGuard = getGuard(oneStmt, pid, state);
+		BooleanExpression theOtherGuard = universe.not(oneGuard);
 		BooleanExpression pathCondition = state.getPathCondition();
-		Reasoner reasoner = universe.reasoner(pathCondition);
+		Reasoner reasoner = null; // will be created when necessary
 		LinkedList<Transition> transitions = new LinkedList<>();
 
-		if (!firstGuard.isFalse()) {
-			if (firstGuard.isTrue())
-				firstPc = pathCondition;
-			else {
-				firstGuard = (BooleanExpression) universe.canonic(firstGuard);
-
-				BooleanExpression notFirstGuard = (BooleanExpression) universe
-						.canonic(universe.not(firstGuard));
-
-				if (reasoner.isValid(notFirstGuard)) {
-					secondPc = pathCondition;
-				} else {
-					if (reasoner.isValid(firstGuard))
-						firstPc = pathCondition;
-					else {
-						firstPc = (BooleanExpression) universe.canonic(
-								universe.and(pathCondition, firstGuard));
-						secondPc = (BooleanExpression) universe.canonic(
-								universe.and(pathCondition, notFirstGuard));
-					}
-				}
-			}
-		} else
-			// firstGuard is false, then second guard is true
-			secondPc = pathCondition;
-		if (firstPc != null)
-			transitions.addAll(enabledTransitionsOfStatement(state, first,
-					firstPc, pid, false, atomicLockAction));
-		if (secondPc != null)
-			transitions.addAll(enabledTransitionsOfStatement(state, second,
-					secondPc, pid, false, atomicLockAction));
+		if (oneGuard.isTrue() || (reasoner = universe.reasoner(pathCondition))
+				.isValid(oneGuard)) {
+			return enabledTransitionsOfStatement(state, oneStmt, oneGuard, pid,
+					false, atomicLockAction);
+		}
+		if (theOtherGuard.isTrue() || (reasoner = reasoner == null
+				? universe.reasoner(pathCondition)
+				: reasoner).isValid(theOtherGuard)) {
+			return enabledTransitionsOfStatement(state, theOtherStmt,
+					theOtherGuard, pid, false, atomicLockAction);
+		}
+		transitions.addAll(enabledTransitionsOfStatement(state, oneStmt,
+				oneGuard, pid, false, atomicLockAction));
+		transitions.addAll(enabledTransitionsOfStatement(state, theOtherStmt,
+				theOtherGuard, pid, false, atomicLockAction));
 		return transitions;
 	}
 
@@ -630,55 +601,56 @@ public abstract class CommonEnabler implements Enabler {
 		int pidInAtomic;
 
 		pidInAtomic = stateFactory.processInAtomic(state);
-		if (pidInAtomic >= 0) {
-			// execute a transition in an atomic block of a certain process
-			// without interleaving with other processes
-			// TransitionSequence localTransitions =
-			// Semantics.newTransitionSequence(state, false);
-			List<Transition> localTransitions = new ArrayList<>();
-			Location location = state.getProcessState(pidInAtomic)
-					.getLocation();
+		if (pidInAtomic < 0)
+			return null;
 
-			if (location.isGuardedLocation()) {
-				Statement statement = location.getOutgoing(0);
-				BooleanExpression guardValue = this.getGuard(statement,
-						pidInAtomic, state);
-				BooleanExpression otherAssumption = null;
-				BooleanExpression newPathCondition = state.getPathCondition();
+		// Executes a transition in an atomic block of a certain process
+		// without interleaving with other processes:
+		Location location = state.getProcessState(pidInAtomic).getLocation();
 
-				if (!guardValue.isFalse()) {
-					if (!guardValue.isTrue()) {
-						Reasoner reasoner = universe
-								.reasoner(state.getPathCondition());
+		if (location.isGuardedLocation()) {
+			Statement statement = location.getOutgoing(0);
+			BooleanExpression guardValue = this.getGuard(statement, pidInAtomic,
+					state);
+			BooleanExpression notGuardValue = universe.not(guardValue);
+			Reasoner reasoner = null; // will be created when necessary
 
-						BooleanExpression notGuard = (BooleanExpression) universe
-								.canonic(universe.not(guardValue));
+			// if guard is true, keeps the path condition and enables the
+			// transition of statements:
+			if (guardValue.isTrue()
+					|| (reasoner = universe.reasoner(state.getPathCondition()))
+							.isValid(guardValue)) {
+				List<Transition> localTransitions = enabledTransitionsOfStatement(
+						state, statement, trueExpression, pidInAtomic, false,
+						AtomicLockAction.NONE);
 
-						if (reasoner.isValid(notGuard)) {
-							return null;
-						}
-						if (!reasoner.isValid(guardValue)) {
-							otherAssumption = notGuard;
-							newPathCondition = (BooleanExpression) universe
-									.canonic(universe.and(newPathCondition,
-											guardValue));
-						}
-					}
-					localTransitions.addAll(enabledTransitionsOfStatement(state,
-							statement, newPathCondition, pidInAtomic, false,
-							AtomicLockAction.NONE));
-				}
-				return new Pair<>(otherAssumption, Semantics
-						.newTransitionSet(state, localTransitions, false));
-			} else {
-				localTransitions.addAll(
-						enabledTransitionsOfProcess(state, pidInAtomic, null));
-			}
+				return new Pair<>(null, Semantics.newTransitionSet(state,
+						localTransitions, false));
+			} else if (guardValue.isFalse() || (reasoner = reasoner == null
+					? universe.reasoner(state.getPathCondition())
+					: reasoner).isValid(notGuardValue))
+				return null;
+			// The guard is satisfiable, returns a pair:
+			// Left: the negation of the guard which will be added to the
+			// path condition of the path where this process is blocked;
+			// Right: a set of transitions which direct to the path where
+			// this process is NOT blocked:
+			List<Transition> localTransitions = enabledTransitionsOfStatement(
+					state, statement, guardValue, pidInAtomic, false,
+					AtomicLockAction.NONE);
+
+			return new Pair<>(notGuardValue,
+					Semantics.newTransitionSet(state, localTransitions, false));
+		} else {
+			List<Transition> localTransitions = enabledTransitionsOfProcess(
+					state, pidInAtomic, null);
+
 			if (!localTransitions.isEmpty())
 				return new Pair<>(null, Semantics.newTransitionSet(state,
 						localTransitions, false));
+			else
+				return null;
 		}
-		return null;
 	}
 
 	/**
@@ -689,12 +661,16 @@ public abstract class CommonEnabler implements Enabler {
 	 * 
 	 * @param state
 	 *            The state to work with.
-	 * @param s
+	 * @param statement
 	 *            The statement to be used to generate transitions.
-	 * @param pathCondition
-	 *            The current path condition.
+	 * @param clause
+	 *            The clause will be conjuncted to the path condition before
+	 *            executing the enabled transitions.
 	 * @param pid
 	 *            The process id that the statement belongs to.
+	 * @param simplifyState
+	 *            A flag, set true if and only if the target states of those
+	 *            enabled transitions must be simplified.
 	 * @param assignAtomicLock
 	 *            The assignment statement for the atomic lock variable, should
 	 *            be null except that the process is going to re-obtain the
@@ -702,7 +678,7 @@ public abstract class CommonEnabler implements Enabler {
 	 * @return The set of enabled transitions.
 	 */
 	private List<Transition> enabledTransitionsOfStatement(State state,
-			Statement statement, BooleanExpression pathCondition, int pid,
+			Statement statement, BooleanExpression clause, int pid,
 			boolean simplifyState, AtomicLockAction atomicLockAction) {
 		List<Transition> localTransitions = new LinkedList<>();
 
@@ -714,9 +690,10 @@ public abstract class CommonEnabler implements Enabler {
 					CallOrSpawnStatement call = (CallOrSpawnStatement) statement;
 
 					if (call.isSystemCall()) { // TODO check function pointer
-						return this.getEnabledTransitionsOfSystemCall(
-								call.getSource(), state, call, pathCondition,
-								pid, atomicLockAction);
+						return this
+								.getEnabledTransitionsOfStatement_systemCalls(
+										call.getSource(), state, call, clause,
+										pid, atomicLockAction);
 					} else if (procBound > 0 && call.isSpawn()
 							&& state.numLiveProcs() >= procBound) {
 						// empty set: spawn is disabled due to procBound
@@ -732,8 +709,8 @@ public abstract class CommonEnabler implements Enabler {
 							(UpdateStatement) statement, atomicLockAction);
 				default :
 			}
-			localTransitions.add(Semantics.newTransition(pathCondition, pid,
-					statement, simplifyState, atomicLockAction));
+			localTransitions.add(Semantics.newTransition(pid, clause, statement,
+					simplifyState, atomicLockAction));
 		} catch (UnsatisfiablePathConditionException e) {
 			// nothing to do: don't add this transition
 		}
@@ -778,8 +755,9 @@ public abstract class CommonEnabler implements Enabler {
 		place = symbolicUtil.extractInt(csSource, (NumericExpression) universe
 				.tupleRead(colStateComp, universe.intObject(0)));
 		gstateHandle = universe.tupleRead(colStateComp, universe.intObject(1));
-		eval = this.evaluator.dereference(csSource, state, "p" + pid,
-				colStateExpr, gstateHandle, false, true);
+		eval = evaluator.dereference(csSource, state, "p" + pid,
+				typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
+				gstateHandle, false, true);
 		state = eval.state;
 		colStateID = this.modelFactory.getStateRef(csSource,
 				universe.tupleRead(eval.value, universe.intObject(1)));
@@ -812,14 +790,15 @@ public abstract class CommonEnabler implements Enabler {
 					false);
 			assign.setTargetTemp(originalStmt.target());
 			assign.setSourceTemp(originalStmt.source());
-			result.add(Semantics.newTransition(
-					universe.and(oldPC, newColState.getPathCondition()), pid,
-					assign, atomicLockAction));
+			// TODO: is there any way to only conjunct with new clauses in
+			// colState's PC (instead of the whole PC)?
+			result.add(Semantics.newTransition(pid,
+					newColState.getPathCondition(), assign, atomicLockAction));
 		}
 		return result;
 	}
 
-	// TODO
+	// TODO: is this usefull any more ?
 	private List<Transition> enabledTransitionsOfUpdateStatement(State state,
 			int pid, UpdateStatement update, AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
@@ -845,8 +824,9 @@ public abstract class CommonEnabler implements Enabler {
 			argumentValues[i] = eval.value;
 			state = eval.state;
 		}
-		eval = this.evaluator.dereference(collator.getSource(), state, process,
-				collator, collatorHandle, false, true);
+		eval = evaluator.dereference(collator.getSource(), state, process,
+				typeFactory.systemType(ModelConfiguration.COLLATOR_TYPE),
+				collatorHandle, false, true);
 		collatorComp = eval.value;
 		state = eval.state;
 		place = (NumericExpression) universe.tupleRead(collatorComp,
@@ -854,8 +834,9 @@ public abstract class CommonEnabler implements Enabler {
 		placeID = symbolicUtil.extractInt(source, place);
 		gcollatorHandle = universe.tupleRead(collatorComp,
 				universe.intObject(1));
-		eval = this.evaluator.dereference(collator.getSource(), state, process,
-				collator, gcollatorHandle, false, true);
+		eval = evaluator.dereference(collator.getSource(), state, process,
+				typeFactory.systemType(ModelConfiguration.GCOLLATOR_TYPE),
+				gcollatorHandle, false, true);
 		gcollatorComp = eval.value;
 		state = eval.state;
 		gqueueLength = (NumericExpression) universe.tupleRead(gcollatorComp,
@@ -871,12 +852,12 @@ public abstract class CommonEnabler implements Enabler {
 				colStateRefAssignPairs, atomicLockAction, update);
 	}
 
+	// TODO: is this usefull any more ?
 	private List<Transition> assignPairs2Transitions(State state, int pid,
 			CIVLSource source,
 			List<Pair<LHSExpression, List<Expression>>> colStateRefAssignPairs,
 			AtomicLockAction atomicLockAction, Statement originalStmt) {
 		List<Transition> result = new LinkedList<>();
-		BooleanExpression pc = state.getPathCondition();
 		List<List<Pair<LHSExpression, Expression>>> assignPairs = perumtations(
 				colStateRefAssignPairs, colStateRefAssignPairs.size() - 1);
 		Statement assign;
@@ -886,8 +867,8 @@ public abstract class CommonEnabler implements Enabler {
 					assignPairList);
 			assign.setTargetTemp(originalStmt.target());
 			assign.setSourceTemp(originalStmt.source());
-			result.add(
-					Semantics.newTransition(pc, pid, assign, atomicLockAction));
+			result.add(Semantics.newTransition(pid, trueExpression, assign,
+					atomicLockAction));
 		}
 		return result;
 	}
@@ -948,7 +929,8 @@ public abstract class CommonEnabler implements Enabler {
 			BooleanExpression isIdleState;
 			ResultType result;
 
-			eval = this.evaluator.dereference(source, state, process, collator,
+			eval = evaluator.dereference(source, state, process,
+					typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
 					gstateHandle, false, true);
 			gstate = eval.value;
 			state = eval.state;
@@ -1010,7 +992,7 @@ public abstract class CommonEnabler implements Enabler {
 	 *            the current state
 	 * @param call
 	 *            the system call statement
-	 * @param pathCondition
+	 * @param clause
 	 *            the current path condition
 	 * @param pid
 	 *            the PID
@@ -1019,9 +1001,9 @@ public abstract class CommonEnabler implements Enabler {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private List<Transition> getEnabledTransitionsOfSystemCall(
+	private List<Transition> getEnabledTransitionsOfStatement_systemCalls(
 			CIVLSource source, State state, CallOrSpawnStatement call,
-			BooleanExpression pathCondition, int pid,
+			BooleanExpression clause, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		SystemFunction sysFunction = (SystemFunction) call.function();
@@ -1031,22 +1013,21 @@ public abstract class CommonEnabler implements Enabler {
 			try {
 				LibraryEnabler libEnabler = libraryEnabler(source, libraryName);
 
-				return libEnabler.enabledTransitions(state, call, pathCondition,
-						pid, atomicLockAction);
+				return libEnabler.enabledTransitions(state, call, clause, pid,
+						atomicLockAction);
 			} catch (LibraryLoaderException exception) {
-				return Arrays.asList(Semantics.newTransition(pathCondition, pid,
-						call, atomicLockAction));
+				return Arrays.asList(Semantics.newTransition(pid, clause, call,
+						atomicLockAction));
 			}
 		} else {
-			return Arrays.asList(Semantics.newTransition(pathCondition, pid,
-					call, atomicLockAction));
+			return Arrays.asList(Semantics.newTransition(pid, clause, call,
+					atomicLockAction));
 		}
 	}
 
 	/**
 	 * Given a state, a process, and a statement, check if the statement's guard
-	 * is satisfiable under the path condition. If it is, return the conjunction
-	 * of the path condition and the guard. This will be the new path condition.
+	 * is satisfiable under the path condition. If it is, return the guard.
 	 * Otherwise, return false.
 	 * 
 	 * @param state
@@ -1057,39 +1038,32 @@ public abstract class CommonEnabler implements Enabler {
 	 *            The statement.
 	 * @param the
 	 *            ID of the statement in its source location
-	 * @param newGuardMap
+	 * @param guardCache
 	 *            a map from process ID to map of statement and the value of its
 	 *            guard at the current state
-	 * @return The new path condition. False if the guard is not satisfiable
-	 *         under the path condition.
+	 * @return The guard of the given statement. False if the guard is not
+	 *         satisfiable under the path condition.
 	 */
-	private BooleanExpression newPathCondition(State state, int pid,
+	private BooleanExpression getCachedGuard(State state, int pid,
 			Statement statement, int statementId,
-			BooleanExpression newGuardMap[][]) {
+			BooleanExpression guardCache[][]) {
 		BooleanExpression guard;
-		BooleanExpression myMap[] = newGuardMap != null
-				? newGuardMap[pid]
-				: null;
+		BooleanExpression myMap[] = guardCache != null ? guardCache[pid] : null;
 
 		guard = myMap != null ? myMap[statementId] : null;
 		if (guard == null)
 			guard = getGuard(statement, pid, state);
 		if (guard.isFalse())
 			return this.falseExpression;
+		if (guard.isTrue())
+			return trueExpression;
 
 		BooleanExpression pathCondition = state.getPathCondition();
 		Reasoner reasoner = universe.reasoner(pathCondition);
 
-		if (guard.isTrue()) {
-			return pathCondition;
-		}
-		guard = (BooleanExpression) universe.canonic(guard);
 		if (reasoner.isValid(universe.not(guard)))
 			return this.falseExpression;
-		if (reasoner.isValid(guard))
-			return pathCondition;
-		return (BooleanExpression) universe
-				.canonic(universe.and(pathCondition, guard));
+		return guard;
 	}
 }
 

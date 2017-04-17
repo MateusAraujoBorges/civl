@@ -18,19 +18,21 @@ public interface Transition {
 	}
 
 	public enum AtomicLockAction {
-		NONE, /** no action to the atomic lock */
-		GRAB, /** attempts to grab the atomic lock */
+		NONE,
+		/** no action to the atomic lock */
+		GRAB,
+		/** attempts to grab the atomic lock */
 		RELEASE
 		/** releases the atomic lock */
 	}
 
 	/**
-	 * The path condition of the new state after this transition is executed.
 	 * 
-	 * @return The path condition of the new state after this transition is
-	 *         executed.
+	 * @return a boolean-value clause. Execution of this transition will start
+	 *         from a new state, which is obtained via conjunction of this
+	 *         clause and the path condition of the source state.
 	 */
-	BooleanExpression pathCondition();
+	BooleanExpression clause();
 
 	/**
 	 * The statement that this transition is to execute, which should be atomic,

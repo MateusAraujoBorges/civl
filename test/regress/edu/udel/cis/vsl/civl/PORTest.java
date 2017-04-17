@@ -1,8 +1,8 @@
 package edu.udel.cis.vsl.civl;
 
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 
 import java.io.File;
 
@@ -29,7 +29,8 @@ public class PORTest {
 
 	@Test
 	public void adder2() {
-		assertTrue(ui.run("verify", "-inputN=4", QUIET, filename("adder2.cvl")));
+		assertTrue(
+				ui.run("verify", "-inputN=4", QUIET, filename("adder2.cvl")));
 	}
 
 	@Test
@@ -40,6 +41,11 @@ public class PORTest {
 	@Test
 	public void atomic1() {
 		assertFalse(ui.run("verify", QUIET, filename("atomic1.cvl")));
+	}
+
+	@Test
+	public void invisibility_c3() {
+		assertFalse(ui.run("verify", QUIET, filename("invisibility_c3.cvl")));
 	}
 
 	@Test
@@ -84,21 +90,18 @@ public class PORTest {
 
 	@Test
 	public void loop() {
-		assertFalse(ui.run(
-				"verify -errorBound=4",
-				QUIET, filename("loop.cvl")));
+		assertFalse(
+				ui.run("verify -errorBound=4", QUIET, filename("loop.cvl")));
 	}
 
 	@Test
 	public void loop2() {
-		assertTrue(ui.run("verify",
-				QUIET, filename("loop2.cvl")));
+		assertTrue(ui.run("verify", QUIET, filename("loop2.cvl")));
 	}
 
 	@Test
 	public void loop3() {
-		assertTrue(ui.run("verify",
-				QUIET, filename("loop3.cvl")));
+		assertTrue(ui.run("verify", QUIET, filename("loop3.cvl")));
 	}
 
 	@AfterClass

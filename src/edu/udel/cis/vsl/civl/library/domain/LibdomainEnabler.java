@@ -46,14 +46,14 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
 
-public class LibdomainEnabler extends BaseLibraryEnabler implements
-		LibraryEnabler {
+public class LibdomainEnabler extends BaseLibraryEnabler
+		implements
+			LibraryEnabler {
 
 	public LibdomainEnabler(String name, Enabler primaryEnabler,
 			Evaluator evaluator, ModelFactory modelFactory,
 			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
-			CIVLConfiguration civlConfig,
-			LibraryEnablerLoader libEnablerLoader,
+			CIVLConfiguration civlConfig, LibraryEnablerLoader libEnablerLoader,
 			LibraryEvaluatorLoader libEvaluatorLoader) {
 		super(name, primaryEnabler, evaluator, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libEnablerLoader,
@@ -62,18 +62,18 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 
 	@Override
 	public List<Transition> enabledTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, AtomicLockAction atomicLockAction)
+			CallOrSpawnStatement call, BooleanExpression clause, int pid,
+			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		String functionName = call.function().name().name();
 		try {
 			switch (functionName) {
-			case "$domain_partition":
-				return this.enabledDomainPartition(state, call, pathCondition,
-						pid, atomicLockAction);
-			default:
-				return super.enabledTransitions(state, call, pathCondition,
-						pid, atomicLockAction);
+				case "$domain_partition" :
+					return this.enabledDomainPartition(state, call, clause, pid,
+							atomicLockAction);
+				default :
+					return super.enabledTransitions(state, call, clause, pid,
+							atomicLockAction);
 			}
 		} catch (LibraryLoaderException e) {
 			throw new CIVLInternalException("Domain library loader fails",
@@ -84,8 +84,8 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 	/* *************************** Private Methods ************************* */
 
 	private List<Transition> enabledDomainPartition(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, AtomicLockAction atomicLockAction)
+			CallOrSpawnStatement call, BooleanExpression clause, int pid,
+			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException, LibraryLoaderException {
 		List<Statement> statements = new LinkedList<>();
 		List<Transition> transitions = new LinkedList<>();
@@ -96,7 +96,8 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 		Evaluation eval;
 		Number strategyNum;
 		int strategyInt;
-		Reasoner reasoner = universe.reasoner(pathCondition);
+		Reasoner reasoner = universe
+				.reasoner(universe.and(state.getPathCondition(), clause));
 		String process = "p" + pid;
 
 		call.arguments().toArray(arguments);
@@ -118,33 +119,34 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 				+ ": strategy must be a DECOMP_STRATEGY type";
 		strategyInt = ((IntegerNumber) strategyNum).intValue();
 		switch (strategyInt) {
-		case ModelConfiguration.DECOMP_ALL:
-			List<SymbolicExpression> subDecomp;
-			SymbolicExpression[] argValues = new SymbolicExpression[3];
+			case ModelConfiguration.DECOMP_ALL :
+				List<SymbolicExpression> subDecomp;
+				SymbolicExpression[] argValues = new SymbolicExpression[3];
 
-			Arrays.asList(domain, strategy, nthreads).toArray(argValues);
-			subDecomp = evaluateDomDecompAllPartition(state, pid, process,
-					arguments, argValues, call.getSource());
-			statements.addAll(this.allDecompStatements(call, arguments[0]
-					.expressionScope(), call.lhs().getExpressionType(),
-					subDecomp, arguments[0].getSource()));
-			break;
-		case ModelConfiguration.DECOMP_ROUND_ROBIN:
-			return super.enabledTransitions(state, call, pathCondition, pid,
-					atomicLockAction);
-		case ModelConfiguration.DECOMP_RANDOM:
-		default:
-			throw new CIVLUnimplementedFeatureException("domain strategy");
+				Arrays.asList(domain, strategy, nthreads).toArray(argValues);
+				subDecomp = evaluateDomDecompAllPartition(state, pid, process,
+						arguments, argValues, call.getSource());
+				statements.addAll(this.allDecompStatements(call,
+						arguments[0].expressionScope(),
+						call.lhs().getExpressionType(), subDecomp,
+						arguments[0].getSource()));
+				break;
+			case ModelConfiguration.DECOMP_ROUND_ROBIN :
+				return super.enabledTransitions(state, call, clause, pid,
+						atomicLockAction);
+			case ModelConfiguration.DECOMP_RANDOM :
+			default :
+				throw new CIVLUnimplementedFeatureException("domain strategy");
 		}
 		for (int i = 0; i < statements.size(); i++) {
-			transitions.add(Semantics.newTransition(pathCondition, pid,
+			transitions.add(Semantics.newTransition(pid, clause,
 					statements.get(i), atomicLockAction));
 		}
 		return transitions;
 	}
 
-	private List<AssignStatement> allDecompStatements(
-			CallOrSpawnStatement call, Scope exprScope, CIVLType exprType,
+	private List<AssignStatement> allDecompStatements(CallOrSpawnStatement call,
+			Scope exprScope, CIVLType exprType,
 			List<SymbolicExpression> subDecomp, CIVLSource sourceOfLocation) {
 		StructOrUnionLiteralExpression decompsConstantExpr;
 		List<AssignStatement> assignStatements = new LinkedList<>();
@@ -195,8 +197,8 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 		// concrete number
 		// assert strategy == DECOMP_ALL;
 		numPartsNumber = reasoner.extractNumber(numParts);
-		numElementsNumber = reasoner.extractNumber(symbolicUtil
-				.getDomainSize(domain));
+		numElementsNumber = reasoner
+				.extractNumber(symbolicUtil.getDomainSize(domain));
 		decompType = universe.tupleType(
 				universe.stringObject("$domain_decomposition"),
 				Arrays.asList(universe.integerType(),
@@ -258,31 +260,30 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 				if (decompedDomainsElements.keySet().size() < numParts_int)
 					continue;
 				// creating sub-domains and decomp struct
-				for (int j = 0; j < decompedDomainsElements.keySet().size(); j++) {
+				for (int j = 0; j < decompedDomainsElements.keySet()
+						.size(); j++) {
 					List<List<SymbolicExpression>> elements;
 					SymbolicExpression myDomain;
-					SymbolicExpression literalDomainElement, literalDomain, domainUnion;
+					SymbolicExpression literalDomainElement, literalDomain,
+							domainUnion;
 					List<SymbolicExpression> litDomEleArrayComp = new LinkedList<>();
 
 					elements = decompedDomainsElements.get(j);
 					for (int k = 0; k < elements.size(); k++) {
-						literalDomainElement = universe.array(
-								universe.integerType(), elements.get(k));
+						literalDomainElement = universe
+								.array(universe.integerType(), elements.get(k));
 						litDomEleArrayComp.add(literalDomainElement);
 					}
 					literalDomain = universe.array(domainElementType,
 							litDomEleArrayComp);
 					domainUnion = universe.unionInject(unionType, oneObject,
 							literalDomain);
-					myDomain = universe.tuple(
-							(SymbolicTupleType) domain.type(),
+					myDomain = universe.tuple((SymbolicTupleType) domain.type(),
 							Arrays.asList(dim, one, domainUnion));
 					subDomains.add(myDomain);
 				}
-				decomp = universe.tuple(
-						decompType,
-						Arrays.asList(numParts,
-								universe.array(domain.type(), subDomains)));
+				decomp = universe.tuple(decompType, Arrays.asList(numParts,
+						universe.array(domain.type(), subDomains)));
 				allDecomp.add(decomp);
 
 			} catch (NullPointerException e) {
@@ -328,8 +329,8 @@ public class LibdomainEnabler extends BaseLibraryEnabler implements
 						singlePartition);
 
 				singlePartitionBranch.add(new Pair<>(i, j));
-				result.addAll(this.getAllPartitionsWorker(
-						singlePartitionBranch, numEle, numParts));
+				result.addAll(this.getAllPartitionsWorker(singlePartitionBranch,
+						numEle, numParts));
 			}
 			singlePartition.add(new Pair<>(i, 0));
 		}

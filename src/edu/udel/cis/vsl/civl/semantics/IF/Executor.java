@@ -28,8 +28,8 @@ public interface Executor {
 	 *            the source code information for error report
 	 * @param state
 	 *            a CIVL model state
-	 * @param process
-	 *            the process information (process name + PID) for error report
+	 * @param pid
+	 *            the PID of the calling process
 	 * @param pointer
 	 *            a pointer value
 	 * @param value
@@ -37,7 +37,7 @@ public interface Executor {
 	 * @return the new state
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	State assign(CIVLSource source, State state, String process,
+	State assign(CIVLSource source, State state, int pid,
 			SymbolicExpression pointer, SymbolicExpression value)
 			throws UnsatisfiablePathConditionException;
 

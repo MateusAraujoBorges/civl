@@ -26,16 +26,16 @@ public class CudaTest {
 
 	@Test
 	public void sum() {
-		assertTrue(ui.run(
-				"verify -enablePrintf=false -inputN=8 -inputNBLOCKS=4",
-				TestConstants.QUIET, filename("sum.cu")));
+		assertTrue(
+				ui.run("verify -enablePrintf=false -deadlock=none -inputN=8 -inputNBLOCKS=4",
+						TestConstants.QUIET, filename("sum.cu")));
 	}
 
 	@Test
 	public void matMult1() {
-		assertTrue(ui.run(
-				"verify -enablePrintf=false -inputN=2 -inputTILE_WIDTH=1 ",
-				TestConstants.QUIET, filename("matMult1.cu")));
+		assertTrue(
+				ui.run("verify -enablePrintf=false -deadlock=none -inputN=2 -inputTILE_WIDTH=1 ",
+						TestConstants.QUIET, filename("matMult1.cu")));
 	}
 
 	@AfterClass

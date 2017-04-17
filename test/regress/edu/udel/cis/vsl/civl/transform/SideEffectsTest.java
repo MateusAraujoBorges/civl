@@ -52,11 +52,52 @@ public class SideEffectsTest {
 				filename("quantifiedSideEffects.c")));
 	}
 
-	// TODO: failing. see ticket #733
 	@Test
 	public void structWithDiv() {
 		assertTrue(ui.run("verify", TestConstants.QUIET,
 				filename("structWithDiv.cvl")));
+	}
+
+	@Test
+	public void simpleShortCircuit() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				filename("trivilShortCircuits.cvl")));
+	}
+
+	@Test
+	public void complextShortCircuitExpression() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				filename("complexShortCircuitExpressions.cvl")));
+	}
+
+	@Test
+	public void complextShortCircuitLoopCondition() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				filename("complexShortCircuitLoopConditions.cvl")));
+	}
+
+	@Test
+	public void nestedShortCircuitLoopCondition() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				filename("nestedShortCircuitLoopConditions.cvl")));
+	}
+
+	@Test
+	public void errSideEffectInGuard() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				filename("errSideEffectsInGuard.cvl")));
+	}
+
+	@Test
+	public void errSideEffectInQuantified() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				filename("errSideEffectsInQuantified.cvl")));
+	}
+
+	@Test
+	public void errSideEffectInQuantifiedButOK() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				filename("errSideEffectsInQuantifiedButOK.cvl")));
 	}
 
 	@AfterClass

@@ -237,9 +237,6 @@ int $mpi_recv(void *buf, int count, MPI_Datatype datatype, int source,
     deterministicTag = tag < 0 ? -2 : tag;
     $elaborate(source);
     in = $comm_dequeue(comm.p2p, source, deterministicTag);
-#ifdef _MPI_CONTRACT
-    $elaborate(count);
-#endif
 
     int size = count*sizeofDatatype(datatype);
 
@@ -319,11 +316,9 @@ int $mpi_collective_send(const void *buf, int count, MPI_Datatype datatype, int 
     int place = $comm_place(comm.col);
     $message out = $message_pack(place, dest, tag, buf, size);
 
+    $elaborate(dest);
 #ifdef _MPI_CONTRACT
-    $atomic{
-      $comm_enqueue(comm.col, out);
-      //$mpi_colSendShot(comm.gcommIndex, out, place);
-    }
+    $elaborate(count);
 #else 
     $comm_enqueue(comm.col, out);   
 #endif

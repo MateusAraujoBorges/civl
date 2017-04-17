@@ -344,24 +344,6 @@ public class LibraryTest {
 	}
 
 	@Test
-	public void pointerRealloc() {
-		assertTrue(ui.run("verify", QUIET,
-				filename(POINTER, "simplePointerRealloc.cvl")));
-	}
-
-	@Test
-	public void pointerReallocBad() {
-		assertFalse(ui.run("verify", "-DBAD", QUIET,
-				filename(POINTER, "simplePointerRealloc.cvl")));
-	}
-
-	@Test
-	public void SymPointerRealloc() {
-		assertTrue(ui.run("verify", QUIET,
-				filename(POINTER, "symbolicPointerRealloc.cvl")));
-	}
-
-	@Test
 	public void simpleCopyTest() {
 		assertTrue(ui.run("verify", QUIET,
 				filename(POINTER, "simpleCopyTest.cvl")));

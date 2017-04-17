@@ -62,7 +62,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.Format.ConversionType;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
-import edu.udel.cis.vsl.civl.semantics.IF.NoopTransition;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition.AtomicLockAction;
@@ -433,7 +432,7 @@ public class CommonExecutor implements Executor {
 						+ "      expected size argument: a multile of "
 						+ elementSize.toString();
 
-				state = errorLogger.logError(source, state, process,
+				state = errorLogger.logError(source, state, pid,
 						symbolicAnalyzer.stateInformation(state), claim,
 						validity, ErrorKind.MALLOC, message);
 				throw new UnsatisfiablePathConditionException();
@@ -1306,7 +1305,7 @@ public class CommonExecutor implements Executor {
 	 * @throws UnsatisfiablePathConditionException
 	 *             if the memory represented by the lhs expression is invalid
 	 */
-	protected State assign(CIVLSource source, State state, String process,
+	protected State assign(CIVLSource source, State state, int pid,
 			SymbolicExpression pointer, SymbolicExpression value,
 			boolean isInitialization, boolean toCheckPointer)
 			throws UnsatisfiablePathConditionException {
@@ -1314,7 +1313,7 @@ public class CommonExecutor implements Executor {
 				.isDerefablePointer(state, pointer);
 
 		if (checkPointer.right != ResultType.YES) // {
-			state = errorLogger.logError(source, state, process,
+			state = errorLogger.logError(source, state, pid,
 					symbolicAnalyzer.stateInformation(state), checkPointer.left,
 					checkPointer.right, ErrorKind.DEREFERENCE,
 					"attempt to write to a memory location through the pointer "
@@ -1335,6 +1334,8 @@ public class CommonExecutor implements Executor {
 		// false);
 		// state = eval.state;
 		if (sid < 0) {
+			String process = state.getProcessState(pid).name();
+
 			errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.DEREFERENCE,
@@ -1344,6 +1345,8 @@ public class CommonExecutor implements Executor {
 		variable = state.getDyscope(sid).lexicalScope().variable(vid);
 		if (!isInitialization) {
 			if (variable.isInput()) {
+				String process = state.getProcessState(pid).name();
+
 				errorLogger.logSimpleError(source, state, process,
 						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.INPUT_WRITE,
@@ -1351,6 +1354,8 @@ public class CommonExecutor implements Executor {
 								+ variable.name());
 				throw new UnsatisfiablePathConditionException();
 			} else if (variable.isConst()) {
+				String process = state.getProcessState(pid).name();
+
 				errorLogger.logSimpleError(source, state, process,
 						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.CONSTANT_WRITE,
@@ -1398,6 +1403,8 @@ public class CommonExecutor implements Executor {
 				// return result;
 				// }
 				// }
+				String process = state.getProcessState(pid).name();
+
 				errorLogger.logSimpleError(source, state, process,
 						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.DEREFERENCE,
@@ -1460,18 +1467,18 @@ public class CommonExecutor implements Executor {
 			// }
 			// }
 			// TODO check if lhs is constant or input value
-			return assign(lhs.getSource(), eval.state, process, eval.value,
-					value, isInitialization, toCheckPointer);
+			return assign(lhs.getSource(), eval.state, pid, eval.value, value,
+					isInitialization, toCheckPointer);
 		}
 	}
 
 	/* *********************** Methods from Executor *********************** */
 
 	@Override
-	public State assign(CIVLSource source, State state, String process,
+	public State assign(CIVLSource source, State state, int pid,
 			SymbolicExpression pointer, SymbolicExpression value)
 			throws UnsatisfiablePathConditionException {
-		return this.assign(source, state, process, pointer, value, false, true);
+		return this.assign(source, state, pid, pointer, value, false, true);
 	}
 
 	@Override
@@ -1552,7 +1559,8 @@ public class CommonExecutor implements Executor {
 								+ atomicLockAction.toString(),
 						transition.statement().getSource());
 		}
-		state = state.setPathCondition(transition.pathCondition());
+		state = stateFactory.addToPathcondition(state, pid,
+				transition.clause());
 		if (transition.simpifyState()
 				&& (civlConfig.svcomp() || this.civlConfig.simplify()))
 			state = this.stateFactory.simplify(state);
@@ -1600,7 +1608,7 @@ public class CommonExecutor implements Executor {
 		format += "[" + process + "]:" + violatedCondition + "\n"
 				+ violatedCondition + " is evaluated as " + assertValue + "\n"
 				+ mergedStateExplanation;
-		return errorLogger.logError(source, state, process,
+		return errorLogger.logError(source, state, place,
 				symbolicAnalyzer.stateInformation(state), assertValue,
 				resultType, errorKind, format);
 	}

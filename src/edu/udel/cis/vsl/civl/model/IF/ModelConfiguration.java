@@ -153,6 +153,10 @@ public final class ModelConfiguration {
 	public static final String RANGE_TYPE = "$range";
 
 	/**
+	 * The name of the "pthread_t" type defined in pthread library
+	 */
+	public static final String PTHREAD_THREAD_TYPE = "pthread_t";
+	/**
 	 * The name of _pthread_gpool_t type, which is the object type of the handle
 	 * $pthread_gpool, and is used by pthread.cvl.
 	 */
@@ -241,19 +245,24 @@ public final class ModelConfiguration {
 	public static final String TM_TYPE = "tm";
 
 	/**
-	 * The <code>__collect_record__</code> type
+	 * The <code>$gcollator</code> type
 	 */
-	public static final String COLLECT_RECORD_TYPE = "_collator_entry";
+	public static final String GCOLLATOR_TYPE = "$gcollator";
 
 	/**
-	 * The <code>__gcollect_checker__</code> type
+	 * The <code>$collator</code> type
 	 */
-	public static final String GCOLLECT_CHECKER_TYPE = "_gcollator";
+	public static final String COLLATOR_TYPE = "$collator";
 
 	/**
-	 * The <code>__collect_checker__</code> type
+	 * The <code>$gcollate_state</code> type
 	 */
-	public static final String COLLECT_CHECKER_TYPE = "_collator";
+	public static final String GCOLLATE_STATE = "$gcollate_state";
+
+	/**
+	 * The <code>$collate_state</code> type
+	 */
+	public static final String COLLATE_STATE = "$collate_state";
 
 	/* libraries */
 

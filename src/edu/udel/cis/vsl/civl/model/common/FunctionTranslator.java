@@ -1593,9 +1593,7 @@ public class FunctionTranslator {
 		ExpressionNode rhs = assignNode.getArgument(1);
 		Expression leftExpression;
 
-		// this.isLHS = true;
 		leftExpression = translateExpressionNode(lhs, scope, true);
-		// this.isLHS = false;
 		assert assignNode.getOperator() == Operator.ASSIGN;
 		if (!(leftExpression instanceof LHSExpression))
 			throw new CIVLInternalException(
@@ -1943,8 +1941,10 @@ public class FunctionTranslator {
 				defaultFragment.updateStartLocation(startLocation);
 				result.addFinalStatementSet(defaultFragment.finalStatements());
 				wholeGuard = modelFactory.trueExpression(startSource);
+				startLocation.setSwitchOrChooseWithDefault();
 			}
-		}
+		} else
+			startLocation.setSwitchOrChooseWithDefault();
 		assert wholeGuard != null;
 		// insert noop at the beginning the fragment so that the guard of the
 		// start location will be true;
@@ -3279,6 +3279,7 @@ public class FunctionTranslator {
 									UNARY_OPERATOR.NOT, combinedCaseGuards)));
 
 			result = result.parallelCombineWith(defaultGoto);
+			location.setSwitchOrChooseWithDefault();
 			for (Statement stmt : defaultGoto.finalStatements())
 				functionInfo.putToGotoStatement(stmt, label);
 		} else {
@@ -5665,7 +5666,7 @@ public class FunctionTranslator {
 	 *            The CIVL source
 	 * @param scope
 	 *            The scope
-	 * @param type
+	 * @param dynamicType
 	 *            The ABC struct or union type
 	 * @return CIVL type of struct or union
 	 */
@@ -5748,6 +5749,9 @@ public class FunctionTranslator {
 				case ModelConfiguration.QUEUE_TYPE :
 					modelBuilder.queueType = result;
 					break;
+				case ModelConfiguration.PTHREAD_THREAD_TYPE :
+					typeFactory.addSystemType(tag, result);
+					break;
 				case ModelConfiguration.PTHREAD_POOL :
 				case ModelConfiguration.PTHREAD_GPOOL :
 					structType.setHandleObjectType(true);
@@ -5803,23 +5807,25 @@ public class FunctionTranslator {
 					// modelBuilder.handledObjectTypes.add(result);
 					typeFactory.addSystemType(tag, result);
 					break;
-				case ModelConfiguration.COLLECT_RECORD_TYPE :
-					typeFactory.addSystemType(tag, result);
-					structType.setHandleObjectType(false);
-					modelBuilder.collectRecordType = result;
-					// modelBuilder.handledObjectTypes.add(result);
-					break;
-				case ModelConfiguration.GCOLLECT_CHECKER_TYPE :
+				case ModelConfiguration.GCOLLATOR_TYPE :
 					typeFactory.addSystemType(tag, result);
 					structType.setHandleObjectType(true);
-					modelBuilder.gcollectCheckerType = result;
+					modelBuilder.gcollatorType = result;
 					modelBuilder.handledObjectTypes.add(result);
 					break;
-				case ModelConfiguration.COLLECT_CHECKER_TYPE :
+				case ModelConfiguration.COLLATOR_TYPE :
 					typeFactory.addSystemType(tag, result);
 					structType.setHandleObjectType(true);
-					modelBuilder.collectCheckerType = result;
+					modelBuilder.collatorType = result;
 					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.GCOLLATE_STATE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.COLLATE_STATE :
+					typeFactory.addSystemType(tag, result);
 					break;
 				default :
 					// TODO: set default case
