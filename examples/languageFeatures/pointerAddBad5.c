@@ -4,5 +4,6 @@ int main(int argc, char * argv[]) {
     int y;
   } point;
   int * test = &point.x + 1;
+
   return 0;
 }

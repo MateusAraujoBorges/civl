@@ -1,0 +1,15 @@
+#include<assert.h>
+
+int main() {
+  int x = 1;
+  int y = 2;
+  int z = 3;
+
+  if (( x == y+1 && y > z ) + 1 >= 1 && z + y <= 3) 
+    assert(0);
+  else if ( x == 3 || z == 1 || y == 2)
+    assert(1);
+  else
+    assert(0);
+  return 0;
+}

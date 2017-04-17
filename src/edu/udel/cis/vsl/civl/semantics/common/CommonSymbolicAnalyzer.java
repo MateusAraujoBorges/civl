@@ -183,7 +183,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		// different.
 		if (vid == 0)
 			return ref;
-		objType = typeOfObjByPointer(source, state, pointer);
+		objType = civlTypeOfObjByPointer(source, state, pointer);
 		while (objType.isArrayType()) {
 			ref = universe.arrayElementReference(ref, zero);
 			objType = ((CIVLArrayType) objType).elementType();
@@ -192,9 +192,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public SymbolicExpression getSubArray(SymbolicExpression array,
-			NumericExpression startIndex, NumericExpression endIndex,
-			State state, String process, CIVLSource source)
+	public SymbolicExpression getSubArray(State state, int pid,
+			SymbolicExpression array, NumericExpression startIndex,
+			NumericExpression endIndex, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		// if startIndex is zero and endIndex is length, return array
 		// verify startIndex >=0 and endIndex<= Length
@@ -215,7 +215,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			ResultType valid = reasoner.valid(claim).getResultType();
 
 			if (valid != ResultType.YES) {
-				state = errorLogger.logError(source, state, process,
+				state = errorLogger.logError(source, state, pid,
 						this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS, "negative start index");
 				pathCondition = state.getPathCondition();
@@ -224,7 +224,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			claim = universe.lessThanEquals(endIndex, length);
 			valid = reasoner.valid(claim).getResultType();
 			if (valid != ResultType.YES) {
-				state = errorLogger.logError(source, state, process,
+				state = errorLogger.logError(source, state, pid,
 						this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS,
 						"end index exceeds length of array");
@@ -234,7 +234,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			claim = universe.lessThanEquals(startIndex, endIndex);
 			valid = reasoner.valid(claim).getResultType();
 			if (valid != ResultType.YES) {
-				state = errorLogger.logError(source, state, process,
+				state = errorLogger.logError(source, state, pid,
 						this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS,
 						"start index greater than end index");
@@ -336,7 +336,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
-	public CIVLType typeOfObjByPointer(CIVLSource soruce, State state,
+	public CIVLType civlTypeOfObjByPointer(CIVLSource soruce, State state,
 			SymbolicExpression pointer) {
 		ReferenceExpression reference = this.symbolicUtil.getSymRef(pointer);
 		int dyscopeId = symbolicUtil.getDyscopeId(soruce, pointer);
@@ -353,9 +353,25 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	}
 
 	@Override
+	public SymbolicType dynamicTypeOfObjByPointer(CIVLSource soruce,
+			State state, SymbolicExpression pointer) {
+		ReferenceExpression reference = symbolicUtil.getSymRef(pointer);
+		int dyscopeId = symbolicUtil.getDyscopeId(soruce, pointer);
+		int vid = symbolicUtil.getVariableId(soruce, pointer);
+		SymbolicExpression varValue;
+
+		if (dyscopeId == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE) {
+			varValue = modelFactory.model().staticConstantScope().variable(vid)
+					.constantValue();
+		} else
+			varValue = state.getDyscope(dyscopeId).getValue(vid);
+		return universe.dereference(varValue, reference).type();
+	}
+
+	@Override
 	public CIVLType getArrayBaseType(State state, CIVLSource source,
 			SymbolicExpression arrayPtr) {
-		CIVLType type = this.typeOfObjByPointer(source, state, arrayPtr);
+		CIVLType type = this.civlTypeOfObjByPointer(source, state, arrayPtr);
 
 		while (type instanceof CIVLArrayType)
 			type = ((CIVLArrayType) type).elementType();
@@ -1797,9 +1813,17 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			}
 			parentType = typeOfObjByRef(type, parent);
 			if (parentType.isHeapType()) {
+				MallocStatement malloc = ((CIVLHeapType) parentType)
+						.getMalloc(index);
+				CIVLType elementType = malloc.getStaticElementType();
+				Expression sizeExpr = malloc.getSizeExpression();
+				Expression sizeofType = modelFactory
+						.sizeofTypeExpression(malloc.getSource(), elementType);
+				Expression numHeapObjects = modelFactory.binaryExpression(
+						malloc.getSource(), BINARY_OPERATOR.DIVIDE, sizeExpr,
+						sizeofType);
 				CIVLArrayType heapTupleType = typeFactory
-						.incompleteArrayType(((CIVLHeapType) parentType)
-								.getMalloc(index).getStaticElementType());
+						.completeArrayType(elementType, numHeapObjects);
 
 				heapTupleType = typeFactory.incompleteArrayType(heapTupleType);
 				return heapTupleType;
@@ -2803,8 +2827,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			return new Pair<>(universe.trueExpression(), ResultType.YES);
 		if (pointer.isNull())
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
-		if (!pointer.operator().equals(SymbolicOperator.TUPLE)
-				&& !pointer.operator().equals(SymbolicOperator.CONCRETE))
+		if (!SymbolicAnalyzer.isConcretePointer(pointer))
 			throw new CIVLUnimplementedFeatureException(
 					"\nAbility to deterine whether a non-concrete pointer is defined."
 							+ "\npointer value: " + pointer.toString(),

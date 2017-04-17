@@ -11,6 +11,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLException.Certainty;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.gmc.ErrorLog;
 import edu.udel.cis.vsl.gmc.ExcessiveErrorException;
@@ -42,6 +43,11 @@ public class CIVLErrorLogger extends ErrorLog {
 	private SymbolicUniverse universe;
 
 	/**
+	 * A reference to the {@link StateFactory}
+	 */
+	private StateFactory stateFactory;
+
+	/**
 	 * Reasoner with trivial context "true". Used to determine satisfiability of
 	 * path conditions.
 	 */
@@ -64,13 +70,15 @@ public class CIVLErrorLogger extends ErrorLog {
 	 */
 	public CIVLErrorLogger(File directory, String sessionName, PrintStream out,
 			CIVLConfiguration civlConfig, GMCConfiguration gmcConfig,
-			SymbolicUniverse universe, boolean solve) {
+			StateFactory stateFactory, SymbolicUniverse universe,
+			boolean solve) {
 		super(directory, sessionName, out);
 		this.civlConfig = civlConfig;
 		this.gmcConfig = gmcConfig;
 		this.universe = universe;
 		this.trueReasoner = universe.reasoner(universe.trueExpression());
 		this.solve = solve;
+		this.stateFactory = stateFactory;
 	}
 
 	/**
@@ -139,7 +147,7 @@ public class CIVLErrorLogger extends ErrorLog {
 	 *         state.
 	 * 
 	 */
-	public State logError(CIVLSource source, State state, String process,
+	public State logError(CIVLSource source, State state, int pid,
 			StringBuffer stateString, BooleanExpression claim,
 			ResultType resultType, ErrorKind errorKind, String message)
 			throws UnsatisfiablePathConditionException {
@@ -149,6 +157,7 @@ public class CIVLErrorLogger extends ErrorLog {
 		ResultType nsat = validityResult.getResultType();
 		Certainty certainty;
 		CIVLExecutionException error;
+		String process = state.getProcessState(pid).name();
 
 		assert resultType != ResultType.YES;
 		// performance! need to cache the satisfiability of each pc somewhere
@@ -193,7 +202,7 @@ public class CIVLErrorLogger extends ErrorLog {
 		nsat = trueReasoner.valid(universe.not(newPc)).getResultType();
 		if (nsat == ResultType.YES)
 			throw new UnsatisfiablePathConditionException();
-		state = state.setPathCondition(newPc);
+		state = stateFactory.addToPathcondition(state, pid, claim);
 		return state;
 	}
 

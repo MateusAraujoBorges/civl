@@ -1,5 +1,5 @@
-#include <assert.h>
 #include <civlc.cvh>
+
 $input int offset;
 $assume(0<=offset && offset<=1);
 int main() {

@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.dynamic.common;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -9,8 +8,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.dynamic.common.HeapAnalyzer.CIVLMemoryBlock;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
@@ -717,7 +718,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public boolean isHeapPointer(SymbolicExpression pointer) {
+	public boolean isPointerToHeap(SymbolicExpression pointer) {
 		return heapAnalyzer.isPointerToHeap(pointer);
 	}
 
@@ -793,15 +794,11 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public SymbolicExpression parentPointer(CIVLSource source,
-			SymbolicExpression pointer) {
+	public SymbolicExpression parentPointer(SymbolicExpression pointer) {
 		ReferenceExpression symRef = getSymRef(pointer);
 
-		if (symRef instanceof NTReferenceExpression)
-			return setSymRef(pointer,
-					((NTReferenceExpression) symRef).getParent());
-		throw new CIVLInternalException(
-				"Expected non-trivial pointer: " + pointer, source);
+		assert !symRef.isNullReference() && !symRef.isIdentityReference();
+		return setSymRef(pointer, ((NTReferenceExpression) symRef).getParent());
 	}
 
 	@Override
@@ -809,7 +806,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		ReferenceExpression ref = (ReferenceExpression) universe
 				.tupleRead(pointer, twoObj);
 
-		if (this.isHeapPointer(pointer)) {
+		if (this.isPointerToHeap(pointer)) {
 			Pair<ReferenceExpression, Integer> refResult = heapAnalyzer
 					.heapReference(ref, true);
 
@@ -910,56 +907,76 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public NumericExpression[] arrayCoordinateSizes(
+	public NumericExpression[] arrayDimensionExtents(
 			SymbolicCompleteArrayType arrayType) {
-		int dimension, counter;
-		NumericExpression[] coordinates;
-		SymbolicType childType;
+		int dimension, i = 0;
+		NumericExpression[] extents;
 
-		dimension = universe.arrayDimensionAndBaseType(arrayType).left;
-		coordinates = new NumericExpression[dimension];
-		childType = arrayType;
-		counter = 0;
+		dimension = arrayType.dimensions();
+		extents = new NumericExpression[dimension];
 		do {
-			assert childType instanceof SymbolicCompleteArrayType : "Cannot get coordinate's sizes from incomplete arrays";
-			arrayType = (SymbolicCompleteArrayType) childType;
-			coordinates[counter] = arrayType.extent();
-			childType = arrayType.elementType();
-			counter++;
-		} while (childType.typeKind().equals(SymbolicTypeKind.ARRAY));
-
-		return coordinates;
+			extents[i++] = arrayType.extent();
+			if (i < dimension)
+				arrayType = (SymbolicCompleteArrayType) arrayType.elementType();
+			else
+				break;
+		} while (true);
+		return extents;
 	}
 
 	@Override
-	public SymbolicExpression arrayRootPtr(SymbolicExpression arrayPtr,
-			CIVLSource source) {
+	public SymbolicExpression arrayRootPtr(SymbolicExpression arrayPtr) {
 		SymbolicExpression arrayRootPtr = arrayPtr;
 
-		while (getSymRef(arrayRootPtr).isArrayElementReference())
-			arrayRootPtr = parentPointer(source, arrayRootPtr);
+		if (heapAnalyzer.isPointerToHeap(arrayPtr)) {
+			// Since the heap is modeled as a tuple of array of array of T, the
+			// parent searching must stop once the pointer already points to the
+			// first element of an heap memory block (i.e. the block of memory
+			// allocated by one malloc call).
+			while (getSymRef(arrayRootPtr).isArrayElementReference()
+					&& !isPointer2MemoryBlock(arrayRootPtr))
+				arrayRootPtr = parentPointer(arrayRootPtr);
 
-		return arrayRootPtr;
+			return arrayRootPtr;
+		} else {
+			while (getSymRef(arrayRootPtr).isArrayElementReference())
+				arrayRootPtr = parentPointer(arrayRootPtr);
+
+			return arrayRootPtr;
+		}
 	}
 
 	@Override
-	public NumericExpression[] stripIndicesFromReference(
-			ArrayElementReference eleRef) {
-		ArrayDeque<NumericExpression> tmpStack = new ArrayDeque<>(5);
+	public NumericExpression[] extractArrayIndicesFrom(
+			SymbolicExpression pointerToArrayElement) {
+		Stack<NumericExpression> tmpStack = new Stack<>();
 		NumericExpression[] indices;
-		ReferenceExpression ref = eleRef;
-		int dimension;
+		ReferenceExpression ref = getSymRef(pointerToArrayElement);
+		int size;
 
-		while (ref.isArrayElementReference()) {
-			ArrayElementReference tmpEleRef = (ArrayElementReference) ref;
+		if (!heapAnalyzer.isPointerToHeap(pointerToArrayElement))
+			while (ref.isArrayElementReference()) {
+				ArrayElementReference tmpEleRef = (ArrayElementReference) ref;
 
-			tmpStack.push((tmpEleRef).getIndex());
-			ref = tmpEleRef.getParent();
+				tmpStack.push(tmpEleRef.getIndex());
+				ref = tmpEleRef.getParent();
+			}
+		else {
+			SymbolicExpression tmpPointer = pointerToArrayElement;
+
+			while (ref.isArrayElementReference()
+					&& !isPointer2MemoryBlock(tmpPointer)) {
+				ArrayElementReference tmpEleRef = (ArrayElementReference) ref;
+
+				tmpStack.push(tmpEleRef.getIndex());
+				ref = tmpEleRef.getParent();
+				tmpPointer = setSymRef(tmpPointer, ref);
+			}
 		}
-		dimension = tmpStack.size();
-		indices = new NumericExpression[dimension];
-		for (int i = 0; !tmpStack.isEmpty(); i++)
-			indices[i] = tmpStack.pop();
+		size = tmpStack.size();
+		indices = new NumericExpression[size];
+		for (int i = 0; !tmpStack.isEmpty();)
+			indices[i++] = tmpStack.pop();
 		return indices;
 	}
 
@@ -1480,5 +1497,20 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	public SymbolicExpression makeFunctionPointer(int dyscopeID, int fid) {
 		return universe.tuple(this.functionPointerType, Arrays.asList(
 				modelFactory.scopeValue(dyscopeID), universe.integer(fid)));
+	}
+
+	@Override
+	public boolean isPointer2MemoryBlock(SymbolicExpression pointer) {
+		return heapAnalyzer.isPointer2MemoryBlock(pointer);
+	}
+
+	@Override
+	public boolean arePoint2SameMemoryBlock(SymbolicExpression ptr0,
+			SymbolicExpression ptr1) {
+		assert isPointerToHeap(ptr0) && isPointerToHeap(ptr1);
+		CIVLMemoryBlock blk0 = heapAnalyzer.memoryBlock(ptr0);
+		CIVLMemoryBlock blk1 = heapAnalyzer.memoryBlock(ptr1);
+
+		return blk0.compare(blk1);
 	}
 }

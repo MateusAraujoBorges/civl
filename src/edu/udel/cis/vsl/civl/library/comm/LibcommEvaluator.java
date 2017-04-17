@@ -9,8 +9,10 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryEvaluator;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluator;
@@ -126,17 +128,21 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		NumericExpression dest;
 		BooleanExpression guard;
 		CIVLSource civlsource = arguments[0].getSource();
+		CIVLType commType = typeFactory
+				.systemType(ModelConfiguration.COMM_TYPE);
 		Evaluation eval;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition());
 		Number srcNum, destNum;
 		int srcInt, destInt;
 
-		eval = evaluator.dereference(civlsource, state, process, arguments[0],
+		eval = evaluator.dereference(civlsource, state, process,
+				typeFactory.systemType(ModelConfiguration.COMM_TYPE),
 				commHandle, false, true);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null,
+		eval = evaluator.dereference(civlsource, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOMM_TYPE),
 				gcommHandle, false, true);
 		state = eval.state;
 		gcomm = eval.value;
@@ -358,7 +364,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		Evaluation eval;
 
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, null,
+		eval = evaluator.dereference(civlsource, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOMM_TYPE),
 				gcommHandle, false, true);
 		return eval;
 	}
@@ -387,7 +394,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		eval = evaluator.evaluate(state, pid, commHandleExpr);
 		commHandle = eval.value;
 		eval = evaluator.dereference(commHandleExpr.getSource(), eval.state,
-				process, commHandleExpr, commHandle, false, true);
+				process, typeFactory.systemType(ModelConfiguration.COMM_TYPE),
+				commHandle, false, true);
 		return eval;
 	}
 
@@ -422,7 +430,7 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		claim = universe.lessThan(index, universe.length(procArray));
 		resultType = reasoner.valid(claim).getResultType();
 		if (!resultType.equals(ResultType.YES)) {
-			state = this.errorLogger.logError(source, state, process,
+			state = this.errorLogger.logError(source, state, pid,
 					symbolicAnalyzer.stateInformation(state), claim, resultType,
 					ErrorKind.OUT_OF_BOUNDS, "The place of " + process
 							+ " in a communicator is out of the bound of the total number of processes");

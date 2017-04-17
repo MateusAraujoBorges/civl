@@ -7,6 +7,7 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -246,7 +247,8 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 				zeroObject);
 		gcollateStateHandle = universe.tupleRead(collateState,
 				collate_state_gstate);
-		eval = evaluator.dereference(source, state, process, arguments[0],
+		eval = evaluator.dereference(source, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
 				gcollateStateHandle, false, true);
 		state = eval.state;
 		gcollateState = eval.value;
@@ -271,7 +273,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		symStateRef = modelFactory.stateValue(resultRef);
 		gcollateState = universe.tupleWrite(gcollateState, gcollate_state_state,
 				symStateRef);
-		state = this.primaryExecutor.assign(source, state, process,
+		state = this.primaryExecutor.assign(source, state, pid,
 				gcollateStateHandle, gcollateState);
 		return new Evaluation(state, null);
 	}
@@ -306,7 +308,8 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression gstate, statusArray;
 		Evaluation eval;
 
-		eval = evaluator.dereference(source, state, process, arguments[0],
+		eval = evaluator.dereference(source, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
 				gstateHanlde, false, true);
 		gstate = eval.value;
 		statusArray = universe.tupleRead(gstate, gcollate_state_status);
@@ -358,7 +361,8 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression gstate, statusArray;
 		Evaluation eval;
 
-		eval = evaluator.dereference(source, state, process, arguments[0],
+		eval = evaluator.dereference(source, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
 				gstateHanlde, false, true);
 		gstate = eval.value;
 		statusArray = universe.tupleRead(gstate, gcollate_state_status);

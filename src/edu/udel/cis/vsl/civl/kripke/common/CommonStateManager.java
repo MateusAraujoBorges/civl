@@ -20,7 +20,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
-import edu.udel.cis.vsl.civl.semantics.IF.NoopTransition;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition.TransitionKind;
@@ -495,8 +494,7 @@ public class CommonStateManager implements StateManager {
 		config.out().print(symbolicAnalyzer.statementEvaluation(currentState,
 				newState, transition.pid(), stmt));
 		if (transition.transitionKind() == TransitionKind.NOOP) {
-			NoopTransition noopTransition = (NoopTransition) transition;
-			BooleanExpression assumption = noopTransition.assumption();
+			BooleanExpression assumption = transition.clause();
 
 			if (assumption != null) {
 				config.out().print(" [$assume(");
@@ -594,7 +592,8 @@ public class CommonStateManager implements StateManager {
 			// since the error has been logged, just return
 			// some state with false path condition, so there
 			// will be no next state...
-			result = new NullTraceStep(state.setPathCondition(falseExpr));
+			result = new NullTraceStep(stateFactory.addToPathcondition(state,
+					transition.pid(), falseExpr));
 		}
 		return result;
 	}

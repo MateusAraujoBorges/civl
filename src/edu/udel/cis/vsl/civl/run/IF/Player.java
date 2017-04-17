@@ -105,6 +105,7 @@ public abstract class Player {
 			PrintStream err, boolean collectOutputs)
 			throws CommandLineException {
 		SymbolicUniverse universe;
+		Evaluator errorSideEffectFreeEvaluator;
 
 		this.config = gmcConfig;
 		this.model = model;
@@ -130,15 +131,15 @@ public abstract class Player {
 		universe = modelFactory.universe();
 		this.solve = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(solveO);
-		this.log = new CIVLErrorLogger(new File("CIVLREP"), sessionName, out,
-				civlConfig, gmcConfig, universe, solve);
-		this.log.setErrorBound((int) gmcConfig.getAnonymousSection()
-				.getValueOrDefault(errorBoundO));
 		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory);
 		this.memUnitFactory = States.newImmutableMemoryUnitFactory(universe,
 				modelFactory);
 		this.stateFactory = States.newImmutableStateFactory(modelFactory,
 				symbolicUtil, memUnitFactory, civlConfig);
+		this.log = new CIVLErrorLogger(new File("CIVLREP"), sessionName, out,
+				civlConfig, gmcConfig, this.stateFactory, universe, solve);
+		this.log.setErrorBound((int) gmcConfig.getAnonymousSection()
+				.getValueOrDefault(errorBoundO));
 		this.libraryEvaluatorLoader = Semantics
 				.newLibraryEvaluatorLoader(this.civlConfig);
 		this.symbolicAnalyzer = Semantics.newSymbolicAnalyzer(this.civlConfig,
@@ -155,9 +156,14 @@ public abstract class Player {
 		this.executor = Semantics.newExecutor(modelFactory, stateFactory,
 				libraryExecutorLoader, evaluator, symbolicAnalyzer, log,
 				civlConfig);
-		enabler = Kripkes.newEnabler(stateFactory, evaluator, executor,
-				symbolicAnalyzer, memUnitFactory, this.libraryEnablerLoader,
-				log, civlConfig);
+		errorSideEffectFreeEvaluator = Semantics
+				.newErrorSideEffectFreeEvaluator(modelFactory, stateFactory,
+						libraryEvaluatorLoader, libraryExecutorLoader,
+						symbolicUtil, symbolicAnalyzer, memUnitFactory, log,
+						civlConfig);
+		this.enabler = Kripkes.newEnabler(stateFactory,
+				errorSideEffectFreeEvaluator, executor, symbolicAnalyzer,
+				memUnitFactory, this.libraryEnablerLoader, log, civlConfig);
 		this.random = gmcConfig.getAnonymousSection().isTrue(randomO);
 		this.minimize = gmcConfig.getAnonymousSection().isTrue(minO);
 		this.maxdepth = (int) gmcConfig.getAnonymousSection()
@@ -167,8 +173,9 @@ public abstract class Player {
 					(Enabler) this.enabler, symbolicAnalyzer));
 		} else if (civlConfig.deadlock() == DeadlockKind.POTENTIAL) {
 			this.addPredicate(Predicates.newPotentialDeadlock(universe,
-					(Enabler) this.enabler, libraryEnablerLoader, evaluator,
-					modelFactory, symbolicUtil, symbolicAnalyzer));
+					(Enabler) this.enabler, libraryEnablerLoader,
+					errorSideEffectFreeEvaluator, modelFactory, symbolicUtil,
+					symbolicAnalyzer));
 		} else {
 			this.addPredicate(Predicates.newTrivialPredicate());
 		}

@@ -20,6 +20,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
@@ -99,17 +100,17 @@ public class LibcommEnabler extends BaseLibraryEnabler
 
 	@Override
 	public List<Transition> enabledTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition, int pid,
+			CallOrSpawnStatement call, BooleanExpression clause, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		String functionName = call.function().name().name();
 
 		switch (functionName) {
 			case "$comm_dequeue" :
-				return this.enabledCommDequeueTransitions(state, call,
-						pathCondition, pid, atomicLockAction);
+				return this.enabledCommDequeueTransitions(state, call, clause,
+						pid, atomicLockAction);
 			default :
-				return super.enabledTransitions(state, call, pathCondition, pid,
+				return super.enabledTransitions(state, call, clause, pid,
 						atomicLockAction);
 		}
 	}
@@ -227,14 +228,15 @@ public class LibcommEnabler extends BaseLibraryEnabler
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private List<Transition> enabledCommDequeueTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition, int pid,
+			CallOrSpawnStatement call, BooleanExpression clause, int pid,
 			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		List<Expression> arguments = call.arguments();
 		List<Transition> localTransitions = new LinkedList<>();
 		Evaluation eval;
 		String process = "p" + pid;
-		Reasoner reasoner = universe.reasoner(pathCondition);
+		Reasoner reasoner = universe
+				.reasoner(universe.and(state.getPathCondition(), clause));
 		IntegerNumber argSourceNumber; // numeric object of the value of source
 		int intSource, intDest;
 		// set of all available sources
@@ -248,8 +250,9 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		boolean isWildcardTag = false;
 
 		// evaluate the second argument: source
-		eval = this.evaluator.evaluate(state.setPathCondition(pathCondition),
-				pid, arguments.get(1));
+		eval = evaluator.evaluate(
+				stateFactory.addToPathcondition(state, pid, clause), pid,
+				arguments.get(1));
 		state = eval.state;
 		argSourceNumber = (IntegerNumber) reasoner
 				.extractNumber((NumericExpression) eval.value);
@@ -271,11 +274,13 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		tagExpr = arguments.get(2);
 		commHandle = evaluator.evaluate(state, pid, commHandleExpr).value;
 		comm = evaluator.dereference(commHandleExpr.getSource(), state, process,
-				commHandleExpr, commHandle, false, true).value;
+				typeFactory.systemType(ModelConfiguration.COMM_TYPE),
+				commHandle, false, true).value;
 		dest = this.universe.tupleRead(comm, zeroObject);
 		gcommHandle = this.universe.tupleRead(comm, oneObject);
 		gcomm = evaluator.dereference(commHandleExpr.getSource(), state,
-				process, null, gcommHandle, false, true).value;
+				process, typeFactory.systemType(ModelConfiguration.GCOMM_TYPE),
+				gcommHandle, false, true).value;
 		assert (dest instanceof NumericExpression) : "Argument of destination of $comm_dequeue() should be a numeric type.\n";
 		intDest = ((IntegerNumber) reasoner
 				.extractNumber((NumericExpression) dest)).intValue();
@@ -306,11 +311,11 @@ public class LibcommEnabler extends BaseLibraryEnabler
 					call.function().returnType(), call.statementScope(),
 					call.guard(), call.target(), call.lhs());
 			for (int j = 0; j < callWorkers.size(); j++)
-				localTransitions.add(Semantics.newTransition(pathCondition, pid,
+				localTransitions.add(Semantics.newTransition(pid, clause,
 						callWorkers.get(j), atomicLockAction));
 		} else
-			localTransitions.add(Semantics.newTransition(pathCondition, pid,
-					call, atomicLockAction));
+			localTransitions.add(Semantics.newTransition(pid, clause, call,
+					atomicLockAction));
 		return localTransitions;
 	}
 
@@ -596,29 +601,5 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		for (int procid = 0; procid < state.numProcs(); procid++)
 			procs.add(procid);
 		return procs;
-		// eval = evaluator.dereference(commHandleExpr.getSource(), state,
-		// process, commHandle, false);
-		// state = eval.state;
-		// comm = eval.value;
-		// gcommHandle = universe.tupleRead(comm, oneObject);
-		// eval = evaluator.dereference(commHandleExpr.getSource(), state,
-		// process, gcommHandle, false);
-		// state = eval.state;
-		// gcomm = eval.value;
-		// procArray = universe.tupleRead(gcomm, oneObject);
-		// nprocs = universe.tupleRead(gcomm, zeroObject);
-		// reasoner = universe.reasoner(state.getPathCondition());
-		// nprocsInt = (IntegerNumber) reasoner
-		// .extractNumber((NumericExpression) nprocs);
-		// for (int i = 0; i < nprocsInt.intValue(); i++) {
-		// SymbolicExpression currProcSym = universe.arrayRead(procArray,
-		// universe.integer(i));
-		// int curr_pid = modelFactory.getProcessId((CIVLSource) null,
-		// currProcSym);
-		// if (curr_pid == -1)
-		// curr_pid = state.numProcs();
-		// procs.add(curr_pid);
-		// }
-		// return procs;
 	}
 }
