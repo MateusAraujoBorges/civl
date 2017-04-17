@@ -10,6 +10,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -56,28 +57,21 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 									Arrays.asList(universe.realType()),
 									this.tmSymbolicType)));
 		if (tmType != null)
-			this.tmToStrFunc = (SymbolicConstant) universe
-					.canonic(universe
-							.symbolicConstant(universe.stringObject("strftime"),
-									universe.functionType(
-											Arrays.asList(
-													universe.integerType(),
-													typeFactory
-															.pointerSymbolicType(),
-													this.tmSymbolicType),
-											this.stringSymbolicType)));
+			this.tmToStrFunc = (SymbolicConstant) universe.canonic(
+					universe.symbolicConstant(universe.stringObject("strftime"),
+							universe.functionType(
+									Arrays.asList(universe.integerType(),
+											typeFactory.pointerSymbolicType(),
+											this.tmSymbolicType),
+									this.stringSymbolicType)));
 		if (tmType != null)
-			this.tmToStrSizeFunc = (SymbolicConstant) universe
-					.canonic(
-							universe.symbolicConstant(
-									universe.stringObject("strftimeSize"),
-									universe.functionType(
-											Arrays.asList(
-													universe.integerType(),
-													typeFactory
-															.pointerSymbolicType(),
-													this.tmSymbolicType),
-											universe.integerType())));
+			this.tmToStrSizeFunc = (SymbolicConstant) universe.canonic(universe
+					.symbolicConstant(universe.stringObject("strftimeSize"),
+							universe.functionType(
+									Arrays.asList(universe.integerType(),
+											typeFactory.pointerSymbolicType(),
+											this.tmSymbolicType),
+									universe.integerType())));
 	}
 
 	@Override
@@ -125,17 +119,18 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 		SymbolicExpression resultPointer = argumentValues[0];
 		String process = state.getProcessState(pid).name();
 		Evaluation eval = this.evaluator.dereference(arguments[3].getSource(),
-				state, process, arguments[3], argumentValues[3], false, true);
+				state, process,
+				typeFactory.systemType(ModelConfiguration.TM_TYPE),
+				argumentValues[3], false, true);
 		SymbolicExpression tmValue, sizeValue, tmStr;
 
-		resultPointer = this.symbolicUtil
-				.parentPointer(arguments[0].getSource(), resultPointer);
+		resultPointer = this.symbolicUtil.parentPointer(resultPointer);
 		state = eval.state;
 		tmValue = eval.value;
 		tmStr = universe.apply(tmToStrFunc,
 				Arrays.asList(argumentValues[1], argumentValues[2], tmValue));
 		state = this.primaryExecutor.assign(arguments[0].getSource(), state,
-				process, resultPointer, tmStr);
+				pid, resultPointer, tmStr);
 		sizeValue = universe.apply(tmToStrSizeFunc,
 				Arrays.asList(argumentValues[1], argumentValues[2], tmValue));
 		return new Evaluation(state, sizeValue);
@@ -168,8 +163,10 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		String process = state.getProcessState(pid).name();
-		Evaluation eval = this.evaluator.dereference(arguments[0].getSource(),
-				state, process, arguments[0], argumentValues[0], false, true);
+		CIVLPointerType ptrType = (CIVLPointerType) arguments[0]
+				.getExpressionType();
+		Evaluation eval = evaluator.dereference(arguments[0].getSource(), state,
+				process, ptrType.baseType(), argumentValues[0], false, true);
 		SymbolicExpression result;
 		Variable brokenTimeVar = this.modelFactory.brokenTimeVariable();
 		SymbolicExpression brokenTimePointer;

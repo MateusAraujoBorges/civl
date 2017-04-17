@@ -13,6 +13,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -149,9 +150,8 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 			state = this.reportAssertionFailure(state, pid, process, resultType,
 					message.toString(), arguments, argumentValues, source,
 					assertValue, 1);
-			state = state.setPathCondition(
-					this.universe.and(state.getPathCondition(),
-							(BooleanExpression) argumentValues[0]));
+			state = stateFactory.addToPathcondition(state, pid,
+					(BooleanExpression) argumentValues[0]);
 		}
 		return state;
 	}
@@ -183,29 +183,26 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 				.isDefinedPointer(state, firstElementPointer, source);
 
 		if (checkPointer.right != ResultType.YES) {
-			state = this.errorLogger.logError(source, state, process,
+			state = this.errorLogger.logError(source, state, pid,
 					symbolicAnalyzer.stateInformation(state), checkPointer.left,
 					checkPointer.right, ErrorKind.MEMORY_MANAGE,
 					"attempt to deallocate memory space through an undefined pointer");
 			// dont report unsatisfiable path condition exception
 		} else if (this.symbolicUtil.isNullPointer(firstElementPointer)) {
 			// does nothing for null pointer.
-		} else if (!this.symbolicUtil.isHeapPointer(firstElementPointer)
+		} else if (!this.symbolicUtil.isPointerToHeap(firstElementPointer)
 				|| !this.symbolicUtil.isMallocPointer(source,
 						firstElementPointer)) {
-			this.errorLogger
-					.logSimpleError(source, state, process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.MEMORY_MANAGE,
-							"the argument of free "
-									+ symbolicAnalyzer
-											.symbolicExpressionToString(source,
-													state,
-													arguments[0]
-															.getExpressionType(),
-													firstElementPointer)
-									+ " is not a pointer returned by a memory "
-									+ "management method");
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.MEMORY_MANAGE,
+					"the argument of free "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									source, state,
+									arguments[0].getExpressionType(),
+									firstElementPointer)
+							+ " is not a pointer returned by a memory "
+							+ "management method");
 		} else {
 			Evaluation eval;
 			SymbolicExpression heapObject = null;
@@ -213,8 +210,11 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 					.isDerefablePointer(state, firstElementPointer);
 
 			if (checkDerefable.right == ResultType.YES) {
-				eval = this.evaluator.dereference(source, state, process, null,
-						firstElementPointer, false, true);
+				CIVLPointerType ptrType = (CIVLPointerType) arguments[0]
+						.getExpressionType();
+
+				eval = evaluator.dereference(source, state, process,
+						ptrType.baseType(), firstElementPointer, false, true);
 				heapObject = eval.value;
 				state = eval.state;
 			}
@@ -283,7 +283,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 					this.civlConfig.svcomp()).state;
 			civlConfig.out().println();
 		}
-		state = errorLogger.logError(source, state, process,
+		state = errorLogger.logError(source, state, pid,
 				this.symbolicAnalyzer.stateInformation(state), claim,
 				resultType, ErrorKind.ASSERTION_VIOLATION, message);
 		return state;
@@ -337,34 +337,6 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 			state = this.stateFactory.setLocation(state, pid, target);
 		eval.state = state;
 		return eval;
-	}
-
-	@Override
-	public State executeWithValue(State state, int pid,
-			CallOrSpawnStatement call, String functionName,
-			SymbolicExpression[] argumentValues)
-			throws UnsatisfiablePathConditionException {
-		Evaluation eval;
-		LHSExpression lhs = call.lhs();
-		Location target = call.target();
-		Expression[] arguments;
-		int numArgs;
-		String process = state.getProcessState(pid).name();
-
-		numArgs = call.arguments().size();
-		arguments = new Expression[numArgs];
-		for (int i = 0; i < numArgs; i++) {
-			arguments[i] = call.arguments().get(i);
-		}
-		eval = this.executeValue(state, pid, process, call.getSource(),
-				functionName, arguments, argumentValues);
-		state = eval.state;
-		if (lhs != null && eval.value != null)
-			state = this.primaryExecutor.assign(state, pid, process, lhs,
-					eval.value);
-		if (target != null && !state.getProcessState(pid).hasEmptyStack())
-			state = this.stateFactory.setLocation(state, pid, target);
-		return state;
 	}
 
 	abstract protected Evaluation executeValue(State state, int pid,

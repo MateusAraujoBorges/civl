@@ -287,16 +287,6 @@ public interface State {
 	Iterable<? extends ProcessState> getProcessStates();
 
 	/**
-	 * Sets the path condition to the given value. This will either modify this
-	 * state (if the state is mutable) or return a new state (if not).
-	 * 
-	 * @param pathCondition
-	 *            a boolean-valued symbolic expression
-	 * @return state modified to have new path condition
-	 */
-	State setPathCondition(BooleanExpression pathCondition);
-
-	/**
 	 * How many processes can reach this dynamic scope? A process p can reach a
 	 * dynamic scope d iff there is a path starting from a dynamic scope which
 	 * is referenced in a frame on p's call stack to d, following the "parent"

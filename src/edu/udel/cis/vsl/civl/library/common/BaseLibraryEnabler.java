@@ -33,8 +33,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * @author Manchun Zheng (zmanchun)
  * 
  */
-public abstract class BaseLibraryEnabler extends LibraryComponent implements
-		LibraryEnabler {
+public abstract class BaseLibraryEnabler extends LibraryComponent
+		implements
+			LibraryEnabler {
 
 	/* *************************** Instance Fields ************************* */
 
@@ -69,12 +70,11 @@ public abstract class BaseLibraryEnabler extends LibraryComponent implements
 	public BaseLibraryEnabler(String name, Enabler primaryEnabler,
 			Evaluator evaluator, ModelFactory modelFactory,
 			SymbolicUtility symbolicUtil, SymbolicAnalyzer symbolicAnalyzer,
-			CIVLConfiguration civlConfig,
-			LibraryEnablerLoader libEnablerLoader,
+			CIVLConfiguration civlConfig, LibraryEnablerLoader libEnablerLoader,
 			LibraryEvaluatorLoader libEvaluatorLoader) {
 		super(name, evaluator.universe(), symbolicUtil, symbolicAnalyzer,
-				civlConfig, libEvaluatorLoader, modelFactory, evaluator
-						.errorLogger(), evaluator);
+				civlConfig, libEvaluatorLoader, modelFactory,
+				evaluator.errorLogger(), evaluator);
 		this.primaryEnabler = primaryEnabler;
 		this.stateFactory = evaluator.stateFactory();
 		this.memUnitFactory = stateFactory.memUnitFactory();
@@ -84,8 +84,7 @@ public abstract class BaseLibraryEnabler extends LibraryComponent implements
 	/* ********************* Methods from LibraryEnabler ******************* */
 
 	@Override
-	public BitSet ampleSet(State state, int pid,
-			CallOrSpawnStatement statement,
+	public BitSet ampleSet(State state, int pid, CallOrSpawnStatement statement,
 			MemoryUnitSet[] reachablePtrWritableMap,
 			MemoryUnitSet[] reachablePtrReadonlyMap,
 			MemoryUnitSet[] reachableNonPtrWritableMap,
@@ -96,13 +95,13 @@ public abstract class BaseLibraryEnabler extends LibraryComponent implements
 
 	@Override
 	public List<Transition> enabledTransitions(State state,
-			CallOrSpawnStatement call, BooleanExpression pathCondition,
-			int pid, AtomicLockAction atomicLockAction)
+			CallOrSpawnStatement call, BooleanExpression clause, int pid,
+			AtomicLockAction atomicLockAction)
 			throws UnsatisfiablePathConditionException {
 		List<Transition> localTransitions = new LinkedList<>();
 
-		localTransitions.add(Semantics.newTransition(pathCondition, pid, call,
-				atomicLockAction));
+		localTransitions.add(
+				Semantics.newTransition(pid, clause, call, atomicLockAction));
 		return localTransitions;
 	}
 

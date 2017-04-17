@@ -426,25 +426,32 @@ public class AmpleSetWorker {
 
 	/**
 	 * <p>
-	 * For each process p in a ample process set candidate, if enabled
-	 * transitions of p are NOT invisible for the deadlock property, p cannot be
-	 * in a proper ample processes set.
+	 * The ample set enabled by the given ample process set candidate is
+	 * invisible for deadlock property iff the disjunction of the guards of all
+	 * transitions in it is true (for the current state and any future state).
 	 * </p>
 	 * 
 	 * <p>
-	 * Enabled transitions of a process p are invisible for the deadlock
-	 * property, if and only if one of the following holds for the current state
-	 * and all the future states:
-	 * <li>Disjunction of the guards is true;</li>
-	 * <li>One of the guards is a system function guard.</li>
-	 * <li>The location is in the body of a function who was annotated with POR
-	 * contract</li>
+	 * We don't have to consider the situation that transitions outside of the
+	 * candidate ample set may affect the evaluation of the guards because the
+	 * candidate ample set has already being analyzed and guarantees that
+	 * outside transitions are independent with this ones inside (por-condition:
+	 * C1).
 	 * </p>
+	 * 
 	 * 
 	 * @param ampleProcsCandidate
 	 *            A group of processes which is a candidate group to form an
 	 *            ample set.
-	 * @return True iff the aforementioned conditions are satisfied.
+	 * @return True iff at least one process p in the given ample proc candidate
+	 *         set satisfies one of the following conditions: <br>
+	 *         <li>location of p is a binary branching location</li>
+	 *         <li>location of p is at a switch or choose statement who has
+	 *         default case being specified</li>
+	 *         <li>at least one guard of enabled transitions of p is a literal
+	 *         true or a system guard</li>
+	 * 
+	 * @author ziqingluo
 	 */
 	private boolean allDeadlockInvisible(BitSet ampleProcsCandidate) {
 		if (config.deadlock() == DeadlockKind.NONE)
@@ -454,31 +461,26 @@ public class AmpleSetWorker {
 				0); pid >= 0; pid = ampleProcsCandidate.nextSetBit(pid + 1)) {
 			ProcessState proc = state.getProcessState(pid);
 			Location location = proc.getLocation();
-			boolean isNontrivial = true;
 
 			// optimization, disjunction of guards at binary branching location
 			// will always be true:
 			if (location.isBinaryBranching()
 					|| location.isSwitchOrChooseWithDefault())
-				continue;
+				return true;
 			// heuristic: if the location is in a POR-contracted function, it is
 			// invisible for deadlock property:
 			if (location.function().isContracted() && location.function()
 					.functionContract().hasDependsClause())
-				continue;
+				return true;
 			for (Statement stmt : location.outgoing()) {
 				Expression guard = stmt.guard();
 
 				if ((guard.hasConstantValue() && guard.constantValue().isTrue())
-						|| guard.expressionKind() == ExpressionKind.SYSTEM_GUARD) {
-					isNontrivial = false;
-					break;
-				}
+						|| guard.expressionKind() == ExpressionKind.SYSTEM_GUARD)
+					return true;
 			}
-			if (isNontrivial)
-				return false;
 		}
-		return true;
+		return false;
 	}
 
 	private void difference(BitSet lhs, BitSet rhs) {
@@ -1480,7 +1482,7 @@ public class AmpleSetWorker {
 					if (symbolicUtil.getSymRef(expr)
 							.isArrayElementReference()) {
 						SymbolicExpression arrayPointer = symbolicUtil
-								.parentPointer(null, expr);
+								.parentPointer(expr);
 
 						try {
 							eval = this.dereference(state, arrayPointer);

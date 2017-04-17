@@ -9,6 +9,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
@@ -16,7 +17,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
-import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -246,14 +246,9 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		// test:
 		Pair<SymbolicExpression, NumericExpression> ptr_count = pointerTyping(
 				state, pid, pointer, size, source);
-		CIVLType baseType = symbolicAnalyzer.typeOfObjByPointer(source, state,
-				ptr_count.left);
-		TypeEvaluation teval = evaluator.getDynamicType(state, pid, baseType,
-				source, false);
 
-		eval = getDataFrom(teval.state, pid, process, arguments[0],
-				ptr_count.left, ptr_count.right, true, false,
-				arguments[0].getSource());
+		eval = getDataFrom(state, pid, process, arguments[0], ptr_count.left,
+				ptr_count.right, true, false, arguments[0].getSource());
 		state = eval.state;
 		bundleContent = eval.value;
 		assert (bundleContent != null
@@ -331,7 +326,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		targetObject = eval.value;
 		// If it's assigned to an array or an object
 		if (bufPointer != null && targetObject != null)
-			state = primaryExecutor.assign(source, state, process, bufPointer,
+			state = primaryExecutor.assign(source, state, pid, bufPointer,
 					targetObject);
 		else
 			throw new CIVLInternalException(
@@ -493,8 +488,11 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		dataSize = universe.length(data);
 		// If data size is zero, do nothing.
 		if (reasoner.isValid(universe.equals(dataSize, zero))) {
-			eval = evaluator.dereference(civlsource, state, process, null,
-					pointer, false, true);
+			CIVLPointerType ptrType = (CIVLPointerType) pointerExpr
+					.getExpressionType();
+
+			eval = evaluator.dereference(civlsource, state, process,
+					ptrType.baseType(), pointer, false, true);
 			return new Pair<Evaluation, SymbolicExpression>(eval, pointer);
 		}
 		// If data size larger than one, return an array and the corresponding

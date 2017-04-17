@@ -297,16 +297,17 @@ public class CommonMemoryUnitEvaluator
 						if (symbolicUtil.getSymRef(expr)
 								.isArrayElementReference()) {
 							SymbolicExpression arrayPointer = symbolicUtil
-									.parentPointer(null, expr);
+									.parentPointer(expr);
 
 							eval = evaluator.dereference(null, state, process,
-									null, arrayPointer, false, true);
+									typeFactory.voidType(), arrayPointer, false,
+									true);
 							/* Check if it's length == 0 */
 							if (universe.length(eval.value).isZero())
 								return;
 						}
-						eval = evaluator.dereference(null, state, process, null,
-								expr, false, true);
+						eval = evaluator.dereference(null, state, process,
+								typeFactory.voidType(), expr, false, true);
 						pointerValue = eval.value;
 						state = eval.state;
 						if (pointerValue.operator() == SymbolicOperator.TUPLE

@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.library.seq;
 
-import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,10 +11,9 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
@@ -93,11 +91,12 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression arrayPtr = argumentValues[0];
 		NumericExpression count = (NumericExpression) argumentValues[1];
+		Expression elePointerExpr = arguments[2];
 		SymbolicExpression elePointer = argumentValues[2];
 		CIVLSource arrayPtrSource = arguments[0].getSource();
 		CIVLSource elePtrSource = arguments[2].getSource();
 		CIVLType objTypePointedByFirstArg = symbolicAnalyzer
-				.typeOfObjByPointer(arrayPtrSource, state, arrayPtr);
+				.civlTypeOfObjByPointer(arrayPtrSource, state, arrayPtr);
 		CIVLArrayType arrayType;
 
 		if (objTypePointedByFirstArg.isArrayType()
@@ -108,7 +107,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 					+ " should be a pointer to an imcomplete array"
 					+ arguments[0].getSource());
 		if (count.isZero()) {
-			state = primaryExecutor.assign(source, state, process, arrayPtr,
+			state = primaryExecutor.assign(source, state, pid, arrayPtr,
 					universe.array(
 							arrayType.elementType().getDynamicType(universe),
 							new LinkedList<SymbolicExpression>()));
@@ -144,8 +143,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 								+ ": pointer to " + arrayType);
 				throw new UnsatisfiablePathConditionException();
 			} else {
-				CIVLType eleType = symbolicAnalyzer
-						.typeOfObjByPointer(elePtrSource, state, elePointer);
+				CIVLType eleType = symbolicAnalyzer.civlTypeOfObjByPointer(
+						elePtrSource, state, elePointer);
 				CIVLType arrayEleType = ((CIVLArrayType) arrayType)
 						.elementType();
 
@@ -164,16 +163,19 @@ public class LibseqExecutor extends BaseLibraryExecutor
 					return new Evaluation(state, null);
 				} else {
 					SymbolicExpression eleValue, arrayValue;
+					CIVLPointerType ptrType = (CIVLPointerType) elePointerExpr
+							.getExpressionType();
 					Evaluation eval = evaluator.dereference(elePtrSource, state,
-							process, arguments[2], elePointer, false, true);
+							process, ptrType.baseType(), elePointer, false,
+							true);
 
 					state = eval.state;
 					eleValue = eval.value;
 					arrayValue = symbolicUtil.newArray(state.getPathCondition(),
 							arrayType.elementType().getDynamicType(universe),
 							count, eleValue);
-					state = primaryExecutor.assign(source, state, process,
-							arrayPtr, arrayValue);
+					state = primaryExecutor.assign(source, state, pid, arrayPtr,
+							arrayValue);
 				}
 			}
 		}
@@ -240,6 +242,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 	private Evaluation executeSeqLength(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
+		Expression seqPtrExpr = arguments[0];
 		SymbolicExpression seqPtr = argumentValues[0];
 		CIVLSource seqSource = arguments[0].getSource();
 		SymbolicExpression result = null;
@@ -254,8 +257,10 @@ public class LibseqExecutor extends BaseLibraryExecutor
 									seqSource, state, null, seqPtr));
 			throw new UnsatisfiablePathConditionException();
 		} else {
+			CIVLPointerType ptrType = (CIVLPointerType) seqPtrExpr
+					.getExpressionType();
 			Evaluation eval = evaluator.dereference(seqSource, state, process,
-					arguments[0], seqPtr, false, true);
+					ptrType.baseType(), seqPtr, false, true);
 			SymbolicExpression seq;
 
 			state = eval.state;
@@ -327,8 +332,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 									valuesPtrSource, state, null, valuesPtr));
 			throw new UnsatisfiablePathConditionException();
 		}
-		arrayType = symbolicAnalyzer.typeOfObjByPointer(arrayPtrSource, state,
-				arrayPtr);
+		arrayType = symbolicAnalyzer.civlTypeOfObjByPointer(arrayPtrSource,
+				state, arrayPtr);
 		if (!arrayType.isIncompleteArrayType()) {
 			this.errorLogger.logSimpleError(source, state, process,
 					symbolicAnalyzer.stateInformation(state),
@@ -341,7 +346,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 		}
 		arrayEleType = ((CIVLArrayType) arrayType).elementType();
 		if (!symbolicUtil.isNullPointer(valuesPtr)) {
-			valueType = symbolicAnalyzer.typeOfObjByPointer(valuesPtrSource,
+			valueType = symbolicAnalyzer.civlTypeOfObjByPointer(valuesPtrSource,
 					state, valuesPtr);
 
 			if (!arrayEleType.isSuperTypeOf(valueType)) {
@@ -358,8 +363,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 				throw new UnsatisfiablePathConditionException();
 			}
 		}
-		eval = evaluator.dereference(arrayPtrSource, state, process,
-				arguments[0], arrayPtr, false, true);
+		eval = evaluator.dereference(arrayPtrSource, state, process, arrayType,
+				arrayPtr, false, true);
 		state = eval.state;
 		arrayValue = eval.value;
 		if (arrayValue.operator() != SymbolicOperator.ARRAY) {
@@ -404,20 +409,18 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			if (i == 0)
 				valuePtr = valuesPtr;
 			else if (!removeToNull) {
-				BinaryExpression pointerAdd = modelFactory.binaryExpression(
-						source, BINARY_OPERATOR.POINTER_ADD, arguments[2],
-						modelFactory.integerLiteralExpression(source,
-								BigInteger.valueOf(i)));
-
-				eval = evaluator.pointerAdd(state, pid, process, pointerAdd,
-						valuesPtr, universe.integer(i));
+				eval = evaluator.arrayElementReferenceAdd(state, pid, valuesPtr,
+						universe.integer(i), source).left;
 				state = eval.state;
 				valuePtr = eval.value;
 			} else
 				valuePtr = valuesPtr;
 			if (isInsert) {
-				eval = evaluator.dereference(source, state, process, null,
-						valuePtr, false, true);
+				eval = evaluator
+						.dereference(source, state, process,
+								symbolicAnalyzer.civlTypeOfObjByPointer(source,
+										state, valuePtr),
+								valuePtr, false, true);
 				state = eval.state;
 				value = eval.value;
 
@@ -430,8 +433,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			} else {
 				value = universe.arrayRead(arrayValue, index);
 				if (!symbolicUtil.isNullPointer(valuePtr)) {
-					state = primaryExecutor.assign(valuesPtrSource, state,
-							process, valuePtr, value);
+					state = primaryExecutor.assign(valuesPtrSource, state, pid,
+							valuePtr, value);
 				}
 				arrayValue = universe.removeElementAt(arrayValue, indexInt);
 			}
@@ -440,7 +443,7 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			arrayValue = universe.array(
 					((SymbolicArrayType) arrayValue.type()).elementType(),
 					elements);
-		state = primaryExecutor.assign(source, state, process, arrayPtr,
+		state = primaryExecutor.assign(source, state, pid, arrayPtr,
 				arrayValue);
 		return new Evaluation(state, null);
 	}

@@ -104,7 +104,8 @@ public class ColStateManager extends CommonStateManager
 			// since the error has been logged, just return
 			// some state with false path condition, so there
 			// will be no next state...
-			result = new NullTraceStep(state.setPathCondition(falseExpr));
+			result = new NullTraceStep(stateFactory.addToPathcondition(state,
+					transition.pid(), falseExpr));
 		}
 
 		State resultState = result.getFinalState();

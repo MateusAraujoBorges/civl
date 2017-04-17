@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.semantics.IF;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -14,6 +15,8 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
  * This class provides methods dealing with symbolic expressions and states,
@@ -24,6 +27,15 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * 
  */
 public interface SymbolicAnalyzer {
+	/**
+	 * @param pointer
+	 *            A pointer type symbolic expression.
+	 * @return true iff the given pointer is concrete.
+	 */
+	static public boolean isConcretePointer(SymbolicExpression pointer) {
+		return !(!pointer.operator().equals(SymbolicOperator.TUPLE)
+				&& !pointer.operator().equals(SymbolicOperator.CONCRETE));
+	}
 	/**
 	 * Given an array, a start index, and end index, returns the array which is
 	 * the subsequence of the given array consisting of the elements in
@@ -38,9 +50,9 @@ public interface SymbolicAnalyzer {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	SymbolicExpression getSubArray(SymbolicExpression array,
-			NumericExpression startIndex, NumericExpression endIndex,
-			State state, String process, CIVLSource source)
+	SymbolicExpression getSubArray(State state, int pid,
+			SymbolicExpression array, NumericExpression startIndex,
+			NumericExpression endIndex, CIVLSource source)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -150,7 +162,24 @@ public interface SymbolicAnalyzer {
 	 *            The pointer the type of whose object is to be computed.
 	 * @return The CIVL type of the object referring to by the given pointer.
 	 */
-	CIVLType typeOfObjByPointer(CIVLSource soruce, State state,
+	CIVLType civlTypeOfObjByPointer(CIVLSource soruce, State state,
+			SymbolicExpression pointer);
+
+	/**
+	 * Computes the {@link SymbolicType} of the object referring to by the given
+	 * pointer.
+	 * 
+	 * @param source
+	 *            The source code information related to the symbolic expression
+	 *            for error report if any.
+	 * @param state
+	 *            The state that the given pointer belongs to.
+	 * @param pointer
+	 *            The pointer the type of whose object is to be computed.
+	 * @return The {@link SymbolicType} of the object referring to by the given
+	 *         pointer.
+	 */
+	SymbolicType dynamicTypeOfObjByPointer(CIVLSource source, State state,
 			SymbolicExpression pointer);
 
 	/**
@@ -252,8 +281,8 @@ public interface SymbolicAnalyzer {
 	 * @param civlSource
 	 *            The source related with the pointer
 	 * @return True iff the given pointer is defined.
-	 * @throws CIVLUnimplementedFeatureException 
-	 * 			  If the given pointer is a non-concrete one.
+	 * @throws CIVLUnimplementedFeatureException
+	 *             If the given pointer is a non-concrete one.
 	 */
 	Pair<BooleanExpression, ResultType> isDefinedPointer(State state,
 			SymbolicExpression pointer, CIVLSource civlSource);

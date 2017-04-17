@@ -8,3 +8,6 @@ malloc : malloc.cvl
 	
 postIncr : postIncr.cvl
 	$(VERIFY) postIncr.cvl
+
+clean:
+	rm -rf *~ CIVLREP
