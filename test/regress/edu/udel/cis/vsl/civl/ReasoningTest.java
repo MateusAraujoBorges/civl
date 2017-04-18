@@ -54,6 +54,11 @@ public class ReasoningTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("quantified.cvl")));
 	}
 
+	@Test
+	public void arraySliceHavoc() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("arraySliceHavoc.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

@@ -1,0 +1,24 @@
+/* A non-trivial mimic of havocing an array slice using temporary
+ * variable and quantified assumptions */
+
+#include <pointer.cvh>
+$input int N, M, I;
+$assume(N > 0 && M > 0 && 0 < I && I < N);
+
+void havoc_slice(double (*a)[], int len, int start, int stop) {
+  double tmp[len];
+
+  $copy(&tmp, a);
+  $havoc(a);
+  $assume(($forall (int j | (0 <= j && j < start) || (stop <= j && j < len))
+           (*a)[j] == tmp[j]));
+}
+
+int main () {
+  double a[N*M];
+  double old_zero = a[0];
+
+  havoc_slice(&a, N*M, I*M, (I+1)*M);
+  $assert(a[0] == old_zero);
+  return 0;
+}

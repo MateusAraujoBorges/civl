@@ -85,4 +85,10 @@ public class SvcompTest {
 		assertTrue(ui.run("verify  -svcomp16", TestConstants.QUIET,
 				filename("10_fmaxsym_cas_true-unreach-call.i")));
 	}
+
+	@Test
+	public void assume_with_disjuncts() {
+		assertFalse(ui.run("verify  -svcomp16", TestConstants.QUIET,
+				filename("assume_with_disjuncts.cvl")));
+	}
 }

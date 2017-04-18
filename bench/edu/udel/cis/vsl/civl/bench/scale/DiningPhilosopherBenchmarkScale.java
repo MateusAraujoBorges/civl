@@ -19,8 +19,8 @@ public class DiningPhilosopherBenchmarkScale {
 			civlDir = args[0];
 		for (int i = 2; i <= 10; i++) {
 			System.out.println(">>>>>>>> Dining philosopher <<<<<<<<");
-			ui.run("verify -inputBOUND=" + i + " " + civlDir
-					+ "/examples/concurrency/dining.cvl");
+			ui.run("verify -intOperationTransformer=false -inputBOUND=" + i
+					+ " " + civlDir + "/examples/concurrency/dining.cvl");
 		}
 	}
 
