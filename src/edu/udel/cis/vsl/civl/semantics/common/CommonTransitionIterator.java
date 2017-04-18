@@ -4,9 +4,9 @@ import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionIterator;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.gmc.TransitionIterator;
 import edu.udel.cis.vsl.gmc.TransitionSetIF;
 
 /**
@@ -16,7 +16,7 @@ import edu.udel.cis.vsl.gmc.TransitionSetIF;
  * @author Yihao Yan (yihaoyan)
  *
  */
-public class CommonTransitionIterator implements TransitionIterator {
+public class CommonTransitionIterator extends TransitionIterator<State, Transition> {
 	/**
 	 * The source transition set.
 	 */
