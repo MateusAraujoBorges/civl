@@ -29,14 +29,13 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * <b>Here is just a record of Java methods, calling of which will change the
  * write set</b>
  * <ul>
- * <li>The proctected method {@link CommonExecutor#assign}s, there are two of
- * them.</li>
+ * <li>The private methods in {@link CommonExecutor}, there are two of them:
+ * assignCore and assignLHS</li>
  * <li>
  * {@link ImmutableStateFactory#deallocate(edu.udel.cis.vsl.civl.state.IF.State, SymbolicExpression, int, int, int)}
  * </li>
- * <li>
- * {@link ImmutableStateFactory#malloc(edu.udel.cis.vsl.civl.state.IF.State, int, int, SymbolicExpression)}
- * </li> TODO: can all the following go through the executor's assign() ?
+ * <li>executeMalloc and malloc in {@link CommonExecutor}</li> <br>
+ * TODO: can all the following go through the executor's assign() ?
  * <li>{@link LibmpiExecutor#executeNewGcomm} (TODO: is this needed to be
  * recorded ?)</li>
  * <li>{@link LibtimeExecutor#executeLocalTime}</li>

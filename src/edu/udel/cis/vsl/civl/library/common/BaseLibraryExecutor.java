@@ -228,6 +228,13 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 				Pair<Integer, Integer> indexes;
 
 				indexes = getMallocIndex(firstElementPointer);
+				if (state.isMonitoringWrites(pid)) {
+					SymbolicExpression pointer2memoryBlk = symbolicUtil
+							.parentPointer(firstElementPointer);
+
+					state = stateFactory.addWriteRecords(state, pid,
+							pointer2memoryBlk);
+				}
 				state = stateFactory.deallocate(state, firstElementPointer,
 						modelFactory.getScopeId(source,
 								universe.tupleRead(firstElementPointer,

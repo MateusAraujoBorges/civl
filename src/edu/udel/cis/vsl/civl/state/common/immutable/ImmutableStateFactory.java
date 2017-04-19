@@ -17,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
+import edu.udel.cis.vsl.civl.dynamic.IF.Dynamics;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.Certainty;
@@ -28,13 +30,10 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
-import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
-import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
-import edu.udel.cis.vsl.civl.state.IF.CollectiveSnapshotsEntry;
 import edu.udel.cis.vsl.civl.state.IF.DynamicScope;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
@@ -483,7 +482,7 @@ public class ImmutableStateFactory implements StateFactory {
 			}
 			for (int pid = 0; pid < numProcs; pid++)
 				newProcesses[pid] = theState.getProcessState(pid)
-						.updateDyscopes(oldToNew);
+						.updateDyscopes(oldToNew, substituter);
 			theState = ImmutableState.newState(theState, newProcesses,
 					newScopes, newPathCondition);
 		}
@@ -858,7 +857,6 @@ public class ImmutableStateFactory implements StateFactory {
 		newState = new ImmutableState(newProcesses, theState.copyScopes(),
 				theState.getPathCondition());
 		newState.collectibleCounts = theState.collectibleCounts;
-		newState = newState.setSnapshotsQueues(theState.getSnapshotsQueues());
 		return newState;
 	}
 
@@ -971,19 +969,6 @@ public class ImmutableStateFactory implements StateFactory {
 			if (hasSimplication && simplifyStateRefs)
 				theState = this.simplifyReferencedStates(theState,
 						pathCondition);
-			theState.simplifiedState = theState;
-		}
-		if (config.isEnableMpiContract()) {
-			ImmutableCollectiveSnapshotsEntry[][] queues = theState
-					.getSnapshotsQueues();
-			ImmutableCollectiveSnapshotsEntry[][] newQueues = new ImmutableCollectiveSnapshotsEntry[queues.length][];
-
-			for (int i = 0; i < queues.length; i++) {
-				newQueues[i] = queues[i].clone();
-				for (int j = 0; j < newQueues[i].length; j++)
-					newQueues[i][j] = newQueues[i][j].simplify(state);
-			}
-			theState = theState.setSnapshotsQueues(newQueues);
 			theState.simplifiedState = theState;
 		}
 		return theState;
@@ -2090,168 +2075,6 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	/* **************** MPI contracts related functions ******************* */
-	@Override
-	public ImmutableState commitUpdatedChannelsToEntries(State state,
-			int queueId, SymbolicExpression[] newBuffers) {
-		ImmutableState tmpState = (ImmutableState) state;
-		ImmutableCollectiveSnapshotsEntry[][] queues = tmpState
-				.getSnapshotsQueues();
-		ImmutableCollectiveSnapshotsEntry[] queue;
-		int queueLength;
-
-		assert queues != null : "Commite updated message channels to a "
-				+ "state with empty collective queue";
-		assert queues.length > queueId;
-		queue = queues[queueId];
-		assert queue != null : "Commite updated message channels to an unexisted collective queue";
-		queueLength = queue.length;
-		assert queueLength == newBuffers.length;
-		for (int i = 0; i < queueLength; i++) {
-			ImmutableCollectiveSnapshotsEntry entry = queue[i];
-
-			entry = entry.setMsgBuffers(newBuffers[i]);
-			queue[i] = entry;
-		}
-		queues[queueId] = queue;
-		return tmpState.setSnapshotsQueues(queues);
-	}
-
-	@Override
-	public ImmutableState mergeMonostates(State state,
-			ImmutableCollectiveSnapshotsEntry entry) {
-		ImmutableMonoState[] monoStates = entry.getMonoStates();
-		return mergeStatesWorker(state, entry, monoStates, entry.getMaxPid());
-	}
-
-	/**
-	 * Partially merging monoStates which stored in the
-	 * {@link CollectiveSnapshotsEntry}. Missing monoStates will be compensated
-	 * by the current state.
-	 * 
-	 * @param state
-	 * @param entry
-	 * @return
-	 */
-	@Override
-	public ImmutableState partialMergeMonostates(State state,
-			ImmutableCollectiveSnapshotsEntry entry, int place2Pid[]) {
-		assert entry.contractKind() == ContractKind.WAITSFOR;
-		int numMonoStates = entry.numMonoStates();
-		ImmutableMonoState monoStates[] = entry.getMonoStates();
-		int missingPlaces[];
-		int numMissing = monoStates.length - numMonoStates;
-		int maxPid = entry.getMaxPid();
-
-		// If there are missing monoStates:
-		if (numMissing > 0) {
-			missingPlaces = new int[numMissing];
-			// It's unsafe to test "monoStates[..] == null" because they are not
-			// initialized in that way:
-			for (int i = 0, j = 0; i < monoStates.length; i++)
-				if (!entry.isRecorded(i))
-					missingPlaces[j++] = i;
-			// Reorganize monoStates:
-			for (int i = 0; i < numMissing; i++) {
-				int missPlace = missingPlaces[i];
-				ImmutableMonoState missOne = takeSnapshot(
-						(ImmutableState) state, place2Pid[missPlace]);
-
-				monoStates[missPlace] = missOne;
-				if (maxPid < missOne.getProcessState().getPid())
-					maxPid = missOne.getProcessState().getPid();
-			}
-		}
-		return mergeStatesWorker(state, entry, monoStates, maxPid);
-	}
-
-	// pre-condition: entry exists.
-	@Override
-	public ImmutableState addToCollectiveSnapshotsEntry(ImmutableState state,
-			int pid, int place, int queueID, int entryPos,
-			Expression assertion) {
-		ImmutableCollectiveSnapshotsEntry[] queue = state.getSnapshots(queueID);
-		ImmutableCollectiveSnapshotsEntry entry;
-		ImmutableMonoState snapshot;
-
-		assert queue != null;
-		entry = queue[entryPos];
-		// take a snapshot
-		snapshot = takeSnapshot((ImmutableState) state, pid);
-		entry = entry.insertMonoState(place, snapshot, assertion);
-		queue[entryPos] = entry;
-		return state.updateQueue(queueID, queue);
-	}
-
-	@Override
-	public ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state,
-			int pid, int numProcesses, int place, int queueID,
-			Expression assertion, SymbolicExpression channels,
-			ContractKind kind, int[][] agreedVars,
-			SymbolicExpression[] agreedVals) {
-		ImmutableCollectiveSnapshotsEntry[] queue = state.getSnapshots(queueID);
-		ImmutableCollectiveSnapshotsEntry[] newQueue;
-		ImmutableCollectiveSnapshotsEntry entry = new ImmutableCollectiveSnapshotsEntry(
-				numProcesses, universe, kind);
-		ImmutableMonoState snapshot;
-
-		// take a snapshot
-		snapshot = this.takeSnapshot((ImmutableState) state, pid);
-		entry = entry.insertMonoState(place, snapshot, assertion);
-		entry = entry.setMsgBuffers(channels);
-		if (agreedVals == null)
-			agreedVals = new SymbolicExpression[0];
-		if (agreedVars == null)
-			agreedVars = new int[0][];
-		entry = entry.deliverAgreedVariables(agreedVars, agreedVals);
-		assert queue != null;
-		newQueue = new ImmutableCollectiveSnapshotsEntry[queue.length + 1];
-		for (int i = 0; i < queue.length; i++)
-			newQueue[i] = queue[i];
-		newQueue[queue.length] = entry;
-		return state.updateQueue(queueID, newQueue);
-	}
-
-	@Override
-	public State dequeueCollectiveSnapshotsEntry(State state, int queueID) {
-		ImmutableState immuState = (ImmutableState) state;
-		ImmutableCollectiveSnapshotsEntry[] queue = immuState
-				.getSnapshots(queueID);
-
-		assert queue != null && queue.length > 0 : "Dequeues on an empty queue";
-		if (queue.length == 1)
-			queue = new ImmutableCollectiveSnapshotsEntry[0];
-		else
-			queue = Arrays.copyOfRange(queue, 1, queue.length);
-		return immuState.updateQueue(queueID, queue);
-	}
-
-	@Override
-	public ImmutableCollectiveSnapshotsEntry peekCollectiveSnapshotsEntry(
-			State state, int queueID) {
-		ImmutableState immuState = (ImmutableState) state;
-		ImmutableCollectiveSnapshotsEntry[] queue = immuState
-				.getSnapshots(queueID);
-		ImmutableCollectiveSnapshotsEntry entry;;
-
-		assert queue != null && queue.length > 0 : "Peeks on an empty queue";
-		entry = queue[0];
-		return entry;
-	}
-
-	@Override
-	public ImmutableCollectiveSnapshotsEntry[] getSnapshotsQueue(State state,
-			int queueID) {
-		return ((ImmutableState) state).getSnapshots(queueID);
-	}
-
-	@Override
-	public ImmutableState copySnapshotsQueues(State fromState, State toState) {
-		ImmutableCollectiveSnapshotsEntry[][] queues = ((ImmutableState) fromState)
-				.getSnapshotsQueues();
-
-		return ((ImmutableState) toState).setSnapshotsQueues(queues);
-	}
-
 	/**
 	 * Renumbers and re-arranges an array of {@link DynamicScope} with an
 	 * "oldToNew" array as a dictionary which is used for looking up new IDs
@@ -2301,78 +2124,6 @@ public class ImmutableStateFactory implements StateFactory {
 		return (BooleanExpression) substituter.apply(oldPathCondition);
 	}
 
-	/**
-	 * Take a snapshot for a process specified with its PID on a
-	 * {@link ImmutableState}. For the {@link ProcessState} associates to the
-	 * PID, this function will take its {@link DynamicScope}s with following
-	 * rules:<br>
-	 * <ol>
-	 * <li>1. The {@link DynamicScope} d0 associates to the top frame of the
-	 * call stack of the process.</li>
-	 * <li>2. All reachable ancestors of d0. (It's based on the assumption that
-	 * there is no shared storage among MPI processes.)</li>
-	 * 
-	 * @precondition: State and PID must be a valid one.
-	 * @postcondition: true.
-	 * 
-	 * @param state
-	 *            The global state where the snapshot is taken
-	 * @param pid
-	 *            The PID for the process whose state is taken as a snapshot
-	 * @return A new {@link ImmutableMonoState} which is a snapshot for a
-	 *         process.
-	 */
-	private ImmutableMonoState takeSnapshot(ImmutableState state, int pid) {
-		ImmutableProcessState processState = state.getProcessState(pid);
-		ImmutableProcessState newProcessState;
-		ImmutableMonoState snapshot;
-		ImmutableDynamicScope newDyscopes[];
-		ImmutableDynamicScope[] oldDyscopes;
-		StackEntry[] newMonoFrame = new StackEntry[processState.stackSize()];
-		BooleanExpression pathCondition;
-		Iterator<StackEntry> iter;
-		// upper bound of number of dyscopes in the snapshot:
-		int numDyscopesInState = state.numDyscopes();
-		int oldToNew[];
-		int newDyscopesCounter = 0;
-		int frameLoc = 0;
-
-		newDyscopes = new ImmutableDynamicScope[numDyscopesInState];
-		oldToNew = new int[numDyscopesInState];
-		// initializes oldToNew array
-		for (int i = 0; i < numDyscopesInState; i++)
-			oldToNew[i] = -1;
-		oldDyscopes = new ImmutableDynamicScope[numDyscopesInState];
-		iter = processState.getStackEntries().iterator();
-		while (iter.hasNext()) {
-			StackEntry topFrame = iter.next();
-			int oldSid = topFrame.scope();
-			ImmutableDynamicScope currentDyscope;
-
-			newMonoFrame[frameLoc++] = topFrame;
-			while (oldSid != -1) {
-				if (oldToNew[oldSid] >= 0)
-					break; // duplicated
-				currentDyscope = state.getDyscope(oldSid);
-				if (currentDyscope.reachableByProcess(pid)) {
-					oldDyscopes[oldSid] = currentDyscope;
-					oldToNew[oldSid] = newDyscopesCounter++;
-				}
-				oldSid = currentDyscope.getParent();
-			}
-		}
-		renumberDyscopes(oldDyscopes, oldToNew, newDyscopes, null);
-		processState = (ImmutableProcessState) processState
-				.setStackEntries(newMonoFrame);
-		newProcessState = processState.updateDyscopes(oldToNew);
-		// TODO: Does the path condition contain references on other processes ?
-		pathCondition = state.getPathCondition();
-		newDyscopes = Arrays.copyOf(newDyscopes, newDyscopesCounter);
-		snapshot = new ImmutableMonoState(newProcessState, newDyscopes,
-				pathCondition);
-		return snapshot;
-	}
-
 	@Override
 	public State enterAtomic(State state, int pid) {
 		ProcessState procState = state.getProcessState(pid);
@@ -2391,96 +2142,6 @@ public class ImmutableStateFactory implements StateFactory {
 		if (atomicCount == 1)
 			state = releaseAtomicLock(state);
 		return this.setProcessState(state, procState.decrementAtomicCount());
-	}
-
-	/**
-	 * A helper worker for merging a given group of {@link ImmutableMonoState}s.
-	 * 
-	 * @param state
-	 *            The current state, which is used to provide informations for
-	 *            the new generated states
-	 * @param entry
-	 *            The {@link CollectiveSnapshotsEntry} related to this merging.
-	 * @param monoStates
-	 *            The group of {@link ImmutableMonoState}s that will be merged.
-	 * @param maxPid
-	 *            The maximum PID, used to allocate an array which is large
-	 *            enough for saving PIDs.
-	 * @return
-	 */
-	private ImmutableState mergeStatesWorker(State state,
-			CollectiveSnapshotsEntry entry, ImmutableMonoState[] monoStates,
-			int maxPid) {
-		ImmutableState newState;
-		int numProcesses = monoStates.length;
-		ImmutableProcessState[] processes = new ImmutableProcessState[numProcesses];
-		ImmutableDynamicScope[][] localDyscopes = new ImmutableDynamicScope[numProcesses][];
-		ImmutableDynamicScope[] dyscopes;
-		// A list of "oldToNew" tables, each process has its own table.
-		int[][] dyscopeOldToNews = new int[numProcesses][];
-		int totalDyscopeCounter = 0;
-		int[] procOldToNew = new int[maxPid + 1];
-		BooleanExpression pathCondition = universe.trueExpression();
-
-		for (int place = 0; place < numProcesses; place++) {
-			ImmutableMonoState monoState = monoStates[place];
-			ImmutableProcessState process = monoState.getProcessState();
-			int oldPid = process.getPid();
-			int numDyscopes = monoState.numDyscopes();
-
-			processes[place] = process.setPid(place);
-			procOldToNew[oldPid] = place;
-			localDyscopes[place] = this
-					.updateProcessReferencesInScopes(monoState, procOldToNew);
-			// computes oldToNew arrays
-			dyscopeOldToNews[place] = new int[localDyscopes[place].length];
-			for (int sid = 0; sid < numDyscopes; sid++)
-				dyscopeOldToNews[place][sid] = totalDyscopeCounter++;
-			pathCondition = universe.and(pathCondition,
-					monoState.getPathCondition());
-		}
-		dyscopes = new ImmutableDynamicScope[totalDyscopeCounter];
-		// re-numbers dyscopes
-		for (int place = 0; place < numProcesses; place++) {
-			renumberDyscopes(localDyscopes[place], dyscopeOldToNews[place],
-					dyscopes, null);
-			processes[place] = processes[place]
-					.updateDyscopes(dyscopeOldToNews[place]);
-		}
-		newState = new ImmutableState(processes, dyscopes, pathCondition);
-		newState = newState.setSnapshotsQueues(
-				((ImmutableState) state).getSnapshotsQueues());
-		return newState;
-	}
-
-	@Override
-	public ImmutableState updateProcessesForState(State state,
-			int[] procsNewToOld) {
-		int numProcesses = procsNewToOld.length;
-		ImmutableProcessState processes[] = new ImmutableProcessState[numProcesses];
-		int procsOldToNew[] = new int[state.numProcs()];
-		ImmutableDynamicScope updatedDyscopes[];
-
-		for (int i = 0; i < procsOldToNew.length; i++)
-			procsOldToNew[i] = -1;
-		for (int place = 0; place < numProcesses; place++) {
-			ImmutableProcessState process = (ImmutableProcessState) state
-					.getProcessState(procsNewToOld[place]);
-			int oldPid = process.getPid();
-
-			processes[place] = process.setPid(place);
-			procsOldToNew[oldPid] = place;
-		}
-		updatedDyscopes = updateProcessReferencesInScopes(state, procsOldToNew);
-		// re-numbers dyscopes
-		// for (int place = 0; place < numProcesses; place++) {
-		// renumberDyscopes(localDyscopes[place], dyscopeOldToNews[place],
-		// dyscopes);
-		// processes[place] = processes[place]
-		// .updateDyscopes(dyscopeOldToNews[place]);
-		// }
-		return new ImmutableState(processes, updatedDyscopes,
-				state.getPathCondition());
 	}
 
 	@Override
@@ -2622,7 +2283,17 @@ public class ImmutableStateFactory implements StateFactory {
 			}
 		System.arraycopy(theState.copyScopes(), 0, dyscopes, 0,
 				theState.numDyscopes());
-		processes[newPid] = monoProcess.updateDyscopes(dyscopeOld2New);
+
+		IntArray key = new IntArray(dyscopeOld2New);
+		UnaryOperator<SymbolicExpression> substituter = dyscopeSubMap.get(key);
+
+		// TODO: use the renumber dyscope method ?
+		if (substituter == null) {
+			substituter = universe.mapSubstituter(scopeSubMap(dyscopeOld2New));
+			dyscopeSubMap.putIfAbsent(key, substituter);
+		}
+		processes[newPid] = monoProcess.updateDyscopes(dyscopeOld2New,
+				substituter);
 		for (ImmutableProcessState proc : processes)
 			if (!proc.hasEmptyStack())
 				setReachablesForProc(dyscopes, proc);
@@ -2690,9 +2361,20 @@ public class ImmutableStateFactory implements StateFactory {
 		StackEntry[] newStack = new StackEntry[1];
 
 		newStack[0] = external.peekStack();
-		processes[newPid] = new ImmutableProcessState(newPid, newStack,
-				external.atomicCount(), true);
-		processes[newPid] = processes[newPid].updateDyscopes(old2New);
+		processes[newPid] = new ImmutableProcessState(newPid, newStack, null,
+				null, external.atomicCount(), true);
+
+		IntArray key = new IntArray(old2New);
+		UnaryOperator<SymbolicExpression> substituter = dyscopeSubMap.get(key);
+
+		if (substituter == null) {
+			substituter = universe.mapSubstituter(scopeSubMap(old2New));
+			dyscopeSubMap.putIfAbsent(key, substituter);
+		}
+
+		// TODO: replace with the renumberDyscope method ?
+		processes[newPid] = processes[newPid].updateDyscopes(old2New,
+				substituter);
 		setReachablesForProc(dyscopes, processes[newPid]);
 		return ImmutableState.newState(theColState, processes, dyscopes,
 				universe.and(newRealPC, theColState.getPathCondition()));
@@ -2770,5 +2452,74 @@ public class ImmutableStateFactory implements StateFactory {
 
 			throw new CIVLException(errorMessage, null);
 		}
+	}
+
+	@Override
+	public ImmutableState addWriteRecords(State state, int pid,
+			SymbolicExpression pointer) {
+		ImmutableState imuState = ((ImmutableState) state);
+		DynamicWriteSet newWsStack[] = imuState.copyOfWriteSetStack(pid);
+		int head = newWsStack.length - 1;
+
+		newWsStack[head] = newWsStack[head].addReference(pointer);
+		return imuState.setWriteSetStack(pid, newWsStack);
+	}
+
+	@Override
+	public DynamicWriteSet peekWriteSet(State state, int pid) {
+		ImmutableState imuState = ((ImmutableState) state);
+		DynamicWriteSet[] wsStack = imuState.getProcessState(pid)
+				.getWriteSets();
+		int head = wsStack.length - 1;
+
+		return wsStack[head];
+	}
+
+	@Override
+	public State pushEmptyWrite(State state, int pid) {
+		DynamicWriteSet newWriteSet = Dynamics.newDynamicWriteSet(universe);
+		ImmutableState imuState = ((ImmutableState) state);
+		DynamicWriteSet[] wsStack = imuState.copyOfWriteSetStack(pid);
+		DynamicWriteSet[] newWsStack = Arrays.copyOf(wsStack,
+				wsStack.length + 1);
+		int head = wsStack.length;
+
+		newWsStack[head] = newWriteSet;
+		return imuState.setWriteSetStack(pid, newWsStack);
+	}
+
+	@Override
+	public State popWriteSet(State state, int pid) {
+		ImmutableState imuState = ((ImmutableState) state);
+		DynamicWriteSet[] wsStack = imuState.copyOfWriteSetStack(pid);
+		DynamicWriteSet[] newWsStack = Arrays.copyOf(wsStack,
+				wsStack.length - 1);
+
+		return imuState.setWriteSetStack(pid, newWsStack);
+	}
+
+	@Override
+	public State pushAssumption(State state, int pid,
+			BooleanExpression assumption) {
+		ImmutableState imuState = ((ImmutableState) state);
+		BooleanExpression[] ppcStack = imuState
+				.copyOfPartialPathConditionStack(pid);
+		BooleanExpression[] ppcNewStack = Arrays.copyOf(ppcStack,
+				ppcStack.length + 1);
+		int head = ppcStack.length;
+
+		ppcNewStack[head] = assumption;
+		return imuState.setPartialPathConditionStack(pid, ppcNewStack);
+	}
+
+	@Override
+	public State popAssumption(State state, int pid) {
+		ImmutableState imuState = ((ImmutableState) state);
+		BooleanExpression[] ppcStack = imuState
+				.copyOfPartialPathConditionStack(pid);
+		BooleanExpression[] ppcNewStack = Arrays.copyOf(ppcStack,
+				ppcStack.length - 1);
+
+		return imuState.setPartialPathConditionStack(pid, ppcNewStack);
 	}
 }

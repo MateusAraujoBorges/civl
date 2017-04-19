@@ -385,6 +385,15 @@ public interface State {
 	 */
 	public void setFullyExpanded(boolean value);
 
+	/**
+	 * @param pid
+	 *            The PID of the process who will be tested if it is monitoring
+	 *            write operations.
+	 * @return True iff any change of variables and memory heap objects by this
+	 *         process of this state will be recorded.
+	 */
+	public boolean isMonitoringWrites(int pid);
+
 	@Override
 	String toString();
 }
