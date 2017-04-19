@@ -7,6 +7,7 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -247,6 +248,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		gcollateStateHandle = universe.tupleRead(collateState,
 				collate_state_gstate);
 		eval = evaluator.dereference(source, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
 				gcollateStateHandle, false, true);
 		state = eval.state;
 		gcollateState = eval.value;
@@ -306,8 +308,9 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression gstate, statusArray;
 		Evaluation eval;
 
-		eval = evaluator.dereference(source, state, process, gstateHanlde,
-				false, true);
+		eval = evaluator.dereference(source, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
+				gstateHanlde, false, true);
 		gstate = eval.value;
 		statusArray = universe.tupleRead(gstate, gcollate_state_status);
 		nprocs = universe.length(statusArray);
@@ -358,8 +361,9 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression gstate, statusArray;
 		Evaluation eval;
 
-		eval = evaluator.dereference(source, state, process, gstateHanlde,
-				false, true);
+		eval = evaluator.dereference(source, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
+				gstateHanlde, false, true);
 		gstate = eval.value;
 		statusArray = universe.tupleRead(gstate, gcollate_state_status);
 

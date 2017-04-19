@@ -217,6 +217,13 @@ public class TransformerFactory {
 		};
 	}
 
+	/**
+	 * Creates a new instance of a {@link ShortCircuitTransformer}
+	 * 
+	 * @param config
+	 *            A reference to {@link CIVLConfiguration}
+	 * @return A {@link TransformRecord} of a {@link ShortCircuitTransformer}.
+	 */
 	public TransformRecord getShortCircuitTransformerRecord(
 			CIVLConfiguration config) {
 		return new TransformRecord(ShortCircuitTransformer.CODE,

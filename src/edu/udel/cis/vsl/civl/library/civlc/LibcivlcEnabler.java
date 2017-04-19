@@ -281,7 +281,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 				procPointer = eval.value;
 				state = eval.state;
 				eval = evaluator.dereference(procsSource, state, process,
-						procPointer, false, true);
+						typeFactory.processType(), procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
 				pidValue = modelFactory.getProcessId(procsSource, proc);

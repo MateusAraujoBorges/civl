@@ -320,6 +320,7 @@ public class ModelTranslator {
 			task.addTransformRecord(transformerFactory
 					.getIntOperationTransformerRecord(macros, config));
 		task.addTransformCode(SideEffectRemover.CODE);
+		// Add short circhuit transformer:
 		task.addTransformRecord(
 				transformerFactory.getShortCircuitTransformerRecord(config));
 		task.addTransformCode(Pruner.CODE);

@@ -121,7 +121,7 @@ public class ImmutableMonoState implements State {
 	/**
 	 * Whether this state is on the DFS search stack
 	 */
-	private boolean onStack = false;
+	private int stackPosition = -1;
 	/**
 	 * Cached hashcode for the array of dynamic scopes
 	 */
@@ -220,8 +220,8 @@ public class ImmutableMonoState implements State {
 	}
 
 	@Override
-	public boolean onStack() {
-		return this.onStack;
+	public int stackPosition() {
+		return this.stackPosition;
 	}
 
 	@Override
@@ -230,8 +230,8 @@ public class ImmutableMonoState implements State {
 	}
 
 	@Override
-	public void setOnStack(boolean onStack) {
-		this.onStack = onStack;
+	public void setStackPosition(int stackIndex) {
+		this.stackPosition = stackIndex;
 	}
 
 	@Override
@@ -635,12 +635,12 @@ public class ImmutableMonoState implements State {
 	}
 
 	@Override
-	public boolean allSuccessorsVisited() {
+	public boolean fullyExpanded() {
 		return allSuccessorsVisited;
 	}
 
 	@Override
-	public void setAllSuccessorsVisited(boolean value) {
+	public void setFullyExpanded(boolean value) {
 		this.allSuccessorsVisited = value;
 	}
 

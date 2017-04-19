@@ -56,13 +56,13 @@ public class CIVLConstants {
 			new File(File.separator + "include"), "civl");
 
 	/** The version of this release of CIVL. */
-	public final static String version = "1.7.4";
+	public final static String version = "1.8+";
 
 	/**
 	 * The date of this release of CIVL. Format: YYYY-MM-DD in accordance with
 	 * ISO 8601.
 	 */
-	public final static String date = "2017-03-10";
+	public final static String date = "2017-04-18";
 
 	/**
 	 * The prefix of the full name of the class of a library enabler/executor.
@@ -212,8 +212,8 @@ public class CIVLConstants {
 	public final static Option errorBoundO = Option.newScalarOption(ERROR_BOUND,
 			INTEGER, "stop after finding this many errors", 1);
 
-	public final static Option maxProcsO = Option.newScalarOption(
-			MAX_PROCS, INTEGER, "the maximum number of processes", 1000);
+	public final static Option maxProcsO = Option.newScalarOption(MAX_PROCS,
+			INTEGER, "the maximum number of processes", 1000);
 
 	/**
 	 * The semantics for used to determine when error states are equivalent;

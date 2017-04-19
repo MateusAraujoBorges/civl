@@ -9,6 +9,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
@@ -487,8 +488,11 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		dataSize = universe.length(data);
 		// If data size is zero, do nothing.
 		if (reasoner.isValid(universe.equals(dataSize, zero))) {
-			eval = evaluator.dereference(civlsource, state, process, pointer,
-					false, true);
+			CIVLPointerType ptrType = (CIVLPointerType) pointerExpr
+					.getExpressionType();
+
+			eval = evaluator.dereference(civlsource, state, process,
+					ptrType.baseType(), pointer, false, true);
 			return new Pair<Evaluation, SymbolicExpression>(eval, pointer);
 		}
 		// If data size larger than one, return an array and the corresponding

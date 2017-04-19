@@ -48,11 +48,8 @@ public interface Evaluator {
 	 *            The state where the operation happens.
 	 * @param process
 	 *            The process information (name, PID) for error report.
-	 * @param resultType
-	 *            The {@link CIVLType} of the result of the dereference
-	 *            operation. For cases that there is no lexical information
-	 *            referred, the type should be acquired by calling
-	 *            {@link SymbolicAnalyzer#civlTypeOfObjByPointer(CIVLSource, State, SymbolicExpression)}.
+	 * @param referredType
+	 *            The {@link CIVLType} of the dereference operation.
 	 * @param pointer
 	 *            A pointer value which refers to some sub-structure in the
 	 *            state, and is to dereferenced.
@@ -68,7 +65,8 @@ public interface Evaluator {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	Evaluation dereference(CIVLSource source, State state, String process,
-			SymbolicExpression pointer, boolean checkedOutput, boolean strict)
+			CIVLType referredType, SymbolicExpression pointer,
+			boolean checkedOutput, boolean strict)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -358,9 +356,10 @@ public interface Evaluator {
 	 *         pointed by the given pointer which helps saving computing time
 	 *         for caller functions.
 	 */
-	public Pair<Evaluation, NumericExpression[]> arrayElementReferenceAdd(State state,
-			int pid, SymbolicExpression ptr, NumericExpression offset,
-			CIVLSource source) throws UnsatisfiablePathConditionException;
+	public Pair<Evaluation, NumericExpression[]> arrayElementReferenceAdd(
+			State state, int pid, SymbolicExpression ptr,
+			NumericExpression offset, CIVLSource source)
+			throws UnsatisfiablePathConditionException;
 
 	List<ReferenceExpression> leafNodeReferencesOfType(CIVLSource source,
 			State state, int pid, CIVLType type)

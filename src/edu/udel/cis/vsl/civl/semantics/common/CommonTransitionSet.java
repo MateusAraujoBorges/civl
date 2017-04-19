@@ -6,7 +6,7 @@ import java.util.List;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.TransitionIteratorIF;
+import edu.udel.cis.vsl.gmc.TransitionIterator;
 
 /**
  * A transition set contains a list of transitions and the state from which they
@@ -107,13 +107,13 @@ public class CommonTransitionSet implements TransitionSet {
 	}
 
 	@Override
-	public TransitionIteratorIF<State, Transition> randomIterator() {
+	public TransitionIterator<State, Transition> randomIterator() {
 		// TODO this method will be removed later.
 		return null;
 	}
 
 	@Override
-	public TransitionIteratorIF<State, Transition> iterator() {
+	public TransitionIterator<State, Transition> iterator() {
 		CommonTransitionIterator transitionIterator = new CommonTransitionIterator(this);
 		transitionIterator.setOffSet(offSet);
 

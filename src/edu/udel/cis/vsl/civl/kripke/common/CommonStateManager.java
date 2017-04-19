@@ -599,8 +599,8 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public boolean onStack(State state) {
-		return state.onStack();
+	public int stackPosition(State state) {
+		return state.stackPosition();
 	}
 
 	@Override
@@ -644,8 +644,8 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public void setOnStack(State state, boolean value) {
-		state.setOnStack(value);
+	public void setStackPosition(State state, int stackIndex) {
+		state.setStackPosition(stackIndex);
 	}
 
 	@Override
@@ -708,13 +708,13 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public boolean allSuccessorsVisited(State state) {
-		return state.allSuccessorsVisited();
+	public boolean fullyExpanded(State state) {
+		return state.fullyExpanded();
 	}
 
 	@Override
-	public void setAllSuccessorsVisited(State state, boolean value) {
-		state.setAllSuccessorsVisited(value);
+	public void setFullyExpanded(State state, boolean value) {
+		state.setFullyExpanded(value);
 	}
 
 }

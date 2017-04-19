@@ -135,13 +135,15 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		Number srcNum, destNum;
 		int srcInt, destInt;
 
-		eval = evaluator.dereference(civlsource, state, process, commHandle,
-				false, true);
+		eval = evaluator.dereference(civlsource, state, process,
+				typeFactory.systemType(ModelConfiguration.COMM_TYPE),
+				commHandle, false, true);
 		state = eval.state;
 		comm = eval.value;
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, gcommHandle,
-				false, true);
+		eval = evaluator.dereference(civlsource, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOMM_TYPE),
+				gcommHandle, false, true);
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
@@ -362,8 +364,9 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		Evaluation eval;
 
 		gcommHandle = universe.tupleRead(comm, oneObject);
-		eval = evaluator.dereference(civlsource, state, process, gcommHandle,
-				false, true);
+		eval = evaluator.dereference(civlsource, state, process,
+				typeFactory.systemType(ModelConfiguration.GCOMM_TYPE),
+				gcommHandle, false, true);
 		return eval;
 	}
 
@@ -391,7 +394,8 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		eval = evaluator.evaluate(state, pid, commHandleExpr);
 		commHandle = eval.value;
 		eval = evaluator.dereference(commHandleExpr.getSource(), eval.state,
-				process, commHandle, false, true);
+				process, typeFactory.systemType(ModelConfiguration.COMM_TYPE),
+				commHandle, false, true);
 		return eval;
 	}
 

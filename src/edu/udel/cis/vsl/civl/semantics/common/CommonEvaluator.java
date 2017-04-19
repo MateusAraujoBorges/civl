@@ -143,6 +143,12 @@ public class CommonEvaluator implements Evaluator {
 	public static String INT_TO_POINTER_FUNCTION = "_int2Pointer";
 	public static String CHAR_TO_INT_FUNCTION = "_char2int";
 	public static String INT_TO_CHAR_FUNCTION = "_int2char";
+	/**
+	 * An abstract function which shall represent a dereference operation, in
+	 * the context where pure first-order logic is applied, when the operation
+	 * possibly results to an undefined value in C language.
+	 */
+	public static String TOTAL_DEREFERENCE_FUNCTION = "_total_deref";
 
 	/* *************************** Instance Fields ************************* */
 	private LibraryExecutorLoader libExeLoader;
@@ -426,6 +432,8 @@ public class CommonEvaluator implements Evaluator {
 	 *            The state where the dereference happens.
 	 * @param process
 	 *            The process name for error report.
+	 * @param referredType
+	 *            The {@link CIVLType} of the dereference operation.
 	 * @param pointer
 	 *            The pointer to be dereferenced.
 	 * @param checkOutput
@@ -448,8 +456,9 @@ public class CommonEvaluator implements Evaluator {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	protected Evaluation dereferenceWorker(CIVLSource source, State state,
-			String process, SymbolicExpression pointer, boolean checkOutput,
-			boolean analysisOnly, boolean strict, boolean muteErrorSideEffects)
+			String process, CIVLType referredType, SymbolicExpression pointer,
+			boolean checkOutput, boolean analysisOnly, boolean strict,
+			boolean muteErrorSideEffects)
 			throws UnsatisfiablePathConditionException {
 		boolean throwPCException = false;
 		SymbolicExpression deref;
@@ -461,8 +470,8 @@ public class CommonEvaluator implements Evaluator {
 		// the unary * operator are a null pointer, an address
 		// inappropriately aligned for the type of object pointed to, and
 		// the address of an object after the end of its lifetime.
-		deref = dereferenceWorkerErrorChecking(state, process, pointer,
-				muteErrorSideEffects, source);
+		deref = dereferenceWorkerErrorChecking(state, process, referredType,
+				pointer, muteErrorSideEffects, source);
 		assert deref == null || muteErrorSideEffects;
 		if (deref != null)
 			return new Evaluation(state, deref);
@@ -502,11 +511,15 @@ public class CommonEvaluator implements Evaluator {
 			try {
 				deref = universe.dereference(variableValue, symRef);
 			} catch (SARLException e) {
-				errorLogger.logSimpleError(source, state, process,
-						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.DEREFERENCE,
-						"Illegal pointer dereference: " + e.getMessage() + "\n"
-								+ symbolicAnalyzer.stateInformation(state));
+				if (muteErrorSideEffects) {
+					deref = totalDereferenceFunction(referredType, pointer);
+				} else
+					errorLogger.logSimpleError(source, state, process,
+							symbolicAnalyzer.stateInformation(state),
+							ErrorKind.DEREFERENCE,
+							"Illegal pointer dereference: " + e.getMessage()
+									+ "\n"
+									+ symbolicAnalyzer.stateInformation(state));
 				throwPCException = true;
 			}
 		}
@@ -552,7 +565,7 @@ public class CommonEvaluator implements Evaluator {
 	 *             one of the error cases.
 	 */
 	private SymbolicExpression dereferenceWorkerErrorChecking(State state,
-			String process, SymbolicExpression pointer,
+			String process, CIVLType referredType, SymbolicExpression pointer,
 			boolean muteErrorSideEffects, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		boolean throwPCException = false;
@@ -595,16 +608,39 @@ public class CommonEvaluator implements Evaluator {
 				throwPCException = true;
 			}
 		}
-		if (throwPCException && muteErrorSideEffects) {
-			CIVLType objType = symbolicAnalyzer.civlTypeOfObjByPointer(source,
-					state, pointer);
-
-			return modelFactory
-					.undefinedValue(objType.getDynamicType(universe));
-		}
+		if (throwPCException && muteErrorSideEffects)
+			return totalDereferenceFunction(referredType, pointer);
 		if (throwPCException)
 			throw new UnsatisfiablePathConditionException();
 		return null;
+	}
+
+	/**
+	 * <p>
+	 * <strong>Pre-condition:</strong> Dereferencing the given pointer results
+	 * an undefined value.
+	 * </p>
+	 * 
+	 * <p>
+	 * Creates an abstract function to represent a dereference operation, which
+	 * may results an undefined value in C language.
+	 * </p>
+	 * 
+	 * @param referredType
+	 *            The {@link CIVLType} of the dereferenced object
+	 * @param pointer
+	 *            The pointer which cannot be illegally dereferenced.
+	 * @return An abstract function representing a pointer dereference.
+	 */
+	private SymbolicExpression totalDereferenceFunction(CIVLType referredType,
+			SymbolicExpression pointer) {
+		SymbolicExpression totoalFuction = universe.symbolicConstant(
+				universe.stringObject(TOTAL_DEREFERENCE_FUNCTION),
+				universe.functionType(
+						Arrays.asList(typeFactory.pointerSymbolicType()),
+						referredType.getDynamicType(universe)));
+
+		return universe.apply(totoalFuction, Arrays.asList(pointer));
 	}
 
 	/**
@@ -1141,9 +1177,10 @@ public class CommonEvaluator implements Evaluator {
 			String process, DereferenceExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.pointer());
+		CIVLType referredType = expression.getExpressionType();
 
 		return dereference(expression.pointer().getSource(), eval.state,
-				process, eval.value, true, true);
+				process, referredType, eval.value, true, true);
 	}
 
 	/**
@@ -3775,12 +3812,13 @@ public class CommonEvaluator implements Evaluator {
 
 	@Override
 	public Evaluation dereference(CIVLSource source, State state,
-			String process, SymbolicExpression pointer, boolean checkOutput,
-			boolean strict) throws UnsatisfiablePathConditionException {
+			String process, CIVLType referredType, SymbolicExpression pointer,
+			boolean checkOutput, boolean strict)
+			throws UnsatisfiablePathConditionException {
 		boolean muteErrorSideEffects = false; // report error side effects
 
-		return dereferenceWorker(source, state, process, pointer, checkOutput,
-				false, strict, muteErrorSideEffects);
+		return dereferenceWorker(source, state, process, referredType, pointer,
+				checkOutput, false, strict, muteErrorSideEffects);
 	}
 
 	/**
@@ -3826,8 +3864,9 @@ public class CommonEvaluator implements Evaluator {
 						.parentPointer(charPointer);
 				SymbolicExpression charArray;
 
-				eval = dereference(source, state, process, pointerCharArray,
-						false, true);
+				eval = dereference(source, state, process,
+						typeFactory.incompleteArrayType(typeFactory.charType()),
+						pointerCharArray, false, true);
 				state = eval.state;
 				charArray = eval.value;
 				originalArray = charArray;
@@ -3835,8 +3874,8 @@ public class CommonEvaluator implements Evaluator {
 						((ArrayElementReference) ref).getIndex());
 
 			} else {
-				eval = dereference(source, state, process, charPointer, false,
-						true);
+				eval = dereference(source, state, process,
+						typeFactory.charType(), charPointer, false, true);
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
@@ -3924,7 +3963,8 @@ public class CommonEvaluator implements Evaluator {
 			SymbolicExpression arrayReference = symbolicUtil
 					.parentPointer(charPointer);
 			NumericExpression indexExpr = arrayEltRef.getIndex();
-			Evaluation eval = this.dereference(source, state, process,
+			Evaluation eval = dereference(source, state, process,
+					typeFactory.incompleteArrayType(typeFactory.charType()),
 					arrayReference, false, true);
 			int index;
 
@@ -4092,9 +4132,8 @@ public class CommonEvaluator implements Evaluator {
 						"Operands of pointer subtraction point to different heap obejcts");
 			}
 			// Get array by dereferencing array pointer
-			Evaluation eval = dereferenceWorker(expression.getSource(), state,
-					process, arrayPtr, false, false, true, true);
-			SymbolicType arrayType = eval.value.type();
+			SymbolicType arrayType = symbolicAnalyzer.dynamicTypeOfObjByPointer(
+					expression.getSource(), state, arrayPtr);
 
 			assert arrayType != null
 					&& arrayType.typeKind() == SymbolicTypeKind.ARRAY
@@ -4114,8 +4153,7 @@ public class CommonEvaluator implements Evaluator {
 				rightPos = universe.add(rightPos,
 						universe.multiply(rightIdx, sliceSizes));
 			}
-			return new Evaluation(eval.state,
-					universe.subtract(leftPos, rightPos));
+			return new Evaluation(state, universe.subtract(leftPos, rightPos));
 		}
 	}
 
@@ -4146,8 +4184,8 @@ public class CommonEvaluator implements Evaluator {
 					((SubscriptExpression) operand).index());
 			index = (NumericExpression) result.value;
 			result = dereference(operand.getSource(), state,
-					state.getProcessState(pid).name(), arrayPointer, false,
-					true);
+					state.getProcessState(pid).name(),
+					arrayExpr.getExpressionType(), arrayPointer, false, true);
 			array = result.value;
 			arrayType = (SymbolicArrayType) array.type();
 			if (array.type() == null)

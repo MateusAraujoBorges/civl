@@ -8,6 +8,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -47,12 +48,13 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 
 	@Override
 	public Evaluation dereference(CIVLSource source, State state,
-			String process, SymbolicExpression pointer, boolean checkOutput,
-			boolean strict) throws UnsatisfiablePathConditionException {
+			String process, CIVLType referredType, SymbolicExpression pointer,
+			boolean checkOutput, boolean strict)
+			throws UnsatisfiablePathConditionException {
 		boolean muteErrorSideEffects = true; // mute error side effects
 
-		return dereferenceWorker(source, state, process, pointer, checkOutput,
-				false, strict, muteErrorSideEffects);
+		return dereferenceWorker(source, state, process, referredType, pointer,
+				checkOutput, false, strict, muteErrorSideEffects);
 	}
 
 	@Override
@@ -81,9 +83,10 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 	}
 
 	@Override
-	public Pair<Evaluation, NumericExpression[]> arrayElementReferenceAdd(State state,
-			int pid, SymbolicExpression ptr, NumericExpression offset,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
+	public Pair<Evaluation, NumericExpression[]> arrayElementReferenceAdd(
+			State state, int pid, SymbolicExpression ptr,
+			NumericExpression offset, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
 		SymbolicExpression newPtr = symbolicUtil.makePointer(ptr,
 				symbolicAnalyzer.getLeafNodeReference(state, ptr, source));
 

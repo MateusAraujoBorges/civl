@@ -20,6 +20,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
@@ -273,11 +274,13 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		tagExpr = arguments.get(2);
 		commHandle = evaluator.evaluate(state, pid, commHandleExpr).value;
 		comm = evaluator.dereference(commHandleExpr.getSource(), state, process,
+				typeFactory.systemType(ModelConfiguration.COMM_TYPE),
 				commHandle, false, true).value;
 		dest = this.universe.tupleRead(comm, zeroObject);
 		gcommHandle = this.universe.tupleRead(comm, oneObject);
 		gcomm = evaluator.dereference(commHandleExpr.getSource(), state,
-				process, gcommHandle, false, true).value;
+				process, typeFactory.systemType(ModelConfiguration.GCOMM_TYPE),
+				gcommHandle, false, true).value;
 		assert (dest instanceof NumericExpression) : "Argument of destination of $comm_dequeue() should be a numeric type.\n";
 		intDest = ((IntegerNumber) reasoner
 				.extractNumber((NumericExpression) dest)).intValue();

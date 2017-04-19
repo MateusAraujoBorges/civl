@@ -22,7 +22,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 
 /**
  * Implementation of State based on the Immutable Pattern. This class is not
- * entirely immutable; it has certain fields such as {@link #onStack} and
+ * entirely immutable; it has certain fields such as {@link #stackPosition} and
  * {@link #depth} used by the depth first search algorithm which can be
  * modified. But it has an "observationally immutable core" consisting of the
  * path condition, dynamic scopes, and process states. While these can also
@@ -148,7 +148,7 @@ public class ImmutableState implements State {
 	/**
 	 * Whether this state is on the DFS search stack.
 	 */
-	private boolean onStack = false;
+	private int stackPosition = -1;
 
 	/**
 	 * The iterable object over the process states, created once and cached here
@@ -195,7 +195,7 @@ public class ImmutableState implements State {
 	 * True iff all successors resulting from the enabled transitions have been
 	 * visited during the search.
 	 */
-	private boolean allSuccessorsVisited = false;
+	private boolean fullyExpanded = false;
 
 	int[] collectibleCounts;
 
@@ -876,8 +876,8 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public boolean onStack() {
-		return onStack;
+	public int stackPosition() {
+		return stackPosition;
 	}
 
 	@Override
@@ -931,8 +931,8 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public void setOnStack(boolean onStack) {
-		this.onStack = onStack;
+	public void setStackPosition(int stackIndex) {
+		this.stackPosition = stackIndex;
 	}
 
 	@Override
@@ -1047,13 +1047,13 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public boolean allSuccessorsVisited() {
-		return allSuccessorsVisited;
+	public boolean fullyExpanded() {
+		return fullyExpanded;
 	}
 
 	@Override
-	public void setAllSuccessorsVisited(boolean value) {
-		this.allSuccessorsVisited = value;
+	public void setFullyExpanded(boolean value) {
+		this.fullyExpanded = value;
 	}
 
 	@Override

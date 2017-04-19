@@ -207,8 +207,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 									source, state, null, pointer));
 
 		Evaluation havocEval;
-		CIVLType objType = symbolicAnalyzer.civlTypeOfObjByPointer(source, state,
-				pointer);
+		CIVLType objType = symbolicAnalyzer.civlTypeOfObjByPointer(source,
+				state, pointer);
 		TypeEvaluation teval = evaluator.getDynamicType(state, pid, objType,
 				source, false);
 
@@ -404,12 +404,12 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				SymbolicExpression procPointer, proc;
 				int pidValue;
 
-				eval = evaluator.arrayElementReferenceAdd(state, pid, procsPointer, offSetV,
-						procsSource).left;
+				eval = evaluator.arrayElementReferenceAdd(state, pid,
+						procsPointer, offSetV, procsSource).left;
 				procPointer = eval.value;
 				state = eval.state;
 				eval = evaluator.dereference(procsSource, state, process,
-						procPointer, false, true);
+						typeFactory.processType(), procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
 				pidValue = modelFactory.getProcessId(procsSource, proc);

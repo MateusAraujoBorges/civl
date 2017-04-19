@@ -16,6 +16,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
@@ -781,8 +782,9 @@ public abstract class LibraryComponent {
 		}
 		// here "startPtr" is already updated as the pointer to the common sub
 		// array.
-		eval = evaluator.dereference(source, state, process, startPtr, false,
-				true);
+		eval = evaluator.dereference(source, state, process, symbolicAnalyzer
+				.civlTypeOfObjByPointer(source, state, startPtr), startPtr,
+				false, true);
 		state = eval.state;
 		if (eval.value.type().typeKind().equals(SymbolicTypeKind.ARRAY)) {
 			eval = this.setDataBetween(state, pid, eval.value, arraySlicesSizes,
@@ -833,8 +835,11 @@ public abstract class LibraryComponent {
 
 		// If "count" == 1:
 		if (reasoner.isValid(universe.equals(count, one))) {
-			eval = evaluator.dereference(source, state, process, pointer, true,
-					true);
+			CIVLPointerType ptrType = (CIVLPointerType) pointerExpr
+					.getExpressionType();
+
+			eval = evaluator.dereference(source, state, process,
+					ptrType.baseType(), pointer, true, true);
 			if (eval.value.isNull())
 				reportUndefinedValueError(state, pid,
 						symbolicUtil.getSymRef(pointer).isIdentityReference(),
@@ -860,8 +865,9 @@ public abstract class LibraryComponent {
 				break;
 		}
 		rootPointer = symbolicUtil.makePointer(pointer, symref);
-		eval = evaluator.dereference(source, state, process, rootPointer, false,
-				true);
+		eval = evaluator.dereference(source, state, process, symbolicAnalyzer
+				.civlTypeOfObjByPointer(source, state, rootPointer),
+				rootPointer, false, true);
 		state = eval.state;
 		rootArray = eval.value;
 		if (rootArray.isNull())

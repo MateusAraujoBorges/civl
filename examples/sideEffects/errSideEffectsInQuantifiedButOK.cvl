@@ -1,0 +1,8 @@
+$input int a[10];
+$assume($forall (int i : 0 .. 9) a[i] == 0);
+
+int main() {
+  int * x = (void *)0;
+
+  $assert($forall (int i : 0 .. 10) a[i] == *x || 1);
+}

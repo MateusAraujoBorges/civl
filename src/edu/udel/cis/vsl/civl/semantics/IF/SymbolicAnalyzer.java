@@ -169,7 +169,7 @@ public interface SymbolicAnalyzer {
 	 * Computes the {@link SymbolicType} of the object referring to by the given
 	 * pointer.
 	 * 
-	 * @param soruce
+	 * @param source
 	 *            The source code information related to the symbolic expression
 	 *            for error report if any.
 	 * @param state
@@ -179,7 +179,7 @@ public interface SymbolicAnalyzer {
 	 * @return The {@link SymbolicType} of the object referring to by the given
 	 *         pointer.
 	 */
-	SymbolicType dynamicTypeOfObjByPointer(CIVLSource soruce, State state,
+	SymbolicType dynamicTypeOfObjByPointer(CIVLSource source, State state,
 			SymbolicExpression pointer);
 
 	/**

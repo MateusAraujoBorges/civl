@@ -82,6 +82,24 @@ public class SideEffectsTest {
 				filename("nestedShortCircuitLoopConditions.cvl")));
 	}
 
+	@Test
+	public void errSideEffectInGuard() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				filename("errSideEffectsInGuard.cvl")));
+	}
+
+	@Test
+	public void errSideEffectInQuantified() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				filename("errSideEffectsInQuantified.cvl")));
+	}
+
+	@Test
+	public void errSideEffectInQuantifiedButOK() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				filename("errSideEffectsInQuantifiedButOK.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

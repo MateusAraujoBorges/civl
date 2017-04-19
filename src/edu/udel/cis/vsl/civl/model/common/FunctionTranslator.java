@@ -5749,6 +5749,9 @@ public class FunctionTranslator {
 				case ModelConfiguration.QUEUE_TYPE :
 					modelBuilder.queueType = result;
 					break;
+				case ModelConfiguration.PTHREAD_THREAD_TYPE :
+					typeFactory.addSystemType(tag, result);
+					break;
 				case ModelConfiguration.PTHREAD_POOL :
 				case ModelConfiguration.PTHREAD_GPOOL :
 					structType.setHandleObjectType(true);
@@ -5807,14 +5810,22 @@ public class FunctionTranslator {
 				case ModelConfiguration.GCOLLATOR_TYPE :
 					typeFactory.addSystemType(tag, result);
 					structType.setHandleObjectType(true);
-					modelBuilder.gcollectCheckerType = result;
+					modelBuilder.gcollatorType = result;
 					modelBuilder.handledObjectTypes.add(result);
 					break;
 				case ModelConfiguration.COLLATOR_TYPE :
 					typeFactory.addSystemType(tag, result);
 					structType.setHandleObjectType(true);
-					modelBuilder.collectCheckerType = result;
+					modelBuilder.collatorType = result;
 					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.GCOLLATE_STATE :
+					typeFactory.addSystemType(tag, result);
+					structType.setHandleObjectType(true);
+					modelBuilder.handledObjectTypes.add(result);
+					break;
+				case ModelConfiguration.COLLATE_STATE :
+					typeFactory.addSystemType(tag, result);
 					break;
 				default :
 					// TODO: set default case
