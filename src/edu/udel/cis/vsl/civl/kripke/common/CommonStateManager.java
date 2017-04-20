@@ -148,7 +148,7 @@ public class CommonStateManager implements StateManager {
 		this.falseExpr = symbolicAnalyzer.getUniverse().falseExpression();
 		if (config.collectOutputs())
 			this.outputCollector = new OutputCollector(
-					this.enabler.modelFactory.model());
+					this.enabler.modelFactory.model(), this.enabler.universe);
 		ignoredHeapErrors = new HashSet<>(0);
 	}
 
@@ -341,11 +341,12 @@ public class CommonStateManager implements StateManager {
 			config.out().print(state.toString());
 			config.out().print(" -- path condition: ");
 			if (config.showPathConditonAsOneLine())
-				config.out().println(state.getPathCondition());
+				config.out().println(state.getPathCondition(enabler.universe));
 			else
-				config.out().println(
-						this.symbolicAnalyzer.pathconditionToString(null, state,
-								"\t", state.getPathCondition()));
+				config.out()
+						.println(this.symbolicAnalyzer.pathconditionToString(
+								null, state, "\t", state
+										.getPathCondition(enabler.universe)));
 		}
 		numProcs = state.numLiveProcs();
 		Utils.biggerAndSet(maxProcs, numProcs);

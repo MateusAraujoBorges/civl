@@ -135,7 +135,7 @@ public class AbsCallAnalyzer extends CommonCodeAnalyzer
 		AbsStatus status = this.result.get(statement);
 
 		if (status != null) {
-			BooleanExpression pathCondition = state.getPathCondition();
+			BooleanExpression pathCondition = state.getPathCondition(universe);
 			NumericExpression argValue = (NumericExpression) argumentValues[0];
 
 			this.analyzeZero(status, pathCondition, argValue);

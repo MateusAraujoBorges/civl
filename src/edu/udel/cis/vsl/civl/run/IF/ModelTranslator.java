@@ -287,6 +287,8 @@ public class ModelTranslator {
 			}
 		task.addTransformRecord(
 				transformerFactory.getSvcompTransformerRecord(config));
+		task.addTransformRecord(
+				transformerFactory.getLoopContractTransformerRecord());
 		if (config.isEnableMpiContract())
 			task.addTransformRecord(
 					transformerFactory.getContractTransformerRecord(

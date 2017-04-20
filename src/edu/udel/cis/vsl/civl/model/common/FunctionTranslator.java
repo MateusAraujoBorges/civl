@@ -5743,6 +5743,9 @@ public class FunctionTranslator {
 		modelBuilder.typeMap.put(type, result);
 		if (!isSystemType) {
 			switch (tag) {
+				case ModelConfiguration.MEM_TYPE :
+					typeFactory.addSystemType(tag, structType);
+					break;
 				case ModelConfiguration.MESSAGE_TYPE :
 					modelBuilder.messageType = result;
 					break;

@@ -198,7 +198,7 @@ public class QuantifiedExpressionEvaluator
 		int numInputs = arrayType.inputTypes().numTypes();
 		NumericSymbolicConstant[] boundVariables = new NumericSymbolicConstant[numInputs];
 		SymbolicExpression restriction;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 
 		state = typeEval.state;
 		this.boundVariableStack.push(new HashSet<SymbolicConstant>());
@@ -298,7 +298,7 @@ public class QuantifiedExpressionEvaluator
 		restriction = universe.and(restriction, (BooleanExpression) eval.value);
 
 		Evaluation result;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 
 		if (reasoner.valid(universe.not(restriction))
 				.getResultType() == ResultType.YES) {
@@ -313,11 +313,12 @@ public class QuantifiedExpressionEvaluator
 		} else {
 			State stateWithRestriction = stateFactory.addToPathcondition(state,
 					pid, restriction);
-			BooleanExpression context = stateWithRestriction.getPathCondition();
+			BooleanExpression context = stateWithRestriction
+					.getPathCondition(universe);
 			Evaluation quantifiedExpression = evaluate(stateWithRestriction,
 					pid, expression.expression());
 
-			context = quantifiedExpression.state.getPathCondition();
+			context = quantifiedExpression.state.getPathCondition(universe);
 			reasoner = universe.reasoner(context);
 
 			BooleanExpression simplifiedExpression = (BooleanExpression) reasoner
@@ -395,7 +396,7 @@ public class QuantifiedExpressionEvaluator
 	}
 
 	private BooleanExpression getPredicateOnBoundVariables(State state) {
-		BooleanExpression pc = state.getPathCondition();
+		BooleanExpression pc = state.getPathCondition(universe);
 		BooleanExpression context = universe.trueExpression();
 		BooleanExpression[] clauses = symbolicUtil.getConjunctiveClauses(pc);
 
@@ -454,7 +455,7 @@ public class QuantifiedExpressionEvaluator
 
 		state = eval.state;
 		proc = (NumericExpression) eval.value;
-		reasoner = universe.reasoner(state.getPathCondition());
+		reasoner = universe.reasoner(state.getPathCondition(universe));
 
 		Number procNum = reasoner.extractNumber(proc);
 		int procNumVal;

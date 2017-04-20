@@ -4,6 +4,7 @@ import java.io.PrintStream;
 
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
@@ -93,9 +94,11 @@ public interface State {
 	/**
 	 * Returns the path condition.
 	 * 
+	 * @param universe
+	 *            A reference to a {@link SymbolicUniverse}.
 	 * @return the path condition.
 	 */
-	BooleanExpression getPathCondition();
+	BooleanExpression getPathCondition(SymbolicUniverse universe);
 
 	/**
 	 * Has this state been seen before in the depth-first search? This is simply

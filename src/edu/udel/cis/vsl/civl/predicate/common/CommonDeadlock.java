@@ -5,6 +5,7 @@ package edu.udel.cis.vsl.civl.predicate.common;
 
 import static edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType.MAYBE;
 import static edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType.YES;
+
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.Certainty;
@@ -41,8 +42,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public class CommonDeadlock extends CommonCIVLStatePredicate implements
-		Deadlock {
+public class CommonDeadlock extends CommonCIVLStatePredicate
+		implements
+			Deadlock {
 
 	private Enabler enabler;
 
@@ -132,7 +134,7 @@ public class CommonDeadlock extends CommonCIVLStatePredicate implements
 					// state, pid, waitExpr).value;
 					// int pidValue = modelFactory.getProcessId(
 					// waitExpr.getSource(), joinProcess);
-					// nonGuardExplanation = "\n  Waiting on process "
+					// nonGuardExplanation = "\n Waiting on process "
 					// + pidValue;
 					// }
 					if (predicate == null) {
@@ -174,7 +176,7 @@ public class CommonDeadlock extends CommonCIVLStatePredicate implements
 			return false;
 
 		BooleanExpression predicate = falseExpr;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		CIVLSource source = null; // location of first non-term proc
 
 		for (ProcessState p : state.getProcessStates()) {
@@ -212,7 +214,7 @@ public class CommonDeadlock extends CommonCIVLStatePredicate implements
 				certainty = Certainty.PROVEABLE;
 				message = "A deadlock is possible:\n";
 			}
-			message += "  Path condition: " + state.getPathCondition()
+			message += "  Path condition: " + state.getPathCondition(universe)
 					+ "\n  Enabling predicate: " + predicate + "\n";
 			message += explanationWork(state);
 			violation = new CIVLExecutionException(ErrorKind.DEADLOCK,

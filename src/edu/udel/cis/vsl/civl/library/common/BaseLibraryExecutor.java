@@ -110,7 +110,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 		ValidityResult valid;
 		ResultType resultType;
 
-		reasoner = universe.reasoner(state.getPathCondition());
+		reasoner = universe.reasoner(state.getPathCondition(universe));
 		valid = reasoner.valid(assertValue);
 		resultType = valid.getResultType();
 		// System.out.println(this.symbolicAnalyzer.expressionEvaluation(state,

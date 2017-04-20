@@ -422,7 +422,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
-		reasoner = universe.reasoner(state.getPathCondition());
+		reasoner = universe.reasoner(state.getPathCondition(universe));
 		number = reasoner.extractNumber(source);
 		if (number != null)
 			srcInt = ((IntegerNumber) number).intValue();
@@ -706,7 +706,8 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		nprocs_int = symbolicUtil.extractInt(nprocExpr.getSource(), nprocs);
 		buf = universe.tupleRead(gcomm, threeObject);
 		for (int i = 0; i < nprocs_int; i++) {
-			Reasoner reasoner = universe.reasoner(state.getPathCondition());
+			Reasoner reasoner = universe
+					.reasoner(state.getPathCondition(universe));
 
 			queues = universe.arrayRead(buf, universe.integer(i));
 			for (int j = 0; j < nprocs_int; j++) {
@@ -779,7 +780,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression message = null;
 		NumericExpression numericQueueLength = (NumericExpression) queueLength;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		BooleanExpression isAnyTag = universe.equals(universe.integer(-2), tag);
 		BooleanExpression isSpecTag = universe.lessThanEquals(zero,
 				(NumericExpression) tag);

@@ -43,8 +43,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
  * 
  * @author Ziqing Luo
  */
-public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
-		PotentialDeadlock {
+public class CommonPotentialDeadlock extends CommonCIVLStatePredicate
+		implements
+			PotentialDeadlock {
 
 	private Enabler enabler;
 
@@ -142,7 +143,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 					// state, pid, waitExpr).value;
 					// int pidValue = modelFactory.getProcessId(
 					// waitExpr.getSource(), joinProcess);
-					// nonGuardExplanation = "\n  Waiting on process "
+					// nonGuardExplanation = "\n Waiting on process "
 					// + pidValue;
 					// }
 					if (predicate == null) {
@@ -184,7 +185,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 			return false;
 
 		BooleanExpression predicate = falseExpr;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		CIVLSource source = null; // location of first non-term proc
 
 		for (ProcessState p : state.getProcessStates()) {
@@ -238,7 +239,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate implements
 				certainty = Certainty.PROVEABLE;
 				message = "A potential or absolute deadlock is possible:\n";
 			}
-			message += "  Path condition: " + state.getPathCondition()
+			message += "  Path condition: " + state.getPathCondition(universe)
 					+ "\n  Enabling predicate: " + predicate + "\n";
 			message += explanationWork(state);
 			violation = new CIVLExecutionException(ErrorKind.DEADLOCK,

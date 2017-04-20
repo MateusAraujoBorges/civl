@@ -33,8 +33,9 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
 
-public class LibdomainExecutor extends BaseLibraryExecutor implements
-		LibraryExecutor {
+public class LibdomainExecutor extends BaseLibraryExecutor
+		implements
+			LibraryExecutor {
 
 	public LibdomainExecutor(String name, Executor primaryExecutor,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -54,38 +55,38 @@ public class LibdomainExecutor extends BaseLibraryExecutor implements
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$dimension_of":
-			callEval = execute_dimension_of(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$domain_partition":
-			callEval = execute_domain_partition(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$high_of_regular_range":
-			callEval = execute_high_of_regular_range(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$is_rectangular_domain":
-			callEval = execute_is_rectangular_domain(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$is_regular_range":
-			callEval = execute_is_regular_range(state, pid, process, arguments,
-					argumentValues, source);
-			break;
-		case "$low_of_regular_range":
-			callEval = execute_low_of_regular_range(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$range_of_rectangular_domain":
-			callEval = execute_range_of_rectangular_domain(state, pid, process,
-					arguments, argumentValues, source);
-			break;
-		case "$step_of_regular_range":
-			callEval = execute_step_of_regular_range(state, pid, process,
-					arguments, argumentValues, source);
-			break;
+			case "$dimension_of" :
+				callEval = execute_dimension_of(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$domain_partition" :
+				callEval = execute_domain_partition(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$high_of_regular_range" :
+				callEval = execute_high_of_regular_range(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$is_rectangular_domain" :
+				callEval = execute_is_rectangular_domain(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$is_regular_range" :
+				callEval = execute_is_regular_range(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$low_of_regular_range" :
+				callEval = execute_low_of_regular_range(state, pid, process,
+						arguments, argumentValues, source);
+				break;
+			case "$range_of_rectangular_domain" :
+				callEval = execute_range_of_rectangular_domain(state, pid,
+						process, arguments, argumentValues, source);
+				break;
+			case "$step_of_regular_range" :
+				callEval = execute_step_of_regular_range(state, pid, process,
+						arguments, argumentValues, source);
+				break;
 		}
 		return callEval;
 	}
@@ -99,32 +100,31 @@ public class LibdomainExecutor extends BaseLibraryExecutor implements
 
 	}
 
-	private Evaluation execute_range_of_rectangular_domain(State state,
-			int pid, String process, Expression[] arguments,
+	private Evaluation execute_range_of_rectangular_domain(State state, int pid,
+			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		int index = this.symbolicUtil.extractInt(source,
 				(NumericExpression) argumentValues[1]);
 
-		return new Evaluation(state,
-				this.symbolicUtil.getRangeOfRectangularDomain(
-						argumentValues[0], index));
+		return new Evaluation(state, this.symbolicUtil
+				.getRangeOfRectangularDomain(argumentValues[0], index));
 	}
 
 	private Evaluation execute_is_rectangular_domain(State state, int pid,
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		return new Evaluation(state, universe.bool(this.symbolicUtil
-				.isRectangularDomain(argumentValues[0])));
+		return new Evaluation(state, universe.bool(
+				this.symbolicUtil.isRectangularDomain(argumentValues[0])));
 	}
 
 	private Evaluation execute_is_regular_range(State state, int pid,
 			String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		return new Evaluation(state, universe.bool(this.symbolicUtil
-				.isRegularRange(argumentValues[0])));
+		return new Evaluation(state, universe
+				.bool(this.symbolicUtil.isRegularRange(argumentValues[0])));
 	}
 
 	private Evaluation execute_step_of_regular_range(State state, int pid,
@@ -179,10 +179,10 @@ public class LibdomainExecutor extends BaseLibraryExecutor implements
 		SymbolicExpression domain = argumentValues[0];
 		NumericExpression strategy = (NumericExpression) argumentValues[1];
 		NumericExpression numParts = (NumericExpression) argumentValues[2];
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		IntegerNumber strategy_num = (IntegerNumber) reasoner
-				.extractNumber(strategy), numParts_num = (IntegerNumber) reasoner
-				.extractNumber(numParts);
+				.extractNumber(strategy),
+				numParts_num = (IntegerNumber) reasoner.extractNumber(numParts);
 		int strategy_int, numParts_int;
 		List<SymbolicExpression> subDomains = null;
 		SymbolicTupleType resultType;
@@ -195,29 +195,26 @@ public class LibdomainExecutor extends BaseLibraryExecutor implements
 			throw new UnsatisfiablePathConditionException();
 		}
 		if (numParts_num == null) {
-			this.errorLogger
-					.logSimpleError(source, state, process,
-							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.OTHER,
-							"$domain_partition requires a concrete number of partitions argument");
+			this.errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
+					"$domain_partition requires a concrete number of partitions argument");
 			throw new UnsatisfiablePathConditionException();
 		}
 		strategy_int = strategy_num.intValue();
 		numParts_int = numParts_num.intValue();
 		switch (strategy_int) {
-		default:
-		case ModelConfiguration.DECOMP_ROUND_ROBIN:
-			subDomains = this.domainPartition_round_robin(domain, numParts_int);
-			break;
+			default :
+			case ModelConfiguration.DECOMP_ROUND_ROBIN :
+				subDomains = this.domainPartition_round_robin(domain,
+						numParts_int);
+				break;
 		}
 		resultType = universe.tupleType(
 				universe.stringObject("$domain_decomposition"),
 				Arrays.asList(universe.integerType(),
 						universe.arrayType(domain.type(), numParts)));
-		result = universe.tuple(
-				resultType,
-				Arrays.asList(numParts,
-						universe.array(domain.type(), subDomains)));
+		result = universe.tuple(resultType, Arrays.asList(numParts,
+				universe.array(domain.type(), subDomains)));
 		return new Evaluation(state, result);
 	}
 
@@ -253,8 +250,8 @@ public class LibdomainExecutor extends BaseLibraryExecutor implements
 			SymbolicExpression myDomain, myLiterals;
 			SymbolicType domainElementType = symbolicUtil
 					.getDomainElementType(domain);
-			NumericExpression dim = (NumericExpression) universe.tupleRead(
-					domain, zeroObject);
+			NumericExpression dim = (NumericExpression) universe
+					.tupleRead(domain, zeroObject);
 
 			while (domIter.hasNext()) {
 				SymbolicExpression element;

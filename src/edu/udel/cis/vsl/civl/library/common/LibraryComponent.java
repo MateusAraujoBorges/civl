@@ -308,7 +308,7 @@ public abstract class LibraryComponent {
 			String process, SymbolicExpression operands[], CIVLOperator CIVLOp,
 			NumericExpression count, SymbolicType elementType,
 			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		Number concCount = reasoner.extractNumber(count);
 		SymbolicExpression operand0 = operands[0];
 		SymbolicExpression operand1 = operands[1];
@@ -698,7 +698,7 @@ public abstract class LibraryComponent {
 		SymbolicExpression startPtr, endPtr;
 		Evaluation eval;
 		Pair<Evaluation, NumericExpression[]> eval_and_slices;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ReferenceExpression symref;
 		BooleanExpression claim;
 		ResultType resultType;
@@ -831,7 +831,7 @@ public abstract class LibraryComponent {
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		ReferenceExpression symref;
 		Evaluation eval;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 
 		// If "count" == 1:
 		if (reasoner.isValid(universe.equals(count, one))) {
@@ -1014,7 +1014,7 @@ public abstract class LibraryComponent {
 			SymbolicExpression targetArray, SymbolicExpression dataArray,
 			NumericExpression index, CIVLSource source) {
 		NumericExpression dataLength = universe.length(dataArray);
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		Number concreteDataLength = reasoner.extractNumber(dataLength);
 
 		// If the data array has a non-concrete length, use array lambda:
@@ -1080,7 +1080,7 @@ public abstract class LibraryComponent {
 		IntegerNumber flattenLength;
 		IntegerNumber dimensionalSpace;
 		SymbolicType elementType;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		int dim, numElements;
 
 		assert (typeTemplate.typeKind().equals(SymbolicTypeKind.ARRAY));
@@ -1179,7 +1179,7 @@ public abstract class LibraryComponent {
 			SymbolicExpression array, ArrayMeasurement arrayMeasurement,
 			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
 		Queue<SymbolicExpression> subTreeQueue = new LinkedList<>();
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		SymbolicType baseType = arrayMeasurement.baseType;
 		NumericExpression extents[] = arrayMeasurement.extents;
 		NumericExpression sliceSizes[] = arrayMeasurement.sliceSizes;
@@ -1276,7 +1276,7 @@ public abstract class LibraryComponent {
 		NumericExpression dataSize;
 		NumericExpression i;
 		BooleanExpression claim;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 
 		dataSize = universe.length(dataSequence);
 		// Direct assignment conditions:
@@ -1485,7 +1485,7 @@ public abstract class LibraryComponent {
 		SymbolicExpression newPointer;
 		NumericExpression sizeofObj;
 		BooleanExpression query;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType resultType;
 		// Termination:
 		boolean term = false;

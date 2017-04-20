@@ -13,6 +13,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
+import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -197,11 +198,13 @@ public class ImmutableProcessState implements ProcessState {
 	 */
 	void makeCanonic(SymbolicUniverse universe) {
 		if (!canonic) {
-			for (int i = 0; i < partialPathConditions.length; i++)
-				partialPathConditions[i] = (BooleanExpression) universe
-						.canonic(partialPathConditions[i]);
-			for (int i = 0; i < writeSets.length; i++)
-				writeSets[i] = writeSets[i].canonicalize(universe);
+			if (partialPathConditions != null)
+				for (int i = 0; i < partialPathConditions.length; i++)
+					partialPathConditions[i] = (BooleanExpression) universe
+							.canonic(partialPathConditions[i]);
+			if (writeSets != null)
+				for (int i = 0; i < writeSets.length; i++)
+					writeSets[i] = writeSets[i].canonicalize(universe);
 		}
 		canonic = true;
 	}
@@ -361,22 +364,26 @@ public class ImmutableProcessState implements ProcessState {
 						newScope);
 			}
 		}
+		DynamicWriteSet newWriteSets[] = null;
+		BooleanExpression[] ppcsNew = null;
 
-		DynamicWriteSet newWriteSets[] = new DynamicWriteSet[writeSets.length];
-		BooleanExpression[] ppcsNew = new BooleanExpression[partialPathConditions.length];
-
-		for (int j = 0; j < writeSets.length; j++) {
-			newWriteSets[j] = writeSets[j].apply(substituter);
-			if (newWriteSets[j] != writeSets[j])
-				change = true;
+		if (writeSets != null) {
+			newWriteSets = new DynamicWriteSet[writeSets.length];
+			for (int j = 0; j < writeSets.length; j++) {
+				newWriteSets[j] = writeSets[j].apply(substituter);
+				if (newWriteSets[j] != writeSets[j])
+					change = true;
+			}
 		}
-		for (int j = 0; j < ppcsNew.length; j++) {
-			ppcsNew[j] = (BooleanExpression) substituter
-					.apply(partialPathConditions[j]);
-			if (ppcsNew[j] != partialPathConditions[j])
-				change = true;
+		if (partialPathConditions != null) {
+			ppcsNew = new BooleanExpression[partialPathConditions.length];
+			for (int j = 0; j < ppcsNew.length; j++) {
+				ppcsNew[j] = (BooleanExpression) substituter
+						.apply(partialPathConditions[j]);
+				if (ppcsNew[j] != partialPathConditions[j])
+					change = true;
+			}
 		}
-
 		return change
 				? new ImmutableProcessState(pid, newStack, ppcsNew,
 						newWriteSets, atomicCount, selfDestructable)
@@ -427,6 +434,47 @@ public class ImmutableProcessState implements ProcessState {
 			return new DynamicWriteSet[0];
 		else
 			return writeSets;
+	}
+
+	/**
+	 * @param reasoner
+	 *            A reference to a {@link Reasoner}
+	 * @return An {@link ImmutableProcessState} whose partial path condition
+	 *         stack and write set stack has been simplified.
+	 */
+	ImmutableProcessState simplify(Reasoner reasoner) {
+		boolean change = false;
+		BooleanExpression ppcNew[] = null;
+		DynamicWriteSet writeSetsNew[] = null;
+
+		if (partialPathConditions != null) {
+			ppcNew = Arrays.copyOf(partialPathConditions,
+					partialPathConditions.length);
+			for (int i = 0; i < partialPathConditions.length; i++) {
+				BooleanExpression tmp = reasoner
+						.simplify(partialPathConditions[i]);
+
+				if (tmp != partialPathConditions[i]) {
+					ppcNew[i] = tmp;
+					change = true;
+				}
+			}
+		}
+		if (writeSets != null) {
+			writeSetsNew = Arrays.copyOf(writeSets, writeSets.length);
+			for (int i = 0; i < writeSets.length; i++) {
+				DynamicWriteSet tmp = writeSets[i].simplify(reasoner);
+
+				if (tmp != writeSets[i]) {
+					writeSetsNew[i] = tmp;
+					change = true;
+				}
+			}
+		}
+		if (change)
+			return new ImmutableProcessState(pid, callStack, ppcNew,
+					writeSetsNew, atomicCount, selfDestructable);
+		return this;
 	}
 
 	/* ********************* Methods from ProcessState ********************* */
@@ -583,10 +631,10 @@ public class ImmutableProcessState implements ProcessState {
 				return false;
 			if (hashed && that.hashed && hashCode != that.hashCode)
 				return false;
-			if (!Arrays.equals(partialPathConditions,
-					that.partialPathConditions))
+			if (partialPathConditions != null && !Arrays
+					.equals(partialPathConditions, that.partialPathConditions))
 				return false;
-			if (!Arrays.equals(writeSets, that.writeSets))
+			if (writeSets != null && !Arrays.equals(writeSets, that.writeSets))
 				return false;
 			if (!Arrays.equals(callStack, that.callStack))
 				return false;
@@ -604,8 +652,10 @@ public class ImmutableProcessState implements ProcessState {
 		if (!hashed) {
 			hashCode = Arrays.hashCode(callStack)
 					^ (48729 * (pid ^ (31 * this.atomicCount)));
-			hashCode ^= Arrays.hashCode(partialPathConditions)
-					^ Arrays.hashCode(writeSets);
+			if (partialPathConditions != null)
+				hashCode ^= Arrays.hashCode(partialPathConditions);
+			if (writeSets != null)
+				hashCode ^= Arrays.hashCode(writeSets);
 			hashed = true;
 		}
 		return hashCode;

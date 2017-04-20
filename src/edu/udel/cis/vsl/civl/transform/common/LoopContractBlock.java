@@ -1,8 +1,8 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
@@ -38,7 +38,7 @@ class LoopContractBlock {
 	/**
 	 * A set of assigned memory locations specified in this loop contract block.
 	 */
-	private Set<ExpressionNode> assignSet;
+	private List<ExpressionNode> assignClauses;
 
 	/**
 	 * A reference to the associated {@link LoopNode}
@@ -48,6 +48,8 @@ class LoopContractBlock {
 	LoopContractBlock(LoopNode loop) {
 		assert loop != null;
 		this.loop = loop;
+		this.invariants = new LinkedList<>();
+		this.assignClauses = new LinkedList<>();
 		this.parseLoopContracts(loop);
 	}
 
@@ -67,7 +69,7 @@ class LoopContractBlock {
 	 */
 	void addLoopAssigns(SequenceNode<ExpressionNode> writeSets) {
 		for (ExpressionNode writeSet : writeSets)
-			this.assignSet.add(writeSet);
+			this.assignClauses.add(writeSet);
 	}
 
 	/**
@@ -102,7 +104,7 @@ class LoopContractBlock {
 	 * @return
 	 */
 	Iterable<ExpressionNode> getLoopAssignSet() {
-		return assignSet;
+		return assignClauses;
 	}
 
 	/**

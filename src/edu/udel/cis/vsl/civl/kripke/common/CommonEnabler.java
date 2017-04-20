@@ -219,7 +219,7 @@ public abstract class CommonEnabler implements Enabler {
 		Pair<BooleanExpression, TransitionSet> transitionsAssumption;
 		List<Transition> transitions = new ArrayList<>();
 
-		if (state.getPathCondition().isFalse())
+		if (state.getPathCondition(universe).isFalse())
 			// return empty set of transitions.
 			return Semantics.newTransitionSet(state, true);
 		// return resumable atomic transitions.
@@ -556,7 +556,7 @@ public abstract class CommonEnabler implements Enabler {
 				theOtherStmt = pLocation.getOutgoing(1);
 		BooleanExpression oneGuard = getGuard(oneStmt, pid, state);
 		BooleanExpression theOtherGuard = universe.not(oneGuard);
-		BooleanExpression pathCondition = state.getPathCondition();
+		BooleanExpression pathCondition = state.getPathCondition(universe);
 		Reasoner reasoner = null; // will be created when necessary
 		LinkedList<Transition> transitions = new LinkedList<>();
 
@@ -617,8 +617,8 @@ public abstract class CommonEnabler implements Enabler {
 
 			// if guard is true, keeps the path condition and enables the
 			// transition of statements:
-			if (guardValue.isTrue()
-					|| (reasoner = universe.reasoner(state.getPathCondition()))
+			if (guardValue.isTrue() || (reasoner = universe
+					.reasoner(state.getPathCondition(universe)))
 							.isValid(guardValue)) {
 				List<Transition> localTransitions = enabledTransitionsOfStatement(
 						state, statement, trueExpression, pidInAtomic, false,
@@ -627,7 +627,7 @@ public abstract class CommonEnabler implements Enabler {
 				return new Pair<>(null, Semantics.newTransitionSet(state,
 						localTransitions, false));
 			} else if (guardValue.isFalse() || (reasoner = reasoner == null
-					? universe.reasoner(state.getPathCondition())
+					? universe.reasoner(state.getPathCondition(universe))
 					: reasoner).isValid(notGuardValue))
 				return null;
 			// The guard is satisfiable, returns a pair:
@@ -747,7 +747,7 @@ public abstract class CommonEnabler implements Enabler {
 				modelFactory.dereferenceExpression(csSource,
 						modelFactory.dotExpression(csSource, colStateExpr, 1)),
 				1);
-		BooleanExpression oldPC = state.getPathCondition();
+		BooleanExpression oldPC = state.getPathCondition(universe);
 
 		eval = this.evaluator.evaluate(state, pid, colStateExpr);
 		state = eval.state;
@@ -793,7 +793,8 @@ public abstract class CommonEnabler implements Enabler {
 			// TODO: is there any way to only conjunct with new clauses in
 			// colState's PC (instead of the whole PC)?
 			result.add(Semantics.newTransition(pid,
-					newColState.getPathCondition(), assign, atomicLockAction));
+					newColState.getPathCondition(universe), assign,
+					atomicLockAction));
 		}
 		return result;
 	}
@@ -912,7 +913,7 @@ public abstract class CommonEnabler implements Enabler {
 			throws UnsatisfiablePathConditionException {
 		final int IDLE = 0;
 		Evaluation eval;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		NumericExpression idle = universe.integer(IDLE);
 		List<Pair<LHSExpression, List<Expression>>> colStateRefAssignPairs = new ArrayList<>();
 		LHSExpression stateQueueExpr = modelFactory.dotExpression(source,
@@ -1058,7 +1059,7 @@ public abstract class CommonEnabler implements Enabler {
 		if (guard.isTrue())
 			return trueExpression;
 
-		BooleanExpression pathCondition = state.getPathCondition();
+		BooleanExpression pathCondition = state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(pathCondition);
 
 		if (reasoner.isValid(universe.not(guard)))

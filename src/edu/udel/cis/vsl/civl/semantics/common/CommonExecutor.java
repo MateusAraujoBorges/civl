@@ -417,7 +417,7 @@ public class CommonExecutor implements Executor {
 				statement.getStaticElementType());
 		state = eval.state;
 		elementSize = (NumericExpression) eval.value;
-		pathCondition = state.getPathCondition();
+		pathCondition = state.getPathCondition(universe);
 		if (!this.civlConfig.svcomp()) {
 			claim = universe.divides(elementSize, mallocSize);
 			validity = universe.reasoner(pathCondition).valid(claim)
@@ -771,7 +771,7 @@ public class CommonExecutor implements Executor {
 		// TODO: why is dim -1 sometimes?
 		int dim = parFor.dimension();
 		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		IntegerNumber number_domSize;
 		VariableExpression parProcsVar = parFor.parProcsVar();
 

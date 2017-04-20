@@ -57,6 +57,11 @@ public class TransformerFactory {
 
 	private DirectingTransformer directingTransformer;
 
+	/**
+	 * A cache for a created {@link LoopContractTransformer}
+	 */
+	private LoopContractTransformer loopContractTransformer = null;
+
 	public TransformerFactory(ASTFactory astFactory) {
 		this.astFactory = astFactory;
 	}
@@ -84,6 +89,23 @@ public class TransformerFactory {
 					contractTransformer = new ContractTransformer(astFactory,
 							targetFunction);
 				return contractTransformer;
+			}
+		};
+	}
+
+	/**
+	 * @return A {@link TransformRecord} for loop contract transformer
+	 */
+	public TransformRecord getLoopContractTransformerRecord() {
+		return new TransformRecord(LoopContractTransformer.CODE,
+				LoopContractTransformer.LONG_NAME,
+				LoopContractTransformer.SHORT_DESCRIPTION) {
+			@Override
+			public Transformer create(ASTFactory astFactory) {
+				if (loopContractTransformer == null)
+					loopContractTransformer = new LoopContractTransformer(
+							astFactory);
+				return loopContractTransformer;
 			}
 		};
 	}

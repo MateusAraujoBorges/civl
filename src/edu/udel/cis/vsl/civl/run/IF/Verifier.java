@@ -393,7 +393,8 @@ public class Verifier extends Player {
 					violationFound = true;
 					config.setQuiet(civlConfig.isQuiet());
 					CIVLLogEntry entry = new CIVLLogEntry(civlConfig, config,
-							this.predicate.getUnreportedViolation());
+							this.predicate.getUnreportedViolation(),
+							evaluator.universe());
 					log.report(entry); // may throw ExcessiveErrorException
 				}
 			} catch (ExcessiveErrorException e) {

@@ -414,9 +414,91 @@ public class ImmutableStateFactory implements StateFactory {
 			for (int i = 0; i < numDyscopes; i++)
 				newScopes[i] = theState.getDyscope(i)
 						.updateHeapPointers(oldToNewHeapMemUnits, universe);
+			// update heap pointers in write set and partial path conditions:
+			theState = applyToProcessStates(theState,
+					universe.mapSubstituter(oldToNewHeapMemUnits));
 			theState = theState.setScopes(newScopes);
 			return theState;
 		}
+	}
+
+	// TODO: polish
+	/**
+	 * Apply an {@link UnaryOperator} to symbolic expressions in partial path
+	 * conditions and write sets in {@link ProcessState}s of the given state.
+	 * 
+	 * @param state
+	 *            The state where heap pointers are collected.
+	 * @param substituteMap
+	 *            A unary operator which will be applied to partial path
+	 *            condition stacks and write set stacks of processes in the
+	 *            given state.
+	 * @return A new state in which heap pointers in process states are
+	 *         collected.
+	 */
+	private ImmutableState applyToProcessStates(ImmutableState state,
+			UnaryOperator<SymbolicExpression> substituter) {
+		ImmutableProcessState[] newProcs = state.copyProcessStates();
+		ImmutableProcessState newProcesses[] = new ImmutableProcessState[state
+				.numProcs()];
+		boolean procChanged = false;
+
+		for (int i = 0; i < newProcs.length; i++) {
+			if (state.getProcessState(i) == null) {
+				newProcesses[i] = null;
+				continue;
+			} else
+				newProcesses[i] = state.getProcessState(i);
+
+			BooleanExpression[] ppcs = state.copyOfPartialPathConditionStack(i);
+			DynamicWriteSet[] writeSets = state.copyOfWriteSetStack(i);
+			// the most-left two bits marks if write set and ppc stacks are
+			// changed:
+			byte changes = 0;
+
+			for (int j = 0; j < ppcs.length; j++) {
+				BooleanExpression newPpc = (BooleanExpression) substituter
+						.apply(ppcs[j]);
+
+				if (newPpc == ppcs[j])
+					continue;
+				ppcs[j] = newPpc;
+				changes |= 1;// set left most bit
+			}
+			// If ppc stack is not changed, not refer to an new array instance:
+			ppcs = changes == 1
+					? ppcs
+					: newProcesses[i].getPartialPathConditions();
+			for (int j = 0; j < writeSets.length; j++) {
+				DynamicWriteSet newSet = writeSets[j].apply(substituter);
+
+				if (newSet == writeSets[j])
+					continue;
+				writeSets[j] = newSet;
+				changes |= 2; // set the second left most bit
+			}
+			// If write set stack is not changed, not refer to an new array
+			// instance:
+			writeSets = (changes & 2) == 2
+					? writeSets
+					: newProcesses[i].getWriteSets();
+			// if any of the most left twos bits has been set:
+			if ((changes & 3) != 0) {
+				StackEntry callStack[] = new StackEntry[newProcesses[i]
+						.stackSize()];
+
+				for (int j = 0; j < callStack.length; j++)
+					callStack[j] = newProcesses[i].getStackEntry(j);
+				newProcesses[i] = new ImmutableProcessState(i, callStack, ppcs,
+						writeSets, newProcesses[i].atomicCount(),
+						newProcesses[i].isSelfDestructable());
+				procChanged = true;
+			}
+		}
+		if (procChanged)
+			return state.setProcessStates(newProcesses);
+		else
+			return state;
 	}
 
 	@Override
@@ -465,7 +547,7 @@ public class ImmutableStateFactory implements StateFactory {
 			int numProcs = theState.numProcs();
 			ImmutableProcessState[] newProcesses = new ImmutableProcessState[numProcs];
 			BooleanExpression newPathCondition = (BooleanExpression) substituter
-					.apply(theState.getPathCondition());
+					.apply(theState.getPermanentPathCondition());
 
 			for (int i = 0; i < oldNumScopes; i++) {
 				int newId = oldToNew[i];
@@ -480,9 +562,12 @@ public class ImmutableStateFactory implements StateFactory {
 							oldParent < 0 ? oldParent : oldToNew[oldParent]);
 				}
 			}
-			for (int pid = 0; pid < numProcs; pid++)
-				newProcesses[pid] = theState.getProcessState(pid)
-						.updateDyscopes(oldToNew, substituter);
+			for (int pid = 0; pid < numProcs; pid++) {
+				newProcesses[pid] = theState.getProcessState(pid);
+				if (newProcesses[pid] != null)
+					newProcesses[pid] = newProcesses[pid]
+							.updateDyscopes(oldToNew, substituter);
+			}
 			theState = ImmutableState.newState(theState, newProcesses,
 					newScopes, newPathCondition);
 		}
@@ -855,7 +940,7 @@ public class ImmutableStateFactory implements StateFactory {
 		newProcesses[pid] = (ImmutableProcessState) p;
 		theState = theState.setProcessStates(newProcesses);
 		newState = new ImmutableState(newProcesses, theState.copyScopes(),
-				theState.getPathCondition());
+				theState.getPermanentPathCondition());
 		newState.collectibleCounts = theState.collectibleCounts;
 		return newState;
 	}
@@ -917,7 +1002,7 @@ public class ImmutableStateFactory implements StateFactory {
 			return theState.simplifiedState;
 
 		int numScopes = theState.numDyscopes();
-		BooleanExpression pathCondition = theState.getPathCondition();
+		BooleanExpression pathCondition = theState.getPermanentPathCondition();
 		ImmutableDynamicScope[] newDynamicScopes = null;
 		Reasoner reasoner = universe.reasoner(pathCondition);
 		BooleanExpression newPathCondition;
@@ -963,12 +1048,26 @@ public class ImmutableStateFactory implements StateFactory {
 						? oldScope.setVariableValues(newVariableValues)
 						: oldScope;
 		}
-		if (newDynamicScopes != null || newPathCondition != null) {
-			theState = ImmutableState.newState(theState, null, newDynamicScopes,
-					newPathCondition);
+
+		boolean processChanged = false;
+		ImmutableProcessState[] procStates = theState.copyProcessStates();
+
+		for (int i = 0; i < procStates.length; i++) {
+			if (procStates[i] == null)
+				continue;
+
+			ImmutableProcessState tmp = procStates[i].simplify(reasoner);
+
+			if (tmp != procStates[i])
+				processChanged = true;
+			procStates[i] = tmp;
+		}
+		if (newDynamicScopes != null || newPathCondition != null
+				|| processChanged) {
+			theState = ImmutableState.newState(theState, procStates,
+					newDynamicScopes, newPathCondition);
 			if (hasSimplication && simplifyStateRefs)
-				theState = this.simplifyReferencedStates(theState,
-						pathCondition);
+				theState = simplifyReferencedStates(theState, pathCondition);
 			theState.simplifiedState = theState;
 		}
 		return theState;
@@ -1002,12 +1101,13 @@ public class ImmutableStateFactory implements StateFactory {
 
 						seen.add(stateRef);
 						if (stateID >= 0) {
-							State refState = this.getStateByReference(stateID);
+							ImmutableState refState = this
+									.getStateByReference(stateID);
 
 							// TODO: is this necessary ?
 							refState = ((ImmutableState) refState)
-									.setPathCondition(universe.and(
-											refState.getPathCondition(),
+									.setPermanentPathCondition(universe.and(
+											refState.getPermanentPathCondition(),
 											context));
 							refState = this.simplify(refState);
 							newStateID = this.saveState(refState, 0).left;
@@ -1981,7 +2081,8 @@ public class ImmutableStateFactory implements StateFactory {
 		if (!change)
 			newScopes = null;
 
-		BooleanExpression oldPathCondition = theState.getPathCondition();
+		BooleanExpression oldPathCondition = theState
+				.getPermanentPathCondition();
 		BooleanExpression newPathCondition = (BooleanExpression) canonicRenamer
 				.apply(oldPathCondition);
 
@@ -1989,54 +2090,17 @@ public class ImmutableStateFactory implements StateFactory {
 			newPathCondition = null;
 		else
 			change = true;
+
+		State tmpState = applyToProcessStates(theState, canonicRenamer);
+
+		if (tmpState != theState)
+			change = true;
 		if (change) {
 			theState = ImmutableState.newState(theState, null, newScopes,
 					newPathCondition);
 			theState = theState.updateCollectibleCount(
 					ModelConfiguration.HAVOC_PREFIX_INDEX,
 					canonicRenamer.getNumNewNames());
-		}
-
-		if (config.isEnableMpiContract()) {
-			// ImmutableDynamicScope dyscopes[] = theState.copyScopes();
-			// List<SymbolicExpression> stateRefs = new LinkedList<>();
-			// SymbolicType stateRefType = typeFactory.stateSymbolicType();
-			//
-			// for (int i = 0; i < dyscopes.length; i++) {
-			// Scope scope = dyscopes[i].lexicalScope();
-			//
-			// for (Variable var : scope.variablesWithStaterefs()) {
-			// SymbolicExpression val = dyscopes[i].getValue(var.vid());
-			//
-			// ((CommonSymbolicUtility) symbolicUtil)
-			// .digStateRefValueFrom(val);
-			// }
-			// }
-			//
-			// Map<SymbolicExpression, SymbolicExpression> stateRefOld2New = new
-			// HashMap<>();
-			//
-			// for (SymbolicExpression stateRef : stateRefs) {
-			// int ref = modelFactory.getStateRef(null, stateRef);
-			// ImmutableState savedState = savedCanonicStates.get(ref);
-			// BooleanExpression savedPC = savedState.getPathCondition();
-			// ImmutableDynamicScope savedDyscopes[] = savedState.copyScopes();
-			//
-			// savedPC = (BooleanExpression) canonicRenamer.apply(savedPC);
-			// for (int i = 0; i < savedDyscopes.length; i++)
-			// savedDyscopes[i] = savedDyscopes[i]
-			// .updateSymbolicConstants(canonicRenamer);
-			// savedState = ImmutableState.newState(savedState,
-			// savedState.copyProcessStates(), savedDyscopes, savedPC);
-			// savedState = flyweight(savedState);
-			// savedCanonicStates.put(savedState.getCanonicId(), savedState);
-			// stateRefOld2New.put(stateRef,
-			// modelFactory.stateValue(savedState.getCanonicId()));
-			// }
-			// if (!stateRefOld2New.isEmpty())
-			// theState = this.updateStateReferencesInDyscopes(theState,
-			// stateRefOld2New);
-			// theState = flyweight(theState);
 		}
 		return theState;
 	}
@@ -2272,7 +2336,7 @@ public class ImmutableStateFactory implements StateFactory {
 			}
 		dyscopes = new ImmutableDynamicScope[counter];
 		newMonoPC = renumberDyscopes(monoDyscopes, dyscopeOld2New, dyscopes,
-				theMono.getPathCondition());
+				theMono.getPermanentPathCondition());
 		// Clear reacher for the monoDyscopes:
 		for (int i = 0; i < counter; i++)
 			if (dyscopes[i] != null) {
@@ -2306,7 +2370,7 @@ public class ImmutableStateFactory implements StateFactory {
 		processes[newPid] = processes[newPid].push((ImmutableStackEntry) top);
 
 		theResult = ImmutableState.newState(theState, processes, dyscopes,
-				universe.and(newMonoPC, theState.getPathCondition()));
+				universe.and(newMonoPC, theState.getPermanentPathCondition()));
 		return theResult;
 	}
 
@@ -2343,7 +2407,7 @@ public class ImmutableStateFactory implements StateFactory {
 		}
 		dyscopes = new ImmutableDynamicScope[counter];
 		newRealPC = renumberDyscopes(theRealState.copyScopes(), old2New,
-				dyscopes, theRealState.getPathCondition());
+				dyscopes, theRealState.getPermanentPathCondition());
 		// Clear reachers for those new dyscopes:
 		for (int i = 0; i < counter; i++) {
 			if (dyscopes[i] != null) {
@@ -2377,7 +2441,8 @@ public class ImmutableStateFactory implements StateFactory {
 				substituter);
 		setReachablesForProc(dyscopes, processes[newPid]);
 		return ImmutableState.newState(theColState, processes, dyscopes,
-				universe.and(newRealPC, theColState.getPathCondition()));
+				universe.and(newRealPC,
+						theColState.getPermanentPathCondition()));
 	}
 
 	@Override
@@ -2431,10 +2496,21 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public ImmutableState addToPathcondition(State state, int pid,
 			BooleanExpression clause) {
-		BooleanExpression newPathCondition = universe
-				.and(state.getPathCondition(), clause);
+		ImmutableState imuState = (ImmutableState) state;
+		BooleanExpression partialPathConditions[] = imuState
+				.copyOfPartialPathConditionStack(pid);
+		int head = partialPathConditions.length - 1;
 
-		return ((ImmutableState) state).setPathCondition(newPathCondition);
+		if (head >= 0) {
+			partialPathConditions[head] = universe
+					.and(partialPathConditions[head], clause);
+			return imuState.setPartialPathConditionStack(pid,
+					partialPathConditions);
+		}
+		BooleanExpression newPathCondition = universe
+				.and(imuState.getPermanentPathCondition(), clause);
+
+		return imuState.setPermanentPathCondition(newPathCondition);
 	}
 
 	@Override

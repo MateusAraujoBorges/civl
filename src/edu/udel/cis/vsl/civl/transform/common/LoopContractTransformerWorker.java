@@ -186,10 +186,11 @@ public class LoopContractTransformerWorker extends BaseWorker {
 				if (isContractedLoop(loop)) {
 					// transform the loop
 					annotatedLoop = new LoopContractBlock(loop);
-					loop.remove();
-					transformLoopWorker(annotatedLoop);
-					// skip the whole loop then continue:
+					// skip the whole loop then continue. The loopNode will be
+					// removed in transformLoopWorker method, so the Skip call
+					// must happen before it.
 					node = BaseWorker.nextDFSSkip(loop);
+					transformLoopWorker(annotatedLoop);
 					continue;
 				}
 			}

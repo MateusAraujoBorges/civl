@@ -630,7 +630,8 @@ public class ImmutableState implements State {
 	 *            A boolean-value symbolic expression.
 	 * @return A new state who has the new path condition against this one.
 	 */
-	ImmutableState setPathCondition(BooleanExpression newPathCondition) {
+	ImmutableState setPermanentPathCondition(
+			BooleanExpression newPathCondition) {
 		ImmutableState result = new ImmutableState(processStates, dyscopes,
 				newPathCondition);
 
@@ -644,6 +645,10 @@ public class ImmutableState implements State {
 		}
 		result.collectibleCounts = this.collectibleCounts;
 		return result;
+	}
+
+	BooleanExpression getPermanentPathCondition() {
+		return pathCondition;
 	}
 
 	/**
@@ -706,6 +711,7 @@ public class ImmutableState implements State {
 
 		return Arrays.copyOf(wsStack, wsStack.length);
 	}
+
 	/* ************************ Methods from State ************************* */
 
 	@Override
@@ -724,8 +730,19 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public BooleanExpression getPathCondition() {
-		return pathCondition;
+	public BooleanExpression getPathCondition(SymbolicUniverse universe) {
+		BooleanExpression pc = pathCondition;
+
+		for (ImmutableProcessState procState : processStates) {
+			if (procState == null)
+				continue;
+
+			BooleanExpression ppcs[] = procState.getPartialPathConditions();
+
+			for (int i = 0; i < ppcs.length; i++)
+				pc = universe.and(pc, ppcs[i]);
+		}
+		return pc;
 	}
 
 	@Override

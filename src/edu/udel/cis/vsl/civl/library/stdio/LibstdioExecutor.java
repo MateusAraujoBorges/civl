@@ -810,7 +810,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 					universe.intObject(6));
 			positionExceedFileLength = universe.lessThanEquals(fileLength,
 					position);
-			reasoner = universe.reasoner(state.getPathCondition());
+			reasoner = universe.reasoner(state.getPathCondition(universe));
 			positionExceedFileLengthValid = reasoner
 					.valid(positionExceedFileLength).getResultType();
 

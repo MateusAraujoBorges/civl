@@ -765,7 +765,7 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression leftValue = (BooleanExpression) eval.value;
-		BooleanExpression assumption = eval.state.getPathCondition();
+		BooleanExpression assumption = eval.state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(assumption);
 
 		// true && x = x;
@@ -1091,12 +1091,12 @@ public class CommonEvaluator implements Evaluator {
 			eval.value = this.booleanToInteger(value);
 			return eval;
 		} else if (argType.isIntegerType() && castType.isPointerType()) {
-			eval.value = this.int2PointerCaster.apply(state.getPathCondition(),
-					value, castType);
+			eval.value = this.int2PointerCaster
+					.apply(state.getPathCondition(universe), value, castType);
 			return eval;
 		} else if (argType.isPointerType() && castType.isIntegerType()) {
-			eval.value = this.pointer2IntCaster.apply(state.getPathCondition(),
-					value, null);
+			eval.value = this.pointer2IntCaster
+					.apply(state.getPathCondition(universe), value, null);
 			return eval;
 		} else if (argType.isPointerType() && castType.isPointerType()) {
 			// pointer to pointer: for now...no change.
@@ -1122,12 +1122,12 @@ public class CommonEvaluator implements Evaluator {
 				eval.value = universe.not(universe.equals(value, zero));
 			return eval;
 		} else if (argType.isIntegerType() && castType.isCharType()) {
-			eval.value = this.int2CharCaster.apply(state.getPathCondition(),
-					value, null);
+			eval.value = this.int2CharCaster
+					.apply(state.getPathCondition(universe), value, null);
 			return eval;
 		} else if (argType.isCharType() && castType.isIntegerType()) {
-			eval.value = this.char2IntCaster.apply(state.getPathCondition(),
-					value, null);
+			eval.value = this.char2IntCaster
+					.apply(state.getPathCondition(universe), value, null);
 			return eval;
 		}
 		try {
@@ -1520,7 +1520,7 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression p = (BooleanExpression) eval.value;
-		BooleanExpression assumption = eval.state.getPathCondition();
+		BooleanExpression assumption = eval.state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(assumption);
 
 		// If p is false, the implication will evaluate to true.
@@ -1600,7 +1600,7 @@ public class CommonEvaluator implements Evaluator {
 		Expression extent = arrayType.extent();
 		Evaluation eval = evaluate(state, pid, extent);
 		BooleanExpression validArrayLength;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType resultType;
 
 		state = eval.state;
@@ -1853,7 +1853,7 @@ public class CommonEvaluator implements Evaluator {
 			BinaryExpression expression, NumericExpression numerator,
 			NumericExpression denominator, boolean muteErrorSideEffects)
 			throws UnsatisfiablePathConditionException {
-		BooleanExpression assumption = state.getPathCondition();
+		BooleanExpression assumption = state.getPathCondition(universe);
 
 		if (civlConfig.svcomp() || muteErrorSideEffects) {
 			BooleanExpression leftPositive = universe.lessThan(zero, numerator);
@@ -1935,7 +1935,7 @@ public class CommonEvaluator implements Evaluator {
 			BinaryExpression expression, NumericExpression numerator,
 			NumericExpression denominator, boolean muteErrorSideEffects)
 			throws UnsatisfiablePathConditionException {
-		BooleanExpression assumption = state.getPathCondition();
+		BooleanExpression assumption = state.getPathCondition(universe);
 		SymbolicExpression result;
 
 		if (civlConfig.checkDivisionByZero() && !muteErrorSideEffects
@@ -1995,7 +1995,7 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression p = (BooleanExpression) eval.value;
-		BooleanExpression assumption = eval.state.getPathCondition();
+		BooleanExpression assumption = eval.state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(assumption);
 
 		// TODO: handle special common case as in evaluateAnd.
@@ -2265,8 +2265,8 @@ public class CommonEvaluator implements Evaluator {
 		step = eval.value;
 		state = eval.state;
 		claim = universe.equals(this.zero, step);
-		validity = universe.reasoner(state.getPathCondition()).valid(claim)
-				.getResultType();
+		validity = universe.reasoner(state.getPathCondition(universe))
+				.valid(claim).getResultType();
 		if (validity == ResultType.YES) {
 			errorLogger.logSimpleError(range.getSource(), state, process,
 					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
@@ -2274,8 +2274,8 @@ public class CommonEvaluator implements Evaluator {
 			throw new UnsatisfiablePathConditionException();
 		}
 		claim = universe.lessThan(this.zero, (NumericExpression) step);
-		validity = universe.reasoner(state.getPathCondition()).valid(claim)
-				.getResultType();
+		validity = universe.reasoner(state.getPathCondition(universe))
+				.valid(claim).getResultType();
 		if (validity == ResultType.NO)
 			negativeStep = true;
 		if (negativeStep) {
@@ -2408,7 +2408,7 @@ public class CommonEvaluator implements Evaluator {
 			boolean addressOnly) throws UnsatisfiablePathConditionException {
 		if (!this.civlConfig.svcomp() && arrayType.isComplete()) {
 			NumericExpression length = universe.length(array);
-			BooleanExpression assumption = state.getPathCondition();
+			BooleanExpression assumption = state.getPathCondition(universe);
 			// TODO change to andTo
 			BooleanExpression claim;
 			ResultType resultType;
@@ -2884,8 +2884,9 @@ public class CommonEvaluator implements Evaluator {
 				// lost:
 				teval = getDynamicType(state, pid, elementType, null, false);
 				state = teval.state;
-				eval.value = symbolicUtil.newArray(state.getPathCondition(),
-						teval.type, extent, elementValue);
+				eval.value = symbolicUtil.newArray(
+						state.getPathCondition(universe), teval.type, extent,
+						elementValue);
 				break;
 			}
 			case BUNDLE :
@@ -3109,7 +3110,7 @@ public class CommonEvaluator implements Evaluator {
 		Evaluation eval;
 		int scopeId = symbolicUtil.getDyscopeId(source, pointer);
 		int vid = symbolicUtil.getVariableId(source, pointer);
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
 		String process = state.getProcessState(pid).name();
 
@@ -3235,7 +3236,7 @@ public class CommonEvaluator implements Evaluator {
 			BooleanExpression claim = universe.and(
 					universe.lessThanEquals(zero, newOffset),
 					universe.lessThanEquals(newOffset, one));
-			BooleanExpression assumption = state.getPathCondition();
+			BooleanExpression assumption = state.getPathCondition(universe);
 			ResultType resultType = universe.reasoner(assumption).valid(claim)
 					.getResultType();
 
@@ -3292,12 +3293,12 @@ public class CommonEvaluator implements Evaluator {
 		ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
 
 		claim = universe.equals(zero, offset);
-		assumption = state.getPathCondition();
+		assumption = state.getPathCondition(universe);
 		resultType = universe.reasoner(assumption).valid(claim).getResultType();
 		if (resultType.equals(ResultType.YES))
 			return new Evaluation(state, pointer);
 		claim = universe.equals(one, offset);
-		assumption = state.getPathCondition();
+		assumption = state.getPathCondition(universe);
 		resultType = universe.reasoner(assumption).valid(claim).getResultType();
 		if (resultType.equals(ResultType.YES))
 			return new Evaluation(state, symbolicUtil.makePointer(pointer,
@@ -3637,7 +3638,7 @@ public class CommonEvaluator implements Evaluator {
 			SymbolicExpression lambda, NumericExpression low,
 			NumericExpression high) throws UnsatisfiablePathConditionException {
 		BooleanExpression lowLEHigh = universe.lessThanEquals(low, high);
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType reasonResult = reasoner.valid(lowLEHigh).getResultType();
 		NumericExpression result = null;
 
@@ -3743,7 +3744,7 @@ public class CommonEvaluator implements Evaluator {
 		if (type instanceof CIVLPrimitiveType) {
 			NumericExpression value = ((CIVLPrimitiveType) type).getSizeof();
 			BooleanExpression facts = ((CIVLPrimitiveType) type).getFacts();
-			BooleanExpression pc = state.getPathCondition();
+			BooleanExpression pc = state.getPathCondition(universe);
 			Reasoner reasoner = universe.reasoner(pc);
 
 			if (!reasoner.isValid(facts)) {
@@ -3954,7 +3955,7 @@ public class CommonEvaluator implements Evaluator {
 	public Evaluation getStringExpression(State state, String process,
 			CIVLSource source, SymbolicExpression charPointer)
 			throws UnsatisfiablePathConditionException {
-		BooleanExpression pc = state.getPathCondition();
+		BooleanExpression pc = state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(pc);
 		ReferenceExpression symRef = symbolicUtil.getSymRef(charPointer);
 
@@ -4280,7 +4281,8 @@ public class CommonEvaluator implements Evaluator {
 
 				state = eval.state;
 
-				Reasoner reasoner = universe.reasoner(state.getPathCondition());
+				Reasoner reasoner = universe
+						.reasoner(state.getPathCondition(universe));
 				IntegerNumber length_number = (IntegerNumber) reasoner
 						.extractNumber(extentValue);
 
@@ -4531,7 +4533,7 @@ public class CommonEvaluator implements Evaluator {
 			NumericExpression[] arrayExtents, boolean muteErrorSideEffects,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		NumericExpression[] results = new NumericExpression[dimensions];
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType resultType;
 		BooleanExpression checkClaim;
 

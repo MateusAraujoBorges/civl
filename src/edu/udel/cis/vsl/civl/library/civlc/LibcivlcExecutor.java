@@ -1,11 +1,15 @@
 package edu.udel.cis.vsl.civl.library.civlc;
 
+import java.util.LinkedList;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -24,9 +28,13 @@ import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
  * Implementation of the execution for system functions declared civlc.h.
@@ -82,6 +90,14 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 						argumentValues, source);
 				callEval = new Evaluation(state, null);
 				break;
+			case "$assume_push" :
+				callEval = executeAssumePush(state, pid, arguments,
+						argumentValues, source);
+				break;
+			case "$assume_pop" :
+				callEval = executeAssumePop(state, pid, arguments,
+						argumentValues, source);
+				break;
 			case "$assume" :
 				callEval = this.executeAssume(state, pid, process, arguments,
 						argumentValues, source);
@@ -104,6 +120,10 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				break;
 			case "$havoc" :
 				callEval = executeHavoc(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$havoc_mem" :
+				callEval = executeHavocMem(state, pid, arguments,
 						argumentValues, source);
 				break;
 			case "$is_concrete_int" :
@@ -142,6 +162,14 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			case "$waitall" :
 				callEval = executeWaitAll(state, pid, arguments, argumentValues,
 						source);
+				break;
+			case "$write_set_push" :
+				callEval = executeWriteSetPush(state, pid, arguments,
+						argumentValues, source);
+				break;
+			case "$write_set_pop" :
+				callEval = executeWriteSetPop(state, pid, arguments,
+						argumentValues, source);
 				break;
 			case "$variable_reference" :
 				callEval = executeVariableReference(state, pid, process,
@@ -218,6 +246,101 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		return new Evaluation(state, null);
 	}
 
+	/**
+	 * <p>
+	 * Executing the system function:<code>$havoc_mem($mem m)</code>. <br>
+	 * <br>
+	 * Semantics: The function assigns a fresh new symbolic constant to every
+	 * memory location in the memory location set represented by m. <br>
+	 * 
+	 * Notice that currently we do an <strong>compromise</strong> for refreshing
+	 * array elements in m: For an array element e in array a in m, we do NOT
+	 * assign e a fresh new constant but instead assign the array a a fresh new
+	 * constant. The reason is: A non-concrete array write will prevent states
+	 * from being canonicalized into a seen state. For example:
+	 * 
+	 * <code>
+	 * $input int N, X;
+	 * $assume(N > 0 && X > 0 && N > X);
+	 * int a[N];
+	 * 
+	 * LOOP_0: while (true) {
+	 *   a[X] = 0;
+	 *   $havoc(&a[X]);
+	 * }
+	 * 
+	 * LOOP_1: while (true) {
+	 *   a[X] = 0;
+	 *   $havoc(&a);
+	 * }
+	 * </code> Loop 1 will never converge but the value of a keeps growing. Loop
+	 * 2 will converge.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeHavocMem(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		SymbolicExpression memObj = argumentValues[0];
+		NumericExpression memSize;
+		SymbolicExpression pointerArray;
+		Number memSizeConcrete;
+		Evaluation eval = null;
+
+		// mem obj structure:
+		// struct _mem {
+		// int size;
+		// void * ptrArray[];
+		// }
+		memSize = (NumericExpression) universe.tupleRead(memObj, zeroObject);
+		pointerArray = universe.tupleRead(memObj, oneObject);
+		memSizeConcrete = universe.extractNumber(memSize);
+		assert memSizeConcrete != null : "The size of $mem obj shall never be non-concrete";
+
+		int memSizeInt = ((IntegerNumber) memSizeConcrete).intValue();
+		Expression memObjExpr = arguments[0];
+
+		for (int i = 0; i < memSizeInt; i++) {
+			SymbolicExpression pointer = universe.arrayRead(pointerArray,
+					universe.integer(i));
+			SymbolicType pointedType;
+			ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
+
+			// compromise: if the given pointer points to an array element,
+			// havoc the whole array:
+			if (symRef.isArrayElementReference()
+					&& !symbolicUtil.isPointer2MemoryBlock(pointer))
+				pointer = symbolicUtil.parentPointer(pointer);
+			// some dyscopes referred by the pointer may gone already:
+			if (symbolicUtil.getDyscopeId(source, pointer) >= 0) {
+				pointedType = symbolicAnalyzer.dynamicTypeOfObjByPointer(
+						memObjExpr.getSource(), state, pointer);
+				eval = evaluator.havoc(state, pointedType);
+				state = primaryExecutor.assign(source, eval.state, pid, pointer,
+						eval.value);
+			}
+		}
+		if (eval != null) {
+			eval.value = null;
+			eval.state = state;
+		}
+		return new Evaluation(state, null);
+	}
+
 	private Evaluation executePow(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
@@ -245,7 +368,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				? this.trueValue
 				: this.falseValue;
 		if (result.isTrue()) {
-			Reasoner reasoner = universe.reasoner(state.getPathCondition());
+			Reasoner reasoner = universe
+					.reasoner(state.getPathCondition(universe));
 
 			result = reasoner.extractNumber((NumericExpression) value) != null
 					? trueValue
@@ -262,7 +386,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			this.civlConfig.out()
 					.println("path condition: " + this.symbolicAnalyzer
 							.symbolicExpressionToString(source, state, null,
-									state.getPathCondition()));
+									state.getPathCondition(universe)));
 		return new Evaluation(state, null);
 	}
 
@@ -383,7 +507,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression procsPointer = argumentValues[0];
 		SymbolicExpression numOfProcs = argumentValues[1];
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		IntegerNumber number_nprocs = (IntegerNumber) reasoner
 				.extractNumber((NumericExpression) numOfProcs);
 		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
@@ -421,4 +545,169 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		return new Evaluation(state, null);
 	}
 
+	/**
+	 * <p>
+	 * Executing the system function:<code>$assume_push()</code>. <br>
+	 * <br>
+	 * 
+	 * Push a boolean expression as a partial path condition onto the partial
+	 * path condition stack associated with the calling process.
+	 * 
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeAssumePush(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) {
+		BooleanExpression assumeValue = (BooleanExpression) argumentValues[0];
+
+		state = stateFactory.pushAssumption(state, pid, assumeValue);
+		return new Evaluation(state, null);
+	}
+
+	/**
+	 * <p>
+	 * Executing the system function:<code>$assume_pop()</code>. <br>
+	 * <br>
+	 * 
+	 * Pop a partial path condition out of the partial path condition stack
+	 * associated with the calling process.
+	 * 
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeAssumePop(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) {
+		state = stateFactory.popAssumption(state, pid);
+		return new Evaluation(state, null);
+	}
+
+	/**
+	 * <p>
+	 * Executing the system function:<code>$write_set_push()</code>. <br>
+	 * <br>
+	 * 
+	 * Push an empty write set onto write set stack associated with the calling
+	 * process.
+	 * 
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeWriteSetPush(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) {
+		state = stateFactory.pushEmptyWrite(state, pid);
+		return new Evaluation(state, null);
+	}
+
+	/**
+	 * <p>
+	 * Executing the system function:<code>$write_set_pop($mem * m)</code>. <br>
+	 * <br>
+	 * 
+	 * Pop a write set w out of the write set stack associated with the calling
+	 * process. Assign write set w' to the object refered by the given reference
+	 * m, where w' is a subset of w. <code>w - w'</code> is a set of unreachable
+	 * memory locaiton references.
+	 * 
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeWriteSetPop(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		SymbolicExpression memPointer = argumentValues[0];
+		String process = state.getProcessState(pid).name();
+		CIVLType memType = typeFactory.systemType(ModelConfiguration.MEM_TYPE);
+		Evaluation eval = evaluator.dereference(source, state, process, memType,
+				memPointer, false, true);
+
+		state = eval.state;
+
+		SymbolicExpression memValue = eval.value;
+		SymbolicExpression pointerArray;
+		SymbolicTupleType memValueType;
+		LinkedList<SymbolicExpression> memValueComponents = new LinkedList<>();
+		DynamicWriteSet writeSet = stateFactory.peekWriteSet(state, pid);
+		int size = 0;
+
+		state = stateFactory.popWriteSet(state, pid);
+		memValueType = (SymbolicTupleType) memType.getDynamicType(universe);
+		for (SymbolicExpression pointer : writeSet) {
+			int referredDyscope = symbolicUtil.getDyscopeId(source, pointer);
+
+			if (referredDyscope < 0)
+				continue;
+			memValueComponents.add(pointer);
+			size++;
+		}
+		pointerArray = universe.array(typeFactory.pointerSymbolicType(),
+				memValueComponents);
+		memValueComponents.clear();
+		memValueComponents.add(universe.integer(size));
+		memValueComponents.add(pointerArray);
+		memValue = universe.tuple(memValueType, memValueComponents);
+		state = primaryExecutor.assign(source, state, pid, memPointer,
+				memValue);
+		eval.state = state;
+		eval.value = null;
+		return eval;
+	}
 }

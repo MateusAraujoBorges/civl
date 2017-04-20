@@ -96,8 +96,8 @@ public class LibdomainEnabler extends BaseLibraryEnabler
 		Evaluation eval;
 		Number strategyNum;
 		int strategyInt;
-		Reasoner reasoner = universe
-				.reasoner(universe.and(state.getPathCondition(), clause));
+		Reasoner reasoner = universe.reasoner(
+				universe.and(state.getPathCondition(universe), clause));
 		String process = "p" + pid;
 
 		call.arguments().toArray(arguments);
@@ -182,7 +182,7 @@ public class LibdomainEnabler extends BaseLibraryEnabler
 		NumericExpression strategy = (NumericExpression) argumentValues[1];
 		NumericExpression numParts = (NumericExpression) argumentValues[2];
 		NumericExpression dim;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		int numElements_int; // domain size
 		int numParts_int;
 		Number numPartsNumber, numElementsNumber; // Number type objects
