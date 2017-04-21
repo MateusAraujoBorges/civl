@@ -12,13 +12,18 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.location.Location;
+import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
+import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
+import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -46,6 +51,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 public class LibcivlcExecutor extends BaseLibraryExecutor
 		implements
 			LibraryExecutor {
+	private Evaluator errSideEffectFreeEvaluator;
 
 	/* **************************** Constructors *************************** */
 
@@ -71,11 +77,53 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		super(name, primaryExecutor, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
+		this.errSideEffectFreeEvaluator = Semantics
+				.newErrorSideEffectFreeEvaluator(modelFactory, stateFactory,
+						libEvaluatorLoader, libExecutorLoader, symbolicUtil,
+						symbolicAnalyzer, stateFactory.memUnitFactory(),
+						errorLogger, civlConfig);
 	}
 
 	/*
 	 * ******************** Methods from BaseLibraryExecutor *******************
 	 */
+	@Override
+	public Evaluation execute(State state, int pid, CallOrSpawnStatement call,
+			String functionName) throws UnsatisfiablePathConditionException {
+		Evaluation eval;
+		LHSExpression lhs = call.lhs();
+		Location target = call.target();
+		Expression[] arguments;
+		SymbolicExpression[] argumentValues;
+		int numArgs;
+		String process = state.getProcessState(pid).name();
+		Evaluator theEvaluator = evaluator;
+
+		numArgs = call.arguments().size();
+		arguments = new Expression[numArgs];
+		argumentValues = new SymbolicExpression[numArgs];
+		if (functionName.equals("$assume")
+				|| functionName.equals("$assume_push")
+				|| functionName.equals("$assume_pop")
+				|| functionName.equals("$assert"))
+			theEvaluator = this.errSideEffectFreeEvaluator;
+		for (int i = 0; i < numArgs; i++) {
+			arguments[i] = call.arguments().get(i);
+			eval = theEvaluator.evaluate(state, pid, arguments[i]);
+			argumentValues[i] = eval.value;
+			state = eval.state;
+		}
+		eval = this.executeValue(state, pid, process, call.getSource(),
+				functionName, arguments, argumentValues);
+		state = eval.state;
+		if (lhs != null && eval.value != null)
+			state = this.primaryExecutor.assign(state, pid, process, lhs,
+					eval.value);
+		if (target != null && !state.getProcessState(pid).hasEmptyStack())
+			state = this.stateFactory.setLocation(state, pid, target);
+		eval.state = state;
+		return eval;
+	}
 
 	@Override
 	protected Evaluation executeValue(State state, int pid, String process,

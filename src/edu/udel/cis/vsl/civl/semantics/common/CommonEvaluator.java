@@ -443,10 +443,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            false only when executing $copy function.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects
-	 *            <strong> results an undefined value of the same type as the
-	 *            dereference expression </strong> iff this parameter set to
-	 *            true. Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects <strong>
+	 *            results an undefined value of the same type as the dereference
+	 *            expression </strong> iff this parameter set to true.
+	 *            Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @return A possibly new state and the value of memory space pointed by the
 	 *         pointer.
@@ -487,13 +487,11 @@ public class CommonEvaluator implements Evaluator {
 							.variable(vid);
 
 					if (variable.isOutput()) {
-						errorLogger
-								.logSimpleError(source, state, process,
-										symbolicAnalyzer.stateInformation(
-												state),
-										ErrorKind.OUTPUT_READ,
-										"Attempt to read output variable "
-												+ variable.name().name());
+						errorLogger.logSimpleError(source, state, process,
+								symbolicAnalyzer.stateInformation(state),
+								ErrorKind.OUTPUT_READ,
+								"Attempt to read output variable "
+										+ variable.name().name());
 						throwPCException = true;
 					}
 				}
@@ -548,10 +546,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            The pointer to be dereferenced.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects
-	 *            <strong> results an undefined value of the same type as the
-	 *            dereference expression </strong> iff this parameter set to
-	 *            true. Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects <strong>
+	 *            results an undefined value of the same type as the dereference
+	 *            expression </strong> iff this parameter set to true.
+	 *            Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @param source
 	 *            The {@link CIVLSource} associates with the dereference
@@ -569,7 +567,8 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		boolean throwPCException = false;
 
-		if (!pointer.type().equals(pointerType)) {
+		if (pointer == symbolicUtil.undefinedPointer()
+				|| !pointer.type().equals(pointerType)) {
 			if (!muteErrorSideEffects)
 				errorLogger.logSimpleError(source, state, process,
 						this.symbolicAnalyzer.stateInformation(state),
@@ -1521,8 +1520,12 @@ public class CommonEvaluator implements Evaluator {
 			eval.value = universe.trueExpression();
 			return eval;
 		} else {
+			State tmp = eval.state;
+
+			eval.state = stateFactory.addToPathcondition(eval.state, pid, p);
 			eval = evaluate(eval.state, pid, expression.right());
 			eval.value = universe.implies(p, (BooleanExpression) eval.value);
+			eval.state = tmp;
 			return eval;
 		}
 	}
@@ -3729,13 +3732,11 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger
-							.logSimpleError(source, state, process,
-									this.symbolicAnalyzer.stateInformation(
-											state),
-									ErrorKind.OTHER,
-									"Try to obtain a string from a sequence of char has length"
-											+ " less than or equal to one");
+					this.errorLogger.logSimpleError(source, state, process,
+							this.symbolicAnalyzer.stateInformation(state),
+							ErrorKind.OTHER,
+							"Try to obtain a string from a sequence of char has length"
+									+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;

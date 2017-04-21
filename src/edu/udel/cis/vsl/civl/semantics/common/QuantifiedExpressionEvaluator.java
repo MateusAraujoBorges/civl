@@ -420,11 +420,8 @@ public class QuantifiedExpressionEvaluator
 			}
 			for (BooleanExpression clause : simplifiedClauses)
 				predicate = clauseCombiner.operation(predicate, clause);
+			predicate = restirctionCombiner.operation(restriction, predicate);
 			for (SymbolicConstant complexBoundVar : boundVariables) {
-				if (complexBoundVar == null)
-					continue;
-				predicate = restirctionCombiner.operation(restriction,
-						predicate);
 				predicate = quantifiedExpression.operation(complexBoundVar,
 						predicate);
 			}
@@ -526,9 +523,9 @@ public class QuantifiedExpressionEvaluator
 			}
 		}
 		// Eliminate simplified bound variables:
-		for (int varId = simplified.nextSetBit(
-				0); varId >= 0; varId = simplified.nextSetBit(varId + 1))
-			boundVariables[varId] = null;
+		// for (int varId = simplified.nextSetBit(
+		// 0); varId >= 0; varId = simplified.nextSetBit(varId + 1))
+		// boundVariables[varId] = null;
 		return clauses;
 	}
 
