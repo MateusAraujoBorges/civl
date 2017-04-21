@@ -10,6 +10,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLCompleteArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -18,8 +19,9 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
  * @author Manchun Zheng (zmanchun)
  * 
  */
-public class CommonArrrayLambdaExpression extends CommonExpression implements
-		ArrayLambdaExpression {
+public class CommonArrrayLambdaExpression extends CommonExpression
+		implements
+			ArrayLambdaExpression {
 	private Expression restriction;
 	private Expression expression;
 	private List<Pair<List<Variable>, Expression>> boundVariableList;
@@ -135,8 +137,8 @@ public class CommonArrrayLambdaExpression extends CommonExpression implements
 					this.expressionScope(), this.expressionType,
 					this.boundVariableList, newRestriction, expression);
 		} else {
-			Expression newExpressionField = expression.replaceWith(
-					oldExpression, newExpression);
+			Expression newExpressionField = expression
+					.replaceWith(oldExpression, newExpression);
 
 			if (newExpressionField != null)
 				result = new CommonArrrayLambdaExpression(this.getSource(),
@@ -182,6 +184,11 @@ public class CommonArrrayLambdaExpression extends CommonExpression implements
 				&& this.boundVariableList.equals(that.boundVariableList())
 				&& this.expression.equals(that.expression())
 				&& this.restriction.equals(that.restriction());
+	}
+
+	@Override
+	public CIVLCompleteArrayType getExpressionType() {
+		return (CIVLCompleteArrayType) expressionType;
 	}
 
 	@Override

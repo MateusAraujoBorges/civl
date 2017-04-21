@@ -2091,10 +2091,13 @@ public class ImmutableStateFactory implements StateFactory {
 		else
 			change = true;
 
-		State tmpState = applyToProcessStates(theState, canonicRenamer);
+		ImmutableState tmpState = applyToProcessStates(theState,
+				canonicRenamer);
 
-		if (tmpState != theState)
+		if (tmpState != theState) {
+			theState = tmpState;
 			change = true;
+		}
 		if (change) {
 			theState = ImmutableState.newState(theState, null, newScopes,
 					newPathCondition);

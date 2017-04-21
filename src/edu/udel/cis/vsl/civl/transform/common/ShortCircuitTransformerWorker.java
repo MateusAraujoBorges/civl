@@ -151,6 +151,8 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 	private static String ASSUME_NAME = "$assume";
 
 	private static String ASSUME_PUSH_NAME = "$assume_push";
+
+	private static String ASSERT_NAME = "$assert";
 	/**
 	 * <p>
 	 * This class is a short-circuit operation that will be transformed into a
@@ -238,6 +240,11 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 				|| oprt == Operator.IMPLIES;
 	}
 
+	static private boolean isInErrorSEFreeContext(ExpressionNode expr) {
+		return isBoundedExpression(expr) || isGuard(expr) || isAssumption(expr)
+				|| isAssertion(expr);
+	}
+
 	/**
 	 * @param expr
 	 *            An instance of a {@link ExpressionNode}.
@@ -269,7 +276,7 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 		return false;
 	}
 
-	static private boolean isAssumtion(ExpressionNode expr) {
+	static private boolean isAssumption(ExpressionNode expr) {
 		if (expr.expressionKind() == ExpressionKind.FUNCTION_CALL) {
 			FunctionCallNode callNode = (FunctionCallNode) expr;
 			ExpressionNode functionIdentifier = callNode.getFunction();
@@ -281,6 +288,22 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 
 				return name.equals(ASSUME_NAME)
 						|| name.equals(ASSUME_PUSH_NAME);
+			}
+		}
+		return false;
+	}
+
+	static private boolean isAssertion(ExpressionNode expr) {
+		if (expr.expressionKind() == ExpressionKind.FUNCTION_CALL) {
+			FunctionCallNode callNode = (FunctionCallNode) expr;
+			ExpressionNode functionIdentifier = callNode.getFunction();
+
+			if (functionIdentifier
+					.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
+				String name = ((IdentifierExpressionNode) functionIdentifier)
+						.getIdentifier().name();
+
+				return name.equals(ASSERT_NAME);
 			}
 		}
 		return false;
@@ -473,8 +496,7 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 				searchSCExpressionInSubTreeWorker(child, (StatementNode) child,
 						output);
 			else if (child.nodeKind() == NodeKind.EXPRESSION) {
-				if (!isGuard((ExpressionNode) child)
-						&& !isAssumtion((ExpressionNode) child))
+				if (!isInErrorSEFreeContext((ExpressionNode) child))
 					searchSCInExpression((ExpressionNode) child, location,
 							output);
 			} else {
@@ -504,7 +526,7 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 	private void searchSCInExpression(ExpressionNode expression,
 			BlockItemNode location, List<ShortCircuitOperation> output) {
 		// Cannot transform quantified expressions:
-		if (isBoundedExpression(expression) || isAssumtion(expression))
+		if (isInErrorSEFreeContext(expression))
 			return;
 
 		if (expression.expressionKind() == ExpressionKind.OPERATOR) {

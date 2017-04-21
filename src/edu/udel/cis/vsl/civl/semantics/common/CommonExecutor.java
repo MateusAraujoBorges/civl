@@ -1558,8 +1558,9 @@ public class CommonExecutor implements Executor {
 								+ atomicLockAction.toString(),
 						transition.statement().getSource());
 		}
-		state = stateFactory.addToPathcondition(state, pid,
-				transition.clause());
+		if (!transition.clause().isTrue())
+			state = stateFactory.addToPathcondition(state, pid,
+					transition.clause());
 		if (transition.simpifyState()
 				&& (civlConfig.svcomp() || this.civlConfig.simplify()))
 			state = this.stateFactory.simplify(state);

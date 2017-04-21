@@ -154,7 +154,7 @@ public class LoopContractTransformerWorker extends BaseWorker {
 		completeSources(root);
 		ast = astFactory.newAST(root, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		ast.prettyPrint(System.out, false);
+		// ast.prettyPrint(System.out, false);
 		return ast;
 	}
 
