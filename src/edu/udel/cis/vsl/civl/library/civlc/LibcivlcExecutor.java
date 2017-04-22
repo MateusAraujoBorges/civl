@@ -1,6 +1,11 @@
 package edu.udel.cis.vsl.civl.library.civlc;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
@@ -29,7 +34,9 @@ import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.sarl.IF.CoreUniverse.ForallStructure;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.ValidityResult;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
@@ -38,6 +45,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -757,5 +767,173 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		eval.state = state;
 		eval.value = null;
 		return eval;
+	}
+
+	private State executeAssert(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		BooleanExpression assertValue = (BooleanExpression) argumentValues[0];
+		Reasoner reasoner;
+		ValidityResult valid;
+		ResultType resultType;
+
+		reasoner = universe.reasoner(state.getPathCondition(universe));
+		valid = reasoner.valid(assertValue);
+		resultType = valid.getResultType();
+		if (resultType != ResultType.YES) {
+			BooleanExpression simplfiedAssertedValue = quantifiedExpressionInduction(
+					reasoner, assertValue);
+
+			valid = reasoner.valid(simplfiedAssertedValue);
+			resultType = valid.getResultType();
+		}
+		if (resultType != ResultType.YES) {
+			StringBuilder message = new StringBuilder();
+			Pair<State, String> messageResult = this.symbolicAnalyzer
+					.expressionEvaluation(state, pid, arguments[0], false);
+			String firstEvaluation, secondEvaluation, result;
+
+			state = messageResult.left;
+			message.append("\nAssertion: ");
+			message.append(arguments[0]);
+			message.append("\n        -> ");
+			message.append(messageResult.right);
+			firstEvaluation = messageResult.right;
+			messageResult = this.symbolicAnalyzer.expressionEvaluation(state,
+					pid, arguments[0], true);
+			state = messageResult.left;
+			secondEvaluation = messageResult.right;
+			if (!firstEvaluation.equals(secondEvaluation)) {
+				message.append("\n        -> ");
+				message.append(secondEvaluation);
+			}
+			result = this.symbolicAnalyzer
+					.symbolicExpressionToString(arguments[0].getSource(), state,
+							null, assertValue)
+					.toString();
+			if (!secondEvaluation.equals(result)) {
+				message.append("\n        -> ");
+				message.append(result);
+			}
+			state = this.reportAssertionFailure(state, pid, process, resultType,
+					message.toString(), arguments, argumentValues, source,
+					assertValue, 1);
+			state = stateFactory.addToPathcondition(state, pid,
+					(BooleanExpression) argumentValues[0]);
+		}
+		return state;
+	}
+
+	private BooleanExpression quantifiedExpressionInduction(Reasoner reasoner,
+			BooleanExpression pred) {
+		BooleanExpression newPred = pred;
+		Map<SymbolicExpression, SymbolicExpression> subMap = new TreeMap<>(
+				universe.comparator());
+
+		for (BooleanExpression universal : universalQuantifiedExpressionsIn(
+				pred)) {
+			ForallStructure structure = universe.getForallStructure(universal);
+
+			if (structure == null)
+				continue;
+			for (SymbolicExpression sigma : summationExpressionsIn(
+					structure.body)) {
+				BooleanExpression inductiveUniversal = sigmaInduction(reasoner,
+						structure, sigma);
+
+				if (reasoner.isValid(inductiveUniversal))
+					subMap.put(structure.body, trueValue);// not substitute
+															// whole
+															// quantified
+															// expression
+															// ?
+			}
+		}
+		newPred = (BooleanExpression) universe.mapSubstituter(subMap)
+				.apply(pred);
+		return newPred;
+	}
+
+	private List<BooleanExpression> universalQuantifiedExpressionsIn(
+			BooleanExpression predicate) {
+		List<BooleanExpression> results = new LinkedList<>();
+
+		if (predicate.operator() == SymbolicOperator.AND
+				|| predicate.operator() == SymbolicOperator.OR) {
+			// clause_0 && clause_1 && ... && clause_n OR
+			// clause_0 || clause_1 || ... || clause_n:
+			for (SymbolicObject clause : predicate.getArguments())
+				results.addAll(universalQuantifiedExpressionsIn(
+						(BooleanExpression) clause));
+		} else {
+			// basic clause:
+			if (predicate.operator() == SymbolicOperator.FORALL)
+				results.add(predicate);
+		}
+		return results;
+	}
+
+	// TODO: doc
+	private List<SymbolicExpression> summationExpressionsIn(
+			SymbolicExpression predicate) {
+		List<SymbolicExpression> results = new LinkedList<>();
+
+		for (SymbolicObject arg : predicate.getArguments()) {
+			if (arg.symbolicObjectKind() == SymbolicObjectKind.EXPRESSION) {
+				SymbolicExpression symExpr = (SymbolicExpression) arg;
+
+				if (symExpr.operator() == SymbolicOperator.APPLY) {
+					SymbolicExpression func = (SymbolicExpression) symExpr
+							.argument(0);
+
+					if (func.operator() == SymbolicOperator.SYMBOLIC_CONSTANT) {
+						StringObject name = (StringObject) func.argument(0);
+
+						if (name.getString().equals("sigma")) {
+							results.add(symExpr);
+							continue;
+						}
+					}
+				}
+				results.addAll(summationExpressionsIn(symExpr));
+			}
+		}
+		return results;
+	}
+
+	private BooleanExpression sigmaInduction(Reasoner reasoner,
+			ForallStructure forallStructure, SymbolicExpression sigma) {
+		@SuppressWarnings("unchecked")
+		Iterator<SymbolicExpression> args = ((Iterable<SymbolicExpression>) sigma
+				.argument(1)).iterator();
+		NumericExpression low = (NumericExpression) args.next();
+		NumericExpression high = (NumericExpression) args.next();
+		SymbolicExpression function = args.next();
+
+		if (!universe.getFreeSymbolicConstants(high)
+				.contains(forallStructure.boundVariable))
+			return null;
+
+		NumericExpression quantifiedHigh = (NumericExpression) universe
+				.simpleSubstituter(forallStructure.boundVariable,
+						forallStructure.upperBound)
+				.apply(high);
+		NumericExpression quantifiedUpperSigma = (NumericExpression) universe
+				.apply(function, Arrays.asList(quantifiedHigh));
+		NumericExpression inductiveSigma = universe
+				.add((NumericExpression) sigma, quantifiedUpperSigma);
+		Map<SymbolicExpression, SymbolicExpression> subMap = new TreeMap<>(
+				universe.comparator());
+
+		subMap.put(sigma, inductiveSigma);
+
+		BooleanExpression newBody = (BooleanExpression) universe
+				.mapSubstituter(subMap).apply(forallStructure.body);
+		// upper bound is exclusive, thus here it implicitly does an "upperBound
+		// -= 1" operation:
+		return universe.forallInt(forallStructure.boundVariable,
+				forallStructure.lowerBound, forallStructure.upperBound,
+				newBody);
+
 	}
 }

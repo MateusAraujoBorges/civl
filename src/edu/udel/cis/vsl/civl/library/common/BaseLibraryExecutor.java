@@ -24,8 +24,6 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.sarl.IF.Reasoner;
-import edu.udel.cis.vsl.sarl.IF.ValidityResult;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -102,59 +100,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 
 	/* ************************* Protected Methods ************************* */
 
-	protected State executeAssert(State state, int pid, String process,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		BooleanExpression assertValue = (BooleanExpression) argumentValues[0];
-		Reasoner reasoner;
-		ValidityResult valid;
-		ResultType resultType;
-
-		reasoner = universe.reasoner(state.getPathCondition(universe));
-		valid = reasoner.valid(assertValue);
-		resultType = valid.getResultType();
-		// System.out.println(this.symbolicAnalyzer.expressionEvaluation(state,
-		// pid, arguments[0], true));
-		// System.out.println(this.symbolicAnalyzer
-		// .symbolicExpressionToString(source, state, null, assertValue));
-		// System.out.println(this.symbolicAnalyzer.pathconditionToString(source,
-		// state, "\t", state.getPathCondition()));
-		if (resultType != ResultType.YES) {
-			StringBuilder message = new StringBuilder();
-			Pair<State, String> messageResult = this.symbolicAnalyzer
-					.expressionEvaluation(state, pid, arguments[0], false);
-			String firstEvaluation, secondEvaluation, result;
-
-			state = messageResult.left;
-			message.append("\nAssertion: ");
-			message.append(arguments[0]);
-			message.append("\n        -> ");
-			message.append(messageResult.right);
-			firstEvaluation = messageResult.right;
-			messageResult = this.symbolicAnalyzer.expressionEvaluation(state,
-					pid, arguments[0], true);
-			state = messageResult.left;
-			secondEvaluation = messageResult.right;
-			if (!firstEvaluation.equals(secondEvaluation)) {
-				message.append("\n        -> ");
-				message.append(secondEvaluation);
-			}
-			result = this.symbolicAnalyzer
-					.symbolicExpressionToString(arguments[0].getSource(), state,
-							null, assertValue)
-					.toString();
-			if (!secondEvaluation.equals(result)) {
-				message.append("\n        -> ");
-				message.append(result);
-			}
-			state = this.reportAssertionFailure(state, pid, process, resultType,
-					message.toString(), arguments, argumentValues, source,
-					assertValue, 1);
-			state = stateFactory.addToPathcondition(state, pid,
-					(BooleanExpression) argumentValues[0]);
-		}
-		return state;
-	}
+	
 
 	/**
 	 * Executes the function call "$free(*void)": removes from the heap the
