@@ -3413,6 +3413,10 @@ public class CommonEvaluator implements Evaluator {
 				result = evaluateIntegerLiteral(state, pid,
 						(IntegerLiteralExpression) expression);
 				break;
+			case LAMBDA :
+				result = evaluateLambda(state, pid,
+						(LambdaExpression) expression);
+				break;
 			case MPI_CONTRACT_EXPRESSION :
 				result = evaluateMPIContractExpression(state, pid, process,
 						(MPIContractExpression) expression);

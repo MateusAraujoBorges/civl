@@ -2444,11 +2444,10 @@ public class CommonModelFactory implements ModelFactory {
 
 	@Override
 	public LambdaExpression lambdaExpression(CIVLSource source,
-			CIVLFunctionType functionType,
-			List<Pair<List<Variable>, Expression>> boundVariableList,
-			Expression restriction, Expression expression) {
-		return new CommonLambdaExpression(source, functionType,
-				boundVariableList, restriction, expression);
+			CIVLFunctionType functionType, Variable freeVariable,
+			Expression expression) {
+		return new CommonLambdaExpression(source, functionType, freeVariable,
+				expression);
 	}
 
 	@Override

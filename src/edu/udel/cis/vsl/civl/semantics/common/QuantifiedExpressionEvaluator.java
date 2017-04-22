@@ -21,6 +21,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.BoundVariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.ExtendedQuantifiedExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLCompleteArrayType;
@@ -99,7 +100,7 @@ public class QuantifiedExpressionEvaluator
 	 * <code> \sum(0, 10, \lambda i; i+1); </code> The restriction on free
 	 * variable i is <code>0&lt= i &lt=10</code>.
 	 */
-	protected Stack<BooleanExpression> extendedQuantifiedRestrictionsStack = new Stack<>();
+	protected Stack<SymbolicExpression> extendedQuantifiedRestrictionsStack = new Stack<>();
 
 	/**
 	 * This object represents a stack of restrictions which is maintained during
@@ -421,10 +422,9 @@ public class QuantifiedExpressionEvaluator
 			for (BooleanExpression clause : simplifiedClauses)
 				predicate = clauseCombiner.operation(predicate, clause);
 			predicate = restirctionCombiner.operation(restriction, predicate);
-			for (SymbolicConstant complexBoundVar : boundVariables) {
+			for (SymbolicConstant complexBoundVar : boundVariables)
 				predicate = quantifiedExpression.operation(complexBoundVar,
 						predicate);
-			}
 			result = new Evaluation(state, predicate);
 		}
 		boundVariableStack.pop();
@@ -567,7 +567,7 @@ public class QuantifiedExpressionEvaluator
 		// free variable in a lambda expression will return a boolean-value
 		// restriction for the free variable:
 		extendedQuantifiedRestrictionsStack
-				.push((BooleanExpression) universe.lambda(idx, restriction));
+				.push(universe.lambda(idx, restriction));
 		lowNum = reasoner.extractNumber(low);
 		highNum = reasoner.extractNumber(high);
 		eval = evaluate(typeEval.state, pid, function);
@@ -651,12 +651,6 @@ public class QuantifiedExpressionEvaluator
 								+ quant,
 						source);
 		}
-		if (inductive != null) {
-			BooleanExpression newClause;
-
-			newClause = universe.equals(inductive, result);
-			state = stateFactory.addToPathcondition(state, pid, newClause);
-		}
 		return new Evaluation(state, result);
 	}
 
@@ -719,6 +713,46 @@ public class QuantifiedExpressionEvaluator
 			}
 		}
 		return result;
+	}
+
+	@Override
+	protected Evaluation evaluateLambda(State state, int pid,
+			LambdaExpression lambda)
+			throws UnsatisfiablePathConditionException {
+		Variable freeVariable = lambda.freeVariable();
+		Evaluation eval = null;
+		TypeEvaluation typeEval;
+		SymbolicType varType;
+		NumericSymbolicConstant freeVariableValue;
+
+		typeEval = getDynamicType(state, pid, freeVariable.type(),
+				freeVariable.getSource(), false);
+		state = typeEval.state;
+		varType = typeEval.type;
+		boundVariableStack.push(new HashMap<>());
+		freeVariableValue = (NumericSymbolicConstant) universe
+				.symbolicConstant(freeVariable.name().stringObject(), varType);
+		boundVariableStack.peek().put(freeVariableValue.name().getString(),
+				freeVariableValue);
+
+		State oldState = state;
+
+		if (!extendedQuantifiedRestrictionsStack.isEmpty()) {
+			SymbolicExpression restrictFunction = extendedQuantifiedRestrictionsStack
+					.peek();
+			BooleanExpression restriction;
+
+			restriction = (BooleanExpression) universe.apply(restrictFunction,
+					Arrays.asList(freeVariableValue));
+			assert restriction.type()
+					.typeKind() == SymbolicType.SymbolicTypeKind.BOOLEAN;
+			state = stateFactory.addToPathcondition(state, pid, restriction);
+		}
+		eval = evaluate(state, pid, lambda.lambdaFunction());
+		eval.state = oldState;
+		eval.value = universe.lambda(freeVariableValue, eval.value);
+		boundVariableStack.pop();
+		return eval;
 	}
 
 	// No bound checking during the evaluation of lambda expression

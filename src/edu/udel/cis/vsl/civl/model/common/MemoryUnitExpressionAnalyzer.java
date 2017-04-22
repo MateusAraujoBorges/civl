@@ -413,16 +413,8 @@ public class MemoryUnitExpressionAnalyzer {
 			case LAMBDA : {
 				LambdaExpression lambda = (LambdaExpression) expression;
 
-				for (Pair<List<Variable>, Expression> variables : lambda
-						.boundVariableList()) {
-					if (variables.right != null)
-						computeImpactMemoryUnitsOfExpression(writableVars,
-								variables.right, result, derefCount);
-				}
 				computeImpactMemoryUnitsOfExpression(writableVars,
-						lambda.restriction(), result, derefCount);
-				computeImpactMemoryUnitsOfExpression(writableVars,
-						lambda.expression(), result, derefCount);
+						lambda.lambdaFunction(), result, derefCount);
 				break;
 			}
 			case ARRAY_LITERAL : {

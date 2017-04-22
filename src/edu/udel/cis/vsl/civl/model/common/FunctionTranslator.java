@@ -4418,8 +4418,27 @@ public class FunctionTranslator {
 	 */
 	private LambdaExpression translateLambdaNode(LambdaNode lambdaNode,
 			Scope scope) {
-		// TODO: complete me
-		return null;
+		VariableDeclarationNode freeVarDecl = lambdaNode.freeVariable();
+		ExpressionNode lambdaFunction = lambdaNode.lambdaFunction();
+		CIVLSource civlsource = modelFactory.sourceOf(lambdaNode);
+		Scope lambdaScope = modelFactory.scope(civlsource, scope,
+				Arrays.asList(), scope.function());
+
+		functionInfo.addBoundVariableSet();
+
+		Variable freeVar = translateVariableDeclarationNode(freeVarDecl, scope);
+
+		functionInfo.addBoundVariable(freeVar);
+
+		Expression lambdaFunctionExpr = translateExpressionNode(lambdaFunction,
+				lambdaScope, true);
+		CIVLType freeVarType[] = {freeVar.type()};
+
+		functionInfo.popBoundVariableStackNew();
+		return modelFactory.lambdaExpression(civlsource,
+				typeFactory.functionType(lambdaFunctionExpr.getExpressionType(),
+						freeVarType),
+				freeVar, lambdaFunctionExpr);
 	}
 
 	/**
