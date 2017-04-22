@@ -1,7 +1,6 @@
 package edu.udel.cis.vsl.civl.semantics.common;
 
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,7 +34,6 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.civl.util.IF.CartesianProductSolver;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
@@ -45,7 +43,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
-import edu.udel.cis.vsl.sarl.IF.number.Interval;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
@@ -391,25 +388,23 @@ public class QuantifiedExpressionEvaluator
 					result = new Evaluation(state, universe.trueExpression());
 			}
 		} else {
-			List<BooleanExpression> simplifiedClauses;
+			BooleanExpression simplifiedPredicate;
 			BooleanExpression predicate;
 			// function references, see how do they be assigned with methods
 			// from universe in the switch block below:
-			LogicalOperation clauseCombiner, restirctionCombiner;
+			LogicalOperation restirctionCombiner;
 			ApplyConstantOperation quantifiedExpression;
 
 			// This is the simplification procedure explained above:
-			simplifiedClauses = evaluateBoundedExpression(state, pid,
+			simplifiedPredicate = evaluateBoundedExpression(state, pid,
 					expression.expression(), boundVariables);
 			switch (expression.quantifier()) {
 				case EXISTS :
-					clauseCombiner = universe::or;
 					restirctionCombiner = universe::and;
 					quantifiedExpression = universe::exists;
 					predicate = universe.falseExpression();
 					break;
 				case FORALL :
-					clauseCombiner = universe::and;
 					restirctionCombiner = universe::implies;
 					quantifiedExpression = universe::forall;
 					predicate = universe.trueExpression();
@@ -419,9 +414,8 @@ public class QuantifiedExpressionEvaluator
 							"Unknown quantifier: " + expression.quantifier(),
 							expression.getSource());
 			}
-			for (BooleanExpression clause : simplifiedClauses)
-				predicate = clauseCombiner.operation(predicate, clause);
-			predicate = restirctionCombiner.operation(restriction, predicate);
+			predicate = restirctionCombiner.operation(restriction,
+					simplifiedPredicate);
 			for (SymbolicConstant complexBoundVar : boundVariables)
 				predicate = quantifiedExpression.operation(complexBoundVar,
 						predicate);
@@ -455,78 +449,25 @@ public class QuantifiedExpressionEvaluator
 	 * @return A list of evaluations of the given predicate.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private List<BooleanExpression> evaluateBoundedExpression(State state,
-			int pid, Expression predicate, SymbolicConstant[] boundVariables)
+	private BooleanExpression evaluateBoundedExpression(State state, int pid,
+			Expression predicate, SymbolicConstant[] boundVariables)
 			throws UnsatisfiablePathConditionException {
-		Reasoner reasoner;
-		BitSet simplified = new BitSet();
-		List<List<SymbolicExpression>> intervals = new LinkedList<>();
 		BooleanExpression restriction = universe.trueExpression();
 
 		for (BooleanExpression restrict : quantifiedRestrictionsStack)
 			restriction = universe.and(restrict, restriction);
-		reasoner = universe.reasoner(restriction);
-		for (int i = 0; i < boundVariables.length; i++) {
-			if (!boundVariables[i].isNumeric())
-				continue;
 
-			// Interval interval = reasoner.intervalApproximation(
-			// (NumericExpression) boundVariables[i]);
-			Interval interval = reasoner.intervalApproximation(
-					(NumericSymbolicConstant) boundVariables[i]);
+		State newState;
+		Evaluation eval;
 
-			// We can only simplify symbolic constants which have non-null
-			// integeral intervals. And all intervals must have finite numbers
-			// as bounds:
-			if (interval != null && interval.isIntegral()
-					&& !interval.lower().isInfinite()
-					&& !interval.upper().isInfinite()) {
-				Number high = interval.upper();
-				Number low = interval.lower();
-				List<SymbolicExpression> vector = new LinkedList<>();
+		newState = stateFactory.addToPathcondition(state, pid, restriction);
+		eval = evaluate(newState, pid, predicate);
 
-				while (universe.numberFactory().compare(high, low) >= 0) {
-					vector.add(universe.number(low));
-					low = universe.numberFactory().increment(low);
-				}
-				intervals.add(vector);
-				simplified.set(i);
-			} else
-				intervals.add(Arrays.asList(boundVariables[i]));
-		}
-
-		CartesianProductSolver<SymbolicExpression> solver = new CartesianProductSolver<>(
-				intervals);
-		List<BooleanExpression> clauses = new LinkedList<>();
-
-		for (List<SymbolicExpression> vector : solver) {
-			Reasoner contextReasoner;
-			BooleanExpression restrictionAndVector = restriction;
-			BooleanExpression pc = state.getPathCondition(universe);
-			State newState;
-			Evaluation eval;
-			int varIdx = 0;
-
-			for (SymbolicExpression value : vector)
-				restrictionAndVector = universe.and(restrictionAndVector,
-						universe.equals(boundVariables[varIdx++], value));
-			// If restriction (context) is unsatisfiable, skip:
-			contextReasoner = universe.reasoner(universe.trueExpression());
-			if (contextReasoner.isValid(
-					universe.not(universe.and(pc, restrictionAndVector))))
-				continue;
-			else {
-				newState = stateFactory.addToPathcondition(state, pid,
-						restrictionAndVector);
-				eval = evaluate(newState, pid, predicate);
-				clauses.add((BooleanExpression) eval.value);
-			}
-		}
 		// Eliminate simplified bound variables:
 		// for (int varId = simplified.nextSetBit(
 		// 0); varId >= 0; varId = simplified.nextSetBit(varId + 1))
 		// boundVariables[varId] = null;
-		return clauses;
+		return (BooleanExpression) eval.value;
 	}
 
 	/**

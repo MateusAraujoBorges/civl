@@ -907,6 +907,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		Iterator<SymbolicExpression> args = ((Iterable<SymbolicExpression>) sigma
 				.argument(1)).iterator();
 		NumericExpression low = (NumericExpression) args.next();
+		assert low != null;
 		NumericExpression high = (NumericExpression) args.next();
 		SymbolicExpression function = args.next();
 
