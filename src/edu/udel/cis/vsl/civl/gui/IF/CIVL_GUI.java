@@ -30,6 +30,7 @@ import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.Trace;
+import edu.udel.cis.vsl.sarl.SARL;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
@@ -121,7 +122,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 	private void initComponents() {
 		leftView = drawTransitions();
 		rightView = drawState(this.initState);
-		split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftView, rightView);
+		split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftView,
+				rightView);
 		add(split); // To the CIVL_GUI JFrame
 	}
 
@@ -174,8 +176,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 		}
 
 		// Add the path condition to the root of the tree
-		top.add(new DefaultMutableTreeNode("Path Condition: "
-				+ state.getPathCondition().toString()));
+		top.add(new DefaultMutableTreeNode("Path Condition: " + state
+				.getPathCondition(SARL.newStandardUniverse()).toString()));
 
 		// Add the dyscopes to the root of the tree
 		top.add(dy);
@@ -186,8 +188,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 
 		// Make the stateTree a JTree with the top as the root
 		stateTree = new JTree(top);
-		stateTree.getSelectionModel().setSelectionMode(
-				TreeSelectionModel.SINGLE_TREE_SELECTION);
+		stateTree.getSelectionModel()
+				.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
 		setDyscopeNodeExpansion(oldTree, stateTree);
 
@@ -204,7 +206,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 						return;
 					if (n.getKind() == GUINodeKind.ROOT_NODE) {
 						if (!n.isCollapsed()) {
-							for (int i = stateTree.getRowCount() - 1; i > 0; i--) {
+							for (int i = stateTree.getRowCount()
+									- 1; i > 0; i--) {
 								stateTree.collapseRow(i);
 							}
 							n.setCollapsed(true);
@@ -236,7 +239,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 	 *            The given dynamic scope
 	 * @return TreeNode
 	 */
-	private void addVariables(State state, DynamicScope dScope, DyscopeNode node) {
+	private void addVariables(State state, DynamicScope dScope,
+			DyscopeNode node) {
 		if (dScope.numberOfValues() > 0) {
 
 			// Keep track of which variable we're on with vid
@@ -247,8 +251,7 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 				Variable var = dScope.lexicalScope().variable(vid);
 				String variableName = var.name().name();
 				DefaultMutableTreeNode variableNode = new DefaultMutableTreeNode(
-						variableName
-								+ " = "
+						variableName + " = "
 								+ symbolicAnalyzer.symbolicExpressionToString(
 										var.getSource(), state, var.type(), s));
 				if (!(variableName == "__heap" && s.isNull())) {
@@ -353,7 +356,7 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 			for (@SuppressWarnings("unchecked")
 			Enumeration<DefaultMutableTreeNode> e = ((DefaultMutableTreeNode) newTree
 					.getModel().getRoot()).depthFirstEnumeration(); e
-					.hasMoreElements();) {
+							.hasMoreElements();) {
 
 				DefaultMutableTreeNode current = e.nextElement();
 				int indexInOldTree = TreeUtil.containsNode(oldTree, current);
@@ -362,8 +365,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 				if (indexInOldTree != -1) {
 					String expansionState = TreeUtil.getExpansionState(oldTree,
 							indexInOldTree);
-					TreeUtil.restoreExpanstionState(newTree,
-							current.getLevel(), expansionState);
+					TreeUtil.restoreExpanstionState(newTree, current.getLevel(),
+							expansionState);
 				}
 
 				// The oldTree doesn't contain the current node
@@ -374,7 +377,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 					newTree.expandRow(current.getLevel());
 					int currentRow = current.getLevel();
 					int numChildren = current.getChildCount();
-					for (int i = currentRow; i < currentRow + numChildren; i++) {
+					for (int i = currentRow; i < currentRow
+							+ numChildren; i++) {
 						newTree.expandRow(i);
 					}
 					// if (current.getChildCount() > 0) {
@@ -444,8 +448,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 
 		// Make the transition tree with root node top
 		transitionTree = new JTree(top);
-		transitionTree.getSelectionModel().setSelectionMode(
-				TreeSelectionModel.SINGLE_TREE_SELECTION);
+		transitionTree.getSelectionModel()
+				.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
 		// CIVL_GUI is the listener for transition trees
 		transitionTree.addTreeSelectionListener(this);
@@ -505,7 +509,9 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 
 	}
 
-	/* *************************** Private Classes *************************** */
+	/*
+	 * *************************** Private Classes ***************************
+	 */
 
 	/* ***************** TreeSelectionListener Method ***************** */
 
@@ -522,7 +528,8 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 			if (n.getKind() == GUINodeKind.ROOT_NODE) {
 				try {
 					if (!n.isCollapsed()) {
-						for (int i = transitionTree.getRowCount() - 1; i > 0; i--) {
+						for (int i = transitionTree.getRowCount()
+								- 1; i > 0; i--) {
 							transitionTree.collapseRow(i);
 						}
 						n.setCollapsed(true);

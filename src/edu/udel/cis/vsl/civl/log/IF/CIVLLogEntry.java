@@ -11,20 +11,23 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.gmc.LogEntry;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 /**
- * This represents an entry in the error log of CIVL.   LogEntry's are stored in a
- * collection that is ordered by the compareTo method and where the equals method
- * determines redundancy in terms of error reports.
+ * This represents an entry in the error log of CIVL. LogEntry's are stored in a
+ * collection that is ordered by the compareTo method and where the equals
+ * method determines redundancy in terms of error reports.
  * 
- * Currently these two methods consult the CIVLConfiguration to determine what equivalence
- * should be applied to error states.   States that do not share the same problem kind
- * are always inequivalent.   There are three alternative criteria that are applied:
- *     LOC : require error locations in each proc to be the same for equivalence
- *     CALLSTACK : require call stacks in each proc to be the same for equivalence
- *     FULL : require the full trace, as expressed by the path condition, to be the same for equivalence
+ * Currently these two methods consult the CIVLConfiguration to determine what
+ * equivalence should be applied to error states. States that do not share the
+ * same problem kind are always inequivalent. There are three alternative
+ * criteria that are applied: LOC : require error locations in each proc to be
+ * the same for equivalence CALLSTACK : require call stacks in each proc to be
+ * the same for equivalence FULL : require the full trace, as expressed by the
+ * path condition, to be the same for equivalence
  * 
- * Additional equivalences are easy to implement by accessing components of the state.
+ * Additional equivalences are easy to implement by accessing components of the
+ * state.
  * 
  * @author zirkel
  * @author dwyer
@@ -34,13 +37,15 @@ public class CIVLLogEntry extends LogEntry {
 
 	private CIVLExecutionException problem;
 	private CIVLConfiguration civlConfig;
+	private SymbolicUniverse universe;
 
 	public CIVLLogEntry(CIVLConfiguration civlConfig,
-			GMCConfiguration gmcConfig,
-			CIVLExecutionException problem) {
+			GMCConfiguration gmcConfig, CIVLExecutionException problem,
+			SymbolicUniverse universe) {
 		super(gmcConfig);
 		this.civlConfig = civlConfig;
 		this.problem = problem;
+		this.universe = universe;
 		problem.setReported();
 	}
 
@@ -76,27 +81,37 @@ public class CIVLLogEntry extends LogEntry {
 				} else if (source1 != null & source2 == null) {
 					return 1;
 				} else {
-					if (civlConfig.errorStateEquiv() == ErrorStateEquivalence.LOC) {
+					if (civlConfig
+							.errorStateEquiv() == ErrorStateEquivalence.LOC) {
 						if (source1.equals(source2))
 							return 0;
 						else
-							return source1.toString().compareTo(source2.toString());
-						
-					} else if (civlConfig.errorStateEquiv() == ErrorStateEquivalence.CALLSTACK) {
+							return source1.toString()
+									.compareTo(source2.toString());
+
+					} else if (civlConfig
+							.errorStateEquiv() == ErrorStateEquivalence.CALLSTACK) {
 						// compare based on the call stack
-						String callString1 = errorState1.callStackToString().toString();
-						String callString2 = errorState2.callStackToString().toString();
-						
+						String callString1 = errorState1.callStackToString()
+								.toString();
+						String callString2 = errorState2.callStackToString()
+								.toString();
+
 						return callString1.compareTo(callString2);
-						
-					} else if (civlConfig.errorStateEquiv() == ErrorStateEquivalence.FULL) {
+
+					} else if (civlConfig
+							.errorStateEquiv() == ErrorStateEquivalence.FULL) {
 						// compare based on the full state
-						assert errorState1.getCanonicId() != -1 : "Expected error state to be canonic";
-						assert errorState2.getCanonicId() != -1 : "Expected error state to be canonic";
-						
-						String stateString1 = errorState1.getPathCondition().toString();
-						String stateString2 = errorState2.getPathCondition().toString();
-						
+						assert errorState1
+								.getCanonicId() != -1 : "Expected error state to be canonic";
+						assert errorState2
+								.getCanonicId() != -1 : "Expected error state to be canonic";
+
+						String stateString1 = errorState1
+								.getPathCondition(universe).toString();
+						String stateString2 = errorState2
+								.getPathCondition(universe).toString();
+
 						return stateString1.compareTo(stateString2);
 					} else {
 						assert false : "Invalid error state equivalence";
@@ -127,27 +142,37 @@ public class CIVLLogEntry extends LogEntry {
 				} else if (source1 != null & source2 == null) {
 					return false;
 				} else {
-					if (civlConfig.errorStateEquiv() == ErrorStateEquivalence.LOC) {
+					if (civlConfig
+							.errorStateEquiv() == ErrorStateEquivalence.LOC) {
 						if (source1.equals(source2))
 							return true;
 						else
-							return source1.toString().equals(source2.toString());
-						
-					} else if (civlConfig.errorStateEquiv() == ErrorStateEquivalence.CALLSTACK) {
+							return source1.toString()
+									.equals(source2.toString());
+
+					} else if (civlConfig
+							.errorStateEquiv() == ErrorStateEquivalence.CALLSTACK) {
 						// compare based on the call stack
-						String callString1 = errorState1.callStackToString().toString();
-						String callString2 = errorState2.callStackToString().toString();
-						
+						String callString1 = errorState1.callStackToString()
+								.toString();
+						String callString2 = errorState2.callStackToString()
+								.toString();
+
 						return callString1.equals(callString2);
-						
-					} else if (civlConfig.errorStateEquiv() == ErrorStateEquivalence.FULL) {
+
+					} else if (civlConfig
+							.errorStateEquiv() == ErrorStateEquivalence.FULL) {
 						// compare based on the full state
-						assert errorState1.getCanonicId() != -1 : "Expected error state to be canonic";
-						assert errorState2.getCanonicId() != -1 : "Expected error state to be canonic";
-						
-						String stateString1 = errorState1.getPathCondition().toString();
-						String stateString2 = errorState2.getPathCondition().toString();
-						
+						assert errorState1
+								.getCanonicId() != -1 : "Expected error state to be canonic";
+						assert errorState2
+								.getCanonicId() != -1 : "Expected error state to be canonic";
+
+						String stateString1 = errorState1
+								.getPathCondition(universe).toString();
+						String stateString2 = errorState2
+								.getPathCondition(universe).toString();
+
 						return stateString1.equals(stateString2);
 					} else {
 						assert false : "Invalid error state equivalence";

@@ -223,7 +223,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		int elementTypeIndex;
 		CIVLBundleType bundleType = this.typeFactory.bundleType();
 		BooleanExpression isPtrValid, isSizeGTZ;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 
 		// requires : pointer is valid:
 		isPtrValid = symbolicAnalyzer.isDerefablePointer(state, pointer).left;
@@ -480,7 +480,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		SymbolicExpression data = bundleData;
 		NumericExpression dataSize;
 		Evaluation eval;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		Pair<Evaluation, SymbolicExpression> eval_and_pointer;
 
 		// Since bundle unpack is called by executeBundleUnpack, it has no need

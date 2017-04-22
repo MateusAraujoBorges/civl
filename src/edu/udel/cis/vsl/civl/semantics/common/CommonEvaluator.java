@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode.ExtendedQuantifier;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.mpi.LibmpiEvaluator;
@@ -48,7 +47,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RealLiteralExpression;
@@ -63,7 +61,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SystemGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
@@ -151,9 +148,9 @@ public class CommonEvaluator implements Evaluator {
 	public static String TOTAL_DEREFERENCE_FUNCTION = "_total_deref";
 
 	/* *************************** Instance Fields ************************* */
-	private LibraryExecutorLoader libExeLoader;
+	protected LibraryExecutorLoader libExeLoader;
 
-	private MemoryUnitFactory memUnitFactory;
+	protected MemoryUnitFactory memUnitFactory;
 
 	protected CIVLConfiguration civlConfig;
 
@@ -303,7 +300,7 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	protected SymbolicAnalyzer symbolicAnalyzer;
 
-	private MemoryUnitExpressionEvaluator memUnitEvaluator;
+	protected MemoryUnitExpressionEvaluator memUnitEvaluator;
 
 	protected CIVLTypeFactory typeFactory;
 
@@ -446,10 +443,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            false only when executing $copy function.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @return A possibly new state and the value of memory space pointed by the
 	 *         pointer.
@@ -490,11 +487,13 @@ public class CommonEvaluator implements Evaluator {
 							.variable(vid);
 
 					if (variable.isOutput()) {
-						errorLogger.logSimpleError(source, state, process,
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.OUTPUT_READ,
-								"Attempt to read output variable "
-										+ variable.name().name());
+						errorLogger
+								.logSimpleError(source, state, process,
+										symbolicAnalyzer.stateInformation(
+												state),
+										ErrorKind.OUTPUT_READ,
+										"Attempt to read output variable "
+												+ variable.name().name());
 						throwPCException = true;
 					}
 				}
@@ -549,10 +548,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            The pointer to be dereferenced.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @param source
 	 *            The {@link CIVLSource} associates with the dereference
@@ -570,7 +569,8 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		boolean throwPCException = false;
 
-		if (!pointer.type().equals(pointerType)) {
+		if (pointer == symbolicUtil.undefinedPointer()
+				|| !pointer.type().equals(pointerType)) {
 			if (!muteErrorSideEffects)
 				errorLogger.logSimpleError(source, state, process,
 						this.symbolicAnalyzer.stateInformation(state),
@@ -765,7 +765,7 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression leftValue = (BooleanExpression) eval.value;
-		BooleanExpression assumption = eval.state.getPathCondition();
+		BooleanExpression assumption = eval.state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(assumption);
 
 		// true && x = x;
@@ -780,6 +780,7 @@ public class CommonEvaluator implements Evaluator {
 			eval = evaluate(eval.state, pid, expression.right());
 			eval.value = universe.and(leftValue,
 					(BooleanExpression) eval.value);
+			// eval.state = tmp;
 			return eval;
 		}
 	}
@@ -911,22 +912,11 @@ public class CommonEvaluator implements Evaluator {
 			case EQUAL :
 				return evaluateNumericOperations(state, pid, process,
 						expression);
-			case REMOTE : {
-				return evaluateRemoteOperation(state, pid, expression);
-			}
+			case REMOTE :
 			default :
 				throw new CIVLUnimplementedFeatureException(
 						"Evaluating binary operator of " + operator + " kind");
 		}
-	}
-
-	protected Evaluation evaluateRemoteOperation(State state, int pid,
-			BinaryExpression expression)
-			throws UnsatisfiablePathConditionException {
-		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
-				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
-				memUnitFactory, errorLogger, civlConfig)
-						.evaluateRemoteOperation(state, pid, expression);
 	}
 
 	/**
@@ -1091,12 +1081,12 @@ public class CommonEvaluator implements Evaluator {
 			eval.value = this.booleanToInteger(value);
 			return eval;
 		} else if (argType.isIntegerType() && castType.isPointerType()) {
-			eval.value = this.int2PointerCaster.apply(state.getPathCondition(),
-					value, castType);
+			eval.value = this.int2PointerCaster
+					.apply(state.getPathCondition(universe), value, castType);
 			return eval;
 		} else if (argType.isPointerType() && castType.isIntegerType()) {
-			eval.value = this.pointer2IntCaster.apply(state.getPathCondition(),
-					value, null);
+			eval.value = this.pointer2IntCaster
+					.apply(state.getPathCondition(universe), value, null);
 			return eval;
 		} else if (argType.isPointerType() && castType.isPointerType()) {
 			// pointer to pointer: for now...no change.
@@ -1122,12 +1112,12 @@ public class CommonEvaluator implements Evaluator {
 				eval.value = universe.not(universe.equals(value, zero));
 			return eval;
 		} else if (argType.isIntegerType() && castType.isCharType()) {
-			eval.value = this.int2CharCaster.apply(state.getPathCondition(),
-					value, null);
+			eval.value = this.int2CharCaster
+					.apply(state.getPathCondition(universe), value, null);
 			return eval;
 		} else if (argType.isCharType() && castType.isIntegerType()) {
-			eval.value = this.char2IntCaster.apply(state.getPathCondition(),
-					value, null);
+			eval.value = this.char2IntCaster
+					.apply(state.getPathCondition(universe), value, null);
 			return eval;
 		}
 		try {
@@ -1520,7 +1510,7 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression p = (BooleanExpression) eval.value;
-		BooleanExpression assumption = eval.state.getPathCondition();
+		BooleanExpression assumption = eval.state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(assumption);
 
 		// If p is false, the implication will evaluate to true.
@@ -1600,7 +1590,7 @@ public class CommonEvaluator implements Evaluator {
 		Expression extent = arrayType.extent();
 		Evaluation eval = evaluate(state, pid, extent);
 		BooleanExpression validArrayLength;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType resultType;
 
 		state = eval.state;
@@ -1853,7 +1843,7 @@ public class CommonEvaluator implements Evaluator {
 			BinaryExpression expression, NumericExpression numerator,
 			NumericExpression denominator, boolean muteErrorSideEffects)
 			throws UnsatisfiablePathConditionException {
-		BooleanExpression assumption = state.getPathCondition();
+		BooleanExpression assumption = state.getPathCondition(universe);
 
 		if (civlConfig.svcomp() || muteErrorSideEffects) {
 			BooleanExpression leftPositive = universe.lessThan(zero, numerator);
@@ -1935,7 +1925,7 @@ public class CommonEvaluator implements Evaluator {
 			BinaryExpression expression, NumericExpression numerator,
 			NumericExpression denominator, boolean muteErrorSideEffects)
 			throws UnsatisfiablePathConditionException {
-		BooleanExpression assumption = state.getPathCondition();
+		BooleanExpression assumption = state.getPathCondition(universe);
 		SymbolicExpression result;
 
 		if (civlConfig.checkDivisionByZero() && !muteErrorSideEffects
@@ -1995,7 +1985,7 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression p = (BooleanExpression) eval.value;
-		BooleanExpression assumption = eval.state.getPathCondition();
+		BooleanExpression assumption = eval.state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(assumption);
 
 		// TODO: handle special common case as in evaluateAnd.
@@ -2265,8 +2255,8 @@ public class CommonEvaluator implements Evaluator {
 		step = eval.value;
 		state = eval.state;
 		claim = universe.equals(this.zero, step);
-		validity = universe.reasoner(state.getPathCondition()).valid(claim)
-				.getResultType();
+		validity = universe.reasoner(state.getPathCondition(universe))
+				.valid(claim).getResultType();
 		if (validity == ResultType.YES) {
 			errorLogger.logSimpleError(range.getSource(), state, process,
 					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
@@ -2274,8 +2264,8 @@ public class CommonEvaluator implements Evaluator {
 			throw new UnsatisfiablePathConditionException();
 		}
 		claim = universe.lessThan(this.zero, (NumericExpression) step);
-		validity = universe.reasoner(state.getPathCondition()).valid(claim)
-				.getResultType();
+		validity = universe.reasoner(state.getPathCondition(universe))
+				.valid(claim).getResultType();
 		if (validity == ResultType.NO)
 			negativeStep = true;
 		if (negativeStep) {
@@ -2408,7 +2398,7 @@ public class CommonEvaluator implements Evaluator {
 			boolean addressOnly) throws UnsatisfiablePathConditionException {
 		if (!this.civlConfig.svcomp() && arrayType.isComplete()) {
 			NumericExpression length = universe.length(array);
-			BooleanExpression assumption = state.getPathCondition();
+			BooleanExpression assumption = state.getPathCondition(universe);
 			// TODO change to andTo
 			BooleanExpression claim;
 			ResultType resultType;
@@ -2884,8 +2874,9 @@ public class CommonEvaluator implements Evaluator {
 				// lost:
 				teval = getDynamicType(state, pid, elementType, null, false);
 				state = teval.state;
-				eval.value = symbolicUtil.newArray(state.getPathCondition(),
-						teval.type, extent, elementValue);
+				eval.value = symbolicUtil.newArray(
+						state.getPathCondition(universe), teval.type, extent,
+						elementValue);
 				break;
 			}
 			case BUNDLE :
@@ -3109,7 +3100,7 @@ public class CommonEvaluator implements Evaluator {
 		Evaluation eval;
 		int scopeId = symbolicUtil.getDyscopeId(source, pointer);
 		int vid = symbolicUtil.getVariableId(source, pointer);
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
 		String process = state.getProcessState(pid).name();
 
@@ -3235,7 +3226,7 @@ public class CommonEvaluator implements Evaluator {
 			BooleanExpression claim = universe.and(
 					universe.lessThanEquals(zero, newOffset),
 					universe.lessThanEquals(newOffset, one));
-			BooleanExpression assumption = state.getPathCondition();
+			BooleanExpression assumption = state.getPathCondition(universe);
 			ResultType resultType = universe.reasoner(assumption).valid(claim)
 					.getResultType();
 
@@ -3292,12 +3283,12 @@ public class CommonEvaluator implements Evaluator {
 		ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
 
 		claim = universe.equals(zero, offset);
-		assumption = state.getPathCondition();
+		assumption = state.getPathCondition(universe);
 		resultType = universe.reasoner(assumption).valid(claim).getResultType();
 		if (resultType.equals(ResultType.YES))
 			return new Evaluation(state, pointer);
 		claim = universe.equals(one, offset);
-		assumption = state.getPathCondition();
+		assumption = state.getPathCondition(universe);
 		resultType = universe.reasoner(assumption).valid(claim).getResultType();
 		if (resultType.equals(ResultType.YES))
 			return new Evaluation(state, symbolicUtil.makePointer(pointer,
@@ -3411,11 +3402,10 @@ public class CommonEvaluator implements Evaluator {
 				result = evaluateIntegerLiteral(state, pid,
 						(IntegerLiteralExpression) expression);
 				break;
-			case LAMBDA : {
+			case LAMBDA :
 				result = evaluateLambda(state, pid,
 						(LambdaExpression) expression);
 				break;
-			}
 			case MPI_CONTRACT_EXPRESSION :
 				result = evaluateMPIContractExpression(state, pid, process,
 						(MPIContractExpression) expression);
@@ -3503,45 +3493,18 @@ public class CommonEvaluator implements Evaluator {
 				result = evaluateExtendedQuantifiedExpression(state, pid,
 						(ExtendedQuantifiedExpression) expression);
 				break;
-			case VALUE_AT : {
-				result = evaluateValueAtExpression(state, pid,
-						(ValueAtExpression) expression);
-				break;
-			}
-			case ORIGINAL : {
-				result = evaluateOriginalExpression(state, pid,
-						(OriginalExpression) expression);
-				break;
-			}
 			case MEMORY_UNIT :
 			case NULL_LITERAL :
 			case STRING_LITERAL :
 				throw new CIVLSyntaxException(
 						"Illegal use of " + kind + " expression: ",
 						expression.getSource());
-
+			case VALUE_AT :
 			default :
-				throw new CIVLInternalException("unreachable", expression);
+				throw new CIVLInternalException("unreachable: " + kind,
+						expression);
 		}
 		return result;
-	}
-
-	protected Evaluation evaluateOriginalExpression(State state, int pid,
-			OriginalExpression original)
-			throws UnsatisfiablePathConditionException {
-		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
-				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
-				memUnitFactory, errorLogger, civlConfig)
-						.evaluateOriginalExpression(state, pid, original);
-	}
-
-	protected Evaluation evaluateValueAtExpression(State state, int pid,
-			ValueAtExpression valueAt)
-			throws UnsatisfiablePathConditionException {
-		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
-				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
-				memUnitFactory, errorLogger, civlConfig)
-						.evaluateValueAtExpression(state, pid, valueAt);
 	}
 
 	protected Evaluation evaluateQuantifiedExpression(State state, int pid,
@@ -3604,128 +3567,11 @@ public class CommonEvaluator implements Evaluator {
 	protected Evaluation evaluateExtendedQuantifiedExpression(State state,
 			int pid, ExtendedQuantifiedExpression extQuant)
 			throws UnsatisfiablePathConditionException {
-		Evaluation eval;
-		Expression function = extQuant.function();
-		NumericExpression low, high;
-		ExtendedQuantifier quant = extQuant.extendedQuantifier();
-
-		eval = evaluate(state, pid, extQuant.lower());
-		state = eval.state;
-		low = (NumericExpression) eval.value;
-		eval = evaluate(state, pid, extQuant.higher());
-		high = (NumericExpression) eval.value;
-		state = eval.state;
-
-		if (function.expressionKind() == ExpressionKind.LAMBDA) {
-			SymbolicExpression lambda;
-
-			eval = evaluate(state, pid, function);
-			state = eval.state;
-			lambda = eval.value;
-			eval.value = applyLambda4ExtendedQuantfication(state, pid,
-					extQuant.getSource(), quant, lambda, low, high);
-		} else {
-			throw new CIVLUnimplementedFeatureException(
-					"using non-lambda functions in " + quant + " expressions",
-					extQuant);
-		}
-		return eval;
-	}
-
-	private SymbolicExpression applyLambda4ExtendedQuantfication(State state,
-			int pid, CIVLSource source, ExtendedQuantifier quant,
-			SymbolicExpression lambda, NumericExpression low,
-			NumericExpression high) throws UnsatisfiablePathConditionException {
-		BooleanExpression lowLEHigh = universe.lessThanEquals(low, high);
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
-		ResultType reasonResult = reasoner.valid(lowLEHigh).getResultType();
-		NumericExpression result = null;
-
-		if (reasonResult == ResultType.YES) {
-			// low<=hi, TODO needs to check that (hi-low) is bounded
-			NumericExpression index = low;
-			SymbolicExpression current;
-			BooleanExpression indexInBound;
-
-			do {
-				current = universe.apply(lambda, Arrays.asList(index));
-				switch (quant) {
-					case SUM :
-						result = result == null
-								? (NumericExpression) current
-								: universe.add(result,
-										(NumericExpression) current);
-						break;
-					case NUMOF : {
-						if (reasoner.isValid((BooleanExpression) current)) {
-							result = result == null
-									? one
-									: universe.add(result, one);
-						} else if (!reasoner.isValid(
-								universe.not((BooleanExpression) current))) {
-							errorLogger.logSimpleError(source, state,
-									state.getProcessState(pid).name(),
-									symbolicAnalyzer.stateInformation(state),
-									ErrorKind.OTHER,
-									"unable to decide the result of the boolean function in \numof");
-							throw new UnsatisfiablePathConditionException();
-						}
-						break;
-					}
-					case PROD :
-						result = result == null
-								? (NumericExpression) current
-								: universe.multiply(result,
-										(NumericExpression) current);
-						break;
-					default :
-						throw new CIVLUnimplementedFeatureException(
-								"evaluating extended quantification " + quant,
-								source);
-				}
-				index = universe.add(index, one);
-				indexInBound = universe.lessThanEquals(index, high);
-				if (reasoner.isValid(universe.not(indexInBound)))
-					break;
-			} while (true);
-		} else {
-			BooleanExpression lowGtHigh = universe.lessThan(high, low);
-
-			reasonResult = reasoner.valid(lowGtHigh).getResultType();
-			if (reasonResult == ResultType.YES) {
-				// low>hi
-				switch (quant) {
-					case SUM :
-					case NUMOF :
-						result = this.zero;
-						break;
-					case PROD :
-						result = this.one;
-						break;
-					default :
-						errorLogger.logSimpleError(source, state,
-								state.getProcessState(pid).name(),
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.OTHER,
-								"undefined input for " + quant);
-						throw new UnsatisfiablePathConditionException();
-				}
-			} else {
-				errorLogger.logSimpleError(source, state,
-						state.getProcessState(pid).name(),
-						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.OTHER,
-						"unable to decide the LE/GT relation between the lower bound "
-								+ symbolicAnalyzer.symbolicExpressionToString(
-										source, state, null, low)
-								+ " and the upper bound "
-								+ symbolicAnalyzer.symbolicExpressionToString(
-										source, state, null, high)
-								+ quant);
-				throw new UnsatisfiablePathConditionException();
-			}
-		}
-		return result;
+		return new QuantifiedExpressionEvaluator(modelFactory, stateFactory,
+				libLoader, libExeLoader, symbolicUtil, symbolicAnalyzer,
+				memUnitFactory, errorLogger, civlConfig)
+						.evaluateExtendedQuantifiedExpression(state, pid,
+								extQuant);
 	}
 
 	protected Evaluation evaluateFunctionCallExpression(State state, int pid,
@@ -3743,7 +3589,7 @@ public class CommonEvaluator implements Evaluator {
 		if (type instanceof CIVLPrimitiveType) {
 			NumericExpression value = ((CIVLPrimitiveType) type).getSizeof();
 			BooleanExpression facts = ((CIVLPrimitiveType) type).getFacts();
-			BooleanExpression pc = state.getPathCondition();
+			BooleanExpression pc = state.getPathCondition(universe);
 			Reasoner reasoner = universe.reasoner(pc);
 
 			if (!reasoner.isValid(facts)) {
@@ -3879,11 +3725,13 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger.logSimpleError(source, state, process,
-							this.symbolicAnalyzer.stateInformation(state),
-							ErrorKind.OTHER,
-							"Try to obtain a string from a sequence of char has length"
-									+ " less than or equal to one");
+					this.errorLogger
+							.logSimpleError(source, state, process,
+									this.symbolicAnalyzer.stateInformation(
+											state),
+									ErrorKind.OTHER,
+									"Try to obtain a string from a sequence of char has length"
+											+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;
@@ -3954,7 +3802,7 @@ public class CommonEvaluator implements Evaluator {
 	public Evaluation getStringExpression(State state, String process,
 			CIVLSource source, SymbolicExpression charPointer)
 			throws UnsatisfiablePathConditionException {
-		BooleanExpression pc = state.getPathCondition();
+		BooleanExpression pc = state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(pc);
 		ReferenceExpression symRef = symbolicUtil.getSymRef(charPointer);
 
@@ -4280,7 +4128,8 @@ public class CommonEvaluator implements Evaluator {
 
 				state = eval.state;
 
-				Reasoner reasoner = universe.reasoner(state.getPathCondition());
+				Reasoner reasoner = universe
+						.reasoner(state.getPathCondition(universe));
 				IntegerNumber length_number = (IntegerNumber) reasoner
 						.extractNumber(extentValue);
 
@@ -4492,8 +4341,8 @@ public class CommonEvaluator implements Evaluator {
 	/**
 	 * <p>
 	 * The worker method for
-	 * {@link #recomputeArrayIndices(State, int, int, int, SymbolicExpression, NumericExpression, Reasoner, boolean, CIVLSource)}.
-	 * This method returns an updated state and an array of new indices.
+	 * {@link #recomputeArrayIndices(State, int, int, int, SymbolicExpression, NumericExpression, Reasoner, boolean, CIVLSource)}
+	 * . This method returns an updated state and an array of new indices.
 	 * 
 	 * Note that the compute of new indices is driven by pointer addition, so
 	 * that they may point to the end of an array (different from array
@@ -4531,7 +4380,7 @@ public class CommonEvaluator implements Evaluator {
 			NumericExpression[] arrayExtents, boolean muteErrorSideEffects,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		NumericExpression[] results = new NumericExpression[dimensions];
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType resultType;
 		BooleanExpression checkClaim;
 

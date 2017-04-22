@@ -131,7 +131,7 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 		CIVLType commType = typeFactory
 				.systemType(ModelConfiguration.COMM_TYPE);
 		Evaluation eval;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		Number srcNum, destNum;
 		int srcInt, destInt;
 
@@ -188,7 +188,7 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 	private BooleanExpression dequeueGuardGenerator(CIVLSource civlsource,
 			State state, SymbolicExpression gcomm, int source, int dest,
 			NumericExpression tag) throws UnsatisfiablePathConditionException {
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		boolean hasMsg, isWildTag = false;
 
 		/*
@@ -424,7 +424,7 @@ public class LibcommEvaluator extends BaseLibraryEvaluator
 			NumericExpression index, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		BooleanExpression claim;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType resultType;
 
 		claim = universe.lessThan(index, universe.length(procArray));

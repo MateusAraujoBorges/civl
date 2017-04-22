@@ -369,7 +369,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 
 		BooleanExpression pred = universe.trueExpression();
 		SymbolicExpression status;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		BitSet rangeVal = symbolicUtil.range2BitSet(range, reasoner);
 
 		for (int i = rangeVal.nextSetBit(0); i >= 0; i = rangeVal

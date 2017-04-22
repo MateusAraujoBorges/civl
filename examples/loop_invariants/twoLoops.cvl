@@ -1,0 +1,18 @@
+#include <civlc.cvh>
+#pragma PARSE_ACSL
+
+int main() {
+  int i = 0;
+
+  /*@ loop invariant i >= 0 ;
+    @*/
+  while (1) {    
+    i++;   
+  }
+
+  // The second loop will never executes
+
+  /*@ loop invariant i >= 0 ;
+    @*/
+  while(1) i--;
+}

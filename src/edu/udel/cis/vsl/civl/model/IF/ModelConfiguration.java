@@ -314,6 +314,11 @@ public final class ModelConfiguration {
 	public final static String MPI_SYS_STATUS = "_mpi_status";
 
 	/**
+	 * The name of the $mem type, which represents a set of memory locations.
+	 */
+	public final static String MEM_TYPE = "_mem";
+
+	/**
 	 * The name of the input variable denoting the number of MPI processes in
 	 * the final CIVL-C program.
 	 */

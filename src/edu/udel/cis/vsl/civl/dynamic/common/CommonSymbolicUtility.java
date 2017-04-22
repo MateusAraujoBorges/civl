@@ -197,7 +197,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 				this.makePointer(-1, -1, universe.identityReference()));
 		this.nullFunctionPointer = universe
 				.canonic(this.makeFunctionPointer(-1, -1));
-		this.undefinedPointer = universe.canonic(universe.nullExpression());
+		this.undefinedPointer = modelFactory
+				.undefinedValue(typeFactory.pointerSymbolicType());
 		this.stringType = universe.arrayType(universe.characterType());
 	}
 
