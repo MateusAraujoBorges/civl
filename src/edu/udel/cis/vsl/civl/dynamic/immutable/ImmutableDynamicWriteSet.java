@@ -10,6 +10,7 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 
 /**
  * An immutable pattern implementaion of {@Link DynamicWriteSet}
@@ -29,10 +30,8 @@ public class ImmutableDynamicWriteSet implements DynamicWriteSet {
 		pointerSet = new TreeSet<>(universe.comparator());
 	}
 
-	@SuppressWarnings("unchecked")
-	private ImmutableDynamicWriteSet(Comparator<?> comparator) {
-		this.pointerSet = (TreeSet<SymbolicExpression>) new TreeSet<>(
-				comparator);
+	private ImmutableDynamicWriteSet(Comparator<SymbolicObject> comparator) {
+		this.pointerSet = new TreeSet<>(comparator);
 	}
 
 	private ImmutableDynamicWriteSet(TreeSet<SymbolicExpression> references) {
@@ -72,8 +71,11 @@ public class ImmutableDynamicWriteSet implements DynamicWriteSet {
 	@Override
 	public ImmutableDynamicWriteSet apply(
 			UnaryOperator<SymbolicExpression> operator) {
+		@SuppressWarnings("unchecked")
+		Comparator<SymbolicObject> comparator = (Comparator<SymbolicObject>) pointerSet
+				.comparator();
 		ImmutableDynamicWriteSet newSet = new ImmutableDynamicWriteSet(
-				pointerSet.comparator());
+				comparator);
 		boolean change = false;
 
 		for (SymbolicExpression pointer : pointerSet) {
@@ -91,8 +93,11 @@ public class ImmutableDynamicWriteSet implements DynamicWriteSet {
 
 	@Override
 	public ImmutableDynamicWriteSet simplify(Reasoner reasoner) {
+		@SuppressWarnings("unchecked")
+		Comparator<SymbolicObject> comparator = (Comparator<SymbolicObject>) pointerSet
+				.comparator();
 		ImmutableDynamicWriteSet newSet = new ImmutableDynamicWriteSet(
-				pointerSet.comparator());
+				comparator);
 		boolean change = false;
 
 		for (SymbolicExpression pointer : pointerSet) {
