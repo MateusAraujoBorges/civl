@@ -1,0 +1,20 @@
+#pragma PARSE_ACSL
+$input int N;
+$assume(N > 0);
+$input int a[N];
+$input int b[N];
+
+int main() {
+  int sum = 0;
+  int i = 0;
+  
+  /*@
+    @ loop invariant 0<=i && i <=N;
+    @ loop invariant \forall int j; 0 <= j && j < i ==> sum == \sum(0, j, \lambda int t; a[t] + b[t]);
+    @*/
+  while (i < N) {
+    sum += a[i] + b[i];
+    i++;
+  }
+  return 0;
+}
