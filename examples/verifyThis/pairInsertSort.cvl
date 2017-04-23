@@ -1,0 +1,52 @@
+/* Challenge 1: original Java code.
+ * CIVL says there is array index out of bounds, as indicated below.
+ * Not sure if this is correct.
+ */
+
+#include <stdio.h>
+$input int N = 6; // upper bound on n
+$input int n; // size of array
+$assume(1<=n && n<=N);
+$input int A[n];
+$input int LEFT;
+$input int RIGHT;
+$assume(1<=LEFT && LEFT < RIGHT && RIGHT<n-1);
+
+int main() {
+  // assumption: a[LEFT-1] is less than every thing of right of LEFT:
+  $assume($forall (int j : LEFT .. RIGHT) A[j] >= A[LEFT-1]);
+  
+  printf("n=%d\n", n);
+  int a[n];
+  for (int i=0; i<n; i++) a[i]=A[i];
+  int left = LEFT, right = RIGHT;
+  int k;
+  /*@ loop invariant left < right;
+    @ loop invariant LEFT <= k && k <= RIGHT+2;
+    @ loop invariant \forall int i; LEFT <= i && i <= RIGHT ==>
+    @                               a[k] >= a[LEFT-1];
+    @ loop invariant \forall int j; LEFT <= j && j < left-1 ==>
+    @                               a[j] <= a[j+1];
+    @
+    @*/
+  for (k = left; ++left <= right; k = ++left) {
+    int a1 = a[k], a2 = a[left];
+    if (a1 < a2) {
+      a2 = a1; a1 = a[left];
+    }
+    while (a1 < a[--k]) {
+      a[k + 2] = a[k];
+    }
+    a[++k + 1] = a1;
+    while (a2 < a[--k]) {
+    printf("k=%d, LEFT=%d, a2=%d, a[k-1]=%d\n", k, LEFT, a2, a[k-1]);
+      a[k + 1] = a[k]; // violated? CIVL says k can be LEFT-2, LEFT-3, ...
+    }
+    a[k + 1] = a2;
+  }
+  int last = a[right];
+  while (last < a[--right]) {
+    a[right + 1] = a[right];
+  }
+  a[right + 1] = last;
+}
