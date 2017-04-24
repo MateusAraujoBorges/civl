@@ -38,6 +38,12 @@ public class CudaTest {
 						TestConstants.QUIET, filename("matMult1.cu")));
 	}
 
+	@Test
+	public void dotTest() {
+		assertTrue(ui.run("verify -inputN_B=3 -input threadsPerBlock_B=3",
+				TestConstants.QUIET, filename("dot.cu")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
