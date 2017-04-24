@@ -1,0 +1,59 @@
+/* Prove the sorted property of the main loop in a pair-insertion
+ * sorting algorithm. Currently SARL is not capable to prove the
+ * second inner loop.
+ **/
+#include <stdio.h>
+#pragma PARSE_ACSL
+$input int N = 6; // upper bound on n
+$input int n; // size of array
+$assume(1<=n && n<=N);
+$input int LEFT;
+$input int RIGHT;
+$assume(1<=LEFT && LEFT < RIGHT && RIGHT<n-1);
+
+int main() {
+  int a[n];
+
+  // assumption: a[LEFT-1] is less than every thing of right of LEFT:
+  $assume($forall (int j : LEFT .. RIGHT) a[j] >= a[LEFT-1]);
+  int left = LEFT, right = RIGHT;
+  int k = left;
+  
+  left++;
+  /*@ loop invariant left <= right + 2;
+    @ loop invariant LEFT <= k && k <= RIGHT+1 && k == left - 1;
+    @ loop invariant \forall int i; LEFT <= i && i <= RIGHT ==>
+    @                               a[i] >= a[LEFT-1];
+    @ loop invariant \forall int j; LEFT <= j && j < k ==>
+    @                               a[j-1] <= a[j];
+    @*/
+  for (;left <= right;) {
+    int a1 = a[k], a2 = a[left];
+    if (a1 < a2) {
+      a2 = a1; a1 = a[left];
+    }
+    k--;
+    /*@ loop invariant LEFT - 1 <= k && k < left - 1;
+      @ loop invariant \forall int i; k + 2 < i && i < left ==> 
+      @                                a[i] <= a[i+1] && a[i] >= a1;
+      @*/
+    while (a1 < a[k]) {
+      a[k + 2] = a[k];
+      k--;
+    }
+    a[++k + 1] = a1;
+    k--;
+    /*@ loop invariant LEFT - 1 <= k && k < left - 1; 
+      @ loop invariant \forall int i; k + 1 < i && i < left ==>
+      @                                a[i] <= a[i+1];
+      @*/
+    while (a2 < a[k]) {
+      a[k + 1] = a[k]; 
+      k--;
+    }
+    a[k + 1] = a2;
+    k = ++left;
+    left++;
+  }
+  $assert( $forall (int i : LEFT .. RIGHT-2) a[i] <= a[i+1] );
+}
