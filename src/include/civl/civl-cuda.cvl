@@ -138,9 +138,9 @@ dim3 $cuda_to_dim3(int x) {
  * The location of the cell is passed to the spawning function.
  */
 void $cuda_run_procs(dim3 dim, void spawningFunction(uint3)) {
-  $range rx = 0 .. dim.x - 1;
-  $range ry = 0 .. dim.y - 1;
-  $range rz = 0 .. dim.z - 1;
+  $range rx = 0 .. (dim.x == 0 ? -1 : dim.x - 1);
+  $range ry = 0 .. (dim.y == 0 ? -1 : dim.y - 1);
+  $range rz = 0 .. (dim.z == 0 ? -1 : dim.z - 1);
   $domain(3) dom = ($domain){rx, ry, rz};
   $parfor(int x,y,z : dom){
     uint3 id = { x, y, z };
