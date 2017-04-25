@@ -374,7 +374,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		CIVLType objectElementTypeStatic;
 		SymbolicType objectElementType;
 		BooleanExpression claim;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType resultType;
 		Evaluation eval;
 		Pair<Evaluation, NumericExpression[]> ptrAddRet;
@@ -471,7 +471,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				zeros.add(zeroVar);
 			zerosArray = universe.array(objectElementType, zeros);
 		} else {
-			zerosArray = symbolicUtil.newArray(state.getPathCondition(),
+			zerosArray = symbolicUtil.newArray(state.getPathCondition(universe),
 					objectElementType, length, zeroVar);
 		}
 		// Calling setDataFrom to set the pointed object to zero

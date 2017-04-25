@@ -608,7 +608,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		SymbolicExpression firstPtr, secondPtr;
 		SymbolicExpression first, second;
 		BooleanExpression claim;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType resultType;
 		Evaluation eval;
 		boolean firstPtrDefined, secPtrDefined, firstInit, secondInit;
@@ -838,7 +838,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 				primitiveTypePointedStatic, primitiveTypePointed);
 		if (!this.civlConfig.svcomp()) {
 			claim = universe.divides(ptr_primType_size, type_size);
-			reasoner = universe.reasoner(state.getPathCondition());
+			reasoner = universe.reasoner(state.getPathCondition(universe));
 			resultType = reasoner.valid(claim).getResultType();
 			if (!resultType.equals(ResultType.YES)) {
 				state = this.errorLogger.logError(source, state, pid,

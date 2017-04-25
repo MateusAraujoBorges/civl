@@ -21,3 +21,6 @@ quantifiedComp:
 
 relaxedPrefix:
 	$(VERIFY) relaxedPrefix.c
+
+clean:
+	rm -rf CIVLREP *~

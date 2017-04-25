@@ -166,7 +166,8 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		switch (function) {
 			case "$comm_dequeue" :
 				NumericExpression argSrc = (NumericExpression) argumentValues[1];
-				Reasoner reasoner = universe.reasoner(state.getPathCondition());
+				Reasoner reasoner = universe
+						.reasoner(state.getPathCondition(universe));
 
 				if (reasoner.isValid(universe.lessThanEquals(zero, argSrc))) {
 					return this.computeAmpleSetByHandleObject(state, pid,
@@ -235,8 +236,8 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		List<Transition> localTransitions = new LinkedList<>();
 		Evaluation eval;
 		String process = "p" + pid;
-		Reasoner reasoner = universe
-				.reasoner(universe.and(state.getPathCondition(), clause));
+		Reasoner reasoner = universe.reasoner(
+				universe.and(state.getPathCondition(universe), clause));
 		IntegerNumber argSourceNumber; // numeric object of the value of source
 		int intSource, intDest;
 		// set of all available sources
@@ -445,7 +446,7 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		SymbolicExpression comm, gcomm, place, dest, tag, msg;
 		SymbolicExpression procArray, candidateProc;
 		Evaluation eval;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		int candidateProcId;
 
 		eval = evaluator.evaluate(state, pid, enqueue_call.guard());

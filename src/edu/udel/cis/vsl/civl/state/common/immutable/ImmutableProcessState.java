@@ -8,10 +8,15 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 
+import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
+import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
@@ -137,6 +142,10 @@ public class ImmutableProcessState implements ProcessState {
 
 	private Map<SymbolicExpression, Boolean> reachableMemoryUnitsWtPointer;
 
+	private BooleanExpression[] partialPathConditions = null;
+
+	private DynamicWriteSet[] writeSets = null;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -153,10 +162,13 @@ public class ImmutableProcessState implements ProcessState {
 	 *            The flag indicates weather the process is self-destructable,
 	 *            see {@link #isSelfDestructable()}
 	 */
-	ImmutableProcessState(int pid, StackEntry[] stack, int atomicCount,
+	ImmutableProcessState(int pid, StackEntry[] stack, BooleanExpression[] ppcs,
+			DynamicWriteSet[] writeSets, int atomicCount,
 			boolean selfDestructable) {
 		this.pid = pid;
 		this.callStack = stack;
+		this.partialPathConditions = ppcs;
+		this.writeSets = writeSets;
 		this.atomicCount = atomicCount;
 		this.selfDestructable = selfDestructable;
 	}
@@ -173,7 +185,7 @@ public class ImmutableProcessState implements ProcessState {
 	 *            see {@link #isSelfDestructable()}
 	 */
 	ImmutableProcessState(int pid, boolean selfDestructable) {
-		this(pid, new ImmutableStackEntry[0], 0, selfDestructable);
+		this(pid, new ImmutableStackEntry[0], null, null, 0, selfDestructable);
 	}
 
 	/* ********************** Package-private Methods ********************** */
@@ -184,7 +196,16 @@ public class ImmutableProcessState implements ProcessState {
 	 * this class do not contain anything that can be made canonic: locations,
 	 * dynamic scope IDs, ints.
 	 */
-	void makeCanonic() {
+	void makeCanonic(SymbolicUniverse universe) {
+		if (!canonic) {
+			if (partialPathConditions != null)
+				for (int i = 0; i < partialPathConditions.length; i++)
+					partialPathConditions[i] = (BooleanExpression) universe
+							.canonic(partialPathConditions[i]);
+			if (writeSets != null)
+				for (int i = 0; i < writeSets.length; i++)
+					writeSets[i] = writeSets[i].canonicalize(universe);
+		}
 		canonic = true;
 	}
 
@@ -202,8 +223,8 @@ public class ImmutableProcessState implements ProcessState {
 				- 1];
 
 		System.arraycopy(callStack, 1, newStack, 0, callStack.length - 1);
-		return new ImmutableProcessState(pid, newStack, this.atomicCount,
-				selfDestructable);
+		return new ImmutableProcessState(pid, newStack, partialPathConditions,
+				writeSets, this.atomicCount, selfDestructable);
 	}
 
 	/**
@@ -221,8 +242,8 @@ public class ImmutableProcessState implements ProcessState {
 
 		System.arraycopy(callStack, 0, newStack, 1, callStack.length);
 		newStack[0] = newStackEntry;
-		return new ImmutableProcessState(pid, newStack, this.atomicCount,
-				selfDestructable);
+		return new ImmutableProcessState(pid, newStack, partialPathConditions,
+				writeSets, this.atomicCount, selfDestructable);
 	}
 
 	/**
@@ -243,8 +264,8 @@ public class ImmutableProcessState implements ProcessState {
 
 		System.arraycopy(callStack, 1, newStack, 1, length - 1);
 		newStack[0] = newStackEntry;
-		return new ImmutableProcessState(pid, newStack, this.atomicCount,
-				selfDestructable);
+		return new ImmutableProcessState(pid, newStack, partialPathConditions,
+				writeSets, this.atomicCount, selfDestructable);
 	}
 
 	/**
@@ -276,8 +297,8 @@ public class ImmutableProcessState implements ProcessState {
 	 * @return A new instance of process state with only the PID being changed.
 	 */
 	ImmutableProcessState setPid(int pid) {
-		return new ImmutableProcessState(pid, callStack, this.atomicCount,
-				selfDestructable);
+		return new ImmutableProcessState(pid, callStack, partialPathConditions,
+				writeSets, this.atomicCount, selfDestructable);
 	}
 
 	/**
@@ -289,8 +310,8 @@ public class ImmutableProcessState implements ProcessState {
 	 *         changed.
 	 */
 	ProcessState setStackEntries(StackEntry[] frames) {
-		return new ImmutableProcessState(pid, frames, this.atomicCount,
-				selfDestructable);
+		return new ImmutableProcessState(pid, frames, partialPathConditions,
+				writeSets, this.atomicCount, selfDestructable);
 	}
 
 	/**
@@ -309,8 +330,8 @@ public class ImmutableProcessState implements ProcessState {
 
 		System.arraycopy(callStack, 0, newStack, 0, n);
 		newStack[index] = frame;
-		return new ImmutableProcessState(pid, newStack, this.atomicCount,
-				selfDestructable);
+		return new ImmutableProcessState(pid, newStack, partialPathConditions,
+				writeSets, this.atomicCount, selfDestructable);
 	}
 
 	/**
@@ -324,10 +345,11 @@ public class ImmutableProcessState implements ProcessState {
 	 *         that the dyscopeIDs in the call stack entries have been replaced
 	 *         with new values according to the given map
 	 */
-	ImmutableProcessState updateDyscopes(int[] oldToNew) {
+	ImmutableProcessState updateDyscopes(int[] oldToNew,
+			UnaryOperator<SymbolicExpression> substituter) {
 		int stackSize = callStack.length;
 		StackEntry[] newStack = new StackEntry[stackSize];
-		boolean stackChange = false;
+		boolean change = false;
 
 		for (int j = 0; j < stackSize; j++) {
 			StackEntry oldFrame = callStack[j];
@@ -337,15 +359,122 @@ public class ImmutableProcessState implements ProcessState {
 			if (oldScope == newScope) {
 				newStack[j] = oldFrame;
 			} else {
-				stackChange = true;
+				change = true;
 				newStack[j] = new ImmutableStackEntry(oldFrame.location(),
 						newScope);
 			}
 		}
-		return stackChange
-				? new ImmutableProcessState(pid, newStack, atomicCount,
-						selfDestructable)
+		DynamicWriteSet newWriteSets[] = null;
+		BooleanExpression[] ppcsNew = null;
+
+		if (writeSets != null) {
+			newWriteSets = new DynamicWriteSet[writeSets.length];
+			for (int j = 0; j < writeSets.length; j++) {
+				newWriteSets[j] = writeSets[j].apply(substituter);
+				if (newWriteSets[j] != writeSets[j])
+					change = true;
+			}
+		}
+		if (partialPathConditions != null) {
+			ppcsNew = new BooleanExpression[partialPathConditions.length];
+			for (int j = 0; j < ppcsNew.length; j++) {
+				ppcsNew[j] = (BooleanExpression) substituter
+						.apply(partialPathConditions[j]);
+				if (ppcsNew[j] != partialPathConditions[j])
+					change = true;
+			}
+		}
+		return change
+				? new ImmutableProcessState(pid, newStack, ppcsNew,
+						newWriteSets, atomicCount, selfDestructable)
 				: this;
+	}
+
+	/**
+	 * Set the partial path condition array to the given one.
+	 * 
+	 * @param newPpcs
+	 *            An array of partial path conditions
+	 * @return A new instance whose partial path condition array field has been
+	 *         updated.
+	 */
+	ImmutableProcessState setPartialPathConditions(
+			BooleanExpression[] newPpcs) {
+		return new ImmutableProcessState(pid, callStack, newPpcs, writeSets,
+				atomicCount, selfDestructable);
+	}
+
+	/**
+	 * @return The reference to the partial path condition array.
+	 */
+	BooleanExpression[] getPartialPathConditions() {
+		if (partialPathConditions == null)
+			return new BooleanExpression[0];
+		else
+			return partialPathConditions;
+	}
+
+	/**
+	 * Set the {@link DynamicWriteSet} array to the given one.
+	 * 
+	 * @param newPpcs
+	 *            An array of write sets
+	 * @return A new instance whose write set array field has been updated.
+	 */
+	ImmutableProcessState setWriteSets(DynamicWriteSet[] newWriteSets) {
+		return new ImmutableProcessState(pid, callStack, partialPathConditions,
+				newWriteSets, atomicCount, selfDestructable);
+	}
+
+	/**
+	 * @return The reference to the {@link DynamicWriteSet} array.
+	 */
+	DynamicWriteSet[] getWriteSets() {
+		if (writeSets == null)
+			return new DynamicWriteSet[0];
+		else
+			return writeSets;
+	}
+
+	/**
+	 * @param reasoner
+	 *            A reference to a {@link Reasoner}
+	 * @return An {@link ImmutableProcessState} whose partial path condition
+	 *         stack and write set stack has been simplified.
+	 */
+	ImmutableProcessState simplify(Reasoner reasoner) {
+		boolean change = false;
+		BooleanExpression ppcNew[] = null;
+		DynamicWriteSet writeSetsNew[] = null;
+
+		if (partialPathConditions != null) {
+			ppcNew = Arrays.copyOf(partialPathConditions,
+					partialPathConditions.length);
+			for (int i = 0; i < partialPathConditions.length; i++) {
+				BooleanExpression tmp = reasoner
+						.simplify(partialPathConditions[i]);
+
+				if (tmp != partialPathConditions[i]) {
+					ppcNew[i] = tmp;
+					change = true;
+				}
+			}
+		}
+		if (writeSets != null) {
+			writeSetsNew = Arrays.copyOf(writeSets, writeSets.length);
+			for (int i = 0; i < writeSets.length; i++) {
+				DynamicWriteSet tmp = writeSets[i].simplify(reasoner);
+
+				if (tmp != writeSets[i]) {
+					writeSetsNew[i] = tmp;
+					change = true;
+				}
+			}
+		}
+		if (change)
+			return new ImmutableProcessState(pid, callStack, ppcNew,
+					writeSetsNew, atomicCount, selfDestructable);
+		return this;
 	}
 
 	/* ********************* Methods from ProcessState ********************* */
@@ -363,7 +492,8 @@ public class ImmutableProcessState implements ProcessState {
 	@Override
 	public ProcessState decrementAtomicCount() {
 		return new ImmutableProcessState(this.pid, this.callStack,
-				this.atomicCount - 1, selfDestructable);
+				partialPathConditions, writeSets, this.atomicCount - 1,
+				selfDestructable);
 	}
 
 	@Override
@@ -403,7 +533,8 @@ public class ImmutableProcessState implements ProcessState {
 	@Override
 	public ProcessState incrementAtomicCount() {
 		return new ImmutableProcessState(this.pid, this.callStack,
-				this.atomicCount + 1, selfDestructable);
+				partialPathConditions, writeSets, this.atomicCount + 1,
+				selfDestructable);
 	}
 
 	/**
@@ -500,6 +631,11 @@ public class ImmutableProcessState implements ProcessState {
 				return false;
 			if (hashed && that.hashed && hashCode != that.hashCode)
 				return false;
+			if (partialPathConditions != null && !Arrays
+					.equals(partialPathConditions, that.partialPathConditions))
+				return false;
+			if (writeSets != null && !Arrays.equals(writeSets, that.writeSets))
+				return false;
 			if (!Arrays.equals(callStack, that.callStack))
 				return false;
 			if (pid != that.pid)
@@ -516,6 +652,10 @@ public class ImmutableProcessState implements ProcessState {
 		if (!hashed) {
 			hashCode = Arrays.hashCode(callStack)
 					^ (48729 * (pid ^ (31 * this.atomicCount)));
+			if (partialPathConditions != null)
+				hashCode ^= Arrays.hashCode(partialPathConditions);
+			if (writeSets != null)
+				hashCode ^= Arrays.hashCode(writeSets);
 			hashed = true;
 		}
 		return hashCode;

@@ -1,0 +1,49 @@
+#include <stdio.h>
+#pragma PARSE_ACSL
+$input int N = 6; // upper bound on n
+$input int n; // size of array
+$assume(1<=n && n<=N);
+$input int LEFT;
+$input int RIGHT;
+$assume(1<=LEFT && LEFT < RIGHT && RIGHT<n-1);
+
+int main() {
+  int a[n];
+
+  // assumption: a[LEFT-1] is less than every thing of right of LEFT:
+  $assume($forall (int j : LEFT .. RIGHT) a[j] >= a[LEFT-1]);
+  int left = LEFT, right = RIGHT;
+  int k = left;
+  
+  left++;
+  /*@ loop invariant left <= right + 2;                                  // initially left <= right, left <= right+2 at termination
+    @ loop invariant LEFT <= k && k <= RIGHT+1 && k == left - 1;         // initially LEFT <= k < RIGHT, LEFT <= k <= RIGHT + 1 at termination
+    @ loop invariant \forall int i; LEFT <= i && i <= RIGHT ==>
+    @                               a[i] >= a[LEFT-1];
+    @ loop invariant \forall int j; LEFT <= j && j < k ==>
+    @                               a[j-1] <= a[j];
+    @*/
+  for (;left <= right;) {
+    int a1 = a[k], a2 = a[left];
+    if (a1 < a2) {
+      a2 = a1; a1 = a[left];
+    }
+    k--;
+    while (a1 < a[k]) {
+      a[k + 2] = a[k];
+      k--;
+    }
+    a[++k + 1] = a1;
+    k--;
+    while (a2 < a[k]) {
+      a[k + 1] = a[k]; 
+      k--;
+    }
+    a[k + 1] = a2;
+    k = ++left;
+    left++;
+  }
+  // [LEFT, RIGHT-1] is guaranteed to be sorted, but if element at [RIGHT] is 
+  // sorted depends on if length of the sub-array is even.
+  $assert( $forall (int i : LEFT .. RIGHT-2) a[i] <= a[i+1] );
+}

@@ -115,7 +115,8 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 				state = argumentsEval.left;
 
 				IntegerNumber upperNumber = (IntegerNumber) universe
-						.reasoner(state.getPathCondition()).extractNumber(
+						.reasoner(state.getPathCondition(universe))
+						.extractNumber(
 								(NumericExpression) argumentsEval.right[0]);
 				int upper;
 
@@ -248,7 +249,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression procsPointer = argumentValues[0];
 		SymbolicExpression numOfProcs = argumentValues[1];
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		IntegerNumber number_nprocs = (IntegerNumber) reasoner
 				.extractNumber((NumericExpression) numOfProcs);
 		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
@@ -331,7 +332,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 			Statement call, CIVLSource source,
 			Set<SymbolicConstant> symbolicConstants,
 			AtomicLockAction atomicLockAction) {
-		BooleanExpression pathCondition = state.getPathCondition();
+		BooleanExpression pathCondition = state.getPathCondition(universe);
 		List<ConstantBound> bounds = new ArrayList<>();
 		ConstantBound[] constantBounds;
 		Set<BooleanExpression> concreteValueClauses;

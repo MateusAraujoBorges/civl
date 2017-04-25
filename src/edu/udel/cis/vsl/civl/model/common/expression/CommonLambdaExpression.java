@@ -1,29 +1,27 @@
 package edu.udel.cis.vsl.civl.model.common.expression;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
-import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
-import edu.udel.cis.vsl.civl.util.IF.Pair;
 
 /**
  * @author Manchun Zheng (zmanchun)
  * 
  */
 public class CommonLambdaExpression extends CommonExpression
-		implements LambdaExpression {
-	private Expression restriction;
+		implements
+			LambdaExpression {
 	private Expression expression;
-	private List<Pair<List<Variable>, Expression>> boundVariableList;
+	private Variable freeVariable;
 
 	/**
 	 * creates a new array lambda expression
@@ -40,11 +38,11 @@ public class CommonLambdaExpression extends CommonExpression
 	 *            The body expression.
 	 */
 	public CommonLambdaExpression(CIVLSource source, CIVLFunctionType type,
-			List<Pair<List<Variable>, Expression>> boundVariableList,
-			Expression restriction, Expression expression) {
-		super(source, null, null, type);
-		this.boundVariableList = boundVariableList;
-		this.restriction = restriction;
+			Variable freeVariable, Expression expression) {
+		super(source, expression.expressionScope(), expression.lowestScope(),
+				type);
+		assert (type.typeKind() == CIVLType.TypeKind.FUNCTION);
+		this.freeVariable = freeVariable;
 		this.expression = expression;
 	}
 
@@ -54,51 +52,20 @@ public class CommonLambdaExpression extends CommonExpression
 	}
 
 	@Override
-	public List<Pair<List<Variable>, Expression>> boundVariableList() {
-		return this.boundVariableList;
+	public Variable freeVariable() {
+		return this.freeVariable;
 	}
 
 	@Override
-	public Expression restriction() {
-		return restriction;
-	}
-
-	@Override
-	public Expression expression() {
+	public Expression lambdaFunction() {
 		return expression;
 	}
 
 	@Override
 	public String toString() {
 		String result = "$lambda (";
-		boolean isFirstVariableSubList = true;
 
-		for (Pair<List<Variable>, Expression> variableSubList : this.boundVariableList) {
-			boolean isFirstVariable = true;
-
-			if (isFirstVariableSubList)
-				isFirstVariableSubList = false;
-			else
-				result += "; ";
-			for (Variable variable : variableSubList.left) {
-				if (isFirstVariable) {
-					result += variable.type() + " " + variable.name();
-					isFirstVariable = false;
-				} else {
-					result += ", ";
-					result += variable.name();
-				}
-				if (variableSubList.right != null) {
-					result += ": ";
-					result += variableSubList.right;
-				}
-			}
-
-		}
-		if (restriction != null) {
-			result += " | ";
-			result += restriction;
-		}
+		result += freeVariable;
 		result += ") ";
 		result += expression.toString();
 		return result;
@@ -107,38 +74,24 @@ public class CommonLambdaExpression extends CommonExpression
 	@Override
 	public void replaceWith(ConditionalExpression oldExpression,
 			VariableExpression newExpression) {
-		if (restriction == oldExpression) {
-			restriction = newExpression;
-			return;
-		}
 		if (expression == oldExpression) {
 			expression = newExpression;
 			return;
 		}
-		restriction.replaceWith(oldExpression, newExpression);
 		expression.replaceWith(oldExpression, newExpression);
 	}
 
 	@Override
 	public Expression replaceWith(ConditionalExpression oldExpression,
 			Expression newExpression) {
-		Expression newRestriction = restriction.replaceWith(oldExpression,
-				newExpression);
 		CommonLambdaExpression result = null;
+		Expression newExpressionField = expression.replaceWith(oldExpression,
+				newExpression);
 
-		if (newRestriction != null) {
+		if (newExpressionField != null)
 			result = new CommonLambdaExpression(this.getSource(),
-					(CIVLFunctionType) this.expressionType,
-					this.boundVariableList, newRestriction, expression);
-		} else {
-			Expression newExpressionField = expression
-					.replaceWith(oldExpression, newExpression);
-
-			if (newExpressionField != null)
-				result = new CommonLambdaExpression(this.getSource(),
-						(CIVLFunctionType) this.expressionType,
-						boundVariableList, restriction, newExpressionField);
-		}
+					(CIVLFunctionType) this.expressionType, this.freeVariable,
+					newExpressionField);
 		return result;
 	}
 
@@ -147,9 +100,6 @@ public class CommonLambdaExpression extends CommonExpression
 		Set<Variable> variableSet = new HashSet<>();
 		Set<Variable> operandResult;
 
-		operandResult = this.restriction.variableAddressedOf(scope);
-		if (operandResult != null)
-			variableSet.addAll(operandResult);
 		operandResult = expression.variableAddressedOf(scope);
 		if (operandResult != null)
 			variableSet.addAll(operandResult);
@@ -161,9 +111,6 @@ public class CommonLambdaExpression extends CommonExpression
 		Set<Variable> variableSet = new HashSet<>();
 		Set<Variable> operandResult;
 
-		operandResult = this.restriction.variableAddressedOf();
-		if (operandResult != null)
-			variableSet.addAll(operandResult);
 		operandResult = expression.variableAddressedOf();
 		if (operandResult != null)
 			variableSet.addAll(operandResult);
@@ -172,16 +119,20 @@ public class CommonLambdaExpression extends CommonExpression
 
 	@Override
 	protected boolean expressionEquals(Expression expression) {
-		ArrayLambdaExpression that = (ArrayLambdaExpression) expression;
+		CommonLambdaExpression that = (CommonLambdaExpression) expression;
 
 		return this.getExpressionType().equals(that.getExpressionType())
-				&& this.boundVariableList.equals(that.boundVariableList())
-				&& this.expression.equals(that.expression())
-				&& this.restriction.equals(that.restriction());
+				&& this.freeVariable.equals(that.freeVariable)
+				&& this.expression.equals(that.lambdaFunction());
 	}
 
 	@Override
 	public boolean containsHere() {
-		return restriction.containsHere() || expression.containsHere();
+		return expression.containsHere();
+	}
+
+	@Override
+	public CIVLFunctionType getExpressionType() {
+		return (CIVLFunctionType) this.expressionType;
 	}
 }

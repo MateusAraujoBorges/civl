@@ -445,17 +445,13 @@ public interface ModelFactory {
 	 * @param boundVariableList
 	 *            the list of bound variables as long as their domains
 	 *            (optional)
-	 * @param restriction
-	 *            the boolean-valued expression involving the bound variable
-	 *            which is expected to be true
 	 * @param expression
 	 *            the body expression.
 	 * @return the new array lambda expression
 	 */
 	LambdaExpression lambdaExpression(CIVLSource source,
-			CIVLFunctionType functionType,
-			List<Pair<List<Variable>, Expression>> boundVariableList,
-			Expression restriction, Expression expression);
+			CIVLFunctionType functionType, Variable variable,
+			Expression expression);
 
 	/**
 	 * 

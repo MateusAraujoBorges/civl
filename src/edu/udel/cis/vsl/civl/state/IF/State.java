@@ -4,6 +4,7 @@ import java.io.PrintStream;
 
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
@@ -93,9 +94,11 @@ public interface State {
 	/**
 	 * Returns the path condition.
 	 * 
+	 * @param universe
+	 *            A reference to a {@link SymbolicUniverse}.
 	 * @return the path condition.
 	 */
-	BooleanExpression getPathCondition();
+	BooleanExpression getPathCondition(SymbolicUniverse universe);
 
 	/**
 	 * Has this state been seen before in the depth-first search? This is simply
@@ -106,12 +109,13 @@ public interface State {
 	boolean seen();
 
 	/**
-	 * Is this state currently on the depth-frist search stack? This is simply
-	 * the "getter" for the "setter" method {@link #setOnStack(boolean)}.
+	 * This method will return the stack position of this state. If this state
+	 * is not on the stack, this method will return -1.
 	 * 
-	 * @return true iff this state is on the DFS stack
+	 * @return -1 iff this state is not on stack, otherwise, return the stack
+	 *         position of this state.
 	 */
-	boolean onStack();
+	int stackPosition();
 
 	/**
 	 * Sets the seen bit to the given value.
@@ -122,12 +126,12 @@ public interface State {
 	void setSeen(boolean value);
 
 	/**
-	 * Sets the "onStack" bit to the given value.
+	 * Sets the "stack position" field of a state.
 	 * 
-	 * @param onStack
-	 *            whether this state is on the DFS stack
+	 * @param stackIndex
+	 *            the position at which the state is on stack.
 	 */
-	void setOnStack(boolean onStack);
+	void setStackPosition(int stackIndex);
 
 	/**
 	 * Gets the dynamic scope ID (dyscope ID) of the parent of the dynamic scope
@@ -369,20 +373,29 @@ public interface State {
 	boolean getExpand();
 
 	/**
-	 * Get the "all-successors-on-stack" flag of a state.
+	 * Get the "fullyExpanded" flag of a state.
 	 * 
-	 * @return The value of the "all-successors-on-stack" flag.
+	 * @return The value of the "fullExpanded" flag.
 	 */
-	public boolean allSuccessorsVisited();
+	public boolean fullyExpanded();
 
 	/**
-	 * Set the "all-successors-on-stack" flag to a given value.
+	 * Set the "fullyExpanded" flag to a given value.
 	 * 
 	 * @param value
 	 *            The value that is assigned to the "all-successors-on-stack"
 	 *            flag.
 	 */
-	public void setAllSuccessorsVisited(boolean value);
+	public void setFullyExpanded(boolean value);
+
+	/**
+	 * @param pid
+	 *            The PID of the process who will be tested if it is monitoring
+	 *            write operations.
+	 * @return True iff any change of variables and memory heap objects by this
+	 *         process of this state will be recorded.
+	 */
+	public boolean isMonitoringWrites(int pid);
 
 	@Override
 	String toString();

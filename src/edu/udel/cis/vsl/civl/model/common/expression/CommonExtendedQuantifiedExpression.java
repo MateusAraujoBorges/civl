@@ -12,7 +12,8 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
 public class CommonExtendedQuantifiedExpression extends CommonExpression
-		implements ExtendedQuantifiedExpression {
+		implements
+			ExtendedQuantifiedExpression {
 	private ExtendedQuantifier quantifier;
 	private Expression lower;
 	private Expression higher;
@@ -81,6 +82,11 @@ public class CommonExtendedQuantifiedExpression extends CommonExpression
 	@Override
 	public Expression function() {
 		return this.function;
+	}
+
+	@Override
+	public String toString() {
+		return quantifier + "(" + lower + ", " + higher + "," + function + ")";
 	}
 
 	@Override

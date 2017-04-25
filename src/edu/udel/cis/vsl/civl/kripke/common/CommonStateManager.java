@@ -148,7 +148,7 @@ public class CommonStateManager implements StateManager {
 		this.falseExpr = symbolicAnalyzer.getUniverse().falseExpression();
 		if (config.collectOutputs())
 			this.outputCollector = new OutputCollector(
-					this.enabler.modelFactory.model());
+					this.enabler.modelFactory.model(), this.enabler.universe);
 		ignoredHeapErrors = new HashSet<>(0);
 	}
 
@@ -341,11 +341,12 @@ public class CommonStateManager implements StateManager {
 			config.out().print(state.toString());
 			config.out().print(" -- path condition: ");
 			if (config.showPathConditonAsOneLine())
-				config.out().println(state.getPathCondition());
+				config.out().println(state.getPathCondition(enabler.universe));
 			else
-				config.out().println(
-						this.symbolicAnalyzer.pathconditionToString(null, state,
-								"\t", state.getPathCondition()));
+				config.out()
+						.println(this.symbolicAnalyzer.pathconditionToString(
+								null, state, "\t", state
+										.getPathCondition(enabler.universe)));
 		}
 		numProcs = state.numLiveProcs();
 		Utils.biggerAndSet(maxProcs, numProcs);
@@ -599,8 +600,8 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public boolean onStack(State state) {
-		return state.onStack();
+	public int stackPosition(State state) {
+		return state.stackPosition();
 	}
 
 	@Override
@@ -644,8 +645,8 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public void setOnStack(State state, boolean value) {
-		state.setOnStack(value);
+	public void setStackPosition(State state, int stackIndex) {
+		state.setStackPosition(stackIndex);
 	}
 
 	@Override
@@ -708,13 +709,13 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public boolean allSuccessorsVisited(State state) {
-		return state.allSuccessorsVisited();
+	public boolean fullyExpanded(State state) {
+		return state.fullyExpanded();
 	}
 
 	@Override
-	public void setAllSuccessorsVisited(State state, boolean value) {
-		state.setAllSuccessorsVisited(value);
+	public void setFullyExpanded(State state, boolean value) {
+		state.setFullyExpanded(value);
 	}
 
 }

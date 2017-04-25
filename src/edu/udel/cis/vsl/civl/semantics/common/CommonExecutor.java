@@ -248,7 +248,7 @@ public class CommonExecutor implements Executor {
 			 * .baseType().isVoidType()) { if (eval.value.type().isInteger()) {
 			 * eval.value = int2PointerCaster .forceCast(eval.value); } } } }
 			 */
-			state = assign(eval.state, pid, process, statement.getLhs(),
+			state = assignLHS(eval.state, pid, process, statement.getLhs(),
 					eval.value, statement.isInitialization());
 		}
 		state = stateFactory.setLocation(state, pid, statement.target(), true);
@@ -264,7 +264,7 @@ public class CommonExecutor implements Executor {
 
 		for (Pair<LHSExpression, Expression> assign : assignPairs) {
 			eval = evaluator.evaluate(state, pid, assign.right);
-			state = assign(eval.state, pid, process, assign.left, eval.value,
+			state = assignLHS(eval.state, pid, process, assign.left, eval.value,
 					false);
 		}
 		return stateFactory.setLocation(state, pid, statement.target());
@@ -417,7 +417,7 @@ public class CommonExecutor implements Executor {
 				statement.getStaticElementType());
 		state = eval.state;
 		elementSize = (NumericExpression) eval.value;
-		pathCondition = state.getPathCondition();
+		pathCondition = state.getPathCondition(universe);
 		if (!this.civlConfig.svcomp()) {
 			claim = universe.divides(elementSize, mallocSize);
 			validity = universe.reasoner(pathCondition).valid(claim)
@@ -469,6 +469,12 @@ public class CommonExecutor implements Executor {
 			dynamicElementType = statement.getDynamicElementType();
 		mallocResult = stateFactory.malloc(state, pid, dyScopeID,
 				statement.getMallocId(), dynamicElementType, elementCount);
+		if (state.isMonitoringWrites(pid)) {
+			SymbolicExpression pointer2memoryBlk = symbolicUtil
+					.parentPointer(mallocResult.right);
+
+			state = stateFactory.addWriteRecords(state, pid, pointer2memoryBlk);
+		}
 		state = mallocResult.left;
 		if (lhs != null)
 			state = assign(state, pid, process, lhs, mallocResult.right);
@@ -765,7 +771,7 @@ public class CommonExecutor implements Executor {
 		// TODO: why is dim -1 sometimes?
 		int dim = parFor.dimension();
 		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		IntegerNumber number_domSize;
 		VariableExpression parProcsVar = parFor.parProcsVar();
 
@@ -1280,8 +1286,15 @@ public class CommonExecutor implements Executor {
 	}
 
 	/**
+	 * <p>
 	 * assigns a given value to a memory pointed to by a pointer at a given
 	 * state by a certain process.
+	 * </p>
+	 * 
+	 * <p>
+	 * This is the core method which delivers changes in state, it is called by
+	 * other higher-level assign methods.
+	 * </p>
 	 * 
 	 * @param source
 	 *            the source for error report
@@ -1305,7 +1318,7 @@ public class CommonExecutor implements Executor {
 	 * @throws UnsatisfiablePathConditionException
 	 *             if the memory represented by the lhs expression is invalid
 	 */
-	protected State assign(CIVLSource source, State state, int pid,
+	private State assignCore(CIVLSource source, State state, int pid,
 			SymbolicExpression pointer, SymbolicExpression value,
 			boolean isInitialization, boolean toCheckPointer)
 			throws UnsatisfiablePathConditionException {
@@ -1364,6 +1377,8 @@ public class CommonExecutor implements Executor {
 				throw new UnsatisfiablePathConditionException();
 			}
 		}
+		if (state.isMonitoringWrites(pid))
+			state = stateFactory.addWriteRecords(state, pid, pointer);
 		if (symRef.isIdentityReference()) {
 			result = stateFactory.setVariable(state, vid, sid, value);
 		} else {
@@ -1440,35 +1455,28 @@ public class CommonExecutor implements Executor {
 	 * @throws UnsatisfiablePathConditionException
 	 *             if the memory represented by the lhs expression is invalid
 	 */
-	protected State assign(State state, int pid, String process,
+	private State assignLHS(State state, int pid, String process,
 			LHSExpression lhs, SymbolicExpression value,
 			boolean isInitialization)
 			throws UnsatisfiablePathConditionException {
 		LHSExpressionKind kind = lhs.lhsExpressionKind();
 
-		if (kind == LHSExpressionKind.VARIABLE)
-			return this.stateFactory.setVariable(state,
-					((VariableExpression) lhs).variable(), pid, value);
-		else {
+		if (kind == LHSExpressionKind.VARIABLE) {
+			Variable variable = ((VariableExpression) lhs).variable();
+			int dyscopeId = state.getDyscopeID(pid, variable);
+
+			if (state.isMonitoringWrites(pid))
+				state = stateFactory.addWriteRecords(state, pid,
+						symbolicUtil.makePointer(dyscopeId, variable.vid(),
+								universe.identityReference()));
+			return stateFactory.setVariable(state, variable, pid, value);
+		} else {
 			Evaluation eval = evaluator.reference(state, pid, lhs);
 			boolean toCheckPointer = kind == LHSExpressionKind.DEREFERENCE;
 
-			// if (lhs instanceof DotExpression) {
-			// DotExpression dot = (DotExpression) lhs;
-			//
-			// if (dot.isUnion()) {
-			// int memberIndex = dot.fieldIndex();
-			//
-			// value = evaluator.universe().unionInject(
-			// (SymbolicUnionType) (dot.structOrUnion()
-			// .getExpressionType()
-			// .getDynamicType(evaluator.universe())),
-			// evaluator.universe().intObject(memberIndex), value);
-			// }
-			// }
 			// TODO check if lhs is constant or input value
-			return assign(lhs.getSource(), eval.state, pid, eval.value, value,
-					isInitialization, toCheckPointer);
+			return assignCore(lhs.getSource(), eval.state, pid, eval.value,
+					value, isInitialization, toCheckPointer);
 		}
 	}
 
@@ -1478,14 +1486,14 @@ public class CommonExecutor implements Executor {
 	public State assign(CIVLSource source, State state, int pid,
 			SymbolicExpression pointer, SymbolicExpression value)
 			throws UnsatisfiablePathConditionException {
-		return this.assign(source, state, pid, pointer, value, false, true);
+		return this.assignCore(source, state, pid, pointer, value, false, true);
 	}
 
 	@Override
 	public State assign(State state, int pid, String process, LHSExpression lhs,
 			SymbolicExpression value)
 			throws UnsatisfiablePathConditionException {
-		return this.assign(state, pid, process, lhs, value, false);
+		return this.assignLHS(state, pid, process, lhs, value, false);
 	}
 
 	@Override
@@ -1496,21 +1504,6 @@ public class CommonExecutor implements Executor {
 	@Override
 	public long getNumSteps() {
 		return numSteps.longValue();
-	}
-
-	@Override
-	public State malloc(CIVLSource source, State state, int pid, String process,
-			LHSExpression lhs, Expression scopeExpression,
-			SymbolicExpression scopeValue, CIVLType objectType,
-			SymbolicExpression objectValue)
-			throws UnsatisfiablePathConditionException {
-		Evaluation eval = this.malloc(source, state, pid, process,
-				scopeExpression, scopeValue, objectType, objectValue);
-
-		state = eval.state;
-		if (lhs != null)
-			state = assign(state, pid, process, lhs, eval.value);
-		return state;
 	}
 
 	@Override
@@ -1531,6 +1524,12 @@ public class CommonExecutor implements Executor {
 		heapObject = universe.array(objectType.getDynamicType(universe),
 				Arrays.asList(objectValue));
 		result = stateFactory.malloc(state, dyscopeID, mallocId, heapObject);
+		if (state.isMonitoringWrites(pid)) {
+			SymbolicExpression pointer2memoryBlk = symbolicUtil
+					.parentPointer(result.right);
+
+			state = stateFactory.addWriteRecords(state, pid, pointer2memoryBlk);
+		}
 		return new Evaluation(result.left, result.right);
 	}
 
@@ -1559,8 +1558,9 @@ public class CommonExecutor implements Executor {
 								+ atomicLockAction.toString(),
 						transition.statement().getSource());
 		}
-		state = stateFactory.addToPathcondition(state, pid,
-				transition.clause());
+		if (!transition.clause().isTrue())
+			state = stateFactory.addToPathcondition(state, pid,
+					transition.clause());
 		if (transition.simpifyState()
 				&& (civlConfig.svcomp() || this.civlConfig.simplify()))
 			state = this.stateFactory.simplify(state);

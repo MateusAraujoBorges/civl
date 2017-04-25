@@ -11,6 +11,7 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
@@ -27,12 +28,17 @@ public class OutputCollector {
 	private Set<State> checkedState = new HashSet<>();
 	private int[] outputIds;
 	private int numOutputs;
+	/**
+	 * A reference to {@link SymbolicUniverse}
+	 */
+	private SymbolicUniverse universe;
 
-	public OutputCollector(Model model) {
+	public OutputCollector(Model model, SymbolicUniverse universe) {
 		List<Variable> outputVariables = model.outputVariables();
 		int i = 0;
-		numOutputs = outputVariables.size();
 
+		this.universe = universe;
+		numOutputs = outputVariables.size();
 		outptutNames = new String[this.numOutputs];
 		outputIds = new int[this.numOutputs];
 		for (Variable variable : outputVariables) {
@@ -49,7 +55,7 @@ public class OutputCollector {
 			return;
 
 		// state.print(System.out);
-		BooleanExpression pc = state.getPathCondition();
+		BooleanExpression pc = state.getPathCondition(universe);
 		int rootScope = 0;
 		Set<Pair<State, SymbolicExpression[]>> outputSet = this.collectedOutputs
 				.get(pc);

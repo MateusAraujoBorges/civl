@@ -201,7 +201,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		// if startIndex==endIndex return emptyArray
 		// else if startIndex and endIndex are concrete, create concrete array
 		// else need array lambdas or subsequence operation: todo
-		BooleanExpression pathCondition = state.getPathCondition();
+		BooleanExpression pathCondition = state.getPathCondition(universe);
 		Reasoner reasoner = universe.reasoner(pathCondition);
 		NumericExpression length = universe.length(array);
 		SymbolicArrayType arrayType = (SymbolicArrayType) array.type();
@@ -218,7 +218,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				state = errorLogger.logError(source, state, pid,
 						this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS, "negative start index");
-				pathCondition = state.getPathCondition();
+				pathCondition = state.getPathCondition(universe);
 				reasoner = universe.reasoner(pathCondition);
 			}
 			claim = universe.lessThanEquals(endIndex, length);
@@ -228,7 +228,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS,
 						"end index exceeds length of array");
-				pathCondition = state.getPathCondition();
+				pathCondition = state.getPathCondition(universe);
 				reasoner = universe.reasoner(pathCondition);
 			}
 			claim = universe.lessThanEquals(startIndex, endIndex);
@@ -238,7 +238,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						this.stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS,
 						"start index greater than end index");
-				pathCondition = state.getPathCondition();
+				pathCondition = state.getPathCondition(universe);
 				reasoner = universe.reasoner(pathCondition);
 			}
 			if (reasoner.isValid(universe.equals(startIndex, endIndex))) {
@@ -300,7 +300,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		result.append("\n");
 		result.append("| Path condition");
 		result.append(this.pathconditionToString(null, state, "| | ",
-				state.getPathCondition()));
+				state.getPathCondition(universe)));
 		// result.append("| | "
 		// + this.symbolicExpressionToString(null, state, null,
 		// state.getPathCondition()));
@@ -1718,7 +1718,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			SymbolicExpression heapValue, String prefix, String separate) {
 		StringBuffer result = new StringBuffer();
 		int numFields = typeFactory.heapType().getNumMallocs();
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		String fieldPrefix = prefix + separate;
 		String objectPrefix = fieldPrefix + separate;
 
@@ -2576,7 +2576,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		result.append(this.inputVariablesToStringBuffer(state));
 		result.append("\nContext:");
 		result.append(this.pathconditionToString(null, state, "  ",
-				state.getPathCondition()));
+				state.getPathCondition(universe)));
 		result.append(state.callStackToString());
 		return result;
 	}
@@ -2680,7 +2680,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		if (value == null)
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
 		return this.checkReference(true,
-				universe.reasoner(state.getPathCondition()),
+				universe.reasoner(state.getPathCondition(universe)),
 				symbolicUtil.getSymRef(pointer), value);
 	}
 
@@ -2846,7 +2846,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		if (value == null)
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
 		return this.checkReference(false,
-				universe.reasoner(state.getPathCondition()),
+				universe.reasoner(state.getPathCondition(universe)),
 				symbolicUtil.getSymRef(pointer), value);
 	}
 

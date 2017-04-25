@@ -248,7 +248,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 		Evaluation eval;
 
 		count = (NumericExpression) argumentValues[1];
-		reasoner = universe.reasoner(state.getPathCondition());
+		reasoner = universe.reasoner(state.getPathCondition(universe));
 		if (reasoner.isValid(universe.equals(count, zero))
 				|| pointer.isNull()) {
 			return new Evaluation(state, null);

@@ -291,7 +291,7 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		// getDataFrom always return a sequence of objects (i.e. an array of
 		// objects), but here if the count is equal to one, the receiver is
 		// expecting a single object:
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 
 		if (reasoner.isValid(universe.equals(one, universe.length(eval.value))))
 			eval.value = universe.arrayRead(eval.value, zero);

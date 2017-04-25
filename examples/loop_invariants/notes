@@ -1,0 +1,12 @@
+1. Side-effects in loop-condition will be a problem in transformation.
+2. Loop must not have goto statements in original code.
+3. The assertion failure message printed after running arrayZeroes1d-bad.cvl looks confusing.
+4. Think about the last two commented-out lines of code in arrayEqualsNoReturn.cvl
+5. Currently no induction heuristic handling for $exist
+6. IMPORTANT: why I have to add loop condition into the pushed assumption ?
+
+   if (loop_cond)
+      while(true) {
+         $assume_push(loop_cond && invariants); // why the loop_cond has to be there ?
+         ...
+      }

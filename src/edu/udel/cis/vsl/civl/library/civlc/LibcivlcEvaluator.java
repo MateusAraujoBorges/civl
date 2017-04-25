@@ -121,7 +121,7 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression procsPointer = argumentValues[0];
 		SymbolicExpression numOfProcs = argumentValues[1];
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		IntegerNumber number_nprocs = (IntegerNumber) reasoner
 				.extractNumber((NumericExpression) numOfProcs);
 		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";

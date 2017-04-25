@@ -205,7 +205,7 @@ public class CommonMemoryUnitEvaluator
 						Expression extent = arrayType.extent();
 						int extentInt;
 						Reasoner reasoner = universe
-								.reasoner(state.getPathCondition());
+								.reasoner(state.getPathCondition(universe));
 						IntegerNumber length_number;
 
 						eval = evaluator.evaluate(state, pid, extent);

@@ -9,6 +9,7 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.Map;
 
+import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
@@ -22,7 +23,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 
 /**
  * Implementation of State based on the Immutable Pattern. This class is not
- * entirely immutable; it has certain fields such as {@link #onStack} and
+ * entirely immutable; it has certain fields such as {@link #stackPosition} and
  * {@link #depth} used by the depth first search algorithm which can be
  * modified. But it has an "observationally immutable core" consisting of the
  * path condition, dynamic scopes, and process states. While these can also
@@ -100,12 +101,6 @@ public class ImmutableState implements State {
 	private BooleanExpression pathCondition;
 
 	/**
-	 * Snapshots queue array for MPI communicators, one MPI communicator has an
-	 * corresponding snapshot queue.
-	 */
-	private ImmutableCollectiveSnapshotsEntry[][] snapshotsQueues;
-
-	/**
 	 * processes[i] contains the process of pid i. some entries may be null.
 	 */
 	private ImmutableProcessState[] processStates;
@@ -148,7 +143,7 @@ public class ImmutableState implements State {
 	/**
 	 * Whether this state is on the DFS search stack.
 	 */
-	private boolean onStack = false;
+	private int stackPosition = -1;
 
 	/**
 	 * The iterable object over the process states, created once and cached here
@@ -195,7 +190,7 @@ public class ImmutableState implements State {
 	 * True iff all successors resulting from the enabled transitions have been
 	 * visited during the search.
 	 */
-	private boolean allSuccessorsVisited = false;
+	private boolean fullyExpanded = false;
 
 	int[] collectibleCounts;
 
@@ -242,7 +237,6 @@ public class ImmutableState implements State {
 			result.scopeHashCode = state.scopeHashCode;
 		}
 		result.collectibleCounts = state.collectibleCounts;
-		result.snapshotsQueues = state.snapshotsQueues;
 		return result;
 	}
 
@@ -318,12 +312,13 @@ public class ImmutableState implements State {
 	 *         class
 	 */
 	private ImmutableProcessState canonic(ImmutableProcessState processState,
-			Map<ImmutableProcessState, ImmutableProcessState> processMap) {
+			Map<ImmutableProcessState, ImmutableProcessState> processMap,
+			SymbolicUniverse universe) {
 		ImmutableProcessState canonicProcessState = processMap
 				.get(processState);
 
 		if (canonicProcessState == null) {
-			processState.makeCanonic();
+			processState.makeCanonic(universe);
 			processMap.put(processState, processState);
 			return processState;
 		}
@@ -423,7 +418,7 @@ public class ImmutableState implements State {
 			ImmutableProcessState processState = processStates[i];
 
 			if (processState != null && !processState.isCanonic())
-				processStates[i] = canonic(processState, processMap);
+				processStates[i] = canonic(processState, processMap, universe);
 		}
 		for (int i = 0; i < numScopes; i++) {
 			ImmutableDynamicScope scope = dyscopes[i];
@@ -492,46 +487,6 @@ public class ImmutableState implements State {
 	}
 
 	/**
-	 * Get a new copy of the collective snapshot queues in this state. If the
-	 * {@link #snapshotsQueues} field is null, return an empty HashMap.
-	 * 
-	 * @return
-	 */
-	ImmutableCollectiveSnapshotsEntry[][] getSnapshotsQueues() {
-		ImmutableCollectiveSnapshotsEntry[][] returnedEntry;
-
-		if (snapshotsQueues == null) {
-			snapshotsQueues = new ImmutableCollectiveSnapshotsEntry[0][0];
-			return new ImmutableCollectiveSnapshotsEntry[0][0];
-		} else {
-			returnedEntry = new ImmutableCollectiveSnapshotsEntry[snapshotsQueues.length][];
-
-			for (int i = 0; i < snapshotsQueues.length; i++)
-				returnedEntry[i] = snapshotsQueues[i].clone();
-		}
-		return returnedEntry;
-	}
-
-	/**
-	 * Update the {@link #snapshotsQueues} field, return a new state with
-	 * updated collective snapshot queues
-	 * 
-	 * @param newQueues
-	 * @return
-	 */
-	ImmutableState setSnapshotsQueues(
-			ImmutableCollectiveSnapshotsEntry[][] newQueues) {
-		ImmutableState newState = newState(this, processStates, dyscopes,
-				pathCondition);
-		int queueLength = newQueues.length;
-
-		newState.snapshotsQueues = newQueues.clone();
-		for (int i = 0; i < queueLength; i++)
-			newState.snapshotsQueues[i] = newQueues[i].clone();
-		return newState;
-	}
-
-	/**
 	 * Finds the dynamic scope containing the given variable. The search begins
 	 * in the current dynamic scope of process pid (i.e., the dyscope at the top
 	 * of that process' call stack). If the variable is not found there, it then
@@ -589,7 +544,6 @@ public class ImmutableState implements State {
 			result.procHashed = true;
 			result.procHashCode = procHashCode;
 		}
-		result.snapshotsQueues = this.snapshotsQueues;
 		result.collectibleCounts = this.collectibleCounts;
 		return result;
 	}
@@ -619,7 +573,6 @@ public class ImmutableState implements State {
 			result.scopeHashed = true;
 			result.scopeHashCode = scopeHashCode;
 		}
-		result.snapshotsQueues = this.snapshotsQueues;
 		result.collectibleCounts = this.collectibleCounts;
 		return result;
 	}
@@ -640,60 +593,8 @@ public class ImmutableState implements State {
 			result.scopeHashed = true;
 			result.scopeHashCode = scopeHashCode;
 		}
-		result.snapshotsQueues = this.snapshotsQueues;
 		result.collectibleCounts = this.collectibleCounts;
 		return result;
-	}
-
-	/**
-	 * Returns the corresponding snapshot queue by giving the identifier of an
-	 * MPI communicator (The identifier is a component of the CIVL MPI library
-	 * implementation). If there is no such a snapshot queue for the MPI
-	 * communicator, returns an empty array.
-	 * 
-	 * @param id
-	 *            The identifier of a MPI communicator
-	 * @return
-	 */
-	ImmutableCollectiveSnapshotsEntry[] getSnapshots(int id) {
-		if (snapshotsQueues == null)
-			snapshotsQueues = new ImmutableCollectiveSnapshotsEntry[id + 1][0];
-		if (snapshotsQueues.length > id)
-			return snapshotsQueues[id].clone();
-		else
-			return new ImmutableCollectiveSnapshotsEntry[0];
-	}
-
-	/**
-	 * Update one collective snapshot queue. Returns a new state after the
-	 * updating.
-	 * 
-	 * @param id
-	 *            The identifier of an MPI communicator which specifies the
-	 *            updated snapshot queue
-	 * @param queue
-	 *            The updated snapshot queue
-	 * @return
-	 */
-	ImmutableState updateQueue(int id,
-			ImmutableCollectiveSnapshotsEntry[] queue) {
-		ImmutableState newState;
-		int newLength;
-
-		assert queue != null;
-		newState = newState(this, processStates, dyscopes, pathCondition);
-		if (newState.snapshotsQueues.length <= id)
-			newState.snapshotsQueues = new ImmutableCollectiveSnapshotsEntry[id
-					+ 1][];
-		else
-			newState.snapshotsQueues = this.snapshotsQueues.clone();
-		newLength = snapshotsQueues.length;
-		// For unchanged queues, there is no need to do clone();
-		for (int i = 0; i < newLength; i++)
-			newState.snapshotsQueues[i] = this.snapshotsQueues[i];
-		// The updated queue must be cloned in case it is changed some where.
-		newState.snapshotsQueues[id] = queue.clone();
-		return newState;
 	}
 
 	/**
@@ -729,7 +630,8 @@ public class ImmutableState implements State {
 	 *            A boolean-value symbolic expression.
 	 * @return A new state who has the new path condition against this one.
 	 */
-	ImmutableState setPathCondition(BooleanExpression newPathCondition) {
+	ImmutableState setPermanentPathCondition(
+			BooleanExpression newPathCondition) {
 		ImmutableState result = new ImmutableState(processStates, dyscopes,
 				newPathCondition);
 
@@ -742,8 +644,72 @@ public class ImmutableState implements State {
 			result.procHashCode = procHashCode;
 		}
 		result.collectibleCounts = this.collectibleCounts;
-		result.snapshotsQueues = snapshotsQueues;
 		return result;
+	}
+
+	BooleanExpression getPermanentPathCondition() {
+		return pathCondition;
+	}
+
+	/**
+	 * Set the partial path condition stack of the given process to the new one.
+	 * 
+	 * @param pid
+	 *            The PID of the process who owns the stack.
+	 * @param newPpcStack
+	 *            The new stack.
+	 * @return A new state in which the corresponding process state has changed.
+	 */
+	ImmutableState setPartialPathConditionStack(int pid,
+			BooleanExpression newPpcStack[]) {
+		ImmutableProcessState process = processStates[pid];
+		ImmutableProcessState newProcessStates[] = Arrays.copyOf(processStates,
+				processStates.length);
+
+		newProcessStates[pid] = process.setPartialPathConditions(newPpcStack);
+		return newState(this, newProcessStates, dyscopes, pathCondition);
+	}
+
+	/**
+	 * @param pid
+	 *            The PID of the process who owns the stack.
+	 * @return The partial path condition stack of the given process.
+	 */
+	BooleanExpression[] copyOfPartialPathConditionStack(int pid) {
+		BooleanExpression ppcs[] = processStates[pid]
+				.getPartialPathConditions();
+
+		return Arrays.copyOf(ppcs, ppcs.length);
+	}
+
+	/**
+	 * Set the write set stack of the given process to the new one.
+	 * 
+	 * @param pid
+	 *            The PID of the process who owns the stack.
+	 * @param newWriteSetStack
+	 *            The new stack.
+	 * @return A new state in which the corresponding process state has changed.
+	 */
+	ImmutableState setWriteSetStack(int pid,
+			DynamicWriteSet newWriteSetStack[]) {
+		ImmutableProcessState process = processStates[pid];
+		ImmutableProcessState newProcessStates[] = Arrays.copyOf(processStates,
+				processStates.length);
+
+		newProcessStates[pid] = process.setWriteSets(newWriteSetStack);
+		return newState(this, newProcessStates, dyscopes, pathCondition);
+	}
+
+	/**
+	 * @param pid
+	 *            The PID of the process who owns the stack.
+	 * @return The write set stack of the given process.
+	 */
+	DynamicWriteSet[] copyOfWriteSetStack(int pid) {
+		DynamicWriteSet wsStack[] = processStates[pid].getWriteSets();
+
+		return Arrays.copyOf(wsStack, wsStack.length);
 	}
 
 	/* ************************ Methods from State ************************* */
@@ -764,8 +730,19 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public BooleanExpression getPathCondition() {
-		return pathCondition;
+	public BooleanExpression getPathCondition(SymbolicUniverse universe) {
+		BooleanExpression pc = pathCondition;
+
+		for (ImmutableProcessState procState : processStates) {
+			if (procState == null)
+				continue;
+
+			BooleanExpression ppcs[] = procState.getPartialPathConditions();
+
+			for (int i = 0; i < ppcs.length; i++)
+				pc = universe.and(pc, ppcs[i]);
+		}
+		return pc;
 	}
 
 	@Override
@@ -876,8 +853,8 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public boolean onStack() {
-		return onStack;
+	public int stackPosition() {
+		return stackPosition;
 	}
 
 	@Override
@@ -931,8 +908,8 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public void setOnStack(boolean onStack) {
-		this.onStack = onStack;
+	public void setStackPosition(int stackIndex) {
+		this.stackPosition = stackIndex;
 	}
 
 	@Override
@@ -1047,18 +1024,23 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public boolean allSuccessorsVisited() {
-		return allSuccessorsVisited;
+	public boolean fullyExpanded() {
+		return fullyExpanded;
 	}
 
 	@Override
-	public void setAllSuccessorsVisited(boolean value) {
-		this.allSuccessorsVisited = value;
+	public void setFullyExpanded(boolean value) {
+		this.fullyExpanded = value;
 	}
 
 	@Override
 	public void setCanonicId(int id) {
 		this.canonicId = id;
+	}
+
+	@Override
+	public boolean isMonitoringWrites(int pid) {
+		return processStates[pid].getWriteSets().length > 0;
 	}
 
 }

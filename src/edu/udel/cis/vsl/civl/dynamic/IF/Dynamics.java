@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl.dynamic.IF;
 
 import edu.udel.cis.vsl.civl.dynamic.common.CommonSymbolicUtility;
+import edu.udel.cis.vsl.civl.dynamic.immutable.ImmutableDynamicWriteSet;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
@@ -24,5 +25,17 @@ public class Dynamics {
 	public static SymbolicUtility newSymbolicUtility(SymbolicUniverse universe,
 			ModelFactory modelFactory) {
 		return new CommonSymbolicUtility(universe, modelFactory);
+	}
+
+	/**
+	 * Creates a new instance of {@link DynamicWriteSet}.
+	 * 
+	 * @param universe
+	 *            A reference to a {@link SymbolicUniverse}.
+	 * @return a new instance of {@link DynamicWriteSet}.
+	 */
+	public static DynamicWriteSet newDynamicWriteSet(
+			SymbolicUniverse universe) {
+		return new ImmutableDynamicWriteSet(universe);
 	}
 }

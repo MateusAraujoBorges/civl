@@ -1,32 +1,55 @@
 package edu.udel.cis.vsl.civl.library.civlc;
 
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
+import edu.udel.cis.vsl.civl.model.IF.location.Location;
+import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
+import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
+import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.sarl.IF.CoreUniverse.ForallStructure;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.ValidityResult;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
  * Implementation of the execution for system functions declared civlc.h.
@@ -38,6 +61,7 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 public class LibcivlcExecutor extends BaseLibraryExecutor
 		implements
 			LibraryExecutor {
+	private Evaluator errSideEffectFreeEvaluator;
 
 	/* **************************** Constructors *************************** */
 
@@ -63,11 +87,53 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		super(name, primaryExecutor, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
+		this.errSideEffectFreeEvaluator = Semantics
+				.newErrorSideEffectFreeEvaluator(modelFactory, stateFactory,
+						libEvaluatorLoader, libExecutorLoader, symbolicUtil,
+						symbolicAnalyzer, stateFactory.memUnitFactory(),
+						errorLogger, civlConfig);
 	}
 
 	/*
 	 * ******************** Methods from BaseLibraryExecutor *******************
 	 */
+	@Override
+	public Evaluation execute(State state, int pid, CallOrSpawnStatement call,
+			String functionName) throws UnsatisfiablePathConditionException {
+		Evaluation eval;
+		LHSExpression lhs = call.lhs();
+		Location target = call.target();
+		Expression[] arguments;
+		SymbolicExpression[] argumentValues;
+		int numArgs;
+		String process = state.getProcessState(pid).name();
+		Evaluator theEvaluator = evaluator;
+
+		numArgs = call.arguments().size();
+		arguments = new Expression[numArgs];
+		argumentValues = new SymbolicExpression[numArgs];
+		if (functionName.equals("$assume")
+				|| functionName.equals("$assume_push")
+				|| functionName.equals("$assume_pop")
+				|| functionName.equals("$assert"))
+			theEvaluator = this.errSideEffectFreeEvaluator;
+		for (int i = 0; i < numArgs; i++) {
+			arguments[i] = call.arguments().get(i);
+			eval = theEvaluator.evaluate(state, pid, arguments[i]);
+			argumentValues[i] = eval.value;
+			state = eval.state;
+		}
+		eval = this.executeValue(state, pid, process, call.getSource(),
+				functionName, arguments, argumentValues);
+		state = eval.state;
+		if (lhs != null && eval.value != null)
+			state = this.primaryExecutor.assign(state, pid, process, lhs,
+					eval.value);
+		if (target != null && !state.getProcessState(pid).hasEmptyStack())
+			state = this.stateFactory.setLocation(state, pid, target);
+		eval.state = state;
+		return eval;
+	}
 
 	@Override
 	protected Evaluation executeValue(State state, int pid, String process,
@@ -81,6 +147,14 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				state = this.executeAssert(state, pid, process, arguments,
 						argumentValues, source);
 				callEval = new Evaluation(state, null);
+				break;
+			case "$assume_push" :
+				callEval = executeAssumePush(state, pid, arguments,
+						argumentValues, source);
+				break;
+			case "$assume_pop" :
+				callEval = executeAssumePop(state, pid, arguments,
+						argumentValues, source);
 				break;
 			case "$assume" :
 				callEval = this.executeAssume(state, pid, process, arguments,
@@ -104,6 +178,10 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				break;
 			case "$havoc" :
 				callEval = executeHavoc(state, pid, process, arguments,
+						argumentValues, source);
+				break;
+			case "$havoc_mem" :
+				callEval = executeHavocMem(state, pid, arguments,
 						argumentValues, source);
 				break;
 			case "$is_concrete_int" :
@@ -142,6 +220,14 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			case "$waitall" :
 				callEval = executeWaitAll(state, pid, arguments, argumentValues,
 						source);
+				break;
+			case "$write_set_push" :
+				callEval = executeWriteSetPush(state, pid, arguments,
+						argumentValues, source);
+				break;
+			case "$write_set_pop" :
+				callEval = executeWriteSetPop(state, pid, arguments,
+						argumentValues, source);
 				break;
 			case "$variable_reference" :
 				callEval = executeVariableReference(state, pid, process,
@@ -218,6 +304,101 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		return new Evaluation(state, null);
 	}
 
+	/**
+	 * <p>
+	 * Executing the system function:<code>$havoc_mem($mem m)</code>. <br>
+	 * <br>
+	 * Semantics: The function assigns a fresh new symbolic constant to every
+	 * memory location in the memory location set represented by m. <br>
+	 * 
+	 * Notice that currently we do an <strong>compromise</strong> for refreshing
+	 * array elements in m: For an array element e in array a in m, we do NOT
+	 * assign e a fresh new constant but instead assign the array a a fresh new
+	 * constant. The reason is: A non-concrete array write will prevent states
+	 * from being canonicalized into a seen state. For example:
+	 * 
+	 * <code>
+	 * $input int N, X;
+	 * $assume(N > 0 && X > 0 && N > X);
+	 * int a[N];
+	 * 
+	 * LOOP_0: while (true) {
+	 *   a[X] = 0;
+	 *   $havoc(&a[X]);
+	 * }
+	 * 
+	 * LOOP_1: while (true) {
+	 *   a[X] = 0;
+	 *   $havoc(&a);
+	 * }
+	 * </code> Loop 1 will never converge but the value of a keeps growing. Loop
+	 * 2 will converge.
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeHavocMem(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		SymbolicExpression memObj = argumentValues[0];
+		NumericExpression memSize;
+		SymbolicExpression pointerArray;
+		Number memSizeConcrete;
+		Evaluation eval = null;
+
+		// mem obj structure:
+		// struct _mem {
+		// int size;
+		// void * ptrArray[];
+		// }
+		memSize = (NumericExpression) universe.tupleRead(memObj, zeroObject);
+		pointerArray = universe.tupleRead(memObj, oneObject);
+		memSizeConcrete = universe.extractNumber(memSize);
+		assert memSizeConcrete != null : "The size of $mem obj shall never be non-concrete";
+
+		int memSizeInt = ((IntegerNumber) memSizeConcrete).intValue();
+		Expression memObjExpr = arguments[0];
+
+		for (int i = 0; i < memSizeInt; i++) {
+			SymbolicExpression pointer = universe.arrayRead(pointerArray,
+					universe.integer(i));
+			SymbolicType pointedType;
+			ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
+
+			// compromise: if the given pointer points to an array element,
+			// havoc the whole array:
+			if (symRef.isArrayElementReference()
+					&& !symbolicUtil.isPointer2MemoryBlock(pointer))
+				pointer = symbolicUtil.parentPointer(pointer);
+			// some dyscopes referred by the pointer may gone already:
+			if (symbolicUtil.getDyscopeId(source, pointer) >= 0) {
+				pointedType = symbolicAnalyzer.dynamicTypeOfObjByPointer(
+						memObjExpr.getSource(), state, pointer);
+				eval = evaluator.havoc(state, pointedType);
+				state = primaryExecutor.assign(source, eval.state, pid, pointer,
+						eval.value);
+			}
+		}
+		if (eval != null) {
+			eval.value = null;
+			eval.state = state;
+		}
+		return new Evaluation(state, null);
+	}
+
 	private Evaluation executePow(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
@@ -245,7 +426,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				? this.trueValue
 				: this.falseValue;
 		if (result.isTrue()) {
-			Reasoner reasoner = universe.reasoner(state.getPathCondition());
+			Reasoner reasoner = universe
+					.reasoner(state.getPathCondition(universe));
 
 			result = reasoner.extractNumber((NumericExpression) value) != null
 					? trueValue
@@ -262,7 +444,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			this.civlConfig.out()
 					.println("path condition: " + this.symbolicAnalyzer
 							.symbolicExpressionToString(source, state, null,
-									state.getPathCondition()));
+									state.getPathCondition(universe)));
 		return new Evaluation(state, null);
 	}
 
@@ -383,7 +565,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression procsPointer = argumentValues[0];
 		SymbolicExpression numOfProcs = argumentValues[1];
-		Reasoner reasoner = universe.reasoner(state.getPathCondition());
+		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		IntegerNumber number_nprocs = (IntegerNumber) reasoner
 				.extractNumber((NumericExpression) numOfProcs);
 		String process = state.getProcessState(pid).name() + "(id=" + pid + ")";
@@ -421,4 +603,338 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		return new Evaluation(state, null);
 	}
 
+	/**
+	 * <p>
+	 * Executing the system function:<code>$assume_push()</code>. <br>
+	 * <br>
+	 * 
+	 * Push a boolean expression as a partial path condition onto the partial
+	 * path condition stack associated with the calling process.
+	 * 
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeAssumePush(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) {
+		BooleanExpression assumeValue = (BooleanExpression) argumentValues[0];
+
+		state = stateFactory.pushAssumption(state, pid, assumeValue);
+		return new Evaluation(state, null);
+	}
+
+	/**
+	 * <p>
+	 * Executing the system function:<code>$assume_pop()</code>. <br>
+	 * <br>
+	 * 
+	 * Pop a partial path condition out of the partial path condition stack
+	 * associated with the calling process.
+	 * 
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeAssumePop(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) {
+		state = stateFactory.popAssumption(state, pid);
+		return new Evaluation(state, null);
+	}
+
+	/**
+	 * <p>
+	 * Executing the system function:<code>$write_set_push()</code>. <br>
+	 * <br>
+	 * 
+	 * Push an empty write set onto write set stack associated with the calling
+	 * process.
+	 * 
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeWriteSetPush(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) {
+		state = stateFactory.pushEmptyWrite(state, pid);
+		return new Evaluation(state, null);
+	}
+
+	/**
+	 * <p>
+	 * Executing the system function:<code>$write_set_pop($mem * m)</code>. <br>
+	 * <br>
+	 * 
+	 * Pop a write set w out of the write set stack associated with the calling
+	 * process. Assign write set w' to the object refered by the given reference
+	 * m, where w' is a subset of w. <code>w - w'</code> is a set of unreachable
+	 * memory locaiton references.
+	 * 
+	 * </p>
+	 * 
+	 * @param state
+	 *            The current state.
+	 * @param pid
+	 *            The ID of the process that the function call belongs to.
+	 * @param arguments
+	 *            The static representation of the arguments of the function
+	 *            call.
+	 * @param argumentValues
+	 *            The dynamic representation of the arguments of the function
+	 *            call.
+	 * @param source
+	 *            The {@link CIVLSource} associates to the function call.
+	 * @return The new state after executing the function call.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation executeWriteSetPop(State state, int pid,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		SymbolicExpression memPointer = argumentValues[0];
+		String process = state.getProcessState(pid).name();
+		CIVLType memType = typeFactory.systemType(ModelConfiguration.MEM_TYPE);
+		Evaluation eval = evaluator.dereference(source, state, process, memType,
+				memPointer, false, true);
+
+		state = eval.state;
+
+		SymbolicExpression memValue = eval.value;
+		SymbolicExpression pointerArray;
+		SymbolicTupleType memValueType;
+		LinkedList<SymbolicExpression> memValueComponents = new LinkedList<>();
+		DynamicWriteSet writeSet = stateFactory.peekWriteSet(state, pid);
+		int size = 0;
+
+		state = stateFactory.popWriteSet(state, pid);
+		memValueType = (SymbolicTupleType) memType.getDynamicType(universe);
+		for (SymbolicExpression pointer : writeSet) {
+			int referredDyscope = symbolicUtil.getDyscopeId(source, pointer);
+
+			if (referredDyscope < 0)
+				continue;
+			memValueComponents.add(pointer);
+			size++;
+		}
+		pointerArray = universe.array(typeFactory.pointerSymbolicType(),
+				memValueComponents);
+		memValueComponents.clear();
+		memValueComponents.add(universe.integer(size));
+		memValueComponents.add(pointerArray);
+		memValue = universe.tuple(memValueType, memValueComponents);
+		state = primaryExecutor.assign(source, state, pid, memPointer,
+				memValue);
+		eval.state = state;
+		eval.value = null;
+		return eval;
+	}
+
+	private State executeAssert(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) throws UnsatisfiablePathConditionException {
+		BooleanExpression assertValue = (BooleanExpression) argumentValues[0];
+		Reasoner reasoner;
+		ValidityResult valid;
+		ResultType resultType;
+
+		reasoner = universe.reasoner(state.getPathCondition(universe));
+		valid = reasoner.valid(assertValue);
+		resultType = valid.getResultType();
+		if (resultType != ResultType.YES) {
+			BooleanExpression simplfiedAssertedValue = quantifiedExpressionInduction(
+					reasoner, assertValue);
+
+			valid = reasoner.valid(simplfiedAssertedValue);
+			resultType = valid.getResultType();
+		}
+		if (resultType != ResultType.YES) {
+			StringBuilder message = new StringBuilder();
+			Pair<State, String> messageResult = this.symbolicAnalyzer
+					.expressionEvaluation(state, pid, arguments[0], false);
+			String firstEvaluation, secondEvaluation, result;
+
+			state = messageResult.left;
+			message.append("\nAssertion: ");
+			message.append(arguments[0]);
+			message.append("\n        -> ");
+			message.append(messageResult.right);
+			firstEvaluation = messageResult.right;
+			messageResult = this.symbolicAnalyzer.expressionEvaluation(state,
+					pid, arguments[0], true);
+			state = messageResult.left;
+			secondEvaluation = messageResult.right;
+			if (!firstEvaluation.equals(secondEvaluation)) {
+				message.append("\n        -> ");
+				message.append(secondEvaluation);
+			}
+			result = this.symbolicAnalyzer
+					.symbolicExpressionToString(arguments[0].getSource(), state,
+							null, assertValue)
+					.toString();
+			if (!secondEvaluation.equals(result)) {
+				message.append("\n        -> ");
+				message.append(result);
+			}
+			state = this.reportAssertionFailure(state, pid, process, resultType,
+					message.toString(), arguments, argumentValues, source,
+					assertValue, 1);
+			state = stateFactory.addToPathcondition(state, pid,
+					(BooleanExpression) argumentValues[0]);
+		}
+		return state;
+	}
+
+	private BooleanExpression quantifiedExpressionInduction(Reasoner reasoner,
+			BooleanExpression pred) {
+		BooleanExpression newPred = pred;
+		Map<SymbolicExpression, SymbolicExpression> subMap = new TreeMap<>(
+				universe.comparator());
+
+		for (BooleanExpression universal : universalQuantifiedExpressionsIn(
+				pred)) {
+			ForallStructure structure = universe.getForallStructure(universal);
+
+			if (structure == null)
+				continue;
+			for (SymbolicExpression sigma : summationExpressionsIn(
+					structure.body)) {
+				BooleanExpression inductiveUniversal = sigmaInduction(reasoner,
+						structure, sigma);
+
+				if (reasoner.isValid(inductiveUniversal))
+					subMap.put(structure.body, trueValue);// not substitute
+															// whole
+															// quantified
+															// expression
+															// ?
+			}
+		}
+		newPred = (BooleanExpression) universe.mapSubstituter(subMap)
+				.apply(pred);
+		return newPred;
+	}
+
+	private List<BooleanExpression> universalQuantifiedExpressionsIn(
+			BooleanExpression predicate) {
+		List<BooleanExpression> results = new LinkedList<>();
+
+		if (predicate.operator() == SymbolicOperator.AND
+				|| predicate.operator() == SymbolicOperator.OR) {
+			// clause_0 && clause_1 && ... && clause_n OR
+			// clause_0 || clause_1 || ... || clause_n:
+			for (SymbolicObject clause : predicate.getArguments())
+				results.addAll(universalQuantifiedExpressionsIn(
+						(BooleanExpression) clause));
+		} else {
+			// basic clause:
+			if (predicate.operator() == SymbolicOperator.FORALL)
+				results.add(predicate);
+		}
+		return results;
+	}
+
+	// TODO: doc
+	private List<SymbolicExpression> summationExpressionsIn(
+			SymbolicExpression predicate) {
+		List<SymbolicExpression> results = new LinkedList<>();
+
+		for (SymbolicObject arg : predicate.getArguments()) {
+			if (arg.symbolicObjectKind() == SymbolicObjectKind.EXPRESSION) {
+				SymbolicExpression symExpr = (SymbolicExpression) arg;
+
+				if (symExpr.operator() == SymbolicOperator.APPLY) {
+					SymbolicExpression func = (SymbolicExpression) symExpr
+							.argument(0);
+
+					if (func.operator() == SymbolicOperator.SYMBOLIC_CONSTANT) {
+						StringObject name = (StringObject) func.argument(0);
+
+						if (name.getString().equals("sigma")) {
+							results.add(symExpr);
+							continue;
+						}
+					}
+				}
+				results.addAll(summationExpressionsIn(symExpr));
+			}
+		}
+		return results;
+	}
+
+	private BooleanExpression sigmaInduction(Reasoner reasoner,
+			ForallStructure forallStructure, SymbolicExpression sigma) {
+		@SuppressWarnings("unchecked")
+		Iterator<SymbolicExpression> args = ((Iterable<SymbolicExpression>) sigma
+				.argument(1)).iterator();
+		NumericExpression low = (NumericExpression) args.next();
+		assert low != null;
+		NumericExpression high = (NumericExpression) args.next();
+		SymbolicExpression function = args.next();
+
+		if (!universe.getFreeSymbolicConstants(high)
+				.contains(forallStructure.boundVariable))
+			return null;
+
+		NumericExpression quantifiedHigh = (NumericExpression) universe
+				.simpleSubstituter(forallStructure.boundVariable,
+						forallStructure.upperBound)
+				.apply(high);
+		NumericExpression quantifiedUpperSigma = (NumericExpression) universe
+				.apply(function, Arrays.asList(quantifiedHigh));
+		NumericExpression inductiveSigma = universe
+				.add((NumericExpression) sigma, quantifiedUpperSigma);
+		Map<SymbolicExpression, SymbolicExpression> subMap = new TreeMap<>(
+				universe.comparator());
+
+		subMap.put(sigma, inductiveSigma);
+
+		BooleanExpression newBody = (BooleanExpression) universe
+				.mapSubstituter(subMap).apply(forallStructure.body);
+		// upper bound is exclusive, thus here it implicitly does an "upperBound
+		// -= 1" operation:
+		return universe.forallInt(forallStructure.boundVariable,
+				forallStructure.lowerBound, forallStructure.upperBound,
+				newBody);
+
+	}
 }

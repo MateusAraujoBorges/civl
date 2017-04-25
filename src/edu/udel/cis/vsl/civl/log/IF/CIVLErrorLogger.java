@@ -151,7 +151,7 @@ public class CIVLErrorLogger extends ErrorLog {
 			StringBuffer stateString, BooleanExpression claim,
 			ResultType resultType, ErrorKind errorKind, String message)
 			throws UnsatisfiablePathConditionException {
-		BooleanExpression pc = state.getPathCondition(), newPc;
+		BooleanExpression pc = state.getPathCondition(universe), newPc;
 		BooleanExpression npc = universe.not(pc);
 		ValidityResult validityResult = trueReasoner.valid(npc);
 		ResultType nsat = validityResult.getResultType();
@@ -218,7 +218,7 @@ public class CIVLErrorLogger extends ErrorLog {
 	private void reportError(CIVLExecutionException err) {
 		try {
 			gmcConfig.setQuiet(civlConfig.isQuiet());
-			report(new CIVLLogEntry(civlConfig, gmcConfig, err));
+			report(new CIVLLogEntry(civlConfig, gmcConfig, err, universe));
 		} catch (FileNotFoundException e) {
 			throw new CIVLException(e.toString(), err.getSource());
 		}
@@ -248,7 +248,7 @@ public class CIVLErrorLogger extends ErrorLog {
 	public void logSimpleError(CIVLSource source, State state, String process,
 			StringBuffer stateString, ErrorKind errorKind, String message)
 			throws UnsatisfiablePathConditionException {
-		BooleanExpression pc = state.getPathCondition();
+		BooleanExpression pc = state.getPathCondition(universe);
 		BooleanExpression npc = universe.not(pc);
 		ValidityResult validityResult = trueReasoner.valid(npc);
 		ResultType nsat = validityResult.getResultType();

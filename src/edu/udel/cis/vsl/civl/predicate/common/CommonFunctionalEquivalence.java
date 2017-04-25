@@ -17,17 +17,16 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 public class CommonFunctionalEquivalence extends CommonCIVLStatePredicate
-		implements FunctionalEquivalence {
+		implements
+			FunctionalEquivalence {
 
 	private boolean debug = false;
 	private String[] outputNames;
 	private Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> specificationOutputs = new LinkedHashMap<>();
 	private int numOutputs;
 
-	public CommonFunctionalEquivalence(
-			SymbolicUniverse universe,
-			SymbolicAnalyzer symbolicAnalyzer,
-			String[] outputNames,
+	public CommonFunctionalEquivalence(SymbolicUniverse universe,
+			SymbolicAnalyzer symbolicAnalyzer, String[] outputNames,
 			Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> specOutputs) {
 		this.outputNames = outputNames;
 		this.specificationOutputs = specOutputs;
@@ -49,7 +48,7 @@ public class CommonFunctionalEquivalence extends CommonCIVLStatePredicate
 		BooleanExpression predicate;
 		// p -> (p1 && (o=o11 || o = o12 || ..) || p2 && (o=o21 || o=o22 || ...
 		// ) || ...).
-		BooleanExpression pc = state.getPathCondition();
+		BooleanExpression pc = state.getPathCondition(universe);
 		BooleanExpression disjunction = null;
 		Reasoner reasoner = universe.reasoner(universe.trueExpression());
 		boolean result;
@@ -111,9 +110,8 @@ public class CommonFunctionalEquivalence extends CommonCIVLStatePredicate
 						null, state, null, implOutputs[i]));
 			}
 			violation = new CIVLExecutionException(
-					ErrorKind.FUNCTIONAL_EQUIVALENCE, Certainty.PROVEABLE,
-					null, msg.toString(),
-					state, null);
+					ErrorKind.FUNCTIONAL_EQUIVALENCE, Certainty.PROVEABLE, null,
+					msg.toString(), state, null);
 		}
 		return result;
 	}
@@ -148,18 +146,19 @@ public class CommonFunctionalEquivalence extends CommonCIVLStatePredicate
 			result.append("\npc: ");
 			result.append(entry.getKey());
 			result.append(", output: {");
-			for (Pair<State,SymbolicExpression[]> stateAndoutputs : entry.getValue()) {
+			for (Pair<State, SymbolicExpression[]> stateAndoutputs : entry
+					.getValue()) {
 				SymbolicExpression[] outputs = stateAndoutputs.right;
-				
+
 				if (j > 0)
 					result.append(", ");
 				result.append("(");
 				for (int k = 0; k < this.numOutputs; k++) {
 					if (k > 0)
 						result.append(", ");
-					result.append(this.symbolicAnalyzer
-							.symbolicExpressionToString(null, null, null,
-									outputs[k]));
+					result.append(
+							this.symbolicAnalyzer.symbolicExpressionToString(
+									null, null, null, outputs[k]));
 				}
 				result.append(")");
 				j++;

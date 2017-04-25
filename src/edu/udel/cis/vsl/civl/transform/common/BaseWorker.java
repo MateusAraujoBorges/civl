@@ -1248,4 +1248,22 @@ public abstract class BaseWorker {
 		}
 		return result;
 	}
+
+	/**
+	 * Returns the next node (in DFS order) by skipping the whole sub-tree of
+	 * the given node.
+	 * 
+	 * @param node
+	 * @return
+	 */
+	static ASTNode nextDFSSkip(ASTNode node) {
+		ASTNode parent = node.parent();
+		int childIdx = node.childIndex();
+
+		if (parent == null)
+			return null;
+		if (parent.numChildren() == childIdx + 1)
+			return nextDFSSkip(parent);
+		return parent.child(childIdx + 1);
+	}
 }

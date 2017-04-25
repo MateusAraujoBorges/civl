@@ -7,18 +7,14 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
-import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
-import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
-import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableCollectiveSnapshotsEntry;
-import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableMonoState;
-import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableState;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -692,176 +688,6 @@ public interface StateFactory {
 
 	/* ****************** Snapshots related method ****************** */
 	/* Note: Snapshots are objects with type ImmutableMonoState */
-
-	/**
-	 * Merges a set of {@link ImmutableMonoState} to a FAKE global
-	 * {@link ImmutableState} which should only be used to evaluation.
-	 * 
-	 * @precondition: For any two monoStates in the array, they should be owned
-	 *                by different processes.
-	 * @postcondition: true.
-	 * 
-	 * @param monoStates
-	 *            The array of {@link ImmutableMonoState}
-	 * @return
-	 */
-	ImmutableState mergeMonostates(State state,
-			ImmutableCollectiveSnapshotsEntry entry);
-
-	/**
-	 * Partially merging monoStates which stored in the
-	 * {@link CollectiveSnapshotsEntry}. Missing monoStates will be compensated
-	 * by the current state.
-	 * 
-	 * @param state
-	 * @param entry
-	 * @return
-	 */
-	ImmutableState partialMergeMonostates(State state,
-			ImmutableCollectiveSnapshotsEntry entry, int place2Pid[]);
-
-	/**
-	 * Take a snapshot on current state then store the snapshot with the
-	 * collective assertion into an collectiveSnapshotsEntry. If the global
-	 * state has a queue, then either create a new entry then enqueue, or modify
-	 * a existing entry, otherwise create both a queue and a entry. Return the
-	 * new or modified entry.
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The PID of the process
-	 * @param place
-	 *            The place of the process in the collective entry
-	 * @param queueID
-	 *            The ID identifies a collective entry
-	 * @param entryPos
-	 *            The position of the entry in the collective queue
-	 * @param assertion
-	 *            The expression of a assertion asserted by the process
-	 * @return
-	 */
-	ImmutableState addToCollectiveSnapshotsEntry(ImmutableState state, int pid,
-			int place, int queueID, int entryPos, Expression assertion);
-
-	/**
-	 * The process with "pid" creates a fresh new
-	 * {@link CollectiveSnapshotsEntry}, then saves its own snapshot in the new
-	 * entry. This function returns the new state with a new entry in one of its
-	 * snapshots queues.
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The PID of the process
-	 * @param numProcesses
-	 *            The number of processes participating this collective entry
-	 * @param place
-	 *            The place of the process in the collective entry
-	 * @param queueID
-	 *            The ID identifies a collective queue
-	 * @param assertion
-	 *            The expression of the assertion asserted by the processes
-	 * @param channels
-	 *            Message buffer snapshot
-	 * @return
-	 */
-	ImmutableState createCollectiveSnapshotsEnrty(ImmutableState state, int pid,
-			int numProcesses, int place, int queueID, Expression assertion,
-			SymbolicExpression channels, ContractKind kind, int[][] agreedVars,
-			SymbolicExpression[] agreedVals);
-
-	/**
-	 * Dequeues an {@link CollectiveSnapshotsEntry} from the specific snapshots
-	 * queue, returns a new state.
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param queueID
-	 *            The ID identifies a collective queue
-	 * @return
-	 */
-	State dequeueCollectiveSnapshotsEntry(State state, int queueID);
-
-	/**
-	 * Copy the top {@link CollectiveSnapshotsEntry} from the specific snapshots
-	 * queue, returns the copied snapshots entry.
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param queueID
-	 *            The ID identifies a collective queue
-	 * @return
-	 */
-	ImmutableCollectiveSnapshotsEntry peekCollectiveSnapshotsEntry(State state,
-			int queueID);
-
-	/**
-	 * Update all entries in a collective queue with a group of message buffers.
-	 * Note: The entry in position i will be updated with the message buffers in
-	 * newBuffers[i]. The 0 position in collective queue is the head of the
-	 * queue. The reason of using an array of message buffers to update the
-	 * collective queue is to prevent the queue in state be changed for other
-	 * purposes.
-	 * 
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param queueId
-	 *            The ID of the collective queue
-	 * @param newChannels
-	 *            The array of new message buffers. see
-	 *            {@link CollectiveSnapshotsEntry#getMsgBuffers()}
-	 * @return
-	 */
-	ImmutableState commitUpdatedChannelsToEntries(State state, int queueId,
-			SymbolicExpression[] newChannels);
-
-	/**
-	 * Returns the corresponding snapshot queue by giving the identifier of an
-	 * MPI communicator (The identifier is a component of the CIVL MPI library
-	 * implementation). If there is no such a snapshot queue for the MPI
-	 * communicator, returns an empty array.
-	 * 
-	 * @param id
-	 *            The identifier of a MPI communicator
-	 * @return
-	 */
-	ImmutableCollectiveSnapshotsEntry[] getSnapshotsQueue(State state,
-			int queueID);
-
-	/**
-	 * <p>
-	 * <b>Summary: </b> Returns a new state s'' by copy the snapshots queues in
-	 * a state s to another state s'
-	 * </p>
-	 * 
-	 * @param fromState
-	 *            The state whose snapshots queues will be copied
-	 * @param toState
-	 *            The state that will be updated with a snapshots queues
-	 * @return The new state obtained by doing the aforementioned copy.
-	 */
-	ImmutableState copySnapshotsQueues(State fromState, State toState);
-
-	/**
-	 * <p>
-	 * <b>Pre-condition:</b> The path condition of the given state shall not
-	 * contain values of scope IDs and process IDs.
-	 * </p>
-	 * <p>
-	 * <b>Summary: </b> Returns a new state by renaming processes in a state
-	 * with a given table which maps process IDs from new IDs to old IDs.
-	 * </p>
-	 * 
-	 * @param state
-	 *            The state will be re-numbered.
-	 * @param procsNewToOld
-	 *            The table maps process IDs from new IDs to old IDs.
-	 * @return The new state after renumbering.
-	 */
-	ImmutableState updateProcessesForState(State state, int[] procsNewToOld);
-
 	/**
 	 * <p>
 	 * Take a snapshot for the process pid on the given state, returns a new
@@ -1003,8 +829,80 @@ public interface StateFactory {
 	 */
 	void unsaveStateByReference(int stateRef);
 	/* ****************** End of Snapshots related method ****************** */
+	/**
+	 * Records a collection of pointers to changed memory locations. The change
+	 * was done by the given process.
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the calling process who may change some memory
+	 *            locations.
+	 * @param pointer
+	 *            A set of pointers to changed memory locations.
+	 * @return A state in which the given memory locations are recorded.
+	 */
+	State addWriteRecords(State state, int pid, SymbolicExpression pointer);
+
+	/**
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the calling process whose write set stack will be
+	 *            peeked.
+	 * @return the top frame in the write set stack associates to the given
+	 *         process.
+	 */
+	DynamicWriteSet peekWriteSet(State state, int pid);
+
+	/**
+	 * @param state
+	 *            The current state
+	 * @param The
+	 *            PID of the calling process whose write set stack will be
+	 *            pushed.
+	 * @return A new state in which the process state of the given pid will be
+	 *         updated. The write set stack of the process state has one more
+	 *         empty stack.
+	 */
+	State pushEmptyWrite(State state, int pid);
+
+	/**
+	 * @param state
+	 *            The current state
+	 * @param The
+	 *            PID of the calling process whose write set stack will be
+	 *            popped.
+	 * @return A new state in which the process state of the given pid will be
+	 *         updated. The write set stack of the process state has been popped
+	 */
+	State popWriteSet(State state, int pid);
+
+	/**
+	 * @param state
+	 *            The current state
+	 * @param The
+	 *            PID of the calling process whose partial path condition stack
+	 *            will be pushed.
+	 * @return A new state in which the process state of the given pid will be
+	 *         updated. The partial path condition stack of the process state
+	 *         has one more empty stack.
+	 */
+	State pushAssumption(State state, int pid, BooleanExpression assumption);
+
+	/**
+	 * @param state
+	 *            The current state
+	 * @param The
+	 *            PID of the calling process whose partial path condition stack
+	 *            will be popped.
+	 * @return A new state in which the process state of the given pid will be
+	 *         updated. The partial path condition stack of the process state
+	 *         has been popped.
+	 */
+	State popAssumption(State state, int pid);
 
 	void setConfiguration(CIVLConfiguration config);
-	
+
 	public SymbolicExpression processValue(int pid);
 }
