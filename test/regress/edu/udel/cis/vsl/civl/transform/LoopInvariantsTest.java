@@ -144,8 +144,8 @@ public class LoopInvariantsTest {
 
 	@Test
 	public void summation() {
-		assertTrue(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename("summation.cvl")));
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+				filename("summation.cvl")));
 	}
 
 	@Test
