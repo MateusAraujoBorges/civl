@@ -10,7 +10,7 @@ int main() {
   
   /*@
     @ loop invariant 0<=i && i <=N;
-    @ loop invariant \forall int j; 0 <= j && j < i ==> sum == \sum(0, j, \lambda int t; a[t] + b[t]);
+    @ loop invariant sum == \sum(0, i-1, \lambda int t; a[t] + b[t]);
     @*/
   while (i < N) {
     sum += a[i] + b[i];
