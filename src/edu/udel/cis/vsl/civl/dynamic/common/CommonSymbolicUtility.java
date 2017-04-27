@@ -576,7 +576,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 					new Singleton<SymbolicExpression>(id)));
 			typeExpressionMap.put(type, result);
 			typeExpressionMap2.put(result, type);
-			this.staticTypeMap.put(type, civlType);
+			if (civlType != null)
+				staticTypeMap.put(type, civlType);
 		}
 		return result;
 	}
@@ -848,8 +849,9 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			else if (type instanceof SymbolicCompleteArrayType) {
 				SymbolicCompleteArrayType arrayType = (SymbolicCompleteArrayType) type;
 
-				result = sizeof(source,
-						((CIVLArrayType) civlType).elementType(),
+				result = sizeof(source, civlType == null
+						? null
+						: ((CIVLArrayType) civlType).elementType(),
 						arrayType.elementType());
 				result = universe.multiply(arrayType.extent(),
 						(NumericExpression) result);
