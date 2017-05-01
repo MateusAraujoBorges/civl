@@ -772,7 +772,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		valid = reasoner.valid(assertValue);
 		resultType = valid.getResultType();
 		if (resultType == ResultType.MAYBE)
-			resultType = HeuristicProveHelper.applyHeuristics(reasoner,
+			resultType = HeuristicProveHelper.heuristicsValid(reasoner,
 					universe, assertValue);
 		if (resultType != ResultType.YES) {
 			StringBuilder message = new StringBuilder();
