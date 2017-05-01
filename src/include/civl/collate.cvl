@@ -121,7 +121,7 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
   _Bool first = $true;
   $gcollate_state * queue;
   $gcollate_state gcollate_state;
-  $collate_state result;
+  $collate_state result = {0, NULL};
 
   nprocs = c->gcollator->nprocs;
   queue = c->gcollator->queue;
