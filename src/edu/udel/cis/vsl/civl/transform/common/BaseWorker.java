@@ -77,13 +77,13 @@ import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 public abstract class BaseWorker {
 	protected final static Map<String, String> EMPTY_MACRO_MAP = new HashMap<>(
 			0);
-	protected final static String GEN_MAIN = GeneralTransformer.PREFIX + "main";
-	protected final static String MAIN = "main";
-	protected final static String ASSUME = "$assume";
-	protected final static String ASSERT = "$assert";
-	protected final static String ELABORATE = "$elaborate";
-	protected final static String DEREFABLE = "$is_derefable";
-	protected final static String EXTENT_MPI_DATATYPE = "$mpi_extentof";
+	final static String GEN_MAIN = GeneralTransformer.PREFIX + "main";
+	final static String MAIN = "main";
+	final static String ASSUME = "$assume";
+	final static String ASSERT = "$assert";
+	final static String ELABORATE = "$elaborate";
+	final static String DEREFRABLE = "$is_derefable";
+	final static String EXTENT_MPI_DATATYPE = "$mpi_extentof";
 
 	protected String identifierPrefix;
 
@@ -114,6 +114,24 @@ public abstract class BaseWorker {
 	 * used by the {@link #astFactory}.
 	 */
 	protected TokenFactory tokenFactory;
+
+	/* ************************ Static ************************** */
+	/**
+	 * A static version of {@link #identifierExpression(Source, String)}
+	 */
+	static IdentifierExpressionNode identifierExpression(Source source,
+			String identifierName, NodeFactory nodeFactory) {
+		return nodeFactory.newIdentifierExpressionNode(source,
+				nodeFactory.newIdentifierNode(source, identifierName));
+	}
+
+	/**
+	 * A static version of {@link #identifier(String)}
+	 */
+	static IdentifierNode identifier(Source source, String identifierName,
+			NodeFactory nodeFactory) {
+		return nodeFactory.newIdentifierNode(source, identifierName);
+	}
 
 	/* ****************************** Constructor ************************** */
 
@@ -412,14 +430,16 @@ public abstract class BaseWorker {
 						"formal parameter types",
 						new LinkedList<VariableDeclarationNode>()),
 				false);
-		newMainFunction = nodeFactory.newFunctionDefinitionNode(
-				this.newSource("new main function",
-						CivlcTokenConstant.FUNCTION_DEFINITION),
-				this.identifier(MAIN), mainFuncType, null,
-				nodeFactory.newCompoundStatementNode(
+		newMainFunction = nodeFactory
+				.newFunctionDefinitionNode(
 						this.newSource("new main function",
-								CivlcTokenConstant.BODY),
-						blockItems));
+								CivlcTokenConstant.FUNCTION_DEFINITION),
+						this.identifier(MAIN), mainFuncType, null,
+						nodeFactory
+								.newCompoundStatementNode(
+										this.newSource("new main function",
+												CivlcTokenConstant.BODY),
+										blockItems));
 		root.addSequenceChild(newMainFunction);
 	}
 
@@ -1171,23 +1191,28 @@ public abstract class BaseWorker {
 					ExpressionNode extent = arrayType.getVariableSize();
 
 					if (extent != null) {
-						condition = this.nodeFactory.newOperatorNode(expr
-								.getSource(), Operator.LAND, Arrays.asList(
-										nodeFactory.newOperatorNode(
-												expr.getSource(),
-												Operator.LEQ,
-												Arrays.asList(
-														this.integerConstant(0),
-														index.copy())),
-										nodeFactory.newOperatorNode(
-												expr.getSource(), Operator.LEQ,
-												Arrays.asList(index.copy(),
-														extent.copy()))));
+						condition = this.nodeFactory
+								.newOperatorNode(expr.getSource(),
+										Operator.LAND,
+										Arrays.asList(
+												nodeFactory.newOperatorNode(
+														expr.getSource(),
+														Operator.LEQ,
+														Arrays.asList(
+																this.integerConstant(
+																		0),
+																index.copy())),
+												nodeFactory.newOperatorNode(
+														expr.getSource(),
+														Operator.LEQ,
+														Arrays.asList(
+																index.copy(),
+																extent.copy()))));
 					}
 				}
 			} else if (op == Operator.DEREFERENCE) {
 				condition = this.functionCall(
-						operator.getArgument(0).getSource(), DEREFABLE,
+						operator.getArgument(0).getSource(), DEREFRABLE,
 						Arrays.asList(operator.getArgument(0).copy()));
 			}
 		} else if (kind == ExpressionKind.MPI_CONTRACT_EXPRESSION) {
@@ -1218,7 +1243,7 @@ public abstract class BaseWorker {
 							expr.getSource(), Operator.PLUS,
 							Arrays.asList(buf.copy(), offSet));
 
-					condition = this.functionCall(expr.getSource(), DEREFABLE,
+					condition = this.functionCall(expr.getSource(), DEREFRABLE,
 							Arrays.asList(pointer));
 					if (mpiKind == MPIContractExpressionKind.MPI_EQUALS) {
 						ExpressionNode remotePointer = nodeFactory
@@ -1232,7 +1257,7 @@ public abstract class BaseWorker {
 								expr.getSource(), Operator.LAND,
 								Arrays.asList(condition,
 										functionCall(expr.getSource(),
-												DEREFABLE,
+												DEREFRABLE,
 												Arrays.asList(remotePointer))));
 					}
 					break;
