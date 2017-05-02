@@ -2468,7 +2468,7 @@ public class ImmutableStateFactory implements StateFactory {
 			}
 		else
 			result = (ImmutableState) state;
-		savedCanonicStates.put(result.getCanonicId(), result);
+		savedCanonicStates.putIfAbsent(result.getCanonicId(), result);
 		return new Pair<>(result.getCanonicId(), result);
 	}
 

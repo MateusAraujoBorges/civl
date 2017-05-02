@@ -42,7 +42,7 @@ public class HeuristicProveHelper {
 	 * @return The {@link ResultType} of the reason of transformed predicate.
 	 *         {@link ResultType#MAYBE} if nothing changes.
 	 */
-	static ResultType applyHeuristics(Reasoner reasoner,
+	static ResultType validWithHeuristics(Reasoner reasoner,
 			SymbolicUniverse universe, BooleanExpression predicate) {
 		Map<SymbolicExpression, SymbolicExpression> subMap = null;
 		BooleanExpression newPredicate = predicate;
