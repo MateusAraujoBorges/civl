@@ -79,10 +79,10 @@ public abstract class BaseWorker {
 			0);
 	final static String GEN_MAIN = GeneralTransformer.PREFIX + "main";
 	final static String MAIN = "main";
-	final static String ASSUME = "$assume";
-	final static String ASSERT = "$assert";
-	final static String ELABORATE = "$elaborate";
-	final static String DEREFRABLE = "$is_derefable";
+	public final static String ASSUME = "$assume";
+	public final static String ASSERT = "$assert";
+	public final static String ELABORATE = "$elaborate";
+	public final static String DEREFRABLE = "$is_derefable";
 	final static String EXTENT_MPI_DATATYPE = "$mpi_extentof";
 
 	protected String identifierPrefix;
@@ -833,6 +833,11 @@ public abstract class BaseWorker {
 		return this.typeNode(source, type);
 	}
 
+	// TODO: replace this method with the public static one
+	protected TypeNode typeNode(Source source, Type type) {
+		return typeNode(source, type, nodeFactory);
+	}
+
 	/**
 	 * Creates a type node of a given type, with the given source.
 	 * 
@@ -842,7 +847,9 @@ public abstract class BaseWorker {
 	 *            the specified type
 	 * @return the new type node
 	 */
-	protected TypeNode typeNode(Source source, Type type) {
+	public static TypeNode typeNode(Source source, Type type,
+			NodeFactory nodeFactory) {
+
 		switch (type.kind()) {
 			case VOID :
 				return nodeFactory.newVoidTypeNode(source);
@@ -853,26 +860,30 @@ public abstract class BaseWorker {
 				return nodeFactory.newBasicTypeNode(source, BasicTypeKind.INT);
 			case ARRAY :
 				return nodeFactory.newArrayTypeNode(source,
-						this.typeNode(source,
-								((ArrayType) type).getElementType()),
+						typeNode(source, ((ArrayType) type).getElementType(),
+								nodeFactory),
 						((ArrayType) type).getVariableSize().copy());
 			case POINTER :
-				return nodeFactory.newPointerTypeNode(source, this.typeNode(
-						source, ((PointerType) type).referencedType()));
+				return nodeFactory.newPointerTypeNode(source, typeNode(source,
+						((PointerType) type).referencedType(), nodeFactory));
 			case QUALIFIED :
-				return typeNode(((QualifiedObjectType) type).getBaseType());
+				return typeNode(source,
+						((QualifiedObjectType) type).getBaseType(),
+						nodeFactory);
 			case STRUCTURE_OR_UNION : {
 				StructureOrUnionType structOrUnionType = (StructureOrUnionType) type;
 
 				return nodeFactory.newStructOrUnionTypeNode(source,
 						structOrUnionType.isStruct(),
-						this.identifier(structOrUnionType.getTag()), null);
+						nodeFactory.newIdentifierNode(source,
+								structOrUnionType.getTag()),
+						null);
 			}
 			case ENUMERATION : {
 				EnumerationType enumType = (EnumerationType) type;
 
-				return nodeFactory.newTypedefNameNode(
-						identifier(enumType.getTag()), null);
+				return nodeFactory.newTypedefNameNode(nodeFactory
+						.newIdentifierNode(source, enumType.getTag()), null);
 			}
 			case SCOPE :
 				return nodeFactory.newScopeTypeNode(source);

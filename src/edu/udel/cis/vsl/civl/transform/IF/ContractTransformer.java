@@ -4,7 +4,7 @@ import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.BaseTransformer;
-import edu.udel.cis.vsl.civl.transform.common.ContractTransformerWorker;
+import edu.udel.cis.vsl.civl.transform.common.contracts.ContractTransformerWorker;
 
 public class ContractTransformer extends BaseTransformer {
 
@@ -21,7 +21,8 @@ public class ContractTransformer extends BaseTransformer {
 	/**
 	 * The description of this transformer.
 	 */
-	public final static String SHORT_DESCRIPTION = "transforms C/MPI program to a set of programs each of which verifies a single function";
+	public final static String SHORT_DESCRIPTION = "transforms C/MPI program "
+			+ "to a set of programs each of which verifies a single function";
 
 	private String targetFunction;
 
