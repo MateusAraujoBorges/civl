@@ -20,9 +20,18 @@ char * $mpi_coroutine_name(int tag);
 /**************************** Duplicated Part *************************************/
 
 #ifdef _MPI_CONTRACT
-struct _mpi_data_size{
-  MPI_Datatype type;
-  size_t size;
+// A type of a union of all mpi datatypes.
+typedef union _mpi_data_bundle_t {
+  int integer;
+  _MPI_2INT_T doubleIntegers;
+  $real real;
+  char byte;
+};                     
+
+// A type for objects of arbitrary MPI_Datatypes.
+struct _mpi_data_t {
+  $mpi_data_bundle_t * buf;
+  MPI_Datatype tag;
 };
 #endif
 
