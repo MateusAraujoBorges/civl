@@ -17,24 +17,8 @@
 
 /* Library private helper function declaration */
 char * $mpi_coroutine_name(int tag);
+
 /**************************** Duplicated Part *************************************/
-
-#ifdef _MPI_CONTRACT
-// A type of a union of all mpi datatypes.
-typedef union _mpi_data_bundle_t {
-  int integer;
-  _MPI_2INT_T doubleIntegers;
-  $real real;
-  char byte;
-};                     
-
-// A type for objects of arbitrary MPI_Datatypes.
-struct _mpi_data_t {
-  $mpi_data_bundle_t * buf;
-  MPI_Datatype tag;
-};
-#endif
-
 /* Duplicated definition with the same struct in mpi.h.
    The reason of this duplication is to make civlmpi.cvl
    independent with mpi.cvl. */
@@ -54,10 +38,6 @@ struct $mpi_gcomm {
   $gcollator gcollator;
   $gbarrier gbarrier;
 };
-
-#ifdef _MPI_CONTRACT
-$mpi_data_size_t _mpi_size_map[];//=($mpi_data_size_t[0]) $lambda(int i) (($mpi_data_size_t){0, 0});
-#endif
 
 /****************************** Helper Functions **********************************/
 int sizeofDatatype(MPI_Datatype datatype) {

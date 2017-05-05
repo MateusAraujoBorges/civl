@@ -201,12 +201,13 @@ public class ContractTransformerWorker extends BaseWorker {
 	TransformConfiguration config;
 
 	public ContractTransformerWorker(ASTFactory astFactory,
-			String targetFunctionName) {
+			String targetFunctionName, CIVLConfiguration civlConfig) {
 		super(ContractTransformer.LONG_NAME, astFactory);
 		identifierPrefix = CIVL_CONTRACT_PREFIX;
 		this.targetFunctionName = targetFunctionName;
 		intTypeNode = nodeFactory.newBasicTypeNode(
 				newSource("int", CivlcTokenConstant.TYPE), BasicTypeKind.INT);
+		this.civlConfig = civlConfig;
 		config = MPIContractUtilities.getTransformConfiguration();
 		this.mpiCommRankSource = this.newSource("$mpi_comm_rank",
 				CivlcTokenConstant.IDENTIFIER);
@@ -241,7 +242,7 @@ public class ContractTransformerWorker extends BaseWorker {
 				continue;
 			sourceFileName = child.getSource().getFirstToken().getSourceFile()
 					.getName();
-			if (civlConfig.inputVariables().containsKey(sourceFileName))
+			if (sourceFileName.endsWith(".c"))
 				sourceFiles.add(child);
 			if (!hasMPI && sourceFileName.equals("mpi.h"))
 				hasMPI = true;
@@ -263,6 +264,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		externalList.addAll(processedSourceFiles.right);
 		// $havoc for all global variables:
 		externalList.addAll(globalVarHavocs);
+		processedSourceFiles.left.remove();
 		externalList.add(mainFunction(processedSourceFiles.left, hasMPI));
 		newRootNode = nodeFactory.newSequenceNode(
 				newSource("TranslationUnit",
@@ -271,7 +273,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		// newAst.prettyPrint(System.out, false);
+		newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 	/* ******************* Package private methods: ******************** */
@@ -377,6 +379,7 @@ public class ContractTransformerWorker extends BaseWorker {
 							newSourceFileNodes.add(
 									transformTargetFunction(funcDefi, hasMpi));
 							target = funcDefi;
+							target.remove();
 							target.getContract().remove();
 							continue;
 						} else
@@ -404,6 +407,7 @@ public class ContractTransformerWorker extends BaseWorker {
 						defiOfThis.remove();
 				}
 			} else {
+				child.remove();
 				newSourceFileNodes.add(child);
 				continue;
 			}
@@ -655,7 +659,8 @@ public class ContractTransformerWorker extends BaseWorker {
 					requirements.add(nodeFactory.newIfNode(
 							condClause.condition.getSource(),
 							condClause.condition, compound));
-				}
+				} else
+					requirements.addAll(tmp);
 				ensures = condClause.getEnsures(nodeFactory);
 				if (ensures != null) {
 					StatementNode assertion;
@@ -690,7 +695,7 @@ public class ContractTransformerWorker extends BaseWorker {
 					.transformMPICollectiveBlock4Target(mpiBlock, config);
 
 			requirements.addAll(pair.requirements);
-			ensurances.addAll(ensurances);
+			ensurances.addAll(pair.ensurances);
 		}
 		// Unsnapshots for pre- and post-:
 		for (FunctionContractBlock mpiBlock : parsedContractBlocks) {

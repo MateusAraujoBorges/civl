@@ -36,7 +36,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.type.TypedefNameNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.PointerType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
@@ -250,26 +249,36 @@ class ContractClauseTransformer {
 				source,
 				nodeFactory.newIdentifierNode(source, postStateDecl.getName()));
 
+		requirements.addAll(mpiConstantsInitialization(mpiComm));
+		config.setAlloc4Valid(true);
+		for (ConditionalClauses condClause : mpiBlock.getConditionalClauses()) {
+			ExpressionNode requires = condClause.getRequires(nodeFactory);
+
+			requirements.addAll(allocation4Valids(requires, config));
+		}
+		config.setAlloc4Valid(false);
 		requirements.add(preStateDecl);
 		ensurances.add(postStateDecl);
-		requirements.addAll(mpiConstantsInitialization(mpiComm));
-
 		for (ConditionalClauses condClause : mpiBlock.getConditionalClauses()) {
 			ExpressionNode requires = condClause.getRequires(nodeFactory);
 			ExpressionNode ensures = condClause.getEnsures(nodeFactory);
 
-			config.setIgnoreOld(true);
-			config.setNoResult(true);
-			ACSLPrimitives2CIVLC(requires, preState, config);
-			requirements.addAll(allocation4Valids(requires, config));
-			requirements.addAll(transformClause2Assumption(condClause.condition,
-					requires, preState, condClause.getWaitsfors(), config));
-			// TODO: How check assigns ?
-			config.setIgnoreOld(false);
-			config.setNoResult(false);
-			ACSLPrimitives2CIVLC(ensures, preState, config);
-			ensurances.addAll(transformClause2Checking(condClause.condition,
-					ensures, postState, condClause.getWaitsfors(), config));
+			if (requires != null) {
+				config.setIgnoreOld(true);
+				config.setNoResult(true);
+				ACSLPrimitives2CIVLC(requires, preState, config);
+				requirements.addAll(transformClause2Assumption(
+						condClause.condition, requires, preState,
+						condClause.getWaitsfors(), config));
+			}
+			if (ensures != null) {
+				// TODO: How check assigns ?
+				config.setIgnoreOld(false);
+				config.setNoResult(false);
+				ACSLPrimitives2CIVLC(ensures, preState, config);
+				ensurances.addAll(transformClause2Checking(condClause.condition,
+						ensures, postState, condClause.getWaitsfors(), config));
+			}
 		}
 		return new TransformPair(requirements, ensurances);
 	}
@@ -400,7 +409,7 @@ class ContractClauseTransformer {
 					mpiValidNodes.get(0).getSource());
 		if (config.alloc4Valid()) {
 			for (OperatorNode validNode : validNodes)
-				results.addAll(allocate4Valid(validNode));
+				results.addAll(allocate4ACSLValid(validNode));
 			for (MPIContractExpressionNode mpiValidNode : mpiValidNodes)
 				results.addAll(allocate4MPIValid(mpiValidNode));
 
@@ -570,7 +579,7 @@ class ContractClauseTransformer {
 	 * @throws SyntaxException
 	 *             If the valid expression is not written in the canonical form.
 	 */
-	private List<BlockItemNode> allocate4Valid(OperatorNode valid)
+	private List<BlockItemNode> allocate4ACSLValid(OperatorNode valid)
 			throws SyntaxException {
 		Source source = valid.getSource();
 		ExpressionNode argument = valid.getArgument(0);
@@ -650,26 +659,24 @@ class ContractClauseTransformer {
 		ExpressionNode buf = mpiValid.getArgument(0);
 		ExpressionNode count = mpiValid.getArgument(1);
 		ExpressionNode datatype = mpiValid.getArgument(2);
-		EnumerationConstantNode castedDatatype;
+		TypeNode typeNode;
 
-		if (!(datatype instanceof EnumerationConstantNode))
-			throw new CIVLSyntaxException(
-					"The third argument of \\mpi_valid must be a enumeration"
-							+ " constant of MPI_Datatype",
-					datatype.getSource());
+		if (datatype instanceof EnumerationConstantNode) {
+			EnumerationConstantNode mpiDatatypeConstant = (EnumerationConstantNode) datatype;
+			String name = mpiDatatypeConstant.getName().name();
+			String typedefname = "_" + name + "_t"; // quick translation
 
-		castedDatatype = (EnumerationConstantNode) datatype;
-
-		// Interpret MPI_Datatype, see civl-mpi.cvh. For a MPI_Datatype name
-		// "t", transform to "_t_T"
-		String mpiTypeName = castedDatatype.getName().name();
-		String transformedMpiTypeName = "_" + mpiTypeName + "_T";
-		TypedefNameNode transformedMpiType = nodeFactory.newTypedefNameNode(
-				nodeFactory.newIdentifierNode(castedDatatype.getSource(),
-						transformedMpiTypeName),
-				null);
-
-		return createAllocation(buf, transformedMpiType, count, source);
+			typeNode = nodeFactory.newTypedefNameNode(nodeFactory
+					.newIdentifierNode(datatype.getSource(), typedefname),
+					null);
+		} else {
+			typeNode = nodeFactory.newBasicTypeNode(datatype.getSource(),
+					BasicTypeKind.CHAR);
+			// char data[count * extentof(datatype)];
+			count = nodeFactory.newOperatorNode(source, Operator.TIMES, Arrays
+					.asList(count.copy(), createMPIExtentofCall(datatype)));
+		}
+		return createAllocation(buf, typeNode, count, source);
 	}
 
 	/**
@@ -723,12 +730,9 @@ class ContractClauseTransformer {
 				numElements.copy());
 		TypeNode arrayType = nodeFactory.newArrayTypeNode(source, elementType,
 				numElements);
-		String allocationName = null;
+		String allocationName = nextAllocationName();
 		IdentifierNode allocationIdentifierNode;
 
-		if (pointer instanceof IdentifierExpressionNode)
-			allocationName = ((IdentifierExpressionNode) pointer)
-					.getIdentifier().name();
 		allocationIdentifierNode = nodeFactory
 				.newIdentifierNode(pointer.getSource(), allocationName);
 
@@ -778,7 +782,7 @@ class ContractClauseTransformer {
 		return nodeFactory.newFunctionCallNode(datatype.getSource(),
 				identifierExpressionNode(datatype.getSource(),
 						ContractTransformerWorker.MPI_EXTENTOF),
-				Arrays.asList(datatype), null);
+				Arrays.asList(datatype.copy()), null);
 	}
 
 	/**
@@ -829,11 +833,10 @@ class ContractClauseTransformer {
 				isDereferablePtr = createQualifiedPointerCheckingCondition(
 						ptr_range.first, ptr_range.second, ptr_range.third);
 			else
-				isDereferablePtr = nodeFactory
-						.newFunctionCallNode(regValid.getSource(),
-								identifierExpressionNode(source,
-										BaseWorker.DEREFRABLE),
-								Arrays.asList(ptr_range.first.copy()), null);
+				isDereferablePtr = nodeFactory.newFunctionCallNode(
+						regValid.getSource(),
+						identifierExpressionNode(source, BaseWorker.DEREFRABLE),
+						Arrays.asList(ptr_range.first.copy()), null);
 		} else // else it is an \mpi_valid
 		{
 			// TODO: currently we can use the
@@ -1123,11 +1126,19 @@ class ContractClauseTransformer {
 	}
 
 	/**
-	 * @return a new name for intermediate variable used for transforming
-	 *         assigns clauses
+	 * @return a new name for artificial variable used for transforming assigns
+	 *         clauses
 	 */
 	private String nextAssignName() {
 		return ASSIGN_VAR_PREFIX + tmpAssignCounter++;
+	}
+
+	/**
+	 * @return a new name for artificial variable used for transforming
+	 *         allocations
+	 */
+	private String nextAllocationName() {
+		return HEAP_VAR_PREFIX + tmpHeapCounter++;
 	}
 
 	/*
@@ -1311,12 +1322,9 @@ class ContractClauseTransformer {
 	}
 
 	private void substituteAllValid2True(ExpressionNode predicate) {
-		ASTNode parent = predicate.parent();
-		int childIdx = predicate.childIndex();
 		ASTNode visitor = predicate;
 		List<ASTNode> valids = new LinkedList<>();
 
-		predicate.remove();
 		while (visitor != null) {
 			if (visitor instanceof OperatorNode) {
 				OperatorNode opNode = (OperatorNode) visitor;
@@ -1333,8 +1341,9 @@ class ContractClauseTransformer {
 			}
 			visitor = visitor.nextDFS();
 		}
-		parent.setChild(childIdx, predicate);
 		for (ASTNode valid : valids) {
+			ASTNode parent;
+			int childIdx;
 			ASTNode trueLiteral = nodeFactory
 					.newBooleanConstantNode(valid.getSource(), true);
 
