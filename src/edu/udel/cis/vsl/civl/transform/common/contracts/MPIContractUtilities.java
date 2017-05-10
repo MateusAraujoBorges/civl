@@ -1,13 +1,9 @@
 package edu.udel.cis.vsl.civl.transform.common.contracts;
 
-import java.util.Arrays;
 import java.util.BitSet;
-import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 
 public class MPIContractUtilities {
@@ -19,6 +15,8 @@ public class MPIContractUtilities {
 	static final String MPI_COMM_RANK_CALL = "MPI_Comm_rank";
 
 	static final String MPI_COMM_SIZE_CALL = "MPI_Comm_size";
+
+	static final String MPI_BARRIER_CALL = "MPI_Barrier";
 
 	static final String MPI_SNAPSHOT = "$mpi_snapshot";
 
@@ -32,9 +30,11 @@ public class MPIContractUtilities {
 
 	static final String STATE_NULL = "$state_null";
 
-	static final String ACSL_RESULT = "$result";
-
 	static final String COLLATE_STATE_TYPE = "$collate_state";
+
+	static final String COLLATE_GET_STATE_CALL = "$collate_get_state";
+
+	static final String ACSL_RESULT_VAR = "$result";
 
 	static TransformConfiguration getTransformConfiguration() {
 		return new TransformConfiguration();
@@ -42,60 +42,7 @@ public class MPIContractUtilities {
 
 	static ExpressionNode getStateNullExpression(Source source,
 			NodeFactory nodeFactory) {
-		return nodeFactory.newIdentifierExpressionNode(source,
-				nodeFactory.newIdentifierNode(source, STATE_NULL));
-	}
-
-	static StatementNode withStatementWrapper(StatementNode body,
-			ExpressionNode collateState, List<ExpressionNode> dependents,
-			TransformConfiguration config, NodeFactory nodeFactory) {
-		StatementNode withStmt = nodeFactory.newWithNode(body.getSource(),
-				collateState.copy(), body.copy());
-		if (config.getWith())
-			return withStmt;
-
-		if (config.getWithComplete() || config.getRunWithComplete()) {
-			ExpressionNode functionIdentifier = nodeFactory
-					.newIdentifierExpressionNode(body.getSource(),
-							nodeFactory.newIdentifierNode(body.getSource(),
-									COLLATE_COMPLETE));
-			ExpressionNode collateComplete = nodeFactory.newFunctionCallNode(
-					collateState.getSource(), functionIdentifier,
-					Arrays.asList(collateState.copy()), null);
-			StatementNode withCompleteStmt = nodeFactory.newWhenNode(
-					collateComplete.getSource(), collateComplete, withStmt);
-
-			if (config.getRunWithComplete())
-				return nodeFactory.newRunNode(withCompleteStmt.getSource(),
-						withCompleteStmt);
-			else
-				return withCompleteStmt;
-		}
-		if (config.getRunWithArrived()) {
-			ExpressionNode functionIdentifier = nodeFactory
-					.newIdentifierExpressionNode(body.getSource(),
-							nodeFactory.newIdentifierNode(body.getSource(),
-									COLLATE_ARRIVED));
-			ExpressionNode allArrived = null;
-
-			for (ExpressionNode dependent : dependents) {
-				ExpressionNode arrived = nodeFactory.newFunctionCallNode(
-						collateState.getSource(), functionIdentifier,
-						Arrays.asList(collateState.copy(), dependent.copy()),
-						null);
-				Source arrivedSource = arrived.getSource();
-
-				allArrived = allArrived == null
-						? arrived
-						: nodeFactory.newOperatorNode(arrivedSource,
-								Operator.LAND,
-								Arrays.asList(allArrived, arrived));
-
-			}
-			return nodeFactory.newRunNode(withStmt.getSource(), nodeFactory
-					.newWhenNode(allArrived.getSource(), allArrived, withStmt));
-		}
-		return body;
+		return nodeFactory.newStatenullNode(source);
 	}
 
 	static class TransformConfiguration {

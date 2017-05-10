@@ -41,13 +41,6 @@ struct $mpi_gcomm {
 
 /****************************** Helper Functions **********************************/
 int sizeofDatatype(MPI_Datatype datatype) {
-#ifdef  _MPI_CONTRACT
-  if (!$is_concrete_int(datatype)) {
-    size_t extent = $mpi_extentof(datatype);
-
-    return extent * sizeof(char);
-  }
-#endif
   size_t result;
 
   switch (datatype) {
@@ -78,35 +71,7 @@ int sizeofDatatype(MPI_Datatype datatype) {
   default:
     $assert(0, "Unreachable");
   }
-#ifdef  _MPI_CONTRACT
-  $assume(result == $mpi_extentof(datatype));
-#endif
   return result;
-}
-
-
-void * $mpi_malloc(int count, MPI_Datatype datatype) {  
-  switch (datatype) {
-  case MPI_INT:
-  case MPI_SHORT:
-  case MPI_LONG:
-  case MPI_LONG_LONG_INT:
-  case MPI_LONG_LONG:
-  case MPI_UNSIGNED_LONG_LONG:
-    return (int *)malloc(sizeof(int) * count);
-  case MPI_2INT:
-    return (int *)malloc(2 * count * sizeof(int));
-  case MPI_FLOAT:
-  case MPI_DOUBLE:
-  case MPI_LONG_DOUBLE:
-    return ($real *)malloc(count * sizeof($real));
-  case MPI_CHAR:
-  case MPI_BYTE:
-    return (char *)malloc(count * sizeof(char));
-  default:
-    $assert(0, "Unreachable");
-  } 
-  return (void *)0;
 }
 
 /************************** MPI LIB Implementations *******************************/
@@ -764,6 +729,29 @@ void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
     
     memcpy(buf, newValues, count * sizeofDatatype(datatype));   
   }
+}
+
+$state_f size_t $mpi_extentof(MPI_Datatype datatype) {
+  if ($is_concrete_int(datatype)) 
+    return sizeofDatatype(datatype);
+  else {
+    $abstract size_t $mpi_sizeof(MPI_Datatype datatype);
+
+    return $mpi_sizeof(datatype);
+  }
+}
+
+$atomic_f void $check_mpi_comm_empty(MPI_Comm comm, MPI_CHANNEL channel) {
+  _Bool empty;
+
+  if (channel == P2P) {
+    empty = $comm_empty_in(comm.p2p);
+    empty &= $comm_empty_out(comm.p2p);
+  } else {
+    empty = $comm_empty_in(comm.col);
+    empty &= $comm_empty_out(comm.col);
+  }
+  assert(empty, "Non empty message channels in MPI communicator\n");
 }
 
 /********************* Private helper functions *********************/

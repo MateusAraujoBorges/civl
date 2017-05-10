@@ -10,14 +10,10 @@ import java.util.Set;
 import edu.udel.cis.vsl.abc.ast.IF.AST;
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICollectiveKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
@@ -52,11 +48,6 @@ import edu.udel.cis.vsl.civl.transform.common.contracts.MPIContractUtilities.Tra
  *
  */
 public class ContractTransformerWorker extends BaseWorker {
-
-	/**
-	 * A reference to {@link CIVLConfiguration}
-	 */
-	private CIVLConfiguration civlConfig;
 
 	/**
 	 * The common prefix for all generated identifiers, 'ctat' is short for
@@ -122,26 +113,6 @@ public class ContractTransformerWorker extends BaseWorker {
 	final static String MPI_ASSIGNS = "$mpi_assigns";
 
 	/**
-	 * A comm-library function identifier:
-	 */
-	private final static String COMM_EMPTY_IN = "$comm_empty_in";
-
-	/**
-	 * A comm-library function identifier:
-	 */
-	private final static String COMM_EMPTY_OUT = "$comm_empty_out";
-
-	/**
-	 * p2p field of an MPI_Comm sturct object:
-	 */
-	private final static String P2P = "p2p";
-
-	/**
-	 * col field of an MPI_Comm sturct object:
-	 */
-	private final static String COL = "col";
-
-	/**
 	 * A collate-library function identifier:
 	 */
 	final static String COLLATE_STATE = "$collate_state";
@@ -168,11 +139,6 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * A string source for a return statement:
 	 */
 	private final static String RETURN_RESULT = "return $result;";
-
-	/**
-	 * A variable representing the return value of a function:
-	 */
-	final static String RESULT = "$result";
 
 	/**
 	 * Set of all global variables in source files:
@@ -207,7 +173,6 @@ public class ContractTransformerWorker extends BaseWorker {
 		this.targetFunctionName = targetFunctionName;
 		intTypeNode = nodeFactory.newBasicTypeNode(
 				newSource("int", CivlcTokenConstant.TYPE), BasicTypeKind.INT);
-		this.civlConfig = civlConfig;
 		config = MPIContractUtilities.getTransformConfiguration();
 		this.mpiCommRankSource = this.newSource("$mpi_comm_rank",
 				CivlcTokenConstant.IDENTIFIER);
@@ -462,7 +427,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		Source contractSource = funcDecl.getContract().getSource();
 		List<FunctionContractBlock> contractBlocks;
 		ContractClauseTransformer clauseTransformer = new ContractClauseTransformer(
-				astFactory, this);
+				astFactory);
 		/*
 		 * Requirements (including assigns) of callees will be transformed to
 		 * assertions
@@ -477,7 +442,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		// callee shall not do allocation:
 		config.setAlloc4Valid(false);
 		if (contractBlocks.get(0).isSequentialBlock())
-			localBlock = contractBlocks.get(0);
+			localBlock = contractBlocks.remove(0);
 		if (localBlock != null) {
 			/*
 			 * Transform sequential contracts:
@@ -559,19 +524,23 @@ public class ContractTransformerWorker extends BaseWorker {
 		boolean returnVoid = false;
 
 		bodyItems.addAll(transformedRequirements);
-		bodyItems.addAll(transformedEnsurances);
 		returnVoid = isVoidType(funcTypeNode.getReturnType().getType());
 		if (!returnVoid) {
 			bodyItems.add(nodeFactory.newVariableDeclarationNode(contractSource,
-					identifier(RESULT), funcTypeNode.getReturnType().copy()));
+					identifier(MPIContractUtilities.ACSL_RESULT_VAR),
+					funcTypeNode.getReturnType().copy()));
 			bodyItems
 					.add(nodeFactory.newExpressionStatementNode(createHavocCall(
-							identifierExpression(RESULT), nodeFactory)));
+							identifierExpression(
+									MPIContractUtilities.ACSL_RESULT_VAR),
+							nodeFactory)));
 		}
+		bodyItems.addAll(transformedEnsurances);
 		if (!returnVoid)
 			bodyItems.add(nodeFactory.newReturnNode(
 					newSource(RETURN_RESULT, CivlcTokenConstant.RETURN),
-					identifierExpression(RESULT)));
+					identifierExpression(
+							MPIContractUtilities.ACSL_RESULT_VAR)));
 		body = nodeFactory.newCompoundStatementNode(funcDecl.getSource(),
 				bodyItems);
 		return nodeFactory.newFunctionDefinitionNode(funcDecl.getSource(),
@@ -616,7 +585,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		Source driverSource = newSource(driverName,
 				CivlcTokenConstant.FUNCTION_DEFINITION);
 		ContractClauseTransformer clauseTransformer = new ContractClauseTransformer(
-				astFactory, this);
+				astFactory);
 
 		List<BlockItemNode> requirements = new LinkedList<>();
 		List<BlockItemNode> ensurances = new LinkedList<>();
@@ -721,6 +690,7 @@ public class ContractTransformerWorker extends BaseWorker {
 					.add(identifierExpression(param.getIdentifier().name()));
 		targetCall = nodeFactory.newFunctionCallNode(driverSource,
 				funcIdentifier.copy(), funcParamIdentfiers, null);
+
 		// Create variable declarations which are actual parameters of the
 		// target function:
 		driverComponents
@@ -728,7 +698,8 @@ public class ContractTransformerWorker extends BaseWorker {
 		driverComponents.addAll(requirements);
 		if (!isVoidType(funcTypeNode.getReturnType().getType()))
 			driverComponents.add(nodeFactory.newVariableDeclarationNode(
-					contractSource, identifier(RESULT),
+					contractSource,
+					identifier(MPIContractUtilities.ACSL_RESULT_VAR),
 					funcDefi.getTypeNode().getReturnType().copy(), targetCall));
 		else
 			driverComponents
@@ -749,80 +720,6 @@ public class ContractTransformerWorker extends BaseWorker {
 	/*
 	 * ************************* Utility methods ****************************
 	 */
-	/**
-	 * <p>
-	 * <b>Summary: </b> Creates an MPI_Comm_rank function call:<code>
-	 * MPI_Comm_rank(mpiComm, &variableRank);</code>
-	 * </p>
-	 * 
-	 * @param mpiComm
-	 *            An {@link ExpressionNode} representing an MPI communicator.
-	 * 
-	 * @param rankVar
-	 *            An {@link ExpressionNode} representing an variable.
-	 * @param source
-	 *            The {@link Source} of the created call statement;
-	 * @return The created MPI_Comm_rank call statement node.
-	 */
-	private StatementNode createMPICommRankCall(ExpressionNode mpiComm,
-			ExpressionNode rankVar) {
-		ExpressionNode callIdentifier = identifierExpression(
-				MPI_COMM_RANK_CALL);
-		ExpressionNode addressOfRank = nodeFactory.newOperatorNode(
-				rankVar.getSource(), Operator.ADDRESSOF, rankVar.copy());
-		FunctionCallNode call = nodeFactory.newFunctionCallNode(
-				mpiCommRankSource, callIdentifier,
-				Arrays.asList(mpiComm.copy(), addressOfRank), null);
-		return nodeFactory.newExpressionStatementNode(call);
-	}
-
-	/**
-	 * <p>
-	 * <b>Summary: </b> Creates an MPI_Comm_size function call:<code>
-	 * MPI_Comm_size(mpiComm, &variableRank);</code>
-	 * </p>
-	 * 
-	 * @param mpiComm
-	 *            An {@link ExpressionNode} representing an MPI communicator.
-	 * 
-	 * @param variableRank
-	 *            An {@link ExpressionNode} representing an variable.
-	 * @param source
-	 *            The {@link Source} of the created call statement;
-	 * @return The created MPI_Comm_size call statement node.
-	 */
-	private StatementNode createMPICommSizeCall(ExpressionNode mpiComm,
-			ExpressionNode sizeVar) {
-		ExpressionNode callIdentifier = identifierExpression(
-				MPI_COMM_SIZE_CALL);
-		ExpressionNode addressOfSize = nodeFactory.newOperatorNode(
-				sizeVar.getSource(), Operator.ADDRESSOF, sizeVar.copy());
-		FunctionCallNode call = nodeFactory.newFunctionCallNode(
-				mpiCommSizeSource, callIdentifier,
-				Arrays.asList(mpiComm.copy(), addressOfSize), null);
-		return nodeFactory.newExpressionStatementNode(call);
-	}
-
-	/**
-	 * <p>
-	 * <b>Summary: </b> Creates an $mpi_snapshot function call:<code>
-	 * $mpi_snapshot(mpiComm, $scope);</code>
-	 * </p>
-	 * 
-	 * @param mpiComm
-	 *            An {@link ExpressionNode} representing an MPI communicator.
-	 * @return The created $mpi_snapshot call statement node.
-	 */
-	private ExpressionNode createMPISnapshotCall(ExpressionNode mpiComm) {
-		Source source = newSource(MPI_SNAPSHOT, CivlcTokenConstant.CALL);
-		Source hereSource = newSource("$here", CivlcTokenConstant.HERE);
-		ExpressionNode callIdentifier = identifierExpression(MPI_SNAPSHOT);
-		ExpressionNode hereNode = nodeFactory.newHereNode(hereSource);
-		FunctionCallNode call = nodeFactory.newFunctionCallNode(source,
-				callIdentifier, Arrays.asList(mpiComm.copy(), hereNode), null);
-
-		return call;
-	}
 
 	/**
 	 * <p>
@@ -882,34 +779,6 @@ public class ContractTransformerWorker extends BaseWorker {
 	}
 
 	/**
-	 * *
-	 * <p>
-	 * <b>Summary: </b> Creates an variable declaration:<code>
-	 * $collate_state _conc_varName# = $mpi_snapshot(mpiComm);</code>
-	 * </p>
-	 * 
-	 * @param varName
-	 *            The String type variable name, it will be concatenated with
-	 *            transformer prefix and counter.
-	 * @param mpiComm
-	 *            An expression represents an MPI communicator
-	 * @param source
-	 *            The {@link Source} attached with this declaration.
-	 * @return The created declaration node.
-	 */
-	private VariableDeclarationNode createCollateStateInitializer(
-			String collateStateName, ExpressionNode mpiComm) {
-		Source source = mpiComm.getSource();
-		InitializerNode initializer = createMPISnapshotCall(mpiComm.copy());
-		TypeNode collateStateTypeName = nodeFactory
-				.newTypedefNameNode(identifier(COLLATE_STATE), null);
-		IdentifierNode varIdent = identifier(collateStateName);
-
-		return nodeFactory.newVariableDeclarationNode(source, varIdent,
-				collateStateTypeName, initializer);
-	}
-
-	/**
 	 * <p>
 	 * <b>Summary: </b> Creates an $havoc function call:<code>
 	 * $mpi_snapshot(&var);</code>
@@ -930,37 +799,6 @@ public class ContractTransformerWorker extends BaseWorker {
 				callIdentifier, Arrays.asList(addressOfVar), null);
 
 		return call;
-	}
-
-	/**
-	 * Given an {@link MPICollectiveBlockNode}
-	 * <code>\collective(MPI_Comm, P2P/COL): ...</code>, creates such a
-	 * expression:
-	 * <code>$mpi_empty_in(MPI_Comm.(p2p/col)) && $mpi_empty_out(MPI_Comm.(p2p/col))</code>
-	 * 
-	 * @param mpiCollectiveBlock
-	 *            The given {@link MPICollectiveBlockNode}
-	 * @return
-	 */
-	private ExpressionNode commEmptyInAndOut(ExpressionNode mpiComm,
-			MPICollectiveKind colKind) {
-		ExpressionNode arg, result;
-		StringBuffer mpiCommPretty = mpiComm.prettyRepresentation();
-		Source source = newSource("$comm_empty_in(" + mpiCommPretty
-				+ ") && $comm_empty_out(" + mpiCommPretty + ");",
-				CivlcTokenConstant.CALL);
-
-		arg = colKind == MPICollectiveKind.P2P
-				? nodeFactory.newDotNode(mpiComm.getSource(), mpiComm.copy(),
-						identifier(P2P))
-				: nodeFactory.newDotNode(mpiComm.getSource(), mpiComm.copy(),
-						identifier(COL));
-		result = nodeFactory.newFunctionCallNode(source,
-				identifierExpression(COMM_EMPTY_IN), Arrays.asList(arg), null);
-		return nodeFactory.newOperatorNode(source, Operator.LAND, result,
-				nodeFactory.newFunctionCallNode(source,
-						identifierExpression(COMM_EMPTY_OUT),
-						Arrays.asList(arg.copy()), null));
 	}
 
 	/**

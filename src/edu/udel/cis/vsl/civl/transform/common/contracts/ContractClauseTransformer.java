@@ -8,13 +8,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
-import edu.udel.cis.vsl.abc.ast.entity.IF.Entity;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
-import edu.udel.cis.vsl.abc.ast.node.IF.PairNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
@@ -27,15 +24,13 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.QuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.RegularRangeNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteOnExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.DeclarationListNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode.TypeNodeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.PointerType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
@@ -47,39 +42,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.common.BaseWorker;
 import edu.udel.cis.vsl.civl.transform.common.contracts.FunctionContractBlock.ConditionalClauses;
 import edu.udel.cis.vsl.civl.transform.common.contracts.MPIContractUtilities.TransformConfiguration;
-import edu.udel.cis.vsl.civl.util.IF.Triple;
 class ContractClauseTransformer {
-
-	/**
-	 * A collate-library function identifier:
-	 */
-	private final static String COLLATE_COMPLETE = "$collate_complete";
-
-	/**
-	 * A collate-library function identifier:
-	 */
-	private final static String COLLATE_ARRIVED = "$collate_arrived";
-
-	/**
-	 * A collate-library function identifier:
-	 */
-	private final static String COLLATE_GET_STATE = "$collate_get_state";
-
-	/**
-	 * A CIVL-MPI function identifier:
-	 */
-	private final static String MPI_SIZEOF = "sizeofDatatype";
-
-	/**
-	 * Generated old variable prefix:
-	 */
-	private final static String OLD_VAR_PREFIX = ContractTransformerWorker.CIVL_CONTRACT_PREFIX
-			+ "_old_";
-
-	/**
-	 * Generated old variable counter:
-	 */
-	private int tmpOldCounter = 0;
 
 	/**
 	 * Generated heap variable prefix:
@@ -93,62 +56,17 @@ class ContractClauseTransformer {
 	private int tmpHeapCounter = 0;
 
 	/**
-	 * Generated datatype-extent variable prefix:
-	 */
-	private final static String EXTENT_VAR_PREFIX = ContractTransformerWorker.CIVL_CONTRACT_PREFIX
-			+ "_extent_";
-
-	/**
-	 * Generated datatype-extent variable counter:
-	 */
-	private int tmpExtentCounter = 0;
-
-	/**
-	 * Generated datatype-extent variable prefix:
-	 */
-	private final static String QUANT_VAR_PREFIX = ContractTransformerWorker.CIVL_CONTRACT_PREFIX
-			+ "_quant_";
-
-	/**
-	 * Generated $mem type variable prefix:
-	 */
-	private final static String LAMB_VAR_PREFIX = ContractTransformerWorker.CIVL_CONTRACT_PREFIX
-			+ "_lam_";
-
-	/**
 	 * Generated $mem type variable prefix:
 	 */
 	private final static String ASSIGN_VAR_PREFIX = ContractTransformerWorker.CIVL_CONTRACT_PREFIX
-			+ "_a_";
+			+ "_assign_";
 
 	private int tmpAssignCounter = 0;
-
-	/**
-	 * Generated quantifier variable counter:
-	 */
-	private int tmpQuantCounter = 0;
 
 	/**
 	 * A reference to an instance of {@link NodeFactory}
 	 */
 	private NodeFactory nodeFactory;
-
-	/**
-	 * A reference to an instance of {@link ASTFactory}
-	 */
-	private ASTFactory astFactory;
-
-	/**
-	 * A reference to the owner of this class (contract transformer:
-	 * {@link ContractTransformerWorker}):
-	 */
-	private ContractTransformerWorker contractTransformer;
-	/**
-	 * A set of entities of objects which have MPI_Datatype type. With such set
-	 * maintained, it's able to be known that if a datatype was seen so that we
-	 * can reduce the number of the generated intermediate variables:
-	 */
-	private Map<Entity, String> dataTypeEntity2Extentof;
 
 	class TransformPair {
 		List<BlockItemNode> requirements;
@@ -161,12 +79,8 @@ class ContractClauseTransformer {
 		}
 	}
 
-	ContractClauseTransformer(ASTFactory astFactory,
-			ContractTransformerWorker contractTransformer) {
-		this.astFactory = astFactory;
+	ContractClauseTransformer(ASTFactory astFactory) {
 		this.nodeFactory = astFactory.getNodeFactory();
-		this.dataTypeEntity2Extentof = new HashMap<>();
-		this.contractTransformer = contractTransformer;
 	}
 
 	/**
@@ -174,8 +88,8 @@ class ContractClauseTransformer {
 	 */
 	void ACSLPrimitives2CIVLC(ExpressionNode predicate,
 			TransformConfiguration config) throws SyntaxException {
-		assert config.ignoreOld();
 		old2ValueAt(predicate, null, config);
+		on2ValueAt(predicate, null, config);
 		result2intermediate(predicate, config);
 	}
 
@@ -185,6 +99,7 @@ class ContractClauseTransformer {
 		ExpressionNode state = createCollateGetStateCall(preCollateState,
 				predicate.getSource());
 
+		on2ValueAt(predicate, null, config);
 		old2ValueAt(predicate, state, config);
 		result2intermediate(predicate, config);
 	}
@@ -207,26 +122,32 @@ class ContractClauseTransformer {
 				source,
 				nodeFactory.newIdentifierNode(source, postStateDecl.getName()));
 
+		requirements.addAll(mpiConstantsInitialization(mpiComm));
 		requirements.add(preStateDecl);
 		ensurances.add(postStateDecl);
-		requirements.addAll(mpiConstantsInitialization(mpiComm));
 
 		for (ConditionalClauses condClause : mpiBlock.getConditionalClauses()) {
 			ExpressionNode requires = condClause.getRequires(nodeFactory);
 			ExpressionNode ensures = condClause.getEnsures(nodeFactory);
 
-			config.setIgnoreOld(true);
-			config.setNoResult(true);
-			ACSLPrimitives2CIVLC(requires, preState, config);
-			requirements.addAll(transformClause2Checking(condClause.condition,
-					requires, preState, condClause.getWaitsfors(), config));
+			if (requires != null) {
+				config.setIgnoreOld(true);
+				config.setNoResult(true);
+				ACSLPrimitives2CIVLC(requires, preState, config);
+				requirements.addAll(
+						transformClause2Checking(condClause.condition, requires,
+								preState, condClause.getWaitsfors(), config));
+			}
 			requirements.addAll(
 					transformAssignsClause(condClause.getAssignsArgs()));
-			config.setIgnoreOld(false);
-			config.setNoResult(false);
-			ACSLPrimitives2CIVLC(ensures, preState, config);
-			ensurances.addAll(transformClause2Assumption(condClause.condition,
-					ensures, postState, condClause.getWaitsfors(), config));
+			if (ensures != null) {
+				config.setIgnoreOld(false);
+				config.setNoResult(false);
+				ACSLPrimitives2CIVLC(ensures, preState, config);
+				ensurances.addAll(transformClause2Assumption(
+						condClause.condition, ensures, postState,
+						condClause.getWaitsfors(), config));
+			}
 		}
 		return new TransformPair(requirements, ensurances);
 	}
@@ -280,6 +201,8 @@ class ContractClauseTransformer {
 						ensures, postState, condClause.getWaitsfors(), config));
 			}
 		}
+		requirements.add(nodeFactory
+				.newExpressionStatementNode(createMPIBarrier(mpiComm)));
 		return new TransformPair(requirements, ensurances);
 	}
 
@@ -289,8 +212,8 @@ class ContractClauseTransformer {
 			throws SyntaxException {
 		StatementNode assertion = createAssertion(predicate.copy());
 
-		assertion = MPIContractUtilities.withStatementWrapper(assertion,
-				collateState, arrivends, config, nodeFactory);
+		assertion = withStatementWrapper(assertion, collateState, arrivends,
+				config);
 		// conditional transformation:
 		if (condition != null)
 			assertion = nodeFactory.newIfNode(condition.getSource(),
@@ -344,8 +267,8 @@ class ContractClauseTransformer {
 			List<ExpressionNode> arrivends, TransformConfiguration config) {
 		StatementNode assumes = createAssumption(predicate.copy());
 
-		assumes = MPIContractUtilities.withStatementWrapper(assumes,
-				collateState, arrivends, config, nodeFactory);
+		assumes = withStatementWrapper(assumes, collateState, arrivends,
+				config);
 		// conditional transformation:
 		if (condition != null)
 			assumes = nodeFactory.newIfNode(condition.getSource(),
@@ -449,7 +372,7 @@ class ContractClauseTransformer {
 			ExpressionNode artificialVar = nodeFactory
 					.newIdentifierExpressionNode(result.getSource(),
 							nodeFactory.newIdentifierNode(result.getSource(),
-									MPIContractUtilities.ACSL_RESULT));
+									MPIContractUtilities.ACSL_RESULT_VAR));
 
 			if (parent == null) {
 				// The given predicate is an instance of result expression:
@@ -475,42 +398,92 @@ class ContractClauseTransformer {
 	private ExpressionNode old2ValueAt(ExpressionNode predicate,
 			ExpressionNode preState, TransformConfiguration config) {
 		ASTNode visitor = predicate;
-		LinkedList<OperatorNode> oldExprs = new LinkedList<>();
+		LinkedList<ExpressionNode[]> oldExprs = new LinkedList<>();
 
 		assert predicate.parent() == null;
 		while (visitor != null) {
 			if (visitor instanceof OperatorNode) {
 				OperatorNode opNode = (OperatorNode) visitor;
+				ExpressionNode rankConstant = nodeFactory
+						.newIdentifierExpressionNode(opNode.getSource(),
+								nodeFactory.newIdentifierNode(
+										opNode.getSource(),
+										MPIContractUtilities.MPI_COMM_RANK_CONST));
 
-				if (opNode.getOperator() == Operator.OLD)
-					oldExprs.add(opNode);
+				if (opNode.getOperator() == Operator.OLD) {
+					ExpressionNode[] valueAtArgs = {null, rankConstant,
+							opNode.getArgument(0), opNode};
+					oldExprs.add(valueAtArgs);
+				}
 			}
 			visitor = visitor.nextDFS();
 		}
-		while (!oldExprs.isEmpty()) {
-			OperatorNode old = oldExprs.removeLast();
-			ASTNode parent = old.parent();
-			int childIdx = old.childIndex();
-			ExpressionNode value_at;
-
-			old.getArgument(0).remove();
-			value_at = nodeFactory.newValueAtNode(old.getSource(),
-					preState.copy(),
-					nodeFactory.newIdentifierExpressionNode(old.getSource(),
-							nodeFactory.newIdentifierNode(old.getSource(),
-									MPIContractUtilities.MPI_COMM_RANK_CONST)),
-					old.getArgument(0));
-			if (parent == null) {
-				// The given predicate is an instance of old expression:
-				assert oldExprs.isEmpty();
-				return old;
-			}
-			old.remove();
-			parent.setChild(childIdx, value_at);
-		}
+		for (ExpressionNode[] valueAtArgs : oldExprs)
+			predicate = replaceWithValueAt(valueAtArgs[0], valueAtArgs[1],
+					valueAtArgs[2], valueAtArgs[3], predicate);
 		return predicate;
 	}
 
+	/**
+	 * Replace all OLD expressions with VALUE_AT expressions.
+	 * 
+	 * @param predicate
+	 *            The predicate may contain OLD expressions.
+	 * @param preState
+	 *            The pre collate state
+	 * @param config
+	 * @return The predicate after substitution.
+	 */
+	private ExpressionNode on2ValueAt(ExpressionNode predicate,
+			ExpressionNode preState, TransformConfiguration config) {
+		ASTNode visitor = predicate;
+		// a list of an array of 4 expression nodes, which represents state,
+		// process, expression and the original remote on expression
+		// respectively:
+		LinkedList<ExpressionNode[]> onExprs = new LinkedList<>();
+
+		assert predicate.parent() == null;
+		while (visitor != null) {
+			if (visitor instanceof RemoteOnExpressionNode) {
+				RemoteOnExpressionNode onNode = (RemoteOnExpressionNode) visitor;
+				ExpressionNode valueAtArgs[] = {preState,
+						onNode.getProcessExpression(),
+						onNode.getForeignExpressionNode(), onNode};
+
+				onExprs.add(valueAtArgs);
+			}
+			visitor = visitor.nextDFS();
+		}
+		for (ExpressionNode valueAtArgs[] : onExprs)
+			predicate = replaceWithValueAt(valueAtArgs[0], valueAtArgs[1],
+					valueAtArgs[2], valueAtArgs[3], predicate);
+		return predicate;
+	}
+
+	private ExpressionNode replaceWithValueAt(ExpressionNode state,
+			ExpressionNode proc, ExpressionNode expr, ExpressionNode original,
+			ExpressionNode root) {
+		ASTNode parent = original.parent();
+		int childIdx = original.childIndex();
+		ExpressionNode valueAt;
+
+		if (state == null)
+			state = MPIContractUtilities
+					.getStateNullExpression(original.getSource(), nodeFactory);
+		state.remove();
+		proc.remove();
+		expr.remove();
+		valueAt = nodeFactory.newValueAtNode(original.getSource(), state, proc,
+				expr);
+		if (parent != null) {
+			original.remove();
+			parent.setChild(childIdx, valueAt);
+			return root;
+		} else {
+			assert root == original;
+			return valueAt;
+		}
+	}
 	/*
 	 * *************************************************************************
 	 * Methods creating new statements:
@@ -686,7 +659,8 @@ class ContractClauseTransformer {
 	private ExpressionNode createCollateGetStateCall(ExpressionNode colStateRef,
 			Source source) {
 		return nodeFactory.newFunctionCallNode(source,
-				identifierExpressionNode(source, COLLATE_GET_STATE),
+				identifierExpressionNode(source,
+						MPIContractUtilities.COLLATE_GET_STATE_CALL),
 				Arrays.asList(colStateRef.copy()), null);
 	}
 
@@ -728,8 +702,8 @@ class ContractClauseTransformer {
 		ExpressionNode extentGTzero = nodeFactory.newOperatorNode(source,
 				Operator.LT, nodeFactory.newIntegerConstantNode(source, "0"),
 				numElements.copy());
-		TypeNode arrayType = nodeFactory.newArrayTypeNode(source, elementType,
-				numElements);
+		TypeNode arrayType = nodeFactory.newArrayTypeNode(source,
+				elementType.copy(), numElements.copy());
 		String allocationName = nextAllocationName();
 		IdentifierNode allocationIdentifierNode;
 
@@ -785,143 +759,60 @@ class ContractClauseTransformer {
 				Arrays.asList(datatype.copy()), null);
 	}
 
-	/**
-	 * Create a temporary variable which represents the extent of an MPI data
-	 * type.
-	 * 
-	 * @param datatype
-	 * @param isMPIExtent
-	 * @return
-	 */
-	private VariableDeclarationNode createMPIDatatypeVariable(
-			ExpressionNode datatype, boolean isMPIExtent, String varName) {
-		TypeNode intNode = nodeFactory.newBasicTypeNode(datatype.getSource(),
-				BasicTypeKind.INT);
-		ExpressionNode sizeofCall = nodeFactory.newFunctionCallNode(
-				datatype.getSource(),
-				identifierExpressionNode(datatype.getSource(), MPI_SIZEOF),
-				Arrays.asList(datatype), null);
+	private StatementNode withStatementWrapper(StatementNode body,
+			ExpressionNode collateState, List<ExpressionNode> dependents,
+			TransformConfiguration config) {
+		StatementNode withStmt = nodeFactory.newWithNode(body.getSource(),
+				collateState.copy(), body.copy());
+		if (config.getWith())
+			return withStmt;
+		boolean run = config.getRunWithComplete() || config.getRunWithArrived();
+		boolean complete = config.getWithComplete()
+				|| config.getRunWithComplete() || dependents.isEmpty();
 
-		return nodeFactory.newVariableDeclarationNode(datatype.getSource(),
-				nodeFactory.newIdentifierNode(datatype.getSource(), varName),
-				intNode, sizeofCall);
-	}
+		if (complete) {
+			ExpressionNode functionIdentifier = nodeFactory
+					.newIdentifierExpressionNode(body.getSource(),
+							nodeFactory.newIdentifierNode(body.getSource(),
+									MPIContractUtilities.COLLATE_COMPLETE));
+			ExpressionNode collateComplete = nodeFactory.newFunctionCallNode(
+					collateState.getSource(), functionIdentifier,
+					Arrays.asList(collateState.copy()), null);
+			StatementNode withCompleteStmt = nodeFactory.newWhenNode(
+					collateComplete.getSource(), collateComplete, withStmt);
 
-	/**
-	 * Given a valid expression v (either regular \valid or \mpi_valid), returns
-	 * a boolean expression e which is equivalent to v that can be understood by
-	 * CIVL
-	 * 
-	 * @param validNode
-	 *            A valid expression
-	 * @return A equivalent expression e to v that can be checked by CIVL
-	 * @throws SyntaxException
-	 */
-	private ExpressionNode createValidCheckingCondition(
-			ExpressionNode validNode) throws SyntaxException {
-		Source source = validNode.getSource();
-		ExpressionNode isDereferablePtr;
-
-		// If it is a regular \valid
-		if (validNode instanceof OperatorNode) {
-			OperatorNode regValid = (OperatorNode) validNode;
-			Triple<ExpressionNode, Operator, ExpressionNode> ptr_range = parseValidArgument(
-					regValid.getArgument(0));
-
-			regValid.remove();
-			if (ptr_range.third != null)
-				isDereferablePtr = createQualifiedPointerCheckingCondition(
-						ptr_range.first, ptr_range.second, ptr_range.third);
+			if (run)
+				return nodeFactory.newRunNode(withCompleteStmt.getSource(),
+						withCompleteStmt);
 			else
-				isDereferablePtr = nodeFactory.newFunctionCallNode(
-						regValid.getSource(),
-						identifierExpressionNode(source, BaseWorker.DEREFRABLE),
-						Arrays.asList(ptr_range.first.copy()), null);
-		} else // else it is an \mpi_valid
-		{
-			// TODO: currently we can use the
-			// system evaluation for \mpi_valid
-			assert validNode instanceof MPIContractExpressionNode;
-			isDereferablePtr = null;
-
+				return withCompleteStmt;
 		}
-		return isDereferablePtr;
-	}
+		if (config.getRunWithArrived()) {
+			ExpressionNode functionIdentifier = nodeFactory
+					.newIdentifierExpressionNode(body.getSource(),
+							nodeFactory.newIdentifierNode(body.getSource(),
+									MPIContractUtilities.COLLATE_ARRIVED));
+			ExpressionNode allArrived = null;
 
-	/**
-	 * Given a pointer p, a Operator op (plus or minus) and a range r. Returns a
-	 * expression e representing the condition that: for all int i; i in r,
-	 * op(p, i) is a valid pointer. (Note that pointer that does plus or minus
-	 * with an integer is still a pointer in C).
-	 * 
-	 * @param pointer
-	 *            The base pointer
-	 * @param plusOrMinus
-	 *            The operator, PLUS or MINUS
-	 * @param range
-	 *            The range representing a set of offsets
-	 * @return The quantified condition
-	 */
-	private ExpressionNode createQualifiedPointerCheckingCondition(
-			ExpressionNode pointer, Operator plusOrMinus,
-			ExpressionNode range) {
-		ExpressionNode result;
-		Source source = pointer.getSource();
-		VariableDeclarationNode boundOffsetVar = nodeFactory
-				.newVariableDeclarationNode(source,
-						nodeFactory.newIdentifierNode(source, "i"), nodeFactory
-								.newBasicTypeNode(source, BasicTypeKind.INT));
-		OperatorNode ptrPLUSboundVar = nodeFactory.newOperatorNode(source,
-				plusOrMinus, pointer.copy(),
-				identifierExpressionNode(source, boundOffsetVar.getName()));
-		List<PairNode<SequenceNode<VariableDeclarationNode>, ExpressionNode>> boundVars = new LinkedList<>();
+			for (ExpressionNode dependent : dependents) {
+				ExpressionNode arrived = nodeFactory.newFunctionCallNode(
+						collateState.getSource(), functionIdentifier.copy(),
+						Arrays.asList(collateState.copy(),
+								makeItRange(dependent)),
+						null);
+				Source arrivedSource = arrived.getSource();
 
-		boundVars.add(nodeFactory.newPairNode(source,
-				nodeFactory.newSequenceNode(source,
-						"bound var declaration list",
-						Arrays.asList(boundOffsetVar)),
-				range.copy()));
-		result = nodeFactory.newFunctionCallNode(source,
-				identifierExpressionNode(source, BaseWorker.DEREFRABLE),
-				Arrays.asList(ptrPLUSboundVar), null);
-		result = nodeFactory.newQuantifiedExpressionNode(source,
-				QuantifiedExpressionNode.Quantifier.FORALL,
-				nodeFactory.newSequenceNode(source,
-						"bound var declaration list", boundVars),
-				null, result, null);
-		return result;
-	}
+				allArrived = allArrived == null
+						? arrived
+						: nodeFactory.newOperatorNode(arrivedSource,
+								Operator.LAND,
+								Arrays.asList(allArrived, arrived));
 
-	/**
-	 * Create an if-then statement by giving a condition expression c and a list
-	 * l of {@link BlockItemNode}s: <code>
-	 * if (c) {
-	 *   l;
-	 * }
-	 * </code> If the given condition expression node is null, return l
-	 * directly.
-	 * 
-	 * @param condition
-	 *            An expression node representing the if-condition
-	 * @param statements
-	 *            A list of statements as the body of the if-then statement
-	 * @param source
-	 *            The {@link Source} related to the body statement.
-	 * @return A list of {@link BlockItemNode} which represents an if-then
-	 *         statement
-	 */
-	private List<BlockItemNode> createIfThemStmt(ExpressionNode condition,
-			List<BlockItemNode> statements, Source source) {
-		if (condition == null)
-			return statements;
-		else {
-			StatementNode compundStatement = nodeFactory
-					.newCompoundStatementNode(source, statements);
-
-			compundStatement = nodeFactory.newIfNode(source, condition.copy(),
-					compundStatement);
-			return Arrays.asList(compundStatement);
+			}
+			return nodeFactory.newRunNode(withStmt.getSource(), nodeFactory
+					.newWhenNode(allArrived.getSource(), allArrived, withStmt));
 		}
+		return body;
 	}
 
 	/*
@@ -990,41 +881,15 @@ class ContractClauseTransformer {
 		return call;
 	}
 
-	/**
-	 * Given an array type t, returns the weakest condition expression which
-	 * implies that any array a of t, a is a valid array object. i.e. the extent
-	 * of a greater than zero.
-	 * 
-	 * @param arrayTypeNode
-	 *            An array type t.
-	 * @return A condition e that e implies array of t is a valid array
-	 * @throws SyntaxException
-	 */
-	private ExpressionNode validArrayTypeCondition(ArrayTypeNode arrayTypeNode)
-			throws SyntaxException {
-		TypeNode elementType = arrayTypeNode;
-		ExpressionNode condition = null;
-		ExpressionNode zero = nodeFactory
-				.newIntegerConstantNode(arrayTypeNode.getSource(), "0");
+	private ExpressionNode createMPIBarrier(ExpressionNode mpiComm) {
+		ExpressionNode functionIdentifierExpression = nodeFactory
+				.newIdentifierExpressionNode(mpiComm.getSource(),
+						nodeFactory.newIdentifierNode(mpiComm.getSource(),
+								MPIContractUtilities.MPI_BARRIER_CALL));
 
-		while (elementType.kind() == TypeNodeKind.ARRAY) {
-			ArrayTypeNode arrayType = (ArrayTypeNode) elementType;
-			ExpressionNode extent = arrayType.getExtent();
-
-			if (extent != null) {
-				ExpressionNode greaterThanZero = nodeFactory.newOperatorNode(
-						extent.getSource(), Operator.LT, zero.copy(),
-						extent.copy());
-
-				if (condition == null)
-					condition = greaterThanZero;
-				else
-					condition = nodeFactory.newOperatorNode(extent.getSource(),
-							Operator.LAND, condition, greaterThanZero);
-			}
-			elementType = arrayType.getElementType();
-		}
-		return condition;
+		return nodeFactory.newFunctionCallNode(mpiComm.getSource(),
+				functionIdentifierExpression, Arrays.asList(mpiComm.copy()),
+				null);
 	}
 
 	private VariableDeclarationNode createCollateStateInitializer(
@@ -1053,78 +918,10 @@ class ContractClauseTransformer {
 		return call;
 	}
 
-	/**
-	 * <p>
-	 * Parse an argument expression of a valid expression into a triple: base
-	 * address, PLUS/MINUS and range.
-	 * </p>
-	 * <p>
-	 * Note that the argument of a valid expression can either be a single
-	 * pointer type expression or a pointer PLUS/MINUS a range (or a singleton
-	 * range which is an offset).
-	 * </p>
-	 * 
-	 * @param arg
-	 * @return
-	 * @throws SyntaxException
-	 */
-	private Triple<ExpressionNode, Operator, ExpressionNode> parseValidArgument(
-			ExpressionNode arg) throws SyntaxException {
-		if (arg.expressionKind() == ExpressionKind.OPERATOR) {
-			OperatorNode opNode = (OperatorNode) arg;
-
-			assert opNode.getOperator() == Operator.PLUS
-					|| opNode.getOperator() == Operator.MINUS;
-
-			ExpressionNode left = opNode.getArgument(0);
-			ExpressionNode right = opNode.getArgument(1);
-
-			if (left.getConvertedType().kind() == TypeKind.POINTER)
-				return new Triple<>(left, opNode.getOperator(), right);
-			else
-				return new Triple<>(right, opNode.getOperator(), left);
-
-		} else
-			return new Triple<>(arg, null, null);
-	}
-
 	/*
 	 * *************************************************************************
 	 * Methods give system generated entities names
 	 **************************************************************************/
-
-	/**
-	 * @return a new name for intermediate variable used for transforming \old
-	 *         expressions
-	 */
-	String nextOldValueName() {
-		return OLD_VAR_PREFIX + tmpOldCounter++;
-	}
-
-	/**
-	 * @return a new name for intermediate variable used for transforming
-	 *         "extent of type" expressions. (e.g. $mpi_extent)
-	 */
-	String nextTypeExtentValueName() {
-		return EXTENT_VAR_PREFIX + tmpExtentCounter++;
-	}
-
-	/**
-	 * <p>
-	 * This method requires caller to provide a counter as an argument so that
-	 * the same names can be used in different name spaces. For lambda
-	 * expressions, a whole expression is a name space.
-	 * </p>
-	 * 
-	 * @param tmpLambCounter
-	 *            The counter used to identify unique names
-	 * @return a new name for intermediate variable used for transforming lambda
-	 *         expressions
-	 */
-	String nextLambdaIdentifierName(int tmpLambCounter) {
-		return LAMB_VAR_PREFIX + tmpLambCounter;
-	}
-
 	/**
 	 * @return a new name for artificial variable used for transforming assigns
 	 *         clauses
@@ -1299,7 +1096,7 @@ class ContractClauseTransformer {
 			return rangeOrInteger;
 		assert rangeOrInteger.getType().kind() == TypeKind.BASIC;
 		return nodeFactory.newRegularRangeNode(rangeOrInteger.getSource(),
-				rangeOrInteger, rangeOrInteger);
+				rangeOrInteger.copy(), rangeOrInteger.copy());
 	}
 
 	/**

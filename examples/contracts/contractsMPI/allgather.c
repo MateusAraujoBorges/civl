@@ -6,7 +6,7 @@
 #include<string.h>
 
 #define BUFFER_BOUND 3
-
+#pragma PARSE_ACSL
 /*@ 
   @ \mpi_collective(comm, P2P):
   @   requires 0 <= root && root < \mpi_comm_size;
@@ -18,7 +18,8 @@
   @   behavior others:
   @     assumes \mpi_comm_rank != root;
   @     assigns \mpi_region(buf, count, datatype);
-  @     ensures \mpi_equals(buf, count, datatype, \on(root, buf));
+  @     ensures \mpi_equals(\mpi_region(buf, count, datatype), 
+  @                       \mpi_region(\on(root, buf), count, datatype));
   @     waitsfor root;
   @*/
 int broadcast(void * buf, int count, 
@@ -51,12 +52,18 @@ int broadcast(void * buf, int count,
   @     requires \mpi_valid(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @     requires recvcount * \mpi_extent(recvtype) == 
   @              sendcount * \mpi_extent(sendtype);
-  @     ensures  \mpi_equals(\mpi_offset(recvbuf, root * sendcount, sendtype), sendcount, sendtype, sendbuf);
+  @     ensures  \mpi_equals(\mpi_region(\mpi_offset(recvbuf, root * sendcount, sendtype), 
+  @                                       recvcount, recvtype),
+  @                          \mpi_region(sendbuf, sendcount, sendtype)
+  @                          );
+  @
   @     waitsfor (0 .. \mpi_comm_size-1);
   @   behavior imnroot:
-  @     assumes  \mpi_comm_rank != root;
-  @     ensures \mpi_equals(sendbuf, sendcount, sendtype, 
-  @              \mpi_offset(\on(root, recvbuf), \mpi_comm_rank * sendcount, sendtype));
+  @     assumes \mpi_comm_rank != root;
+  @     ensures \mpi_equals(\mpi_region(sendbuf, sendcount, sendtype),
+  @                         \mpi_region(\mpi_offset(\on(root, recvbuf), \mpi_comm_rank * sendcount, sendtype),
+  @                                      recvcount, recvtype)
+  @                        );
   @*/
 int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype, 
 	   void* recvbuf, int recvcount, MPI_Datatype recvtype,
@@ -101,8 +108,10 @@ int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
   @   requires \mpi_extent(recvtype) * recvcount == \mpi_extent(sendtype) * sendcount;
   @   //assigns \mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @   ensures \mpi_agree(\mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype));
-  @   ensures \mpi_equals(sendbuf, sendcount, sendtype, 
-  @                       \mpi_offset(recvbuf, \mpi_comm_rank * recvcount, recvtype));
+  @   ensures \mpi_equals(\mpi_region(sendbuf, sendcount, sendtype),
+  @                       \mpi_region(
+  @                                   \mpi_offset(recvbuf, \mpi_comm_rank * recvcount, recvtype),
+  @                                    recvcount, recvtype));
   @
  */
 int allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
