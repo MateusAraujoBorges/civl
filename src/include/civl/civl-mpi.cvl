@@ -74,6 +74,30 @@ int sizeofDatatype(MPI_Datatype datatype) {
   return result;
 }
 
+void * $mpi_malloc(int count, MPI_Datatype datatype) {
+  switch (datatype) {
+  case MPI_INT:
+  case MPI_SHORT:
+  case MPI_LONG:
+  case MPI_LONG_LONG_INT:
+  case MPI_LONG_LONG:
+  case MPI_UNSIGNED_LONG_LONG:
+    return (int *)malloc(sizeof(int) * count);
+  case MPI_2INT:
+    return (int *)malloc(2 * count * sizeof(int));
+  case MPI_FLOAT:
+  case MPI_DOUBLE:
+  case MPI_LONG_DOUBLE:
+    return ($real *)malloc(count * sizeof($real));
+  case MPI_CHAR:
+  case MPI_BYTE:
+    return (char *)malloc(count * sizeof(char));
+  default:
+    $assert(0, "Unreachable");
+  }
+  return (void *)0;
+}
+
 /************************** MPI LIB Implementations *******************************/
 $mpi_gcomm $mpi_gcomm_create($scope scope, int size) {
   $mpi_gcomm result;
@@ -741,17 +765,17 @@ $state_f size_t $mpi_extentof(MPI_Datatype datatype) {
   }
 }
 
-$atomic_f void $check_mpi_comm_empty(MPI_Comm comm, MPI_CHANNEL channel) {
+$atomic_f void $mpi_comm_empty(MPI_Comm comm, MPI_COMM_MODE mode) {
   _Bool empty;
 
-  if (channel == P2P) {
+  if (mode == P2P) {
     empty = $comm_empty_in(comm.p2p);
     empty &= $comm_empty_out(comm.p2p);
   } else {
     empty = $comm_empty_in(comm.col);
     empty &= $comm_empty_out(comm.col);
   }
-  assert(empty, "Non empty message channels in MPI communicator\n");
+  $assert(empty, "Messages are remaining in MPI communicator\n");
 }
 
 /********************* Private helper functions *********************/
