@@ -5,7 +5,7 @@ import java.util.List;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICollectiveKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICommunicatorMode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode.Operator;
 import edu.udel.cis.vsl.abc.token.IF.Source;
@@ -30,7 +30,7 @@ class ContractBlock {
 	 * The expression represents the choice of which MPI communicator is used
 	 * for the contracts in the contract block: point-2-point or collective.
 	 */
-	private MPICollectiveKind pattern;
+	private MPICommunicatorMode pattern;
 	/**
 	 * A list of {@link ConditionalClauses} which represents the body of the
 	 * block.
@@ -49,7 +49,7 @@ class ContractBlock {
 	 */
 	private boolean complete = false;
 
-	ContractBlock(ExpressionNode mpiComm, MPICollectiveKind pattern,
+	ContractBlock(ExpressionNode mpiComm, MPICommunicatorMode pattern,
 			Source source) {
 		behaviors = new LinkedList<>();
 		this.mpiComm = mpiComm;
@@ -66,7 +66,7 @@ class ContractBlock {
 		return mpiComm;
 	}
 
-	MPICollectiveKind getPattern() {
+	MPICommunicatorMode getPattern() {
 		return pattern;
 	}
 

@@ -27,7 +27,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode.ExtendedQuantifier;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICollectiveKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICommunicatorMode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
@@ -488,7 +488,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		 * used for the contracts in the contract block: point-2-point or
 		 * collective.
 		 */
-		private MPICollectiveKind pattern;
+		private MPICommunicatorMode pattern;
 		/**
 		 * A list of {@link ConditionalClauses} which represents the body of the
 		 * block.
@@ -506,7 +506,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		 */
 		private boolean complete = false;
 
-		ParsedContractBlock(ExpressionNode mpiComm, MPICollectiveKind pattern,
+		ParsedContractBlock(ExpressionNode mpiComm, MPICommunicatorMode pattern,
 				Source source) {
 			behaviors = new LinkedList<>();
 			this.mpiComm = mpiComm;
@@ -2078,14 +2078,14 @@ public class ContractTransformerWorker extends BaseWorker {
 	 * @return
 	 */
 	private ExpressionNode commEmptyInAndOut(ExpressionNode mpiComm,
-			MPICollectiveKind colKind) {
+			MPICommunicatorMode colKind) {
 		ExpressionNode arg, result;
 		StringBuffer mpiCommPretty = mpiComm.prettyRepresentation();
 		Source source = newSource("$comm_empty_in(" + mpiCommPretty
 				+ ") && $comm_empty_out(" + mpiCommPretty + ");",
 				CivlcTokenConstant.CALL);
 
-		arg = colKind == MPICollectiveKind.P2P
+		arg = colKind == MPICommunicatorMode.P2P
 				? nodeFactory.newDotNode(mpiComm.getSource(), mpiComm.copy(),
 						identifier(P2P))
 				: nodeFactory.newDotNode(mpiComm.getSource(), mpiComm.copy(),
