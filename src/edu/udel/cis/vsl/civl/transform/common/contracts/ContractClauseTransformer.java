@@ -8,10 +8,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
+import edu.udel.cis.vsl.abc.ast.entity.IF.Entity;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.NodeFactory;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICommunicatorMode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.InitializerNode;
@@ -44,24 +46,11 @@ import edu.udel.cis.vsl.civl.transform.common.contracts.FunctionContractBlock.Co
 import edu.udel.cis.vsl.civl.transform.common.contracts.MPIContractUtilities.TransformConfiguration;
 class ContractClauseTransformer {
 
-	/**
-	 * Generated heap variable prefix:
-	 */
-	private final static String HEAP_VAR_PREFIX = ContractTransformerWorker.CIVL_CONTRACT_PREFIX
-			+ "_heap_";
-
-	/**
-	 * Generated heap variable counter:
-	 */
 	private int tmpHeapCounter = 0;
 
-	/**
-	 * Generated $mem type variable prefix:
-	 */
-	private final static String ASSIGN_VAR_PREFIX = ContractTransformerWorker.CIVL_CONTRACT_PREFIX
-			+ "_assign_";
-
 	private int tmpAssignCounter = 0;
+
+	Map<Entity, Integer> datatype2counter;
 
 	/**
 	 * A reference to an instance of {@link NodeFactory}
@@ -81,6 +70,7 @@ class ContractClauseTransformer {
 
 	ContractClauseTransformer(ASTFactory astFactory) {
 		this.nodeFactory = astFactory.getNodeFactory();
+		this.datatype2counter = new HashMap<>();
 	}
 
 	/**
@@ -91,6 +81,7 @@ class ContractClauseTransformer {
 		old2ValueAt(predicate, null, config);
 		on2ValueAt(predicate, null, config);
 		result2intermediate(predicate, config);
+		mpiExtent2mpiExtentof(predicate);
 	}
 
 	void ACSLPrimitives2CIVLC(ExpressionNode predicate,
@@ -102,6 +93,7 @@ class ContractClauseTransformer {
 		on2ValueAt(predicate, null, config);
 		old2ValueAt(predicate, state, config);
 		result2intermediate(predicate, config);
+		mpiExtent2mpiExtentof(predicate);
 	}
 
 	TransformPair transformMPICollectiveBlock4Callee(
@@ -203,6 +195,8 @@ class ContractClauseTransformer {
 		}
 		requirements.add(nodeFactory
 				.newExpressionStatementNode(createMPIBarrier(mpiComm)));
+		ensurances.addLast(nodeFactory.newExpressionStatementNode(
+				createMPICommEmptyCall(mpiComm, mpiBlock.getKind())));
 		return new TransformPair(requirements, ensurances);
 	}
 
@@ -383,6 +377,38 @@ class ContractClauseTransformer {
 			parent.setChild(childIdx, artificialVar);
 		}
 		return expression;
+	}
+
+	private ExpressionNode mpiExtent2mpiExtentof(ExpressionNode predicate) {
+		ASTNode visitor = predicate;
+		LinkedList<MPIContractExpressionNode> mpiExtents = new LinkedList<>();
+
+		assert predicate.parent() == null;
+		while (visitor != null) {
+			if (visitor instanceof MPIContractExpressionNode) {
+				MPIContractExpressionNode mpiExpr = (MPIContractExpressionNode) visitor;
+
+				if (mpiExpr
+						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_EXTENT)
+					mpiExtents.add(mpiExpr);
+			}
+			visitor = visitor.nextDFS();
+		}
+		while (!mpiExtents.isEmpty()) {
+			MPIContractExpressionNode mpiExpr = mpiExtents.remove();
+			ASTNode parent = mpiExpr.parent();
+			int childidx = mpiExpr.childIndex();
+			ExpressionNode mpiextentofCall = createMPIExtentofCall(
+					mpiExpr.getArgument(0));
+
+			if (parent == null) {
+				assert mpiExpr == predicate;
+				return mpiextentofCall;
+			}
+			mpiExpr.remove();
+			parent.setChild(childidx, mpiextentofCall);
+		}
+		return predicate;
 	}
 
 	/**
@@ -704,7 +730,8 @@ class ContractClauseTransformer {
 				numElements.copy());
 		TypeNode arrayType = nodeFactory.newArrayTypeNode(source,
 				elementType.copy(), numElements.copy());
-		String allocationName = nextAllocationName();
+		String allocationName = MPIContractUtilities
+				.nextAllocationName(tmpHeapCounter++);
 		IdentifierNode allocationIdentifierNode;
 
 		allocationIdentifierNode = nodeFactory
@@ -738,7 +765,7 @@ class ContractClauseTransformer {
 	private ExpressionNode createHavocCall(ExpressionNode addr) {
 		Source source = addr.getSource();
 		ExpressionNode callIdentifier = identifierExpressionNode(source,
-				ContractTransformerWorker.HAVOC);
+				MPIContractUtilities.HAVOC);
 
 		addr = nodeFactory.newOperatorNode(source, Operator.ADDRESSOF,
 				Arrays.asList(addr));
@@ -747,16 +774,6 @@ class ContractClauseTransformer {
 				callIdentifier, Arrays.asList(addr), null);
 
 		return call;
-	}
-
-	/**
-	 * create a call : <code>$mpi_sizeof(datatype)</code>
-	 */
-	private ExpressionNode createMPIExtentofCall(ExpressionNode datatype) {
-		return nodeFactory.newFunctionCallNode(datatype.getSource(),
-				identifierExpressionNode(datatype.getSource(),
-						ContractTransformerWorker.MPI_EXTENTOF),
-				Arrays.asList(datatype.copy()), null);
 	}
 
 	private StatementNode withStatementWrapper(StatementNode body,
@@ -864,6 +881,16 @@ class ContractClauseTransformer {
 		return nodeFactory.newExpressionStatementNode(call);
 	}
 
+	private ExpressionNode createMPIExtentofCall(ExpressionNode datatype) {
+		ExpressionNode callIdentifier = nodeFactory.newIdentifierExpressionNode(
+				datatype.getSource(),
+				nodeFactory.newIdentifierNode(datatype.getSource(),
+						MPIContractUtilities.MPI_EXTENT_OF));
+
+		return nodeFactory.newFunctionCallNode(datatype.getSource(),
+				callIdentifier, Arrays.asList(datatype.copy()), null);
+	}
+
 	// TODO: doc
 	private ExpressionNode mpiRegion2assign(
 			MPIContractExpressionNode mpiRegion) {
@@ -875,7 +902,7 @@ class ContractClauseTransformer {
 		ExpressionNode extent = mpiRegion.getArgument(2);
 		ExpressionNode call = nodeFactory.newFunctionCallNode(source,
 				identifierExpressionNode(source,
-						ContractTransformerWorker.MPI_ASSIGNS),
+						MPIContractUtilities.MPI_ASSIGNS),
 				Arrays.asList(ptr.copy(), count.copy(), extent.copy()), null);
 
 		return call;
@@ -890,6 +917,24 @@ class ContractClauseTransformer {
 		return nodeFactory.newFunctionCallNode(mpiComm.getSource(),
 				functionIdentifierExpression, Arrays.asList(mpiComm.copy()),
 				null);
+	}
+
+	private ExpressionNode createMPICommEmptyCall(ExpressionNode mpiComm,
+			MPICommunicatorMode mode) {
+		ExpressionNode functionIdentifierExpression = nodeFactory
+				.newIdentifierExpressionNode(mpiComm.getSource(),
+						nodeFactory.newIdentifierNode(mpiComm.getSource(),
+								MPIContractUtilities.MPI_CHECK_EMPTY_COMM));
+		String mpiCommModeName = mode == MPICommunicatorMode.P2P
+				? MPIContractUtilities.MPI_COMM_P2P_MODE
+				: MPIContractUtilities.MPI_COMM_COL_MODE;
+		ExpressionNode modeEnum = nodeFactory.newEnumerationConstantNode(
+				nodeFactory.newIdentifierNode(mpiComm.getSource(),
+						mpiCommModeName));
+
+		return nodeFactory.newFunctionCallNode(mpiComm.getSource(),
+				functionIdentifierExpression,
+				Arrays.asList(mpiComm.copy(), modeEnum), null);
 	}
 
 	private VariableDeclarationNode createCollateStateInitializer(
@@ -916,26 +961,6 @@ class ContractClauseTransformer {
 				callIdentifier, Arrays.asList(mpiComm.copy(), hereNode), null);
 
 		return call;
-	}
-
-	/*
-	 * *************************************************************************
-	 * Methods give system generated entities names
-	 **************************************************************************/
-	/**
-	 * @return a new name for artificial variable used for transforming assigns
-	 *         clauses
-	 */
-	private String nextAssignName() {
-		return ASSIGN_VAR_PREFIX + tmpAssignCounter++;
-	}
-
-	/**
-	 * @return a new name for artificial variable used for transforming
-	 *         allocations
-	 */
-	private String nextAllocationName() {
-		return HEAP_VAR_PREFIX + tmpHeapCounter++;
 	}
 
 	/*
@@ -1070,7 +1095,8 @@ class ContractClauseTransformer {
 			node = node.nextDFS();
 		}
 		for (RegularRangeNode range : ranges) {
-			String identifierName = nextAssignName();
+			String identifierName = MPIContractUtilities
+					.nextAssignName(tmpAssignCounter++);
 			ExpressionNode identifierExpression = identifierExpressionNode(
 					range.getSource(), identifierName);
 			ASTNode parent = range.parent();

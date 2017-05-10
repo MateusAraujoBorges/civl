@@ -12,7 +12,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ContractNode.ContractKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.EnsuresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICollectiveKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPICollectiveBlockNode.MPICommunicatorMode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.RequiresNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.WaitsforNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
@@ -40,7 +40,7 @@ class FunctionContractBlock {
 	 * The expression represents the choice of which MPI communicator is used
 	 * for the contracts in the contract block: point-2-point or collective.
 	 */
-	private MPICollectiveKind collectiveKind;
+	private MPICommunicatorMode collectiveKind;
 
 	/**
 	 * A list of {@link ConditionalClauses} which represents the body of the
@@ -61,7 +61,7 @@ class FunctionContractBlock {
 	private boolean complete = false;
 
 	private FunctionContractBlock(ExpressionNode mpiComm,
-			MPICollectiveKind kind, Source source) {
+			MPICommunicatorMode kind, Source source) {
 		behaviors = new LinkedList<>();
 		this.mpiComm = mpiComm;
 		this.collectiveKind = kind;
@@ -210,7 +210,7 @@ class FunctionContractBlock {
 		return mpiComm;
 	}
 
-	MPICollectiveKind getKind() {
+	MPICommunicatorMode getKind() {
 		return collectiveKind;
 	}
 

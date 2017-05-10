@@ -8,6 +8,22 @@ import edu.udel.cis.vsl.abc.token.IF.Source;
 
 public class MPIContractUtilities {
 
+	/* **************** Intermediate variable names: *****************/
+
+	static final String CIVL_CONTRACT_PREFIX = "_cc";
+
+	static final String COLLATE_STATE_PREFIX = CIVL_CONTRACT_PREFIX + "_cs";
+
+	static final String PRE_COLLATE_STATE = COLLATE_STATE_PREFIX + "_pre";
+
+	static final String POST_COLLATE_STATE = COLLATE_STATE_PREFIX + "_post";
+
+	static final String ASSIGN_VAR_PREFIX = CIVL_CONTRACT_PREFIX + "_assign_";
+
+	static final String HEAP_VAR_PREFIX = CIVL_CONTRACT_PREFIX + "_heap_";
+
+	/* **************** Artificial identifier names: *****************/
+
 	static final String MPI_COMM_RANK_CONST = "$mpi_comm_rank";
 
 	static final String MPI_COMM_SIZE_CONST = "$mpi_comm_size";
@@ -19,6 +35,20 @@ public class MPIContractUtilities {
 	static final String MPI_BARRIER_CALL = "MPI_Barrier";
 
 	static final String MPI_SNAPSHOT = "$mpi_snapshot";
+
+	static final String MPI_UNSNAPSHOT = "$mpi_unsnapshot";
+
+	static final String MPI_ASSIGNS = "$mpi_assigns";
+
+	static final String MPI_EXTENT_OF = "$mpi_extentof";
+
+	static final String MPI_CHECK_EMPTY_COMM = "$mpi_comm_empty";
+
+	final static String MPI_COMM_WORLD = "MPI_COMM_WORLD";
+
+	static final String MPI_COMM_P2P_MODE = "P2P";
+
+	static final String MPI_COMM_COL_MODE = "COL";
 
 	static final String COLLATE_COMPLETE = "$collate_complete";
 
@@ -36,6 +66,8 @@ public class MPIContractUtilities {
 
 	static final String ACSL_RESULT_VAR = "$result";
 
+	static final String HAVOC = "$havoc";
+
 	static TransformConfiguration getTransformConfiguration() {
 		return new TransformConfiguration();
 	}
@@ -43,6 +75,14 @@ public class MPIContractUtilities {
 	static ExpressionNode getStateNullExpression(Source source,
 			NodeFactory nodeFactory) {
 		return nodeFactory.newStatenullNode(source);
+	}
+
+	static String nextAssignName(int counter) {
+		return ASSIGN_VAR_PREFIX + counter;
+	}
+
+	static String nextAllocationName(int count) {
+		return HEAP_VAR_PREFIX + count;
 	}
 
 	static class TransformConfiguration {

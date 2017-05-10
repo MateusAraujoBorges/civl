@@ -50,37 +50,13 @@ import edu.udel.cis.vsl.civl.transform.common.contracts.MPIContractUtilities.Tra
 public class ContractTransformerWorker extends BaseWorker {
 
 	/**
-	 * The common prefix for all generated identifiers, 'ctat' is short for
-	 * 'contract':
-	 */
-	final static String CIVL_CONTRACT_PREFIX = "_cc";
-
-	final static String COLLATE_STATE_PREFIX = CIVL_CONTRACT_PREFIX + "_cs";
-
-	/**
-	 * $havoc system function identifier:
-	 */
-	final static String HAVOC = "$havoc";
-
-	/**
 	 * MPI_Comm typedef name:
 	 */
-	final static String MPI_COMM_TYPE = "MPI_Comm";
+	private final static String MPI_COMM_TYPE = "MPI_Comm";
 
 	/**
 	 * The default MPI communicator identifier:
 	 */
-	final static String MPI_COMM_WORLD = "MPI_COMM_WORLD";
-
-	/**
-	 * An MPI routine identifier:
-	 */
-	final static String MPI_COMM_SIZE_CALL = "MPI_Comm_size";
-
-	/**
-	 * An MPI routine identifier:
-	 */
-	final static String MPI_COMM_RANK_CALL = "MPI_Comm_rank";
 
 	/**
 	 * An MPI routine identifier:
@@ -93,42 +69,8 @@ public class ContractTransformerWorker extends BaseWorker {
 	private final static String MPI_FINALIZE_CALL = "MPI_Finalize";
 
 	/**
-	 * A CIVL-MPI function identifier:
-	 */
-	final static String MPI_SNAPSHOT = "$mpi_snapshot";
-
-	/**
-	 * A CIVL-MPI function identifier:
-	 */
-	final static String MPI_UNSNAPSHOT = "$mpi_unsnapshot";
-
-	/**
-	 * A CIVL-MPI function identifier:
-	 */
-	final static String MPI_EXTENTOF = "$mpi_extentof";
-
-	/**
-	 * A CIVL-MPI function identifier:
-	 */
-	final static String MPI_ASSIGNS = "$mpi_assigns";
-
-	/**
-	 * A collate-library function identifier:
-	 */
-	final static String COLLATE_STATE = "$collate_state";
-
-	/**
 	 * Within each function (either non-target : )
 	 */
-	/**
-	 * A pre-call collate state identifier:
-	 */
-	final static String PRE_COLLATE_STATE = COLLATE_STATE_PREFIX + "_pre";
-
-	/**
-	 * A post-call collate state identifier:
-	 */
-	final static String POST_COLLATE_STATE = COLLATE_STATE_PREFIX + "_post";
 
 	/**
 	 * The name prefix for a driver function
@@ -169,7 +111,7 @@ public class ContractTransformerWorker extends BaseWorker {
 	public ContractTransformerWorker(ASTFactory astFactory,
 			String targetFunctionName, CIVLConfiguration civlConfig) {
 		super(ContractTransformer.LONG_NAME, astFactory);
-		identifierPrefix = CIVL_CONTRACT_PREFIX;
+		identifierPrefix = MPIContractUtilities.CIVL_CONTRACT_PREFIX;
 		this.targetFunctionName = targetFunctionName;
 		intTypeNode = nodeFactory.newBasicTypeNode(
 				newSource("int", CivlcTokenConstant.TYPE), BasicTypeKind.INT);
@@ -733,8 +675,10 @@ public class ContractTransformerWorker extends BaseWorker {
 	 */
 	private ExpressionNode createMPIUnsnapshotCall(ExpressionNode mpiComm,
 			ExpressionNode collateStateRef) {
-		Source source = newSource(MPI_UNSNAPSHOT, CivlcTokenConstant.CALL);
-		ExpressionNode callIdentifier = identifierExpression(MPI_UNSNAPSHOT);
+		Source source = newSource(MPIContractUtilities.MPI_UNSNAPSHOT,
+				CivlcTokenConstant.CALL);
+		ExpressionNode callIdentifier = identifierExpression(
+				MPIContractUtilities.MPI_UNSNAPSHOT);
 		FunctionCallNode call = nodeFactory.newFunctionCallNode(source,
 				callIdentifier, Arrays.asList(mpiComm, collateStateRef), null);
 
@@ -792,7 +736,7 @@ public class ContractTransformerWorker extends BaseWorker {
 			NodeFactory nodeFactory) {
 		Source source = var.getSource();
 		ExpressionNode callIdentifier = identifierExpression(source,
-				ContractTransformerWorker.HAVOC);
+				MPIContractUtilities.HAVOC);
 		ExpressionNode addressOfVar = nodeFactory.newOperatorNode(
 				var.getSource(), Operator.ADDRESSOF, var.copy());
 		FunctionCallNode call = nodeFactory.newFunctionCallNode(source,
@@ -834,8 +778,8 @@ public class ContractTransformerWorker extends BaseWorker {
 				if (structType.getName().equals(MPI_COMM_TYPE)) {
 					results.add(nodeFactory.newVariableDeclarationNode(
 							varDecl.getSource(), identifier(varDecl.getName()),
-							varDecl.getTypeNode().copy(),
-							identifierExpression(MPI_COMM_WORLD)));
+							varDecl.getTypeNode().copy(), identifierExpression(
+									MPIContractUtilities.MPI_COMM_WORLD)));
 					continue;
 				}
 			}
