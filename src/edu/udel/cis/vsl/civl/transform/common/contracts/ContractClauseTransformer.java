@@ -54,6 +54,8 @@ class ContractClauseTransformer {
 
 	Map<String, String> datatype2counter;
 
+	LinkedList<ExpressionNode> sideEffectConditions;
+
 	/**
 	 * A reference to an instance of {@link NodeFactory}
 	 */
@@ -73,6 +75,7 @@ class ContractClauseTransformer {
 	ContractClauseTransformer(ASTFactory astFactory) {
 		this.nodeFactory = astFactory.getNodeFactory();
 		this.datatype2counter = new HashMap<>();
+		this.sideEffectConditions = new LinkedList<>();
 	}
 
 	/**
@@ -205,6 +208,7 @@ class ContractClauseTransformer {
 				requirements.addAll(transformClause2Assumption(
 						condClause.condition, requires, preState,
 						condClause.getWaitsfors(), config));
+				sideEffectConditions.clear();
 			}
 			if (ensures != null) {
 				// TODO: How check assigns ?
@@ -286,6 +290,20 @@ class ContractClauseTransformer {
 			ExpressionNode predicate, ExpressionNode collateState,
 			List<ExpressionNode> arrivends, TransformConfiguration config) {
 		StatementNode assumes = createAssumption(predicate.copy());
+
+		if (!sideEffectConditions.isEmpty()) {
+			ExpressionNode sfconds = sideEffectConditions.remove().copy();
+			StatementNode sfcondsDischarge;
+
+			for (ExpressionNode sfcond : sideEffectConditions)
+				sfconds = nodeFactory.newOperatorNode(sfcond.getSource(),
+						Operator.LAND, Arrays.asList(sfcond.copy(), sfconds));
+			sfcondsDischarge = createAssertion(nodeFactory.newOperatorNode(
+					sfconds.getSource(), Operator.IMPLIES,
+					Arrays.asList(predicate.copy(), sfconds)));
+			assumes = nodeFactory.newCompoundStatementNode(assumes.getSource(),
+					Arrays.asList(sfcondsDischarge, assumes));
+		}
 
 		assumes = withStatementWrapper(assumes, collateState, arrivends,
 				config);
@@ -747,11 +765,9 @@ class ContractClauseTransformer {
 				intermediateVarName = datatype2counter
 						.get(datatypeIdentifierName);
 			if (intermediateVarName != null)
-				extentofDatatype = nodeFactory
-						.newIdentifierExpressionNode(datatype.getSource(),
-								nodeFactory.newIdentifierNode(
-										datatype.getSource(),
-										intermediateVarName));
+				extentofDatatype = nodeFactory.newIdentifierExpressionNode(
+						datatype.getSource(), nodeFactory.newIdentifierNode(
+								datatype.getSource(), intermediateVarName));
 			else
 				extentofDatatype = createMPIExtentofCall(datatype);
 			// char data[count * extentof(datatype)];
@@ -830,6 +846,7 @@ class ContractClauseTransformer {
 						nodeFactory.newIdentifierExpressionNode(source,
 								allocationIdentifierNode.copy())));
 
+		sideEffectConditions.add(extentGTzero);
 		artificials.add(createAssumption(extentGTzero));
 		artificials.add(artificialVariable);
 		artificials.add(nodeFactory.newExpressionStatementNode(assign));
