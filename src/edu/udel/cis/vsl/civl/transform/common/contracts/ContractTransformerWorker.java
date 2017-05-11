@@ -395,35 +395,54 @@ public class ContractTransformerWorker extends BaseWorker {
 				ExpressionNode requires = condClause.getRequires(nodeFactory);
 				ExpressionNode ensures = condClause.getEnsures(nodeFactory);
 				StatementNode assumptions;
-				List<BlockItemNode> tmp = new LinkedList<>();
+				List<BlockItemNode> tmpContainer = new LinkedList<>();
+				Pair<List<BlockItemNode>, ExpressionNode> sideEffects;
 
 				if (requires != null) {
 					config.setIgnoreOld(true);
 					config.setNoResult(true);
-					clauseTransformer.ACSLPrimitives2CIVLC(requires, config);
-					tmp.add(clauseTransformer.createAssertion(requires));
+					config.setAlloc4Valid(false);
+					sideEffects = clauseTransformer
+							.ACSLSideEffectRemoving(requires, config);
+					tmpContainer.addAll(sideEffects.left);
+					requires = clauseTransformer
+							.ACSLPrimitives2CIVLC(sideEffects.right, config);
+					tmpContainer
+							.add(clauseTransformer.createAssertion(requires));
 				}
-				tmp.addAll(clauseTransformer
+				tmpContainer.addAll(clauseTransformer
 						.transformAssignsClause(condClause.getAssignsArgs()));
 				if (condClause.condition != null) {
 					ExpressionNode cond = condClause.condition;
 					StatementNode compound = nodeFactory
-							.newCompoundStatementNode(tmp.get(0).getSource(),
-									tmp);
+							.newCompoundStatementNode(
+									tmpContainer.get(0).getSource(),
+									tmpContainer);
 
 					transformedRequirements.add(nodeFactory.newIfNode(
 							cond.getSource(), cond.copy(), compound));
 				}
 				if (ensures != null) {
+					tmpContainer.clear();
 					config.setIgnoreOld(false);
 					config.setNoResult(false);
-					clauseTransformer.ACSLPrimitives2CIVLC(ensures, config);
+					config.setAlloc4Valid(false);
+					sideEffects = clauseTransformer
+							.ACSLSideEffectRemoving(ensures, config);
+					tmpContainer.addAll(sideEffects.left);
+					ensures = clauseTransformer
+							.ACSLPrimitives2CIVLC(sideEffects.right, config);
 					assumptions = clauseTransformer.createAssumption(ensures);
-					if (condClause.condition != null)
+					tmpContainer.add(assumptions);
+					if (condClause.condition != null) {
+						StatementNode compountStmt = nodeFactory
+								.newCompoundStatementNode(ensures.getSource(),
+										tmpContainer);
+
 						transformedEnsurances.add(nodeFactory.newIfNode(
 								condClause.condition.getSource(),
-								condClause.condition.copy(), assumptions));
-
+								condClause.condition.copy(), compountStmt));
+					}
 				}
 			}
 		}
@@ -545,40 +564,49 @@ public class ContractTransformerWorker extends BaseWorker {
 			for (ConditionalClauses condClause : localBlock
 					.getConditionalClauses()) {
 				ExpressionNode requires, ensures;
-				List<BlockItemNode> tmp = new LinkedList<>();
+				List<BlockItemNode> tmpContainer = new LinkedList<>();
 
-				config.setAlloc4Valid(true);
 				requires = condClause.getRequires(nodeFactory);
 				if (requires != null) {
 					StatementNode assumptions;
+					Pair<List<BlockItemNode>, ExpressionNode> sideEffects;
 
 					config.setIgnoreOld(true);
 					config.setNoResult(true);
-					tmp.addAll(clauseTransformer.allocation4Valids(requires,
-							config));
-					clauseTransformer.ACSLPrimitives2CIVLC(requires, config);
+					config.setAlloc4Valid(true);
+					sideEffects = clauseTransformer
+							.ACSLSideEffectRemoving(requires, config);
+					tmpContainer.addAll(sideEffects.left);
+					requires = clauseTransformer
+							.ACSLPrimitives2CIVLC(sideEffects.right, config);
 					assumptions = clauseTransformer.createAssumption(requires);
-					tmp.add(assumptions);
+					tmpContainer.add(assumptions);
 				}
-				tmp.addAll(clauseTransformer
+				tmpContainer.addAll(clauseTransformer
 						.transformAssignsClause(condClause.getAssignsArgs()));
 				if (condClause.condition != null) {
 					StatementNode compound = nodeFactory
 							.newCompoundStatementNode(requires.getSource(),
-									tmp);
+									tmpContainer);
 
 					requirements.add(nodeFactory.newIfNode(
 							condClause.condition.getSource(),
 							condClause.condition, compound));
 				} else
-					requirements.addAll(tmp);
+					requirements.addAll(tmpContainer);
 				ensures = condClause.getEnsures(nodeFactory);
 				if (ensures != null) {
 					StatementNode assertion;
+					Pair<List<BlockItemNode>, ExpressionNode> sideEffects;
 
 					config.setIgnoreOld(false);
 					config.setNoResult(false);
-					clauseTransformer.ACSLPrimitives2CIVLC(ensures, config);
+					config.setAlloc4Valid(false);
+					sideEffects = clauseTransformer
+							.ACSLSideEffectRemoving(ensures, config);
+					ensurances.addAll(sideEffects.left);
+					ensures = clauseTransformer
+							.ACSLPrimitives2CIVLC(sideEffects.right, config);
 					assertion = clauseTransformer.createAssertion(ensures);
 					if (condClause.condition != null)
 						assertion = nodeFactory.newIfNode(

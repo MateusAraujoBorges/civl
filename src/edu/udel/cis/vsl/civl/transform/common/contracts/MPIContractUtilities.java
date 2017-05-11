@@ -22,6 +22,8 @@ public class MPIContractUtilities {
 
 	static final String HEAP_VAR_PREFIX = CIVL_CONTRACT_PREFIX + "_heap_";
 
+	static final String EXTENT_VAR_PREFIX = CIVL_CONTRACT_PREFIX + "_extent_";
+
 	/* **************** Artificial identifier names: *****************/
 
 	static final String MPI_COMM_RANK_CONST = "$mpi_comm_rank";
@@ -85,7 +87,12 @@ public class MPIContractUtilities {
 		return HEAP_VAR_PREFIX + count;
 	}
 
+	static String nextExtentName(int count) {
+		return EXTENT_VAR_PREFIX + count;
+	}
+
 	static class TransformConfiguration {
+
 		/**
 		 * 8 bits filed, each bit from LEFT to RIGHT represents respectively:
 		 * <code>With, WithComplete, RunWithComplete, RunWithArrived,

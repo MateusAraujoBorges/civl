@@ -708,6 +708,8 @@ void $mpi_diff_coroutine_entries($bundle specEntry, $bundle mineEntry, int rank)
     }
 }
 
+#ifdef _MPI_CONTRACT
+
 $collate_state $mpi_snapshot(MPI_Comm comm, $scope scope) {
   return $collate_arrives(comm.collator, scope);
 }
@@ -777,6 +779,8 @@ $atomic_f void $mpi_comm_empty(MPI_Comm comm, MPI_COMM_MODE mode) {
   }
   $assert(empty, "Messages are remaining in MPI communicator\n");
 }
+
+#endif
 
 /********************* Private helper functions *********************/
 /* Returns the string literal of MPI collective routine names by

@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import edu.udel.cis.vsl.abc.ast.IF.ASTFactory;
-import edu.udel.cis.vsl.abc.ast.entity.IF.Entity;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
@@ -40,6 +39,7 @@ import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.abc.util.IF.Pair;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.common.BaseWorker;
 import edu.udel.cis.vsl.civl.transform.common.contracts.FunctionContractBlock.ConditionalClauses;
@@ -50,7 +50,9 @@ class ContractClauseTransformer {
 
 	private int tmpAssignCounter = 0;
 
-	Map<Entity, Integer> datatype2counter;
+	private int tmpExtentCounter = 0;
+
+	Map<String, String> datatype2counter;
 
 	/**
 	 * A reference to an instance of {@link NodeFactory}
@@ -76,24 +78,37 @@ class ContractClauseTransformer {
 	/**
 	 * Replace ACSL constructs to CIVL-C primitives
 	 */
-	void ACSLPrimitives2CIVLC(ExpressionNode predicate,
+	ExpressionNode ACSLPrimitives2CIVLC(ExpressionNode predicate,
 			TransformConfiguration config) throws SyntaxException {
-		old2ValueAt(predicate, null, config);
-		on2ValueAt(predicate, null, config);
-		result2intermediate(predicate, config);
-		mpiExtent2mpiExtentof(predicate);
+		predicate = old2ValueAt(predicate, null, config);
+		return on2ValueAt(predicate, null, config);
 	}
 
-	void ACSLPrimitives2CIVLC(ExpressionNode predicate,
+	ExpressionNode ACSLPrimitives2CIVLC(ExpressionNode predicate,
 			ExpressionNode preCollateState, TransformConfiguration config)
 			throws SyntaxException {
 		ExpressionNode state = createCollateGetStateCall(preCollateState,
 				predicate.getSource());
 
-		on2ValueAt(predicate, null, config);
-		old2ValueAt(predicate, state, config);
-		result2intermediate(predicate, config);
-		mpiExtent2mpiExtentof(predicate);
+		predicate = on2ValueAt(predicate, null, config);
+		predicate = old2ValueAt(predicate, state, config);
+		return result2intermediate(predicate, config);
+	}
+
+	Pair<List<BlockItemNode>, ExpressionNode> ACSLSideEffectRemoving(
+			ExpressionNode predicate, TransformConfiguration config)
+			throws SyntaxException {
+		Pair<List<BlockItemNode>, ExpressionNode> result = mpiExtent2intermediate(
+				predicate);
+
+		if (config.alloc4Valid()) {
+			Pair<List<BlockItemNode>, ExpressionNode> subResult = allocation4Valids(
+					result.right, config);
+
+			result.left.addAll(subResult.left);
+			result.right = subResult.right;
+		}
+		return result;
 	}
 
 	TransformPair transformMPICollectiveBlock4Callee(
@@ -121,11 +136,16 @@ class ContractClauseTransformer {
 		for (ConditionalClauses condClause : mpiBlock.getConditionalClauses()) {
 			ExpressionNode requires = condClause.getRequires(nodeFactory);
 			ExpressionNode ensures = condClause.getEnsures(nodeFactory);
+			Pair<List<BlockItemNode>, ExpressionNode> sideEffects;
 
 			if (requires != null) {
 				config.setIgnoreOld(true);
 				config.setNoResult(true);
-				ACSLPrimitives2CIVLC(requires, preState, config);
+				config.setAlloc4Valid(false);
+				sideEffects = ACSLSideEffectRemoving(requires, config);
+				requirements.addAll(sideEffects.left);
+				requires = ACSLPrimitives2CIVLC(sideEffects.right, preState,
+						config);
 				requirements.addAll(
 						transformClause2Checking(condClause.condition, requires,
 								preState, condClause.getWaitsfors(), config));
@@ -135,7 +155,11 @@ class ContractClauseTransformer {
 			if (ensures != null) {
 				config.setIgnoreOld(false);
 				config.setNoResult(false);
-				ACSLPrimitives2CIVLC(ensures, preState, config);
+				config.setAlloc4Valid(false);
+				sideEffects = ACSLSideEffectRemoving(ensures, config);
+				ensures = ACSLPrimitives2CIVLC(sideEffects.right, preState,
+						config);
+				ensurances.addAll(sideEffects.left);
 				ensurances.addAll(transformClause2Assumption(
 						condClause.condition, ensures, postState,
 						condClause.getWaitsfors(), config));
@@ -161,15 +185,9 @@ class ContractClauseTransformer {
 		ExpressionNode postState = nodeFactory.newIdentifierExpressionNode(
 				source,
 				nodeFactory.newIdentifierNode(source, postStateDecl.getName()));
+		Pair<List<BlockItemNode>, ExpressionNode> sideEffects;
 
 		requirements.addAll(mpiConstantsInitialization(mpiComm));
-		config.setAlloc4Valid(true);
-		for (ConditionalClauses condClause : mpiBlock.getConditionalClauses()) {
-			ExpressionNode requires = condClause.getRequires(nodeFactory);
-
-			requirements.addAll(allocation4Valids(requires, config));
-		}
-		config.setAlloc4Valid(false);
 		requirements.add(preStateDecl);
 		ensurances.add(postStateDecl);
 		for (ConditionalClauses condClause : mpiBlock.getConditionalClauses()) {
@@ -179,7 +197,11 @@ class ContractClauseTransformer {
 			if (requires != null) {
 				config.setIgnoreOld(true);
 				config.setNoResult(true);
-				ACSLPrimitives2CIVLC(requires, preState, config);
+				config.setAlloc4Valid(true);
+				sideEffects = ACSLSideEffectRemoving(requires, config);
+				requirements.addAll(0, sideEffects.left);
+				requires = ACSLPrimitives2CIVLC(sideEffects.right, preState,
+						config);
 				requirements.addAll(transformClause2Assumption(
 						condClause.condition, requires, preState,
 						condClause.getWaitsfors(), config));
@@ -188,7 +210,11 @@ class ContractClauseTransformer {
 				// TODO: How check assigns ?
 				config.setIgnoreOld(false);
 				config.setNoResult(false);
-				ACSLPrimitives2CIVLC(ensures, preState, config);
+				config.setAlloc4Valid(false);
+				sideEffects = ACSLSideEffectRemoving(ensures, config);
+				ensurances.addAll(0, sideEffects.left);
+				ensures = ACSLPrimitives2CIVLC(sideEffects.right, preState,
+						config);
 				ensurances.addAll(transformClause2Checking(condClause.condition,
 						ensures, postState, condClause.getWaitsfors(), config));
 			}
@@ -299,8 +325,9 @@ class ContractClauseTransformer {
 	 * *************************************************************************
 	 * Pre-processing Methods :
 	 **************************************************************************/
-	List<BlockItemNode> allocation4Valids(ExpressionNode expression,
-			TransformConfiguration config) throws SyntaxException {
+	private Pair<List<BlockItemNode>, ExpressionNode> allocation4Valids(
+			ExpressionNode expression, TransformConfiguration config)
+			throws SyntaxException {
 		ASTNode astNode = expression;
 		List<OperatorNode> validNodes = new LinkedList<>();
 		List<MPIContractExpressionNode> mpiValidNodes = new LinkedList<>();
@@ -334,7 +361,7 @@ class ContractClauseTransformer {
 			/* Replace valid/mpi_valid expressions with simple true literal */
 			substituteAllValid2True(expression);
 		}
-		return results;
+		return new Pair<>(results, expression);
 	}
 
 	/**
@@ -379,9 +406,11 @@ class ContractClauseTransformer {
 		return expression;
 	}
 
-	private ExpressionNode mpiExtent2mpiExtentof(ExpressionNode predicate) {
+	private Pair<List<BlockItemNode>, ExpressionNode> mpiExtent2intermediate(
+			ExpressionNode predicate) {
 		ASTNode visitor = predicate;
 		LinkedList<MPIContractExpressionNode> mpiExtents = new LinkedList<>();
+		List<BlockItemNode> intermediateVarDecls = new LinkedList<>();
 
 		assert predicate.parent() == null;
 		while (visitor != null) {
@@ -398,17 +427,48 @@ class ContractClauseTransformer {
 			MPIContractExpressionNode mpiExpr = mpiExtents.remove();
 			ASTNode parent = mpiExpr.parent();
 			int childidx = mpiExpr.childIndex();
+			ExpressionNode datatypeExpr = mpiExpr.getArgument(0);
 			ExpressionNode mpiextentofCall = createMPIExtentofCall(
 					mpiExpr.getArgument(0));
+			TypeNode sizeTNode = nodeFactory.newTypedefNameNode(nodeFactory
+					.newIdentifierNode(mpiExpr.getSource(), "size_t"), null);
+			String intermediateVarName = null;
+			String datatypeIdName = null;
 
+			if (datatypeExpr instanceof IdentifierExpressionNode)
+				datatypeIdName = ((IdentifierExpressionNode) datatypeExpr)
+						.getIdentifier().name();
+			else if (datatypeExpr instanceof EnumerationConstantNode)
+				datatypeIdName = ((EnumerationConstantNode) datatypeExpr)
+						.getName().name();
+			if (datatypeIdName != null)
+				intermediateVarName = datatype2counter.get(datatypeIdName);
+			if (intermediateVarName == null) {
+				VariableDeclarationNode intermediateVarDecl;
+
+				intermediateVarName = MPIContractUtilities
+						.nextExtentName(tmpExtentCounter++);
+				datatype2counter.put(datatypeIdName, intermediateVarName);
+				intermediateVarDecl = nodeFactory.newVariableDeclarationNode(
+						mpiExpr.getSource(),
+						nodeFactory.newIdentifierNode(mpiExpr.getSource(),
+								intermediateVarName),
+						sizeTNode, mpiextentofCall);
+				intermediateVarDecls.add(intermediateVarDecl);
+			}
+
+			ExpressionNode intermediateVarExpr = nodeFactory
+					.newIdentifierExpressionNode(mpiExpr.getSource(),
+							nodeFactory.newIdentifierNode(mpiExpr.getSource(),
+									intermediateVarName));
 			if (parent == null) {
 				assert mpiExpr == predicate;
-				return mpiextentofCall;
+				return new Pair<>(intermediateVarDecls, intermediateVarExpr);
 			}
 			mpiExpr.remove();
-			parent.setChild(childidx, mpiextentofCall);
+			parent.setChild(childidx, intermediateVarExpr);
 		}
-		return predicate;
+		return new Pair<>(intermediateVarDecls, predicate);
 	}
 
 	/**
@@ -671,9 +731,32 @@ class ContractClauseTransformer {
 		} else {
 			typeNode = nodeFactory.newBasicTypeNode(datatype.getSource(),
 					BasicTypeKind.CHAR);
+
+			// optimize, reduce the number of intermediate variables introduced
+			// by side-effect remover:
+			String intermediateVarName = null, datatypeIdentifierName = null;
+			ExpressionNode extentofDatatype;
+
+			if (datatype instanceof IdentifierExpressionNode)
+				datatypeIdentifierName = ((IdentifierExpressionNode) datatype)
+						.getIdentifier().name();
+			else if (datatype instanceof EnumerationConstantNode)
+				datatypeIdentifierName = ((EnumerationConstantNode) datatype)
+						.getName().name();
+			if (datatypeIdentifierName != null)
+				intermediateVarName = datatype2counter
+						.get(datatypeIdentifierName);
+			if (intermediateVarName != null)
+				extentofDatatype = nodeFactory
+						.newIdentifierExpressionNode(datatype.getSource(),
+								nodeFactory.newIdentifierNode(
+										datatype.getSource(),
+										intermediateVarName));
+			else
+				extentofDatatype = createMPIExtentofCall(datatype);
 			// char data[count * extentof(datatype)];
-			count = nodeFactory.newOperatorNode(source, Operator.TIMES, Arrays
-					.asList(count.copy(), createMPIExtentofCall(datatype)));
+			count = nodeFactory.newOperatorNode(source, Operator.TIMES,
+					Arrays.asList(count.copy(), extentofDatatype));
 		}
 		return createAllocation(buf, typeNode, count, source);
 	}
@@ -1119,7 +1202,7 @@ class ContractClauseTransformer {
 	 */
 	private ExpressionNode makeItRange(ExpressionNode rangeOrInteger) {
 		if (rangeOrInteger.getType().kind() == TypeKind.RANGE)
-			return rangeOrInteger;
+			return rangeOrInteger.copy();
 		assert rangeOrInteger.getType().kind() == TypeKind.BASIC;
 		return nodeFactory.newRegularRangeNode(rangeOrInteger.getSource(),
 				rangeOrInteger.copy(), rangeOrInteger.copy());
@@ -1144,7 +1227,7 @@ class ContractClauseTransformer {
 		return expression;
 	}
 
-	private void substituteAllValid2True(ExpressionNode predicate) {
+	private ExpressionNode substituteAllValid2True(ExpressionNode predicate) {
 		ASTNode visitor = predicate;
 		List<ASTNode> valids = new LinkedList<>();
 
@@ -1167,13 +1250,19 @@ class ContractClauseTransformer {
 		for (ASTNode valid : valids) {
 			ASTNode parent;
 			int childIdx;
-			ASTNode trueLiteral = nodeFactory
+			ExpressionNode trueLiteral = nodeFactory
 					.newBooleanConstantNode(valid.getSource(), true);
 
 			parent = valid.parent();
 			childIdx = valid.childIndex();
-			parent.setChild(childIdx, trueLiteral);
+			if (parent != null)
+				parent.setChild(childIdx, trueLiteral);
+			else {
+				assert predicate == valid;
+				return trueLiteral;
+			}
 		}
+		return predicate;
 	}
 
 	private IdentifierExpressionNode identifierExpressionNode(Source source,
