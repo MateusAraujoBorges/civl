@@ -34,19 +34,19 @@ public class ContractTest {
 	@Test
 	public void algather() {
 		assertTrue(ui.run(VERIFY, NO_PRINTF, "-mpiContract=allgather", QUIET,
-				filename("/contractsMPIallgather.c")));
+				filename("/contractsMPI/allgather.c")));
 	}
 
 	@Test
 	public void broadcast() {
 		assertTrue(ui.run(VERIFY, NO_PRINTF, "-mpiContract=broadcast", QUIET,
-				filename("/contractsMPIbroadcast.c")));
+				filename("/contractsMPI/broadcast.c")));
 	}
 
 	@Test
 	public void diffusion1d() {
 		assertTrue(ui.run(VERIFY, NO_PRINTF, "-mpiContract=diff1dIter",
-				filename("/contractsMPIdiffusion1d.c")));
+				filename("/contractsMPI/diffusion1d.c")));
 	}
 
 	@Ignore
