@@ -33,7 +33,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  */
 public class ImmutableDynamicScope implements DynamicScope {
 
-	/* *************************** Static Fields *************************** */
+	/* *************************** Static Fields *************************** */ 
 
 	/**
 	 * If true, print debugging information.
