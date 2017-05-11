@@ -77,13 +77,13 @@ import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 public abstract class BaseWorker {
 	protected final static Map<String, String> EMPTY_MACRO_MAP = new HashMap<>(
 			0);
-	protected final static String GEN_MAIN = GeneralTransformer.PREFIX + "main";
-	protected final static String MAIN = "main";
-	protected final static String ASSUME = "$assume";
-	protected final static String ASSERT = "$assert";
-	protected final static String ELABORATE = "$elaborate";
-	protected final static String DEREFABLE = "$is_derefable";
-	protected final static String EXTENT_MPI_DATATYPE = "$mpi_extentof";
+	final static String GEN_MAIN = GeneralTransformer.PREFIX + "main";
+	final static String MAIN = "main";
+	public final static String ASSUME = "$assume";
+	public final static String ASSERT = "$assert";
+	public final static String ELABORATE = "$elaborate";
+	public final static String DEREFRABLE = "$is_derefable";
+	final static String EXTENT_MPI_DATATYPE = "$mpi_extentof";
 
 	protected String identifierPrefix;
 
@@ -813,6 +813,11 @@ public abstract class BaseWorker {
 		return this.typeNode(source, type);
 	}
 
+	// TODO: replace this method with the public static one
+	protected TypeNode typeNode(Source source, Type type) {
+		return typeNode(source, type, nodeFactory);
+	}
+
 	/**
 	 * Creates a type node of a given type, with the given source.
 	 * 
@@ -822,7 +827,9 @@ public abstract class BaseWorker {
 	 *            the specified type
 	 * @return the new type node
 	 */
-	protected TypeNode typeNode(Source source, Type type) {
+	public static TypeNode typeNode(Source source, Type type,
+			NodeFactory nodeFactory) {
+
 		switch (type.kind()) {
 			case VOID :
 				return nodeFactory.newVoidTypeNode(source);
@@ -833,26 +840,30 @@ public abstract class BaseWorker {
 				return nodeFactory.newBasicTypeNode(source, BasicTypeKind.INT);
 			case ARRAY :
 				return nodeFactory.newArrayTypeNode(source,
-						this.typeNode(source,
-								((ArrayType) type).getElementType()),
+						typeNode(source, ((ArrayType) type).getElementType(),
+								nodeFactory),
 						((ArrayType) type).getVariableSize().copy());
 			case POINTER :
-				return nodeFactory.newPointerTypeNode(source, this.typeNode(
-						source, ((PointerType) type).referencedType()));
+				return nodeFactory.newPointerTypeNode(source, typeNode(source,
+						((PointerType) type).referencedType(), nodeFactory));
 			case QUALIFIED :
-				return typeNode(((QualifiedObjectType) type).getBaseType());
+				return typeNode(source,
+						((QualifiedObjectType) type).getBaseType(),
+						nodeFactory);
 			case STRUCTURE_OR_UNION : {
 				StructureOrUnionType structOrUnionType = (StructureOrUnionType) type;
 
 				return nodeFactory.newStructOrUnionTypeNode(source,
 						structOrUnionType.isStruct(),
-						this.identifier(structOrUnionType.getTag()), null);
+						nodeFactory.newIdentifierNode(source,
+								structOrUnionType.getTag()),
+						null);
 			}
 			case ENUMERATION : {
 				EnumerationType enumType = (EnumerationType) type;
 
-				return nodeFactory.newTypedefNameNode(
-						identifier(enumType.getTag()), null);
+				return nodeFactory.newTypedefNameNode(nodeFactory
+						.newIdentifierNode(source, enumType.getTag()), null);
 			}
 			case SCOPE :
 				return nodeFactory.newScopeTypeNode(source);
@@ -1187,7 +1198,7 @@ public abstract class BaseWorker {
 				}
 			} else if (op == Operator.DEREFERENCE) {
 				condition = this.functionCall(
-						operator.getArgument(0).getSource(), DEREFABLE,
+						operator.getArgument(0).getSource(), DEREFRABLE,
 						Arrays.asList(operator.getArgument(0).copy()));
 			}
 		} else if (kind == ExpressionKind.MPI_CONTRACT_EXPRESSION) {
@@ -1218,7 +1229,7 @@ public abstract class BaseWorker {
 							expr.getSource(), Operator.PLUS,
 							Arrays.asList(buf.copy(), offSet));
 
-					condition = this.functionCall(expr.getSource(), DEREFABLE,
+					condition = this.functionCall(expr.getSource(), DEREFRABLE,
 							Arrays.asList(pointer));
 					if (mpiKind == MPIContractExpressionKind.MPI_EQUALS) {
 						ExpressionNode remotePointer = nodeFactory
@@ -1232,7 +1243,7 @@ public abstract class BaseWorker {
 								expr.getSource(), Operator.LAND,
 								Arrays.asList(condition,
 										functionCall(expr.getSource(),
-												DEREFABLE,
+												DEREFRABLE,
 												Arrays.asList(remotePointer))));
 					}
 					break;

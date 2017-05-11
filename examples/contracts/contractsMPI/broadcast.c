@@ -1,13 +1,15 @@
 #include<mpi.h>
 #include<civlc.cvh>
-
+#pragma PARSE_ACSL
 /*@ 
   @ \mpi_collective(comm, P2P):
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \mpi_agree(root) && \mpi_agree(count * \mpi_extent(datatype));
   @   requires 0 < count && count * \mpi_extent(datatype) < 10;
   @   requires \mpi_valid(buf, count, datatype);
-  @   ensures \mpi_equals(buf, count, datatype, \on(root, buf));
+  @   assigns  \mpi_region(buf, count, datatype);
+  @   ensures \mpi_equals(\mpi_region(buf, count, datatype), 
+  @                       \mpi_region(\on(root, buf), count, datatype));
   @   waitsfor root;
   @*/
 int broadcast(void * buf, int count, 

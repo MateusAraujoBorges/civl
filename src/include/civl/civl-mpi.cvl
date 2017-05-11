@@ -17,15 +17,8 @@
 
 /* Library private helper function declaration */
 char * $mpi_coroutine_name(int tag);
+
 /**************************** Duplicated Part *************************************/
-
-#ifdef _MPI_CONTRACT
-struct _mpi_data_size{
-  MPI_Datatype type;
-  size_t size;
-};
-#endif
-
 /* Duplicated definition with the same struct in mpi.h.
    The reason of this duplication is to make civlmpi.cvl
    independent with mpi.cvl. */
@@ -46,19 +39,8 @@ struct $mpi_gcomm {
   $gbarrier gbarrier;
 };
 
-#ifdef _MPI_CONTRACT
-$mpi_data_size_t _mpi_size_map[];//=($mpi_data_size_t[0]) $lambda(int i) (($mpi_data_size_t){0, 0});
-#endif
-
 /****************************** Helper Functions **********************************/
 int sizeofDatatype(MPI_Datatype datatype) {
-#ifdef  _MPI_CONTRACT
-  if (!$is_concrete_int(datatype)) {
-    size_t extent = $mpi_extentof(datatype);
-
-    return extent * sizeof(char);
-  }
-#endif
   size_t result;
 
   switch (datatype) {
@@ -89,14 +71,10 @@ int sizeofDatatype(MPI_Datatype datatype) {
   default:
     $assert(0, "Unreachable");
   }
-#ifdef  _MPI_CONTRACT
-  $assume(result == $mpi_extentof(datatype));
-#endif
   return result;
 }
 
-
-void * $mpi_malloc(int count, MPI_Datatype datatype) {  
+void * $mpi_malloc(int count, MPI_Datatype datatype) {
   switch (datatype) {
   case MPI_INT:
   case MPI_SHORT:
@@ -116,7 +94,7 @@ void * $mpi_malloc(int count, MPI_Datatype datatype) {
     return (char *)malloc(count * sizeof(char));
   default:
     $assert(0, "Unreachable");
-  } 
+  }
   return (void *)0;
 }
 
@@ -731,6 +709,7 @@ void $mpi_diff_coroutine_entries($bundle specEntry, $bundle mineEntry, int rank)
 }
 
 #ifdef _MPI_CONTRACT
+
 $collate_state $mpi_snapshot(MPI_Comm comm, $scope scope) {
   return $collate_arrives(comm.collator, scope);
 }
@@ -777,7 +756,32 @@ void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
     memcpy(buf, newValues, count * sizeofDatatype(datatype));   
   }
 }
+
+$state_f size_t $mpi_extentof(MPI_Datatype datatype) {
+  if ($is_concrete_int(datatype)) 
+    return sizeofDatatype(datatype);
+  else {
+    $abstract size_t $mpi_sizeof(MPI_Datatype datatype);
+
+    return $mpi_sizeof(datatype);
+  }
+}
+
+$atomic_f void $mpi_comm_empty(MPI_Comm comm, MPI_COMM_MODE mode) {
+  _Bool empty;
+
+  if (mode == P2P) {
+    empty = $comm_empty_in(comm.p2p);
+    empty &= $comm_empty_out(comm.p2p);
+  } else {
+    empty = $comm_empty_in(comm.col);
+    empty &= $comm_empty_out(comm.col);
+  }
+  $assert(empty, "Messages are remaining in MPI communicator\n");
+}
+
 #endif
+
 /********************* Private helper functions *********************/
 /* Returns the string literal of MPI collective routine names by
  * giving the unique message tag. */

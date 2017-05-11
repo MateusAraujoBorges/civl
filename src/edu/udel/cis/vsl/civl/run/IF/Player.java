@@ -105,7 +105,6 @@ public abstract class Player {
 			PrintStream err, boolean collectOutputs)
 			throws CommandLineException {
 		SymbolicUniverse universe;
-//		Evaluator errorSideEffectFreeEvaluator;
 
 		this.config = gmcConfig;
 		this.model = model;
@@ -156,11 +155,6 @@ public abstract class Player {
 		this.executor = Semantics.newExecutor(modelFactory, stateFactory,
 				libraryExecutorLoader, evaluator, symbolicAnalyzer, log,
 				civlConfig);
-		// errorSideEffectFreeEvaluator = Semantics
-		// .newErrorSideEffectFreeEvaluator(modelFactory, stateFactory,
-		// libraryEvaluatorLoader, libraryExecutorLoader,
-		// symbolicUtil, symbolicAnalyzer, memUnitFactory, log,
-		// civlConfig);
 		this.enabler = Kripkes.newEnabler(stateFactory, this.evaluator,
 				executor, symbolicAnalyzer, memUnitFactory,
 				this.libraryEnablerLoader, log, civlConfig);
