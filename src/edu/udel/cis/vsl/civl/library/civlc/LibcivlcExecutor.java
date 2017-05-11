@@ -771,9 +771,11 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		reasoner = universe.reasoner(state.getPathCondition(universe));
 		valid = reasoner.valid(assertValue);
 		resultType = valid.getResultType();
+
 		if (resultType == ResultType.MAYBE)
 			resultType = HeuristicProveHelper.heuristicsValid(reasoner,
 					universe, assertValue);
+
 		if (resultType != ResultType.YES) {
 			StringBuilder message = new StringBuilder();
 			Pair<State, String> messageResult = this.symbolicAnalyzer

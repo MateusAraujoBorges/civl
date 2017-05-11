@@ -42,7 +42,7 @@ public class CgTest {
 
 	@Test
 	public void cg3Test() {
-		assertTrue(ui.run("verify", filename("cg3.cvl")));
+		assertTrue(ui.run("verify", "-inputN=3", "-checkDivisionByZero=false", filename("cg.cvl")));
 	}
 
 	@Test

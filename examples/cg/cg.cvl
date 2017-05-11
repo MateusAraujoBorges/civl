@@ -1,0 +1,113 @@
+/* 
+ * Simple implementation of Conjugate Gradient algorithm for an
+ * arbitrary symmetric positive definite square matrix.
+ * Instead of assuming positive-definite-ness, 
+ * we assume that in every division, the denominator is non-0.
+ * Based on https://en.wikipedia.org/wiki/Conjugate_gradient_method
+ */
+
+#include <stdio.h>
+ 
+$input int N = 2;
+$assume(N >= 1);
+$input double A[N][N]; // only use upper triangle
+$input double B[N]; // right-hand side
+
+void cg(int n, double a[n][n], double b[n], double x[n], int nsteps) {
+  double r[n];
+  double p[n];
+  double temp[n];
+  double tempp[n];
+  double rsold;
+  double rsnew;
+  double rsfrac;
+  double alpha;
+
+  // x = 0 [could make this arbitrary]
+  for (int i=0; i<nsteps; i++)
+    x[i] = 0;
+  // temp = A*x [unnecessary if x=0]
+  for (int i=0; i<n; i++) {
+    temp[i] = 0.0;
+    for (int j=0; j<n; j++)
+      temp[i] += a[i][j]*x[j];
+  }
+  // r = b-temp
+  for (int i=0; i<n; i++)
+    r[i] = b[i] - temp[i];
+  // rsold = <r,r>
+  rsold = 0.0;
+  for (int i=0; i<n; i++)
+    rsold += r[i]*r[i];
+  // p=r
+  for (int i=0; i<n; i++)
+    p[i] = r[i];
+  for (int step=0; step<nsteps; step++) {
+    printf("Step = %d\n", step);
+    printf("Computing temp=A*p ...\n");
+    for (int i=0; i<n; i++) {
+      temp[i] = 0.0;
+      for (int j=0; j<n; j++)
+        temp[i] += a[i][j]*p[j];
+    }
+    alpha = 0.0;
+    for (int i=0; i<n; i++)
+      alpha += p[i]*temp[i];
+    //$assume(alpha !=0);
+    printf("Computing alpha=rsold/alpha ...\n");
+    alpha = rsold/alpha;
+    // tempp = r-alpha*temp
+    printf("Computing tempp = r-alpha*temp ...\n");
+    for (int i=0; i<n; i++)
+      tempp[i] = r[i] - alpha*temp[i];
+    printf("Position 5\n");
+    for (int i=0; i<n; i++)
+      r[i] = tempp[i];
+    printf("Position 6\n");
+    for (int i=0; i<n; i++)
+      tempp[i] = x[i] + alpha*p[i];
+    printf("Position 7\n");
+    for (int i=0; i<n; i++)
+      x[i] = tempp[i];
+    printf("Position 8\n");
+    if (step < nsteps-1) {
+      // rsnew = <r,r>
+      rsnew = 0.0;
+      printf("Position 9\n");
+      for (int i=0; i<n; i++)
+        rsnew += r[i]*r[i];
+      printf("Position 10\n");
+      $assume(rsold !=0);
+      rsfrac = rsnew/rsold;
+      printf("Position 11\n");
+      for (int i=0; i<n; i++)
+        tempp[i] = r[i] + rsfrac*p[i];
+      printf("Position 12\n");
+      for (int i=0; i<n; i++)
+        p[i] = tempp[i];
+      rsold = rsnew;
+    }
+  }
+}
+
+void main() {
+  double matrix[N][N];
+  double solution[N];
+  
+  for (int i=0; i<N; i++) {
+    for (int j=0; j<i; j++) {
+      matrix[i][j] = A[i][j];
+      matrix[j][i] = A[i][j];
+    }
+    matrix[i][i] = A[i][i];
+  }
+  cg(N, matrix, B, solution, N);
+  // check the solution is a solution...
+  for (int i=0; i<N; i++) {
+    double check = 0;
+    
+    for (int j=0; j<N; j++)
+      check += matrix[i][j]*solution[j];
+    $assert(check == B[i]);
+  }
+}

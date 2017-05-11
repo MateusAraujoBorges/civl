@@ -116,10 +116,10 @@ void main() {
   A[2][1] = off3;
 
   cg(A,b,xcg,n);
-  printf("\n================Solution x:================\n");
-  for(int i=0; i<n; i++) {
-    printf("x[%d] = %f\n\n",i, xcg[i]);
-  }
+ // printf("\n================Solution x:================\n");
+ // for(int i=0; i<n; i++) {
+ //   printf("x[%d] = %f\n\n",i, xcg[i]);
+ // }
   for(int i=0; i<n; i++) {
     bncg[i] = 0;
     for(int j=0; j<n; j++) {

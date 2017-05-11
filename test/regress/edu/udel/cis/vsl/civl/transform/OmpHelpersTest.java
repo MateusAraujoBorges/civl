@@ -1,8 +1,9 @@
 package edu.udel.cis.vsl.civl.transform;
 
-import static org.junit.Assert.assertTrue;
 import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -52,7 +53,8 @@ public class OmpHelpersTest {
 	public void barrierFlush() {
 		// assertTrue(ui.run("run", filename("barrierFlush.cvl"),
 		// "-showSavedStates"));
-		assertTrue(ui.run("run", QUIET, NO_PRINTF, filename("barrierFlush.cvl")));
+		assertFalse(ui.run("verify", QUIET, NO_PRINTF,
+				filename("barrierFlush.cvl")));
 		// ui.run("run", filename("barrierFlush.cvl"));
 		// ui.run("replay", "-gui", filename("barrierFlush.cvl"));
 	}
@@ -76,7 +78,7 @@ public class OmpHelpersTest {
 	public void ompfor() {
 		assertTrue(ui.run("run", QUIET, NO_PRINTF, filename("for.cvl")));
 	}
-	
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

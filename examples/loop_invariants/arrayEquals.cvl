@@ -24,7 +24,7 @@ int main() {
   _Bool ret = arrayEquals(a, b, N);
   
   if (ret)
-    assert($forall (int i: 0 .. ret-1) a[i] == b[i]);
+    assert($forall (int i: 0 .. N-1) a[i] == b[i]);
   //  if (ret < N)
   //  assert(a[ret] != b[ret]);
 }
