@@ -115,24 +115,6 @@ public abstract class BaseWorker {
 	 */
 	protected TokenFactory tokenFactory;
 
-	/* ************************ Static ************************** */
-	/**
-	 * A static version of {@link #identifierExpression(Source, String)}
-	 */
-	static IdentifierExpressionNode identifierExpression(Source source,
-			String identifierName, NodeFactory nodeFactory) {
-		return nodeFactory.newIdentifierExpressionNode(source,
-				nodeFactory.newIdentifierNode(source, identifierName));
-	}
-
-	/**
-	 * A static version of {@link #identifier(String)}
-	 */
-	static IdentifierNode identifier(Source source, String identifierName,
-			NodeFactory nodeFactory) {
-		return nodeFactory.newIdentifierNode(source, identifierName);
-	}
-
 	/* ****************************** Constructor ************************** */
 
 	protected BaseWorker(String transformerName, ASTFactory astFactory) {
@@ -430,16 +412,14 @@ public abstract class BaseWorker {
 						"formal parameter types",
 						new LinkedList<VariableDeclarationNode>()),
 				false);
-		newMainFunction = nodeFactory
-				.newFunctionDefinitionNode(
+		newMainFunction = nodeFactory.newFunctionDefinitionNode(
+				this.newSource("new main function",
+						CivlcTokenConstant.FUNCTION_DEFINITION),
+				this.identifier(MAIN), mainFuncType, null,
+				nodeFactory.newCompoundStatementNode(
 						this.newSource("new main function",
-								CivlcTokenConstant.FUNCTION_DEFINITION),
-						this.identifier(MAIN), mainFuncType, null,
-						nodeFactory
-								.newCompoundStatementNode(
-										this.newSource("new main function",
-												CivlcTokenConstant.BODY),
-										blockItems));
+								CivlcTokenConstant.BODY),
+						blockItems));
 		root.addSequenceChild(newMainFunction);
 	}
 
@@ -1202,23 +1182,18 @@ public abstract class BaseWorker {
 					ExpressionNode extent = arrayType.getVariableSize();
 
 					if (extent != null) {
-						condition = this.nodeFactory
-								.newOperatorNode(expr.getSource(),
-										Operator.LAND,
-										Arrays.asList(
-												nodeFactory.newOperatorNode(
-														expr.getSource(),
-														Operator.LEQ,
-														Arrays.asList(
-																this.integerConstant(
-																		0),
-																index.copy())),
-												nodeFactory.newOperatorNode(
-														expr.getSource(),
-														Operator.LEQ,
-														Arrays.asList(
-																index.copy(),
-																extent.copy()))));
+						condition = this.nodeFactory.newOperatorNode(expr
+								.getSource(), Operator.LAND, Arrays.asList(
+										nodeFactory.newOperatorNode(
+												expr.getSource(),
+												Operator.LEQ,
+												Arrays.asList(
+														this.integerConstant(0),
+														index.copy())),
+										nodeFactory.newOperatorNode(
+												expr.getSource(), Operator.LEQ,
+												Arrays.asList(index.copy(),
+														extent.copy()))));
 					}
 				}
 			} else if (op == Operator.DEREFERENCE) {
