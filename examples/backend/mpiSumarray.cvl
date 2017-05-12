@@ -69,10 +69,7 @@ $system[civlc] void $assert(_Bool expr, ...);
   @ executes_when $true;
   @*/
 $system[civlc] void $assume(_Bool expr);
-/*@ depends_on \nothing;
-  @ executes_when $true;
-  @*/
-$system[civlc] void $elaborate(int x);
+
 /*@ depends_on \access(p);
   @ executes_when $true;
   @*/

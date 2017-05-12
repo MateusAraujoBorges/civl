@@ -30,6 +30,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteOnExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.DeclarationListNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopInitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.PointerType;
@@ -37,14 +38,20 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
+import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
+import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
+import edu.udel.cis.vsl.abc.token.IF.Formation;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.abc.util.IF.Pair;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.common.BaseWorker;
 import edu.udel.cis.vsl.civl.transform.common.contracts.FunctionContractBlock.ConditionalClauses;
 import edu.udel.cis.vsl.civl.transform.common.contracts.MPIContractUtilities.TransformConfiguration;
 class ContractClauseTransformer {
+
+	public static final String ContractClauseTransformerName = "Contract-clause";
 
 	private int tmpHeapCounter = 0;
 
@@ -61,6 +68,11 @@ class ContractClauseTransformer {
 	 */
 	private NodeFactory nodeFactory;
 
+	/**
+	 * A reference to an instance of {@link ASTFactory}
+	 */
+	private ASTFactory astFactory;
+
 	class TransformPair {
 		List<BlockItemNode> requirements;
 		List<BlockItemNode> ensurances;
@@ -73,6 +85,7 @@ class ContractClauseTransformer {
 	}
 
 	ContractClauseTransformer(ASTFactory astFactory) {
+		this.astFactory = astFactory;
 		this.nodeFactory = astFactory.getNodeFactory();
 		this.datatype2counter = new HashMap<>();
 		this.sideEffectConditions = new LinkedList<>();
@@ -285,10 +298,12 @@ class ContractClauseTransformer {
 	 *            'evalKind' is chosen
 	 *            {@link CollectiveEvaluationKind#ARRIVED_WITH}.
 	 * @return
+	 * @throws SyntaxException
 	 */
 	List<BlockItemNode> transformClause2Assumption(ExpressionNode condition,
 			ExpressionNode predicate, ExpressionNode collateState,
-			List<ExpressionNode> arrivends, TransformConfiguration config) {
+			List<ExpressionNode> arrivends, TransformConfiguration config)
+			throws SyntaxException {
 		StatementNode assumes = createAssumption(predicate.copy());
 
 		if (!sideEffectConditions.isEmpty()) {
@@ -790,20 +805,44 @@ class ContractClauseTransformer {
 	}
 
 	/**
-	 * @param a
-	 *            function call expression: <code>$elaborate(expr)</code>
-	 * @return
+	 * Create Sempty for loop statement for elaborating expressions:
+	 * <code> for (int i = 0; i < expression; i++); </code>
+	 * 
+	 * @param expression
+	 *            The expression will be elaborated
+	 * @return an empty for loop statement
+	 * @throws SyntaxException
+	 *             when unexpected exception happens during creating zero
+	 *             constant node.
 	 */
-	private StatementNode createElaborateFor(ExpressionNode expression) {
-		IdentifierExpressionNode funcIdent = nodeFactory
-				.newIdentifierExpressionNode(expression.getSource(),
-						nodeFactory.newIdentifierNode(expression.getSource(),
-								BaseWorker.ELABORATE));
-		ExpressionNode elaborateCall = nodeFactory.newFunctionCallNode(
-				expression.getSource(), funcIdent,
-				Arrays.asList(expression.copy()), null);
+	private StatementNode createElaborateFor(ExpressionNode expression)
+			throws SyntaxException {
+		TokenFactory tokenFactory = astFactory.getTokenFactory();
+		Formation formation = tokenFactory.newTransformFormation(ContractClauseTransformerName,
+				"Elaborate " + expression.prettyRepresentation());
+		CivlcToken token = tokenFactory.newCivlcToken(CivlcTokenConstant.FOR,
+				"inserted text", formation);
+		Source source = tokenFactory.newSource(token);
+		IdentifierExpressionNode forLoopVarExpr = nodeFactory
+				.newIdentifierExpressionNode(source,
+						nodeFactory.newIdentifierNode(source,
+								BaseWorker.ELABORATE_LOOP_VAR));
+		VariableDeclarationNode forLoopVarDecl = nodeFactory
+				.newVariableDeclarationNode(source,
+						forLoopVarExpr.getIdentifier().copy(),
+						nodeFactory.newBasicTypeNode(source, BasicTypeKind.INT),
+						nodeFactory.newIntegerConstantNode(source, "0"));
+		ForLoopInitializerNode forLoopInitializer = nodeFactory
+				.newForLoopInitializerNode(source,
+						Arrays.asList(forLoopVarDecl));
+		ExpressionNode forLoopCondition = nodeFactory.newOperatorNode(source,
+				Operator.LT, Arrays.asList(forLoopVarExpr, expression.copy()));
+		ExpressionNode forLoopIncrementor = nodeFactory.newOperatorNode(source,
+				Operator.POSTINCREMENT, Arrays.asList(forLoopVarExpr.copy()));
 
-		return nodeFactory.newExpressionStatementNode(elaborateCall);
+		return nodeFactory.newForLoopNode(source, forLoopInitializer,
+				forLoopCondition, forLoopIncrementor,
+				nodeFactory.newNullStatementNode(source), null);
 	}
 
 	/**

@@ -34,6 +34,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.StringLiteralNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopInitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode.StatementKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
@@ -81,7 +82,7 @@ public abstract class BaseWorker {
 	final static String MAIN = "main";
 	public final static String ASSUME = "$assume";
 	public final static String ASSERT = "$assert";
-	public final static String ELABORATE = "$elaborate";
+	public final static String ELABORATE_LOOP_VAR = "_elab_i";
 	public final static String DEREFRABLE = "$is_derefable";
 	final static String EXTENT_MPI_DATATYPE = "$mpi_extentof";
 
@@ -151,13 +152,40 @@ public abstract class BaseWorker {
 	 */
 	protected abstract AST transform(AST ast) throws SyntaxException;
 
-	protected StatementNode elaborateCallNode(ExpressionNode argument) {
-		FunctionCallNode call = nodeFactory.newFunctionCallNode(
-				this.newSource("$elaborate call", CivlcTokenConstant.CALL),
-				this.identifierExpression(ELABORATE), Arrays.asList(argument),
-				null);
+	/**
+	 * Elaborate an expression by inserting an empty for-loop bounded by the
+	 * given expression: <code>for(int i = 0; i < expression; i++);
+	 * </code>
+	 * 
+	 * @param expression
+	 *            The expression will be elaborated
+	 * @return A for-loop statement node
+	 * @throws SyntaxException
+	 *             An unexpected exception happens during creation of a zero
+	 *             constant node.
+	 */
+	protected StatementNode elaborateExpression(ExpressionNode expression)
+			throws SyntaxException {
+		Source source = newSource("Elaborate", CivlcTokenConstant.FOR);
+		VariableDeclarationNode forLoopVarDecl = nodeFactory
+				.newVariableDeclarationNode(source,
+						identifier(ELABORATE_LOOP_VAR),
+						nodeFactory.newBasicTypeNode(source, BasicTypeKind.INT),
+						nodeFactory.newIntegerConstantNode(source, "0"));
+		ForLoopInitializerNode forLoopInitializer = nodeFactory
+				.newForLoopInitializerNode(source,
+						Arrays.asList(forLoopVarDecl));
+		ExpressionNode forLoopCondition = nodeFactory.newOperatorNode(source,
+				Operator.LT,
+				Arrays.asList(identifierExpression(ELABORATE_LOOP_VAR),
+						expression.copy()));
+		ExpressionNode forLoopIncrementor = nodeFactory.newOperatorNode(source,
+				Operator.POSTINCREMENT,
+				Arrays.asList(identifierExpression(ELABORATE_LOOP_VAR)));
 
-		return nodeFactory.newExpressionStatementNode(call);
+		return nodeFactory.newForLoopNode(source, forLoopInitializer,
+				forLoopCondition, forLoopIncrementor,
+				nodeFactory.newNullStatementNode(source), null);
 	}
 
 	/**
