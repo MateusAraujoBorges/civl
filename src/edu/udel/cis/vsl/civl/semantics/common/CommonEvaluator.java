@@ -2022,6 +2022,31 @@ public class CommonEvaluator implements Evaluator {
 		return universe.lambda(index, eleValue);
 	}
 
+	/**
+	 * Creates an array lambda symbolic expression recursively (If it is a
+	 * multi-dimensional array, the created one will be a nested array lambda
+	 * expression).
+	 * 
+	 * 
+	 * @param state
+	 *            The state where the array lambda expression body will evaluate
+	 * @param pid
+	 *            The PID of the process who invokes the creation of array
+	 *            lambda expressions.
+	 * @param boundVariables
+	 *            An array of bound variables specified by the array lambda
+	 *            expression
+	 * @param boundIndex
+	 *            The index of the bound variable in the array which belongs to
+	 *            the current sub-array-lambda expression.
+	 * @param arrayType
+	 *            The symbolic type of a array lambda expression, which must be
+	 *            a complete array type
+	 * @param body
+	 *            The lambda expression body of the array lambda
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	protected SymbolicExpression arrayLambda(State state, int pid,
 			NumericSymbolicConstant[] boundVariables, int boundIndex,
 			SymbolicCompleteArrayType arrayType, Expression body)

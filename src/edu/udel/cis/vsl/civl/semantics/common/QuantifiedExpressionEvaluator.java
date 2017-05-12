@@ -22,7 +22,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.ExtendedQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLCompleteArrayType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -87,7 +86,7 @@ public class QuantifiedExpressionEvaluator
 	 * (possibly nested) quantified expressions. LinkedList is used instead of
 	 * Stack because of its more intuitive iteration order.
 	 */
-	protected LinkedList<Map<String, SymbolicConstant>> boundVariableStack = new LinkedList<>();
+	private LinkedList<Map<String, SymbolicConstant>> boundVariableStack = new LinkedList<>();
 
 	/**
 	 * This object represents a stack of restrictions specified by
@@ -97,15 +96,7 @@ public class QuantifiedExpressionEvaluator
 	 * <code> \sum(0, 10, \lambda i; i+1); </code> The restriction on free
 	 * variable i is <code>0&lt= i &lt=10</code>.
 	 */
-	protected Stack<SymbolicExpression> extendedQuantifiedRestrictionsStack = new Stack<>();
-
-	/**
-	 * This object represents a stack of restrictions which is maintained during
-	 * the recursive evaluation of {@link QuantifiedExpression}s. At any point
-	 * of evaluating a bound variable, the restriction of the bound variable is
-	 * the conjunction of all entries in this stack.
-	 */
-	protected Stack<BooleanExpression> quantifiedRestrictionsStack = new Stack<>();
+	private Stack<SymbolicExpression> extendedQuantifiedRestrictionsStack = new Stack<>();
 
 	/**
 	 * A Java function interface. An instance of this interface can be assigned
@@ -221,60 +212,6 @@ public class QuantifiedExpressionEvaluator
 	}
 
 	/**
-	 * <p>
-	 * Creates an array lambda symbolic expression recursively (If it is a
-	 * multi-dimensional array, the created one will be a nested array lambda
-	 * expression).
-	 * 
-	 * </p>
-	 * 
-	 * @param state
-	 *            The state where the array lambda expression body will evaluate
-	 * @param pid
-	 *            The PID of the process who invokes the creation of array
-	 *            lambda expressions.
-	 * @param boundVariables
-	 *            An array of bound variables specified by the array lambda
-	 *            expression
-	 * @param boundIndex
-	 *            The index of the bound variable in the array which belongs to
-	 *            the current sub-array-lambda expression.
-	 * @param arrayType
-	 *            The symbolic type of a array lambda expression, which must be
-	 *            a complete array type
-	 * @param body
-	 *            The lambda expression body of the array lambda
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	protected SymbolicExpression arrayLambda(State state, int pid,
-			NumericSymbolicConstant[] boundVariables, int boundIndex,
-			SymbolicCompleteArrayType arrayType, Expression body)
-			throws UnsatisfiablePathConditionException {
-		// TODO: The logic of this method is so simple that there is no need to
-		// make it a recursive method, someone can try to use a loop instead.
-		// Recursive calls is a little bit more expensive than using loop.
-		NumericSymbolicConstant index = boundVariables[boundIndex];
-		SymbolicExpression eleValue;
-		SymbolicExpression arrayEleFunction;
-		Evaluation eval;
-		State tmpState; // temporary state only for evaluation
-
-		tmpState = stateFactory.addToPathcondition(state, pid,
-				universe.and(universe.lessThanEquals(zero, index),
-						universe.lessThan(index, arrayType.extent())));
-		if (boundIndex == boundVariables.length - 1) {
-			eval = evaluate(tmpState, pid, body);
-			eleValue = eval.value;
-		} else
-			eleValue = arrayLambda(tmpState, pid, boundVariables,
-					boundIndex + 1,
-					(SymbolicCompleteArrayType) arrayType.elementType(), body);
-		arrayEleFunction = universe.lambda(index, eleValue);
-		return universe.arrayLambda(arrayType, arrayEleFunction);
-	}
-
-	/**
 	 * Evaluates a bound variable expression.
 	 * 
 	 * @param state
@@ -318,156 +255,71 @@ public class QuantifiedExpressionEvaluator
 			throws UnsatisfiablePathConditionException {
 		List<Pair<List<Variable>, Expression>> boundVariableList = expression
 				.boundVariableList();
-		BooleanExpression restriction = universe.trueExpression();
 		Evaluation eval;
-		int index = 0;
 		int numBoundVars = expression.numBoundVariables();
 		SymbolicConstant[] boundVariables = new SymbolicConstant[numBoundVars];
+		BooleanExpression restriction = processBoundVariableList(state, pid,
+				boundVariableList, boundVariables, expression.getSource());
 
-		this.boundVariableStack.push(new HashMap<>());
-		for (Pair<List<Variable>, Expression> boundVariableSubList : boundVariableList) {
-			List<Variable> boundVariableDecls = boundVariableSubList.left;
-			Expression domain = boundVariableSubList.right;
-			SymbolicConstant boundValue;
-
-			if (domain != null && boundVariableDecls.size() > 1)
-				throw new CIVLUnimplementedFeatureException(
-						"declaring bound variables within a specific domain in quantified expressions",
-						expression.getSource());
-			if (domain != null) {
-				// range
-				Variable boundVar = boundVariableDecls.get(0);
-				SymbolicExpression range;
-				NumericExpression lower, upper;
-
-				assert boundVariableDecls.size() == 1;
-				boundValue = universe.symbolicConstant(
-						boundVar.name().stringObject(),
-						boundVar.type().getDynamicType(universe));
-				eval = this.evaluate(state, pid, domain);
-				// TODO assert domain has dimension one
-				boundVariables[index++] = boundValue;
-				this.boundVariableStack.peek()
-						.put(boundValue.name().getString(), boundValue);
-				state = eval.state;
-				range = eval.value;
-				lower = this.symbolicUtil.getLowOfRegularRange(range);
-				upper = this.symbolicUtil.getHighOfRegularRange(range);
-				restriction = universe.and(restriction, universe.and(
-						this.universe.lessThanEquals(lower,
-								(NumericExpression) boundValue),
-						this.universe.lessThanEquals(
-								(NumericExpression) boundValue, upper)));
-			} else {
-				for (Variable boundVar : boundVariableDecls) {
-					boundValue = universe.symbolicConstant(
-							boundVar.name().stringObject(),
-							boundVar.type().getDynamicType(universe));
-					boundVariables[index++] = boundValue;
-					this.boundVariableStack.peek()
-							.put(boundValue.name().getString(), boundValue);
-				}
-			}
-		}
-		eval = this.evaluate(state, pid, expression.restriction());
+		eval = evaluate(state, pid, expression.restriction());
 		state = eval.state;
 		restriction = universe.and(restriction, (BooleanExpression) eval.value);
-		quantifiedRestrictionsStack.push(restriction);
 
-		Evaluation result;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 
 		if (reasoner.valid(universe.not(restriction))
 				.getResultType() == ResultType.YES) {
-			// invalid range restriction
+			// restriction unsatisfied
 			switch (expression.quantifier()) {
 				case EXISTS :
-					result = new Evaluation(state, universe.falseExpression());
+					eval = new Evaluation(state, universe.falseExpression());
 					break;
-				default :// FORALL UNIFORM
-					result = new Evaluation(state, universe.trueExpression());
+				case FORALL :
+					eval = new Evaluation(state, universe.trueExpression());
+					break;
+				default :
+					throw new CIVLUnimplementedFeatureException(
+							expression.quantifier()
+									+ " quantified expression with unsatisfiable restriction",
+							expression.getSource());
 			}
+			return eval;
 		} else {
-			BooleanExpression simplifiedPredicate;
-			BooleanExpression predicate;
-			// function references, see how do they be assigned with methods
-			// from universe in the switch block below:
+			// Temporarily add restriction into path condition:
+			State newState = stateFactory.addToPathcondition(state, pid,
+					restriction);
+			BooleanExpression predicate = (BooleanExpression) evaluate(newState,
+					pid, expression.expression()).value;
+
+			// function references:
+			// Either "restriction AND predicate" or "restriction IMPLIES
+			// predicate" ?
 			LogicalOperation restirctionCombiner;
+			// Either "exists" or "forall" ?
 			ApplyConstantOperation quantifiedExpression;
 
-			// This is the simplification procedure explained above:
-			simplifiedPredicate = evaluateBoundedExpression(state, pid,
-					expression.expression(), boundVariables);
 			switch (expression.quantifier()) {
 				case EXISTS :
 					restirctionCombiner = universe::and;
 					quantifiedExpression = universe::exists;
-					predicate = universe.falseExpression();
 					break;
 				case FORALL :
 					restirctionCombiner = universe::implies;
 					quantifiedExpression = universe::forall;
-					predicate = universe.trueExpression();
 					break;
 				default :
 					throw new CIVLInternalException(
 							"Unknown quantifier: " + expression.quantifier(),
 							expression.getSource());
 			}
-			predicate = restirctionCombiner.operation(restriction,
-					simplifiedPredicate);
+			predicate = restirctionCombiner.operation(restriction, predicate);
 			for (SymbolicConstant complexBoundVar : boundVariables)
 				predicate = quantifiedExpression.operation(complexBoundVar,
 						predicate);
-			result = new Evaluation(state, predicate);
+			eval = new Evaluation(state, predicate);
 		}
 		boundVariableStack.pop();
-		quantifiedRestrictionsStack.pop();
-		return result;
-	}
-
-	/**
-	 * <p>
-	 * Evaluates a quantified predicate with elaboration of bound variables. For
-	 * a tuple v of bound variables, there will be a set of tuples T of values
-	 * as the elaboration of v. This method returns a set of evaluations of the
-	 * predicate, each of which associates to a tuple t in T.
-	 * </p>
-	 * 
-	 * 
-	 * @param state
-	 *            The current state when calling this method.
-	 * @param pid
-	 *            The PID of the calling process
-	 * @param predicate
-	 *            The boolean type {@link Expression} which will be evaluated
-	 *            and may be simplified.
-	 * @param boundVariables
-	 *            Input and Output argument. A tuple of bound variables. For
-	 *            each bound variable v in the tuple, if v is successfully
-	 *            elaborated, it will be set to null.
-	 * @return A list of evaluations of the given predicate.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private BooleanExpression evaluateBoundedExpression(State state, int pid,
-			Expression predicate, SymbolicConstant[] boundVariables)
-			throws UnsatisfiablePathConditionException {
-		BooleanExpression restriction = universe.trueExpression();
-
-		for (BooleanExpression restrict : quantifiedRestrictionsStack)
-			restriction = universe.and(restrict, restriction);
-
-		State newState;
-		Evaluation eval;
-
-		newState = stateFactory.addToPathcondition(state, pid, restriction);
-		eval = evaluate(newState, pid, predicate);
-
-		// Eliminate simplified bound variables:
-		// for (int varId = simplified.nextSetBit(
-		// 0); varId >= 0; varId = simplified.nextSetBit(varId + 1))
-		// boundVariables[varId] = null;
-		return (BooleanExpression) eval.value;
+		return eval;
 	}
 
 	/**
@@ -503,6 +355,7 @@ public class QuantifiedExpressionEvaluator
 
 		restriction = universe.and(restriction,
 				universe.lessThanEquals(idx, high));
+		// To deal with nested extended-quantified expressions:
 		// Push a lambda function into the stack. During the evaluation of the
 		// extended-quantified expression, applying the top stack entry to a
 		// free variable in a lambda expression will return a boolean-value
@@ -562,9 +415,7 @@ public class QuantifiedExpressionEvaluator
 			Reasoner reasoner, NumericExpression low, NumericExpression high,
 			SymbolicExpression lambda, ExtendedQuantifier quant,
 			CIVLSource source) {
-		// The prevResult is kind like the laste one step in induction, for
-		// example summation(0, n) == n + summation(0, n-1):
-		NumericExpression result, inductive = null;
+		NumericExpression result;
 
 		if (reasoner.isValid(universe.lessThan(high, low))) {
 			result = ((SymbolicFunctionType) lambda.type()).outputType()
@@ -573,18 +424,7 @@ public class QuantifiedExpressionEvaluator
 		}
 		switch (quant) {
 			case SUM :
-				NumericExpression highMinusOne = universe.subtract(high, one);
-				BooleanExpression highMinusOneLtLow = universe
-						.lessThan(highMinusOne, low);
-
-				result = (NumericExpression) universe.sigma(low, high, lambda);
-				if (!reasoner.isValid(highMinusOneLtLow)) {
-					inductive = (NumericExpression) universe.sigma(low,
-							highMinusOne, lambda);
-					inductive = universe.add(inductive,
-							(NumericExpression) universe.apply(lambda,
-									Arrays.asList(high)));
-				}
+				result = universe.sigma(low, high, lambda);
 				break;
 			default :
 				throw new CIVLUnimplementedFeatureException(
@@ -696,18 +536,79 @@ public class QuantifiedExpressionEvaluator
 		return eval;
 	}
 
-	// No bound checking during the evaluation of lambda expression
-	@Override
-	protected Evaluation evaluateSubscript(State state, int pid, String process,
-			SubscriptExpression expression)
+	/* ********************** Private helper methods ************************ */
+	/**
+	 * Evaluate a list of bound variables to a set of symbolic constants. For
+	 * bound variables bounded by domains, their constraints will be returned as
+	 * a boolean expression.
+	 * 
+	 * @param state
+	 *            The current state
+	 * @param pid
+	 *            The PID of the calling process.
+	 * @param boundVariableList
+	 *            A list of bound variable groups. Each bound variable group
+	 *            shares a domain constraint or has no domain constraint.
+	 * @param boundVariables
+	 *            Output argument. An array eventually will contain symbolic
+	 *            constants which are values of bound variables.
+	 * @param source
+	 *            CIVLSource associates to those bounded variables.
+	 * @return a constraint on some variables which are bounded by domains.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private BooleanExpression processBoundVariableList(State state, int pid,
+			List<Pair<List<Variable>, Expression>> boundVariableList,
+			SymbolicConstant[] boundVariables, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
-		Evaluation eval = evaluate(state, pid, expression.array());
-		SymbolicExpression array = eval.value;
-		NumericExpression index;
+		BooleanExpression restriction = universe.trueExpression();
+		Evaluation eval;
+		int index = 0;
 
-		eval = evaluate(state, pid, expression.index());
-		index = (NumericExpression) eval.value;
-		eval.value = universe.arrayRead(array, index);
-		return eval;
+		this.boundVariableStack.push(new HashMap<>());
+		for (Pair<List<Variable>, Expression> boundVariableSubList : boundVariableList) {
+			List<Variable> boundVariableDecls = boundVariableSubList.left;
+			Expression domain = boundVariableSubList.right;
+			SymbolicConstant boundValue;
+
+			if (domain != null && boundVariableDecls.size() != 1)
+				throw new CIVLUnimplementedFeatureException(
+						"declaring bound variables within a specific domain in quantified expressions",
+						source);
+			if (domain != null) {
+				// range
+				Variable boundVar = boundVariableDecls.get(0);
+				SymbolicExpression range;
+				NumericExpression lower, upper;
+
+				boundValue = universe.symbolicConstant(
+						boundVar.name().stringObject(),
+						boundVar.type().getDynamicType(universe));
+				eval = this.evaluate(state, pid, domain);
+				// TODO assert domain has dimension one
+				boundVariables[index++] = boundValue;
+				this.boundVariableStack.peek()
+						.put(boundValue.name().getString(), boundValue);
+				state = eval.state;
+				range = eval.value;
+				lower = this.symbolicUtil.getLowOfRegularRange(range);
+				upper = this.symbolicUtil.getHighOfRegularRange(range);
+				restriction = universe.and(restriction, universe.and(
+						this.universe.lessThanEquals(lower,
+								(NumericExpression) boundValue),
+						this.universe.lessThanEquals(
+								(NumericExpression) boundValue, upper)));
+			} else {
+				for (Variable boundVar : boundVariableDecls) {
+					boundValue = universe.symbolicConstant(
+							boundVar.name().stringObject(),
+							boundVar.type().getDynamicType(universe));
+					boundVariables[index++] = boundValue;
+					this.boundVariableStack.peek()
+							.put(boundValue.name().getString(), boundValue);
+				}
+			}
+		}
+		return restriction;
 	}
 }
