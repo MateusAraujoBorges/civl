@@ -200,6 +200,7 @@ public abstract class CommonEnabler implements Enabler {
 				|| civlConfig.showAmpleSetWtStates();
 		this.showAmpleSetWtStates = civlConfig.showAmpleSetWtStates();
 		this.modelFactory = evaluator.modelFactory();
+		this.typeFactory = modelFactory.typeFactory();
 		this.universe = modelFactory.universe();
 		falseExpression = universe.falseExpression();
 		trueExpression = universe.trueExpression();
@@ -759,7 +760,7 @@ public abstract class CommonEnabler implements Enabler {
 				typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
 				gstateHandle, false, true);
 		state = eval.state;
-		colStateID = this.modelFactory.getStateRef(csSource,
+		colStateID = this.modelFactory.getStateRef(
 				universe.tupleRead(eval.value, universe.intObject(1)));
 		colState = stateFactory.getStateByReference(colStateID);
 		colState = stateFactory.addExternalProcess(colState, state, pid, place,
@@ -780,7 +781,7 @@ public abstract class CommonEnabler implements Enabler {
 
 		for (State newColState : colStates) {
 			Pair<Integer, State> newStateAndID = stateFactory
-					.saveState(newColState, pid);
+					.saveState(newColState);
 
 			// System.out.println(
 			// this.symbolicAnalyzer.stateToString(newStateAndID.right));
@@ -940,7 +941,7 @@ public abstract class CommonEnabler implements Enabler {
 			isIdleState = universe.equals(mystatus, idle);
 			result = reasoner.valid(isIdleState).getResultType();
 			if (result == ResultType.YES) {
-				int colStateID = modelFactory.getStateRef(source,
+				int colStateID = modelFactory.getStateRef(
 						universe.tupleRead(gstate, universe.intObject(1)));
 				State colState = stateFactory.getStateByReference(colStateID);
 				Collection<State> newColStates;
@@ -978,7 +979,7 @@ public abstract class CommonEnabler implements Enabler {
 		for (State colState : colStates) {
 			stateExpressions.add(modelFactory.stateExpression(csSource,
 					colStateRef.expressionScope(),
-					stateFactory.saveState(colState, pid).left));
+					stateFactory.saveState(colState).left));
 		}
 		return new Pair<>(colStateRef, stateExpressions);
 	}

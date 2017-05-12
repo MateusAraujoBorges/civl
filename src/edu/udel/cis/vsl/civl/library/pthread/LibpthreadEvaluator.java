@@ -76,7 +76,7 @@ public class LibpthreadEvaluator extends BaseLibraryEvaluator
 			int pidInt;
 
 			pidValue = universe.tupleRead(threadObj, this.zeroObject);
-			pidInt = modelFactory.getProcessId(source, pidValue);
+			pidInt = modelFactory.getProcessId(pidValue);
 			if (pidInt != pid && !modelFactory.isProcessIdNull(pidInt)
 					&& modelFactory.isPocessIdDefined(pidInt))
 				if (!state.getProcessState(pidInt).hasEmptyStack())

@@ -100,8 +100,6 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 
 	/* ************************* Protected Methods ************************* */
 
-	
-
 	/**
 	 * Executes the function call "$free(*void)": removes from the heap the
 	 * object referred to by the given pointer.
@@ -182,9 +180,8 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 							pointer2memoryBlk);
 				}
 				state = stateFactory.deallocate(state, firstElementPointer,
-						modelFactory.getScopeId(source,
-								universe.tupleRead(firstElementPointer,
-										zeroObject)),
+						modelFactory.getScopeId(universe
+								.tupleRead(firstElementPointer, zeroObject)),
 						indexes.left, indexes.right);
 			}
 		}

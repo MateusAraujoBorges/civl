@@ -196,7 +196,6 @@ import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.NumberObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
-import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
@@ -1649,9 +1648,8 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public int getProcessId(CIVLSource source,
-			SymbolicExpression processValue) {
-		return extractIntField(source, processValue, zeroObj);
+	public int getProcessId(SymbolicExpression processValue) {
+		return extractIntField(processValue, zeroObj);
 	}
 
 	@Override
@@ -1681,8 +1679,8 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public int getScopeId(CIVLSource source, SymbolicExpression scopeValue) {
-		return extractIntField(source, scopeValue, zeroObj);
+	public int getScopeId(SymbolicExpression scopeValue) {
+		return extractIntField(scopeValue, zeroObj);
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -1847,8 +1845,8 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public boolean isProcNull(CIVLSource source, SymbolicExpression procValue) {
-		int pid = extractIntField(source, procValue, zeroObj);
+	public boolean isProcNull(SymbolicExpression procValue) {
+		int pid = extractIntField(procValue, zeroObj);
 
 		return this.isProcessIdNull(pid);
 	}
@@ -2040,19 +2038,14 @@ public class CommonModelFactory implements ModelFactory {
 	 * @param expression
 	 *            a numeric expression expected to hold concrete int value
 	 * @return the concrete int
-	 * @throws CIVLInternalException
+	 * @throws ClassCastException
 	 *             if a concrete integer value cannot be extracted
 	 */
-	private int extractInt(CIVLSource source, NumericExpression expression) {
-		if (expression.operator() == SymbolicOperator.CONCRETE) {
-			SymbolicObject object = expression.argument(0);
+	private int extractInt(NumericExpression expression) {
+		assert expression.operator() == SymbolicOperator.CONCRETE;
+		SymbolicObject object = expression.argument(0);
 
-			if (object.symbolicObjectKind() == SymbolicObjectKind.NUMBER)
-				return ((IntegerNumber) ((NumberObject) object).getNumber())
-						.intValue();
-		}
-		throw new CIVLInternalException(
-				"Unable to extract concrete int from " + expression, source);
+		return ((IntegerNumber) ((NumberObject) object).getNumber()).intValue();
 	}
 
 	/**
@@ -2067,12 +2060,12 @@ public class CommonModelFactory implements ModelFactory {
 	 *            index of a field in that tuple
 	 * @return the concrete int value of that field
 	 */
-	private int extractIntField(CIVLSource source, SymbolicExpression tuple,
+	private int extractIntField(SymbolicExpression tuple,
 			IntObject fieldIndex) {
 		NumericExpression field = (NumericExpression) universe.tupleRead(tuple,
 				fieldIndex);
 
-		return extractInt(source, field);
+		return extractInt(field);
 	}
 
 	/**
@@ -2390,8 +2383,8 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public int getStateRef(CIVLSource source, SymbolicExpression stateValue) {
-		return extractIntField(source, stateValue, zeroObj);
+	public int getStateRef(SymbolicExpression stateValue) {
+		return extractIntField(stateValue, zeroObj);
 	}
 
 	@Override

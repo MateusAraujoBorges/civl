@@ -39,7 +39,8 @@ public class ContractTest {
 
 	@Test
 	public void broadcast() {
-		assertTrue(ui.run(VERIFY, NO_PRINTF, "-mpiContract=broadcast", QUIET,
+		assertTrue(ui.run(VERIFY, NO_PRINTF, "-input_mpi_nprocs=2",
+				"-mpiContract=broadcast", QUIET,
 				filename("/contractsMPI/broadcast.c")));
 	}
 

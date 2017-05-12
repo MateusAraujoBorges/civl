@@ -408,8 +408,7 @@ public class CommonExecutor implements Executor {
 		eval = evaluator.evaluate(state, pid, statement.getScopeExpression());
 		state = eval.state;
 		scopeValue = eval.value;
-		dyScopeID = modelFactory.getScopeId(
-				statement.getScopeExpression().getSource(), scopeValue);
+		dyScopeID = modelFactory.getScopeId(scopeValue);
 		eval = evaluator.evaluate(state, pid, statement.getSizeExpression());
 		state = eval.state;
 		mallocSize = (NumericExpression) eval.value;
@@ -1515,12 +1514,9 @@ public class CommonExecutor implements Executor {
 		int mallocId = typeFactory.getHeapFieldId(objectType);
 		int dyscopeID;
 		SymbolicExpression heapObject;
-		CIVLSource scopeSource = scopeExpression == null
-				? source
-				: scopeExpression.getSource();
 		Pair<State, SymbolicExpression> result;
 
-		dyscopeID = modelFactory.getScopeId(scopeSource, scopeValue);
+		dyscopeID = modelFactory.getScopeId(scopeValue);
 		heapObject = universe.array(objectType.getDynamicType(universe),
 				Arrays.asList(objectValue));
 		result = stateFactory.malloc(state, dyscopeID, mallocId, heapObject);

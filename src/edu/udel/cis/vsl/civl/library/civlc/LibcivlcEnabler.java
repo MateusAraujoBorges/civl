@@ -215,12 +215,11 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 	private BitSet ampleSetOfWait(State state, int pid, Expression[] arguments,
 			SymbolicExpression[] argumentValues) {
 		SymbolicExpression joinProc = argumentValues[0];
-		int joinPid = modelFactory.getProcessId(arguments[0].getSource(),
-				joinProc);
+		int joinPid = modelFactory.getProcessId(joinProc);
 		BitSet ampleSet = new BitSet();
 
-		if (modelFactory.isPocessIdDefined(joinPid) && !modelFactory
-				.isProcNull(arguments[0].getSource(), joinProc)) {
+		if (modelFactory.isPocessIdDefined(joinPid)
+				&& !modelFactory.isProcNull(joinProc)) {
 			ampleSet.set(joinPid);
 		}
 		return ampleSet;
@@ -285,7 +284,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 						typeFactory.processType(), procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
-				pidValue = modelFactory.getProcessId(procsSource, proc);
+				pidValue = modelFactory.getProcessId(proc);
 				if (!modelFactory.isProcessIdNull(pidValue)
 						&& modelFactory.isPocessIdDefined(pidValue))
 					ampleSet.set(pidValue);

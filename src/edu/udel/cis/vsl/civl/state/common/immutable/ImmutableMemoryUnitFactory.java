@@ -187,8 +187,7 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 
 	@Override
 	public void add(MemoryUnitSet muSet, SymbolicExpression pointer) {
-		int scope = modelFactory.getScopeId(null,
-				universe.tupleRead(pointer, zero));
+		int scope = modelFactory.getScopeId(universe.tupleRead(pointer, zero));
 		int var = ((IntegerNumber) universe.extractNumber(
 				(NumericExpression) universe.tupleRead(pointer, one)))
 						.intValue();

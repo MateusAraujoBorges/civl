@@ -4260,7 +4260,7 @@ public class FunctionTranslator {
 						(CommonMPIConstantNode) node, scope);
 			case MPI_EQUALS :
 				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EQUALS;
-				numArgs = 4;
+				numArgs = 2;
 				break;
 			case MPI_REGION :
 				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_REGION;
@@ -4286,12 +4286,6 @@ public class FunctionTranslator {
 				throw new CIVLInternalException("Unreachable",
 						node.getSource());
 		}
-		// if (currentMPICollectiveTitle.left == null
-		// || currentMPICollectiveTitle.right == null) {
-		// throw new CIVLSyntaxException(
-		// "MPI Contract expression: " + civlMpiContractKind
-		// + " can only be used in MPI collective behaviors");
-		// }
 		assert numArgs > 0 && civlMpiContractKind != null;
 
 		Expression[] arguments = new Expression[numArgs];
@@ -4299,16 +4293,6 @@ public class FunctionTranslator {
 		for (int i = 0; i < numArgs; i++)
 			arguments[i] = translateExpressionNode(node.getArgument(i), scope,
 					true);
-		// Saving \mpi_agree variables:
-		// if (civlMpiContractKind == MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE)
-		// if (currentContractKind == ContractKind.REQUIRES) {
-		// if (currentContractKind == ContractKind.REQUIRES)
-		// agreedVaraibles.add(
-		// ((VariableExpression) arguments[0]).variable());
-		// } else
-		// throw new CIVLSyntaxException(
-		// "\\mpi_agree currently can only be used in requirements.",
-		// modelFactory.sourceOf(node));
 		return modelFactory.mpiContractExpression(modelFactory.sourceOf(node),
 				scope, null, arguments, civlMpiContractKind, null);
 

@@ -187,7 +187,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor
 			int pidInt;
 
 			pidValue = universe.tupleRead(threadObj, this.zeroObject);
-			pidInt = modelFactory.getProcessId(source, pidValue);
+			pidInt = modelFactory.getProcessId(pidValue);
 			if (pidInt != pid && !modelFactory.isProcessIdNull(pidInt)
 					&& modelFactory.isPocessIdDefined(pidInt))
 				state = stateFactory.removeProcess(state, pidInt);
@@ -241,7 +241,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor
 		Evaluation eval;
 		SymbolicExpression result = trueValue;
 
-		if (modelFactory.isProcNull(arguments[1].getSource(), proc)) {
+		if (modelFactory.isProcNull(proc)) {
 			result = universe.falseExpression();
 		} else {
 			eval = evaluator.dereference(source, state, process,
@@ -540,7 +540,7 @@ public class LibpthreadExecutor extends BaseLibraryExecutor
 			state = eval.state;
 			threadId = universe.tupleRead(thread, zeroObject);
 
-			threadId_int = modelFactory.getProcessId(source, threadId);
+			threadId_int = modelFactory.getProcessId(threadId);
 			if (threadId_int == tid)
 				return new Evaluation(state, threadPointer);
 		}

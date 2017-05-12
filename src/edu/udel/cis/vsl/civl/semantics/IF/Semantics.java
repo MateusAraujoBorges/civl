@@ -153,10 +153,11 @@ public class Semantics {
 	 * @return The new symbolic analyzer.
 	 */
 	public static SymbolicAnalyzer newSymbolicAnalyzer(
-			CIVLConfiguration civlConfig, SymbolicUniverse universe,
-			ModelFactory modelFactory, SymbolicUtility symbolicUtil) {
-		return new CommonSymbolicAnalyzer(civlConfig, universe, modelFactory,
-				symbolicUtil);
+			CIVLConfiguration civlConfig, CIVLErrorLogger errorLogger,
+			SymbolicUniverse universe, ModelFactory modelFactory,
+			SymbolicUtility symbolicUtil) {
+		return new CommonSymbolicAnalyzer(civlConfig, errorLogger, universe,
+				modelFactory, symbolicUtil);
 	}
 
 	/**
