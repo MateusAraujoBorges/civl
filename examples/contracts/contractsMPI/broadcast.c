@@ -1,5 +1,6 @@
 #include<mpi.h>
 #include<civlc.cvh>
+#include<stdio.h>
 #pragma PARSE_ACSL
 /*@ 
   @ \mpi_collective(comm, P2P):
@@ -19,6 +20,7 @@ int broadcast(void * buf, int count,
 
   MPI_Comm_size(comm, &nprocs);
   MPI_Comm_rank(comm, &rank);
+  printf("my rank:%d, root:%d\n", rank, root);
   if (rank == root) {
     for (int i = 0; i < nprocs; i++)
       if (i != root)

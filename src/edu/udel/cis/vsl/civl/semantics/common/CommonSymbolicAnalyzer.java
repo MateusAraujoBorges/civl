@@ -228,7 +228,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				state = errorLogger.logError(source, state, pid,
 						stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS,
-						"end index exceeds length of array");
+						"Index exceeds length of array: " + endIndex
+								+ "\nArray type: " + array.type());
 				pathCondition = state.getPathCondition(universe);
 				reasoner = universe.reasoner(pathCondition);
 			}
@@ -2442,9 +2443,12 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 					Evaluation eval = evaluator.evaluate(state, pid,
 							valueAt.state());
-					State newState = this.evaluator.stateFactory()
-							.getStateByReference(
-									modelFactory.getStateRef(eval.value));
+					State newState = eval.value == modelFactory
+							.statenullConstantValue()
+									? state
+									: evaluator.stateFactory()
+											.getStateByReference(modelFactory
+													.getStateRef(eval.value));
 					int newPid;
 
 					eval = evaluator.evaluate(eval.state, pid, valueAt.pid());
@@ -2537,7 +2541,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				break;
 			case MPI_EQUALS :
 				result.append("$mpi_equals(");
-				numArgs = 4;
+				numArgs = 2;
 				break;
 			case MPI_EXTENT :
 				result.append("$mpi_extent(");

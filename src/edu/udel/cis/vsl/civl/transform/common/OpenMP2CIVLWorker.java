@@ -944,7 +944,7 @@ public class OpenMP2CIVLWorker extends BaseWorker {
 					nodeFactory.newBasicTypeNode(newSource(nthreadDeclaration,
 							CivlcTokenConstant.INT), BasicTypeKind.INT),
 					add);
-			items.add(this.elaborateCallNode(numThreads.copy()));
+			items.add(this.elaborateExpression(numThreads.copy()));
 			items.add(nthreads);
 
 			// $range thread_range = 0 .. nthreads-1;

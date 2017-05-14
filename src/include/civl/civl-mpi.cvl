@@ -40,6 +40,16 @@ struct $mpi_gcomm {
 };
 
 /****************************** Helper Functions **********************************/
+$state_f size_t $mpi_extentof(MPI_Datatype datatype) {
+  if ($is_concrete_int(datatype)) 
+    return sizeofDatatype(datatype);
+  else {
+    $abstract size_t $mpi_sizeof(MPI_Datatype datatype);
+
+    return $mpi_sizeof(datatype);
+  }
+}
+
 int sizeofDatatype(MPI_Datatype datatype) {
   size_t result;
 
@@ -190,15 +200,12 @@ void * $mpi_pointer_add(const void * ptr, int offset, MPI_Datatype datatype) {
 int $mpi_send(const void *buf, int count, MPI_Datatype datatype, int dest,
 	      int tag, MPI_Comm comm) {
   if (dest >= 0 && count >= 0) {
-    int size = count*sizeofDatatype(datatype);
+    int size = count*$mpi_extentof(datatype);
     int place = $comm_place(comm.p2p);
     $message out;
 
     $elaborate(dest);
     out = $message_pack(place, dest, tag, buf, size);
-#ifdef _MPI_CONTRACT
-    $elaborate(count);
-#endif
     $comm_enqueue(comm.p2p, out);   
   }
   return 0;
@@ -216,7 +223,7 @@ int $mpi_recv(void *buf, int count, MPI_Datatype datatype, int source,
     $elaborate(source);
     in = $comm_dequeue(comm.p2p, source, deterministicTag);
 
-    int size = count*sizeofDatatype(datatype);
+    int size = count*$mpi_extentof(datatype);
 
     $message_unpack(in, buf, size);
     if (status != MPI_STATUS_IGNORE) {
@@ -754,16 +761,6 @@ void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
     char newValues[realCount];
     
     memcpy(buf, newValues, count * sizeofDatatype(datatype));   
-  }
-}
-
-$state_f size_t $mpi_extentof(MPI_Datatype datatype) {
-  if ($is_concrete_int(datatype)) 
-    return sizeofDatatype(datatype);
-  else {
-    $abstract size_t $mpi_sizeof(MPI_Datatype datatype);
-
-    return $mpi_sizeof(datatype);
   }
 }
 

@@ -61,6 +61,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SystemGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
@@ -110,6 +111,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.TupleComponentReference;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.number.NumberFactory;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
@@ -3497,6 +3499,10 @@ public class CommonEvaluator implements Evaluator {
 				result = evaluateVariable(state, pid, process,
 						(VariableExpression) expression, checkUndefinedValue);
 				break;
+			case VALUE_AT :
+				result = evaluateValueAtExpression(state, pid,
+						(ValueAtExpression) expression);
+				break;
 			case QUANTIFIER : {
 				result = evaluateQuantifiedExpression(state, pid,
 						(QuantifiedExpression) expression);
@@ -3520,7 +3526,6 @@ public class CommonEvaluator implements Evaluator {
 				throw new CIVLSyntaxException(
 						"Illegal use of " + kind + " expression: ",
 						expression.getSource());
-			case VALUE_AT :
 			default :
 				throw new CIVLInternalException("unreachable: " + kind,
 						expression);
@@ -3536,6 +3541,72 @@ public class CommonEvaluator implements Evaluator {
 				memUnitFactory, errorLogger, civlConfig)
 						.evaluateQuantifiedExpression(state, pid,
 								(QuantifiedExpression) expression);
+	}
+
+	protected Evaluation evaluateValueAtExpression(State currentState, int pid,
+			ValueAtExpression valueAt)
+			throws UnsatisfiablePathConditionException {
+		Expression stateRef = valueAt.state();
+		Expression process = valueAt.pid();
+		Expression expression = valueAt.expression();
+		Evaluation eval;
+		SymbolicExpression stateRefVal, processVal;
+		State evaluationState;
+
+		eval = evaluate(currentState, pid, stateRef);
+		currentState = eval.state;
+		stateRefVal = eval.value;
+		eval = evaluate(currentState, pid, process);
+		currentState = eval.state;
+		processVal = eval.value;
+		assert processVal.type().isNumeric();
+		if (stateRefVal == modelFactory.statenullConstantValue())
+			evaluationState = currentState;
+		else
+			evaluationState = stateFactory
+					.getStateByReference(modelFactory.getStateRef(stateRefVal));
+
+		Number processNumber = universe
+				.reasoner(currentState.getPathCondition(universe))
+				.extractNumber((NumericExpression) processVal);
+
+		assert evaluationState != null;
+		if (processNumber != null) {
+			// for concrete process value:
+			int concreteProcessVal = ((IntegerNumber) processNumber).intValue();
+
+			eval = evaluate(evaluationState, concreteProcessVal, expression);
+			eval.state = currentState;
+		} else {
+			// for non-concrete process value:
+			// omit the external process, who has the max pid:
+			int numProcs = evaluationState.numProcs() - 1;
+			List<SymbolicExpression> possibleEvals = new LinkedList<>();
+
+			for (int procId = 0; procId < numProcs; procId++) {
+				if (evaluationState.getProcessState(procId) != null)
+					eval = evaluate(evaluationState, procId, expression);
+				else
+					eval.value = universe.nullExpression();
+				possibleEvals.add(eval.value);
+			}
+			SymbolicType dynamicType = expression.getExpressionType()
+					.getDynamicType(universe);
+			SymbolicExpression possibleValArray = universe.array(dynamicType,
+					possibleEvals);
+			NumericSymbolicConstant boundedPid = (NumericSymbolicConstant) universe
+					.symbolicConstant(universe.stringObject("_p"),
+							universe.integerType());
+			SymbolicExpression lambda = universe.lambda(boundedPid,
+					universe.arrayRead(possibleValArray, boundedPid));
+
+			eval.value = universe.arrayLambda(
+					universe.arrayType(dynamicType, universe.integer(numProcs)),
+					lambda);
+			eval.value = universe.apply(eval.value, Arrays.asList(processVal));
+			eval.state = currentState;
+		}
+		return eval;
 	}
 
 	protected Evaluation evaluateArrayLambda(State state, int pid,

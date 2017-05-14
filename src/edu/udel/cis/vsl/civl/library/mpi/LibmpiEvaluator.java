@@ -319,44 +319,17 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 	private Evaluation evaluateMPIEquals(State state, int pid, String process,
 			MPIContractExpression expression)
 			throws UnsatisfiablePathConditionException {
-		SymbolicExpression values[] = new SymbolicExpression[4];
-		SymbolicExpression ptr0, ptr1;
-		NumericExpression count, mpiDatatype;
-		Evaluation eval;
-		SymbolicExpression data0, data1;
+		SymbolicExpression values[] = new SymbolicExpression[2];
+		Evaluation eval = null;
 		BooleanExpression result;
-		Pair<SymbolicExpression, NumericExpression> mpiPtr_datatypeSize0,
-				mpiPtr_datatypeSize1;
 
-		// \mpi_equals() takes 4 arguments: pointer0, count, datatype, pointer1:
-		for (int i = 0; i < 4; i++) {
+		// \mpi_equals() compares 2 mpi regions
+		for (int i = 0; i < 2; i++) {
 			eval = evaluator.evaluate(state, pid, expression.arguments()[i]);
 			state = eval.state;
 			values[i] = eval.value;
 		}
-		count = (NumericExpression) values[1];
-		mpiDatatype = (NumericExpression) values[2];
-		mpiPtr_datatypeSize0 = processMPIPointer(state, pid, process,
-				expression.arguments()[0], values[0], expression.arguments()[2],
-				mpiDatatype, expression.getSource());
-		mpiPtr_datatypeSize1 = processMPIPointer(state, pid, process,
-				expression.arguments()[3], values[3], expression.arguments()[2],
-				mpiDatatype, expression.getSource());
-		ptr0 = mpiPtr_datatypeSize0.left;
-		ptr1 = mpiPtr_datatypeSize1.left;
-
-		NumericExpression realCount = universe.multiply(count,
-				mpiPtr_datatypeSize0.right);
-
-		eval = getDataFrom(state, pid, process, expression.arguments()[0], ptr0,
-				realCount, false, false, expression.getSource());
-		state = eval.state;
-		data0 = eval.value;
-		eval = getDataFrom(state, pid, process, expression.arguments()[3], ptr1,
-				realCount, false, false, expression.getSource());
-		state = eval.state;
-		data1 = eval.value;
-		result = universe.equals(data0, data1);
+		result = universe.equals(values[0], values[1]);
 		eval.value = result;
 		return eval;
 	}
@@ -414,8 +387,9 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		// ptr + (real_count - 1):
 		realOffset = universe.subtract(
 				universe.multiply(count, mpiPtr_datatypeSize.right), one);
-		eval = evaluator.arrayElementReferenceAdd(state, pid, mpiPtr_datatypeSize.left,
-				realOffset, expression.getSource()).left;
+		eval = evaluator.arrayElementReferenceAdd(state, pid,
+				mpiPtr_datatypeSize.left, realOffset,
+				expression.getSource()).left;
 		state = eval.state;
 		result = symbolicAnalyzer.isDerefablePointer(state,
 				mpiPtr_datatypeSize.left).left;
@@ -496,7 +470,8 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 
 		mpiPtr_datatypeSize = processMPIPointer(state, pid, process, ptrExpr,
 				ptr, datatypeExpr, datatype, expression.getSource());
-		return evaluator.arrayElementReferenceAdd(state, pid, mpiPtr_datatypeSize.left,
+		return evaluator.arrayElementReferenceAdd(state, pid,
+				mpiPtr_datatypeSize.left,
 				universe.multiply(count, mpiPtr_datatypeSize.right),
 				expression.getSource()).left;
 	}
@@ -527,7 +502,7 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 	 *            The {@link Expression} of the given pointer
 	 * @param ptr
 	 *            The value of the given pointer
-	 * @param mpiDatatypeExpr
+	 * @param mpiDatatypeExtent
 	 *            The {@link Expression} of MPI_Datatype
 	 * @param mpiDatatype
 	 *            The value of the MPI_Datatype.
@@ -546,14 +521,14 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 	@SuppressWarnings("unused")
 	private Pair<SymbolicExpression, NumericExpression> processMPIPointer(
 			State state, int pid, String process, Expression ptrExpr,
-			SymbolicExpression ptr, Expression mpiDatatypeExpr,
+			SymbolicExpression ptr, Expression mpiDatatypeExtent,
 			NumericExpression mpiDatatype, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		ReferenceExpression baseRef = symbolicAnalyzer
 				.getLeafNodeReference(state, ptr, source);
 		SymbolicExpression basePtr = symbolicUtil.makePointer(ptr, baseRef);
-		CIVLType baseType = symbolicAnalyzer.civlTypeOfObjByPointer(source, state,
-				basePtr);
+		CIVLType baseType = symbolicAnalyzer.civlTypeOfObjByPointer(source,
+				state, basePtr);
 		NumericExpression numPrimitives;
 		Evaluation eval = evaluator.evaluateSizeofType(source, state, pid,
 				baseType);
