@@ -128,6 +128,10 @@ public abstract class Player {
 		this.sessionName = model.name();
 		this.modelFactory = model.factory();
 		universe = modelFactory.universe();
+		// Set the probabilistic bound to zero if 'prob' option is disabled:
+		if (!civlConfig.prob())
+			universe.setProbabilisticBound(
+					universe.numberFactory().zeroRational());
 		this.solve = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(solveO);
 		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory);
