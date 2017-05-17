@@ -38,7 +38,7 @@ public class CompareTest {
 
 	@Test
 	public void simpleCompareTest() {
-		assertTrue(ui.run("compare -showProgram -spec",
+		assertTrue(ui.run("compare ", QUIET, "-spec",
 				filename("simple/specDrive.c"), "-impl",
 				filename("simple/implDriver.c"),
 				filename("simple/implDependency1.c")));
@@ -50,7 +50,7 @@ public class CompareTest {
 		String runtime_dense_reversePath = provesaPath
 				+ "/runtime_dense_reverse";
 
-		assertFalse(ui.run("compare -showProgram -spec",
+		assertFalse(ui.run("compare ", QUIET, " -spec",
 				filename("provesa/driver.c"), filename("provesa/tap_driver.c"),
 				filename("provesa/o_fcn_bv.c"),
 				"-impl -DADIC_DENSE_REVERSE -userIncludePath=" + provesaPath
