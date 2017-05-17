@@ -723,8 +723,13 @@ public class CommonExecutor implements Executor {
 				if (noop.noopKind() == NoopKind.LOOP) {
 					LoopBranchStatement loopBranch = (LoopBranchStatement) noop;
 
-					if (!loopBranch.isEnter() && this.civlConfig.simplify())
-						state = this.stateFactory.simplify(state);
+					if (!loopBranch.isEnter() && this.civlConfig.simplify()) {
+						BooleanExpression pc = state.getPathCondition(universe);
+						Reasoner reasoner = universe.reasoner(pc);
+
+						if (reasoner.getReducedContext() != pc)
+							state = this.stateFactory.simplify(state);
+					}
 				}
 				return state;
 			}
@@ -1558,12 +1563,15 @@ public class CommonExecutor implements Executor {
 								+ atomicLockAction.toString(),
 						transition.statement().getSource());
 		}
-		if (!transition.clause().isTrue())
+		// if transition doesn't carry new clause, no need to update the path
+		// condition, neither for simplifying the state
+		if (!transition.clause().isTrue()) {
 			state = stateFactory.addToPathcondition(state, pid,
 					transition.clause());
-		if (transition.simpifyState()
-				&& (civlConfig.svcomp() || this.civlConfig.simplify()))
-			state = this.stateFactory.simplify(state);
+			if (transition.simpifyState()
+					&& (civlConfig.svcomp() || this.civlConfig.simplify()))
+				state = this.stateFactory.simplify(state);
+		}
 		switch (transition.transitionKind()) {
 			case NORMAL :
 				state = this.executeStatement(state, pid,

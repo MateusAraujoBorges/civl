@@ -62,6 +62,8 @@ public class TestConstants {
 
 	public static String NO_CHECK_DIVISION_BY_ZERO = "-checkDivisionByZero=false";
 
+	public static String ENABLE_PROB = "-prob";
+
 	public static String errorBound(int bound) {
 		return "-errorBound=" + bound;
 	}

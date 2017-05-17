@@ -1,5 +1,7 @@
 #include<mpi.h>
 #include<civlc.cvh>
+#pragma PARSE_ACSL
+
 int left, right, nxl, nx, rank, nprocs;
 double * u, * u_new, k;
 

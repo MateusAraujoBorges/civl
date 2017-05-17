@@ -79,7 +79,8 @@ public class TransformerFactory {
 		};
 	}
 
-	public TransformRecord getContractTransformerRecord(String targetFunction) {
+	public TransformRecord getContractTransformerRecord(String targetFunction,
+			CIVLConfiguration civlConfig) {
 		return new TransformRecord(ContractTransformer.CODE,
 				ContractTransformer.LONG_NAME,
 				ContractTransformer.SHORT_DESCRIPTION) {
@@ -87,7 +88,7 @@ public class TransformerFactory {
 			public Transformer create(ASTFactory astFactory) {
 				if (contractTransformer == null)
 					contractTransformer = new ContractTransformer(astFactory,
-							targetFunction);
+							targetFunction, civlConfig);
 				return contractTransformer;
 			}
 		};

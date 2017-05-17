@@ -292,7 +292,7 @@ public class ModelTranslator {
 		if (config.isEnableMpiContract())
 			task.addTransformRecord(
 					transformerFactory.getContractTransformerRecord(
-							config.mpiContractFunction()));
+							config.mpiContractFunction(), config));
 		task.addTransformRecord(
 				transformerFactory.getGeneralTransformerRecord());
 		task.addTransformRecord(

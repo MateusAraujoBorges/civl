@@ -154,6 +154,7 @@ public class CIVLConstants {
 	public static String SVCOMP17 = "svcomp17";
 	public static String SHOW_INPUTS = "showInputs";
 	public static String PREPROC = "preproc";
+	public static String PROB = "prob";
 	public static String SHOW_PROGRAM = "showProgram";
 	public static String SHOW_PATH_CONDITION = "showPathCondition";
 	public static String OMP_NO_SIMPLIFY = "ompNoSimplify";
@@ -275,6 +276,14 @@ public class CIVLConstants {
 	public final static Option procBoundO = Option.newScalarOption(PROC_BOUND,
 			INTEGER, "bound on number of live processes (no bound if negative)",
 			-1);
+
+	/**
+	 * Use probabilistic techniques for verifying numeric identifies. False by
+	 * default.
+	 */
+	public final static Option probO = Option.newScalarOption(PROB, BOOLEAN,
+			"use probabilistic techniques for verifying numeric identifies",
+			false);
 
 	/**
 	 * TODO can it be cleaned up? Select enabled transitions randomly? Default
@@ -623,15 +632,15 @@ public class CIVLConstants {
 				collectScopesO, collectSymbolicConstantsO, deadlockO, debugO,
 				enablePrintfO, errorBoundO, errorStateEquivO, guiO, guidedO,
 				idO, inputO, linkO, macroO, maxdepthO, minO, mpiContractO,
-				ompLoopDecompO, ompNoSimplifyO, preprocO, procBoundO, randomO,
-				saveStatesO, seedO, showAmpleSetO, showAmpleSetWtStatesO,
-				showInputVarsO, showMemoryUnitsO, showModelO,
-				showPathConditionO, showProgramO, showProverQueriesO,
-				showQueriesO, showSavedStatesO, showStatesO, showTimeO,
-				showTransitionsO, showUnreachedCodeO, simplifyO, solveO,
-				statelessPrintfO, svcomp16O, svcomp17O, quietO, sysIncludePathO,
-				traceO, userIncludePathO, verboseO, webO, CIVLMacroO,
-				analyzeAbsO, strictCompareO, collectOutputO,
+				ompLoopDecompO, ompNoSimplifyO, probO, preprocO, procBoundO,
+				randomO, saveStatesO, seedO, showAmpleSetO,
+				showAmpleSetWtStatesO, showInputVarsO, showMemoryUnitsO,
+				showModelO, showPathConditionO, showProgramO,
+				showProverQueriesO, showQueriesO, showSavedStatesO, showStatesO,
+				showTimeO, showTransitionsO, showUnreachedCodeO, simplifyO,
+				solveO, statelessPrintfO, svcomp16O, svcomp17O, quietO,
+				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
+				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
 				sliceAnalysisO, witnessO, direct0, intBit,
 				intOperationTransformer, maxProcsO};

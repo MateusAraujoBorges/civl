@@ -105,7 +105,6 @@ public abstract class Player {
 			PrintStream err, boolean collectOutputs)
 			throws CommandLineException {
 		SymbolicUniverse universe;
-//		Evaluator errorSideEffectFreeEvaluator;
 
 		this.config = gmcConfig;
 		this.model = model;
@@ -129,6 +128,10 @@ public abstract class Player {
 		this.sessionName = model.name();
 		this.modelFactory = model.factory();
 		universe = modelFactory.universe();
+		// Set the probabilistic bound to zero if 'prob' option is disabled:
+		if (!civlConfig.prob())
+			universe.setProbabilisticBound(
+					universe.numberFactory().zeroRational());
 		this.solve = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(solveO);
 		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory);
@@ -156,11 +159,6 @@ public abstract class Player {
 		this.executor = Semantics.newExecutor(modelFactory, stateFactory,
 				libraryExecutorLoader, evaluator, symbolicAnalyzer, log,
 				civlConfig);
-		// errorSideEffectFreeEvaluator = Semantics
-		// .newErrorSideEffectFreeEvaluator(modelFactory, stateFactory,
-		// libraryEvaluatorLoader, libraryExecutorLoader,
-		// symbolicUtil, symbolicAnalyzer, memUnitFactory, log,
-		// civlConfig);
 		this.enabler = Kripkes.newEnabler(stateFactory, this.evaluator,
 				executor, symbolicAnalyzer, memUnitFactory,
 				this.libraryEnablerLoader, log, civlConfig);

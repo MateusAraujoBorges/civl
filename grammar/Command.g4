@@ -136,6 +136,7 @@ OPTION_NAME
     | '-ompLoopDecomp'
     | '-preproc'
     | '-procBound'
+    | '-prob'  
     | '-maxProcs'
     | '-quiet'
     | '-intOperationTransformer'
