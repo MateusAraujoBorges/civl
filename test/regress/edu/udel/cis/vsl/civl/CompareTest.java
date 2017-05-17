@@ -1,6 +1,7 @@
 package edu.udel.cis.vsl.civl;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 
 import java.io.File;
@@ -33,6 +34,33 @@ public class CompareTest {
 	public void unableExtractInt() {
 		assertFalse(ui.run("verify", QUIET, filename("petscBad/ex2Driver.c"),
 				filename("petscBad/ex2a.c")));
+	}
+
+	@Test
+	public void simpleCompareTest() {
+		assertTrue(ui.run("compare -showProgram -spec",
+				filename("simple/specDrive.c"), "-impl",
+				filename("simple/implDriver.c"),
+				filename("simple/implDependency1.c")));
+	}
+
+	@Test
+	public void provesaCompareTest() {
+		String provesaPath = rootDir.getPath() + "/provesa";
+		String runtime_dense_reversePath = provesaPath
+				+ "/runtime_dense_reverse";
+
+		assertFalse(ui.run("compare -showProgram -spec",
+				filename("provesa/driver.c"), filename("provesa/tap_driver.c"),
+				filename("provesa/o_fcn_bv.c"),
+				"-impl -DADIC_DENSE_REVERSE -userIncludePath=" + provesaPath
+						+ ":" + runtime_dense_reversePath,
+				filename("provesa/driver.c"),
+				filename("provesa/runtime_dense_reverse/ad_grad.c"),
+				filename("provesa/runtime_dense_reverse/ad_tape.c"),
+				filename("provesa/runtime_dense_reverse/ad_rev.c"),
+				filename("provesa/adic_driver.c"),
+				filename("provesa/head.cn.xb.pp.c")));
 	}
 
 	@AfterClass
