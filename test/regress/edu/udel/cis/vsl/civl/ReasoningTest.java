@@ -19,44 +19,64 @@ public class ReasoningTest {
 
 	private static File rootDir = new File(new File("examples"), "reasoning");
 
+	private static File cgDir = new File(new File("examples"), "cg");
+
 	private static UserInterface ui = new UserInterface();
 
 	/* *************************** Helper Methods *************************** */
 
-	private static String filename(String name) {
+	private static String reasoningfilename(String name) {
 		return new File(rootDir, name).getPath();
+	}
+
+	private static String cgfilename(String name) {
+		return new File(cgDir, name).getPath();
 	}
 
 	/* **************************** Test Methods *************************** */
 
 	@Test
 	public void neqZero() throws ABCException {
-		assertTrue(ui.run(VERIFY, QUIET, filename("neqZero.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, reasoningfilename("neqZero.cvl")));
 	}
 
 	@Test
 	public void evaluatePc() throws ABCException {
-		assertFalse(ui.run(VERIFY, QUIET, filename("evaluatePc.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, reasoningfilename("evaluatePc.cvl")));
 	}
 
 	@Test
 	public void unsatClause() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("unsatClause.c")));
+		assertTrue(ui.run(VERIFY, QUIET, reasoningfilename("unsatClause.c")));
 	}
 
 	@Test
 	public void unsatClause2() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("unsatClause2.c")));
+		assertTrue(ui.run(VERIFY, QUIET, reasoningfilename("unsatClause2.c")));
 	}
 
 	@Test
 	public void quantified() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("quantified.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, reasoningfilename("quantified.cvl")));
 	}
 
 	@Test
 	public void arraySliceHavoc() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("arraySliceHavoc.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET,
+				reasoningfilename("arraySliceHavoc.cvl")));
+	}
+
+	@Test
+	public void cg2Absolute() {
+		assertTrue(
+				ui.run(VERIFY, QUIET, TestConstants.NO_CHECK_DIVISION_BY_ZERO,
+						"-inputN=2", cgfilename("cg.cvl")));
+	}
+
+	@Test
+	public void cg5Probabilistic() {
+		assertTrue(ui.run(VERIFY, QUIET, "-inputN=5", TestConstants.ENABLE_PROB,
+				TestConstants.NO_CHECK_DIVISION_BY_ZERO, cgfilename("cg.cvl")));
 	}
 
 	@AfterClass

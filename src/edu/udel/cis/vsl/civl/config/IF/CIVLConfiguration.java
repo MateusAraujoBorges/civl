@@ -209,6 +209,12 @@ public class CIVLConfiguration {
 	private boolean witness = false;
 
 	/**
+	 * Should CIVL tell SARL to use probabilistic techniques for verifying
+	 * identities ?
+	 */
+	private boolean prob = false;
+
+	/**
 	 * The maximal number of processes allowed in a state. -1 means infinitely
 	 * many processes are allowed.
 	 */
@@ -385,6 +391,7 @@ public class CIVLConfiguration {
 		this.quiet = config.isTrue(CIVLConstants.quietO);
 		this.sliceAnalysis = config.isTrue(CIVLConstants.sliceAnalysisO);
 		this.witness = config.isTrue(CIVLConstants.witnessO);
+		this.prob = config.isTrue(CIVLConstants.probO);
 		if (this.svcomp16) {
 			if (config.getValue(CIVLConstants.checkMemoryLeakO) == null)
 				this.checkMemoryLeak = false;
@@ -436,6 +443,7 @@ public class CIVLConfiguration {
 		this.ompNoSimplify = config.ompNoSimplify;
 		this.out = config.out;
 		this.procBound = config.procBound;
+		this.prob = config.prob;
 		this.quiet = config.quiet;
 		this.saveStates = config.saveStates;
 		this.showAmpleSet = config.showAmpleSet;
@@ -612,6 +620,14 @@ public class CIVLConfiguration {
 
 	public void setWitness(boolean witness) {
 		this.witness = witness;
+	}
+
+	public boolean prob() {
+		return prob;
+	}
+
+	public void setProb(boolean enableProb) {
+		this.prob = enableProb;
 	}
 
 	public boolean svcomp() {

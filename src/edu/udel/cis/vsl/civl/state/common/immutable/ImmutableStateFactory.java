@@ -261,7 +261,7 @@ public class ImmutableStateFactory implements StateFactory {
 			boolean collectScopes, boolean collectHeaps,
 			Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
 		return canonicWork(state, collectProcesses, collectScopes, collectHeaps,
-				toBeIgnored, true);
+				toBeIgnored, false);
 	}
 
 	/**
@@ -273,11 +273,39 @@ public class ImmutableStateFactory implements StateFactory {
 	 * </p>
 	 * 
 	 * 
+	 * @param state
+	 *            The state that will be canonicalized
+	 * @param collectProcesses
+	 *            true to collect process states in the state during
+	 *            canonicalization.
+	 * @param collectScopes
+	 *            true to collect dynamic scopes in the state during
+	 *            canonicalization.
+	 * @param collectHeaps
+	 *            true to collect memory heaps in the state during
+	 *            canonicalization.
+	 * @param toBeIgnored
+	 *            A set of {@link HeapErrorKind}s which will be supressed during
+	 *            heap collection.
+	 * @param isReferredState
+	 *            <p>
+	 *            True if and only if the given state is a referred state, i.e.
+	 *            it is referred by a variable in current main state (currently
+	 *            it is always a collate state). For referred state, their
+	 *            simplification and symbolic constant collection must be
+	 *            carried out along with their main state. Otherwise there will
+	 *            be inconsistency in between them (referred and main states).
+	 *            </p>
+	 *            <p>
+	 *            Here main state means the state where has variables referring
+	 *            this referred state.
+	 *            </p>
+	 * @return
 	 * @throws CIVLHeapException
 	 */
 	public ImmutableState canonicWork(State state, boolean collectProcesses,
 			boolean collectScopes, boolean collectHeaps,
-			Set<HeapErrorKind> toBeIgnored, boolean simplifyReferredStates)
+			Set<HeapErrorKind> toBeIgnored, boolean isReferredState)
 			throws CIVLHeapException {
 		ImmutableState theState = (ImmutableState) state;
 
@@ -290,17 +318,16 @@ public class ImmutableStateFactory implements StateFactory {
 		if (collectHeaps)
 			theState = collectHeaps(theState, toBeIgnored);
 		// theState = collectSymbolicConstants(theState, collectHeaps);
-		if (config.collectSymbolicNames())
-			theState = collectHavocVariables(theState, simplifyReferredStates);
+		if (config.collectSymbolicNames() && !isReferredState)
+			theState = collectHavocVariables(theState);
 		if (this.config.simplify()) {
 			ImmutableState simplifiedState = theState.simplifiedState;
 
 			if (simplifiedState == null) {
-				simplifiedState = simplifyWork(theState,
-						simplifyReferredStates);
-				// if (theState != simplifiedState)
-				// simplifiedState = collectSymbolicConstants(simplifiedState,
-				// collectHeaps);
+				// variable only for readbility:
+				boolean simplifyReferredState = !isReferredState;
+
+				simplifiedState = simplifyWork(theState, simplifyReferredState);
 			}
 			if (!simplifiedState.isCanonic()) {
 				simplifiedState = flyweight(simplifiedState);
@@ -1084,16 +1111,17 @@ public class ImmutableStateFactory implements StateFactory {
 	 *         aforementioned dyscope.
 	 * 
 	 */
-	private List<Pair<Integer, ImmutableState>> getReferencedStates(
-			ImmutableState state) {
+	private ImmutableState[][] getReferencedStates(ImmutableState state) {
 		SymbolicType stateType = modelFactory.typeFactory().stateSymbolicType();
-		List<Pair<Integer, ImmutableState>> refStates = new LinkedList<>();
+		ImmutableState refStates[][] = new ImmutableState[state
+				.numDyscopes()][];
 		int numDyscopes = state.numDyscopes();
 
 		for (int i = 0; i < numDyscopes; i++) {
 			ImmutableDynamicScope dyscope = state.getDyscope(i);
 			Collection<Variable> variablesWithStateRef = dyscope.lexicalScope()
 					.variablesWithStaterefs();
+			List<ImmutableState> referredStates = new LinkedList<>();
 
 			for (Variable var : variablesWithStateRef) {
 				int vid = var.vid();
@@ -1106,9 +1134,14 @@ public class ImmutableStateFactory implements StateFactory {
 					ImmutableState refState = getStateByReference(stateID);
 
 					assert refState != null;
-					refStates.add(new Pair<>(i, refState));
+					referredStates.add(refState);
 				}
 			}
+			if (!referredStates.isEmpty()) {
+				refStates[i] = new ImmutableState[referredStates.size()];
+				referredStates.toArray(refStates[i]);
+			} else
+				refStates[i] = null;
 		}
 		return refStates;
 	}
@@ -1134,71 +1167,83 @@ public class ImmutableStateFactory implements StateFactory {
 	private ImmutableState collectHavocVariablesInReferredStates(
 			ImmutableState state, UnaryOperator<SymbolicExpression> renamer)
 			throws CIVLHeapException {
-		List<Pair<Integer, ImmutableState>> dyscopeRefStatePairs = getReferencedStates(
-				state);
-		ImmutableDynamicScope newDyscopes[] = new ImmutableDynamicScope[state
-				.numDyscopes()];
-
-		// initialize newDyscopes :
-		for (int i = 0; i < newDyscopes.length; i++)
-			newDyscopes[i] = state.getDyscope(i);
+		ImmutableState[][] dyscopeRefStatePairs = getReferencedStates(state);
+		ImmutableDynamicScope newDyscopes[] = null;
+		BitSet changeDyscopes = new BitSet(state.numDyscopes());
 
 		// Rename symbolic expressions in dyscopes, processStates and path
 		// conditions in each referred state:
-		for (Pair<Integer, ImmutableState> dyscopeRefStatePair : dyscopeRefStatePairs) {
-			ImmutableState oldReferredState = dyscopeRefStatePair.right;
-			ImmutableState newReferredState;
-			boolean unchange = true;
-			ImmutableDynamicScope[] newReferredDyscopes = oldReferredState
-					.copyScopes();
+		for (int i = 0; i < dyscopeRefStatePairs.length; i++) {
+			if (dyscopeRefStatePairs[i] == null)
+				continue;
 
-			// Rename symbolic expressions in each dynamic scope of the referred
-			// state:
-			for (int i = 0; i < newReferredDyscopes.length; i++) {
-				ImmutableDynamicScope tmp = newReferredDyscopes[i]
-						.updateSymbolicConstants(renamer);
+			TreeMap<SymbolicExpression, SymbolicExpression> substituteMap = new TreeMap<>(
+					universe.comparator());
+			UnaryOperator<SymbolicExpression> stateValueUpdater;
 
-				unchange &= tmp == newReferredDyscopes[i];
-				newReferredDyscopes[i] = tmp;
+			for (int j = 0; j < dyscopeRefStatePairs[i].length; j++) {
+				ImmutableState oldReferredState = dyscopeRefStatePairs[i][j];
+				ImmutableState newReferredState;
+				boolean unchange = true;
+				ImmutableDynamicScope[] newReferredDyscopes = oldReferredState
+						.copyScopes();
+
+				// Rename symbolic expressions in each dynamic scope of the
+				// referred
+				// state:
+				for (int k = 0; k < newReferredDyscopes.length; k++) {
+					ImmutableDynamicScope tmp = newReferredDyscopes[k]
+							.updateSymbolicConstants(renamer);
+
+					unchange &= tmp == newReferredDyscopes[k];
+					newReferredDyscopes[k] = tmp;
+				}
+
+				// Rename symbolic expressions in permanent path condition of
+				// the
+				// referred state:
+				BooleanExpression tmp, newPathCondition = oldReferredState
+						.getPermanentPathCondition();
+
+				tmp = (BooleanExpression) renamer.apply(newPathCondition);
+				unchange &= tmp == newPathCondition;
+				newPathCondition = tmp;
+
+				// Rename symbolic expressions in write set stack and partial
+				// path
+				// condition stack in each process state:
+				newReferredState = applyToProcessStates(oldReferredState,
+						renamer);
+				unchange &= newReferredState == oldReferredState;
+				if (!unchange) {
+					newReferredState = ImmutableState.newState(newReferredState,
+							null, newReferredDyscopes, newPathCondition);
+					// no need to collect scopes, processes and symbolic
+					// constants
+					// again:
+					newReferredState = canonicWork(newReferredState, false,
+							false, false, fullHeapErrorSet, true);
+					savedCanonicStates.putIfAbsent(
+							newReferredState.getCanonicId(), newReferredState);
+					substituteMap.put(
+							modelFactory.stateValue(
+									oldReferredState.getCanonicId()),
+							modelFactory.stateValue(
+									newReferredState.getCanonicId()));
+				}
 			}
-
-			// Rename symbolic expressions in permanent path condition of the
-			// referred state:
-			BooleanExpression tmp, newPathCondition = oldReferredState
-					.getPermanentPathCondition();
-
-			tmp = (BooleanExpression) renamer.apply(newPathCondition);
-			unchange &= tmp == newPathCondition;
-			newPathCondition = tmp;
-
-			// Rename symbolic expressions in write set stack and partial path
-			// condition stack in each process state:
-			newReferredState = applyToProcessStates(oldReferredState, renamer);
-			unchange &= newReferredState == oldReferredState;
-			if (!unchange) {
-				newReferredState = ImmutableState.newState(newReferredState,
-						null, newReferredDyscopes, newPathCondition);
-				// no need to collect scopes, processes and symbolic constants
-				// again:
-				newReferredState = canonicWork(newReferredState, false, false,
-						false, fullHeapErrorSet, false);
-				savedCanonicStates.putIfAbsent(newReferredState.getCanonicId(),
-						newReferredState);
-
-				TreeMap<SymbolicExpression, SymbolicExpression> substituteMap = new TreeMap<>(
-						universe.comparator());
-				UnaryOperator<SymbolicExpression> stateValueUpdater = universe
-						.mapSubstituter(substituteMap);
-
-				substituteMap.put(
-						modelFactory
-								.stateValue(oldReferredState.getCanonicId()),
-						modelFactory
-								.stateValue(newReferredState.getCanonicId()));
-				newDyscopes[dyscopeRefStatePair.left] = state
-						.getDyscope(dyscopeRefStatePair.left)
-						.updateSymbolicConstants(stateValueUpdater);
-			}
+			stateValueUpdater = universe.mapSubstituter(substituteMap);
+			// instantiate it at first time:
+			if (newDyscopes == null)
+				newDyscopes = new ImmutableDynamicScope[state.numDyscopes()];
+			newDyscopes[i] = state.getDyscope(i)
+					.updateSymbolicConstants(stateValueUpdater);
+			changeDyscopes.set(i);
+		}
+		if (!changeDyscopes.isEmpty()) {
+			for (int i = 0; i < newDyscopes.length; i++)
+				if (!changeDyscopes.get(i))
+					newDyscopes[i] = state.getDyscope(i);
 		}
 		return ImmutableState.newState(state, null, newDyscopes,
 				state.getPermanentPathCondition());
@@ -2200,8 +2245,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @return
 	 * @throws CIVLHeapException
 	 */
-	private ImmutableState collectHavocVariables(State state,
-			boolean collectReferredStates) throws CIVLHeapException {
+	private ImmutableState collectHavocVariables(State state)
+			throws CIVLHeapException {
 		ImmutableState theState = (ImmutableState) state;
 
 		if (theState.collectibleCounts[ModelConfiguration.HAVOC_PREFIX_INDEX] < 1)
@@ -2243,12 +2288,10 @@ public class ImmutableStateFactory implements StateFactory {
 			change = true;
 		}
 		if (change) {
-			// rename symbolic constants in states referred by $state variables
-			if (collectReferredStates)
-				theState = collectHavocVariablesInReferredStates(theState,
-						canonicRenamer);
 			theState = ImmutableState.newState(theState, null, newScopes,
 					newPathCondition);
+			theState = collectHavocVariablesInReferredStates(theState,
+					canonicRenamer);
 			theState = theState.updateCollectibleCount(
 					ModelConfiguration.HAVOC_PREFIX_INDEX,
 					canonicRenamer.getNumNewNames());
@@ -2461,17 +2504,18 @@ public class ImmutableStateFactory implements StateFactory {
 		int counter = theState.numDyscopes();
 		BooleanExpression newMonoPC;
 
-		// For any dyscope whose scope is a descendant of the LCA, then it is
-		// taken as a local dyscope (i.e. only reachable by the new process and
-		// will be added into the collate state as a new dyscope), otherwise, it
-		// is the LCA or an ancestor of LCA, then the dyscope will be replaced
-		// with the one already in the collate state (it is guaranteed that such
-		// a dyscope must exists in the collate state).
-		for (int i = 0; i < monoDyscopes.length; i++)
-			if (monoDyscopes[i].lexicalScope()
-					.isDescendantOf(leastCommonAncestor))
-				dyscopeOld2New[i] = counter++;
-			else {
+		// For any dyscope whose scope is NOT an ancestor of the LCA (or equal
+		// to LCA), then it is taken as a local dyscope (i.e. only reachable by
+		// the new process and will be added into the collate state as a new
+		// dyscope), otherwise it will be replaced with the one already in the
+		// collate state.
+		for (int i = 0; i < monoDyscopes.length; i++) {
+			Scope currentScope = monoDyscopes[i].lexicalScope();
+
+			// If current scope is an ancestor or equals to the LCA, it will be
+			// a shared scope:
+			if (leastCommonAncestor.isDescendantOf(currentScope)
+					|| leastCommonAncestor.id() == currentScope.id()) {
 				int uniqueDyscopeId = -1;
 
 				for (int d = 0; d < theState.numDyscopes(); d++)
@@ -2484,7 +2528,9 @@ public class ImmutableStateFactory implements StateFactory {
 					dyscopeOld2New[i] = i;
 					counter++;
 				}
-			}
+			} else
+				dyscopeOld2New[i] = counter++;
+		}
 		dyscopes = new ImmutableDynamicScope[counter];
 		newMonoPC = renumberDyscopes(monoDyscopes, dyscopeOld2New, dyscopes,
 				theMono.getPermanentPathCondition());
@@ -2608,7 +2654,7 @@ public class ImmutableStateFactory implements StateFactory {
 		if (state.getCanonicId() < 0)
 			try {
 				result = canonicWork(state, true, true, true, fullHeapErrorSet,
-						false);
+						true);
 			} catch (CIVLHeapException e) {
 				throw new CIVLInternalException(
 						"Canonicalization with ignorance of all kinds of heap errors "

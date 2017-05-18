@@ -1,0 +1,47 @@
+Session name....... Composite_driver_driver
+Directory.......... CIVLREP
+Date............... Mon May 08 15:49:28 EDT 2017
+Trace ID........... 0
+Violation number....... 0
+
+== Begin Violation Message == 
+Violation 0[length=281, file=CIVLREP/Composite_driver_driver_0.trace]:
+CIVL execution violation in p0 (kind: DEREFERENCE, certainty: MAYBE)
+at adic_driver.c:31.2-19 "our_rev_mode.plain":
+attempt to write to a memory location through the pointer &<d2>our_rev_mode.plain which can't be dereferenced
+
+Input:
+  global_x=X_global_x
+Context:
+  0<=(SIZEOF(382)-1)
+  0<=(((X_global_x[1]+(-2*X_global_x[2])+X_global_x[0])*(X_global_x[3]+(-1*X_global_x[4])))+((X_global_x[1]+(-1*X_global_x[0]))*(X_global_x[3]+X_global_x[4]+(-2*X_global_x[5])))+(50/2886751345948129))
+Call stacks:
+process 0:
+  g_fcn at adic_driver.c:31.2-19 "our_rev_mode.plain" called from
+  system_impl at driver.c:39.11-15 "g_fcn" called from
+  main at driver.c:27.0-2 "int"
+
+== End Violation Message == 
+
+== Begin Configuration ==
+-showUnreached=false
+--spec
+-D_gAssumption=""
+driver.c
+tap_driver.c
+o_fcn_bv.c
+--impl
+-DADIC_DENSE_REVERSE=""
+-userIncludePath=".:./runtime_dense_reverse/"
+driver.c
+runtime_dense_reverse/ad_grad.c
+runtime_dense_reverse/ad_tape.c
+runtime_dense_reverse/ad_rev.c
+adic_driver.c
+head.cn.xb.pp.c
+== End Configuration ==
+
+== Begin Trace ==
+LENGTH = 281
+0
+== End Trace ==

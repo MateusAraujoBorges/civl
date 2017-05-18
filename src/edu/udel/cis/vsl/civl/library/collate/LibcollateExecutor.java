@@ -267,8 +267,10 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		resultRef = stateFactory.saveState(resultState).left;
 		if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
 				|| civlConfig.showSavedStates()) {
-			civlConfig.out().println(this.symbolicAnalyzer.stateToString(
-					stateFactory.getStateByReference(resultRef)));
+			civlConfig.out().println();
+			civlConfig.out()
+					.println("Collate " + symbolicAnalyzer.stateToString(
+							stateFactory.getStateByReference(resultRef)));
 		}
 		symStateRef = modelFactory.stateValue(resultRef);
 		gcollateState = universe.tupleWrite(gcollateState, gcollate_state_state,
