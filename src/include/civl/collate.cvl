@@ -69,15 +69,15 @@ struct _collate_state {
  * scope : The scope where the object is allocated.  
  * nprocs: The number of processes included in the global collator.
  */
-$gcollator $gcollator_create($scope scope, int nprocs) {
-  $gcollator gcollator = ($gcollator)$malloc(scope, sizeof(struct _gcollator));
-
-  gcollator->nprocs = nprocs;
-  gcollator->procs = ($proc[nprocs])$lambda(int i) $proc_null;
-  gcollator->queue_length = 0;
-  $seq_init(&(gcollator->queue), 0, NULL);
-  gcollator->entered=(_Bool[nprocs])$lambda(int i) $false;
-  return gcollator;
+$atomic_f $gcollator $gcollator_create($scope scope, int nprocs) {
+    $gcollator gcollator = ($gcollator)$malloc(scope, sizeof(struct _gcollator));
+    
+    gcollator->nprocs = nprocs;
+    gcollator->procs = ($proc[nprocs])$lambda(int i) $proc_null;
+    gcollator->queue_length = 0;
+    $seq_init(&(gcollator->queue), 0, NULL);
+    gcollator->entered=(_Bool[nprocs])$lambda(int i) $false;
+    return gcollator;
 }
 
 /* Creates a local collate object. The object is allocated in the
@@ -91,13 +91,13 @@ $gcollator $gcollator_create($scope scope, int nprocs) {
  * be greater than or equal to 0 and less than the number of all
  * participants.
  */
-$collator $collator_create($gcollator gcollator, $scope scope, int place) {
-  $collator collator = ($collator)$malloc(scope, sizeof(struct _collator));
+$atomic_f $collator $collator_create($gcollator gcollator, $scope scope, int place) {
+    $collator collator = ($collator)$malloc(scope, sizeof(struct _collator));
   
-  collator->place = place;
-  collator->gcollator = gcollator;
-  collator->gcollator->procs[place] = $self;
-  return collator;
+    collator->place = place;
+    collator->gcollator = gcollator;
+    collator->gcollator->procs[place] = $self;
+    return collator;
 }
 
 $atomic_f void $collator_enters($collator collator){
@@ -193,51 +193,51 @@ $atomic_f void $collate_departs($collator c, $collate_state cs) {
   cs.gstate = NULL;
 }
 
-$bundle $collate_check($collator c, $bundle bundle) {
-  int nprocs, queue_size, place, index;
-  _Bool first = $true;
-  $gcollate_state attr;
-  $bundle result;
-
-  nprocs = c->gcollator->nprocs;
-  place = c->place;
-  queue_size = c->gcollator->queue_length;
-  for (int i = 0; i < queue_size; i++) {
-    if (_ATTR_USED(c->gcollator->queue[i], place)
-	&& !_CHECKED(c->gcollator->queue[i], place)) {
-      first = $false;
-      attr = c->gcollator->queue[i];      
-      index = i;
-      break;
-    }
-  }
-  
-  if (first) {
-    $scope gcollate_scope = $scopeof(*c->gcollator);    
+$atomic_f $bundle $collate_check($collator c, $bundle bundle) {
+    int nprocs, queue_size, place, index;
+    _Bool first = $true;
+    $gcollate_state attr;
+    $bundle result;
     
-    attr = ($gcollate_state)$malloc(gcollate_scope, sizeof(struct _gcollate_state));
-    attr->status = ((int[nprocs])$lambda(int i)UNCHECKED);
-    attr->attribute = bundle;
-    $seq_append(&c->gcollator->queue, &attr, 1);
-    index = c->gcollator->queue_length++;
-  }
-  attr->status[place] = CHECKED;
-  result = attr->attribute;
-
-  // if complete, dequeue:
-  _Bool complete = $true;
-
-  for (int i = 0; i < nprocs; i++) 
-    if (!_CHECKED(attr, i)) {
-      complete = $false;
-      break;
+    nprocs = c->gcollator->nprocs;
+    place = c->place;
+    queue_size = c->gcollator->queue_length;
+    for (int i = 0; i < queue_size; i++) {
+      if (_ATTR_USED(c->gcollator->queue[i], place)
+	  && !_CHECKED(c->gcollator->queue[i], place)) {
+	first = $false;
+	attr = c->gcollator->queue[i];      
+	index = i;
+	break;
+      }
     }
-  if (complete) {
-    $free(c->gcollator->queue[index]);
-    $seq_remove(&c->gcollator->queue, index, NULL, 1);
-    c->gcollator->queue_length--;
-  }
-  return result;
+    
+    if (first) {
+      $scope gcollate_scope = $scopeof(*c->gcollator);    
+      
+      attr = ($gcollate_state)$malloc(gcollate_scope, sizeof(struct _gcollate_state));
+      attr->status = ((int[nprocs])$lambda(int i)UNCHECKED);
+      attr->attribute = bundle;
+      $seq_append(&c->gcollator->queue, &attr, 1);
+      index = c->gcollator->queue_length++;
+    }
+    attr->status[place] = CHECKED;
+    result = attr->attribute;
+    
+    // if complete, dequeue:
+    _Bool complete = $true;
+
+    for (int i = 0; i < nprocs; i++) 
+      if (!_CHECKED(attr, i)) {
+	complete = $false;
+	break;
+      }
+    if (complete) {
+      $free(c->gcollator->queue[index]);
+      $seq_remove(&c->gcollator->queue, index, NULL, 1);
+      c->gcollator->queue_length--;
+    }
+    return result;
 }
 
 $atomic_f $state_f $state $collate_get_state($collate_state state){

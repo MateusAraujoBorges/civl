@@ -238,8 +238,6 @@ class ContractClauseTransformer {
 						ensures, postState, condClause.getWaitsfors(), config));
 			}
 		}
-		requirements.add(nodeFactory
-				.newExpressionStatementNode(createMPIBarrier(mpiComm)));
 		ensurances.addLast(nodeFactory.newExpressionStatementNode(
 				createMPICommEmptyCall(mpiComm, mpiBlock.getKind())));
 		return new TransformPair(requirements, ensurances);
@@ -1123,6 +1121,7 @@ class ContractClauseTransformer {
 		return call;
 	}
 
+	@SuppressWarnings("unused")
 	private ExpressionNode createMPIBarrier(ExpressionNode mpiComm) {
 		ExpressionNode functionIdentifierExpression = nodeFactory
 				.newIdentifierExpressionNode(mpiComm.getSource(),
