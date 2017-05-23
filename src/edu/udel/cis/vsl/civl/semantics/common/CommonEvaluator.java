@@ -595,7 +595,7 @@ public class CommonEvaluator implements Evaluator {
 		} else {
 			int sid = symbolicUtil.getDyscopeId(source, pointer);
 
-			if (sid == ModelConfiguration.DYNAMIC_REMOVED_SCOPE) {
+			if (sid == ModelConfiguration.DYNAMIC_NULL_SCOPE) {
 				if (!muteErrorSideEffects)
 					errorLogger.logSimpleError(source, state, process,
 							symbolicAnalyzer.stateInformation(state),
@@ -1473,7 +1473,7 @@ public class CommonEvaluator implements Evaluator {
 	protected Evaluation evaluateFunctionIdentifierExpression(State state,
 			int pid, FunctionIdentifierExpression expression) {
 		Scope scope = expression.scope();
-		SymbolicExpression dyScopeId = modelFactory
+		SymbolicExpression dyScopeId = stateFactory
 				.scopeValue(state.getDyscope(pid, scope));
 		SymbolicExpression functionPointer = universe
 				.tuple(this.functionPointerType, Arrays.asList(dyScopeId,
@@ -1488,7 +1488,7 @@ public class CommonEvaluator implements Evaluator {
 				? state.rootDyscopeID()
 				: state.getProcessState(pid).getDyscopeId();
 
-		return new Evaluation(state, modelFactory.scopeValue(dyScopeID));
+		return new Evaluation(state, stateFactory.scopeValue(dyScopeID));
 	}
 
 	/**
@@ -2322,7 +2322,7 @@ public class CommonEvaluator implements Evaluator {
 				int lowestCommonAncestor = stateFactory
 						.lowestCommonAncestor(state, left, right);
 
-				eval.value = modelFactory.scopeValue(lowestCommonAncestor);
+				eval.value = stateFactory.scopeValue(lowestCommonAncestor);
 				break;
 			case LESS_THAN :
 				result = stateFactory.isDescendantOf(state, right, left);
@@ -2509,7 +2509,7 @@ public class CommonEvaluator implements Evaluator {
 							"Attempt to dereference pointer into scope which has been removed from state");
 					throw new UnsatisfiablePathConditionException();
 				}
-				return new Evaluation(state, modelFactory.scopeValue(sid));
+				return new Evaluation(state, stateFactory.scopeValue(sid));
 			case DOT :
 				return evaluateScopeofExpressionWorker(state, pid, process,
 						(LHSExpression) (((DotExpression) expression)
@@ -2523,7 +2523,7 @@ public class CommonEvaluator implements Evaluator {
 				int scopeId = state.getDyscopeID(pid,
 						((VariableExpression) expression).variable());
 
-				return new Evaluation(state, modelFactory.scopeValue(scopeId));
+				return new Evaluation(state, stateFactory.scopeValue(scopeId));
 			default :
 				throw new CIVLUnimplementedFeatureException(
 						"scope of expression with operand of "

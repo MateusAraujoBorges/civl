@@ -8,6 +8,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
+import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Model;
@@ -901,8 +902,19 @@ public interface StateFactory {
 	 *         has been popped.
 	 */
 	State popAssumption(State state, int pid);
+	
+	/**
+	 * Translate an integer scope id into a symbolic expression
+	 * 
+	 * @param sid
+	 *            The scope id to be translated
+	 * @return The symbolic expression representing the scope id
+	 */
+	SymbolicExpression scopeValue(int sid);
 
 	void setConfiguration(CIVLConfiguration config);
 
 	public SymbolicExpression processValue(int pid);
+	
+	void setSymbolicUtility(SymbolicUtility symbolicUtility);
 }

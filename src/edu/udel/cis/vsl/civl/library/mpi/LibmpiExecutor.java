@@ -375,7 +375,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 		state = eval.state;
 		gcommHandle = universe.tupleRead(eval.value, oneObject);
 		sid = symbolicUtil.getDyscopeId(source, gcommHandle);
-		scopeVal = modelFactory.scopeValue(sid);
+		scopeVal = stateFactory.scopeValue(sid);
 		return new Evaluation(state, scopeVal);
 	}
 
@@ -387,7 +387,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 		int sid;
 
 		sid = symbolicUtil.getDyscopeId(source, commHandle);
-		scopeVal = modelFactory.scopeValue(sid);
+		scopeVal = stateFactory.scopeValue(sid);
 		return new Evaluation(state, scopeVal);
 	}
 }

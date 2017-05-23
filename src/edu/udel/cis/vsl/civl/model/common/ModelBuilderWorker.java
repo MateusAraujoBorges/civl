@@ -68,7 +68,6 @@ import edu.udel.cis.vsl.civl.transform.IF.SvcompTransformer;
 import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.GMCSection;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -1046,11 +1045,8 @@ public class ModelBuilderWorker {
 					.getDynamicType(universe);
 			SymbolicArrayType dynamicObjectType = (SymbolicArrayType) universe
 					.canonic(universe.arrayType(dynamicElementType));
-			SymbolicExpression undefinedObject = factory
-					.undefinedValue(dynamicObjectType);
 
-			malloc.complete(dynamicElementType, dynamicObjectType,
-					undefinedObject);
+			malloc.complete(dynamicElementType, dynamicObjectType);
 		}
 	}
 

@@ -15,7 +15,6 @@ import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -35,8 +34,6 @@ public class CommonMallocStatement extends CommonStatement
 
 	private Expression sizeExpression;
 
-	private SymbolicExpression undefinedObject;
-
 	private LHSExpression lhs;
 
 	public CommonMallocStatement(CIVLSource civlSource, Scope hscope,
@@ -44,7 +41,7 @@ public class CommonMallocStatement extends CommonStatement
 			Expression heapPointerExpression, CIVLType staticElementType,
 			SymbolicType dynamicElementType,
 			SymbolicArrayType dynamicObjectType, Expression sizeExpression,
-			SymbolicExpression undefinedObject, LHSExpression lhs) {
+			LHSExpression lhs) {
 		super(civlSource, hscope, lscope, source, guard);
 		this.id = mallocId;
 		this.scopeExpression = heapPointerExpression;
@@ -52,7 +49,6 @@ public class CommonMallocStatement extends CommonStatement
 		this.dynamicElementType = dynamicElementType;
 		this.dynamicObjectType = dynamicObjectType;
 		this.sizeExpression = sizeExpression;
-		this.undefinedObject = undefinedObject;
 		this.lhs = lhs;
 	}
 
@@ -84,11 +80,6 @@ public class CommonMallocStatement extends CommonStatement
 	@Override
 	public Expression getSizeExpression() {
 		return sizeExpression;
-	}
-
-	@Override
-	public SymbolicExpression getUndefinedObject() {
-		return undefinedObject;
 	}
 
 	@Override
@@ -175,7 +166,7 @@ public class CommonMallocStatement extends CommonStatement
 					this.statementScope, this.lowestScope, this.source(),
 					newGuard, this.id, this.scopeExpression, staticElementType,
 					dynamicElementType, dynamicObjectType, this.sizeExpression,
-					undefinedObject, lhs);
+					lhs);
 		} else {
 			Expression newSizeExpression = sizeExpression
 					.replaceWith(oldExpression, newExpression);
@@ -185,8 +176,7 @@ public class CommonMallocStatement extends CommonStatement
 						this.statementScope, this.lowestScope, this.source(),
 						this.guard(), id, this.scopeExpression,
 						staticElementType, dynamicElementType,
-						dynamicObjectType, newSizeExpression, undefinedObject,
-						lhs);
+						dynamicObjectType, newSizeExpression, lhs);
 			}
 		}
 		return newStatement;
@@ -244,11 +234,9 @@ public class CommonMallocStatement extends CommonStatement
 
 	@Override
 	public void complete(SymbolicType dynamicElementType,
-			SymbolicArrayType dynamicObjectType,
-			SymbolicExpression undefinedObject) {
+			SymbolicArrayType dynamicObjectType) {
 		this.dynamicElementType = dynamicElementType;
 		this.dynamicObjectType = dynamicObjectType;
-		this.undefinedObject = undefinedObject;
 	}
 
 	@Override

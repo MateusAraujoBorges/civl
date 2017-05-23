@@ -16,8 +16,9 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
-public class LibscopeExecutor extends BaseLibraryExecutor implements
-		LibraryExecutor {
+public class LibscopeExecutor extends BaseLibraryExecutor
+		implements
+			LibraryExecutor {
 
 	public LibscopeExecutor(String name, Executor primaryExecutor,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -50,10 +51,10 @@ public class LibscopeExecutor extends BaseLibraryExecutor implements
 		Evaluation callEval = null;
 
 		switch (functionName) {
-		case "$scope_parent":
-			callEval = this.executeScopeParent(state, pid, process, arguments,
-					argumentValues);
-			break;
+			case "$scope_parent" :
+				callEval = this.executeScopeParent(state, pid, process,
+						arguments, argumentValues);
+				break;
 		}
 		return callEval;
 	}
@@ -86,7 +87,7 @@ public class LibscopeExecutor extends BaseLibraryExecutor implements
 		CIVLSource source = scopeExpression.getSource();
 		int scopeID = modelFactory.getScopeId(source, scopeValue);
 		int parentID = state.getParentId(scopeID);
-		SymbolicExpression parentScope = modelFactory.scopeValue(parentID);
+		SymbolicExpression parentScope = stateFactory.scopeValue(parentID);
 
 		return new Evaluation(state, parentScope);
 	}

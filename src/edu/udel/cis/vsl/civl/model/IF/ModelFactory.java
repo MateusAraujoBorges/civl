@@ -1533,15 +1533,6 @@ public interface ModelFactory {
 	boolean isScopeIdDefined(int scopeId);
 
 	/**
-	 * Translate an integer scope id into a symbolic expression
-	 * 
-	 * @param sid
-	 *            The scope id to be translated
-	 * @return The symbolic expression representing the scope id
-	 */
-	SymbolicExpression scopeValue(int sid);
-
-	/**
 	 * Translate an integer canonical state id into a symbolic expression
 	 * 
 	 * @param canonicalId

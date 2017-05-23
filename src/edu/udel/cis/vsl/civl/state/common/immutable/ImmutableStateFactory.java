@@ -15,6 +15,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
@@ -122,7 +125,7 @@ public class ImmutableStateFactory implements StateFactory {
 	private Map<Integer, ImmutableState> savedCanonicStates = new ConcurrentHashMap<>(
 			1000000);
 
-	protected SymbolicExpression undefinedProcessValue;
+	protected final SymbolicExpression undefinedProcessValue;
 
 	/**
 	 * the CIVL configuration specified by the comamnd line
@@ -133,7 +136,7 @@ public class ImmutableStateFactory implements StateFactory {
 	 * The unique symbolic expression for the null process value, which has the
 	 * integer value -2.
 	 */
-	private SymbolicExpression nullProcessValue;
+	private final SymbolicExpression nullProcessValue;
 
 	/**
 	 * The list of canonicalized symbolic expressions of process IDs, will be
@@ -142,7 +145,68 @@ public class ImmutableStateFactory implements StateFactory {
 	 */
 	private SymbolicExpression[] processValues;
 
+	/**
+	 * The max number of processes which can be specified through command line.
+	 */
 	private int maxProcs;
+
+	/**
+	 * Amount by which to increase the list of cached scope values and process
+	 * values when a new value is requested that is outside of the current
+	 * range.
+	 */
+	private final static int CACHE_INCREMENT = 10;
+
+	/**
+	 * The unique symbolic expression for the undefined scope value, which has
+	 * the integer value -1.
+	 */
+	private SymbolicExpression undefinedScopeValue;
+
+	/**
+	 * The unique symbolic expression for the null scope value, which has the
+	 * integer value -2.
+	 */
+	private SymbolicExpression nullScopeValue;
+
+	/** A list of nulls of length CACHE_INCREMENT */
+	private List<SymbolicExpression> nullList = new LinkedList<SymbolicExpression>();
+
+	/**
+	 * The size of {@link #smallScopeValues}.
+	 */
+	private final int SCOPE_VALUES_INIT_SIZE = 500;
+
+	/**
+	 * The array which caches the canonicalized symbolic expression of small
+	 * scope IDs which are less than {@link #SCOPE_VALUES_INIT_SIZE}.
+	 */
+	private SymbolicExpression[] smallScopeValues = new SymbolicExpression[500];
+
+	/**
+	 * The list of canonicalized symbolic expressions of scope IDs, will be used
+	 * in Executor, Evaluator and State factory to obtain symbolic scope ID's.
+	 * 
+	 */
+	private List<SymbolicExpression> bigScopeValues = new ArrayList<SymbolicExpression>();
+
+	/**
+	 * The lock used to make sure the access of {@link #bigScopeValues} is
+	 * thread-safe.
+	 */
+	private ReentrantReadWriteLock scopeValueReadWriteLock = new ReentrantReadWriteLock();
+
+	/**
+	 * The read lock used to access {@link #bigScopeValues}. Readers can read at
+	 * the same time but writers are exclusive.
+	 */
+	private ReadLock scopeValueReadLock = scopeValueReadWriteLock.readLock();
+
+	/**
+	 * The write lock used to access {@link #bigScopeValues}. A writer has the
+	 * exclusive access.
+	 */
+	private WriteLock scopeValueWriteLock = scopeValueReadWriteLock.writeLock();
 
 	/**
 	 * Class used to wrap integer arrays so they can be used as keys in hash
@@ -205,12 +269,10 @@ public class ImmutableStateFactory implements StateFactory {
 	 * Factory to create all state objects.
 	 */
 	public ImmutableStateFactory(ModelFactory modelFactory,
-			SymbolicUtility symbolicUtil, MemoryUnitFactory memFactory,
-			CIVLConfiguration config) {
+			MemoryUnitFactory memFactory, CIVLConfiguration config) {
 		this.modelFactory = modelFactory;
 		this.inputVariables = modelFactory.inputVariables();
 		this.typeFactory = modelFactory.typeFactory();
-		this.symbolicUtil = symbolicUtil;
 		this.universe = modelFactory.universe();
 		this.trueReasoner = universe.reasoner(universe.trueExpression());
 		this.memUnitFactory = (ImmutableMemoryUnitFactory) memFactory;
@@ -230,7 +292,19 @@ public class ImmutableStateFactory implements StateFactory {
 					typeFactory.processSymbolicType(),
 					new Singleton<SymbolicExpression>(universe.integer(i)))));
 		}
-
+		this.undefinedScopeValue = universe.canonic(universe.tuple(
+				typeFactory.scopeSymbolicType(),
+				new Singleton<SymbolicExpression>(universe.integer(-1))));
+		this.nullScopeValue = universe.canonic(universe.tuple(
+				typeFactory.scopeSymbolicType(),
+				new Singleton<SymbolicExpression>(universe.integer(-2))));
+		for (int i = 0; i < SCOPE_VALUES_INIT_SIZE; i++) {
+			smallScopeValues[i] = universe.canonic(universe.tuple(
+					typeFactory.scopeSymbolicType(),
+					new Singleton<SymbolicExpression>(universe.integer(i))));
+		}
+		for (int i = 0; i < CACHE_INCREMENT; i++)
+			nullList.add(null);
 	}
 
 	/* ********************** Methods from StateFactory ******************** */
@@ -1468,7 +1542,7 @@ public class ImmutableStateFactory implements StateFactory {
 		// the root dyscope is forced to be 0
 		oldToNew[0] = 0;
 		for (int i = 1; i < numScopes; i++)
-			oldToNew[i] = ModelConfiguration.DYNAMIC_REMOVED_SCOPE;
+			oldToNew[i] = ModelConfiguration.DYNAMIC_NULL_SCOPE;
 		for (int pid = 0; pid < numProcs; pid++) {
 			ImmutableProcessState process = state.getProcessState(pid);
 			int stackSize;
@@ -1658,9 +1732,8 @@ public class ImmutableStateFactory implements StateFactory {
 				size);
 
 		for (int i = 0; i < size; i++) {
-			SymbolicExpression oldVal = modelFactory.scopeValue(i);
-			SymbolicExpression newVal = modelFactory
-					.scopeValue(oldToNewSidMap[i]);
+			SymbolicExpression oldVal = scopeValue(i);
+			SymbolicExpression newVal = scopeValue(oldToNewSidMap[i]);
 
 			result.put(oldVal, newVal);
 		}
@@ -2600,5 +2673,39 @@ public class ImmutableStateFactory implements StateFactory {
 				ppcStack.length - 1);
 
 		return imuState.setPartialPathConditionStack(pid, ppcNewStack);
+	}
+
+	@Override
+	public SymbolicExpression scopeValue(int sid) {
+		SymbolicExpression result;
+		
+		if (sid == ModelConfiguration.DYNAMIC_NULL_SCOPE)
+			return this.nullScopeValue;
+		if (sid == ModelConfiguration.DYNAMIC_UNDEFINED_SCOPE)
+			return this.undefinedScopeValue;
+		if (sid < SCOPE_VALUES_INIT_SIZE)
+			return smallScopeValues[sid];
+		sid -= SCOPE_VALUES_INIT_SIZE;
+		scopeValueWriteLock.lock();
+		while (sid >= bigScopeValues.size())
+			bigScopeValues.addAll(nullList);
+		scopeValueWriteLock.unlock();
+		scopeValueReadLock.lock();
+		result = bigScopeValues.get(sid);
+		scopeValueReadLock.unlock();
+		if (result == null) {
+			result = universe.canonic(universe.tuple(
+					typeFactory.scopeSymbolicType(),
+					new Singleton<SymbolicExpression>(universe.integer(sid))));
+			scopeValueWriteLock.lock();
+			bigScopeValues.set(sid, result);
+			scopeValueWriteLock.unlock();
+		}
+		return result;
+	}
+
+	@Override
+	public void setSymbolicUtility(SymbolicUtility symbolicUtility) {
+		this.symbolicUtil = symbolicUtility;
 	}
 }
