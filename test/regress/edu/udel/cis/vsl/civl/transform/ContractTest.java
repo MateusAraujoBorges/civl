@@ -30,6 +30,13 @@ public class ContractTest {
 	}
 
 	@Test
+	public void allgatherBad() {
+		assertFalse(ui.run(VERIFY, "-input_mpi_nprocs=2", TestConstants.QUIET,
+				"-mpiContract=allgather", "-collectSymbolicConstants=true",
+				filename("/contractsMPI/allgather_bad.c")));
+	}
+
+	@Test
 	public void broadcast() {
 		assertTrue(
 				ui.run(VERIFY, "-input_mpi_nprocs=2", "-mpiContract=broadcast",

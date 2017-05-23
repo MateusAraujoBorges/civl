@@ -21,6 +21,6 @@ int main() {
   $parfor (int i : 0 .. 4)    {
     process(i);
 }   
-  free(gcollator);
+  $gcollator_destroy(gcollator);
   return 0;
 }
