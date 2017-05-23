@@ -23,6 +23,13 @@ public class ContractTest {
 	}
 
 	@Test
+	public void allgather() {
+		assertTrue(ui.run(VERIFY, "-input_mpi_nprocs=2", TestConstants.QUIET,
+				"-mpiContract=allgather", "-collectSymbolicConstants=true",
+				filename("/contractsMPI/allgather.c")));
+	}
+
+	@Test
 	public void broadcast() {
 		assertTrue(
 				ui.run(VERIFY, "-input_mpi_nprocs=2", "-mpiContract=broadcast",
@@ -36,5 +43,19 @@ public class ContractTest {
 				ui.run(VERIFY, "-input_mpi_nprocs=2", "-mpiContract=broadcast",
 						TestConstants.QUIET, "-collectSymbolicConstants=true",
 						filename("/contractsMPI/broadcast_bad.c")));
+	}
+
+	@Test
+	public void gather() {
+		assertTrue(ui.run(VERIFY, "-input_mpi_nprocs=2", "-mpiContract=gather",
+				TestConstants.QUIET, "-collectSymbolicConstants=true",
+				filename("/contractsMPI/allgather.c")));
+	}
+
+	@Test
+	public void gatherBad() {
+		assertFalse(ui.run(VERIFY, "-input_mpi_nprocs=2", "-mpiContract=gather",
+				TestConstants.QUIET, "-collectSymbolicConstants=true",
+				filename("/contractsMPI/gather_bad.c")));
 	}
 }

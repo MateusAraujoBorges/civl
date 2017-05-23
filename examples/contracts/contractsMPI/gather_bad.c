@@ -1,14 +1,16 @@
+// How to get rid of BOUNDS ?
+/************************** source code  **************************/
 #include<mpi.h>
 #include<civl-mpi.cvh>
-#include<civlc.cvh>
 #include<string.h>
-#include<stdio.h>
 
+#define DATA_LIMIT 1024
+#pragma PARSE_ACSL
 /*@ 
   @ \mpi_collective(comm, P2P) :
   @   requires \mpi_agree(root) && \mpi_agree(sendcount * \mpi_extent(sendtype));
-  @   requires sendcount * \mpi_extent(sendtype) >= 0 && sendcount * \mpi_extent(sendtype) < 5;
-  @   requires recvcount * \mpi_extent(recvtype) >= 0 && recvcount * \mpi_extent(recvtype) < 5;
+  @   requires sendcount * \mpi_extent(sendtype) >= 0 && sendcount * \mpi_extent(sendtype) < DATA_LIMIT;
+  @   requires recvcount * \mpi_extent(recvtype) >= 0 && recvcount * \mpi_extent(recvtype) < DATA_LIMIT;
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \mpi_valid(sendbuf, sendcount, sendtype);
   @   behavior imroot:
@@ -17,12 +19,19 @@
   @     requires \mpi_valid(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @     requires recvcount * \mpi_extent(recvtype) == 
   @              sendcount * \mpi_extent(sendtype);
-  @     ensures  \mpi_equals(\mpi_offset(recvbuf, root * sendcount, sendtype), sendcount, sendtype, sendbuf);
+  @     ensures  \mpi_equals(\mpi_region(\mpi_offset(recvbuf, root * sendcount, sendtype), 
+  @                                       recvcount, recvtype),
+  @                          \mpi_region(sendbuf, sendcount, sendtype)
+  @                          );
+  @
   @     waitsfor (0 .. \mpi_comm_size-1);
   @   behavior imnroot:
-  @     assumes  \mpi_comm_rank != root;
-  @     ensures \mpi_equals(sendbuf, sendcount, sendtype, 
-  @              \mpi_offset(\on(root, recvbuf), \mpi_comm_rank * sendcount, sendtype));
+  @     assumes \mpi_comm_rank != root;
+  @     ensures \mpi_equals(\mpi_region(sendbuf, sendcount, sendtype),
+  @                         \mpi_region(\mpi_offset(\on(root, recvbuf), 
+  @                                                 \mpi_comm_rank * sendcount, sendtype),
+  @                                     sendcount, sendtype)
+  @                        );
   @*/
 int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype, 
 	   void* recvbuf, int recvcount, MPI_Datatype recvtype,
@@ -38,20 +47,23 @@ int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
     
     ptr = $mpi_pointer_add(recvbuf, root * recvcount, recvtype);
     memcpy(ptr, sendbuf, recvcount * sizeofDatatype(recvtype));
-  }else if(rank%2)
+  }else
     MPI_Send(sendbuf, sendcount, sendtype, root, tag, comm);
   if(rank == root) {
     int real_recvcount;
     int offset;
 
     for(int i=0; i<nprocs; i++) {
-      if(i != root && i%2) {
+      if(i != root) {
 	void * ptr;
 
 	offset = i * recvcount;
 	ptr = $mpi_pointer_add(recvbuf, offset, recvtype);
 	MPI_Recv(ptr, recvcount, recvtype, i, tag, comm,
 		 &status);
+
+	// Inserted twist which will make the ensurance not hold:
+	memset(ptr, 0, recvcount * sizeofDatatype(recvtype));
       }
     }
   }

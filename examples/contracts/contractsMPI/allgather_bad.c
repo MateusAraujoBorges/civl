@@ -108,7 +108,7 @@ int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
   @   ensures \mpi_agree(\mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype));
   @   ensures \mpi_equals(\mpi_region(sendbuf, sendcount, sendtype),
   @                       \mpi_region(
-  @                                   \mpi_offset(recvbuf, \mpi_comm_rank * recvcount, recvtype),
+  @                                   \mpi_offset(recvbuf, \mpi_comm_rank * recvcount + 1, recvtype),
   @                                    recvcount, recvtype));
   @
  */

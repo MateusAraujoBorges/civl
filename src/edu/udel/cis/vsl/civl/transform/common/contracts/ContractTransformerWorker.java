@@ -37,8 +37,8 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.ContractTransformer;
 import edu.udel.cis.vsl.civl.transform.common.BaseWorker;
-import edu.udel.cis.vsl.civl.transform.common.contracts.ContractClauseTransformer.TransformPair;
 import edu.udel.cis.vsl.civl.transform.common.contracts.FunctionContractBlock.ConditionalClauses;
+import edu.udel.cis.vsl.civl.transform.common.contracts.FunctionContractTransformer.TransformPair;
 import edu.udel.cis.vsl.civl.transform.common.contracts.MPIContractUtilities.TransformConfiguration;
 
 /**
@@ -368,7 +368,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		CompoundStatementNode body;
 		Source contractSource = funcDecl.getContract().getSource();
 		List<FunctionContractBlock> contractBlocks;
-		ContractClauseTransformer clauseTransformer = new ContractClauseTransformer(
+		FunctionContractTransformer clauseTransformer = new FunctionContractTransformer(
 				astFactory);
 		/*
 		 * Requirements (including assigns) of callees will be transformed to
@@ -410,8 +410,8 @@ public class ContractTransformerWorker extends BaseWorker {
 					tmpContainer
 							.add(clauseTransformer.createAssertion(requires));
 				}
-				tmpContainer.addAll(clauseTransformer
-						.transformAssignsClause(condClause.getAssignsArgs()));
+				tmpContainer.addAll(
+						clauseTransformer.transformAssignsClause(condClause));
 				if (condClause.condition != null) {
 					ExpressionNode cond = condClause.condition;
 					StatementNode compound = nodeFactory
@@ -545,7 +545,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		Source contractSource = funcDefi.getContract().getSource();
 		Source driverSource = newSource(driverName,
 				CivlcTokenConstant.FUNCTION_DEFINITION);
-		ContractClauseTransformer clauseTransformer = new ContractClauseTransformer(
+		FunctionContractTransformer clauseTransformer = new FunctionContractTransformer(
 				astFactory);
 
 		List<BlockItemNode> requirements = new LinkedList<>();
@@ -582,8 +582,9 @@ public class ContractTransformerWorker extends BaseWorker {
 					assumptions = clauseTransformer.createAssumption(requires);
 					tmpContainer.add(assumptions);
 				}
-				tmpContainer.addAll(clauseTransformer
-						.transformAssignsClause(condClause.getAssignsArgs()));
+				// TODO: check assigns for target function
+				// tmpContainer.addAll(clauseTransformer
+				// .transformAssignsClause(condClause.getAssignsArgs()));
 				if (condClause.condition != null) {
 					StatementNode compound = nodeFactory
 							.newCompoundStatementNode(requires.getSource(),

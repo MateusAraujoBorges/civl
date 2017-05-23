@@ -56,6 +56,12 @@ public class BackendTest {
 	}
 
 	@Test
+	public void simplifyAbstractFunction() {
+		assertTrue(ui.run(VERIFY, QUIET,
+				filename("simplifyAbstractFunction2Concrete.cvl")));
+	}
+
+	@Test
 	public void returnNull() throws ABCException {
 		assertFalse(ui.run(VERIFY, errorBound(2), NO_PRINTF, QUIET,
 				filename("returnNull.cvl")));
