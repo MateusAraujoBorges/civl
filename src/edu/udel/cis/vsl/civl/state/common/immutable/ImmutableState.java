@@ -754,7 +754,7 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public Iterable<ProcessState> getProcessStates() {
+	public synchronized Iterable<ProcessState> getProcessStates() {
 		if (processStateIterable == null) {
 			processStateIterable = new ProcessStateIterable();
 		}
@@ -783,7 +783,7 @@ public class ImmutableState implements State {
 				return scopeId;
 			scopeId = getParentId(scopeId);
 		}
-		return ModelConfiguration.DYNAMIC_REMOVED_SCOPE;
+		return ModelConfiguration.DYNAMIC_NULL_SCOPE;
 	}
 
 	@Override
@@ -814,7 +814,7 @@ public class ImmutableState implements State {
 			if (dyScopeId < 0) {
 				stackIndex++;
 				if (stackIndex >= stackSize)
-					return ModelConfiguration.DYNAMIC_REMOVED_SCOPE;
+					return ModelConfiguration.DYNAMIC_NULL_SCOPE;
 				dyScopeId = proc.getStackEntry(stackIndex).scope();
 			}
 			dyScope = this.getDyscope(dyScopeId);

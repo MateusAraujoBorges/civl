@@ -414,10 +414,11 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression filesystemPointer = argumentValues[0];
-		Evaluation eval = evaluator.dereference(expressions[0].getSource(),
-				state, process,
-				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
-				filesystemPointer, false, true);
+		Evaluation eval = evaluator
+				.dereference(expressions[0].getSource(), state, process,
+						typeFactory.systemType(
+								ModelConfiguration.FILE_SYSTEM_TYPE),
+						filesystemPointer, false, true);
 		CIVLSource modeSource = expressions[2].getSource();
 		int mode = symbolicUtil.extractInt(modeSource,
 				(NumericExpression) argumentValues[2]);
@@ -549,7 +550,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			// do malloc, get pointer, do the assignments.
 			return primaryExecutor.malloc(source, state, pid, process,
 					expressions[0],
-					modelFactory.scopeValue(filesystemDyscopeId), FILEtype,
+					stateFactory.scopeValue(filesystemDyscopeId), FILEtype,
 					fileStream);
 		}
 	}
@@ -651,10 +652,11 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 
 		filesystemPointer = eval.value;
 		state = eval.state;
-		eval = evaluator.dereference(fileSystemExpression.getSource(), state,
-				process,
-				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
-				filesystemPointer, false, true);
+		eval = evaluator
+				.dereference(fileSystemExpression.getSource(), state, process,
+						typeFactory.systemType(
+								ModelConfiguration.FILE_SYSTEM_TYPE),
+						filesystemPointer, false, true);
 		state = eval.state;
 		fileSystemStructure = eval.value;
 		fileArray = universe.tupleRead(fileSystemStructure, oneObject);

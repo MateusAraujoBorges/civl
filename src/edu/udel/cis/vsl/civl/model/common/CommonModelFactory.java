@@ -223,13 +223,6 @@ public class CommonModelFactory implements ModelFactory {
 	/* *************************** Static Fields *************************** */
 
 	/**
-	 * Amount by which to increase the list of cached scope values and process
-	 * values when a new value is requested that is outside of the current
-	 * range.
-	 */
-	private final static int CACHE_INCREMENT = 10;
-
-	/**
 	 * The prefix of the temporal variables for translating conditional
 	 * expressions
 	 */
@@ -269,8 +262,6 @@ public class CommonModelFactory implements ModelFactory {
 
 	private Variable brokenTimeVariable;
 
-	// private Variable symbolicConstantCounter;
-
 	private VariableExpression civlFilesystemVariableExpression;
 
 	/**
@@ -303,17 +294,8 @@ public class CommonModelFactory implements ModelFactory {
 
 	private List<CodeAnalyzer> codeAnalyzers;
 
-	/** A list of nulls of length CACHE_INCREMENT */
-	private List<SymbolicExpression> nullList = new LinkedList<SymbolicExpression>();
-
 	/** Keep a unique number to identify scopes. */
 	private int scopeID = 0;
-
-	/**
-	 * The list of canonicalized symbolic expressions of scope IDs, will be used
-	 * in Executor, Evaluator and State factory to obtain symbolic scope ID's.
-	 */
-	private List<SymbolicExpression> scopeValues = new ArrayList<SymbolicExpression>();
 
 	/**
 	 * The system source, used to create the identifier of the system function
@@ -327,18 +309,6 @@ public class CommonModelFactory implements ModelFactory {
 	 * translation.
 	 */
 	private TokenFactory tokenFactory;
-
-	/**
-	 * The unique symbolic expression for the undefined scope value, which has
-	 * the integer value -1.
-	 */
-	private SymbolicExpression undefinedScopeValue;
-
-	/**
-	 * The unique symbolic expression for the null scope value, which has the
-	 * integer value -2.
-	 */
-	private SymbolicExpression nullScopeValue;
 
 	/**
 	 * The unique symbolic expression for the undefined process value, which has
@@ -374,10 +344,21 @@ public class CommonModelFactory implements ModelFactory {
 	private Scope systemScope;
 
 	/**
+	 * The system scope id of the system scope.
+	 */
+	private SymbolicExpression systemScopeId;
+
+	/**
 	 * The static constant scope of the model, which is used for array literal
 	 * constants
 	 */
 	private Scope staticScope;
+
+	/**
+	 * The unique symbolic expression for the undefined scope value, which has
+	 * the integer value -1.
+	 */
+	private SymbolicExpression undefinedScopeValue;
 
 	/**
 	 * An instance of a <code>$wait</code> system function identifier expression
@@ -400,10 +381,7 @@ public class CommonModelFactory implements ModelFactory {
 		this.typeFactory = new CommonCIVLTypeFactory(universe, config);
 		this.universe = universe;
 		this.identifiers = new HashMap<String, Identifier>();
-
 		zeroObj = (IntObject) universe.canonic(universe.intObject(0));
-		for (int i = 0; i < CACHE_INCREMENT; i++)
-			nullList.add(null);
 		undefinedProcessValue = universe.canonic(universe.tuple(
 				typeFactory.processSymbolicType,
 				new Singleton<SymbolicExpression>(universe.integer(-1))));
@@ -413,14 +391,11 @@ public class CommonModelFactory implements ModelFactory {
 		this.nullStateValue = universe.canonic(universe.tuple(
 				typeFactory.stateSymbolicType,
 				new Singleton<SymbolicExpression>(universe.integer(-1))));
-		undefinedScopeValue = universe.canonic(universe.tuple(
-				typeFactory.scopeSymbolicType,
-				new Singleton<SymbolicExpression>(universe.integer(-1))));
-		this.nullScopeValue = universe.canonic(universe.tuple(
-				typeFactory.scopeSymbolicType,
-				new Singleton<SymbolicExpression>(universe.integer(-2))));
 		this.conditionalExpressions = new Stack<ArrayDeque<ConditionalExpression>>();
 		this.anonFragment = new CommonFragment();
+		this.undefinedScopeValue = universe.canonic(universe.tuple(
+				typeFactory.scopeSymbolicType(),
+				new Singleton<SymbolicExpression>(universe.integer(-1))));
 	}
 
 	/* ********************** Methods from ModelFactory ******************** */
@@ -722,7 +697,7 @@ public class CommonModelFactory implements ModelFactory {
 	public HereOrRootExpression hereOrRootExpression(CIVLSource source,
 			boolean isRoot) {
 		return new CommonHereOrRootExpression(source, typeFactory.scopeType,
-				isRoot, isRoot ? this.scopeValue(this.systemScope.id()) : null);
+				isRoot, isRoot ? this.systemScopeId : null);
 	}
 
 	@Override
@@ -1084,7 +1059,7 @@ public class CommonModelFactory implements ModelFactory {
 						Arrays.asList(lhs, scopeExpression, sizeExpression)),
 				source, guard != null ? guard : this.trueExpression(civlSource),
 				mallocId, scopeExpression, staticElementType, null, null,
-				sizeExpression, null, lhs);
+				sizeExpression, lhs);
 	}
 
 	@Override
@@ -1653,29 +1628,13 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public SymbolicExpression scopeValue(int sid) {
-		SymbolicExpression result;
-
-		if (sid == -2)
-			return this.nullScopeValue;
-		if (sid < 0)
-			return this.undefinedScopeValue;
-		while (sid >= scopeValues.size())
-			scopeValues.addAll(nullList);
-		result = scopeValues.get(sid);
-		if (result == null) {
-			result = universe.canonic(universe.tuple(
-					typeFactory.scopeSymbolicType,
-					new Singleton<SymbolicExpression>(universe.integer(sid))));
-			scopeValues.set(sid, result);
-		}
-		return result;
-	}
-
-	@Override
 	public void setScopes(Scope scope) {
 		this.systemScope = scope;
 		this.staticScope = scope.parent();
+		this.systemScopeId = universe
+				.canonic(universe.tuple(typeFactory.scopeSymbolicType,
+						new Singleton<SymbolicExpression>(
+								universe.integer(scope.id()))));
 	}
 
 	@Override
@@ -1684,7 +1643,6 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	/* *************************** Private Methods ************************* */
-
 	@Override
 	public SymbolicExpression undefinedValue(SymbolicType type) {
 		if (type.equals(typeFactory.processSymbolicType))

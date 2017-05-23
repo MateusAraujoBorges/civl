@@ -134,11 +134,13 @@ public abstract class Player {
 					universe.numberFactory().zeroRational());
 		this.solve = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(solveO);
-		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory);
 		this.memUnitFactory = States.newImmutableMemoryUnitFactory(universe,
 				modelFactory);
 		this.stateFactory = States.newImmutableStateFactory(modelFactory,
-				symbolicUtil, memUnitFactory, civlConfig);
+				memUnitFactory, civlConfig);
+		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory,
+				stateFactory);
+		this.stateFactory.setSymbolicUtility(symbolicUtil);
 		this.log = new CIVLErrorLogger(new File("CIVLREP"), sessionName, out,
 				civlConfig, gmcConfig, this.stateFactory, universe, solve);
 		this.log.setErrorBound((int) gmcConfig.getAnonymousSection()

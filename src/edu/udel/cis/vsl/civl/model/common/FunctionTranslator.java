@@ -185,8 +185,11 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonUndefinedProcessExpre
 import edu.udel.cis.vsl.civl.model.common.statement.CommonAtomBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonAtomicLockAssignStatement;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.civl.util.IF.Triple;
 import edu.udel.cis.vsl.gmc.CommandLineException;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
  * This class translates an AST node of a function body and completes the
@@ -3144,6 +3147,12 @@ public class FunctionTranslator {
 		}
 		if (this.atomicCount > 0) {
 			Statement leaveAtomic;
+			SymbolicUniverse universe = modelFactory.universe();
+			// UndefinedProcessExpression has the constant value: 
+			SymbolicExpression undefinedProcValue = universe
+					.canonic(universe.tuple(typeFactory.processSymbolicType(),
+							new Singleton<SymbolicExpression>(universe.integer(
+									ModelConfiguration.UNDEFINED_PROC_ID))));
 
 			for (int i = 0; i < this.atomicCount; i++) {
 				location = modelFactory.location(
@@ -3160,9 +3169,7 @@ public class FunctionTranslator {
 						false, modelFactory.atomicLockVariableExpression(),
 						new CommonUndefinedProcessExpression(
 								modelFactory.systemSource(),
-								typeFactory.processType(),
-								modelFactory.undefinedValue(
-										typeFactory.processSymbolicType())));
+								typeFactory.processType(), undefinedProcValue));
 				atomicReleaseFragment.addNewStatement(leaveAtomic);
 			}
 		}

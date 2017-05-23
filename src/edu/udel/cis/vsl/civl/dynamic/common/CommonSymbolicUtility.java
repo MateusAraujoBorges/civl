@@ -19,6 +19,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
@@ -156,6 +157,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 	private SymbolicExpression nullFunctionPointer;
 
+	private StateFactory stateFactory;
+
 	/* ***************************** Constructor *************************** */
 
 	/**
@@ -167,9 +170,10 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	 *            the model factory to be used by the symbolic utility.
 	 */
 	public CommonSymbolicUtility(SymbolicUniverse universe,
-			ModelFactory modelFactory) {
+			ModelFactory modelFactory, StateFactory stateFactory) {
 		SymbolicType dynamicToIntType;
 
+		this.stateFactory = stateFactory;
 		this.universe = universe;
 		this.modelFactory = modelFactory;
 		this.typeFactory = modelFactory.typeFactory();
@@ -732,7 +736,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	@Override
 	public SymbolicExpression makePointer(int scopeId, int varId,
 			ReferenceExpression symRef) {
-		SymbolicExpression scopeField = modelFactory.scopeValue(scopeId);
+		SymbolicExpression scopeField = stateFactory.scopeValue(scopeId);
 		SymbolicExpression varField = universe.integer(varId);
 		SymbolicExpression result = universe.tuple(this.pointerType,
 				Arrays.asList(new SymbolicExpression[]{scopeField, varField,
@@ -1498,7 +1502,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	@Override
 	public SymbolicExpression makeFunctionPointer(int dyscopeID, int fid) {
 		return universe.tuple(this.functionPointerType, Arrays.asList(
-				modelFactory.scopeValue(dyscopeID), universe.integer(fid)));
+				stateFactory.scopeValue(dyscopeID), universe.integer(fid)));
 	}
 
 	@Override

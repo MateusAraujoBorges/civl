@@ -85,7 +85,7 @@ public class LibscopeExecutor extends BaseLibraryExecutor
 		SymbolicExpression scopeValue = argumentValues[0];
 		int scopeID = modelFactory.getScopeId(scopeValue);
 		int parentID = state.getParentId(scopeID);
-		SymbolicExpression parentScope = modelFactory.scopeValue(parentID);
+		SymbolicExpression parentScope = stateFactory.scopeValue(parentID);
 
 		return new Evaluation(state, parentScope);
 	}
