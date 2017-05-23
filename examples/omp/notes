@@ -1,0 +1,146 @@
+array_of_ptr.c
+	[ERR]
+	Error: This feature is not yet implemented: 
+	Ability to determine whether a non-concrete pointer is defined.
+arrayparam.c
+	[ERR]
+	Error: Undeclared identifier foo
+	* Need to add the function declaration for 'foo', 
+		and change the type of arguments
+c_fft.c
+	[ERR]
+	Error: Undeclared identifier atoi
+c_fft6.c
+	[ERR]
+	Exception in thread "main" java.lang.NullPointerException
+	at edu.udel.cis.vsl.abc.analysis.entity.
+		ExpressionAnalyzer.processExpression(ExpressionAnalyzer.java:210)	
+c_jacobi01.c	
+c_jacobi02.c	
+	[NO]
+	CIVL execution violation in p0 (kind: MEMORY_LEAK, certainty: PROVEABLE)
+c_jacobi03.c
+	[ERR]	
+	Exception in thread "main" java.lang.NullPointerException
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMP2CIVLWorker.replaceOMPPragmas(OpenMP2CIVLWorker.java:2373)
+c_lu.c
+c_mandel.c
+	[ERR]
+	Exception in thread "main" java.lang.NullPointerException
+	at edu.udel.cis.vsl.abc.analysis.entity.
+		ExpressionAnalyzer.processExpression(ExpressionAnalyzer.java:210)
+c_md.c
+	[ERR]
+	Exception in thread "main" java.lang.NullPointerException
+	at edu.udel.cis.vsl.civl.transform.common.
+		BaseWorker.typeNode(BaseWorker.java:873)
+c_pi.c
+	[ERR]
+	CIVL execution violation in p0 (kind: UNDEFINED_VALUE, certainty: PROVEABLE)
+	at c_pi.c:65.12 "N":
+	* The definition of 'N' is commented out.
+c_qsort.c
+	[ERR]
+	Error: Undeclared identifier srandom
+defect_num_544.c
+	[ERR]
+	Ticket# 544, 752
+dijkstra_openmp.c
+	[ERR]
+	Error: Type referenced by pointer on left-hand side of assignment 
+		is incompatible with corresponding type on right-hand side
+	at OpenMPTransformer "_omp_read13" inserted by OpenMPTransformer.identifier _omp_read13 
+		before civlc.cvh:31.22-27 "$scope" included from civl-stdio.cvh:3
+dotProduct_orphan.c
+	[ERR]
+	Exception in thread "main" java.util.EmptyStackException
+	at java.util.Stack.peek(Stack.java:102)
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMPSimplifierWorker.collectAssignRefExprs(OpenMPSimplifierWorker.java:1031)
+fft_openmp.c
+	[ERR]
+	Violation 0 encountered at depth 120:
+	CIVL execution violation in p0 (kind: ASSERTION_VIOLATION, certainty: MAYBE)
+fig3.10-mxv-omp.c 
+fig310-mxv-omp.c
+	[ERR]
+	Syntax error: Function perror doesn't have a definition.
+fig4.98-threadprivate.c
+	[ERR]
+	Error: Undeclared identifier _omp_tid
+helmholtz.c
+	Not finished in 109 sec
+jan_example.c	
+	Exception in thread "main" java.lang.StackOverflowError
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMPSimplifierWorker.indexExpressionDepth(OpenMPSimplifierWorker.java:1483)
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMPSimplifierWorker.indexExpression(OpenMPSimplifierWorker.java:1466)
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMPSimplifierWorker.isSubArrayIndependent(OpenMPSimplifierWorker.java:1290)
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMPSimplifierWorker.isSubArrayIndependent(OpenMPSimplifierWorker.java:1302)
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMPSimplifierWorker.isSubArrayIndependent
+			(OpenMPSimplifierWorker.java:1302)
+	..
+mandelbrot_openmp.c 
+	CIVL execution violation in p2 (kind: ASSERTION_VIOLATION, certainty: MAYBE)
+	at civl-omp.cvl:238.2-239.25 "$assert(otherTid < 0,  ... )":
+matProduct1_orphan.c
+	Exception in thread "main" java.util.EmptyStackException 
+	at java.util.Stack.peek(Stack.java:102)
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMPSimplifierWorker.collectAssignRefExprs
+			(OpenMPSimplifierWorker.java:1031)
+parallel.c
+	Comment out the inclusion of <civlc.h>
+pi_orphan.c	
+	Exception in thread "main" java.util.EmptyStackException
+	at java.util.
+		Stack.peek(Stack.java:102)
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMPSimplifierWorker.collectAssignRefExprs
+			(OpenMPSimplifierWorker.java:1031)
+pi1.c
+	Syntax issue
+poisson_openmp.c
+	Violation 0 encountered at depth 627:
+	CIVL execution violation in p0 
+		(kind: ASSERTION_VIOLATION, certainty: MAYBE)
+	at math.cvl:904.2-56 "$assert(x >= 0,  ... )":
+	Assertion: (0.0<=x)
+        -> 0<=(97...
+raceCond2.c 
+	not finished in 77s
+region1.c
+	Exception in thread "main" java.lang.NullPointerException
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMP2CIVLWorker.replaceOMPPragmas(OpenMP2CIVLWorker.java:2738)
+	at edu.udel.cis.vsl.civl.transform.common.
+		OpenMP2CIVLWorker.replaceOMPPragmas(OpenMP2CIVLWorker.java:2957)
+region2.c
+	Violation 0 encountered at depth 115:
+	CIVL execution violation in p1 
+		(kind: UNDEFINED_VALUE, certainty: PROVEABLE)
+		at OpenMPTransformer "_omp_read0" 
+			inserted by OpenMPTransformer.identifier _omp_read0 
+				before civlc.cvh:31.22-27 "$scope" included from assert.h:7:
+		attempt to read uninitialized variable _omp_read0
+simple_omp_share.c
+	Race Condition.
+threadPrivate.c
+	Exception in thread "main" java.lang.ClassCastException: 
+		edu.udel.cis.vsl.abc.ast.node.common.expression.CommonOperatorNode 
+		cannot be cast to 
+		edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode
+	at edu.udel.cis.vsl.abc.analysis.entity.
+		TypeAnalyzer.processFunctionType(TypeAnalyzer.java:371)
+	at edu.udel.cis.vsl.abc.analysis.entity.
+		TypeAnalyzer.processTypeNode(TypeAnalyzer.java:724)
+ziggurat_openmp.c
+	not finished in 108s 
+
+Find examples from LLNL paper.
+		
