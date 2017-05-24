@@ -7,6 +7,7 @@ import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.library.collate.LibcollateExecutor;
 import edu.udel.cis.vsl.civl.library.mpi.LibmpiEvaluator;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
@@ -148,6 +149,12 @@ public class CommonEvaluator implements Evaluator {
 	 * possibly results to an undefined value in C language.
 	 */
 	public static String TOTAL_DEREFERENCE_FUNCTION = "_total_deref";
+
+	/**
+	 * A bounded process identifier identifies the bound variable in the lambda
+	 * expression which represents a value of a {@link ValueAtExpression}
+	 */
+	protected static String BOUNDED_PROCESS_IDENTIFIER = "_p";
 
 	/* *************************** Instance Fields ************************* */
 	protected LibraryExecutorLoader libExeLoader;
@@ -3540,6 +3547,42 @@ public class CommonEvaluator implements Evaluator {
 								(QuantifiedExpression) expression);
 	}
 
+	/**
+	 * <p>
+	 * Evaluate a {@link ValueAtExpression},
+	 * <code>$value_at($state s, int p, expression e)</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * The semantics of evaluating {@link ValueAtExpression} is evaluate e on
+	 * the state s as if control is on process p. The value of p and s both
+	 * evaluate in the current state. <strong>Note</strong> that such a
+	 * semantics will ONLY make sense if the state s is a collate state. see
+	 * {@link LibcollateExecutor}. Currently CIVL-C language doesn't provide
+	 * anyway to refer a non-collate state.
+	 * </p>
+	 * <p>
+	 * If the concrete value of the identifier (PID) of process p cannot be
+	 * decided, then <code>
+	 *   Define an array a[nprocs], where nprocs is the number of processes in s.
+	 *   Forall int i that 0 &lt= i && i &lt nprocs, a[i] == $value_at(s, i, e);
+	 * </code>. The evaluation thus will be <code>
+	 *   APPLY p on LAMBDA i : a[i]
+	 * </code>.
+	 * 
+	 * 
+	 * </p>
+	 * 
+	 * @param currentState
+	 *            The current state on which the current process reaches a
+	 *            ValueAtExpression.
+	 * @param pid
+	 *            The current process who reaches a ValueAtExpression.
+	 * @param valueAt
+	 *            The ValueAtExpression which will evaluate
+	 * @return The evaluation of the ValueAtExpression.
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	protected Evaluation evaluateValueAtExpression(State currentState, int pid,
 			ValueAtExpression valueAt)
 			throws UnsatisfiablePathConditionException {
@@ -3592,7 +3635,8 @@ public class CommonEvaluator implements Evaluator {
 			SymbolicExpression possibleValArray = universe.array(dynamicType,
 					possibleEvals);
 			NumericSymbolicConstant boundedPid = (NumericSymbolicConstant) universe
-					.symbolicConstant(universe.stringObject("_p"),
+					.symbolicConstant(
+							universe.stringObject(BOUNDED_PROCESS_IDENTIFIER),
 							universe.integerType());
 			SymbolicExpression lambda = universe.lambda(boundedPid,
 					universe.arrayRead(possibleValArray, boundedPid));

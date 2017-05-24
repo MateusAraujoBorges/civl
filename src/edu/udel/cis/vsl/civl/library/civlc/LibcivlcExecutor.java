@@ -765,9 +765,6 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		ValidityResult valid;
 		ResultType resultType;
 
-		// System.out
-		// .println("Context: " + state.getPathCondition(universe) + "\n");
-		// System.out.println("Query: " + assertValue + "\n");
 		reasoner = universe.reasoner(state.getPathCondition(universe));
 		valid = reasoner.valid(assertValue);
 		resultType = valid.getResultType();

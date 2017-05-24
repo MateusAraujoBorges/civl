@@ -2537,7 +2537,6 @@ public class ImmutableStateFactory implements StateFactory {
 		// Change the PID of the mono process to newPid:
 		ImmutableProcessState monoProcess = theMono.getProcessState(0)
 				.setPid(newPid);
-		Scope monoProcScope;
 		Scope leastCommonAncestor;
 		/*
 		 * This variable denotes if this is the first time a monoState being
@@ -2551,10 +2550,11 @@ public class ImmutableStateFactory implements StateFactory {
 		// scope. (the 'root' scope of the process)
 		int bottomDyscopeId = monoProcess
 				.getStackEntry(monoProcess.stackSize() - 1).scope();
+		DynamicScope monoProcScope;
 
-		monoProcScope = monoState.getDyscope(bottomDyscopeId).lexicalScope()
-				.function().outerScope();
-		leastCommonAncestor = monoProcScope.parent();
+		monoProcScope = monoState.getDyscope(bottomDyscopeId);
+		leastCommonAncestor = monoState.getDyscope(monoProcScope.getParent())
+				.lexicalScope();
 		/*
 		 * For the initial case, there is only one process state, so the
 		 * invariants must hold; Then for each time adding a new process state
