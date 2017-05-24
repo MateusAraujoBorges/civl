@@ -57,7 +57,8 @@ public class ImmutableMemoryUnit implements MemoryUnit {
 	 *            The reference that shows how the new memory unit relates to
 	 *            the corresponding variable.
 	 */
-	ImmutableMemoryUnit(int dyscopeID, int varID, ReferenceExpression reference) {
+	ImmutableMemoryUnit(int dyscopeID, int varID,
+			ReferenceExpression reference) {
 		this.dyscopeID = dyscopeID;
 		this.varID = varID;
 		this.reference = reference;
@@ -75,7 +76,6 @@ public class ImmutableMemoryUnit implements MemoryUnit {
 	void makeCanonic(SymbolicUniverse universe) {
 		assert !canonic;
 		canonic = true;
-		universe.canonic(this.reference);
 	}
 
 	/**

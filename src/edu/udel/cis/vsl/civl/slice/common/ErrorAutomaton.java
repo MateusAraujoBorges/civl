@@ -181,8 +181,6 @@ public class ErrorAutomaton {
 
 	public void collectBranchConstraints() {
 
-		SymbolicUniverse universe = SARL.newStandardUniverse();
-
 		for (ErrorCfaLoc l : errorTrace) {
 			if (l.isExitLocation())
 				continue;
@@ -191,7 +189,6 @@ public class ErrorAutomaton {
 				int pid = 0; /* We only analyze single-threaded programs */
 				State state = l.state;
 				BooleanExpression branch = getGuard(stmt, pid, state);
-				branch = (BooleanExpression) universe.canonic(branch);
 				l.branchConstraint = branch;
 			}
 		}

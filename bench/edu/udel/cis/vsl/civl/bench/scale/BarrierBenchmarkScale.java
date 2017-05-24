@@ -24,4 +24,13 @@ public class BarrierBenchmarkScale {
 		}
 	}
 
+	/*
+	 * civl verify -inputB=7 ./examples/concurrency/barrier.cvl
+	 * 
+	 * === Stats === time (s) : 9.1
+	 * 
+	 * civl verify -inputB=8 ./examples/concurrency/barrier.cvl
+	 * 
+	 * === Stats === time (s) : 41.15
+	 */
 }

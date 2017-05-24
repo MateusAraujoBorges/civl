@@ -240,21 +240,17 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 				libEvaluatorLoader);
 		SymbolicType stringArrayType;
 
-		EOF = universe.canonic(universe.integer(-100));
-		stringSymbolicType = (SymbolicArrayType) universe
-				.canonic(universe.arrayType(universe.characterType()));
-		stringArrayType = (SymbolicArrayType) universe
-				.canonic(universe.arrayType(stringSymbolicType));
-		emptyContents = universe
-				.canonic(universe.emptyArray(stringSymbolicType));
-		initialContentsFunction = (SymbolicConstant) universe.canonic(
-				universe.symbolicConstant(universe.stringObject("contents"),
-						universe.functionType(Arrays.asList(stringSymbolicType),
-								stringArrayType)));
-		fileLengthFunction = (SymbolicConstant) universe.canonic(
-				universe.symbolicConstant(universe.stringObject("fileLength"),
-						universe.functionType(Arrays.asList(stringSymbolicType),
-								universe.integerType())));
+		EOF = universe.integer(-100);
+		stringSymbolicType = universe.arrayType(universe.characterType());
+		stringArrayType = universe.arrayType(stringSymbolicType);
+		emptyContents = universe.emptyArray(stringSymbolicType);
+		initialContentsFunction = universe.symbolicConstant(
+				universe.stringObject("contents"), universe.functionType(
+						Arrays.asList(stringSymbolicType), stringArrayType));
+		fileLengthFunction = universe.symbolicConstant(
+				universe.stringObject("fileLength"),
+				universe.functionType(Arrays.asList(stringSymbolicType),
+						universe.integerType()));
 		createStringToDataFunctions();
 		createDataToStringFunctions();
 		this.filesystemStructType = (CIVLStructOrUnionType) typeFactory
@@ -278,40 +274,36 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	 * abstract functions to convert a data of a certain type into a string.
 	 */
 	private void createDataToStringFunctions() {
-		intToStringFunction = (SymbolicConstant) universe.canonic(
-				universe.symbolicConstant(universe.stringObject("intToString"),
+		intToStringFunction = universe
+				.symbolicConstant(universe.stringObject("intToString"),
 						universe.functionType(
 								Arrays.asList(stringSymbolicType,
 										universe.integerType()),
-								stringSymbolicType)));
-		doubleToStringFunction = (SymbolicConstant) universe.canonic(universe
-				.symbolicConstant(universe.stringObject("doubleToString"),
-						universe.functionType(
-								Arrays.asList(stringSymbolicType,
-										universe.realType()),
-								stringSymbolicType)));
-		charToStringFunction = (SymbolicConstant) universe.canonic(
-				universe.symbolicConstant(universe.stringObject("charToString"),
+								stringSymbolicType));
+		doubleToStringFunction = universe.symbolicConstant(
+				universe.stringObject("doubleToString"),
+				universe.functionType(
+						Arrays.asList(stringSymbolicType, universe.realType()),
+						stringSymbolicType));
+		charToStringFunction = universe
+				.symbolicConstant(universe.stringObject("charToString"),
 						universe.functionType(
 								Arrays.asList(stringSymbolicType,
 										universe.characterType()),
-								stringSymbolicType)));
-		stringDataToStringFunction = (SymbolicConstant) universe
-				.canonic(universe.symbolicConstant(
-						universe.stringObject("stringDataToString"),
-						universe.functionType(
-								Arrays.asList(stringSymbolicType,
-										stringSymbolicType),
-								stringSymbolicType)));
-		pointerToStringFunction = (SymbolicConstant) universe
-				.canonic(
-						universe.symbolicConstant(
-								universe.stringObject("pointerToString"),
-								universe.functionType(
+								stringSymbolicType));
+		stringDataToStringFunction = universe.symbolicConstant(
+				universe.stringObject("stringDataToString"),
+				universe.functionType(
+						Arrays.asList(stringSymbolicType, stringSymbolicType),
+						stringSymbolicType));
+		pointerToStringFunction = universe
+				.symbolicConstant(
+						universe.stringObject("pointerToString"), universe
+								.functionType(
 										Arrays.asList(stringSymbolicType,
 												typeFactory
 														.pointerSymbolicType()),
-										stringSymbolicType)));
+										stringSymbolicType));
 	}
 
 	/**
@@ -319,37 +311,31 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	 * abstract functions to convert a string to a data of certain type.
 	 */
 	private void createStringToDataFunctions() {
-		stringToIntFunction = (SymbolicConstant) universe.canonic(
-				universe.symbolicConstant(universe.stringObject("stringToInt"),
-						universe.functionType(
-								Arrays.asList(stringSymbolicType,
-										stringSymbolicType),
-								universe.integerType())));
-		stringToDoubleFunction = (SymbolicConstant) universe.canonic(universe
-				.symbolicConstant(universe.stringObject("stringToDouble"),
-						universe.functionType(
-								Arrays.asList(stringSymbolicType,
-										stringSymbolicType),
-								universe.realType())));
-		stringToCharFunction = (SymbolicConstant) universe.canonic(
-				universe.symbolicConstant(universe.stringObject("stringToChar"),
-						universe.functionType(
-								Arrays.asList(stringSymbolicType,
-										stringSymbolicType),
-								universe.characterType())));
-		stringToStringDataFunction = (SymbolicConstant) universe
-				.canonic(universe.symbolicConstant(
-						universe.stringObject("stringToStringData"),
-						universe.functionType(
-								Arrays.asList(stringSymbolicType,
-										stringSymbolicType),
-								stringSymbolicType)));
-		stringToPointerFunction = (SymbolicConstant) universe.canonic(universe
-				.symbolicConstant(universe.stringObject("stringToPointer"),
-						universe.functionType(
-								Arrays.asList(stringSymbolicType,
-										stringSymbolicType),
-								typeFactory.pointerSymbolicType())));
+		stringToIntFunction = universe.symbolicConstant(
+				universe.stringObject("stringToInt"),
+				universe.functionType(
+						Arrays.asList(stringSymbolicType, stringSymbolicType),
+						universe.integerType()));
+		stringToDoubleFunction = universe.symbolicConstant(
+				universe.stringObject("stringToDouble"),
+				universe.functionType(
+						Arrays.asList(stringSymbolicType, stringSymbolicType),
+						universe.realType()));
+		stringToCharFunction = universe.symbolicConstant(
+				universe.stringObject("stringToChar"),
+				universe.functionType(
+						Arrays.asList(stringSymbolicType, stringSymbolicType),
+						universe.characterType()));
+		stringToStringDataFunction = universe.symbolicConstant(
+				universe.stringObject("stringToStringData"),
+				universe.functionType(
+						Arrays.asList(stringSymbolicType, stringSymbolicType),
+						stringSymbolicType));
+		stringToPointerFunction = universe.symbolicConstant(
+				universe.stringObject("stringToPointer"),
+				universe.functionType(
+						Arrays.asList(stringSymbolicType, stringSymbolicType),
+						typeFactory.pointerSymbolicType()));
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -414,11 +400,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression filesystemPointer = argumentValues[0];
-		Evaluation eval = evaluator
-				.dereference(expressions[0].getSource(), state, process,
-						typeFactory.systemType(
-								ModelConfiguration.FILE_SYSTEM_TYPE),
-						filesystemPointer, false, true);
+		Evaluation eval = evaluator.dereference(expressions[0].getSource(),
+				state, process,
+				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
+				filesystemPointer, false, true);
 		CIVLSource modeSource = expressions[2].getSource();
 		int mode = symbolicUtil.extractInt(modeSource,
 				(NumericExpression) argumentValues[2]);
@@ -652,11 +637,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 
 		filesystemPointer = eval.value;
 		state = eval.state;
-		eval = evaluator
-				.dereference(fileSystemExpression.getSource(), state, process,
-						typeFactory.systemType(
-								ModelConfiguration.FILE_SYSTEM_TYPE),
-						filesystemPointer, false, true);
+		eval = evaluator.dereference(fileSystemExpression.getSource(), state,
+				process,
+				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
+				filesystemPointer, false, true);
 		state = eval.state;
 		fileSystemStructure = eval.value;
 		fileArray = universe.tupleRead(fileSystemStructure, oneObject);
@@ -1221,13 +1205,12 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	private SymbolicConstant charsToString(NumericExpression arrayLength) {
 		SymbolicType charType = universe.characterType();
 		SymbolicType arrayType = universe.arrayType(charType, arrayLength);
-		SymbolicArrayType stringSymType = (SymbolicArrayType) universe
-				.canonic(universe.arrayType(universe.characterType()));
+		SymbolicArrayType stringSymType = universe
+				.arrayType(universe.characterType());
 		SymbolicFunctionType funcType = universe.functionType(
 				Arrays.asList(stringSymType, stringSymType), arrayType);
-		SymbolicConstant charsToString = (SymbolicConstant) universe
-				.canonic(universe.symbolicConstant(
-						universe.stringObject("charsToString"), funcType));
+		SymbolicConstant charsToString = universe.symbolicConstant(
+				universe.stringObject("charsToString"), funcType);
 		return charsToString;
 	}
 

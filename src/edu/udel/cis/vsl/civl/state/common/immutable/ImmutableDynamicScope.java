@@ -33,7 +33,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  */
 public class ImmutableDynamicScope implements DynamicScope {
 
-	/* *************************** Static Fields *************************** */ 
+	/* *************************** Static Fields *************************** */
 
 	/**
 	 * If true, print debugging information.
@@ -222,22 +222,6 @@ public class ImmutableDynamicScope implements DynamicScope {
 		System.arraycopy(variableValues, 0, newValues, 0,
 				variableValues.length);
 		return newValues;
-	}
-
-	/**
-	 * Makes this instance the canonic representative of its equivalence class
-	 * under "equals". Makes all the variable values canonic as well.
-	 * 
-	 * @param universe
-	 *            the symbolic universe that is used to make the variable values
-	 *            canonic
-	 */
-	void makeCanonic(SymbolicUniverse universe) {
-		int numVars = variableValues.length;
-
-		canonic = true;
-		for (int i = 0; i < numVars; i++)
-			variableValues[i] = universe.canonic(variableValues[i]);
 	}
 
 	/**

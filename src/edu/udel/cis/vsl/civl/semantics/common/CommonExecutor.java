@@ -193,9 +193,9 @@ public class CommonExecutor implements Executor {
 		this.symbolicAnalyzer = symbolicAnalyzer;
 		this.loader = loader;
 		this.errorLogger = errorLogger;
-		this.zeroObj = (IntObject) universe.canonic(universe.intObject(0));
-		this.oneObj = (IntObject) universe.canonic(universe.intObject(1));
-		this.twoObj = (IntObject) universe.canonic(universe.intObject(2));
+		this.zeroObj = universe.intObject(0);
+		this.oneObj = universe.intObject(1);
+		this.twoObj = universe.intObject(2);
 		numbers = new HashSet<Character>(10);
 		for (int i = 0; i < 10; i++) {
 			numbers.add(Character.forDigit(i, 10));

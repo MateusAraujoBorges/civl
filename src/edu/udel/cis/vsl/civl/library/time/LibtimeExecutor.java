@@ -48,30 +48,28 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 		this.tmType = this.typeFactory.systemType(ModelConfiguration.TM_TYPE);
 		if (tmType != null)
 			this.tmSymbolicType = tmType.getDynamicType(universe);
-		this.stringSymbolicType = (SymbolicArrayType) universe
-				.canonic(universe.arrayType(universe.characterType()));
+		this.stringSymbolicType = universe.arrayType(universe.characterType());
 		if (tmType != null)
-			this.localtimeFunc = (SymbolicConstant) universe.canonic(universe
-					.symbolicConstant(universe.stringObject("localtime"),
-							universe.functionType(
-									Arrays.asList(universe.realType()),
-									this.tmSymbolicType)));
+			this.localtimeFunc = universe.symbolicConstant(
+					universe.stringObject("localtime"),
+					universe.functionType(Arrays.asList(universe.realType()),
+							this.tmSymbolicType));
 		if (tmType != null)
-			this.tmToStrFunc = (SymbolicConstant) universe.canonic(
-					universe.symbolicConstant(universe.stringObject("strftime"),
-							universe.functionType(
-									Arrays.asList(universe.integerType(),
-											typeFactory.pointerSymbolicType(),
-											this.tmSymbolicType),
-									this.stringSymbolicType)));
+			this.tmToStrFunc = universe.symbolicConstant(
+					universe.stringObject("strftime"),
+					universe.functionType(
+							Arrays.asList(universe.integerType(),
+									typeFactory.pointerSymbolicType(),
+									this.tmSymbolicType),
+							this.stringSymbolicType));
 		if (tmType != null)
-			this.tmToStrSizeFunc = (SymbolicConstant) universe.canonic(universe
-					.symbolicConstant(universe.stringObject("strftimeSize"),
-							universe.functionType(
-									Arrays.asList(universe.integerType(),
-											typeFactory.pointerSymbolicType(),
-											this.tmSymbolicType),
-									universe.integerType())));
+			this.tmToStrSizeFunc = universe.symbolicConstant(
+					universe.stringObject("strftimeSize"),
+					universe.functionType(
+							Arrays.asList(universe.integerType(),
+									typeFactory.pointerSymbolicType(),
+									this.tmSymbolicType),
+							universe.integerType()));
 	}
 
 	@Override

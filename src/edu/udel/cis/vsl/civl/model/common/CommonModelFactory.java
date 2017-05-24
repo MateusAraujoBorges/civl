@@ -381,21 +381,18 @@ public class CommonModelFactory implements ModelFactory {
 		this.typeFactory = new CommonCIVLTypeFactory(universe, config);
 		this.universe = universe;
 		this.identifiers = new HashMap<String, Identifier>();
-		zeroObj = (IntObject) universe.canonic(universe.intObject(0));
-		undefinedProcessValue = universe.canonic(universe.tuple(
-				typeFactory.processSymbolicType,
-				new Singleton<SymbolicExpression>(universe.integer(-1))));
-		this.nullProcessValue = universe.canonic(universe.tuple(
-				typeFactory.processSymbolicType,
-				new Singleton<SymbolicExpression>(universe.integer(-2))));
-		this.nullStateValue = universe.canonic(universe.tuple(
-				typeFactory.stateSymbolicType,
-				new Singleton<SymbolicExpression>(universe.integer(-1))));
+		zeroObj = universe.intObject(0);
+		undefinedProcessValue = universe.tuple(typeFactory.processSymbolicType,
+				new Singleton<SymbolicExpression>(universe.integer(-1)));
+		this.nullProcessValue = universe.tuple(typeFactory.processSymbolicType,
+				new Singleton<SymbolicExpression>(universe.integer(-2)));
+		this.nullStateValue = universe.tuple(typeFactory.stateSymbolicType,
+				new Singleton<SymbolicExpression>(universe.integer(-1)));
 		this.conditionalExpressions = new Stack<ArrayDeque<ConditionalExpression>>();
 		this.anonFragment = new CommonFragment();
-		this.undefinedScopeValue = universe.canonic(universe.tuple(
+		this.undefinedScopeValue = universe.tuple(
 				typeFactory.scopeSymbolicType(),
-				new Singleton<SymbolicExpression>(universe.integer(-1))));
+				new Singleton<SymbolicExpression>(universe.integer(-1)));
 	}
 
 	/* ********************** Methods from ModelFactory ******************** */
@@ -1512,8 +1509,7 @@ public class CommonModelFactory implements ModelFactory {
 		Identifier result = identifiers.get(name);
 
 		if (result == null) {
-			StringObject stringObject = (StringObject) universe
-					.canonic(universe.stringObject(name));
+			StringObject stringObject = universe.stringObject(name);
 
 			result = new CommonIdentifier(source, stringObject);
 			identifiers.put(name, result);
@@ -1631,10 +1627,9 @@ public class CommonModelFactory implements ModelFactory {
 	public void setScopes(Scope scope) {
 		this.systemScope = scope;
 		this.staticScope = scope.parent();
-		this.systemScopeId = universe
-				.canonic(universe.tuple(typeFactory.scopeSymbolicType,
-						new Singleton<SymbolicExpression>(
-								universe.integer(scope.id()))));
+		this.systemScopeId = universe.tuple(typeFactory.scopeSymbolicType,
+				new Singleton<SymbolicExpression>(
+						universe.integer(scope.id())));
 	}
 
 	@Override
@@ -1653,7 +1648,6 @@ public class CommonModelFactory implements ModelFactory {
 			SymbolicExpression result = universe
 					.symbolicConstant(universe.stringObject("UNDEFINED"), type);
 
-			result = universe.canonic(result);
 			return result;
 		}
 	}

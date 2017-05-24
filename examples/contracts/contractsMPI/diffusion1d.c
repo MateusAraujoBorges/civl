@@ -1,6 +1,8 @@
 #include<mpi.h>
 #include<civlc.cvh>
+
 #pragma PARSE_ACSL
+#define DATA_LIMIT 1024
 
 int left, right, nxl, nx, rank, nprocs;
 double * u, * u_new, k;
@@ -15,7 +17,7 @@ double * u, * u_new, k;
 
 /*@ \mpi_collective(MPI_COMM_WORLD, P2P):
   @   requires rank == \mpi_comm_rank;
-  @   requires nxl > 0 && nxl < 5;         //nxl shall not equal to zero
+  @   requires nxl > 0 && nxl < DATA_LIMIT;      //nxl shall not equal to zero
   @   requires \mpi_valid(u, nxl + 2, MPI_DOUBLE);
   @   behavior maxrank:
   @     assumes rank == \mpi_comm_size - 1;
@@ -49,14 +51,17 @@ void exchange_ghost_cells() {
 
 /*@ requires \valid(u + (0 .. (nxl + 1)));
   @ requires \valid(u_new + (0 .. (nxl + 1)));
-  @ requires nxl > 0 && nxl <= 4;
-  @ requires k > 0;
+  @ requires k > 0 && nxl > 0;
   @ assigns  u[1 .. nxl];
   @ ensures  \forall int i; 0< i && i <= nxl
   @           ==> 
   @          u[i] == \old(u[i] + k*(u[i+1] + u[i-1] - 2*u[i]));
   @*/
 void update() {
+  /*@ loop invariant 1 <= i && i <= nxl + 1 &&
+    @    \forall int j; 1 <= j && j < i ==> 
+    @        u_new[j] == u[j] + k*(u[j+1] + u[j-1] - 2*u[j]);
+    @*/
   for (int i = 1; i <= nxl; i++)
     u_new[i] = u[i] + k*(u[i+1] + u[i-1] - 2*u[i]);
   double * tmp = u_new; u_new=u; u=tmp;

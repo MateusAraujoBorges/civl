@@ -3148,11 +3148,11 @@ public class FunctionTranslator {
 		if (this.atomicCount > 0) {
 			Statement leaveAtomic;
 			SymbolicUniverse universe = modelFactory.universe();
-			// UndefinedProcessExpression has the constant value: 
-			SymbolicExpression undefinedProcValue = universe
-					.canonic(universe.tuple(typeFactory.processSymbolicType(),
-							new Singleton<SymbolicExpression>(universe.integer(
-									ModelConfiguration.UNDEFINED_PROC_ID))));
+			// UndefinedProcessExpression has the constant value:
+			SymbolicExpression undefinedProcValue = universe.tuple(
+					typeFactory.processSymbolicType(),
+					new Singleton<SymbolicExpression>(universe
+							.integer(ModelConfiguration.UNDEFINED_PROC_ID)));
 
 			for (int i = 0; i < this.atomicCount; i++) {
 				location = modelFactory.location(

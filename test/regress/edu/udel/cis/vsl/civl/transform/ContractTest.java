@@ -53,6 +53,12 @@ public class ContractTest {
 	}
 
 	@Test
+	public void diff1dUpdate() {
+		assertTrue(ui.run(VERIFY, "-mpiContract=update", TestConstants.QUIET,
+				"-collectSymbolicConstants=true",
+				filename("/contractsMPI/diffusion1d.c")));
+	}
+	@Test
 	public void gather() {
 		assertTrue(ui.run(VERIFY, "-input_mpi_nprocs=2", "-mpiContract=gather",
 				TestConstants.QUIET, "-collectSymbolicConstants=true",

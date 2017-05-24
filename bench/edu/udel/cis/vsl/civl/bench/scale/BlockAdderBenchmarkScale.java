@@ -19,9 +19,18 @@ public class BlockAdderBenchmarkScale {
 			civlDir = args[0];
 		for (int i = 2; i <= 11; i++) {
 			System.out.println(">>>>>>>> Block adder <<<<<<<<");
-			ui.run("verify -inputB=" + 2 * i + " -inputW=" + i + " "
-					+ civlDir + "/examples/concurrency/blockAdder.cvl");
+			ui.run("verify -inputB=" + 2 * i + " -inputW=" + i + " " + civlDir
+					+ "/examples/concurrency/blockAdder.cvl");
 		}
 	}
 
+	/*
+	 * civl verify -inputB=20 -inputW=10 ./examples/concurrency/blockAdder.cvl
+	 * 
+	 * === Stats === time (s) : 12.41
+	 * 
+	 * civl verify -inputB=22 -inputW=11 ./examples/concurrency/blockAdder.cvl
+	 * 
+	 * === Stats === time (s) : 30.68
+	 */
 }

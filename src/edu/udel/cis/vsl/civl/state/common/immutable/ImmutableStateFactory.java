@@ -281,28 +281,26 @@ public class ImmutableStateFactory implements StateFactory {
 				.undefinedValue(typeFactory.processSymbolicType());
 		isReservedSymbolicConstant = new ReservedConstant();
 		this.config = config;
-		this.nullProcessValue = universe.canonic(universe.tuple(
+		this.nullProcessValue = universe.tuple(
 				typeFactory.processSymbolicType(),
-				new Singleton<SymbolicExpression>(universe.integer(-2))));
+				new Singleton<SymbolicExpression>(universe.integer(-2)));
 		this.maxProcs = config.getMaxProcs();
 		this.processValues = new SymbolicExpression[maxProcs];
 		for (HeapErrorKind kind : HeapErrorKind.class.getEnumConstants())
 			fullHeapErrorSet.add(kind);
 		for (int i = 0; i < maxProcs; i++) {
-			processValues[i] = (universe.canonic(universe.tuple(
-					typeFactory.processSymbolicType(),
-					new Singleton<SymbolicExpression>(universe.integer(i)))));
+			processValues[i] = universe.tuple(typeFactory.processSymbolicType(),
+					new Singleton<SymbolicExpression>(universe.integer(i)));
 		}
-		this.undefinedScopeValue = universe.canonic(universe.tuple(
+		this.undefinedScopeValue = universe.tuple(
 				typeFactory.scopeSymbolicType(),
-				new Singleton<SymbolicExpression>(universe.integer(-1))));
-		this.nullScopeValue = universe.canonic(universe.tuple(
-				typeFactory.scopeSymbolicType(),
-				new Singleton<SymbolicExpression>(universe.integer(-2))));
+				new Singleton<SymbolicExpression>(universe.integer(-1)));
+		this.nullScopeValue = universe.tuple(typeFactory.scopeSymbolicType(),
+				new Singleton<SymbolicExpression>(universe.integer(-2)));
 		for (int i = 0; i < SCOPE_VALUES_INIT_SIZE; i++) {
-			smallScopeValues[i] = universe.canonic(universe.tuple(
+			smallScopeValues[i] = universe.tuple(
 					typeFactory.scopeSymbolicType(),
-					new Singleton<SymbolicExpression>(universe.integer(i))));
+					new Singleton<SymbolicExpression>(universe.integer(i)));
 		}
 		for (int i = 0; i < CACHE_INCREMENT; i++)
 			nullList.add(null);
@@ -1093,7 +1091,7 @@ public class ImmutableStateFactory implements StateFactory {
 						universe.equals(pair.getValue(), pair.getKey()));
 			}
 		}
-		return (BooleanExpression) universe.canonic(result);
+		return result;
 	}
 
 	public ImmutableState simplifyWork(State state,
@@ -1117,9 +1115,8 @@ public class ImmutableStateFactory implements StateFactory {
 			if (nsat(newPathCondition))
 				newPathCondition = universe.falseExpression();
 			else
-				newPathCondition = (BooleanExpression) universe
-						.canonic(universe.and(newPathCondition,
-								this.getContextOfSizeofSymbols(reasoner)));
+				newPathCondition = universe.and(newPathCondition,
+						this.getContextOfSizeofSymbols(reasoner));
 			hasSimplication = true;
 		} else
 			newPathCondition = null;
@@ -1443,8 +1440,7 @@ public class ImmutableStateFactory implements StateFactory {
 		heapField = universe.append(heapField, heapObject);
 		heapValue = universe.tupleWrite(heapValue, indexObj, heapField);
 		state = setVariable(state, 0, dyscopeId, heapValue);
-		symRef = (ReferenceExpression) universe
-				.canonic(universe.identityReference());
+		symRef = universe.identityReference();
 		symRef = universe.tupleComponentReference(symRef, indexObj);
 		symRef = universe.arrayElementReference(symRef, heapLength);
 		symRef = universe.arrayElementReference(symRef, universe.zeroInt());
@@ -2888,9 +2884,8 @@ public class ImmutableStateFactory implements StateFactory {
 		result = bigScopeValues.get(sid);
 		scopeValueReadLock.unlock();
 		if (result == null) {
-			result = universe.canonic(universe.tuple(
-					typeFactory.scopeSymbolicType(),
-					new Singleton<SymbolicExpression>(universe.integer(sid))));
+			result = universe.tuple(typeFactory.scopeSymbolicType(),
+					new Singleton<SymbolicExpression>(universe.integer(sid)));
 			scopeValueWriteLock.lock();
 			bigScopeValues.set(sid, result);
 			scopeValueWriteLock.unlock();
