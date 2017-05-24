@@ -241,10 +241,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		SymbolicType stringArrayType;
 
 		EOF = universe.canonic(universe.integer(-100));
-		stringSymbolicType = (SymbolicArrayType) universe
-				.canonic(universe.arrayType(universe.characterType()));
-		stringArrayType = (SymbolicArrayType) universe
-				.canonic(universe.arrayType(stringSymbolicType));
+		stringSymbolicType = universe.arrayType(universe.characterType());
+		stringArrayType = universe.arrayType(stringSymbolicType);
 		emptyContents = universe
 				.canonic(universe.emptyArray(stringSymbolicType));
 		initialContentsFunction = (SymbolicConstant) universe.canonic(
@@ -414,11 +412,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression filesystemPointer = argumentValues[0];
-		Evaluation eval = evaluator
-				.dereference(expressions[0].getSource(), state, process,
-						typeFactory.systemType(
-								ModelConfiguration.FILE_SYSTEM_TYPE),
-						filesystemPointer, false, true);
+		Evaluation eval = evaluator.dereference(expressions[0].getSource(),
+				state, process,
+				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
+				filesystemPointer, false, true);
 		CIVLSource modeSource = expressions[2].getSource();
 		int mode = symbolicUtil.extractInt(modeSource,
 				(NumericExpression) argumentValues[2]);
@@ -652,11 +649,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 
 		filesystemPointer = eval.value;
 		state = eval.state;
-		eval = evaluator
-				.dereference(fileSystemExpression.getSource(), state, process,
-						typeFactory.systemType(
-								ModelConfiguration.FILE_SYSTEM_TYPE),
-						filesystemPointer, false, true);
+		eval = evaluator.dereference(fileSystemExpression.getSource(), state,
+				process,
+				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
+				filesystemPointer, false, true);
 		state = eval.state;
 		fileSystemStructure = eval.value;
 		fileArray = universe.tupleRead(fileSystemStructure, oneObject);
@@ -1221,8 +1217,8 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	private SymbolicConstant charsToString(NumericExpression arrayLength) {
 		SymbolicType charType = universe.characterType();
 		SymbolicType arrayType = universe.arrayType(charType, arrayLength);
-		SymbolicArrayType stringSymType = (SymbolicArrayType) universe
-				.canonic(universe.arrayType(universe.characterType()));
+		SymbolicArrayType stringSymType = universe
+				.arrayType(universe.characterType());
 		SymbolicFunctionType funcType = universe.functionType(
 				Arrays.asList(stringSymType, stringSymType), arrayType);
 		SymbolicConstant charsToString = (SymbolicConstant) universe

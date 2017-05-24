@@ -44,10 +44,10 @@ $assume(1<=nsteps && nsteps<=NSTEPSB);
 $input int wstep = 1;              // write frame every this many time steps
 double oracle[nsteps][ny+2][nx+2]; // solution computed sequentially, done by proc 0 only
 $input int NPROCSXB = 2;           // upper bound for NPROCSX
-$input int NPROCSX = 2;            // number of procs in x direction
+$input int NPROCSX;            // number of procs in x direction
 $assume(NPROCSX >= 1 && NPROCSX <= NPROCSXB);
 $input int NPROCSYB = 2;           // upper bound for NPROCSY
-$input int NPROCSY = 2;            // number of procs in y direction
+$input int NPROCSY;            // number of procs in y direction
 $assume(NPROCSY >= 1 && NPROCSY <= NPROCSYB);
 $input int _mpi_nprocs = NPROCSX * NPROCSY;
 $assume(NPROCSX == _mpi_nprocs);

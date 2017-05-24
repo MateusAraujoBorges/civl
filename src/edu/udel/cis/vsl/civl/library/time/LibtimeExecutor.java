@@ -48,8 +48,7 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 		this.tmType = this.typeFactory.systemType(ModelConfiguration.TM_TYPE);
 		if (tmType != null)
 			this.tmSymbolicType = tmType.getDynamicType(universe);
-		this.stringSymbolicType = (SymbolicArrayType) universe
-				.canonic(universe.arrayType(universe.characterType()));
+		this.stringSymbolicType = universe.arrayType(universe.characterType());
 		if (tmType != null)
 			this.localtimeFunc = (SymbolicConstant) universe.canonic(universe
 					.symbolicConstant(universe.stringObject("localtime"),

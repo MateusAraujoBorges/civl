@@ -1043,8 +1043,8 @@ public class ModelBuilderWorker {
 			CIVLType staticElementType = malloc.getStaticElementType();
 			SymbolicType dynamicElementType = staticElementType
 					.getDynamicType(universe);
-			SymbolicArrayType dynamicObjectType = (SymbolicArrayType) universe
-					.canonic(universe.arrayType(dynamicElementType));
+			SymbolicArrayType dynamicObjectType = universe
+					.arrayType(dynamicElementType);
 
 			malloc.complete(dynamicElementType, dynamicObjectType);
 		}

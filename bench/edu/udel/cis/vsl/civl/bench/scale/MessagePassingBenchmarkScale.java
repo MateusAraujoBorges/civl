@@ -27,7 +27,17 @@ public class MessagePassingBenchmarkScale {
 						+ ny + " -enablePrintf=false " + civlDir
 						+ "/examples/mpi/diffusion2d.c");
 			}
-
+		/*
+		 * civl verify -inputNSTEPSB=2 -inputNXB=3 -inputNYB=3 -inputNPROCSXB=3
+		 * -inputNPROCSYB=3 -enablePrintf=false ./examples/mpi/diffusion2d.c
+		 * 
+		 * === Stats === time (s) : 15.16
+		 * 
+		 * civl verify -inputNSTEPSB=2 -inputNXB=3 -inputNYB=4 -inputNPROCSXB=3
+		 * -inputNPROCSYB=4 -enablePrintf=false ./examples/mpi/diffusion2d.c
+		 * 
+		 * === Stats === time (s) : 21.09
+		 */
 	}
 
 }

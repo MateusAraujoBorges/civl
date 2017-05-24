@@ -382,7 +382,7 @@ public class CommonModelFactory implements ModelFactory {
 		this.typeFactory = new CommonCIVLTypeFactory(universe, config);
 		this.universe = universe;
 		this.identifiers = new HashMap<String, Identifier>();
-		zeroObj = (IntObject) universe.canonic(universe.intObject(0));
+		zeroObj = universe.intObject(0);
 		undefinedProcessValue = universe.canonic(universe.tuple(
 				typeFactory.processSymbolicType,
 				new Singleton<SymbolicExpression>(universe.integer(-1))));
@@ -1513,8 +1513,7 @@ public class CommonModelFactory implements ModelFactory {
 		Identifier result = identifiers.get(name);
 
 		if (result == null) {
-			StringObject stringObject = (StringObject) universe
-					.canonic(universe.stringObject(name));
+			StringObject stringObject = universe.stringObject(name);
 
 			result = new CommonIdentifier(source, stringObject);
 			identifiers.put(name, result);

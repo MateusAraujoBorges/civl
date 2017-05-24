@@ -49,7 +49,7 @@ public class CommonStructOrUnionType extends CommonType
 		this.name = name;
 		this.isStruct = isStruct;
 		this.isHandleObject = false;
-		//fields = new StructOrUnionField[0];
+		// fields = new StructOrUnionField[0];
 	}
 
 	@Override
@@ -168,7 +168,6 @@ public class CommonStructOrUnionType extends CommonType
 						throw new CIVLException(ex.getMessage(), null);
 					}
 				}
-				dynamicType = (SymbolicType) universe.canonic(dynamicType);
 			}
 		}
 		return dynamicType;

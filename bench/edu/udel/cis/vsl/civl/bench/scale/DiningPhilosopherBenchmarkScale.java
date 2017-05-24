@@ -17,11 +17,28 @@ public class DiningPhilosopherBenchmarkScale {
 
 		if (args.length > 0)
 			civlDir = args[0];
-		for (int i = 2; i <= 10; i++) {
+		for (int i = 2; i <= 11; i++) {
 			System.out.println(">>>>>>>> Dining philosopher <<<<<<<<");
 			ui.run("verify -intOperationTransformer=false -inputBOUND=" + i
 					+ " " + civlDir + "/examples/concurrency/dining.cvl");
 		}
 	}
-
+	/*
+	 *
+	 * civl verify -intOperationTransformer=false -inputBOUND=9
+	 * ./examples/concurrency/dining.cvl
+	 * 
+	 * === Stats === time (s) : 6.92
+	 * 
+	 * civl verify -intOperationTransformer=false -inputBOUND=10
+	 * ./examples/concurrency/dining.cvl
+	 * 
+	 * === Stats === time (s) : 20.76
+	 * 
+	 * civl verify -intOperationTransformer=false -inputBOUND=11
+	 * ./examples/concurrency/dining.cvl
+	 * 
+	 * === Stats === time (s) : 81.43
+	 * 
+	 */
 }

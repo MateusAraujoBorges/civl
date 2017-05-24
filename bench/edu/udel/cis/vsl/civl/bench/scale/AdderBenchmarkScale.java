@@ -24,4 +24,20 @@ public class AdderBenchmarkScale {
 		}
 	}
 
+	/*
+	 * 
+	 * >>>>>>>> Adder <<<<<<<<
+	 * 
+	 * civl verify -inputB=12 ./examples/concurrency/adder.cvl
+	 * 
+	 * === Stats === time (s) : 4.15
+	 * 
+	 * civl verify -inputB=13 ./examples/concurrency/adder.cvl
+	 * 
+	 * === Stats === time (s) : 8.68
+	 * 
+	 * civl verify -inputB=14 ./examples/concurrency/adder.cvl
+	 * 
+	 * === Stats === time (s) : 19.45
+	 */
 }

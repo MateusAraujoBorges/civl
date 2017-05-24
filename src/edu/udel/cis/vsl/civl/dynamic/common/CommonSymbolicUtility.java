@@ -185,9 +185,9 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		sizeofFunction = universe.symbolicConstant(
 				universe.stringObject("SIZEOF"), dynamicToIntType);
 		sizeofFunction = universe.canonic(sizeofFunction);
-		this.zeroObj = (IntObject) universe.canonic(universe.intObject(0));
-		this.oneObj = (IntObject) universe.canonic(universe.intObject(1));
-		this.twoObj = (IntObject) universe.canonic(universe.intObject(2));
+		this.zeroObj = universe.intObject(0);
+		this.oneObj = universe.intObject(1);
+		this.twoObj = universe.intObject(2);
 		zero = (NumericExpression) universe.canonic(universe.integer(0));
 		one = (NumericExpression) universe.canonic(universe.integer(1));
 		this.falseValue = (BooleanExpression) universe
@@ -571,7 +571,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			SymbolicType type) {
 		SymbolicExpression result;
 
-		type = (SymbolicType) universe.canonic(type);
 		result = typeExpressionMap.get(type);
 		if (result == null) {
 			SymbolicExpression id = universe.integer(type.id());
