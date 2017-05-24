@@ -1,7 +1,7 @@
 #the cg3 cases are under developing, they keep running...
 
 CIVL=civl
-VERIFY=${CIVL} verify
+VERIFY=${CIVL} verify -checkDivisionByZero=false 
 
 all: cg2_cholesky cg2_sylvester cg2
 

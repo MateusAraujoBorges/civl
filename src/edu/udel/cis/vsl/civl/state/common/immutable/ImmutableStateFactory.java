@@ -1176,48 +1176,50 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	/**
-	 * Search $state type variables in each dynamic scope of the given state.
+	 * Search $state type variables in each dynamic scope (dyscope) of the given
+	 * state. Returns a list of pairs: an dynamic scope ID and a list of
+	 * referred states in it.
 	 * 
 	 * @param state
+	 *            The state in which referred states will be returned.
 	 * @return A list of pairs: one is the ID of the dyscope, in which contains
 	 *         at least one $state variable, of the given state; the other is
 	 *         the state referred by a unique $state variable in the
 	 *         aforementioned dyscope.
 	 * 
 	 */
-	private ImmutableState[][] getReferencedStates(ImmutableState state) {
+	private List<Pair<Integer, List<ImmutableState>>> getReferencedStates(
+			ImmutableState state) {
 		SymbolicType stateType = modelFactory.typeFactory().stateSymbolicType();
-		ImmutableState refStates[][] = new ImmutableState[state
-				.numDyscopes()][];
+		List<Pair<Integer, List<ImmutableState>>> allRefStates = new LinkedList<>();
 		int numDyscopes = state.numDyscopes();
 
 		for (int i = 0; i < numDyscopes; i++) {
 			ImmutableDynamicScope dyscope = state.getDyscope(i);
 			Collection<Variable> variablesWithStateRef = dyscope.lexicalScope()
 					.variablesWithStaterefs();
-			List<ImmutableState> referredStates = new LinkedList<>();
+			List<ImmutableState> refStates = new LinkedList<>();
 
 			for (Variable var : variablesWithStateRef) {
 				int vid = var.vid();
 				SymbolicExpression value = dyscope.getValue(vid);
-				List<SymbolicExpression> stateRefs = this
-						.getSubExpressionsOfType(stateType, value);
+				List<SymbolicExpression> stateRefs = getSubExpressionsOfType(
+						stateType, value);
 
 				for (SymbolicExpression stateRef : stateRefs) {
 					int stateID = modelFactory.getStateRef(stateRef);
 					ImmutableState refState = getStateByReference(stateID);
 
-					assert refState != null;
-					referredStates.add(refState);
+					// If the stateRef value is constant $state_null, refState
+					// will be null
+					if (refState != null)
+						refStates.add(refState);
 				}
 			}
-			if (!referredStates.isEmpty()) {
-				refStates[i] = new ImmutableState[referredStates.size()];
-				referredStates.toArray(refStates[i]);
-			} else
-				refStates[i] = null;
+			if (!refStates.isEmpty())
+				allRefStates.add(new Pair<>(i, refStates));
 		}
-		return refStates;
+		return allRefStates;
 	}
 
 	/**
@@ -1241,30 +1243,27 @@ public class ImmutableStateFactory implements StateFactory {
 	private ImmutableState collectHavocVariablesInReferredStates(
 			ImmutableState state, UnaryOperator<SymbolicExpression> renamer)
 			throws CIVLHeapException {
-		ImmutableState[][] dyscopeRefStatePairs = getReferencedStates(state);
+		List<Pair<Integer, List<ImmutableState>>> dyscopeRefStatePairs = getReferencedStates(
+				state);
 		ImmutableDynamicScope newDyscopes[] = null;
-		BitSet changeDyscopes = new BitSet(state.numDyscopes());
+		BitSet changedDyscopes = new BitSet(state.numDyscopes());
 
-		// Rename symbolic expressions in dyscopes, processStates and path
-		// conditions in each referred state:
-		for (int i = 0; i < dyscopeRefStatePairs.length; i++) {
-			if (dyscopeRefStatePairs[i] == null)
-				continue;
-
+		for (Pair<Integer, List<ImmutableState>> pair : dyscopeRefStatePairs) {
+			int refStateDyId = pair.left;
 			TreeMap<SymbolicExpression, SymbolicExpression> substituteMap = new TreeMap<>(
 					universe.comparator());
 			UnaryOperator<SymbolicExpression> stateValueUpdater;
 
-			for (int j = 0; j < dyscopeRefStatePairs[i].length; j++) {
-				ImmutableState oldReferredState = dyscopeRefStatePairs[i][j];
+			// Rename symbolic expressions in dyscopes, processStates and path
+			// conditions in each referred state:
+			for (ImmutableState oldReferredState : pair.right) {
 				ImmutableState newReferredState;
 				boolean unchange = true;
 				ImmutableDynamicScope[] newReferredDyscopes = oldReferredState
 						.copyScopes();
 
 				// Rename symbolic expressions in each dynamic scope of the
-				// referred
-				// state:
+				// referred state:
 				for (int k = 0; k < newReferredDyscopes.length; k++) {
 					ImmutableDynamicScope tmp = newReferredDyscopes[k]
 							.updateSymbolicConstants(renamer);
@@ -1274,8 +1273,7 @@ public class ImmutableStateFactory implements StateFactory {
 				}
 
 				// Rename symbolic expressions in permanent path condition of
-				// the
-				// referred state:
+				// the referred state:
 				BooleanExpression tmp, newPathCondition = oldReferredState
 						.getPermanentPathCondition();
 
@@ -1284,8 +1282,7 @@ public class ImmutableStateFactory implements StateFactory {
 				newPathCondition = tmp;
 
 				// Rename symbolic expressions in write set stack and partial
-				// path
-				// condition stack in each process state:
+				// path condition stack in each process state:
 				newReferredState = applyToProcessStates(oldReferredState,
 						renamer);
 				unchange &= newReferredState == oldReferredState;
@@ -1293,8 +1290,7 @@ public class ImmutableStateFactory implements StateFactory {
 					newReferredState = ImmutableState.newState(newReferredState,
 							null, newReferredDyscopes, newPathCondition);
 					// no need to collect scopes, processes and symbolic
-					// constants
-					// again:
+					// constants again:
 					newReferredState = canonicWork(newReferredState, false,
 							false, false, fullHeapErrorSet, true);
 					savedCanonicStates.putIfAbsent(
@@ -1310,17 +1306,17 @@ public class ImmutableStateFactory implements StateFactory {
 			// instantiate it at first time:
 			if (newDyscopes == null)
 				newDyscopes = new ImmutableDynamicScope[state.numDyscopes()];
-			newDyscopes[i] = state.getDyscope(i)
+			newDyscopes[refStateDyId] = state.getDyscope(refStateDyId)
 					.updateSymbolicConstants(stateValueUpdater);
-			changeDyscopes.set(i);
+			changedDyscopes.set(refStateDyId);
 		}
-		if (!changeDyscopes.isEmpty()) {
+		if (!changedDyscopes.isEmpty()) {
 			for (int i = 0; i < newDyscopes.length; i++)
-				if (!changeDyscopes.get(i))
+				if (!changedDyscopes.get(i))
 					newDyscopes[i] = state.getDyscope(i);
-		}
-		return ImmutableState.newState(state, null, newDyscopes,
-				state.getPermanentPathCondition());
+		} else
+			assert newDyscopes == null;
+		return ImmutableState.newState(state, null, newDyscopes, null);
 	}
 
 	/**
@@ -1337,54 +1333,57 @@ public class ImmutableStateFactory implements StateFactory {
 	private ImmutableState simplifyReferencedStates(ImmutableState state,
 			BooleanExpression context) {
 		int numDyscopes = state.numDyscopes();
-		Map<SymbolicExpression, SymbolicExpression> old2NewStateRefs = new HashMap<>();
-		SymbolicType stateType = modelFactory.typeFactory().stateSymbolicType();
-		Set<SymbolicExpression> seen = new HashSet<>();
-		ImmutableDynamicScope[] newDynamicScopes = new ImmutableDynamicScope[numDyscopes];
-		UnaryOperator<SymbolicExpression> substituter;
+		Map<SymbolicExpression, SymbolicExpression> old2NewStateRefs = new TreeMap<>(
+				universe.comparator());
+		BitSet changedDysId = new BitSet(numDyscopes);
+		UnaryOperator<SymbolicExpression> stateValueUpdater;
+		List<Pair<Integer, List<ImmutableState>>> dyScopeReferedStatePairs = getReferencedStates(
+				state);
+		ImmutableDynamicScope newDyscopes[] = null;
+		Reasoner reasoner = universe.reasoner(context);
 
-		for (int i = 0; i < numDyscopes; i++) {
-			ImmutableDynamicScope dyscope = state.getDyscope(i);
-			Collection<Variable> variablesWithStateRef = dyscope.lexicalScope()
-					.variablesWithStaterefs();
+		for (Pair<Integer, List<ImmutableState>> pair : dyScopeReferedStatePairs) {
+			int refStateDysId = pair.left;
 
-			newDynamicScopes[i] = dyscope;
-			for (Variable var : variablesWithStateRef) {
-				int vid = var.vid();
-				SymbolicExpression value = dyscope.getValue(vid);
-				List<SymbolicExpression> stateRefs = this
-						.getSubExpressionsOfType(stateType, value);
+			for (ImmutableState oldRefState : pair.right) {
+				ImmutableState newRefState;
+				BooleanExpression oldPC = oldRefState
+						.getPathCondition(universe);
 
-				for (SymbolicExpression stateRef : stateRefs) {
-					if (!seen.contains(stateRef)) {
-						int stateID = modelFactory.getStateRef(stateRef),
-								newStateID;
+				// Temporarily add context into the referred state so that the
+				// context will be used to simplify the state.
+				oldRefState = oldRefState.setPermanentPathCondition(
+						universe.and(oldPC, context));
+				newRefState = simplify(oldRefState);
+				if (newRefState == oldRefState)
+					continue;
+				// Remove the context after simplification.
+				newRefState = newRefState
+						.setPermanentPathCondition(reasoner.simplify(oldPC));
 
-						seen.add(stateRef);
-						if (stateID >= 0) {
-							ImmutableState refState = this
-									.getStateByReference(stateID);
+				int newRefStateId = saveState(newRefState).left;
 
-							// TODO: is this necessary ?
-							refState = ((ImmutableState) refState)
-									.setPermanentPathCondition(universe.and(
-											refState.getPermanentPathCondition(),
-											context));
-							refState = this.simplify(refState);
-							newStateID = this.saveState(refState).left;
-							if (newStateID != stateID) {
-								old2NewStateRefs.put(stateRef,
-										modelFactory.stateValue(newStateID));
-							}
-						}
-					}
-				}
-				substituter = universe.mapSubstituter(old2NewStateRefs);
-				value = substituter.apply(value);
-				newDynamicScopes[i] = newDynamicScopes[i].setValue(vid, value);
+				old2NewStateRefs.put(
+						modelFactory.stateValue(oldRefState.getCanonicId()),
+						modelFactory.stateValue(newRefStateId));
 			}
+			stateValueUpdater = universe.mapSubstituter(old2NewStateRefs);
+			// If it's first time, instantiate it:
+			if (newDyscopes == null)
+				newDyscopes = new ImmutableDynamicScope[numDyscopes];
+			newDyscopes[refStateDysId] = state.getDyscope(refStateDysId)
+					.updateSymbolicConstants(stateValueUpdater);
+			changedDysId.set(refStateDysId);
+			// Clear before re-used
+			old2NewStateRefs.clear();
 		}
-		return ImmutableState.newState(state, null, newDynamicScopes, null);
+		if (!changedDysId.isEmpty()) {
+			for (int d = 0; d < numDyscopes; d++)
+				if (!changedDysId.get(d))
+					newDyscopes[d] = state.getDyscope(d);
+		} else
+			assert newDyscopes == null;
+		return ImmutableState.newState(state, null, newDyscopes, null);
 	}
 
 	private List<SymbolicExpression> getSubExpressionsOfType(SymbolicType type,
@@ -2873,7 +2872,7 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public SymbolicExpression scopeValue(int sid) {
 		SymbolicExpression result;
-		
+
 		if (sid == ModelConfiguration.DYNAMIC_NULL_SCOPE)
 			return this.nullScopeValue;
 		if (sid == ModelConfiguration.DYNAMIC_UNDEFINED_SCOPE)
