@@ -14,7 +14,6 @@ import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
-import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -196,16 +195,7 @@ public class ImmutableProcessState implements ProcessState {
 	 * this class do not contain anything that can be made canonic: locations,
 	 * dynamic scope IDs, ints.
 	 */
-	void makeCanonic(SymbolicUniverse universe) {
-		if (!canonic) {
-			if (partialPathConditions != null)
-				for (int i = 0; i < partialPathConditions.length; i++)
-					partialPathConditions[i] = (BooleanExpression) universe
-							.canonic(partialPathConditions[i]);
-			if (writeSets != null)
-				for (int i = 0; i < writeSets.length; i++)
-					writeSets[i] = writeSets[i].canonicalize(universe);
-		}
+	void makeCanonic() {
 		canonic = true;
 	}
 

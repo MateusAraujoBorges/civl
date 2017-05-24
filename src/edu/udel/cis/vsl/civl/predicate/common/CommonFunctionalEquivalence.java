@@ -88,7 +88,6 @@ public class CommonFunctionalEquivalence extends CommonCIVLStatePredicate
 				disjunction = universe.or(disjunction, clause);
 		}
 		predicate = universe.implies(pc, disjunction);
-		predicate = (BooleanExpression) universe.canonic(predicate);
 		if (debug) {
 			System.out.print(this.symbolicAnalyzer.stateToString(state));
 			System.out.print("predicate: ");

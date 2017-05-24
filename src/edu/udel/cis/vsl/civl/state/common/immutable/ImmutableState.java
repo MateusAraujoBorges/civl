@@ -290,7 +290,6 @@ public class ImmutableState implements State {
 		ImmutableDynamicScope canonicScope = scopeMap.get(dyscope);
 
 		if (canonicScope == null) {
-			dyscope.makeCanonic(universe);
 			canonicScope = scopeMap.putIfAbsent(dyscope, dyscope);
 			return canonicScope == null ? dyscope : canonicScope;
 		}
@@ -318,7 +317,7 @@ public class ImmutableState implements State {
 				.get(processState);
 
 		if (canonicProcessState == null) {
-			processState.makeCanonic(universe);
+			processState.makeCanonic();
 			canonicProcessState = processMap.putIfAbsent(processState,
 					processState);
 			return canonicProcessState == null
@@ -416,7 +415,6 @@ public class ImmutableState implements State {
 		int numProcs = processStates.length;
 		int numScopes = dyscopes.length;
 
-		pathCondition = (BooleanExpression) universe.canonic(pathCondition);
 		for (int i = 0; i < numProcs; i++) {
 			ImmutableProcessState processState = processStates[i];
 

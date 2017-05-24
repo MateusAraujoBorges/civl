@@ -158,7 +158,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		this.functionPointerType = typeFactory.functionPointerSymbolicType();
 		this.oneObj = universe.intObject(1);
 		// this.twoObj = (IntObject) universe.canonic(universe.intObject(2));
-		zero = (NumericExpression) universe.canonic(universe.integer(0));
+		zero = universe.integer(0);
 		this.config = config;
 	}
 

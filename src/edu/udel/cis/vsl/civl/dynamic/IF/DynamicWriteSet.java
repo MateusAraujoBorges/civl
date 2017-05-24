@@ -8,7 +8,6 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.common.CommonExecutor;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableStateFactory;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
-import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
@@ -61,17 +60,6 @@ public interface DynamicWriteSet extends Iterable<SymbolicExpression> {
 	 *         is not in this write set.
 	 */
 	public DynamicWriteSet addReference(SymbolicExpression pointer);
-
-	/**
-	 * <p>
-	 * Canonicalize all memory location references in this write set.
-	 * </p>
-	 * 
-	 * @param universe
-	 *            An instance of {@link SymbolicUniverse}
-	 * @return An instance whose references are canonic ones of this.
-	 */
-	public DynamicWriteSet canonicalize(SymbolicUniverse universe);
 
 	/**
 	 * <p>

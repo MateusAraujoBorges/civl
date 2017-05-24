@@ -47,7 +47,7 @@ import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
@@ -296,7 +296,6 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 		SymbolicExpression undefinedValue = universe.symbolicConstant(
 				universe.stringObject("UNDEFINED"), dynamicType);
 
-		undefinedValue = universe.canonic(undefinedValue);
 		heapType.complete(mallocs, dynamicType, initialValue, undefinedValue);
 		this.heapType = heapType;
 		this.heapSymbolicType = dynamicType;
@@ -545,7 +544,6 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 			fields.add(emptyArray);
 		}
 		result = universe.tuple(heapDynamicType, fields);
-		result = universe.canonic(result);
 		return result;
 	}
 
@@ -573,7 +571,6 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 			fact = universe.trueExpression();
 		else
 			fact = universe.lessThan(universe.zeroInt(), size);
-		fact = (BooleanExpression) universe.canonic(fact);
 		result = new CommonPrimitiveType(kind, dynamicType, size, fact);
 		return result;
 	}
@@ -596,13 +593,14 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 		}
 
 		String name = "SIZEOF_" + kind;
-		SymbolicConstant result = universe.symbolicConstant(
-				universe.stringObject(name), universe.integerType());
+		NumericSymbolicConstant result = (NumericSymbolicConstant) universe
+				.symbolicConstant(universe.stringObject(name),
+						universe.integerType());
 
 		ModelConfiguration.SIZEOF_VARS.add(result);
 		if (!ModelConfiguration.RESERVE_NAMES.contains(name))
 			ModelConfiguration.RESERVE_NAMES.add(name);
-		return (NumericExpression) universe.canonic(result);
+		return result;
 	}
 
 	@Override

@@ -367,27 +367,24 @@ public class CommonEvaluator implements Evaluator {
 		heapType = typeFactory.heapSymbolicType();
 		zeroObj = universe.intObject(0);
 		twoObj = universe.intObject(2);
-		identityReference = (ReferenceExpression) universe
-				.canonic(universe.identityReference());
-		zero = (NumericExpression) universe.canonic(universe.integer(0));
-		zeroR = (NumericExpression) universe.canonic(universe.zeroReal());
-		one = (NumericExpression) universe.canonic(universe.integer(1));
+		identityReference = universe.identityReference();
+		zero = universe.integer(0);
+		zeroR = universe.zeroReal();
+		one = universe.integer(1);
 		nullExpression = universe.nullExpression();
 		sizeofFunction = symbolicUtil.sizeofFunction();
 		bigOFunction = universe.symbolicConstant(universe.stringObject("BIG_O"),
 				universe.functionType(
 						new Singleton<SymbolicType>(universe.realType()),
 						universe.realType()));
-		bigOFunction = universe.canonic(bigOFunction);
 		offsetFunction = universe.symbolicConstant(
 				universe.stringObject("OFFSET"),
 				universe.functionType(
 						Arrays.asList(symbolicUtil.dynamicType(),
 								universe.integerType()),
 						universe.integerType()));
-		offsetFunction = universe.canonic(offsetFunction);
 		charType = universe.characterType();
-		nullCharExpr = universe.canonic(universe.character('\u0000'));
+		nullCharExpr = universe.character('\u0000');
 		// pointer2IntFunc = universe.symbolicConstant(universe
 		// .stringObject(POINTER_TO_INT_FUNCTION), universe.functionType(
 		// Arrays.asList(this.pointerType), this.universe.integerType()));
@@ -1366,8 +1363,8 @@ public class CommonEvaluator implements Evaluator {
 				rangesArray));
 		// The cast is guaranteed
 		// TODO: when is the appropriate time to call universe.canonic() ?
-		domainV = universe.canonic(universe
-				.tuple((SymbolicTupleType) domainType, domValueComponents));
+		domainV = universe.tuple((SymbolicTupleType) domainType,
+				domValueComponents);
 		return new Evaluation(state, domainV);
 	}
 

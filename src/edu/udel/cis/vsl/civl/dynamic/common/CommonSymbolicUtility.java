@@ -184,23 +184,18 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 				universe.integerType());
 		sizeofFunction = universe.symbolicConstant(
 				universe.stringObject("SIZEOF"), dynamicToIntType);
-		sizeofFunction = universe.canonic(sizeofFunction);
 		this.zeroObj = universe.intObject(0);
 		this.oneObj = universe.intObject(1);
 		this.twoObj = universe.intObject(2);
-		zero = (NumericExpression) universe.canonic(universe.integer(0));
-		one = (NumericExpression) universe.canonic(universe.integer(1));
-		this.falseValue = (BooleanExpression) universe
-				.canonic(universe.falseExpression());
-		this.trueValue = (BooleanExpression) universe
-				.canonic(universe.trueExpression());
+		zero = universe.integer(0);
+		one = universe.integer(1);
+		this.falseValue = universe.falseExpression();
+		this.trueValue = universe.trueExpression();
 		this.pointerType = this.typeFactory.pointerSymbolicType();
 		this.functionPointerType = this.typeFactory
 				.functionPointerSymbolicType();
-		this.nullPointer = universe.canonic(
-				this.makePointer(-1, -1, universe.identityReference()));
-		this.nullFunctionPointer = universe
-				.canonic(this.makeFunctionPointer(-1, -1));
+		this.nullPointer = makePointer(-1, -1, universe.identityReference());
+		this.nullFunctionPointer = makeFunctionPointer(-1, -1);
 		this.undefinedPointer = modelFactory
 				.undefinedValue(typeFactory.pointerSymbolicType());
 		this.stringType = universe.arrayType(universe.characterType());
@@ -519,8 +514,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		BooleanExpression result = this.trueValue;
 
 		if (ref1.isIdentityReference() && ref2.isIdentityReference()) {
-			return (BooleanExpression) universe
-					.canonic(universe.equals(ref1, ref2));
+			return universe.equals(ref1, ref2);
 		}
 		if (ref2.isIdentityReference() // second contains first
 				|| universe.equals(scope1, scope2).isFalse() // different scope
@@ -574,8 +568,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		if (result == null) {
 			SymbolicExpression id = universe.integer(type.id());
 
-			result = universe.canonic(universe.tuple(dynamicType,
-					new Singleton<SymbolicExpression>(id)));
+			result = universe.tuple(dynamicType,
+					new Singleton<SymbolicExpression>(id));
 			typeExpressionMap.put(type, result);
 			typeExpressionMap2.put(result, type);
 			if (civlType != null)

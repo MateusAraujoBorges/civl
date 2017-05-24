@@ -24,8 +24,6 @@ public class ImmutableDynamicWriteSet implements DynamicWriteSet {
 	 */
 	private TreeSet<SymbolicExpression> pointerSet = null;
 
-	private boolean canonicalized = false;
-
 	public ImmutableDynamicWriteSet(SymbolicUniverse universe) {
 		pointerSet = new TreeSet<>(universe.comparator());
 	}
@@ -51,21 +49,6 @@ public class ImmutableDynamicWriteSet implements DynamicWriteSet {
 			newSet.pointerSet.add(pointer);
 			return newSet;
 		}
-	}
-
-	@Override
-	public ImmutableDynamicWriteSet canonicalize(SymbolicUniverse universe) {
-		if (canonicalized)
-			return this;
-
-		ImmutableDynamicWriteSet newSet = new ImmutableDynamicWriteSet(
-				universe);
-
-		for (SymbolicExpression pointer : pointerSet)
-			newSet.pointerSet.add(universe.canonic(pointer));
-		newSet.canonicalized = true;
-		return newSet;
-
 	}
 
 	@Override

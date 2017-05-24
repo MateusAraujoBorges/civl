@@ -463,8 +463,8 @@ public abstract class CommonEnabler implements Enabler {
 			concreteValueClauses = this.generateConcreteValueClauses(reasoner,
 					constantBounds, 0);
 			for (BooleanExpression clause : concreteValueClauses) {
-				BooleanExpression newPathCondition = (BooleanExpression) universe
-						.canonic(universe.and(pathCondition, clause));
+				BooleanExpression newPathCondition = universe.and(pathCondition,
+						clause);
 
 				newPCs.add(newPathCondition);
 			}
