@@ -2539,26 +2539,38 @@ public class ImmutableStateFactory implements StateFactory {
 				.setPid(newPid);
 		Scope monoProcScope;
 		Scope leastCommonAncestor;
+		/*
+		 * This variable denotes if this is the first time a monoState being
+		 * merged to an empty state. The invariants of this method in fact hold
+		 * for any i-th time of merging a monoState, where i >= 0 and i <
+		 * theState.numProcs(). This variable is only used for expressing
+		 * properties checked by java assert ...
+		 */
+		boolean first = true;
+		// The scope of the bottom entry in a process call stack is the process
+		// scope. (the 'root' scope of the process)
 		int bottomDyscopeId = monoProcess
 				.getStackEntry(monoProcess.stackSize() - 1).scope();
 
 		monoProcScope = monoState.getDyscope(bottomDyscopeId).lexicalScope()
 				.function().outerScope();
 		leastCommonAncestor = monoProcScope.parent();
-		// For the initial case, there is only one process state, so the
-		// invariants must hold; Then for each time adding a new process
-		// state to the state, it always looking for the least common
-		// ancestor (LCA) scope in between the new process scope and the LCA
-		// of all processes in the state, thus the new LCA can only either
-		// be the old LCA or an ancestor of the old LCA. It is guaranteed
-		// that LCA and any ancestor of LCA has only one dyscope in the
-		// state:
+		/*
+		 * For the initial case, there is only one process state, so the
+		 * invariants must hold; Then for each time adding a new process state
+		 * to the state, it always looking for the least common ancestor (LCA)
+		 * scope in between the new process scope and the LCA of all processes
+		 * in the state, thus the new LCA can only either be the old LCA or an
+		 * ancestor of the old LCA. It is guaranteed that LCA and any ancestor
+		 * of LCA has only one dyscope in the state:
+		 */
 		processes = theState.copyProcessStates();
 		assert theState.numLiveProcs() > 0;
 		for (ImmutableProcessState process : processes)
 			if (!process.hasEmptyStack()) {
 				Scope otherProcScope;
 
+				first = false;
 				bottomDyscopeId = process.getStackEntry(process.stackSize() - 1)
 						.scope();
 				otherProcScope = theState.getDyscope(bottomDyscopeId)
@@ -2572,11 +2584,29 @@ public class ImmutableStateFactory implements StateFactory {
 		int counter = theState.numDyscopes();
 		BooleanExpression newMonoPC;
 
-		// For any dyscope whose scope is NOT an ancestor of the LCA (or equal
-		// to LCA), then it is taken as a local dyscope (i.e. only reachable by
-		// the new process and will be added into the collate state as a new
-		// dyscope), otherwise it will be replaced with the one already in the
-		// collate state.
+		/*
+		 * For any dyscope whose scope is NOT an ancestor of the LCA (or NOT
+		 * equal to LCA), then it is taken as a local dyscope (i.e. only
+		 * reachable by the new process and will be added into the collate state
+		 * as a new dyscope), otherwise it will replace the one already in the
+		 * collate state (which means the shared dyscopes are updated)...
+		 */
+
+		/*
+		 * For readability, an example is presented here:
+		 * 
+		 * Two processes are trying to merge into an (initially) empty state
+		 * (merged state). The first process has dyscope array [0,1,2,3] and
+		 * dyscope 1 is the default LCA. The following loop will construct a
+		 * old2new array: [0,1,2,3]. Then the 4 dyscopes of the first process
+		 * are added into the merged state.
+		 * 
+		 * Later the second process with dyscopes [0',1',2',3'] are trying to
+		 * merge. 1' is the LCA then the following loop will construct a old2new
+		 * array: [0, 1, 4, 5]. Then the dyscopes in the merged state will
+		 * eventually be updated to [0', 1', 2, 3, 2', 3']. Note that shared
+		 * dyscopes are updated.
+		 */
 		for (int i = 0; i < monoDyscopes.length; i++) {
 			Scope currentScope = monoDyscopes[i].lexicalScope();
 
@@ -2588,13 +2618,28 @@ public class ImmutableStateFactory implements StateFactory {
 
 				for (int d = 0; d < theState.numDyscopes(); d++)
 					if (theState.getDyscope(d).lexicalScope()
-							.id() == monoDyscopes[i].lexicalScope().id())
+							.id() == currentScope.id()) {
 						uniqueDyscopeId = d;
+						// start from root dyscope in top-down order , the first
+						// encountered dyscope d (top-most such d), which has
+						// the same lexical scope as the current (lexical)
+						// scope, is the shared one. Thus, no need continue
+						// searching.
+						break;
+					}
 				if (uniqueDyscopeId >= 0)
 					dyscopeOld2New[i] = uniqueDyscopeId;
 				else {
+					/*
+					 * If currentScope is an ancestor of LCA, there must be a
+					 * dyscope in the merged state which is an instance of
+					 * currentScope. Except for the first merge, there is no
+					 * dyscopes in the merged state. The follow JAVA assertion
+					 * checks for this.
+					 */
 					dyscopeOld2New[i] = i;
 					counter++;
+					assert first;
 				}
 			} else
 				dyscopeOld2New[i] = counter++;
@@ -2602,7 +2647,7 @@ public class ImmutableStateFactory implements StateFactory {
 		dyscopes = new ImmutableDynamicScope[counter];
 		newMonoPC = renumberDyscopes(monoDyscopes, dyscopeOld2New, dyscopes,
 				theMono.getPermanentPathCondition());
-		// Clear reacher for the monoDyscopes:
+		// clear reacher for the monoDyscopes:
 		for (int i = 0; i < counter; i++)
 			if (dyscopes[i] != null) {
 				BitSet reachers = dyscopes[i].getReachers();
@@ -2610,13 +2655,13 @@ public class ImmutableStateFactory implements StateFactory {
 				reachers.clear();
 				dyscopes[i] = dyscopes[i].setReachers(reachers);
 			}
+		// copy local dyscopes in theState to new dyscopes array:
 		System.arraycopy(theState.copyScopes(), 0, dyscopes, 0,
 				theState.numDyscopes());
 
 		IntArray key = new IntArray(dyscopeOld2New);
 		UnaryOperator<SymbolicExpression> substituter = dyscopeSubMap.get(key);
 
-		// TODO: use the renumber dyscope method ?
 		if (substituter == null) {
 			substituter = universe.mapSubstituter(scopeSubMap(dyscopeOld2New));
 			dyscopeSubMap.putIfAbsent(key, substituter);
@@ -2700,8 +2745,6 @@ public class ImmutableStateFactory implements StateFactory {
 			substituter = universe.mapSubstituter(scopeSubMap(old2New));
 			dyscopeSubMap.putIfAbsent(key, substituter);
 		}
-
-		// TODO: replace with the renumberDyscope method ?
 		processes[newPid] = processes[newPid].updateDyscopes(old2New,
 				substituter);
 		setReachablesForProc(dyscopes, processes[newPid]);
