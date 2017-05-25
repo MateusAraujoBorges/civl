@@ -236,7 +236,7 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression collateState = argumentValues[0];
 		SymbolicExpression scopeValue = argumentValues[2];
 		SymbolicExpression gcollateStateHandle, gcollateState, symStateRef;
-		int scopeId = modelFactory.getScopeId(source, scopeValue);
+		int scopeId = modelFactory.getScopeId(scopeValue);
 		int stateRef, nprocs, place, resultRef;
 		Evaluation eval;
 		State mono, resultState, coState;
@@ -259,16 +259,18 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		if (modelFactory.statenullConstantValue().equals(symStateRef))
 			coState = stateFactory.emptyState(nprocs);
 		else {
-			stateRef = modelFactory.getStateRef(source, symStateRef);
+			stateRef = modelFactory.getStateRef(symStateRef);
 			coState = stateFactory.getStateByReference(stateRef);
 			assert coState != null;
 		}
 		resultState = stateFactory.addInternalProcess(coState, mono, place);
-		resultRef = stateFactory.saveState(resultState, pid).left;
+		resultRef = stateFactory.saveState(resultState).left;
 		if (this.civlConfig.debugOrVerbose() || this.civlConfig.showStates()
 				|| civlConfig.showSavedStates()) {
-			civlConfig.out().println(this.symbolicAnalyzer.stateToString(
-					stateFactory.getStateByReference(resultRef)));
+			civlConfig.out().println();
+			civlConfig.out()
+					.println("Collate " + symbolicAnalyzer.stateToString(
+							stateFactory.getStateByReference(resultRef)));
 		}
 		symStateRef = modelFactory.stateValue(resultRef);
 		gcollateState = universe.tupleWrite(gcollateState, gcollate_state_state,

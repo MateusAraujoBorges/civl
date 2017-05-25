@@ -128,13 +128,19 @@ public abstract class Player {
 		this.sessionName = model.name();
 		this.modelFactory = model.factory();
 		universe = modelFactory.universe();
+		// Set the probabilistic bound to zero if 'prob' option is disabled:
+		if (!civlConfig.prob())
+			universe.setProbabilisticBound(
+					universe.numberFactory().zeroRational());
 		this.solve = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(solveO);
-		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory);
 		this.memUnitFactory = States.newImmutableMemoryUnitFactory(universe,
 				modelFactory);
 		this.stateFactory = States.newImmutableStateFactory(modelFactory,
-				symbolicUtil, memUnitFactory, civlConfig);
+				memUnitFactory, civlConfig);
+		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory,
+				stateFactory);
+		this.stateFactory.setSymbolicUtility(symbolicUtil);
 		this.log = new CIVLErrorLogger(new File("CIVLREP"), sessionName, out,
 				civlConfig, gmcConfig, this.stateFactory, universe, solve);
 		this.log.setErrorBound((int) gmcConfig.getAnonymousSection()
@@ -142,7 +148,7 @@ public abstract class Player {
 		this.libraryEvaluatorLoader = Semantics
 				.newLibraryEvaluatorLoader(this.civlConfig);
 		this.symbolicAnalyzer = Semantics.newSymbolicAnalyzer(this.civlConfig,
-				universe, modelFactory, symbolicUtil);
+				this.log, universe, modelFactory, symbolicUtil);
 		this.gui = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(guiO);
 		this.libraryExecutorLoader = Semantics.newLibraryExecutorLoader(

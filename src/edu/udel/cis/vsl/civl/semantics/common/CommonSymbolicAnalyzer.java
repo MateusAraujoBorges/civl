@@ -144,8 +144,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	/* ***************************** Constructors ************************** */
 
 	public CommonSymbolicAnalyzer(CIVLConfiguration config,
-			SymbolicUniverse universe, ModelFactory modelFactory,
-			SymbolicUtility symbolicUtil) {
+			CIVLErrorLogger errorLogger, SymbolicUniverse universe,
+			ModelFactory modelFactory, SymbolicUtility symbolicUtil) {
 		this.universe = universe;
 		this.modelFactory = modelFactory;
 		this.typeFactory = modelFactory.typeFactory();
@@ -156,10 +156,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		this.procType = this.typeFactory.processSymbolicType();
 		this.scopeType = this.typeFactory.scopeSymbolicType();
 		this.functionPointerType = typeFactory.functionPointerSymbolicType();
-		this.oneObj = (IntObject) universe.canonic(universe.intObject(1));
+		this.oneObj = universe.intObject(1);
 		// this.twoObj = (IntObject) universe.canonic(universe.intObject(2));
-		zero = (NumericExpression) universe.canonic(universe.integer(0));
+		zero = universe.integer(0);
 		this.config = config;
+		this.errorLogger = errorLogger;
 	}
 
 	/* ******************** Methods From SymbolicAnalyzer ****************** */
@@ -225,9 +226,10 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			valid = reasoner.valid(claim).getResultType();
 			if (valid != ResultType.YES) {
 				state = errorLogger.logError(source, state, pid,
-						this.stateInformation(state), claim, valid,
+						stateInformation(state), claim, valid,
 						ErrorKind.OUT_OF_BOUNDS,
-						"end index exceeds length of array");
+						"Index exceeds length of array: " + endIndex
+								+ "\nArray type: " + array.type());
 				pathCondition = state.getPathCondition(universe);
 				reasoner = universe.reasoner(pathCondition);
 			}
@@ -460,8 +462,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			} else if (varName
 					.equals(ModelConfiguration.ATOMIC_LOCK_VARIABLE_INDEX)
 					&& (value.isNull() || !modelFactory.isPocessIdDefined(
-							modelFactory.getProcessId(variable.getSource(),
-									value)))) {
+							modelFactory.getProcessId(value)))) {
 				continue;
 			}
 			result.append(prefix + "| | " + variable.name());
@@ -987,7 +988,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			if (symbolicExpression.operator() != SymbolicOperator.TUPLE)
 				result.append(symbolicExpression);
 			else {
-				int pid = modelFactory.getProcessId(source, symbolicExpression);
+				int pid = modelFactory.getProcessId(symbolicExpression);
 
 				if (!modelFactory.isPocessIdDefined(pid)) {
 					result.append("UNDEFINED");
@@ -1009,8 +1010,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			if (symbolicExpression.operator() != SymbolicOperator.TUPLE)
 				result.append(symbolicExpression);
 			else {
-				int scopeId = modelFactory.getScopeId(source,
-						symbolicExpression);
+				int scopeId = modelFactory.getScopeId(symbolicExpression);
 
 				if (!modelFactory.isScopeIdDefined(scopeId))
 					result.append("UNDEFINED");
@@ -2443,9 +2443,12 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 					Evaluation eval = evaluator.evaluate(state, pid,
 							valueAt.state());
-					State newState = this.evaluator.stateFactory()
-							.getStateByReference(this.modelFactory
-									.getStateRef(null, eval.value));
+					State newState = eval.value == modelFactory
+							.statenullConstantValue()
+									? state
+									: evaluator.stateFactory()
+											.getStateByReference(modelFactory
+													.getStateRef(eval.value));
 					int newPid;
 
 					eval = evaluator.evaluate(eval.state, pid, valueAt.pid());
@@ -2538,7 +2541,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				break;
 			case MPI_EQUALS :
 				result.append("$mpi_equals(");
-				numArgs = 4;
+				numArgs = 2;
 				break;
 			case MPI_EXTENT :
 				result.append("$mpi_extent(");

@@ -40,8 +40,22 @@ struct $mpi_gcomm {
 };
 
 /****************************** Helper Functions **********************************/
+$state_f size_t $mpi_extentof(MPI_Datatype datatype) {
+  $abstract size_t $mpi_sizeof(MPI_Datatype datatype);
+
+  return $mpi_sizeof(datatype);	  
+}
+
 int sizeofDatatype(MPI_Datatype datatype) {
   size_t result;
+  
+#ifdef _MPI_CONTRACT
+  /* In MPI contract mode, it's possible that datatype is
+     non-concrete. Then use an abstract function to represent the
+     extent of the datatype. */
+  if (!$is_concrete_int(datatype))
+    return $mpi_extentof(datatype);
+#endif
 
   switch (datatype) {
   case MPI_INT:
@@ -71,6 +85,14 @@ int sizeofDatatype(MPI_Datatype datatype) {
   default:
     $assert(0, "Unreachable");
   }
+#ifdef _MPI_CONTRACT
+  /* In the case that a datatype X which is previously non-concrete
+     and whose extent $mpi_sizeof(X) was used. Later X is simplified
+     to a concrete number representing 'int', we need somehow
+     associate SIZEOF_INT to $mpi_sizeof(X) by assume the following
+     predicate. */
+  $assume($mpi_extentof(datatype) == result);
+#endif
   return result;
 }
 
@@ -142,7 +164,7 @@ void $mpi_gcomm_destroy($mpi_gcomm gc) {
 	    " that is never received.", 
 	    src, routine);
   }  
-  $free(gc.gcollator);
+  $gcollator_destroy(gc.gcollator);
   $gbarrier_destroy(gc.gbarrier);
 }
 
@@ -171,16 +193,16 @@ void $mpi_comm_destroy(MPI_Comm comm, $mpi_state mpi_state) {
 
 void * $mpi_pointer_add(const void * ptr, int offset, MPI_Datatype datatype) {
 #ifdef _MPI_CONTRACT
-  int datatypeExtent = $mpi_extentof(datatype);
+  if (!$is_concrete_int(datatype)) {
+    int datatypeExtent = $mpi_extentof(datatype);
 
-//  $elaborate(datatypeExtent);
-//  $elaborate(offset);
-  return $pointer_add(ptr, offset * datatypeExtent, sizeof(char));
-#else
+    return $pointer_add(ptr, offset * datatypeExtent, sizeof(char));
+  }
+#endif
+
   int type_size = sizeofDatatype(datatype);
 
   return $pointer_add(ptr, offset, type_size);
-#endif
 }
 
 /********************* Lower level MPI routines  *********************/
@@ -189,16 +211,13 @@ void * $mpi_pointer_add(const void * ptr, int offset, MPI_Datatype datatype) {
    means no potential deadlocks related to these functions */
 int $mpi_send(const void *buf, int count, MPI_Datatype datatype, int dest,
 	      int tag, MPI_Comm comm) {
-  if (dest >= 0 && count >= 0) {
+  if (dest >= 0) {
     int size = count*sizeofDatatype(datatype);
     int place = $comm_place(comm.p2p);
     $message out;
 
     $elaborate(dest);
     out = $message_pack(place, dest, tag, buf, size);
-#ifdef _MPI_CONTRACT
-    $elaborate(count);
-#endif
     $comm_enqueue(comm.p2p, out);   
   }
   return 0;
@@ -206,7 +225,7 @@ int $mpi_send(const void *buf, int count, MPI_Datatype datatype, int dest,
 
 int $mpi_recv(void *buf, int count, MPI_Datatype datatype, int source,
 	      int tag, MPI_Comm comm, MPI_Status *status) {
-  if ((source >= 0 || source == MPI_ANY_SOURCE) && count >= 0) {
+  if ((source >= 0 || source == MPI_ANY_SOURCE)) {
     $message in;
     int place = $comm_place(comm.p2p);
     int deterministicTag;
@@ -720,31 +739,32 @@ void $mpi_unsnapshot(MPI_Comm comm, $collate_state cs) {
 
 void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
   if ($is_concrete_int(datatype)) {
+    size_t size = sizeofDatatype(datatype);
     int _int[count];
     int _2int[count * 2];
-    $real _real[count];
     char _char[count];
-
+    $real _real[count];
+      
     switch (datatype) {
     case MPI_INT:
     case MPI_SHORT:
     case MPI_LONG:
     case MPI_LONG_LONG_INT:
     case MPI_LONG_LONG:
-    case MPI_UNSIGNED_LONG_LONG:
-      memcpy(buf, _int, count * sizeof(int));
+    case MPI_UNSIGNED_LONG_LONG:      
+      memcpy(buf, _int, count * size);
       break;      
     case MPI_2INT:
-      memcpy(buf, _2int, 2 * count * sizeof(int));
+      memcpy(buf, _2int, 2 * count * size);
       break;
     case MPI_FLOAT:
     case MPI_DOUBLE:
-    case MPI_LONG_DOUBLE:
-      memcpy(buf, _real, count * sizeof($real));
+    case MPI_LONG_DOUBLE:      
+      memcpy(buf, _real, count * size);
       break;
     case MPI_CHAR:
     case MPI_BYTE:
-      memcpy(buf, _char, count * sizeof(char));
+      memcpy(buf, _char, count * size);
       break;
     default:
       $assert(0, "Unreachable");
@@ -752,18 +772,8 @@ void $mpi_assigns(void * buf, int count, MPI_Datatype datatype) {
   } else {
     size_t realCount = count * $mpi_extentof(datatype);
     char newValues[realCount];
-    
+
     memcpy(buf, newValues, count * sizeofDatatype(datatype));   
-  }
-}
-
-$state_f size_t $mpi_extentof(MPI_Datatype datatype) {
-  if ($is_concrete_int(datatype)) 
-    return sizeofDatatype(datatype);
-  else {
-    $abstract size_t $mpi_sizeof(MPI_Datatype datatype);
-
-    return $mpi_sizeof(datatype);
   }
 }
 

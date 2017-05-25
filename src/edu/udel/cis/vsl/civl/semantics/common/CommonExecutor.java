@@ -193,9 +193,9 @@ public class CommonExecutor implements Executor {
 		this.symbolicAnalyzer = symbolicAnalyzer;
 		this.loader = loader;
 		this.errorLogger = errorLogger;
-		this.zeroObj = (IntObject) universe.canonic(universe.intObject(0));
-		this.oneObj = (IntObject) universe.canonic(universe.intObject(1));
-		this.twoObj = (IntObject) universe.canonic(universe.intObject(2));
+		this.zeroObj = universe.intObject(0);
+		this.oneObj = universe.intObject(1);
+		this.twoObj = universe.intObject(2);
 		numbers = new HashSet<Character>(10);
 		for (int i = 0; i < 10; i++) {
 			numbers.add(Character.forDigit(i, 10));
@@ -408,8 +408,7 @@ public class CommonExecutor implements Executor {
 		eval = evaluator.evaluate(state, pid, statement.getScopeExpression());
 		state = eval.state;
 		scopeValue = eval.value;
-		dyScopeID = modelFactory.getScopeId(
-				statement.getScopeExpression().getSource(), scopeValue);
+		dyScopeID = modelFactory.getScopeId(scopeValue);
 		eval = evaluator.evaluate(state, pid, statement.getSizeExpression());
 		state = eval.state;
 		mallocSize = (NumericExpression) eval.value;
@@ -723,8 +722,13 @@ public class CommonExecutor implements Executor {
 				if (noop.noopKind() == NoopKind.LOOP) {
 					LoopBranchStatement loopBranch = (LoopBranchStatement) noop;
 
-					if (!loopBranch.isEnter() && this.civlConfig.simplify())
-						state = this.stateFactory.simplify(state);
+					if (!loopBranch.isEnter() && this.civlConfig.simplify()) {
+						BooleanExpression pc = state.getPathCondition(universe);
+						Reasoner reasoner = universe.reasoner(pc);
+
+						if (reasoner.getReducedContext() != pc)
+							state = this.stateFactory.simplify(state);
+					}
 				}
 				return state;
 			}
@@ -1515,12 +1519,9 @@ public class CommonExecutor implements Executor {
 		int mallocId = typeFactory.getHeapFieldId(objectType);
 		int dyscopeID;
 		SymbolicExpression heapObject;
-		CIVLSource scopeSource = scopeExpression == null
-				? source
-				: scopeExpression.getSource();
 		Pair<State, SymbolicExpression> result;
 
-		dyscopeID = modelFactory.getScopeId(scopeSource, scopeValue);
+		dyscopeID = modelFactory.getScopeId(scopeValue);
 		heapObject = universe.array(objectType.getDynamicType(universe),
 				Arrays.asList(objectValue));
 		result = stateFactory.malloc(state, dyscopeID, mallocId, heapObject);
@@ -1558,12 +1559,15 @@ public class CommonExecutor implements Executor {
 								+ atomicLockAction.toString(),
 						transition.statement().getSource());
 		}
-		if (!transition.clause().isTrue())
+		// if transition doesn't carry new clause, no need to update the path
+		// condition, neither for simplifying the state
+		if (!transition.clause().isTrue()) {
 			state = stateFactory.addToPathcondition(state, pid,
 					transition.clause());
-		if (transition.simpifyState()
-				&& (civlConfig.svcomp() || this.civlConfig.simplify()))
-			state = this.stateFactory.simplify(state);
+			if (transition.simpifyState()
+					&& (civlConfig.svcomp() || this.civlConfig.simplify()))
+				state = this.stateFactory.simplify(state);
+		}
 		switch (transition.transitionKind()) {
 			case NORMAL :
 				state = this.executeStatement(state, pid,

@@ -7,6 +7,7 @@ import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.library.collate.LibcollateExecutor;
 import edu.udel.cis.vsl.civl.library.mpi.LibmpiEvaluator;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
@@ -61,6 +62,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SystemGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
@@ -110,6 +112,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.TupleComponentReference;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.number.NumberFactory;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
@@ -146,6 +149,12 @@ public class CommonEvaluator implements Evaluator {
 	 * possibly results to an undefined value in C language.
 	 */
 	public static String TOTAL_DEREFERENCE_FUNCTION = "_total_deref";
+
+	/**
+	 * A bounded process identifier identifies the bound variable in the lambda
+	 * expression which represents a value of a {@link ValueAtExpression}
+	 */
+	protected static String BOUNDED_PROCESS_IDENTIFIER = "_p";
 
 	/* *************************** Instance Fields ************************* */
 	protected LibraryExecutorLoader libExeLoader;
@@ -365,29 +374,26 @@ public class CommonEvaluator implements Evaluator {
 		pointerType = typeFactory.pointerSymbolicType();
 		functionPointerType = typeFactory.functionPointerSymbolicType();
 		heapType = typeFactory.heapSymbolicType();
-		zeroObj = (IntObject) universe.canonic(universe.intObject(0));
-		twoObj = (IntObject) universe.canonic(universe.intObject(2));
-		identityReference = (ReferenceExpression) universe
-				.canonic(universe.identityReference());
-		zero = (NumericExpression) universe.canonic(universe.integer(0));
-		zeroR = (NumericExpression) universe.canonic(universe.zeroReal());
-		one = (NumericExpression) universe.canonic(universe.integer(1));
+		zeroObj = universe.intObject(0);
+		twoObj = universe.intObject(2);
+		identityReference = universe.identityReference();
+		zero = universe.integer(0);
+		zeroR = universe.zeroReal();
+		one = universe.integer(1);
 		nullExpression = universe.nullExpression();
 		sizeofFunction = symbolicUtil.sizeofFunction();
 		bigOFunction = universe.symbolicConstant(universe.stringObject("BIG_O"),
 				universe.functionType(
 						new Singleton<SymbolicType>(universe.realType()),
 						universe.realType()));
-		bigOFunction = universe.canonic(bigOFunction);
 		offsetFunction = universe.symbolicConstant(
 				universe.stringObject("OFFSET"),
 				universe.functionType(
 						Arrays.asList(symbolicUtil.dynamicType(),
 								universe.integerType()),
 						universe.integerType()));
-		offsetFunction = universe.canonic(offsetFunction);
 		charType = universe.characterType();
-		nullCharExpr = universe.canonic(universe.character('\u0000'));
+		nullCharExpr = universe.character('\u0000');
 		// pointer2IntFunc = universe.symbolicConstant(universe
 		// .stringObject(POINTER_TO_INT_FUNCTION), universe.functionType(
 		// Arrays.asList(this.pointerType), this.universe.integerType()));
@@ -443,10 +449,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            false only when executing $copy function.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects
-	 *            <strong> results an undefined value of the same type as the
-	 *            dereference expression </strong> iff this parameter set to
-	 *            true. Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects <strong>
+	 *            results an undefined value of the same type as the dereference
+	 *            expression </strong> iff this parameter set to true.
+	 *            Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @return A possibly new state and the value of memory space pointed by the
 	 *         pointer.
@@ -487,13 +493,11 @@ public class CommonEvaluator implements Evaluator {
 							.variable(vid);
 
 					if (variable.isOutput()) {
-						errorLogger
-								.logSimpleError(source, state, process,
-										symbolicAnalyzer.stateInformation(
-												state),
-										ErrorKind.OUTPUT_READ,
-										"Attempt to read output variable "
-												+ variable.name().name());
+						errorLogger.logSimpleError(source, state, process,
+								symbolicAnalyzer.stateInformation(state),
+								ErrorKind.OUTPUT_READ,
+								"Attempt to read output variable "
+										+ variable.name().name());
 						throwPCException = true;
 					}
 				}
@@ -548,10 +552,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            The pointer to be dereferenced.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects
-	 *            <strong> results an undefined value of the same type as the
-	 *            dereference expression </strong> iff this parameter set to
-	 *            true. Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects <strong>
+	 *            results an undefined value of the same type as the dereference
+	 *            expression </strong> iff this parameter set to true.
+	 *            Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @param source
 	 *            The {@link CIVLSource} associates with the dereference
@@ -595,7 +599,7 @@ public class CommonEvaluator implements Evaluator {
 		} else {
 			int sid = symbolicUtil.getDyscopeId(source, pointer);
 
-			if (sid == ModelConfiguration.DYNAMIC_REMOVED_SCOPE) {
+			if (sid == ModelConfiguration.DYNAMIC_NULL_SCOPE) {
 				if (!muteErrorSideEffects)
 					errorLogger.logSimpleError(source, state, process,
 							symbolicAnalyzer.stateInformation(state),
@@ -1368,8 +1372,8 @@ public class CommonEvaluator implements Evaluator {
 				rangesArray));
 		// The cast is guaranteed
 		// TODO: when is the appropriate time to call universe.canonic() ?
-		domainV = universe.canonic(universe
-				.tuple((SymbolicTupleType) domainType, domValueComponents));
+		domainV = universe.tuple((SymbolicTupleType) domainType,
+				domValueComponents);
 		return new Evaluation(state, domainV);
 	}
 
@@ -1473,7 +1477,7 @@ public class CommonEvaluator implements Evaluator {
 	protected Evaluation evaluateFunctionIdentifierExpression(State state,
 			int pid, FunctionIdentifierExpression expression) {
 		Scope scope = expression.scope();
-		SymbolicExpression dyScopeId = modelFactory
+		SymbolicExpression dyScopeId = stateFactory
 				.scopeValue(state.getDyscope(pid, scope));
 		SymbolicExpression functionPointer = universe
 				.tuple(this.functionPointerType, Arrays.asList(dyScopeId,
@@ -1488,7 +1492,7 @@ public class CommonEvaluator implements Evaluator {
 				? state.rootDyscopeID()
 				: state.getProcessState(pid).getDyscopeId();
 
-		return new Evaluation(state, modelFactory.scopeValue(dyScopeID));
+		return new Evaluation(state, stateFactory.scopeValue(dyScopeID));
 	}
 
 	/**
@@ -2307,22 +2311,20 @@ public class CommonEvaluator implements Evaluator {
 			BinaryExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
-		int left = modelFactory.getScopeId(expression.left().getSource(),
-				eval.value);
+		int left = modelFactory.getScopeId(eval.value);
 		int right;
 		boolean result;
 
 		state = eval.state;
 		eval = evaluate(state, pid, expression.right());
 		state = eval.state;
-		right = modelFactory.getScopeId(expression.right().getSource(),
-				eval.value);
+		right = modelFactory.getScopeId(eval.value);
 		switch (expression.operator()) {
 			case PLUS :
 				int lowestCommonAncestor = stateFactory
 						.lowestCommonAncestor(state, left, right);
 
-				eval.value = modelFactory.scopeValue(lowestCommonAncestor);
+				eval.value = stateFactory.scopeValue(lowestCommonAncestor);
 				break;
 			case LESS_THAN :
 				result = stateFactory.isDescendantOf(state, right, left);
@@ -2509,7 +2511,7 @@ public class CommonEvaluator implements Evaluator {
 							"Attempt to dereference pointer into scope which has been removed from state");
 					throw new UnsatisfiablePathConditionException();
 				}
-				return new Evaluation(state, modelFactory.scopeValue(sid));
+				return new Evaluation(state, stateFactory.scopeValue(sid));
 			case DOT :
 				return evaluateScopeofExpressionWorker(state, pid, process,
 						(LHSExpression) (((DotExpression) expression)
@@ -2523,7 +2525,7 @@ public class CommonEvaluator implements Evaluator {
 				int scopeId = state.getDyscopeID(pid,
 						((VariableExpression) expression).variable());
 
-				return new Evaluation(state, modelFactory.scopeValue(scopeId));
+				return new Evaluation(state, stateFactory.scopeValue(scopeId));
 			default :
 				throw new CIVLUnimplementedFeatureException(
 						"scope of expression with operand of "
@@ -3501,6 +3503,10 @@ public class CommonEvaluator implements Evaluator {
 				result = evaluateVariable(state, pid, process,
 						(VariableExpression) expression, checkUndefinedValue);
 				break;
+			case VALUE_AT :
+				result = evaluateValueAtExpression(state, pid,
+						(ValueAtExpression) expression);
+				break;
 			case QUANTIFIER : {
 				result = evaluateQuantifiedExpression(state, pid,
 						(QuantifiedExpression) expression);
@@ -3524,7 +3530,6 @@ public class CommonEvaluator implements Evaluator {
 				throw new CIVLSyntaxException(
 						"Illegal use of " + kind + " expression: ",
 						expression.getSource());
-			case VALUE_AT :
 			default :
 				throw new CIVLInternalException("unreachable: " + kind,
 						expression);
@@ -3540,6 +3545,109 @@ public class CommonEvaluator implements Evaluator {
 				memUnitFactory, errorLogger, civlConfig)
 						.evaluateQuantifiedExpression(state, pid,
 								(QuantifiedExpression) expression);
+	}
+
+	/**
+	 * <p>
+	 * Evaluate a {@link ValueAtExpression},
+	 * <code>$value_at($state s, int p, expression e)</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * The semantics of evaluating {@link ValueAtExpression} is evaluate e on
+	 * the state s as if control is on process p. The value of p and s both
+	 * evaluate in the current state. <strong>Note</strong> that such a
+	 * semantics will ONLY make sense if the state s is a collate state. see
+	 * {@link LibcollateExecutor}. Currently CIVL-C language doesn't provide
+	 * anyway to refer a non-collate state.
+	 * </p>
+	 * <p>
+	 * If the concrete value of the identifier (PID) of process p cannot be
+	 * decided, then <code>
+	 *   Define an array a[nprocs], where nprocs is the number of processes in s.
+	 *   Forall int i that 0 &lt= i && i &lt nprocs, a[i] == $value_at(s, i, e);
+	 * </code>. The evaluation thus will be <code>
+	 *   APPLY p on LAMBDA i : a[i]
+	 * </code>.
+	 * 
+	 * 
+	 * </p>
+	 * 
+	 * @param currentState
+	 *            The current state on which the current process reaches a
+	 *            ValueAtExpression.
+	 * @param pid
+	 *            The current process who reaches a ValueAtExpression.
+	 * @param valueAt
+	 *            The ValueAtExpression which will evaluate
+	 * @return The evaluation of the ValueAtExpression.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	protected Evaluation evaluateValueAtExpression(State currentState, int pid,
+			ValueAtExpression valueAt)
+			throws UnsatisfiablePathConditionException {
+		Expression stateRef = valueAt.state();
+		Expression process = valueAt.pid();
+		Expression expression = valueAt.expression();
+		Evaluation eval;
+		SymbolicExpression stateRefVal, processVal;
+		State evaluationState;
+
+		eval = evaluate(currentState, pid, stateRef);
+		currentState = eval.state;
+		stateRefVal = eval.value;
+		eval = evaluate(currentState, pid, process);
+		currentState = eval.state;
+		processVal = eval.value;
+		assert processVal.type().isNumeric();
+		if (stateRefVal == modelFactory.statenullConstantValue())
+			evaluationState = currentState;
+		else
+			evaluationState = stateFactory
+					.getStateByReference(modelFactory.getStateRef(stateRefVal));
+
+		Number processNumber = universe
+				.reasoner(currentState.getPathCondition(universe))
+				.extractNumber((NumericExpression) processVal);
+
+		assert evaluationState != null;
+		if (processNumber != null) {
+			// for concrete process value:
+			int concreteProcessVal = ((IntegerNumber) processNumber).intValue();
+
+			eval = evaluate(evaluationState, concreteProcessVal, expression);
+			eval.state = currentState;
+		} else {
+			// for non-concrete process value:
+			// omit the external process, who has the max pid:
+			int numProcs = evaluationState.numProcs() - 1;
+			List<SymbolicExpression> possibleEvals = new LinkedList<>();
+
+			for (int procId = 0; procId < numProcs; procId++) {
+				if (evaluationState.getProcessState(procId) != null)
+					eval = evaluate(evaluationState, procId, expression);
+				else
+					eval.value = universe.nullExpression();
+				possibleEvals.add(eval.value);
+			}
+			SymbolicType dynamicType = expression.getExpressionType()
+					.getDynamicType(universe);
+			SymbolicExpression possibleValArray = universe.array(dynamicType,
+					possibleEvals);
+			NumericSymbolicConstant boundedPid = (NumericSymbolicConstant) universe
+					.symbolicConstant(
+							universe.stringObject(BOUNDED_PROCESS_IDENTIFIER),
+							universe.integerType());
+			SymbolicExpression lambda = universe.lambda(boundedPid,
+					universe.arrayRead(possibleValArray, boundedPid));
+
+			eval.value = universe.arrayLambda(
+					universe.arrayType(dynamicType, universe.integer(numProcs)),
+					lambda);
+			eval.value = universe.apply(eval.value, Arrays.asList(processVal));
+			eval.state = currentState;
+		}
+		return eval;
 	}
 
 	protected Evaluation evaluateArrayLambda(State state, int pid,
@@ -3750,13 +3858,11 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger
-							.logSimpleError(source, state, process,
-									this.symbolicAnalyzer.stateInformation(
-											state),
-									ErrorKind.OTHER,
-									"Try to obtain a string from a sequence of char has length"
-											+ " less than or equal to one");
+					this.errorLogger.logSimpleError(source, state, process,
+							this.symbolicAnalyzer.stateInformation(state),
+							ErrorKind.OTHER,
+							"Try to obtain a string from a sequence of char has length"
+									+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;

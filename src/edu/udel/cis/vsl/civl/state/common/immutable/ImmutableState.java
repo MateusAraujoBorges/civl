@@ -290,7 +290,6 @@ public class ImmutableState implements State {
 		ImmutableDynamicScope canonicScope = scopeMap.get(dyscope);
 
 		if (canonicScope == null) {
-			dyscope.makeCanonic(universe);
 			canonicScope = scopeMap.putIfAbsent(dyscope, dyscope);
 			return canonicScope == null ? dyscope : canonicScope;
 		}
@@ -318,7 +317,7 @@ public class ImmutableState implements State {
 				.get(processState);
 
 		if (canonicProcessState == null) {
-			processState.makeCanonic(universe);
+			processState.makeCanonic();
 			canonicProcessState = processMap.putIfAbsent(processState,
 					processState);
 			return canonicProcessState == null
@@ -416,7 +415,6 @@ public class ImmutableState implements State {
 		int numProcs = processStates.length;
 		int numScopes = dyscopes.length;
 
-		pathCondition = (BooleanExpression) universe.canonic(pathCondition);
 		for (int i = 0; i < numProcs; i++) {
 			ImmutableProcessState processState = processStates[i];
 
@@ -754,7 +752,7 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public Iterable<ProcessState> getProcessStates() {
+	public synchronized Iterable<ProcessState> getProcessStates() {
 		if (processStateIterable == null) {
 			processStateIterable = new ProcessStateIterable();
 		}
@@ -783,7 +781,7 @@ public class ImmutableState implements State {
 				return scopeId;
 			scopeId = getParentId(scopeId);
 		}
-		return ModelConfiguration.DYNAMIC_REMOVED_SCOPE;
+		return ModelConfiguration.DYNAMIC_NULL_SCOPE;
 	}
 
 	@Override
@@ -814,7 +812,7 @@ public class ImmutableState implements State {
 			if (dyScopeId < 0) {
 				stackIndex++;
 				if (stackIndex >= stackSize)
-					return ModelConfiguration.DYNAMIC_REMOVED_SCOPE;
+					return ModelConfiguration.DYNAMIC_NULL_SCOPE;
 				dyScopeId = proc.getStackEntry(stackIndex).scope();
 			}
 			dyScope = this.getDyscope(dyScopeId);

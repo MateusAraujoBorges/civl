@@ -279,8 +279,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 							Arrays.asList(charPointer1.type(),
 									charPointer2.type()),
 							universe.integerType());
-					func = universe.canonic(universe.symbolicConstant(
-							universe.stringObject("strcmp"), funcType));
+					func = universe.symbolicConstant(
+							universe.stringObject("strcmp"), funcType);
 					symResult = universe.apply(func,
 							Arrays.asList(charPointer1, charPointer2));
 				}

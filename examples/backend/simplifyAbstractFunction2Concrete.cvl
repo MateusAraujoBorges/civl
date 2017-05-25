@@ -1,0 +1,18 @@
+/* An example to show that an abstract function can be simplified to a
+   concrete number. */
+$abstract int foo(int x);
+
+int main() {
+  int x = foo(1);
+  int a[3] = {1, 2, 3};
+
+  $assume(foo(1) >= 0 && foo(1) <= 2);
+
+  int y = a[x];
+
+  $assume(foo(1) == 2);
+  $when( x == 2 ) { // force canonicalization
+    $assert(a[x] == 3); // true iff x is concrete
+    $assert(y == 3);
+  }
+}

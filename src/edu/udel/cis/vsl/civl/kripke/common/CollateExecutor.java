@@ -97,9 +97,10 @@ public class CollateExecutor {
 					+ " at State " + realState.getCanonicId()
 					+ ": start executing sub-program on collate states.");
 		if (this.config.showStates() || config.showSavedStates()
-				|| config.debugOrVerbose())
+				|| config.debugOrVerbose()) {
 			config.out().println(executor.evaluator().symbolicAnalyzer()
 					.stateToString(initState));
+		}
 		while (searcher.search(initState));
 		if (this.config.showTransitions() || this.config.showStates()
 				|| config.showSavedStates() || config.debugOrVerbose())

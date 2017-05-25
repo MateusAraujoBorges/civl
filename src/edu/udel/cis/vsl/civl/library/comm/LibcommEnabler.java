@@ -479,8 +479,7 @@ public class LibcommEnabler extends BaseLibraryEnabler
 		tag = universe.tupleRead(msg, twoObject);
 		candidateProc = libevaluator.readProcArray(state, pid, process,
 				procArray, (NumericExpression) dest, enqueue_call.getSource());
-		candidateProcId = modelFactory.getProcessId(enqueue_call.getSource(),
-				candidateProc);
+		candidateProcId = modelFactory.getProcessId(candidateProc);
 		if (candidateProcId < 0 || candidateProcId == pid)
 			return falseValue;
 		else {

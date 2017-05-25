@@ -8,6 +8,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
+import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Model;
@@ -812,12 +813,10 @@ public interface StateFactory {
 	 * 
 	 * @param state
 	 *            The state will be saved in the stateFactory.
-	 * @param pid
-	 *            The pid of the calling process
 	 * @return A reference that can be used to get the state back with
 	 *         {@link #getStateByReference(int)} and the saved state itself.
 	 */
-	Pair<Integer, State> saveState(State state, int pid);
+	Pair<Integer, State> saveState(State state);
 
 	/**
 	 * Remove a state from the saved state set, the state reference is no longer
@@ -901,8 +900,19 @@ public interface StateFactory {
 	 *         has been popped.
 	 */
 	State popAssumption(State state, int pid);
+	
+	/**
+	 * Translate an integer scope id into a symbolic expression
+	 * 
+	 * @param sid
+	 *            The scope id to be translated
+	 * @return The symbolic expression representing the scope id
+	 */
+	SymbolicExpression scopeValue(int sid);
 
 	void setConfiguration(CIVLConfiguration config);
 
 	public SymbolicExpression processValue(int pid);
+	
+	void setSymbolicUtility(SymbolicUtility symbolicUtility);
 }

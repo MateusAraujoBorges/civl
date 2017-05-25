@@ -3,7 +3,6 @@ package edu.udel.cis.vsl.civl.model.IF.statement;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -89,22 +88,6 @@ public interface MallocStatement extends Statement {
 	Expression getSizeExpression();
 
 	/**
-	 * For every symbolic type, there is a symbolic constant of that type
-	 * representing "undefined" value of that type. The name of that symbolic
-	 * constant might very well be "UNDEFINED". This method returns the
-	 * undefined value whose type is the dynamicObjectType. This is the
-	 * expression used in place of an object that has been deallocated (by a
-	 * <code>$free</code> instruction) until that object is swept up by the
-	 * garbage collector.
-	 * 
-	 * In the example, this would return the symbolic constant UNDEFINED of type
-	 * array of real.
-	 * 
-	 * @return undefined expression of dynamic object type
-	 */
-	SymbolicExpression getUndefinedObject();
-
-	/**
 	 * Returns the expression on the left-hand side of the assignment. In the
 	 * example, this would be <code>p</code>. This expression will be assigned a
 	 * pointer to the first element of the array object created by the malloc.
@@ -123,10 +106,7 @@ public interface MallocStatement extends Statement {
 	 *            the dynamic element type
 	 * @param dynamicObjectType
 	 *            the dynamic object type
-	 * @param undefinedObject
-	 *            the initial undefined value for the object
 	 */
 	void complete(SymbolicType dynamicElementType,
-			SymbolicArrayType dynamicObjectType,
-			SymbolicExpression undefinedObject);
+			SymbolicArrayType dynamicObjectType);
 }

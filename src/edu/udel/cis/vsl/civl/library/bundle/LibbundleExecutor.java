@@ -224,6 +224,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		CIVLBundleType bundleType = this.typeFactory.bundleType();
 		BooleanExpression isPtrValid, isSizeGTZ;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
+		ResultType resultType;
 
 		// requires : pointer is valid:
 		isPtrValid = symbolicAnalyzer.isDerefablePointer(state, pointer).left;
@@ -236,11 +237,12 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 					"Attempt to read/write a invalid pointer type variable.");
 			throw new UnsatisfiablePathConditionException();
 		}
-		if (isSizeGTZ.isFalse() || reasoner.valid(isSizeGTZ)
-				.getResultType() != ResultType.YES) {
-			errorLogger.logSimpleError(arguments[1].getSource(), state, process,
-					symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
-					"Attempt to pack data of 0 size.");
+		resultType = reasoner.valid(isSizeGTZ).getResultType();
+		if (isSizeGTZ.isFalse() || resultType != ResultType.YES) {
+			errorLogger.logError(arguments[1].getSource(), state, pid,
+					symbolicAnalyzer.stateInformation(state), isSizeGTZ,
+					resultType, ErrorKind.OTHER, "Attempt to pack data of "
+							+ size + " size, which can be zero\n");
 			throw new UnsatisfiablePathConditionException();
 		}
 		// test:

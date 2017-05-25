@@ -22,12 +22,22 @@ public class MessagePassingBenchmarkScale {
 				if (ny < nx || (nx != 3 && ny == 4))
 					continue;
 				System.out.println(">>>>>>>> Diffusion2d <<<<<<<<");
-				ui.run("verify  -echo" + " -inputNSTEPSB=2 -inputNXB=" + nx
-						+ " -inputNYB=" + ny + " -inputNPROCSX=" + nx + " "
-						+ "-inputNPROCSY=" + ny + " -enablePrintf=false "
-						+ civlDir + "/examples/mpi/diffusion2d.c");
+				ui.run("verify  -inputNSTEPSB=2 -inputNXB=" + nx + " -inputNYB="
+						+ ny + " -inputNPROCSXB=" + nx + " " + "-inputNPROCSYB="
+						+ ny + " -enablePrintf=false " + civlDir
+						+ "/examples/mpi/diffusion2d.c");
 			}
-
+		/*
+		 * civl verify -inputNSTEPSB=2 -inputNXB=3 -inputNYB=3 -inputNPROCSXB=3
+		 * -inputNPROCSYB=3 -enablePrintf=false ./examples/mpi/diffusion2d.c
+		 * 
+		 * === Stats === time (s) : 15.16
+		 * 
+		 * civl verify -inputNSTEPSB=2 -inputNXB=3 -inputNYB=4 -inputNPROCSXB=3
+		 * -inputNPROCSYB=4 -enablePrintf=false ./examples/mpi/diffusion2d.c
+		 * 
+		 * === Stats === time (s) : 21.09
+		 */
 	}
 
 }

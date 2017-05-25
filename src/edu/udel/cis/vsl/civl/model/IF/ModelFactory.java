@@ -1522,24 +1522,13 @@ public interface ModelFactory {
 	 * tuple with one element of integer type. A CIVL internal exception is
 	 * thrown if the value can't be computed.
 	 * 
-	 * @param source
-	 *            The CIVL source information of the symbolic process id
 	 * @param scopeValue
 	 *            The symbolic object of the scope id
 	 * @return The concrete scope id
 	 */
-	int getScopeId(CIVLSource source, SymbolicExpression scopeValue);
+	int getScopeId(SymbolicExpression scopeValue);
 
 	boolean isScopeIdDefined(int scopeId);
-
-	/**
-	 * Translate an integer scope id into a symbolic expression
-	 * 
-	 * @param sid
-	 *            The scope id to be translated
-	 * @return The symbolic expression representing the scope id
-	 */
-	SymbolicExpression scopeValue(int sid);
 
 	/**
 	 * Translate an integer canonical state id into a symbolic expression
@@ -1562,7 +1551,7 @@ public interface ModelFactory {
 	 * @return The integer canonical ID of state represented by the symbolic
 	 *         state value.
 	 */
-	int getStateRef(CIVLSource source, SymbolicExpression stateValue);
+	int getStateRef(SymbolicExpression stateValue);
 
 	/*
 	 * ************************************************************************
@@ -1574,13 +1563,11 @@ public interface ModelFactory {
 	 * Translate a symbolic process id into an integer. A symbolic process id is
 	 * a tuple with one element of integer type.
 	 * 
-	 * @param source
-	 *            The CIVL source information of the symbolic process id
 	 * @param processValue
 	 *            The symbolic object of the process id
 	 * @return The integer of the process id
 	 */
-	int getProcessId(CIVLSource source, SymbolicExpression processValue);
+	int getProcessId(SymbolicExpression processValue);
 
 	/**
 	 * Checks if the given process value equals to the $proc_null constant. An
@@ -1593,7 +1580,7 @@ public interface ModelFactory {
 	 * @return True iff the given process value equals to the $proc_null
 	 *         constant.
 	 */
-	boolean isProcNull(CIVLSource source, SymbolicExpression procValue);
+	boolean isProcNull(SymbolicExpression procValue);
 
 	SymbolicExpression nullProcessValue();
 

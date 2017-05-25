@@ -30,6 +30,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.RemoteOnExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ResultNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.DeclarationListNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.statement.ForLoopInitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.TypeNode;
 import edu.udel.cis.vsl.abc.ast.type.IF.PointerType;
@@ -37,14 +38,20 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
 import edu.udel.cis.vsl.abc.ast.value.IF.Value;
 import edu.udel.cis.vsl.abc.ast.value.IF.ValueFactory.Answer;
+import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
+import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
+import edu.udel.cis.vsl.abc.token.IF.Formation;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.abc.util.IF.Pair;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.common.BaseWorker;
 import edu.udel.cis.vsl.civl.transform.common.contracts.FunctionContractBlock.ConditionalClauses;
 import edu.udel.cis.vsl.civl.transform.common.contracts.MPIContractUtilities.TransformConfiguration;
 class ContractClauseTransformer {
+
+	public static final String ContractClauseTransformerName = "Contract-clause";
 
 	private int tmpHeapCounter = 0;
 
@@ -54,12 +61,21 @@ class ContractClauseTransformer {
 
 	Map<String, String> datatype2counter;
 
+	/**
+	 * Conditions that should be implied by requirements of the function
+	 * contract otherwise there are side-effect errors.
+	 */
 	LinkedList<ExpressionNode> sideEffectConditions;
 
 	/**
 	 * A reference to an instance of {@link NodeFactory}
 	 */
 	private NodeFactory nodeFactory;
+
+	/**
+	 * A reference to an instance of {@link ASTFactory}
+	 */
+	private ASTFactory astFactory;
 
 	class TransformPair {
 		List<BlockItemNode> requirements;
@@ -73,6 +89,7 @@ class ContractClauseTransformer {
 	}
 
 	ContractClauseTransformer(ASTFactory astFactory) {
+		this.astFactory = astFactory;
 		this.nodeFactory = astFactory.getNodeFactory();
 		this.datatype2counter = new HashMap<>();
 		this.sideEffectConditions = new LinkedList<>();
@@ -101,13 +118,15 @@ class ContractClauseTransformer {
 	Pair<List<BlockItemNode>, ExpressionNode> ACSLSideEffectRemoving(
 			ExpressionNode predicate, TransformConfiguration config)
 			throws SyntaxException {
-		Pair<List<BlockItemNode>, ExpressionNode> result = mpiExtent2intermediate(
+		Pair<List<BlockItemNode>, ExpressionNode> result = mpiExtentSERemove(
+				predicate);
+		Pair<List<BlockItemNode>, ExpressionNode> subResult = MPIDatatype2datatypeExtentSERemove(
 				predicate);
 
+		result.left.addAll(subResult.left);
+		result.right = subResult.right;
 		if (config.alloc4Valid()) {
-			Pair<List<BlockItemNode>, ExpressionNode> subResult = allocation4Valids(
-					result.right, config);
-
+			subResult = allocation4Valids(result.right, config);
 			result.left.addAll(subResult.left);
 			result.right = subResult.right;
 		}
@@ -146,15 +165,14 @@ class ContractClauseTransformer {
 				config.setNoResult(true);
 				config.setAlloc4Valid(false);
 				sideEffects = ACSLSideEffectRemoving(requires, config);
-				requirements.addAll(sideEffects.left);
+				requirements.addAll(0, sideEffects.left);
 				requires = ACSLPrimitives2CIVLC(sideEffects.right, preState,
 						config);
 				requirements.addAll(
 						transformClause2Checking(condClause.condition, requires,
 								preState, condClause.getWaitsfors(), config));
 			}
-			requirements.addAll(
-					transformAssignsClause(condClause.getAssignsArgs()));
+			requirements.addAll(transformAssignsClause(condClause));
 			if (ensures != null) {
 				config.setIgnoreOld(false);
 				config.setNoResult(false);
@@ -162,7 +180,7 @@ class ContractClauseTransformer {
 				sideEffects = ACSLSideEffectRemoving(ensures, config);
 				ensures = ACSLPrimitives2CIVLC(sideEffects.right, preState,
 						config);
-				ensurances.addAll(sideEffects.left);
+				ensurances.addAll(0, sideEffects.left);
 				ensurances.addAll(transformClause2Assumption(
 						condClause.condition, ensures, postState,
 						condClause.getWaitsfors(), config));
@@ -174,8 +192,8 @@ class ContractClauseTransformer {
 	TransformPair transformMPICollectiveBlock4Target(
 			FunctionContractBlock mpiBlock, TransformConfiguration config)
 			throws SyntaxException {
-		LinkedList<BlockItemNode> requirements = new LinkedList<>();
-		LinkedList<BlockItemNode> ensurances = new LinkedList<>();
+		LinkedList<BlockItemNode> reqTranslation = new LinkedList<>();
+		LinkedList<BlockItemNode> ensTranslation = new LinkedList<>();
 		ExpressionNode mpiComm = mpiBlock.getMPIComm();
 		Source source = mpiComm.getSource();
 		VariableDeclarationNode preStateDecl = createCollateStateInitializer(
@@ -189,10 +207,10 @@ class ContractClauseTransformer {
 				source,
 				nodeFactory.newIdentifierNode(source, postStateDecl.getName()));
 		Pair<List<BlockItemNode>, ExpressionNode> sideEffects;
+		List<BlockItemNode> sideEffectTranslation = new LinkedList<>();
 
-		requirements.addAll(mpiConstantsInitialization(mpiComm));
-		requirements.add(preStateDecl);
-		ensurances.add(postStateDecl);
+		reqTranslation.add(preStateDecl);
+		ensTranslation.add(postStateDecl);
 		for (ConditionalClauses condClause : mpiBlock.getConditionalClauses()) {
 			ExpressionNode requires = condClause.getRequires(nodeFactory);
 			ExpressionNode ensures = condClause.getEnsures(nodeFactory);
@@ -202,10 +220,13 @@ class ContractClauseTransformer {
 				config.setNoResult(true);
 				config.setAlloc4Valid(true);
 				sideEffects = ACSLSideEffectRemoving(requires, config);
-				requirements.addAll(0, sideEffects.left);
+				// Translation of side effects should be inserted at the head of
+				// the whole translation; Translation of side effects should be
+				// inserted in order.
+				sideEffectTranslation.addAll(sideEffects.left);
 				requires = ACSLPrimitives2CIVLC(sideEffects.right, preState,
 						config);
-				requirements.addAll(transformClause2Assumption(
+				reqTranslation.addAll(transformClause2Assumption(
 						condClause.condition, requires, preState,
 						condClause.getWaitsfors(), config));
 				sideEffectConditions.clear();
@@ -216,18 +237,19 @@ class ContractClauseTransformer {
 				config.setNoResult(false);
 				config.setAlloc4Valid(false);
 				sideEffects = ACSLSideEffectRemoving(ensures, config);
-				ensurances.addAll(0, sideEffects.left);
+				ensTranslation.addAll(0, sideEffects.left);
 				ensures = ACSLPrimitives2CIVLC(sideEffects.right, preState,
 						config);
-				ensurances.addAll(transformClause2Checking(condClause.condition,
-						ensures, postState, condClause.getWaitsfors(), config));
+				ensTranslation.addAll(
+						transformClause2Checking(condClause.condition, ensures,
+								postState, condClause.getWaitsfors(), config));
 			}
 		}
-		requirements.add(nodeFactory
-				.newExpressionStatementNode(createMPIBarrier(mpiComm)));
-		ensurances.addLast(nodeFactory.newExpressionStatementNode(
+		reqTranslation.addAll(0, sideEffectTranslation);
+		reqTranslation.addAll(0, mpiConstantsInitialization(mpiComm));
+		ensTranslation.addLast(nodeFactory.newExpressionStatementNode(
 				createMPICommEmptyCall(mpiComm, mpiBlock.getKind())));
-		return new TransformPair(requirements, ensurances);
+		return new TransformPair(reqTranslation, ensTranslation);
 	}
 
 	List<BlockItemNode> transformClause2Checking(ExpressionNode condition,
@@ -246,7 +268,7 @@ class ContractClauseTransformer {
 		List<BlockItemNode> results = new LinkedList<>();
 
 		// elaborate waited arguments:
-		if (arrivends != null)
+		if (arrivends != null && config.getRunWithArrived())
 			for (ExpressionNode arrivend : arrivends) {
 				if (arrivend.expressionKind() == ExpressionKind.REGULAR_RANGE) {
 					RegularRangeNode range = (RegularRangeNode) arrivend;
@@ -285,10 +307,12 @@ class ContractClauseTransformer {
 	 *            'evalKind' is chosen
 	 *            {@link CollectiveEvaluationKind#ARRIVED_WITH}.
 	 * @return
+	 * @throws SyntaxException
 	 */
 	List<BlockItemNode> transformClause2Assumption(ExpressionNode condition,
 			ExpressionNode predicate, ExpressionNode collateState,
-			List<ExpressionNode> arrivends, TransformConfiguration config) {
+			List<ExpressionNode> arrivends, TransformConfiguration config)
+			throws SyntaxException {
 		StatementNode assumes = createAssumption(predicate.copy());
 
 		if (!sideEffectConditions.isEmpty()) {
@@ -315,7 +339,7 @@ class ContractClauseTransformer {
 		List<BlockItemNode> results = new LinkedList<>();
 
 		// elaborate waited process places:
-		if (arrivends != null)
+		if (arrivends != null && config.getRunWithArrived())
 			for (ExpressionNode arrivend : arrivends) {
 				if (arrivend.expressionKind() == ExpressionKind.REGULAR_RANGE) {
 					RegularRangeNode range = (RegularRangeNode) arrivend;
@@ -330,12 +354,30 @@ class ContractClauseTransformer {
 	}
 
 	// TODO: add check for sequential and mpi
-	List<BlockItemNode> transformAssignsClause(List<ExpressionNode> memLocSets)
+	List<BlockItemNode> transformAssignsClause(ConditionalClauses condClauses)
 			throws SyntaxException {
-		List<BlockItemNode> results = new LinkedList<>();
+		if (condClauses.getAssignsArgs().isEmpty())
+			return Arrays.asList();
 
-		for (ExpressionNode memoryLocationSet : memLocSets)
+		List<BlockItemNode> results = new LinkedList<>();
+		Source source = null;
+
+		for (ExpressionNode memoryLocationSet : condClauses.getAssignsArgs()) {
 			results.add(refreshMemoryLocationSetExpression(memoryLocationSet));
+			if (source == null)
+				source = memoryLocationSet.getSource();
+		}
+
+		ExpressionNode condition = condClauses.condition;
+
+		if (condition != null) {
+			StatementNode compoundStmt = nodeFactory
+					.newCompoundStatementNode(source, results);
+
+			results.clear();
+			return Arrays.asList(nodeFactory.newIfNode(condition.getSource(),
+					condition.copy(), compoundStmt));
+		}
 		return results;
 	}
 
@@ -424,11 +466,10 @@ class ContractClauseTransformer {
 		return expression;
 	}
 
-	private Pair<List<BlockItemNode>, ExpressionNode> mpiExtent2intermediate(
+	private Pair<List<BlockItemNode>, ExpressionNode> mpiExtentSERemove(
 			ExpressionNode predicate) {
 		ASTNode visitor = predicate;
-		LinkedList<MPIContractExpressionNode> mpiExtents = new LinkedList<>();
-		List<BlockItemNode> intermediateVarDecls = new LinkedList<>();
+		LinkedList<Pair<ExpressionNode, ExpressionNode>> mpiDatatypeAndExtents = new LinkedList<>();
 
 		assert predicate.parent() == null;
 		while (visitor != null) {
@@ -437,28 +478,112 @@ class ContractClauseTransformer {
 
 				if (mpiExpr
 						.MPIContractExpressionKind() == MPIContractExpressionKind.MPI_EXTENT)
-					mpiExtents.add(mpiExpr);
+					mpiDatatypeAndExtents
+							.add(new Pair<>(mpiExpr.getArgument(0), mpiExpr));
 			}
 			visitor = visitor.nextDFS();
 		}
-		while (!mpiExtents.isEmpty()) {
-			MPIContractExpressionNode mpiExpr = mpiExtents.remove();
-			ASTNode parent = mpiExpr.parent();
-			int childidx = mpiExpr.childIndex();
-			ExpressionNode datatypeExpr = mpiExpr.getArgument(0);
-			ExpressionNode mpiextentofCall = createMPIExtentofCall(
-					mpiExpr.getArgument(0));
-			TypeNode sizeTNode = nodeFactory.newTypedefNameNode(nodeFactory
-					.newIdentifierNode(mpiExpr.getSource(), "size_t"), null);
+		return mpidatatypeExtent2intermediateVariable(predicate,
+				mpiDatatypeAndExtents);
+	}
+
+	/**
+	 * <p>
+	 * To eliminate the difference in between the notations of MPI-Contract
+	 * expressions ( {@link MPIContractExpressionNode}) in ACSL-MPI and CIVL
+	 * model, this transformer will replace the third argument "datatype" to
+	 * intermediate variables expressing "extent-of-datatype". If an
+	 * intermediate variable hasn't been declared yet, a variable declaration
+	 * ({@link VariableDeclarationNode}) will be included in the returned
+	 * object.
+	 * </p>
+	 * 
+	 * <p>
+	 * ACSL-MPI:<code>\mpi_region(void * buf, int count, MPI_Datatype datatype)</code>;
+	 * <br>
+	 * <code>\mpi_offset(void * buf, int count, MPI_Datatype datatype)</code>
+	 * <br>
+	 * <code>\mpi_valid(void * buf, int count, MPI_Datatype datatype)</code>
+	 * <br>
+	 * CIVL
+	 * model:<code>$mpi_region(void * buf, int count, size_t datatype_extent)</code>;<br>
+	 * <code>$mpi_offset(void * buf, int count, size_t datatype_extent)</code><br>
+	 * <code>$mpi_valid(void * buf, int count, size_t datatype_extent)</code>
+	 * </p>
+	 * 
+	 * @param predicate
+	 * @return
+	 */
+	private Pair<List<BlockItemNode>, ExpressionNode> MPIDatatype2datatypeExtentSERemove(
+			ExpressionNode predicate) {
+		ASTNode visitor = predicate;
+		LinkedList<Pair<ExpressionNode, ExpressionNode>> datatypesInRegions = new LinkedList<>();
+
+		assert visitor.parent() == null;
+		while (visitor != null) {
+			if (visitor instanceof MPIContractExpressionNode) {
+				MPIContractExpressionNode mpiExpr = (MPIContractExpressionNode) visitor;
+				MPIContractExpressionKind mpiExprKind = mpiExpr
+						.MPIContractExpressionKind();
+
+				if (mpiExprKind == MPIContractExpressionKind.MPI_REGION
+						|| mpiExprKind == MPIContractExpressionKind.MPI_OFFSET
+						|| mpiExprKind == MPIContractExpressionKind.MPI_VALID)
+					datatypesInRegions.add(new Pair<>(mpiExpr.getArgument(2),
+							mpiExpr.getArgument(2)));
+			}
+			visitor = visitor.nextDFS();
+		}
+		return mpidatatypeExtent2intermediateVariable(predicate,
+				datatypesInRegions);
+	}
+
+	/**
+	 * Creates intermediate variables to represent extents of MPI_Datatypes.
+	 * Replaces all the extent expressions in a given expression with the
+	 * intermediate variables.
+	 * 
+	 * @param expression
+	 *            The expression which may contains sub-expressions representing
+	 *            extents of MPI_Datatypes.
+	 * @param datatypeAndExtents:
+	 *            A list of pairs: left is the MPI_Datatype expression, right is
+	 *            the extent of MPI_Datatype expression. An intermediate
+	 *            variable associates to an MPI_Datatype expression; An
+	 *            intermediate variable replaces a set of extent of MPI_Datatype
+	 *            expressions.
+	 * @return A pair: left is a list of intermediate variable declarations;
+	 *         right is the expression in which sub-expressions representing
+	 *         extents of MPI_Datatypes are replaced with intermediate
+	 *         variables.
+	 */
+	private Pair<List<BlockItemNode>, ExpressionNode> mpidatatypeExtent2intermediateVariable(
+			ExpressionNode expression,
+			LinkedList<Pair<ExpressionNode, ExpressionNode>> datatypeAndExtents) {
+		List<BlockItemNode> intermediateVarDecls = new LinkedList<>();
+
+		while (!datatypeAndExtents.isEmpty()) {
+			Pair<ExpressionNode, ExpressionNode> datatypeAndExtent = datatypeAndExtents
+					.remove();
+			ExpressionNode datatype = datatypeAndExtent.left;
+			ExpressionNode extent = datatypeAndExtent.right;
+			Source datatypeSource = datatype.getSource();
+			TypeNode sizeTNode = nodeFactory.newTypedefNameNode(
+					nodeFactory.newIdentifierNode(datatypeSource, "size_t"),
+					null);
+			ExpressionNode mpiextentofCall = createMPIExtentofCall(datatype);
 			String intermediateVarName = null;
 			String datatypeIdName = null;
 
-			if (datatypeExpr instanceof IdentifierExpressionNode)
-				datatypeIdName = ((IdentifierExpressionNode) datatypeExpr)
+			// optimization: for some certain kinds of datatype nodes, their
+			// associated intermediate variables will be cached in order to
+			// reduce the number of intermediate variables:
+			if (datatype instanceof IdentifierExpressionNode)
+				datatypeIdName = ((IdentifierExpressionNode) datatype)
 						.getIdentifier().name();
-			else if (datatypeExpr instanceof EnumerationConstantNode)
-				datatypeIdName = ((EnumerationConstantNode) datatypeExpr)
-						.getName().name();
+			else if (datatype instanceof EnumerationConstantNode)
+				datatypeIdName = ((EnumerationConstantNode) datatype).getName()
+						.name();
 			if (datatypeIdName != null)
 				intermediateVarName = datatype2counter.get(datatypeIdName);
 			if (intermediateVarName == null) {
@@ -468,25 +593,28 @@ class ContractClauseTransformer {
 						.nextExtentName(tmpExtentCounter++);
 				datatype2counter.put(datatypeIdName, intermediateVarName);
 				intermediateVarDecl = nodeFactory.newVariableDeclarationNode(
-						mpiExpr.getSource(),
-						nodeFactory.newIdentifierNode(mpiExpr.getSource(),
+						datatypeSource,
+						nodeFactory.newIdentifierNode(datatypeSource,
 								intermediateVarName),
 						sizeTNode, mpiextentofCall);
 				intermediateVarDecls.add(intermediateVarDecl);
 			}
 
 			ExpressionNode intermediateVarExpr = nodeFactory
-					.newIdentifierExpressionNode(mpiExpr.getSource(),
-							nodeFactory.newIdentifierNode(mpiExpr.getSource(),
+					.newIdentifierExpressionNode(datatypeSource,
+							nodeFactory.newIdentifierNode(datatypeSource,
 									intermediateVarName));
+			ASTNode parent = extent.parent();
+			int childIdx = extent.childIndex();
+
 			if (parent == null) {
-				assert mpiExpr == predicate;
+				assert expression == extent;
 				return new Pair<>(intermediateVarDecls, intermediateVarExpr);
 			}
-			mpiExpr.remove();
-			parent.setChild(childidx, intermediateVarExpr);
+			extent.remove();
+			parent.setChild(childIdx, intermediateVarExpr);
 		}
-		return new Pair<>(intermediateVarDecls, predicate);
+		return new Pair<>(intermediateVarDecls, expression);
 	}
 
 	/**
@@ -736,44 +864,14 @@ class ContractClauseTransformer {
 		ExpressionNode buf = mpiValid.getArgument(0);
 		ExpressionNode count = mpiValid.getArgument(1);
 		ExpressionNode datatype = mpiValid.getArgument(2);
-		TypeNode typeNode;
+		TypeNode typeNode = nodeFactory.newBasicTypeNode(datatype.getSource(),
+				BasicTypeKind.CHAR);
 
-		if (datatype instanceof EnumerationConstantNode) {
-			EnumerationConstantNode mpiDatatypeConstant = (EnumerationConstantNode) datatype;
-			String name = mpiDatatypeConstant.getName().name();
-			String typedefname = "_" + name + "_t"; // quick translation
-
-			typeNode = nodeFactory.newTypedefNameNode(nodeFactory
-					.newIdentifierNode(datatype.getSource(), typedefname),
-					null);
-		} else {
-			typeNode = nodeFactory.newBasicTypeNode(datatype.getSource(),
-					BasicTypeKind.CHAR);
-
-			// optimize, reduce the number of intermediate variables introduced
-			// by side-effect remover:
-			String intermediateVarName = null, datatypeIdentifierName = null;
-			ExpressionNode extentofDatatype;
-
-			if (datatype instanceof IdentifierExpressionNode)
-				datatypeIdentifierName = ((IdentifierExpressionNode) datatype)
-						.getIdentifier().name();
-			else if (datatype instanceof EnumerationConstantNode)
-				datatypeIdentifierName = ((EnumerationConstantNode) datatype)
-						.getName().name();
-			if (datatypeIdentifierName != null)
-				intermediateVarName = datatype2counter
-						.get(datatypeIdentifierName);
-			if (intermediateVarName != null)
-				extentofDatatype = nodeFactory.newIdentifierExpressionNode(
-						datatype.getSource(), nodeFactory.newIdentifierNode(
-								datatype.getSource(), intermediateVarName));
-			else
-				extentofDatatype = createMPIExtentofCall(datatype);
-			// char data[count * extentof(datatype)];
-			count = nodeFactory.newOperatorNode(source, Operator.TIMES,
-					Arrays.asList(count.copy(), extentofDatatype));
-		}
+		// The third argument has been transformed by the ACSLPrimitives2CIVLC
+		// method.
+		count = nodeFactory.newOperatorNode(source, Operator.TIMES,
+				Arrays.asList(count.copy(), datatype.copy()));
+		// char data[count * extentof(datatype)];
 		return createAllocation(buf, typeNode, count, source);
 	}
 
@@ -790,20 +888,45 @@ class ContractClauseTransformer {
 	}
 
 	/**
-	 * @param a
-	 *            function call expression: <code>$elaborate(expr)</code>
-	 * @return
+	 * Create Sempty for loop statement for elaborating expressions:
+	 * <code> for (int i = 0; i < expression; i++); </code>
+	 * 
+	 * @param expression
+	 *            The expression will be elaborated
+	 * @return an empty for loop statement
+	 * @throws SyntaxException
+	 *             when unexpected exception happens during creating zero
+	 *             constant node.
 	 */
-	private StatementNode createElaborateFor(ExpressionNode expression) {
-		IdentifierExpressionNode funcIdent = nodeFactory
-				.newIdentifierExpressionNode(expression.getSource(),
-						nodeFactory.newIdentifierNode(expression.getSource(),
-								BaseWorker.ELABORATE));
-		ExpressionNode elaborateCall = nodeFactory.newFunctionCallNode(
-				expression.getSource(), funcIdent,
-				Arrays.asList(expression.copy()), null);
+	private StatementNode createElaborateFor(ExpressionNode expression)
+			throws SyntaxException {
+		TokenFactory tokenFactory = astFactory.getTokenFactory();
+		Formation formation = tokenFactory.newTransformFormation(
+				ContractClauseTransformerName,
+				"Elaborate " + expression.prettyRepresentation());
+		CivlcToken token = tokenFactory.newCivlcToken(CivlcTokenConstant.FOR,
+				"inserted text", formation);
+		Source source = tokenFactory.newSource(token);
+		IdentifierExpressionNode forLoopVarExpr = nodeFactory
+				.newIdentifierExpressionNode(source,
+						nodeFactory.newIdentifierNode(source,
+								BaseWorker.ELABORATE_LOOP_VAR));
+		VariableDeclarationNode forLoopVarDecl = nodeFactory
+				.newVariableDeclarationNode(source,
+						forLoopVarExpr.getIdentifier().copy(),
+						nodeFactory.newBasicTypeNode(source, BasicTypeKind.INT),
+						nodeFactory.newIntegerConstantNode(source, "0"));
+		ForLoopInitializerNode forLoopInitializer = nodeFactory
+				.newForLoopInitializerNode(source,
+						Arrays.asList(forLoopVarDecl));
+		ExpressionNode forLoopCondition = nodeFactory.newOperatorNode(source,
+				Operator.LT, Arrays.asList(forLoopVarExpr, expression.copy()));
+		ExpressionNode forLoopIncrementor = nodeFactory.newOperatorNode(source,
+				Operator.POSTINCREMENT, Arrays.asList(forLoopVarExpr.copy()));
 
-		return nodeFactory.newExpressionStatementNode(elaborateCall);
+		return nodeFactory.newForLoopNode(source, forLoopInitializer,
+				forLoopCondition, forLoopIncrementor,
+				nodeFactory.newNullStatementNode(source), null);
 	}
 
 	/**
@@ -1008,6 +1131,7 @@ class ContractClauseTransformer {
 		return call;
 	}
 
+	@SuppressWarnings("unused")
 	private ExpressionNode createMPIBarrier(ExpressionNode mpiComm) {
 		ExpressionNode functionIdentifierExpression = nodeFactory
 				.newIdentifierExpressionNode(mpiComm.getSource(),

@@ -240,7 +240,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 	private Evaluation executeGetState(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) {
-		int stateID = this.stateFactory.saveState(state, pid).left;
+		int stateID = this.stateFactory.saveState(state).left;
 
 		return new Evaluation(state, modelFactory.stateValue(stateID));
 	}
@@ -257,7 +257,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) {
 		SymbolicExpression proc = argumentValues[0];
-		int processID = this.modelFactory.getProcessId(source, proc);
+		int processID = this.modelFactory.getProcessId(proc);
 		SymbolicExpression result = this.trueValue;
 
 		if (processID >= 0 && processID < state.numProcs()) {
@@ -480,8 +480,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 	private Evaluation executeProcDefined(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
-		int procValue = modelFactory.getProcessId(arguments[0].getSource(),
-				argumentValues[0]);
+		int procValue = modelFactory.getProcessId(argumentValues[0]);
 		SymbolicExpression result = modelFactory.isPocessIdDefined(procValue)
 				? trueValue
 				: falseValue;
@@ -508,8 +507,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 	private Evaluation executeScopeDefined(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
-		int scopeValue = modelFactory.getScopeId(arguments[0].getSource(),
-				argumentValues[0]);
+		int scopeValue = modelFactory.getScopeId(argumentValues[0]);
 		SymbolicExpression result = modelFactory.isScopeIdDefined(scopeValue)
 				? trueValue
 				: falseValue;
@@ -541,8 +539,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 	private Evaluation executeWait(State state, int pid, Expression[] arguments,
 			SymbolicExpression[] argumentValues, CIVLSource source) {
 		SymbolicExpression procVal = argumentValues[0];
-		int joinedPid = modelFactory.getProcessId(arguments[0].getSource(),
-				procVal);
+		int joinedPid = modelFactory.getProcessId(procVal);
 
 		// state = stateFactory.setLocation(state, pid, target);
 		if (modelFactory.isPocessIdDefined(joinedPid)
@@ -585,7 +582,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 						typeFactory.processType(), procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
-				pidValue = modelFactory.getProcessId(procsSource, proc);
+				pidValue = modelFactory.getProcessId(proc);
 				if (!modelFactory.isProcessIdNull(pidValue)
 						&& modelFactory.isPocessIdDefined(pidValue))
 					state = stateFactory.removeProcess(state, pidValue);

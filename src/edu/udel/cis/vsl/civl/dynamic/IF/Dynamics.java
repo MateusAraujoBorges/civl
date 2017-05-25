@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.dynamic.IF;
 import edu.udel.cis.vsl.civl.dynamic.common.CommonSymbolicUtility;
 import edu.udel.cis.vsl.civl.dynamic.immutable.ImmutableDynamicWriteSet;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
+import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 /**
@@ -23,8 +24,8 @@ public class Dynamics {
 	 * @return The new symbolic utility created.
 	 */
 	public static SymbolicUtility newSymbolicUtility(SymbolicUniverse universe,
-			ModelFactory modelFactory) {
-		return new CommonSymbolicUtility(universe, modelFactory);
+			ModelFactory modelFactory, StateFactory stateFactory) {
+		return new CommonSymbolicUtility(universe, modelFactory, stateFactory);
 	}
 
 	/**

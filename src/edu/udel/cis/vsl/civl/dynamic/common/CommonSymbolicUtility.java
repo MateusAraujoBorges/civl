@@ -19,6 +19,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
@@ -156,6 +157,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 	private SymbolicExpression nullFunctionPointer;
 
+	private StateFactory stateFactory;
+
 	/* ***************************** Constructor *************************** */
 
 	/**
@@ -167,9 +170,10 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	 *            the model factory to be used by the symbolic utility.
 	 */
 	public CommonSymbolicUtility(SymbolicUniverse universe,
-			ModelFactory modelFactory) {
+			ModelFactory modelFactory, StateFactory stateFactory) {
 		SymbolicType dynamicToIntType;
 
+		this.stateFactory = stateFactory;
 		this.universe = universe;
 		this.modelFactory = modelFactory;
 		this.typeFactory = modelFactory.typeFactory();
@@ -180,23 +184,18 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 				universe.integerType());
 		sizeofFunction = universe.symbolicConstant(
 				universe.stringObject("SIZEOF"), dynamicToIntType);
-		sizeofFunction = universe.canonic(sizeofFunction);
-		this.zeroObj = (IntObject) universe.canonic(universe.intObject(0));
-		this.oneObj = (IntObject) universe.canonic(universe.intObject(1));
-		this.twoObj = (IntObject) universe.canonic(universe.intObject(2));
-		zero = (NumericExpression) universe.canonic(universe.integer(0));
-		one = (NumericExpression) universe.canonic(universe.integer(1));
-		this.falseValue = (BooleanExpression) universe
-				.canonic(universe.falseExpression());
-		this.trueValue = (BooleanExpression) universe
-				.canonic(universe.trueExpression());
+		this.zeroObj = universe.intObject(0);
+		this.oneObj = universe.intObject(1);
+		this.twoObj = universe.intObject(2);
+		zero = universe.integer(0);
+		one = universe.integer(1);
+		this.falseValue = universe.falseExpression();
+		this.trueValue = universe.trueExpression();
 		this.pointerType = this.typeFactory.pointerSymbolicType();
 		this.functionPointerType = this.typeFactory
 				.functionPointerSymbolicType();
-		this.nullPointer = universe.canonic(
-				this.makePointer(-1, -1, universe.identityReference()));
-		this.nullFunctionPointer = universe
-				.canonic(this.makeFunctionPointer(-1, -1));
+		this.nullPointer = makePointer(-1, -1, universe.identityReference());
+		this.nullFunctionPointer = makeFunctionPointer(-1, -1);
 		this.undefinedPointer = modelFactory
 				.undefinedValue(typeFactory.pointerSymbolicType());
 		this.stringType = universe.arrayType(universe.characterType());
@@ -515,8 +514,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		BooleanExpression result = this.trueValue;
 
 		if (ref1.isIdentityReference() && ref2.isIdentityReference()) {
-			return (BooleanExpression) universe
-					.canonic(universe.equals(ref1, ref2));
+			return universe.equals(ref1, ref2);
 		}
 		if (ref2.isIdentityReference() // second contains first
 				|| universe.equals(scope1, scope2).isFalse() // different scope
@@ -533,7 +531,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			return this.falseValue;
 		offset = numRefs2 - numRefs1;
 		for (int i = offset; i < numRefs1; i++) {
-			// TODO change to andTo
 			result = universe.and(result, universe.equals(refComps1.get(i),
 					refComps2.get(i + offset)));
 		}
@@ -567,13 +564,12 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			SymbolicType type) {
 		SymbolicExpression result;
 
-		type = (SymbolicType) universe.canonic(type);
 		result = typeExpressionMap.get(type);
 		if (result == null) {
 			SymbolicExpression id = universe.integer(type.id());
 
-			result = universe.canonic(universe.tuple(dynamicType,
-					new Singleton<SymbolicExpression>(id)));
+			result = universe.tuple(dynamicType,
+					new Singleton<SymbolicExpression>(id));
 			typeExpressionMap.put(type, result);
 			typeExpressionMap2.put(result, type);
 			if (civlType != null)
@@ -607,8 +603,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 	@Override
 	public int getDyscopeId(CIVLSource source, SymbolicExpression pointer) {
-		return modelFactory.getScopeId(source,
-				universe.tupleRead(pointer, zeroObj));
+		return modelFactory.getScopeId(universe.tupleRead(pointer, zeroObj));
 	}
 
 	@Override
@@ -692,7 +687,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 				(NumericExpression) step);
 		BooleanExpression negativeStep = universe
 				.lessThan((NumericExpression) step, zero);
-		// TODO change to andTo
 		BooleanExpression positiveStepResult = universe.and(positiveStep,
 				universe.lessThanEquals((NumericExpression) value,
 						(NumericExpression) high));
@@ -733,7 +727,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	@Override
 	public SymbolicExpression makePointer(int scopeId, int varId,
 			ReferenceExpression symRef) {
-		SymbolicExpression scopeField = modelFactory.scopeValue(scopeId);
+		SymbolicExpression scopeField = stateFactory.scopeValue(scopeId);
 		SymbolicExpression varField = universe.integer(varId);
 		SymbolicExpression result = universe.tuple(this.pointerType,
 				Arrays.asList(new SymbolicExpression[]{scopeField, varField,
@@ -1499,7 +1493,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	@Override
 	public SymbolicExpression makeFunctionPointer(int dyscopeID, int fid) {
 		return universe.tuple(this.functionPointerType, Arrays.asList(
-				modelFactory.scopeValue(dyscopeID), universe.integer(fid)));
+				stateFactory.scopeValue(dyscopeID), universe.integer(fid)));
 	}
 
 	@Override

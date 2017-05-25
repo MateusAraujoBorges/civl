@@ -62,7 +62,6 @@ public class CommonArrayType extends CommonType implements CIVLArrayType {
 					.getDynamicType(universe);
 
 			dynamicType = universe.arrayType(elementDynamicType);
-			dynamicType = (SymbolicType) universe.canonic(dynamicType);
 		}
 		return dynamicType;
 	}

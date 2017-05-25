@@ -5,22 +5,19 @@
 #include<civlc.cvh>
 #include<string.h>
 
-#define BUFFER_BOUND 3
+#define DATA_LIMIT 1024
 #pragma PARSE_ACSL
 /*@ 
   @ \mpi_collective(comm, P2P):
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \mpi_agree(root) && \mpi_agree(count * \mpi_extent(datatype));
-  @   requires 0 <= count && count * \mpi_extent(datatype) < 5;
+  @   requires 0 <= count && count * \mpi_extent(datatype) < DATA_LIMIT;
   @   requires \mpi_valid(buf, count, datatype);
-  @   behavior root:
-  @     assumes \mpi_comm_rank == root;
-  @   behavior others:
+  @   ensures \mpi_agree(\mpi_region(buf, count, datatype)); 
+  @   behavior nonroot:
   @     assumes \mpi_comm_rank != root;
   @     assigns \mpi_region(buf, count, datatype);
-  @     ensures \mpi_equals(\mpi_region(buf, count, datatype), 
-  @                       \mpi_region(\on(root, buf), count, datatype));
-  @     waitsfor root;
+  @   waitsfor root;
   @*/
 int broadcast(void * buf, int count, 
 	      MPI_Datatype datatype, int root, MPI_Comm comm) {
@@ -42,8 +39,8 @@ int broadcast(void * buf, int count,
 /*@ 
   @ \mpi_collective(comm, P2P) :
   @   requires \mpi_agree(root) && \mpi_agree(sendcount * \mpi_extent(sendtype));
-  @   requires sendcount * \mpi_extent(sendtype) >= 0 && sendcount * \mpi_extent(sendtype) < 5;
-  @   requires recvcount * \mpi_extent(recvtype) >= 0 && recvcount * \mpi_extent(recvtype) < 5;
+  @   requires sendcount * \mpi_extent(sendtype) >= 0 && sendcount * \mpi_extent(sendtype) < DATA_LIMIT;
+  @   requires recvcount * \mpi_extent(recvtype) >= 0 && recvcount * \mpi_extent(recvtype) < DATA_LIMIT;
   @   requires 0 <= root && root < \mpi_comm_size;
   @   requires \mpi_valid(sendbuf, sendcount, sendtype);
   @   behavior imroot:
@@ -61,8 +58,9 @@ int broadcast(void * buf, int count,
   @   behavior imnroot:
   @     assumes \mpi_comm_rank != root;
   @     ensures \mpi_equals(\mpi_region(sendbuf, sendcount, sendtype),
-  @                         \mpi_region(\mpi_offset(\on(root, recvbuf), \mpi_comm_rank * sendcount, sendtype),
-  @                                      recvcount, recvtype)
+  @                         \mpi_region(\mpi_offset(\on(root, recvbuf), 
+  @                                                 \mpi_comm_rank * sendcount, sendtype),
+  @                                     sendcount, sendtype)
   @                        );
   @*/
 int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype, 
@@ -101,12 +99,12 @@ int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
 
 /*@ \mpi_collective(comm, P2P):
   @   requires \mpi_agree(sendcount * \mpi_extent(sendtype));
-  @   requires sendcount >= 0 && sendcount * \mpi_extent(sendtype) * \mpi_comm_size < 5;
-  @   requires recvcount >= 0 && recvcount * \mpi_extent(recvtype) * \mpi_comm_size < 5;
+  @   requires sendcount >= 0 && sendcount * \mpi_extent(sendtype) * \mpi_comm_size < DATA_LIMIT;
+  @   requires recvcount >= 0 && recvcount * \mpi_extent(recvtype) * \mpi_comm_size < DATA_LIMIT;
   @   requires \mpi_valid(sendbuf, sendcount, sendtype);
   @   requires \mpi_valid(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @   requires \mpi_extent(recvtype) * recvcount == \mpi_extent(sendtype) * sendcount;
-  @   //assigns \mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype);
+  @   assigns \mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype);
   @   ensures \mpi_agree(\mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype));
   @   ensures \mpi_equals(\mpi_region(sendbuf, sendcount, sendtype),
   @                       \mpi_region(

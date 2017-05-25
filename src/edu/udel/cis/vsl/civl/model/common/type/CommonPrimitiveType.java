@@ -183,22 +183,19 @@ public class CommonPrimitiveType extends CommonType
 			case INT :
 				return universe.integer(0);
 			case PROCESS :
-				return universe.canonic(
-						universe.tuple((SymbolicTupleType) this.dynamicType,
-								new Singleton<SymbolicExpression>(
-										universe.integer(-2))));
+				return universe.tuple((SymbolicTupleType) this.dynamicType,
+						new Singleton<SymbolicExpression>(
+								universe.integer(-2)));
 			case STATE :
-				return universe.canonic(
-						universe.tuple((SymbolicTupleType) this.dynamicType,
-								new Singleton<SymbolicExpression>(
-										universe.integer(-1))));
+				return universe.tuple((SymbolicTupleType) this.dynamicType,
+						new Singleton<SymbolicExpression>(
+								universe.integer(-1)));
 			case REAL :
 				return universe.rational(0);
 			case SCOPE :
-				return universe.canonic(
-						universe.tuple((SymbolicTupleType) this.dynamicType,
-								new Singleton<SymbolicExpression>(
-										universe.integer(-2))));
+				return universe.tuple((SymbolicTupleType) this.dynamicType,
+						new Singleton<SymbolicExpression>(
+								universe.integer(-2)));
 			case CHAR :
 				return universe.character('\0');
 			default :

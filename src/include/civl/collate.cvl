@@ -69,15 +69,30 @@ struct _collate_state {
  * scope : The scope where the object is allocated.  
  * nprocs: The number of processes included in the global collator.
  */
-$gcollator $gcollator_create($scope scope, int nprocs) {
-  $gcollator gcollator = ($gcollator)$malloc(scope, sizeof(struct _gcollator));
+$atomic_f $gcollator $gcollator_create($scope scope, int nprocs) {
+    $gcollator gcollator = ($gcollator)$malloc(scope, sizeof(struct _gcollator));
+    
+    gcollator->nprocs = nprocs;
+    gcollator->procs = ($proc[nprocs])$lambda(int i) $proc_null;
+    gcollator->queue_length = 0;
+    $seq_init(&(gcollator->queue), 0, NULL);
+    gcollator->entered=(_Bool[nprocs])$lambda(int i) $false;
+    return gcollator;
+}
 
-  gcollator->nprocs = nprocs;
-  gcollator->procs = ($proc[nprocs])$lambda(int i) $proc_null;
-  gcollator->queue_length = 0;
-  $seq_init(&(gcollator->queue), 0, NULL);
-  gcollator->entered=(_Bool[nprocs])$lambda(int i) $false;
-  return gcollator;
+/* Free a $gcollator object. All gcollate states referred by this
+ *   object will be freed as well. 
+ *
+ * gc : a handle to the $gcollator object
+ */
+$atomic_f void $gcollator_destroy($gcollator gc) {
+  $assert(gc->queue_length == 0, "There is at least an entry in the gcollator "
+	  "(referred by %p) hasn't been departed by all processes.", gc);
+  int garbage_size = $seq_length(&gc->queue);
+  
+  for (int i = 0; i < garbage_size; i++)
+    $free(gc->queue[i]);
+  $free(gc);
 }
 
 /* Creates a local collate object. The object is allocated in the
@@ -91,13 +106,13 @@ $gcollator $gcollator_create($scope scope, int nprocs) {
  * be greater than or equal to 0 and less than the number of all
  * participants.
  */
-$collator $collator_create($gcollator gcollator, $scope scope, int place) {
-  $collator collator = ($collator)$malloc(scope, sizeof(struct _collator));
+$atomic_f $collator $collator_create($gcollator gcollator, $scope scope, int place) {
+    $collator collator = ($collator)$malloc(scope, sizeof(struct _collator));
   
-  collator->place = place;
-  collator->gcollator = gcollator;
-  collator->gcollator->procs[place] = $self;
-  return collator;
+    collator->place = place;
+    collator->gcollator = gcollator;
+    collator->gcollator->procs[place] = $self;
+    return collator;
 }
 
 $atomic_f void $collator_enters($collator collator){
@@ -139,10 +154,12 @@ $atomic_f $collate_state $collate_arrives($collator c, $scope scope) {
     _Bool initValue = $false;
     $scope root = $scopeof(*c->gcollator);
 
-    gcollate_state = ($gcollate_state)$malloc(root, sizeof(struct _gcollate_state));    
+    gcollate_state = ($gcollate_state)$malloc(root, sizeof(struct _gcollate_state));
     gcollate_state->status = (int[nprocs])$lambda(int i) NONARRIVED;
     gcollate_state->state = $state_null;
-    $seq_append(&c->gcollator->queue, &gcollate_state, 1);
+    // It must use insertion instead of append given the existance of
+    // garbage section:
+    $seq_insert(&c->gcollator->queue, c->gcollator->queue_length, &gcollate_state, 1);
     c->gcollator->queue_length++;
   }  
   result.place = place;
@@ -167,8 +184,21 @@ $atomic_f void $collate_departs($collator c, $collate_state cs) {
   // Mark the refered gcollate state as departed:
   gcollate_state->status[place] = DEPARTED;
 
-  // Scan the queue in the gcollator to remove an entry
-  // that has already been  marked as DEPARTED by all processes:
+  /* For a gcollate state which has been departed by all processes, it
+   * will be move to the tail of queue. Then there forms a garbage
+   * section at the tail of the queue whose length will increase. The
+   * reason of keeping these departed gcollate states is they still
+   * can be read by processes after they are marked as departed. The garbage
+   * section will be freed when the gcollator being destroyed.
+   *
+   * The queue length will not reveal the existance of the garbage
+   * section, i.e. queue length will decrease by 1 after a gcollate
+   * state being moved to the garbage section.
+   */
+
+  /* Scan the queue in the gcollator to remove the entry that just has
+   * been marked as DEPARTED by all processes (all-departed). At this
+   * point, there is at most one all-departed entry in the queue. */
   index = -1;
   for (int i = 0; i < queue_size; i++) {
     _Bool isGarbage = $true;
@@ -180,12 +210,12 @@ $atomic_f void $collate_departs($collator c, $collate_state cs) {
       }
     if (isGarbage) {
       index = i;
-      $free(gcollate_state);
       break;
     }
   }
   if (index >= 0) {
     $seq_remove(&c->gcollator->queue, index, NULL, 1);
+    $seq_append(&c->gcollator->queue, &gcollate_state, 1);
     c->gcollator->queue_length--;
   }
   // set the gcollate state reference to NULL so that the process 
@@ -193,51 +223,53 @@ $atomic_f void $collate_departs($collator c, $collate_state cs) {
   cs.gstate = NULL;
 }
 
-$bundle $collate_check($collator c, $bundle bundle) {
-  int nprocs, queue_size, place, index;
-  _Bool first = $true;
-  $gcollate_state attr;
-  $bundle result;
-
-  nprocs = c->gcollator->nprocs;
-  place = c->place;
-  queue_size = c->gcollator->queue_length;
-  for (int i = 0; i < queue_size; i++) {
-    if (_ATTR_USED(c->gcollator->queue[i], place)
-	&& !_CHECKED(c->gcollator->queue[i], place)) {
-      first = $false;
-      attr = c->gcollator->queue[i];      
-      index = i;
-      break;
-    }
-  }
-  
-  if (first) {
-    $scope gcollate_scope = $scopeof(*c->gcollator);    
+$atomic_f $bundle $collate_check($collator c, $bundle bundle) {
+    int nprocs, queue_size, place, index;
+    _Bool first = $true;
+    $gcollate_state attr;
+    $bundle result;
     
-    attr = ($gcollate_state)$malloc(gcollate_scope, sizeof(struct _gcollate_state));
-    attr->status = ((int[nprocs])$lambda(int i)UNCHECKED);
-    attr->attribute = bundle;
-    $seq_append(&c->gcollator->queue, &attr, 1);
-    index = c->gcollator->queue_length++;
-  }
-  attr->status[place] = CHECKED;
-  result = attr->attribute;
-
-  // if complete, dequeue:
-  _Bool complete = $true;
-
-  for (int i = 0; i < nprocs; i++) 
-    if (!_CHECKED(attr, i)) {
-      complete = $false;
-      break;
+    nprocs = c->gcollator->nprocs;
+    place = c->place;
+    queue_size = c->gcollator->queue_length;
+    for (int i = 0; i < queue_size; i++) {
+      if (_ATTR_USED(c->gcollator->queue[i], place)
+	  && !_CHECKED(c->gcollator->queue[i], place)) {
+	first = $false;
+	attr = c->gcollator->queue[i];      
+	index = i;
+	break;
+      }
     }
-  if (complete) {
-    $free(c->gcollator->queue[index]);
-    $seq_remove(&c->gcollator->queue, index, NULL, 1);
-    c->gcollator->queue_length--;
-  }
-  return result;
+    
+    if (first) {
+      $scope gcollate_scope = $scopeof(*c->gcollator);    
+      
+      attr = ($gcollate_state)$malloc(gcollate_scope, sizeof(struct _gcollate_state));
+      attr->status = ((int[nprocs])$lambda(int i)UNCHECKED);
+      attr->attribute = bundle;
+      // It must use insertion instead of append given the existance of
+      // garbage section:
+      $seq_insert(&c->gcollator->queue, c->gcollator->queue_length, &attr, 1);
+      index = c->gcollator->queue_length++;
+    }
+    attr->status[place] = CHECKED;
+    result = attr->attribute;
+    
+    // if complete, dequeue:
+    _Bool complete = $true;
+
+    for (int i = 0; i < nprocs; i++) 
+      if (!_CHECKED(attr, i)) {
+	complete = $false;
+	break;
+      }
+    if (complete) {
+      $free(c->gcollator->queue[index]);
+      $seq_remove(&c->gcollator->queue, index, NULL, 1);
+      c->gcollator->queue_length--;
+    }
+    return result;
 }
 
 $atomic_f $state_f $state $collate_get_state($collate_state state){

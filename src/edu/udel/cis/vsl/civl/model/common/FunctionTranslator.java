@@ -185,8 +185,11 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonUndefinedProcessExpre
 import edu.udel.cis.vsl.civl.model.common.statement.CommonAtomBranchStatement;
 import edu.udel.cis.vsl.civl.model.common.statement.CommonAtomicLockAssignStatement;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.civl.util.IF.Triple;
 import edu.udel.cis.vsl.gmc.CommandLineException;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
  * This class translates an AST node of a function body and completes the
@@ -3144,6 +3147,12 @@ public class FunctionTranslator {
 		}
 		if (this.atomicCount > 0) {
 			Statement leaveAtomic;
+			SymbolicUniverse universe = modelFactory.universe();
+			// UndefinedProcessExpression has the constant value:
+			SymbolicExpression undefinedProcValue = universe.tuple(
+					typeFactory.processSymbolicType(),
+					new Singleton<SymbolicExpression>(universe
+							.integer(ModelConfiguration.UNDEFINED_PROC_ID)));
 
 			for (int i = 0; i < this.atomicCount; i++) {
 				location = modelFactory.location(
@@ -3160,9 +3169,7 @@ public class FunctionTranslator {
 						false, modelFactory.atomicLockVariableExpression(),
 						new CommonUndefinedProcessExpression(
 								modelFactory.systemSource(),
-								typeFactory.processType(),
-								modelFactory.undefinedValue(
-										typeFactory.processSymbolicType())));
+								typeFactory.processType(), undefinedProcValue));
 				atomicReleaseFragment.addNewStatement(leaveAtomic);
 			}
 		}
@@ -4260,7 +4267,7 @@ public class FunctionTranslator {
 						(CommonMPIConstantNode) node, scope);
 			case MPI_EQUALS :
 				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_EQUALS;
-				numArgs = 4;
+				numArgs = 2;
 				break;
 			case MPI_REGION :
 				civlMpiContractKind = MPI_CONTRACT_EXPRESSION_KIND.MPI_REGION;
@@ -4286,12 +4293,6 @@ public class FunctionTranslator {
 				throw new CIVLInternalException("Unreachable",
 						node.getSource());
 		}
-		// if (currentMPICollectiveTitle.left == null
-		// || currentMPICollectiveTitle.right == null) {
-		// throw new CIVLSyntaxException(
-		// "MPI Contract expression: " + civlMpiContractKind
-		// + " can only be used in MPI collective behaviors");
-		// }
 		assert numArgs > 0 && civlMpiContractKind != null;
 
 		Expression[] arguments = new Expression[numArgs];
@@ -4299,16 +4300,6 @@ public class FunctionTranslator {
 		for (int i = 0; i < numArgs; i++)
 			arguments[i] = translateExpressionNode(node.getArgument(i), scope,
 					true);
-		// Saving \mpi_agree variables:
-		// if (civlMpiContractKind == MPI_CONTRACT_EXPRESSION_KIND.MPI_AGREE)
-		// if (currentContractKind == ContractKind.REQUIRES) {
-		// if (currentContractKind == ContractKind.REQUIRES)
-		// agreedVaraibles.add(
-		// ((VariableExpression) arguments[0]).variable());
-		// } else
-		// throw new CIVLSyntaxException(
-		// "\\mpi_agree currently can only be used in requirements.",
-		// modelFactory.sourceOf(node));
 		return modelFactory.mpiContractExpression(modelFactory.sourceOf(node),
 				scope, null, arguments, civlMpiContractKind, null);
 
