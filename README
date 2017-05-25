@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.8
+                               v1.9
 
 ------------------------------ Overview -------------------------------
 
@@ -46,26 +46,10 @@ General Public License.  However, the libraries used by CIVL
 (and incorporated into the complete distribution) use various
 licenses.  See directory licenses for the license of each component.
 
--------------------------- Updates from v1.7.4 -------------------------
-- Improved the approach of evaluating short-circuiting operations. An transformer is now applied.
-  And for short-circuiting operations in guards or quantified expression, no undefined value will
-  be given for expressions with error side effects. This improvement speeds up CIVL for evaluating 
-  non-trivial short-circuiting operations. 
-- Improved the cycle proviso: The cycle proviso in CIVL v1.7.4 was only checking if the current state 
-  is fully expanded. Now it checks it for both current state and the new explored state. It is the
-  condition used in CIVL of versions older than 1.7.1 which is indeed an optimization.
-- Improved the CIVL model of $parfor statement. The new model simplifies the guard of the wating
-  statement which speeds up examples using this primitive.
-- Fixed a bug which made CIVL violate partial order reduction invisibility condition (c2).
-- The improvement above also fixed a bug which will cause bound variables leak out of quantified 
-  expressions when the quantified predicates have complex short-circuiting operations.
-- Fixed a bug which is CIVL model didn't consider Integer to Boolean implicit conversions.
-- Fixed a bug which is "fprint" calls may append strings to non-concrete 2d-arrays-of-char. Now a 
-  non-trivial conditional symbolic expression will be used to handle non-concrete cases.
-- Fixed a bug in ABC, which is ABC could not recognize a function when it is declared in a some other functions 
-  body while definition of it is given in root scope.
-- Fixed bugs in SARL which are all related to quantified expressions.
-
+-------------------------- Updates from v1.8 -------------------------
+- Significant performance improvement
+- Support probabilistic approaches
+- Fixed compare combiner bugs
    
 ------------------------- Binary Installation -------------------------
 
