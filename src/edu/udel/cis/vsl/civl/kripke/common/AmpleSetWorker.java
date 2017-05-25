@@ -29,6 +29,7 @@ import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MemoryEvent;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
@@ -475,6 +476,24 @@ public class AmpleSetWorker {
 			for (Statement stmt : location.outgoing()) {
 				Expression guard = stmt.guard();
 
+				if (guard.expressionKind() == ExpressionKind.FUNC_CALL) {
+					FunctionCallExpression funcCallGuard = (FunctionCallExpression) guard;
+					String funcName = funcCallGuard.callStatement().function()
+							.name().name();
+
+					// TODO: temporarily hard code the hack condition, shall be
+					// removed if CIVL is able to specify if a guard is
+					// invisible or not:
+					/*
+					 * The reason these two guards are invisible is that they
+					 * will never evaluate to MAYBE. Thus CIVL won't MISS a
+					 * state where all guards are MAYBE if we ignore these two
+					 * here.
+					 */
+					if (funcName.equals("$collate_complete")
+							|| funcName.equals("$collate_arrived"))
+						return true;
+				}
 				if ((guard.hasConstantValue() && guard.constantValue().isTrue())
 						|| guard.expressionKind() == ExpressionKind.SYSTEM_GUARD)
 					return true;

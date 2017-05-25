@@ -7,6 +7,7 @@ import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.library.collate.LibcollateExecutor;
 import edu.udel.cis.vsl.civl.library.mpi.LibmpiEvaluator;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
@@ -61,6 +62,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.StructOrUnionLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SystemGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
@@ -110,6 +112,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.TupleComponentReference;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.number.NumberFactory;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
@@ -146,6 +149,12 @@ public class CommonEvaluator implements Evaluator {
 	 * possibly results to an undefined value in C language.
 	 */
 	public static String TOTAL_DEREFERENCE_FUNCTION = "_total_deref";
+
+	/**
+	 * A bounded process identifier identifies the bound variable in the lambda
+	 * expression which represents a value of a {@link ValueAtExpression}
+	 */
+	protected static String BOUNDED_PROCESS_IDENTIFIER = "_p";
 
 	/* *************************** Instance Fields ************************* */
 	protected LibraryExecutorLoader libExeLoader;
@@ -2302,16 +2311,14 @@ public class CommonEvaluator implements Evaluator {
 			BinaryExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
-		int left = modelFactory.getScopeId(expression.left().getSource(),
-				eval.value);
+		int left = modelFactory.getScopeId(eval.value);
 		int right;
 		boolean result;
 
 		state = eval.state;
 		eval = evaluate(state, pid, expression.right());
 		state = eval.state;
-		right = modelFactory.getScopeId(expression.right().getSource(),
-				eval.value);
+		right = modelFactory.getScopeId(eval.value);
 		switch (expression.operator()) {
 			case PLUS :
 				int lowestCommonAncestor = stateFactory
@@ -3496,6 +3503,10 @@ public class CommonEvaluator implements Evaluator {
 				result = evaluateVariable(state, pid, process,
 						(VariableExpression) expression, checkUndefinedValue);
 				break;
+			case VALUE_AT :
+				result = evaluateValueAtExpression(state, pid,
+						(ValueAtExpression) expression);
+				break;
 			case QUANTIFIER : {
 				result = evaluateQuantifiedExpression(state, pid,
 						(QuantifiedExpression) expression);
@@ -3519,7 +3530,6 @@ public class CommonEvaluator implements Evaluator {
 				throw new CIVLSyntaxException(
 						"Illegal use of " + kind + " expression: ",
 						expression.getSource());
-			case VALUE_AT :
 			default :
 				throw new CIVLInternalException("unreachable: " + kind,
 						expression);
@@ -3535,6 +3545,109 @@ public class CommonEvaluator implements Evaluator {
 				memUnitFactory, errorLogger, civlConfig)
 						.evaluateQuantifiedExpression(state, pid,
 								(QuantifiedExpression) expression);
+	}
+
+	/**
+	 * <p>
+	 * Evaluate a {@link ValueAtExpression},
+	 * <code>$value_at($state s, int p, expression e)</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * The semantics of evaluating {@link ValueAtExpression} is evaluate e on
+	 * the state s as if control is on process p. The value of p and s both
+	 * evaluate in the current state. <strong>Note</strong> that such a
+	 * semantics will ONLY make sense if the state s is a collate state. see
+	 * {@link LibcollateExecutor}. Currently CIVL-C language doesn't provide
+	 * anyway to refer a non-collate state.
+	 * </p>
+	 * <p>
+	 * If the concrete value of the identifier (PID) of process p cannot be
+	 * decided, then <code>
+	 *   Define an array a[nprocs], where nprocs is the number of processes in s.
+	 *   Forall int i that 0 &lt= i && i &lt nprocs, a[i] == $value_at(s, i, e);
+	 * </code>. The evaluation thus will be <code>
+	 *   APPLY p on LAMBDA i : a[i]
+	 * </code>.
+	 * 
+	 * 
+	 * </p>
+	 * 
+	 * @param currentState
+	 *            The current state on which the current process reaches a
+	 *            ValueAtExpression.
+	 * @param pid
+	 *            The current process who reaches a ValueAtExpression.
+	 * @param valueAt
+	 *            The ValueAtExpression which will evaluate
+	 * @return The evaluation of the ValueAtExpression.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	protected Evaluation evaluateValueAtExpression(State currentState, int pid,
+			ValueAtExpression valueAt)
+			throws UnsatisfiablePathConditionException {
+		Expression stateRef = valueAt.state();
+		Expression process = valueAt.pid();
+		Expression expression = valueAt.expression();
+		Evaluation eval;
+		SymbolicExpression stateRefVal, processVal;
+		State evaluationState;
+
+		eval = evaluate(currentState, pid, stateRef);
+		currentState = eval.state;
+		stateRefVal = eval.value;
+		eval = evaluate(currentState, pid, process);
+		currentState = eval.state;
+		processVal = eval.value;
+		assert processVal.type().isNumeric();
+		if (stateRefVal == modelFactory.statenullConstantValue())
+			evaluationState = currentState;
+		else
+			evaluationState = stateFactory
+					.getStateByReference(modelFactory.getStateRef(stateRefVal));
+
+		Number processNumber = universe
+				.reasoner(currentState.getPathCondition(universe))
+				.extractNumber((NumericExpression) processVal);
+
+		assert evaluationState != null;
+		if (processNumber != null) {
+			// for concrete process value:
+			int concreteProcessVal = ((IntegerNumber) processNumber).intValue();
+
+			eval = evaluate(evaluationState, concreteProcessVal, expression);
+			eval.state = currentState;
+		} else {
+			// for non-concrete process value:
+			// omit the external process, who has the max pid:
+			int numProcs = evaluationState.numProcs() - 1;
+			List<SymbolicExpression> possibleEvals = new LinkedList<>();
+
+			for (int procId = 0; procId < numProcs; procId++) {
+				if (evaluationState.getProcessState(procId) != null)
+					eval = evaluate(evaluationState, procId, expression);
+				else
+					eval.value = universe.nullExpression();
+				possibleEvals.add(eval.value);
+			}
+			SymbolicType dynamicType = expression.getExpressionType()
+					.getDynamicType(universe);
+			SymbolicExpression possibleValArray = universe.array(dynamicType,
+					possibleEvals);
+			NumericSymbolicConstant boundedPid = (NumericSymbolicConstant) universe
+					.symbolicConstant(
+							universe.stringObject(BOUNDED_PROCESS_IDENTIFIER),
+							universe.integerType());
+			SymbolicExpression lambda = universe.lambda(boundedPid,
+					universe.arrayRead(possibleValArray, boundedPid));
+
+			eval.value = universe.arrayLambda(
+					universe.arrayType(dynamicType, universe.integer(numProcs)),
+					lambda);
+			eval.value = universe.apply(eval.value, Arrays.asList(processVal));
+			eval.state = currentState;
+		}
+		return eval;
 	}
 
 	protected Evaluation evaluateArrayLambda(State state, int pid,

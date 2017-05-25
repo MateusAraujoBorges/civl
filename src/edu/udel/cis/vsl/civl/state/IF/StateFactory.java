@@ -813,12 +813,10 @@ public interface StateFactory {
 	 * 
 	 * @param state
 	 *            The state will be saved in the stateFactory.
-	 * @param pid
-	 *            The pid of the calling process
 	 * @return A reference that can be used to get the state back with
 	 *         {@link #getStateByReference(int)} and the saved state itself.
 	 */
-	Pair<Integer, State> saveState(State state, int pid);
+	Pair<Integer, State> saveState(State state);
 
 	/**
 	 * Remove a state from the saved state set, the state reference is no longer

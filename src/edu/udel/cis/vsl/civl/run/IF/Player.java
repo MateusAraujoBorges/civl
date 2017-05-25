@@ -148,7 +148,7 @@ public abstract class Player {
 		this.libraryEvaluatorLoader = Semantics
 				.newLibraryEvaluatorLoader(this.civlConfig);
 		this.symbolicAnalyzer = Semantics.newSymbolicAnalyzer(this.civlConfig,
-				universe, modelFactory, symbolicUtil);
+				this.log, universe, modelFactory, symbolicUtil);
 		this.gui = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(guiO);
 		this.libraryExecutorLoader = Semantics.newLibraryExecutorLoader(

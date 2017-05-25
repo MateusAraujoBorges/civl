@@ -24,3 +24,6 @@ showTrans: showTrans.cvl
 
 sizeOfTypes: sizeOfTypes.c
 	$(VERIFY) sizeOfTypes.c
+
+clean:
+	rm -rf CIVLREP *~

@@ -86,8 +86,7 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator
 							+ joinProcess);
 			throw new UnsatisfiablePathConditionException();
 		}
-		pidValue = modelFactory.getProcessId(joinProcessExpr.getSource(),
-				joinProcess);
+		pidValue = modelFactory.getProcessId(joinProcess);
 		if (modelFactory.isPocessIdDefined(pidValue)
 				&& !modelFactory.isProcessIdNull(pidValue)
 				&& state.getProcessState(pidValue) != null
@@ -179,7 +178,7 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator
 			for (int idx = startIndex; idx < stopIndex; idx++) {
 				SymbolicExpression proc = universe.arrayRead(procArray,
 						universe.integer(idx));
-				int pidValue = modelFactory.getProcessId(procsSource, proc);
+				int pidValue = modelFactory.getProcessId(proc);
 
 				if (!modelFactory.isProcessIdNull(pidValue)
 						&& modelFactory.isPocessIdDefined(pidValue)
@@ -202,7 +201,7 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator
 						typeFactory.processType(), procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
-				pidValue = modelFactory.getProcessId(procsSource, proc);
+				pidValue = modelFactory.getProcessId(proc);
 				if (!modelFactory.isProcessIdNull(pidValue)
 						&& modelFactory.isPocessIdDefined(pidValue)
 						&& !state.getProcessState(pidValue).hasEmptyStack()) {

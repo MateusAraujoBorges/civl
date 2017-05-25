@@ -841,7 +841,6 @@ public abstract class BaseWorker {
 		return this.typeNode(source, type);
 	}
 
-	// TODO: replace this method with the public static one
 	protected TypeNode typeNode(Source source, Type type) {
 		return typeNode(source, type, nodeFactory);
 	}

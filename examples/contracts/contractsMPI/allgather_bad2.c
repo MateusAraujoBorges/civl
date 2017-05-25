@@ -20,21 +20,7 @@
   @   waitsfor root;
   @*/
 int broadcast(void * buf, int count, 
-	      MPI_Datatype datatype, int root, MPI_Comm comm) {
-  int nprocs, rank;
-  int tag = 999;
-
-  MPI_Comm_size(comm, &nprocs);
-  MPI_Comm_rank(comm, &rank);
-  if (rank == root) {
-    for (int i = 0; i < nprocs; i++)
-      if (i != root)
-	MPI_Send(buf, count, datatype, i, tag, comm);
-  } else
-    MPI_Recv(buf, count, datatype, root, tag, comm,
-	     MPI_STATUS_IGNORE);
-  return 0;
-}
+	      MPI_Datatype datatype, int root, MPI_Comm comm);
 
 /*@ 
   @ \mpi_collective(comm, P2P) :
@@ -65,37 +51,7 @@ int broadcast(void * buf, int count,
   @*/
 int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype, 
 	   void* recvbuf, int recvcount, MPI_Datatype recvtype,
-	   int root, MPI_Comm comm){
-  int rank, nprocs;
-  MPI_Status status;
-  int tag = 998;
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &nprocs);
-  if(root == rank) {
-    void *ptr;
-    
-    ptr = $mpi_pointer_add(recvbuf, root * recvcount, recvtype);
-    memcpy(ptr, sendbuf, recvcount * sizeofDatatype(recvtype));
-  }else
-    MPI_Send(sendbuf, sendcount, sendtype, root, tag, comm);
-  if(rank == root) {
-    int real_recvcount;
-    int offset;
-
-    for(int i=0; i<nprocs; i++) {
-      if(i != root) {
-	void * ptr;
-
-	offset = i * recvcount;
-	ptr = $mpi_pointer_add(recvbuf, offset, recvtype);
-	MPI_Recv(ptr, recvcount, recvtype, i, tag, comm,
-		 &status);
-      }
-    }
-  }
-  return 0;
-}
+	   int root, MPI_Comm comm);
 
 /*@ \mpi_collective(comm, P2P):
   @   requires \mpi_agree(sendcount * \mpi_extent(sendtype));
@@ -108,7 +64,7 @@ int gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
   @   ensures \mpi_agree(\mpi_region(recvbuf, recvcount * \mpi_comm_size, recvtype));
   @   ensures \mpi_equals(\mpi_region(sendbuf, sendcount, sendtype),
   @                       \mpi_region(
-  @                                   \mpi_offset(recvbuf, \mpi_comm_rank * recvcount, recvtype),
+  @                                   \mpi_offset(recvbuf, \mpi_comm_rank * recvcount + 1, recvtype),
   @                                    recvcount, recvtype));
   @
  */

@@ -603,8 +603,7 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 	@Override
 	public int getDyscopeId(CIVLSource source, SymbolicExpression pointer) {
-		return modelFactory.getScopeId(source,
-				universe.tupleRead(pointer, zeroObj));
+		return modelFactory.getScopeId(universe.tupleRead(pointer, zeroObj));
 	}
 
 	@Override

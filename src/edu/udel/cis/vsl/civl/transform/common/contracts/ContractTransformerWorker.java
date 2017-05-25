@@ -37,8 +37,8 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.ContractTransformer;
 import edu.udel.cis.vsl.civl.transform.common.BaseWorker;
-import edu.udel.cis.vsl.civl.transform.common.contracts.ContractClauseTransformer.TransformPair;
 import edu.udel.cis.vsl.civl.transform.common.contracts.FunctionContractBlock.ConditionalClauses;
+import edu.udel.cis.vsl.civl.transform.common.contracts.ContractClauseTransformer.TransformPair;
 import edu.udel.cis.vsl.civl.transform.common.contracts.MPIContractUtilities.TransformConfiguration;
 
 /**
@@ -180,7 +180,7 @@ public class ContractTransformerWorker extends BaseWorker {
 		completeSources(newRootNode);
 		newAst = astFactory.newAST(newRootNode, ast.getSourceFiles(),
 				ast.isWholeProgram());
-		newAst.prettyPrint(System.out, false);
+		// newAst.prettyPrint(System.out, false);
 		return newAst;
 	}
 	/* ******************* Package private methods: ******************** */
@@ -410,8 +410,8 @@ public class ContractTransformerWorker extends BaseWorker {
 					tmpContainer
 							.add(clauseTransformer.createAssertion(requires));
 				}
-				tmpContainer.addAll(clauseTransformer
-						.transformAssignsClause(condClause.getAssignsArgs()));
+				tmpContainer.addAll(
+						clauseTransformer.transformAssignsClause(condClause));
 				if (condClause.condition != null) {
 					ExpressionNode cond = condClause.condition;
 					StatementNode compound = nodeFactory
@@ -582,8 +582,9 @@ public class ContractTransformerWorker extends BaseWorker {
 					assumptions = clauseTransformer.createAssumption(requires);
 					tmpContainer.add(assumptions);
 				}
-				tmpContainer.addAll(clauseTransformer
-						.transformAssignsClause(condClause.getAssignsArgs()));
+				// TODO: check assigns for target function
+				// tmpContainer.addAll(clauseTransformer
+				// .transformAssignsClause(condClause.getAssignsArgs()));
 				if (condClause.condition != null) {
 					StatementNode compound = nodeFactory
 							.newCompoundStatementNode(requires.getSource(),
