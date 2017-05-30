@@ -49,6 +49,7 @@ import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.NameTransformer;
 import edu.udel.cis.vsl.abc.transform.IF.Transform;
+import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
@@ -300,10 +301,11 @@ public class GeneralWorker extends BaseWorker {
 	 */
 	private ExpressionStatementNode argcAssumption(Source source,
 			String argcName) throws SyntaxException {
-		ExpressionNode lowerBound = nodeFactory.newOperatorNode(source,
-				Operator.LT,
-				Arrays.asList(nodeFactory.newIntegerConstantNode(source, "0"),
-						this.identifierExpression(source, argcName)));
+		ExpressionNode lowerBound = nodeFactory
+				.newOperatorNode(source, Operator.LT,
+						Arrays.asList(
+								nodeFactory.newIntegerConstantNode(source, "0"),
+								this.identifierExpression(source, argcName)));
 
 		return nodeFactory.newExpressionStatementNode(
 				this.functionCall(source, ASSUME, Arrays.asList(lowerBound)));
@@ -560,11 +562,10 @@ public class GeneralWorker extends BaseWorker {
 					functionExpression.getIdentifier().setName(CIVL_MALLOC);
 					numElement.parent().removeChild(numElement.childIndex());
 					typeElement.parent().removeChild(typeElement.childIndex());
-					memSize = nodeFactory.newOperatorNode(
-							numElement.getSource(), Operator.TIMES,
-							numElement.copy(), typeElement);
+					memSize = nodeFactory.newOperatorNode(funcCall.getSource(),
+							Operator.TIMES, numElement.copy(), typeElement);
 					funcCall.setArguments(nodeFactory.newSequenceNode(
-							numElement.getSource(), "Actual Parameters",
+							funcCall.getSource(), "Actual Parameters",
 							Arrays.asList(myRootScope, memSize)));
 					if (!(parent instanceof CastNode)) {
 						funcCall.remove();
@@ -621,6 +622,16 @@ public class GeneralWorker extends BaseWorker {
 								.newIdentifierExpressionNode(
 										lhsNode.getSource(),
 										(IdentifierNode) lhsNode.copy());
+					} else if (lhsNode instanceof TypeNode) {
+						memsetFuncCallArg0ExprNode = nodeFactory
+								.newIdentifierExpressionNode(
+										lhsNode.getSource(),
+										(IdentifierNode) lhsNode.parent()
+												.parent().child(0).copy());
+					} else {
+						throw new CIVLInternalException(
+								"Can not find the idenetifier name for memset in: ",
+								lhsNode.getSource());
 					}
 
 					FunctionCallNode memsetCallNode = nodeFactory
