@@ -49,7 +49,6 @@ import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.NameTransformer;
 import edu.udel.cis.vsl.abc.transform.IF.Transform;
-import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
@@ -132,7 +131,7 @@ public class GeneralWorker extends BaseWorker {
 		unit.release();
 		this.getCIVLMallocDeclaration(root);
 		root = moveStaticVariables(root);
-		processMalloc(root, null);
+		processMalloc(root);
 		// transformWith(root);
 		// remove main prototypes...
 		for (DeclarationNode decl : mainFunction.getDeclarations()) {
@@ -499,139 +498,127 @@ public class GeneralWorker extends BaseWorker {
 				nodeFactory.newHereNode(mainSource));
 	}
 
-	private void processMalloc(ASTNode rhsMallocNode, ASTNode lhsNode) {
-		if (rhsMallocNode instanceof FunctionCallNode) {
-			FunctionCallNode funcCall = (FunctionCallNode) rhsMallocNode;
+	private void processMalloc(ASTNode currentNode) throws SyntaxException {
+		if (currentNode instanceof FunctionCallNode) {
+			FunctionCallNode funcCallNode = (FunctionCallNode) currentNode;
+			Source funcCallSource = funcCallNode.getSource();
+			ExpressionNode functionExprNode = funcCallNode.getFunction();
 
-			if (funcCall.getFunction()
+			if (functionExprNode
 					.expressionKind() == ExpressionKind.IDENTIFIER_EXPRESSION) {
-				IdentifierExpressionNode functionExpression = (IdentifierExpressionNode) funcCall
-						.getFunction();
-				String functionName = functionExpression.getIdentifier().name();
+				IdentifierNode funcIdNode = ((IdentifierExpressionNode) functionExprNode)
+						.getIdentifier();
+				String funcName = funcIdNode.name();
 
-				if (functionName.equals(MALLOC)) {
-					ASTNode parent = funcCall.parent();
-					ExpressionNode myRootScope = this.identifierExpression(
-							funcCall.getSource(), GENERAL_ROOT);
-					int callIndex = funcCall.childIndex();
-					ExpressionNode argument = funcCall.getArgument(0);
+				if (funcName.equals(MALLOC)) {
+					ASTNode parent = funcCallNode.parent();
+					int callNodeIndex = funcCallNode.childIndex();
+					ExpressionNode civlRootIdNode = identifierExpression(
+							funcCallSource, GENERAL_ROOT);
+					ExpressionNode argument = funcCallNode.getArgument(0);
 
-					functionExpression.getIdentifier().setName(CIVL_MALLOC);
+					funcIdNode.setName(CIVL_MALLOC);
 					argument.parent().removeChild(argument.childIndex());
-					funcCall.setArguments(nodeFactory.newSequenceNode(
+					funcCallNode.setArguments(nodeFactory.newSequenceNode(
 							argument.getSource(), "Actual Parameters",
-							Arrays.asList(myRootScope, argument)));
+							Arrays.asList(civlRootIdNode, argument)));
 					if (!(parent instanceof CastNode)) {
-						funcCall.remove();
+						funcCallNode.remove();
 						if (parent instanceof OperatorNode) {
-							ExpressionNode lhs = ((OperatorNode) parent)
+							ExpressionNode lhsVarIdExprNode = ((OperatorNode) parent)
 									.getArgument(0);
-							Type type = lhs.getInitialType();
-							TypeNode typeNode;
-							CastNode castNode;
+							Type varType = lhsVarIdExprNode.getInitialType();
 
-							if (type.kind() != TypeKind.POINTER)
+							if (varType.kind() != TypeKind.POINTER)
 								throw new CIVLSyntaxException(
-										"The left hand side of a malloc call must be of pointer"
-												+ " type.",
-										lhs.getSource());
-							typeNode = this.typeNode(lhs.getSource(), type);
-							castNode = nodeFactory.newCastNode(
-									funcCall.getSource(), typeNode, funcCall);
-							parent.setChild(callIndex, castNode);
-						} else if (parent instanceof VariableDeclarationNode) {
-							VariableDeclarationNode variable = (VariableDeclarationNode) parent;
-							CastNode castNode = nodeFactory.newCastNode(
-									funcCall.getSource(),
-									variable.getTypeNode().copy(), funcCall);
+										"The left hand side of a malloc call must be of pointer type.",
+										lhsVarIdExprNode.getSource());
 
-							variable.setInitializer(castNode);
+							TypeNode typeNode = this.typeNode(
+									lhsVarIdExprNode.getSource(), varType);
+							CastNode castNode = nodeFactory.newCastNode(
+									funcCallSource, typeNode, funcCallNode);
+							parent.setChild(callNodeIndex, castNode);
+						} else if (parent instanceof VariableDeclarationNode) {
+							VariableDeclarationNode lhsVarDeclNode = (VariableDeclarationNode) parent;
+							CastNode castNode = nodeFactory.newCastNode(
+									funcCallSource,
+									lhsVarDeclNode.getTypeNode().copy(),
+									funcCallNode);
+
+							lhsVarDeclNode.setInitializer(castNode);
 						}
 					}
-				} else if (functionName.equals(CALLOC)) {
+				} else if (funcName.equals(CALLOC)) {
 					callocExists = true;
 
-					ASTNode parent = funcCall.parent();
-					ExpressionNode myRootScope = this.identifierExpression(
-							funcCall.getSource(), GENERAL_ROOT);
-					int callIndex = funcCall.childIndex();
+					ASTNode parent = funcCallNode.parent();
+					int callNodeIndex = funcCallNode.childIndex();
+					ExpressionNode civlRootIdNode = identifierExpression(
+							funcCallSource, GENERAL_ROOT);
 					ExpressionNode memSize = null;
-					ExpressionNode numElement = funcCall.getArgument(0);
-					ExpressionNode typeElement = funcCall.getArgument(1);
-
-					functionExpression.getIdentifier().setName(CIVL_MALLOC);
-					numElement.parent().removeChild(numElement.childIndex());
-					typeElement.parent().removeChild(typeElement.childIndex());
-					memSize = nodeFactory.newOperatorNode(funcCall.getSource(),
-							Operator.TIMES, numElement.copy(), typeElement);
-					funcCall.setArguments(nodeFactory.newSequenceNode(
-							funcCall.getSource(), "Actual Parameters",
-							Arrays.asList(myRootScope, memSize)));
-					if (!(parent instanceof CastNode)) {
-						funcCall.remove();
-						if (parent instanceof OperatorNode) {
-							ExpressionNode lhs = ((OperatorNode) parent)
-									.getArgument(0);
-							Type type = lhs.getInitialType();
-							TypeNode typeNode;
-							CastNode castNode;
-
-							if (type.kind() != TypeKind.POINTER)
-								throw new CIVLSyntaxException(
-										"The left hand side of a calloc call must be of pointer"
-												+ " type.",
-										lhs.getSource());
-							typeNode = this.typeNode(lhs.getSource(), type);
-							castNode = nodeFactory.newCastNode(
-									funcCall.getSource(), typeNode, funcCall);
-							parent.setChild(callIndex, castNode);
-						} else if (parent instanceof VariableDeclarationNode) {
-							VariableDeclarationNode variable = (VariableDeclarationNode) parent;
-							CastNode castNode = nodeFactory.newCastNode(
-									funcCall.getSource(),
-									variable.getTypeNode().copy(), funcCall);
-
-							variable.setInitializer(castNode);
-						}
-					}
-
-					// TODO: Add 0-initialize loop by using memset
-					Source memsetSource = functionExpression.getSource();
+					ExpressionNode numElement = funcCallNode.getArgument(0);
+					ExpressionNode typeElement = funcCallNode.getArgument(1);
+					Source memsetSource = functionExprNode.getSource();
 					IdentifierNode memsetIdNode = nodeFactory
 							.newIdentifierNode(memsetSource, MEMSET);
 					IdentifierExpressionNode memsetIDExprNode = nodeFactory
 							.newIdentifierExpressionNode(memsetSource,
 									memsetIdNode);
 					ExpressionNode memsetFuncCallArg0ExprNode = null;
-					ExpressionNode memsetFuncCallArg1ExprNode = null;
+					ExpressionNode memsetFuncCallArg1ExprNode = nodeFactory
+							.newIntegerConstantNode(memsetSource, "0");
 					ExpressionNode memsetFuncCallArg2ExprNode = nodeFactory
 							.newOperatorNode(memsetSource, Operator.TIMES,
 									numElement.copy(), typeElement.copy());
 
-					try {
-						memsetFuncCallArg1ExprNode = nodeFactory
-								.newIntegerConstantNode(memsetSource, "0");
-					} catch (SyntaxException e) {
-						e.printStackTrace();
-					}
-					if (lhsNode instanceof ExpressionNode) {
-						memsetFuncCallArg0ExprNode = (ExpressionNode) lhsNode
-								.copy();
-					} else if (lhsNode instanceof IdentifierNode) {
-						memsetFuncCallArg0ExprNode = nodeFactory
-								.newIdentifierExpressionNode(
-										lhsNode.getSource(),
-										(IdentifierNode) lhsNode.copy());
-					} else if (lhsNode instanceof TypeNode) {
-						memsetFuncCallArg0ExprNode = nodeFactory
-								.newIdentifierExpressionNode(
-										lhsNode.getSource(),
-										(IdentifierNode) lhsNode.parent()
-												.parent().child(0).copy());
+					funcIdNode.setName(CIVL_MALLOC);
+					numElement.remove();
+					typeElement.remove();
+					memSize = nodeFactory.newOperatorNode(funcCallSource,
+							Operator.TIMES, numElement, typeElement);
+					funcCallNode.setArguments(nodeFactory.newSequenceNode(
+							funcCallSource, "Actual Parameters",
+							Arrays.asList(civlRootIdNode, memSize)));
+					if (!(parent instanceof CastNode)) {
+						funcCallNode.remove();
+						if (parent instanceof OperatorNode) {
+							ExpressionNode lhsVarIdExprNode = ((OperatorNode) parent)
+									.getArgument(0);
+							Type varType = lhsVarIdExprNode.getInitialType();
+
+							if (varType.kind() != TypeKind.POINTER)
+								throw new CIVLSyntaxException(
+										"The left hand side of a calloc call must be of pointer"
+												+ " type.",
+										lhsVarIdExprNode.getSource());
+
+							TypeNode typeNode = this.typeNode(
+									lhsVarIdExprNode.getSource(), varType);
+							CastNode castNode = nodeFactory.newCastNode(
+									funcCallSource, typeNode, funcCallNode);
+
+							parent.setChild(callNodeIndex, castNode);
+							memsetFuncCallArg0ExprNode = lhsVarIdExprNode
+									.copy();
+						} else if (parent instanceof VariableDeclarationNode) {
+							VariableDeclarationNode lhsVarDeclNode = (VariableDeclarationNode) parent;
+							CastNode castNode = nodeFactory.newCastNode(
+									funcCallSource,
+									lhsVarDeclNode.getTypeNode().copy(),
+									funcCallNode);
+
+							lhsVarDeclNode.setInitializer(castNode);
+							memsetFuncCallArg0ExprNode = nodeFactory
+									.newIdentifierExpressionNode(
+											lhsVarDeclNode.getSource(),
+											lhsVarDeclNode.getIdentifier().copy());
+						}
 					} else {
-						throw new CIVLInternalException(
-								"Can not find the idenetifier name for memset in: ",
-								lhsNode.getSource());
+						memsetFuncCallArg0ExprNode = nodeFactory
+								.newIdentifierExpressionNode(parent.getSource(),
+										(IdentifierNode) parent.parent()
+												.child(0).copy());
 					}
 
 					FunctionCallNode memsetCallNode = nodeFactory
@@ -642,7 +629,7 @@ public class GeneralWorker extends BaseWorker {
 									null);
 					ExpressionStatementNode memsetFuncCallNode = nodeFactory
 							.newExpressionStatementNode(memsetCallNode);
-					ASTNode statementsNode = lhsNode;
+					ASTNode statementsNode = parent;
 					ASTNode tempNode = memsetFuncCallNode;
 					int callocStatementNodeIndex = 0;
 					int bound = -1;
@@ -661,18 +648,12 @@ public class GeneralWorker extends BaseWorker {
 				}
 			}
 		} else {
-			ASTNode tempLhsNode = null;
-
-			for (int i = 0; i < rhsMallocNode.numChildren(); i++) {
-				ASTNode child = rhsMallocNode.child(i);
-
-				if (tempLhsNode == null)
-					tempLhsNode = child;
+			for (int i = 0; i < currentNode.numChildren(); i++) {
+				ASTNode child = currentNode.child(i);
 				if (child != null)
-					processMalloc(child, tempLhsNode);
+					processMalloc(child);
 			}
 		}
-
 	}
 
 	/**
