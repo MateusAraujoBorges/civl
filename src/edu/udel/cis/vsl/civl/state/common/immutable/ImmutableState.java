@@ -119,12 +119,6 @@ public class ImmutableState implements State {
 	private int canonicId = -1;
 
 	/**
-	 * Minimum depth at which this state has been encountered in DFS; used for
-	 * finding minimal counterexample.
-	 */
-	private int depth = -1;
-
-	/**
 	 * If the hashcode has been computed, it is cached here.
 	 */
 	private int hashCode = -1;
@@ -139,11 +133,6 @@ public class ImmutableState implements State {
 	 * created in this run of the JVM.
 	 */
 	private final long instanceId = instanceCount++;
-
-	/**
-	 * Whether this state is on the DFS search stack.
-	 */
-	private int stackPosition = -1;
 
 	/**
 	 * The iterable object over the process states, created once and cached here
@@ -172,25 +161,9 @@ public class ImmutableState implements State {
 	private boolean scopeHashed = false;
 
 	/**
-	 * Has this state been seen in the DFS search?
-	 */
-	private boolean seen = false;
-
-	/**
 	 * Cached reference to the simplified version of this state.
 	 */
 	ImmutableState simplifiedState = null;
-
-	/**
-	 * True iff all successors during search are on the search stack.
-	 */
-	private boolean expand = true;
-
-	/**
-	 * True iff all successors resulting from the enabled transitions have been
-	 * visited during the search.
-	 */
-	private boolean fullyExpanded = false;
 
 	int[] collectibleCounts;
 
@@ -721,11 +694,6 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public int getDepth() {
-		return depth;
-	}
-
-	@Override
 	public int getParentId(int scopeId) {
 		return getDyscope(scopeId).getParent();
 	}
@@ -854,11 +822,6 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public int stackPosition() {
-		return stackPosition;
-	}
-
-	@Override
 	public void print(PrintStream out) {
 		int numScopes = numDyscopes();
 		int numProcs = numProcs();
@@ -896,26 +859,6 @@ public class ImmutableState implements State {
 	@Override
 	public int rootDyscopeID() {
 		return 0;
-	}
-
-	@Override
-	public boolean seen() {
-		return seen;
-	}
-
-	@Override
-	public void setDepth(int value) {
-		this.depth = value;
-	}
-
-	@Override
-	public void setStackPosition(int stackIndex) {
-		this.stackPosition = stackIndex;
-	}
-
-	@Override
-	public void setSeen(boolean seen) {
-		this.seen = seen;
 	}
 
 	@Override
@@ -1012,26 +955,6 @@ public class ImmutableState implements State {
 	@Override
 	public boolean isFinalState() {
 		return processStates.length == 1 && processStates[0].hasEmptyStack();
-	}
-
-	@Override
-	public void setExpand(boolean value) {
-		expand = value;
-	}
-
-	@Override
-	public boolean getExpand() {
-		return expand;
-	}
-
-	@Override
-	public boolean fullyExpanded() {
-		return fullyExpanded;
-	}
-
-	@Override
-	public void setFullyExpanded(boolean value) {
-		this.fullyExpanded = value;
 	}
 
 	@Override

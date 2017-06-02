@@ -6,8 +6,8 @@ package edu.udel.cis.vsl.civl.model.IF;
 import java.io.PrintStream;
 
 import edu.udel.cis.vsl.abc.program.IF.Program;
-import edu.udel.cis.vsl.gmc.CommandLineException;
-import edu.udel.cis.vsl.gmc.GMCSection;
+import edu.udel.cis.vsl.gmc.seq.CommandLineException;
+import edu.udel.cis.vsl.gmc.seq.GMCSection;
 
 /**
  * Class to provide translation from an AST to a model.

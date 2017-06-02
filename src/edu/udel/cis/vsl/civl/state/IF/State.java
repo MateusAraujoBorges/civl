@@ -101,39 +101,6 @@ public interface State {
 	BooleanExpression getPathCondition(SymbolicUniverse universe);
 
 	/**
-	 * Has this state been seen before in the depth-first search? This is simply
-	 * the "getter" for the "setter" method {@link #setSeen(boolean)}.
-	 * 
-	 * @return true iff this state has been seen before
-	 */
-	boolean seen();
-
-	/**
-	 * This method will return the stack position of this state. If this state
-	 * is not on the stack, this method will return -1.
-	 * 
-	 * @return -1 iff this state is not on stack, otherwise, return the stack
-	 *         position of this state.
-	 */
-	int stackPosition();
-
-	/**
-	 * Sets the seen bit to the given value.
-	 * 
-	 * @param value
-	 *            whether this state has been seen in the depth first search
-	 */
-	void setSeen(boolean value);
-
-	/**
-	 * Sets the "stack position" field of a state.
-	 * 
-	 * @param stackIndex
-	 *            the position at which the state is on stack.
-	 */
-	void setStackPosition(int stackIndex);
-
-	/**
 	 * Gets the dynamic scope ID (dyscope ID) of the parent of the dynamic scope
 	 * with the given dyscope ID. If the dynamic scope with the given ID is the
 	 * root scope (which has no parent), the result is -1.
@@ -193,27 +160,6 @@ public interface State {
 	 * @return the call stack information of each process
 	 */
 	StringBuffer callStackToString();
-
-	/**
-	 * Sets the "depth" field of this state to the given value. This is another
-	 * field used by a depth-first search. It is used when searching for a
-	 * minimal counterexample, i.e., a shortest path to a violating state.
-	 * 
-	 * @param value
-	 *            an integer which is currently the least depth at which this
-	 *            state has been encountered in the DFS
-	 */
-	void setDepth(int value);
-
-	/**
-	 * Returns the "depth" field for this state. This is another field used by a
-	 * depth-first search. It is used when searching for a minimal
-	 * counterexample, i.e., a shortest path to a violating state.
-	 * 
-	 * @return an integer which is currently the least depth at which this state
-	 *         has been encountered in the DFS
-	 */
-	int getDepth();
 
 	/**
 	 * Returns the process state for the pid-th process. The process state
@@ -355,38 +301,6 @@ public interface State {
 	 * @return
 	 */
 	boolean isFinalState();
-
-	/**
-	 * Set the "all-successors-on-stack" flag of a state to a certain value.
-	 * 
-	 * @param value
-	 *            The value that is going to be assigned to the
-	 *            "all-successors-on-stack" flag of a state.
-	 */
-	void setExpand(boolean value);
-
-	/**
-	 * Get the "all-successors-on-stack" flag of a state.
-	 * 
-	 * @return The value of the "all-successors-on-stack".
-	 */
-	boolean getExpand();
-
-	/**
-	 * Get the "fullyExpanded" flag of a state.
-	 * 
-	 * @return The value of the "fullExpanded" flag.
-	 */
-	public boolean fullyExpanded();
-
-	/**
-	 * Set the "fullyExpanded" flag to a given value.
-	 * 
-	 * @param value
-	 *            The value that is assigned to the "all-successors-on-stack"
-	 *            flag.
-	 */
-	public void setFullyExpanded(boolean value);
 
 	/**
 	 * @param pid

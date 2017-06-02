@@ -6,8 +6,8 @@ import java.util.NoSuchElementException;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.TransitionIterator;
-import edu.udel.cis.vsl.gmc.TransitionSetIF;
+import edu.udel.cis.vsl.gmc.seq.TransitionIterator;
+import edu.udel.cis.vsl.gmc.seq.TransitionSetIF;
 
 /**
  * This class defines the regular transition iterator of {@link TransitionSetIF}

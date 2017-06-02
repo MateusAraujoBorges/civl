@@ -2,7 +2,7 @@ package edu.udel.cis.vsl.civl.gui.common;
 
 import java.io.Serializable;
 
-import edu.udel.cis.vsl.gmc.Option;
+import edu.udel.cis.vsl.gmc.seq.Option;
 
 /**
  * This class holds all necessary information that will be needed by the GUI in

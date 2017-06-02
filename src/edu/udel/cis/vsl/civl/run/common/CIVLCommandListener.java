@@ -15,10 +15,10 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.run.IF.CommandLine;
 import edu.udel.cis.vsl.civl.run.IF.CommandLine.CommandLineKind;
 import edu.udel.cis.vsl.civl.run.common.NormalCommandLine.NormalCommandKind;
-import edu.udel.cis.vsl.gmc.GMCConfiguration;
-import edu.udel.cis.vsl.gmc.GMCSection;
-import edu.udel.cis.vsl.gmc.Option;
-import edu.udel.cis.vsl.gmc.Option.OptionType;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.seq.GMCSection;
+import edu.udel.cis.vsl.gmc.seq.Option;
+import edu.udel.cis.vsl.gmc.seq.Option.OptionType;
 
 public class CIVLCommandListener extends CommandBaseListener
 		implements CommandListener {

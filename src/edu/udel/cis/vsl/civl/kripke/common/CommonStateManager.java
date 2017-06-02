@@ -32,7 +32,7 @@ import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Printable;
 import edu.udel.cis.vsl.civl.util.IF.Utils;
-import edu.udel.cis.vsl.gmc.TraceStepIF;
+import edu.udel.cis.vsl.gmc.seq.TraceStepIF;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
@@ -576,11 +576,6 @@ public class CommonStateManager implements StateManager {
 	/* ********************* Methods from StateManagerIF ******************* */
 
 	@Override
-	public int getDepth(State state) {
-		return state.getDepth();
-	}
-
-	@Override
 	public TraceStepIF<State> nextState(State state, Transition transition) {
 		TraceStepIF<State> result;
 		// nextStateCalls++;
@@ -597,11 +592,6 @@ public class CommonStateManager implements StateManager {
 					transition.pid(), falseExpr));
 		}
 		return result;
-	}
-
-	@Override
-	public int stackPosition(State state) {
-		return state.stackPosition();
 	}
 
 	@Override
@@ -632,26 +622,6 @@ public class CommonStateManager implements StateManager {
 	@Override
 	public void printTransitionShort(PrintStream out, Transition transition) {
 		out.print(transition.toString());
-	}
-
-	@Override
-	public boolean seen(State state) {
-		return state.seen();
-	}
-
-	@Override
-	public void setDepth(State state, int value) {
-		state.setDepth(value);
-	}
-
-	@Override
-	public void setStackPosition(State state, int stackIndex) {
-		state.setStackPosition(stackIndex);
-	}
-
-	@Override
-	public void setSeen(State state, boolean value) {
-		state.setSeen(value);
 	}
 
 	/* ****************** Public Methods from StateManager ***************** */
@@ -697,25 +667,4 @@ public class CommonStateManager implements StateManager {
 			return this.outputCollector.outptutNames;
 		return null;
 	}
-
-	@Override
-	public void setExpand(State state, boolean value) {
-		state.setExpand(value);
-	}
-
-	@Override
-	public boolean expand(State state) {
-		return state.getExpand();
-	}
-
-	@Override
-	public boolean fullyExpanded(State state) {
-		return state.fullyExpanded();
-	}
-
-	@Override
-	public void setFullyExpanded(State state, boolean value) {
-		state.setFullyExpanded(value);
-	}
-
 }

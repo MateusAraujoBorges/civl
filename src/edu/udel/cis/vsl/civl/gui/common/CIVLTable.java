@@ -10,7 +10,7 @@ import javax.swing.event.EventListenerList;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
-import edu.udel.cis.vsl.gmc.Option;
+import edu.udel.cis.vsl.gmc.seq.Option;
 
 /**
  * This class is used to ensure that the first column of the

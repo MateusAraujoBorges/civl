@@ -6,7 +6,7 @@ package edu.udel.cis.vsl.civl.semantics.IF;
 import java.util.List;
 
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.TransitionSetIF;
+import edu.udel.cis.vsl.gmc.seq.TransitionSetIF;
 
 /**
  * A transition set contains a list of transitions and the state from which they

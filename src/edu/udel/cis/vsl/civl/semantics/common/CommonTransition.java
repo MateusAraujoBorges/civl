@@ -25,7 +25,8 @@ public class CommonTransition implements Transition {
 
 	/**
 	 * The boolean-value clause which will be conjuncted with the path condition
-	 * of the source state.
+	 * of the source state in order to get the new path condition after this
+	 * transitions is executed.
 	 */
 	private BooleanExpression clause;
 

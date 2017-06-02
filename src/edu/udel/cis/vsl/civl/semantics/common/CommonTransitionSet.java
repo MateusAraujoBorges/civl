@@ -6,7 +6,7 @@ import java.util.List;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.TransitionIterator;
+import edu.udel.cis.vsl.gmc.seq.TransitionIterator;
 
 /**
  * A transition set contains a list of transitions and the state from which they

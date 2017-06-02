@@ -12,10 +12,10 @@ import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
+import edu.udel.cis.vsl.gmc.seq.TraceStepIF;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.gmc.TraceStepIF;
 
 /**
  * A collate state has n processes, where n>=1, 1 process has non-empty call
