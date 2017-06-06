@@ -396,13 +396,6 @@ public interface StateFactory {
 	long getNumStateInstances();
 
 	/**
-	 * Returns the number of states stored by this state factory.
-	 * 
-	 * @return the number of states stored
-	 */
-	int getNumStatesSaved();
-
-	/**
 	 * Performs a garbage collection and canonicalization of heaps.
 	 * 
 	 * Computes the set of reachable heap objects, and removes all unreachable
@@ -900,7 +893,7 @@ public interface StateFactory {
 	 *         has been popped.
 	 */
 	State popAssumption(State state, int pid);
-	
+
 	/**
 	 * Translate an integer scope id into a symbolic expression
 	 * 
@@ -913,6 +906,6 @@ public interface StateFactory {
 	void setConfiguration(CIVLConfiguration config);
 
 	public SymbolicExpression processValue(int pid);
-	
+
 	void setSymbolicUtility(SymbolicUtility symbolicUtility);
 }

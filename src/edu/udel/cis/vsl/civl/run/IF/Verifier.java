@@ -58,7 +58,7 @@ public class Verifier extends Player {
 			out.print(" trans=" + executor.getNumSteps());
 			out.print(" traceSteps=" + searcher.numTransitions());
 			out.print(" explored=" + stateManager.numStatesExplored());
-			out.print(" saved=" + stateManager.getNumStatesSaved());
+			out.print(" saved=" + searcher.numOfSearchNodeSaved());
 			out.print(
 					" prove=" + modelFactory.universe().numProverValidCalls());
 			out.println();
@@ -128,7 +128,7 @@ public class Verifier extends Player {
 				out.println("\"steps\" : " + searcher.numTransitions() + " ,");
 				out.println("\"trans\" : " + executor.getNumSteps() + " ,");
 				out.println("\"seen\" : " + searcher.numStatesSeen() + " ,");
-				out.println("\"saved\" : " + stateManager.getNumStatesSaved()
+				out.println("\"saved\" : " + searcher.numOfSearchNodeSaved()
 						+ " ,");
 				out.println("\"prove\" : "
 						+ modelFactory.universe().numProverValidCalls() + " ,");
@@ -303,7 +303,7 @@ public class Verifier extends Player {
 		civlConfig.out().print("   states              : ");
 		civlConfig.out().println(stateManager.numStatesExplored());
 		civlConfig.out().print("   states saved        : ");
-		civlConfig.out().println(stateManager.getNumStatesSaved());
+		civlConfig.out().println(searcher.numOfSearchNodeSaved());
 		// civlConfig.out().print(" statesSeen : ");
 		// civlConfig.out().println(searcher.numStatesSeen());
 		civlConfig.out().print("   state matches       : ");
@@ -342,7 +342,7 @@ public class Verifier extends Player {
 						verificationStatus = new VerificationStatus(
 								stateManager.maxProcs(),
 								stateManager.numStatesExplored(),
-								stateManager.getNumStatesSaved(),
+								searcher.numOfSearchNodeSaved(),
 								searcher.numStatesMatched(),
 								executor.getNumSteps(),
 								searcher.numTransitions());
@@ -419,7 +419,7 @@ public class Verifier extends Player {
 			}
 			this.verificationStatus = new VerificationStatus(
 					stateManager.maxProcs(), stateManager.numStatesExplored(),
-					stateManager.getNumStatesSaved(),
+					searcher.numOfSearchNodeSaved(),
 					searcher.numStatesMatched(), executor.getNumSteps(),
 					searcher.numTransitions());
 			return !violationFound && log.numEntries() == 0;

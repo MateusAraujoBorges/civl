@@ -149,8 +149,9 @@ public class TracePlayer extends Player {
 				.println("   max process count   : " + stateManager.maxProcs());
 		civlConfig.out().print("   states              : ");
 		civlConfig.out().println(stateManager.numStatesExplored());
-		civlConfig.out().print("   states Saved        : ");
-		civlConfig.out().println(stateManager.getNumStatesSaved());
+
+		// civlConfig.out().print(" states Saved : ");
+		// civlConfig.out().println(stateManager.getNumStatesSaved());
 
 		if (isRandom)
 			civlConfig.out().println("   seed                : " + seed);

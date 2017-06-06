@@ -28,13 +28,6 @@ public interface StateManager extends StateManagerIF<State, Transition> {
 	long getNumStateInstances();
 
 	/**
-	 * Returns the number of states saved, i.e., made canonic.
-	 * 
-	 * @return the number of canonic states
-	 */
-	int getNumStatesSaved();
-
-	/**
 	 * @return The maximum number of processes in any state encountered by this
 	 *         state manager.
 	 */

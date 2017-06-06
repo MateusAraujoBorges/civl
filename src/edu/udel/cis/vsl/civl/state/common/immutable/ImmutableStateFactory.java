@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -107,17 +106,12 @@ public class ImmutableStateFactory implements StateFactory {
 			100000);
 
 	/**
-	 * The number of canonic states.
-	 */
-	private AtomicInteger stateCount = new AtomicInteger(0);
-
-	/**
 	 * The map of canonic states. The key and the corresponding value should be
 	 * the same, in order to allow fast checking of existence and returning the
 	 * value.
 	 */
-	private Map<ImmutableState, ImmutableState> stateMap = new ConcurrentHashMap<>(
-			1000000);
+//	private Map<ImmutableState, ImmutableState> stateMap = new ConcurrentHashMap<>(
+//			1000000);
 
 	/**
 	 * The map of a set of saved canonic states. The key is the canonic ID of
@@ -392,23 +386,25 @@ public class ImmutableStateFactory implements StateFactory {
 		// theState = collectSymbolicConstants(theState, collectHeaps);
 		if (config.collectSymbolicNames() && !isReferredState)
 			theState = collectHavocVariables(theState);
-		if (this.config.simplify()) {
-			ImmutableState simplifiedState = theState.simplifiedState;
 
-			if (simplifiedState == null) {
-				// variable only for readbility:
-				boolean simplifyReferredState = !isReferredState;
-
-				simplifiedState = simplifyWork(theState, simplifyReferredState);
-			}
-			if (!simplifiedState.isCanonic()) {
-				simplifiedState = flyweight(simplifiedState);
-				theState.simplifiedState = simplifiedState;
-				simplifiedState.simplifiedState = simplifiedState;
-			}
-			return simplifiedState;
-		}
-		theState = flyweight(theState);
+		theState.makeCanonic(universe, scopeMap, processMap);
+//		if (this.config.simplify()) {
+//			ImmutableState simplifiedState = theState.simplifiedState;
+//
+//			if (simplifiedState == null) {
+//				// variable only for readbility:
+//				boolean simplifyReferredState = !isReferredState;
+//
+//				simplifiedState = simplifyWork(theState, simplifyReferredState);
+//			}
+//			if (!simplifiedState.isCanonic()) {
+//				simplifiedState = flyweight(simplifiedState);
+//				theState.simplifiedState = simplifiedState;
+//				simplifiedState.simplifiedState = simplifiedState;
+//			}
+//			return simplifiedState;
+//		}
+//		theState = flyweight(theState);
 		return theState;
 	}
 
@@ -701,11 +697,6 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public long getNumStateInstances() {
 		return ImmutableState.instanceCount - initialNumStateInstances;
-	}
-
-	@Override
-	public int getNumStatesSaved() {
-		return stateMap.size();
 	}
 
 	@Override
@@ -1531,51 +1522,51 @@ public class ImmutableStateFactory implements StateFactory {
 		return theState;
 	}
 
-	/**
-	 * Returns the canonicalized version of the given state.
-	 * 
-	 * @param state
-	 *            the old state
-	 * @return the state equivalent to the given state and which is
-	 *         canonicalized.
-	 */
-	private ImmutableState flyweight(State state) {
-		ImmutableState theState = (ImmutableState) state;
-
-		if (theState.isCanonic())
-			return theState;
-		else {
-			ImmutableState result = stateMap.get(theState);
-
-			if (result == null) {
-				result = theState;
-				result.makeCanonic(universe, scopeMap, processMap);
-
-				ImmutableState canonicalState = stateMap.putIfAbsent(result,
-						result);
-
-				if (canonicalState == null) {
-					canonicalState = result;
-
-					synchronized (canonicalState) {
-						canonicalState.setCanonicId(
-								this.stateCount.getAndIncrement());
-						canonicalState.notifyAll();
-					}
-				} else {
-					synchronized (canonicalState) {
-						while (canonicalState.getCanonicId() < 0)
-							try {
-								canonicalState.wait();
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-					}
-				}
-			}
-			return result;
-		}
-	}
+//	/**
+//	 * Returns the canonicalized version of the given state.
+//	 * 
+//	 * @param state
+//	 *            the old state
+//	 * @return the state equivalent to the given state and which is
+//	 *         canonicalized.
+//	 */
+//	private ImmutableState flyweight(State state) {
+//		ImmutableState theState = (ImmutableState) state;
+//
+//		if (theState.isCanonic())
+//			return theState;
+//		else {
+//			ImmutableState result = stateMap.get(theState);
+//
+//			if (result == null) {
+//				result = theState;
+//				result.makeCanonic(universe, scopeMap, processMap);
+//
+//				ImmutableState canonicalState = stateMap.putIfAbsent(result,
+//						result);
+//
+//				if (canonicalState == null) {
+//					canonicalState = result;
+//
+//					synchronized (canonicalState) {
+//						canonicalState.setCanonicId(
+//								this.stateCount.getAndIncrement());
+//						canonicalState.notifyAll();
+//					}
+//				} else {
+//					synchronized (canonicalState) {
+//						while (canonicalState.getCanonicId() < 0)
+//							try {
+//								canonicalState.wait();
+//							} catch (InterruptedException e) {
+//								e.printStackTrace();
+//							}
+//					}
+//				}
+//			}
+//			return result;
+//		}
+//	}
 
 	/**
 	 * Creates a dyscope in its initial state.

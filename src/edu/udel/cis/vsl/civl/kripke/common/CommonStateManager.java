@@ -632,11 +632,6 @@ public class CommonStateManager implements StateManager {
 	}
 
 	@Override
-	public int getNumStatesSaved() {
-		return stateFactory.getNumStatesSaved();
-	}
-
-	@Override
 	public int maxProcs() {
 		return maxProcs.intValue();
 	}
@@ -666,5 +661,11 @@ public class CommonStateManager implements StateManager {
 		if (outputCollector != null)
 			return this.outputCollector.outptutNames;
 		return null;
+	}
+
+	@Override
+	public State normalize(State state) {
+		// TODO Auto-generated method stub
+		return stateFactory.simplify(state);
 	}
 }

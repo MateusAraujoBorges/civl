@@ -36,7 +36,9 @@ public class VerifyThisTest {
 
 	@Test
 	public void lrs() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("lrs.c")));
+		assertTrue(ui.run(VERIFY, 
+//				QUIET, 
+				filename("lrs.c")));
 	}
 
 	@Test
@@ -46,12 +48,16 @@ public class VerifyThisTest {
 
 	@Test
 	public void relaxedPrefix_2015_1() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("relaxedPrefix.c")));
+		assertTrue(ui.run(VERIFY, "-showTransitions",
+//				QUIET, 
+				filename("relaxedPrefix.c")));
 	}
 
 	@Test
 	public void matrixMult() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("matrixMult.cvl")));
+		assertTrue(ui.run(VERIFY, 
+//				QUIET, 
+				filename("matrixMult.cvl")));
 	}
 
 	@Test
