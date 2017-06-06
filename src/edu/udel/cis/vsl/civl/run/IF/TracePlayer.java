@@ -6,12 +6,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.util.Collection;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.CIVLStateException;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.seq.CommandLineException;
@@ -62,7 +62,7 @@ public class TracePlayer extends Player {
 		TracePlayer result = new TracePlayer(config, model, out, err);
 		BigInteger seedValue = (BigInteger) config.getAnonymousSection()
 				.getValue(seedO);
-		RandomTransitionChooser<State, Transition, TransitionSet> chooser;
+		RandomTransitionChooser<State, Transition, Collection<Transition>> chooser;
 
 		if (seedValue == null)
 			chooser = new RandomTransitionChooser<>(result.enabler);
@@ -149,7 +149,8 @@ public class TracePlayer extends Player {
 				.println("   max process count   : " + stateManager.maxProcs());
 		civlConfig.out().print("   states              : ");
 		civlConfig.out().println(stateManager.numStatesExplored());
-
+		// TODO replayer don't know the number of states saved since it doesn't
+		// use searcher.
 		// civlConfig.out().print(" states Saved : ");
 		// civlConfig.out().println(stateManager.getNumStatesSaved());
 

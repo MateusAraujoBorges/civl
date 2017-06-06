@@ -665,7 +665,6 @@ public class CommonStateManager implements StateManager {
 
 	@Override
 	public State normalize(State state) {
-		// TODO Auto-generated method stub
 		return stateFactory.simplify(state);
 	}
 }

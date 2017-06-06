@@ -11,10 +11,8 @@ import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
-import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -77,7 +75,7 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 	 * @return The enabled transitions as an instance of TransitionSequence.
 	 */
 	@Override
-	protected TransitionSet enabledTransitionsPOR(State state) {
+	protected List<Transition> enabledTransitionsPOR(State state) {
 		List<Transition> transitions = new ArrayList<>();
 		List<ProcessState> processStates;
 		AmpleSetWorker ampleWorker = new AmpleSetWorker(state, this, evaluator,
@@ -103,7 +101,6 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 			transitions.addAll(enabledTransitionsOfProcess(state, p.getPid(),
 					ampleWorker.newGuards));
 		}
-		return Semantics.newTransitionSet(state, transitions,
-				ampleSetResult.left);
+		return transitions;
 	}
 }

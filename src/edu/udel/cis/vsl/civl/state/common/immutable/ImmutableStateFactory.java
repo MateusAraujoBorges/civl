@@ -106,14 +106,6 @@ public class ImmutableStateFactory implements StateFactory {
 			100000);
 
 	/**
-	 * The map of canonic states. The key and the corresponding value should be
-	 * the same, in order to allow fast checking of existence and returning the
-	 * value.
-	 */
-//	private Map<ImmutableState, ImmutableState> stateMap = new ConcurrentHashMap<>(
-//			1000000);
-
-	/**
 	 * The map of a set of saved canonic states. The key is the canonic ID of
 	 * the state and the value if the state.
 	 */
@@ -386,7 +378,7 @@ public class ImmutableStateFactory implements StateFactory {
 		// theState = collectSymbolicConstants(theState, collectHeaps);
 		if (config.collectSymbolicNames() && !isReferredState)
 			theState = collectHavocVariables(theState);
-
+			
 		theState.makeCanonic(universe, scopeMap, processMap);
 //		if (this.config.simplify()) {
 //			ImmutableState simplifiedState = theState.simplifiedState;
@@ -1521,52 +1513,6 @@ public class ImmutableStateFactory implements StateFactory {
 		theState = theState.setProcessStates(newProcesses);
 		return theState;
 	}
-
-//	/**
-//	 * Returns the canonicalized version of the given state.
-//	 * 
-//	 * @param state
-//	 *            the old state
-//	 * @return the state equivalent to the given state and which is
-//	 *         canonicalized.
-//	 */
-//	private ImmutableState flyweight(State state) {
-//		ImmutableState theState = (ImmutableState) state;
-//
-//		if (theState.isCanonic())
-//			return theState;
-//		else {
-//			ImmutableState result = stateMap.get(theState);
-//
-//			if (result == null) {
-//				result = theState;
-//				result.makeCanonic(universe, scopeMap, processMap);
-//
-//				ImmutableState canonicalState = stateMap.putIfAbsent(result,
-//						result);
-//
-//				if (canonicalState == null) {
-//					canonicalState = result;
-//
-//					synchronized (canonicalState) {
-//						canonicalState.setCanonicId(
-//								this.stateCount.getAndIncrement());
-//						canonicalState.notifyAll();
-//					}
-//				} else {
-//					synchronized (canonicalState) {
-//						while (canonicalState.getCanonicId() < 0)
-//							try {
-//								canonicalState.wait();
-//							} catch (InterruptedException e) {
-//								e.printStackTrace();
-//							}
-//					}
-//				}
-//			}
-//			return result;
-//		}
-//	}
 
 	/**
 	 * Creates a dyscope in its initial state.
