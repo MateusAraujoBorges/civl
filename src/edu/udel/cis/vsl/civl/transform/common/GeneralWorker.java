@@ -498,6 +498,21 @@ public class GeneralWorker extends BaseWorker {
 				nodeFactory.newHereNode(mainSource));
 	}
 
+	/**
+	 * Recursively traverse the AST from the given {@link ASTNode}
+	 * <code>currentNode</code>to process either 'malloc' or 'calloc' methods.
+	 * <br>
+	 * <p>
+	 * 'malloc' will be transformed as 'civl_malloc'.
+	 * </p>
+	 * <p>
+	 * 'calloc' will be transformed as 'civl_malloc' with 'memset' to initialize
+	 * all involved space as '0'.
+	 * </p>
+	 * 
+	 * @param currentNode
+	 *            the {@link ASTNode} processed in this recursion
+	 */
 	private void processMalloc(ASTNode currentNode) throws SyntaxException {
 		if (currentNode instanceof FunctionCallNode) {
 			FunctionCallNode funcCallNode = (FunctionCallNode) currentNode;
@@ -518,10 +533,11 @@ public class GeneralWorker extends BaseWorker {
 					ExpressionNode argument = funcCallNode.getArgument(0);
 
 					funcIdNode.setName(CIVL_MALLOC);
-					argument.parent().removeChild(argument.childIndex());
-					funcCallNode.setArguments(nodeFactory.newSequenceNode(
-							argument.getSource(), "Actual Parameters",
-							Arrays.asList(civlRootIdNode, argument)));
+					argument.remove();
+					funcCallNode.setChild(argument.childIndex(),
+							nodeFactory.newSequenceNode(argument.getSource(),
+									"Actual Parameters", Arrays
+											.asList(civlRootIdNode, argument)));
 					if (!(parent instanceof CastNode)) {
 						funcCallNode.remove();
 						if (parent instanceof OperatorNode) {
@@ -577,6 +593,7 @@ public class GeneralWorker extends BaseWorker {
 					typeElement.remove();
 					memSize = nodeFactory.newOperatorNode(funcCallSource,
 							Operator.TIMES, numElement, typeElement);
+					funcCallNode.getArgument(0).remove();
 					funcCallNode.setArguments(nodeFactory.newSequenceNode(
 							funcCallSource, "Actual Parameters",
 							Arrays.asList(civlRootIdNode, memSize)));
@@ -612,7 +629,8 @@ public class GeneralWorker extends BaseWorker {
 							memsetFuncCallArg0ExprNode = nodeFactory
 									.newIdentifierExpressionNode(
 											lhsVarDeclNode.getSource(),
-											lhsVarDeclNode.getIdentifier().copy());
+											lhsVarDeclNode.getIdentifier()
+													.copy());
 						}
 					} else {
 						memsetFuncCallArg0ExprNode = nodeFactory
