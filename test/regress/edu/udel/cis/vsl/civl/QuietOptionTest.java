@@ -55,9 +55,13 @@ public class QuietOptionTest {
 
 	@Test
 	public void adderBadReplay() {
-		assertFalse(ui.run(VERIFY, "-inputB=5", NO_PRINTF, QUIET, filename1("adderBad.cvl")));
+		assertFalse(ui.run(VERIFY, "-inputB=5", NO_PRINTF, 
+//				QUIET, 
+				filename1("adderBad.cvl")));
 
-		assertFalse(ui.run(REPLAY, QUIET, NO_PRINTF, filename1("adderBad.cvl")));
+		assertFalse(ui.run(REPLAY, 
+//				QUIET, 
+				NO_PRINTF, filename1("adderBad.cvl")));
 	}
 
 	@Test
