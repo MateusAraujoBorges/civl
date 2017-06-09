@@ -42,7 +42,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * @author Stephen F. Siegel (siegel)
  * 
  */
-public class CommonStateManager implements StateManager {
+public class CommonStateManager extends StateManager {
 
 	/* *************************** Instance Fields ************************* */
 
@@ -208,19 +208,8 @@ public class CommonStateManager implements StateManager {
 				config.out().print(this.symbolicAnalyzer.stateToString(state,
 						startStateId, sequenceId++));
 			}
-			// if (stateStatus.enabledTransition.statement()
-			// .statementKind() == StatementKind.WITH) {
-			// Pair<State, Integer> colstateAndPlace = executor
-			// .executeWithStatement(state, pid,
-			// (WithStatement) stateStatus.enabledTransition
-			// .statement());
-			//
-			// state = colstateAndPlace.left;
-			// pid = colstateAndPlace.right;
-			// } else {
 			state = executor.execute(state, stateStatus.enabledTransition.pid(),
 					stateStatus.enabledTransition);
-			// }
 			numStatesExplored.getAndIncrement();
 			if (printTransitions) {
 				if (this.printAllStates)
@@ -230,12 +219,6 @@ public class CommonStateManager implements StateManager {
 			traceStep.addAtomicStep(
 					new CommonAtomicStep(state, stateStatus.enabledTransition));
 			oldState = state;
-			// if (config.debug()) {
-			// config.out().println(
-			// "===========memory analysis at " + state
-			// + "=============");
-			// stateFactory.printReachableMemoryUnits(config.out(), state);
-			// }
 		}
 		assert stateStatus.atomCount == 0;
 		assert stateStatus.enabledStatus != EnabledStatus.DETERMINISTIC;
@@ -258,6 +241,7 @@ public class CommonStateManager implements StateManager {
 					state = stateFactory.canonic(state,
 							config.collectProcesses(), config.collectScopes(),
 							config.collectHeaps(), ignoredErrorSet);
+					state.setCanonicId(getId(state));
 					finished = true;
 				} catch (CIVLHeapException hex) {
 					// TODO state never gets canonicalized and then gmc can't
