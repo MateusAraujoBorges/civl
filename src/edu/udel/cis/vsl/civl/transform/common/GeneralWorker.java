@@ -534,10 +534,9 @@ public class GeneralWorker extends BaseWorker {
 
 					funcIdNode.setName(CIVL_MALLOC);
 					argument.remove();
-					funcCallNode.setChild(argument.childIndex(),
-							nodeFactory.newSequenceNode(argument.getSource(),
-									"Actual Parameters", Arrays
-											.asList(civlRootIdNode, argument)));
+					funcCallNode.setArguments(nodeFactory.newSequenceNode(
+							argument.getSource(), "Actual Parameters",
+							Arrays.asList(civlRootIdNode, argument)));
 					if (!(parent instanceof CastNode)) {
 						funcCallNode.remove();
 						if (parent instanceof OperatorNode) {
@@ -593,7 +592,6 @@ public class GeneralWorker extends BaseWorker {
 					typeElement.remove();
 					memSize = nodeFactory.newOperatorNode(funcCallSource,
 							Operator.TIMES, numElement, typeElement);
-					funcCallNode.getArgument(0).remove();
 					funcCallNode.setArguments(nodeFactory.newSequenceNode(
 							funcCallSource, "Actual Parameters",
 							Arrays.asList(civlRootIdNode, memSize)));
@@ -606,8 +604,7 @@ public class GeneralWorker extends BaseWorker {
 
 							if (varType.kind() != TypeKind.POINTER)
 								throw new CIVLSyntaxException(
-										"The left hand side of a calloc call must be of pointer"
-												+ " type.",
+										"The left hand side of 'calloc' call must be of pointer type:",
 										lhsVarIdExprNode.getSource());
 
 							TypeNode typeNode = this.typeNode(
