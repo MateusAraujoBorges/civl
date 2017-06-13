@@ -272,8 +272,8 @@ $atomic_f $bundle $collate_check($collator c, $bundle bundle) {
     return result;
 }
 
-$atomic_f $state_f $state $collate_get_state($collate_state state){
-  return state.gstate->state;
+$atomic_f $state_f $state * $collate_get_state($collate_state state){
+  return &state.gstate->state;
 }
 
 #endif
