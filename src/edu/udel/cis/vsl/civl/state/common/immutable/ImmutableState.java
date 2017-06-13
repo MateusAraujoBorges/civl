@@ -877,9 +877,13 @@ public class ImmutableState implements State {
 			return true;
 		if (object instanceof ImmutableState) {
 			ImmutableState that = (ImmutableState) object;
+			int thatCanonicId = that.canonicId;
 
-			if (canonicId >= 0 && that.canonicId >= 0)
-				return false;
+			if (canonicId >= 0 && thatCanonicId >= 0)
+				if (canonicId == thatCanonicId)
+					return true;
+				else
+					return false;
 			if (hashed && that.hashed && hashCode != that.hashCode)
 				return false;
 			if (!pathCondition.equals(that.pathCondition))
