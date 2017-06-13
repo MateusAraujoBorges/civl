@@ -182,6 +182,8 @@ public class CommonStateManager extends StateManager {
 		int startStateId = state.getCanonicId();
 		int sequenceId = 1;
 
+		// the source state is simplied
+//		state.setCanonicId(getId(state));
 		pid = transition.pid();
 		process = "p" + pid;
 		traceStep = new CommonTraceStep(pid);
@@ -241,7 +243,7 @@ public class CommonStateManager extends StateManager {
 					state = stateFactory.canonic(state,
 							config.collectProcesses(), config.collectScopes(),
 							config.collectHeaps(), ignoredErrorSet);
-					state.setCanonicId(getId(state));
+//					state.setCanonicId(getId(state));
 					finished = true;
 				} catch (CIVLHeapException hex) {
 					// TODO state never gets canonicalized and then gmc can't

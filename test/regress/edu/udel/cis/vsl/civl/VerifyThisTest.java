@@ -68,7 +68,9 @@ public class VerifyThisTest {
 
 	@Test
 	public void treeBarrier() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("treeBarrier.cvl")));
+		assertTrue(ui.run(VERIFY, 
+//				QUIET, 
+				filename("treeBarrier.cvl")));
 	}
 
 }
