@@ -183,9 +183,18 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
-	public void calloc() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("calloc.cvl")));
+	public void calloc1() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("calloc1.cvl")));
+	}
 
+	@Test
+	public void calloc2() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("calloc2.cvl")));
+	}
+
+	@Test
+	public void calloc3_unimplementedFeature() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("calloc3.cvl")));
 	}
 
 	@Test
