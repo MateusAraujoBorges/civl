@@ -535,7 +535,7 @@ public class GeneralWorker extends BaseWorker {
 				funcCallNode.setArguments(nodeFactory.newSequenceNode(
 						mallocArg.getSource(), "Actual Parameters",
 						Arrays.asList(civlRootIdNode, mallocArg)));
-				// Add type-cast if there is no cast operator (for *.cvl)
+				// Add type-cast if there is no cast operator (for *.c)
 				if (!(mallocParentNode instanceof CastNode)) {
 					funcCallNode.remove();
 					if (mallocParentNode instanceof OperatorNode) {
@@ -623,16 +623,16 @@ public class GeneralWorker extends BaseWorker {
 				} else {
 					throw new CIVLUnimplementedFeatureException(
 							"\nCurrently, CIVL only supports calloc functino call in"
-									+ "\n\t a variable declaration in .cvl file, "
+									+ "\n\t a variable declaration in .c file, "
 									+ "\n\t\t (e.g., int *p = calloc(..);)"
-									+ "\n\t an assignment expression in .cvl file, "
+									+ "\n\t an assignment expression in .c file, "
 									+ "\n\t\t (e.g., p = calloc(..);)"
 									+ "\n\t or a cast operation expression in .c/.cvl file"
 									+ "\n\t\t (e.g., ..(int*)calloc(..);)."
 									+ "\n this exception is thrown for: \n\t"
 									+ callocStatementNode.getSource());
 				}
-				// Add type-cast if there is no cast operator (for *.cvl)
+				// Add type-cast if there is no cast operator (for *.c)
 				if (!(callocStatementNode instanceof CastNode)) {
 					ASTNode funcCallParentNode = funcCallNode.parent();
 
