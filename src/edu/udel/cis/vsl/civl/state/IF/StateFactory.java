@@ -81,7 +81,8 @@ public interface StateFactory {
 	 * @return the canonical version of the given state
 	 */
 	State canonic(State state, boolean collectProcesses, boolean collectScopes,
-			boolean collectHeaps, Set<HeapErrorKind> toBeIgnored)
+			boolean collectHeaps, boolean collectSymbolicConstants,
+			boolean simplify, Set<HeapErrorKind> toBeIgnored)
 			throws CIVLHeapException;
 
 	/**
@@ -811,15 +812,6 @@ public interface StateFactory {
 	 */
 	Pair<Integer, State> saveState(State state);
 
-	/**
-	 * Remove a state from the saved state set, the state reference is no longer
-	 * valid.
-	 * 
-	 * @param stateRef
-	 *            The state reference to the state that will be removed from the
-	 *            saved state set.
-	 */
-	void unsaveStateByReference(int stateRef);
 	/* ****************** End of Snapshots related method ****************** */
 	/**
 	 * Records a collection of pointers to changed memory locations. The change

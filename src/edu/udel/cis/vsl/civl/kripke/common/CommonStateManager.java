@@ -64,6 +64,15 @@ public class CommonStateManager extends StateManager {
 	private AtomicInteger maxProcs = new AtomicInteger(0);
 
 	/**
+	 * Keep track of the maximal normalized ID of states. Since state will only
+	 * be normalized when saveState option is enabled, this is only updated when
+	 * saveState option is enabled. The motivation to have this field is to
+	 * allow the state manager to print only new states in -savedStates mode,
+	 * for better user experiences.
+	 */
+	private AtomicInteger maxNormalizedId = new AtomicInteger(-1);
+
+	/**
 	 * The unique state factory used by the system.
 	 */
 	protected StateFactory stateFactory;
@@ -81,15 +90,6 @@ public class CommonStateManager extends StateManager {
 	 * is typically set by a separate thread. Access to this thread is protected
 	 * by the lock on this StateManager.
 	 */
-
-	/**
-	 * Keep track of the maximal canonic ID of states. Since
-	 * {@link StateFactory#canonic(State)} is only called when savedState option
-	 * is enabled, this is only updated when savedState option is enabled. The
-	 * motivation to have this field is to allow the state manager to print only
-	 * new states in -savedStates mode, for better user experiences.
-	 */
-	private AtomicInteger maxCanonicId = new AtomicInteger(-1);
 
 	protected CIVLErrorLogger errorLogger;
 
@@ -170,7 +170,6 @@ public class CommonStateManager extends StateManager {
 			Transition transition) throws UnsatisfiablePathConditionException {
 		int pid;
 		int numProcs;
-		int oldMaxCanonicId = this.maxCanonicId.get();
 		boolean newState = false;
 		Transition firstTransition;
 		State oldState = state;
@@ -178,12 +177,9 @@ public class CommonStateManager extends StateManager {
 		TraceStep traceStep;
 		String process;
 		int atomCount = 0;
-		// boolean ampleSetUpdated = false;
-		int startStateId = state.getCanonicId();
+		int startStateId = state.getNormalizedID();
 		int sequenceId = 1;
 
-		// the source state is simplied
-		state.setCanonicId(getId(state));
 		pid = transition.pid();
 		process = "p" + pid;
 		traceStep = new CommonTraceStep(pid);
@@ -230,100 +226,13 @@ public class CommonStateManager extends StateManager {
 		if (printTransitions) {
 			config.out().print("--> ");
 		}
-		if (config.saveStates()) {
-			int newCanonicId;
-			Set<HeapErrorKind> ignoredErrorSet = new HashSet<>(
-					this.ignoredHeapErrors);
-			boolean finished = false;
-
-			do {
-				try {
-					if (ignoredErrorSet.size() == HeapErrorKind.values().length)
-						finished = true;
-					state = stateFactory.canonic(state,
-							config.collectProcesses(), config.collectScopes(),
-							config.collectHeaps(), ignoredErrorSet);
-					// here state is not simplified.
-					state.setCanonicId(getId(state));
-					finished = true;
-				} catch (CIVLHeapException hex) {
-					// TODO state never gets canonicalized and then gmc can't
-					// figure out if it has been seen before.
-					String message = "";
-
-					state = hex.state();
-					switch (hex.heapErrorKind()) {
-						case NONEMPTY :
-							message = "The dyscope " + hex.dyscopeName()
-									+ "(id=" + hex.dyscopeID()
-									+ ") has a non-empty heap upon termination.\n";
-							break;
-						case UNREACHABLE :
-							message = "An unreachable object (mallocID="
-									+ hex.heapFieldID() + ", objectID="
-									+ hex.heapObjectID()
-									+ ") is detected in the heap of dyscope "
-									+ hex.dyscopeName() + "(id="
-									+ hex.dyscopeID() + ").\n";
-							break;
-						default :
-					}
-					message = message + "heap"
-							+ symbolicAnalyzer.symbolicExpressionToString(
-									hex.source(), hex.state(), null,
-									hex.heapValue());
-					errorLogger.logSimpleError(hex.source(), state, process,
-							symbolicAnalyzer.stateInformation(hex.state()),
-							hex.kind(), message);
-					ignoredErrorSet.add(hex.heapErrorKind());
-				}
-			} while (!finished);
-
-			traceStep.complete(state);
-			newCanonicId = state.getCanonicId();
-			if (newCanonicId > oldMaxCanonicId) {
-				Utils.biggerAndSet(this.maxCanonicId, newCanonicId);
-				newState = true;
-				numStatesExplored.getAndIncrement();
-			}
-		} else {
-			// FIXME needs to commit all symbolic expressions?
-			// if (config.collectProcesses())
-			// state = stateFactory.collectProcesses(state);
-			// try {
-			// if (config.collectHeaps())
-			// state = stateFactory.collectHeaps(state);
-			// if (config.collectScopes())
-			// state = stateFactory.collectScopes(state);
-			// } catch (CIVLStateException stex) {
-			// CIVLExecutionException err = new CIVLExecutionException(
-			// stex.kind(), stex.certainty(), process, stex.message(),
-			// symbolicAnalyzer.stateToString(stex.state()),
-			// stex.source());
-			//
-			// errorLogger.reportError(err);
-			// }
-			if (config.simplify())
-				state = stateFactory.simplify(state);
-			traceStep.complete(state);
-		}
 		if (config.printTransitions())
 			config.out().println(state);
-
 		// TODO should the expansion of transitionsequence visible here?
-		// if (ampleSetUpdated
-		// && (config.showAmpleSet() || config.showAmpleSetWtStates())) {
-		// State updatedState = stack.peek().state();
-		//
-		// config.out().println("\nample set at state "
-		// + updatedState.getCanonicId() + " fully expanded");
-		// if (config.showAmpleSetWtStates())
-		// config.out().println(updatedState.callStackToString());
-		// }
 		if (printSavedStates && (!config.saveStates() || newState)) {
 			// in -savedStates mode, only print new states.
 			config.out().println();
-			config.out().print(this.symbolicAnalyzer.stateToString(state));
+			config.out().print(symbolicAnalyzer.stateToString(state));
 		} else if (config.showPathConditon()) {
 			config.out().print(state.toString());
 			config.out().print(" -- path condition: ");
@@ -335,6 +244,8 @@ public class CommonStateManager extends StateManager {
 								null, state, "\t", state
 										.getPathCondition(enabler.universe)));
 		}
+		traceStep.complete(state);
+		numStatesExplored.getAndIncrement();
 		numProcs = state.numLiveProcs();
 		Utils.biggerAndSet(maxProcs, numProcs);
 		// if (numProcs > maxProcs)
@@ -651,7 +562,78 @@ public class CommonStateManager extends StateManager {
 	}
 
 	@Override
-	public State normalize(State state) {
-		return stateFactory.simplify(state);
+	public State normalizeWorker(TraceStep traceStep) {
+		State state = traceStep.getFinalState();
+
+		try {
+			if (config.saveStates()) {
+				Set<HeapErrorKind> ignoredErrorSet = new HashSet<>(
+						ignoredHeapErrors);
+				boolean finished = false;
+
+				do {
+					try {
+						if (ignoredErrorSet
+								.size() == HeapErrorKind.values().length)
+							finished = true;
+						state = stateFactory.canonic(state,
+								config.collectProcesses(),
+								config.collectScopes(), config.collectHeaps(),
+								config.collectSymbolicNames(),
+								config.simplify(), ignoredErrorSet);
+						finished = true;
+					} catch (CIVLHeapException hex) {
+						// TODO state never gets canonicalized and then gmc
+						// can't
+						// figure out if it has been seen before.
+						String message = "";
+						String process = "p" + traceStep.processIdentifier();
+
+						state = hex.state();
+						switch (hex.heapErrorKind()) {
+							case NONEMPTY :
+								message = "The dyscope " + hex.dyscopeName()
+										+ "(id=" + hex.dyscopeID()
+										+ ") has a non-empty heap upon termination.\n";
+								break;
+							case UNREACHABLE :
+								message = "An unreachable object (mallocID="
+										+ hex.heapFieldID() + ", objectID="
+										+ hex.heapObjectID()
+										+ ") is detected in the heap of dyscope "
+										+ hex.dyscopeName() + "(id="
+										+ hex.dyscopeID() + ").\n";
+								break;
+							default :
+						}
+						message = message + "heap"
+								+ symbolicAnalyzer.symbolicExpressionToString(
+										hex.source(), hex.state(), null,
+										hex.heapValue());
+						errorLogger.logSimpleError(hex.source(), state, process,
+								symbolicAnalyzer.stateInformation(hex.state()),
+								hex.kind(), message);
+						ignoredErrorSet.add(hex.heapErrorKind());
+					}
+				} while (!finished);
+			} else if (config.simplify())
+				state = stateFactory.simplify(state);
+		} catch (UnsatisfiablePathConditionException e) {
+			// Since the error has been logged, just return
+			// some state with false path condition, so there
+			// will be no next state...
+			return stateFactory.addToPathcondition(state,
+					traceStep.processIdentifier(), falseExpr);
+		}
+		return state;
+	}
+
+	@Override
+	public void postNormalize(State normalizedState, int stateId) {
+		normalizedState.setNormalizedID(stateId);
+		if (stateId > maxNormalizedId.get()) {
+			Utils.biggerAndSet(maxNormalizedId, stateId);
+			numStatesExplored.incrementAndGet();
+		}
 	}
 }

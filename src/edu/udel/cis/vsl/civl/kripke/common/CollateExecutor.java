@@ -86,7 +86,7 @@ public class CollateExecutor {
 		executor.setConfiguration(this.config);
 		try {
 			initState = executor.stateFactory().canonic(initState, false, false,
-					false, new HashSet<>(0));
+					false, false, false, new HashSet<>(0));
 		} catch (CIVLHeapException e) {
 			// ignore
 		}
@@ -94,7 +94,7 @@ public class CollateExecutor {
 				|| config.showSavedStates() || config.debugOrVerbose())
 			config.out().println("********************************\n"
 					+ "Process " + realState.getProcessState(pid).name()
-					+ " at State " + realState.getCanonicId()
+					+ " at State " + realState.getNormalizedID()
 					+ ": start executing sub-program on collate states.");
 		if (this.config.showStates() || config.showSavedStates()
 				|| config.debugOrVerbose()) {

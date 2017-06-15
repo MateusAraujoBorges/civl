@@ -8,6 +8,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Printable;
 import edu.udel.cis.vsl.gmc.seq.StateManagerIF;
+import edu.udel.cis.vsl.gmc.seq.TraceStepIF;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
@@ -64,4 +65,21 @@ public abstract class StateManager extends StateManagerIF<State, Transition> {
 	 * @return the names of output variables
 	 */
 	public abstract String[] outptutNames();
+
+	/**
+	 * The worker method of {@link #normalize(TraceStepIF)}. This method allows
+	 * a sub-class normalize a {@link TraceStep} instead of a
+	 * {@link TraceStepIF}.
+	 * 
+	 * @param traceStep
+	 *            An instance of a {@link TraceStep}
+	 * @return The normalized final state (see {@link TraceStep#getFinalState()}
+	 *         ) of the given trace step.
+	 */
+	protected abstract State normalizeWorker(TraceStep traceStep);
+
+	@Override
+	public State normalize(TraceStepIF<State> traceStep) {
+		return normalizeWorker((TraceStep) traceStep);
+	}
 }

@@ -266,7 +266,7 @@ public interface State {
 	 * @return the canonic ID of the state, or -1 when the state is not yet
 	 *         canonicalized.
 	 */
-	int getCanonicId();
+	int getNormalizedID();
 
 	/**
 	 * Set the canonic id of this state.
@@ -274,7 +274,7 @@ public interface State {
 	 * @param id
 	 *            The id that is set to this state.
 	 */
-	void setCanonicId(int id);
+	void setNormalizedID(int id);
 
 	/**
 	 * Prints the state to a given print stream.

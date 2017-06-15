@@ -103,9 +103,9 @@ public class CIVLLogEntry extends LogEntry {
 							.errorStateEquiv() == ErrorStateEquivalence.FULL) {
 						// compare based on the full state
 						assert errorState1
-								.getCanonicId() != -1 : "Expected error state to be canonic";
+								.getNormalizedID() != -1 : "Expected error state to be normalized";
 						assert errorState2
-								.getCanonicId() != -1 : "Expected error state to be canonic";
+								.getNormalizedID() != -1 : "Expected error state to be normalized";
 
 						String stateString1 = errorState1
 								.getPathCondition(universe).toString();
@@ -164,9 +164,9 @@ public class CIVLLogEntry extends LogEntry {
 							.errorStateEquiv() == ErrorStateEquivalence.FULL) {
 						// compare based on the full state
 						assert errorState1
-								.getCanonicId() != -1 : "Expected error state to be canonic";
+								.getNormalizedID() != -1 : "Expected error state to be canonic";
 						assert errorState2
-								.getCanonicId() != -1 : "Expected error state to be canonic";
+								.getNormalizedID() != -1 : "Expected error state to be canonic";
 
 						String stateString1 = errorState1
 								.getPathCondition(universe).toString();

@@ -1169,7 +1169,7 @@ public class AmpleSetWorker {
 		this.waitMap = new BitSet[state.numProcs()];
 		if (debugging) {
 			debugOut.println("===============memory analysis at state "
-					+ state.getCanonicId() + "================");
+					+ state.getNormalizedID() + "================");
 		}
 		for (int i = 0; i < state.numProcs(); i++) {
 			this.enabledSystemCallMap.add(null);

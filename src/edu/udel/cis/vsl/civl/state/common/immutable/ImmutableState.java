@@ -689,7 +689,7 @@ public class ImmutableState implements State {
 	/* ************************ Methods from State ************************* */
 
 	@Override
-	public int getCanonicId() {
+	public int getNormalizedID() {
 		return canonicId;
 	}
 
@@ -962,7 +962,7 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public void setCanonicId(int id) {
+	public void setNormalizedID(int id) {
 		this.canonicId = id;
 	}
 
