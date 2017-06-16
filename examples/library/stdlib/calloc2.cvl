@@ -1,0 +1,35 @@
+/* Commandline execution:
+ *		civl verify malloc.cvl
+ * */
+#include <civlc.cvh>
+#include <string.h>
+#include <stdlib.h>
+
+void main() {
+  int i = 1;
+  //calloc in a declaration
+  int *p = calloc(1, sizeof(int));
+  int *q;
+  
+  $assert(*p==0);
+  //calloc in an expression in the block
+  q = calloc(1, sizeof(int));
+  $assert(*q==0);
+  $free(q);
+  
+  //calloc in an expression wrapped by if
+  if (*p == 0)
+  	q = calloc(1, sizeof(int));
+  if (*p == 0){
+    $assert(*q==0);
+  	$free(q);
+  }
+  
+  //calloc in an expression wrapped by for
+  for (int n = 0; n < i; n++)
+  	q = calloc(1, sizeof(int));
+  $assert(*q==0);
+  $free(q);
+
+  $free(p);
+}   
