@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl;
 
 import static edu.udel.cis.vsl.civl.TestConstants.NO_PRINTF;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
+import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -125,10 +126,31 @@ public class LibraryTest {
 	}
 
 	@Test
+	public void malloc3() throws ABCException {
+		assertTrue(ui.run("verify", QUIET, NO_PRINTF,
+				filename(STDLIB, "malloc3.c")));
+	}
+
+	@Test
 	public void mallocForSturct() throws ABCException {
 		assertTrue(ui.run("verify", QUIET,
 				filename(STDLIB, "mallocForStruct.cvl")));
 
+	}
+
+	@Test
+	public void calloc1() {
+		assertTrue(ui.run(VERIFY, QUIET, filename(STDLIB, "calloc1.cvl")));
+	}
+
+	@Test
+	public void calloc2() {
+		assertTrue(ui.run(VERIFY, QUIET, filename(STDLIB, "calloc2.cvl")));
+	}
+
+	@Test
+	public void calloc3_unimplementedFeature() {
+		assertFalse(ui.run(VERIFY, QUIET, filename(STDLIB, "calloc3.cvl")));
 	}
 
 	@Test

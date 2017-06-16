@@ -183,21 +183,6 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
-	public void calloc1() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("calloc1.cvl")));
-	}
-
-	@Test
-	public void calloc2() {
-		assertTrue(ui.run(VERIFY, QUIET, filename("calloc2.cvl")));
-	}
-
-	@Test
-	public void calloc3_unimplementedFeature() {
-		assertFalse(ui.run(VERIFY, QUIET, filename("calloc3.cvl")));
-	}
-
-	@Test
 	public void charTest() throws ABCException {
 		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF, filename("char.cvl")));
 	}
