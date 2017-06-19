@@ -1,6 +1,6 @@
 package edu.udel.cis.vsl.civl.kripke.IF;
 
-import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
+import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
 
 /**
@@ -11,7 +11,6 @@ import edu.udel.cis.vsl.civl.state.IF.State;
  * 
  */
 public interface AtomicStep {
-
 	/**
 	 * Updates the resulting state of this atomic step.
 	 * 
@@ -28,9 +27,9 @@ public interface AtomicStep {
 	State getPostState();
 
 	/**
-	 * Returns the statement associated to this atomic step.
+	 * Returns the transition associated to this atomic step.
 	 * 
-	 * @return the statement associated to this atomic step.
+	 * @return the transition associated to this atomic step.
 	 */
-	Statement getStatement();
+	Transition getTransition();
 }

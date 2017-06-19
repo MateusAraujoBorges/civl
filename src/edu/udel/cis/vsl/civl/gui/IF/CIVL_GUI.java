@@ -475,7 +475,7 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 		// Add step information to the name of the transition
 		for (AtomicStep s : transition.getAtomicSteps()) {
 			if (transitionName.length() < 50) {
-				transitionName.append(s.getStatement().toString() + "; ");
+				transitionName.append(s.getTransition().toString() + "; ");
 			} else {
 				transitionName.append("...");
 				break;
@@ -492,7 +492,7 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 	 * @return StepNode
 	 */
 	private StepNode makeStepNode(AtomicStep step) {
-		Statement stmt = step.getStatement();
+		Statement stmt = step.getTransition().statement();
 
 		String targetString;
 

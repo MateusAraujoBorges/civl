@@ -5,18 +5,21 @@ package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.kripke.IF.AtomicStep;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.StateManager;
 import edu.udel.cis.vsl.civl.kripke.IF.TraceStep;
 import edu.udel.cis.vsl.civl.kripke.common.StateStatus.EnabledStatus;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
+import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
@@ -170,15 +173,11 @@ public class CommonStateManager extends StateManager {
 			Transition transition) throws UnsatisfiablePathConditionException {
 		int pid;
 		int numProcs;
-		boolean newState = false;
 		Transition firstTransition;
-		State oldState = state;
 		StateStatus stateStatus;
 		TraceStep traceStep;
 		String process;
 		int atomCount = 0;
-		int startStateId = state.getNormalizedID();
-		int sequenceId = 1;
 
 		pid = transition.pid();
 		process = "p" + pid;
@@ -187,13 +186,6 @@ public class CommonStateManager extends StateManager {
 		if (state.getProcessState(pid).getLocation().enterAtom())
 			atomCount = 1;
 		state = executor.execute(state, pid, firstTransition);
-		if (printTransitions) {
-			if (this.printSavedStates)
-				config.out().println();
-			printTransitionPrefix(oldState, pid);
-			printStatement(oldState, state, firstTransition);
-			oldState = state;
-		}
 		traceStep.addAtomicStep(new CommonAtomicStep(state, firstTransition));
 		for (stateStatus = singleEnabled(state, pid, atomCount,
 				process); stateStatus.val; stateStatus = singleEnabled(state,
@@ -201,49 +193,17 @@ public class CommonStateManager extends StateManager {
 			assert stateStatus.enabledTransition != null;
 			assert stateStatus.enabledStatus == EnabledStatus.DETERMINISTIC;
 			assert stateStatus.atomCount >= 0;
-			if (this.printAllStates) {
-				config.out().println();
-				config.out().print(this.symbolicAnalyzer.stateToString(state,
-						startStateId, sequenceId++));
-			}
 			state = executor.execute(state, stateStatus.enabledTransition.pid(),
 					stateStatus.enabledTransition);
 			numStatesExplored.getAndIncrement();
-			if (printTransitions) {
-				if (this.printAllStates)
-					config.out().println();
-				printStatement(oldState, state, stateStatus.enabledTransition);
-			}
 			traceStep.addAtomicStep(
 					new CommonAtomicStep(state, stateStatus.enabledTransition));
-			oldState = state;
 		}
 		assert stateStatus.atomCount == 0;
 		assert stateStatus.enabledStatus != EnabledStatus.DETERMINISTIC;
 		if (stateStatus.enabledStatus == EnabledStatus.BLOCKED
 				&& stateFactory.lockedByAtomic(state))
 			state = stateFactory.releaseAtomicLock(state);
-		if (printTransitions) {
-			config.out().print("--> ");
-		}
-		if (config.printTransitions())
-			config.out().println(state);
-		// TODO should the expansion of transitionsequence visible here?
-		if (printSavedStates && (!config.saveStates() || newState)) {
-			// in -savedStates mode, only print new states.
-			config.out().println();
-			config.out().print(symbolicAnalyzer.stateToString(state));
-		} else if (config.showPathConditon()) {
-			config.out().print(state.toString());
-			config.out().print(" -- path condition: ");
-			if (config.showPathConditonAsOneLine())
-				config.out().println(state.getPathCondition(enabler.universe));
-			else
-				config.out()
-						.println(this.symbolicAnalyzer.pathconditionToString(
-								null, state, "\t", state
-										.getPathCondition(enabler.universe)));
-		}
 		traceStep.complete(state);
 		numStatesExplored.getAndIncrement();
 		numProcs = state.numLiveProcs();
@@ -384,14 +344,20 @@ public class CommonStateManager extends StateManager {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	private void printStatement(State currentState, State newState,
-			Transition transition) throws UnsatisfiablePathConditionException {
+			Transition transition) {
 		Statement stmt = transition.statement();
 
 		config.out().print("  ");
 		config.out().print(stmt.locationStepString());
 		config.out().print(": ");
-		config.out().print(symbolicAnalyzer.statementEvaluation(currentState,
-				newState, transition.pid(), stmt));
+		try {
+			config.out().print(symbolicAnalyzer.statementEvaluation(
+					currentState, newState, transition.pid(), stmt));
+		} catch (UnsatisfiablePathConditionException e) {
+			throw new CIVLInternalException(
+					"UnsatisfiablePathConditionException happens when printing a statement",
+					stmt.getSource());
+		}
 		if (transition.transitionKind() == TransitionKind.NOOP) {
 			BooleanExpression assumption = transition.clause();
 
@@ -522,6 +488,43 @@ public class CommonStateManager extends StateManager {
 		out.print(transition.toString());
 	}
 
+	@Override
+	public void printTraceStep(State source, TraceStepIF<State> traceStepIF) {
+		TraceStep traceStep = (TraceStep) traceStepIF;
+		int pid = traceStep.processIdentifier();
+		int startStateId = source.getNormalizedID();
+		int sequenceId = 1;
+		Iterator<AtomicStep> atomicStepIter = traceStep.getAtomicSteps()
+				.iterator();
+		AtomicStep atomicStep = atomicStepIter.next();
+		State oldState = source;
+
+		// print the first transition from the source state:
+		if (printTransitions) {
+			if (this.printSavedStates)
+				config.out().println();
+			printTransitionPrefix(source, pid);
+			printStatement(source, atomicStep.getPostState(),
+					atomicStep.getTransition());
+		}
+		oldState = atomicStep.getPostState();
+		while (atomicStepIter.hasNext()) {
+			atomicStep = atomicStepIter.next();
+			if (this.printAllStates) {
+				config.out().println();
+				config.out().print(this.symbolicAnalyzer.stateToString(oldState,
+						startStateId, sequenceId++));
+			}
+			if (printTransitions) {
+				if (this.printAllStates)
+					config.out().println();
+				printStatement(oldState, atomicStep.getPostState(),
+						atomicStep.getTransition());
+			}
+			oldState = atomicStep.getPostState();
+		}
+	}
+
 	/* ****************** Public Methods from StateManager ***************** */
 
 	@Override
@@ -562,7 +565,8 @@ public class CommonStateManager extends StateManager {
 	}
 
 	@Override
-	public State normalizeWorker(TraceStep traceStep) {
+	public State normalize(TraceStepIF<State> traceStepIF) {
+		TraceStep traceStep = (TraceStep) traceStepIF;
 		State state = traceStep.getFinalState();
 
 		try {
@@ -635,5 +639,27 @@ public class CommonStateManager extends StateManager {
 			Utils.biggerAndSet(maxNormalizedId, stateId);
 			numStatesExplored.incrementAndGet();
 		}
+		// TODO should the expansion of transitionsequence visible here?
+		if (printSavedStates && !config.saveStates()) {
+			// in -savedStates mode, only print new states.
+			config.out().println();
+			config.out().print(symbolicAnalyzer.stateToString(normalizedState));
+		} else if (config.showPathConditon()) {
+			config.out().print(normalizedState.toString());
+			config.out().print(" -- path condition: ");
+			if (config.showPathConditonAsOneLine())
+				config.out().println(
+						normalizedState.getPathCondition(enabler.universe));
+			else
+				config.out()
+						.println(this.symbolicAnalyzer.pathconditionToString(
+								null, normalizedState, "\t", normalizedState
+										.getPathCondition(enabler.universe)));
+		}
+	}
+
+	@Override
+	public int getId(State normalizedState) {
+		return normalizedState.getNormalizedID();
 	}
 }

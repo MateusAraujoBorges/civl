@@ -222,13 +222,13 @@ public class ErrorAutomaton {
 			TraceStep step = ((TraceStep) it.next());
 			Iterable<AtomicStep> atomicSteps = step.getAtomicSteps();
 			for (AtomicStep atom : atomicSteps) {
-				Location l = atom.getStatement().source();
+				Location l = atom.getTransition().statement().source();
 				if (notFromOriginalSource(l)) {
 					preState = atom.getPostState();
 					continue;
 				}
 
-				Statement s = atom.getStatement();
+				Statement s = atom.getTransition().statement();
 
 				/* CfaLocation -> CfaTransition logic */
 				ErrorCfaLoc loc = new ErrorCfaLoc(l, preState);

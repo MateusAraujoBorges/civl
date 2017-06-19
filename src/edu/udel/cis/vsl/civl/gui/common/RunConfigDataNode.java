@@ -30,8 +30,9 @@ import edu.udel.cis.vsl.gmc.seq.Option;
  * @author noyes
  * 
  */
-public class RunConfigDataNode extends DefaultMutableTreeNode implements
-		Serializable {
+public class RunConfigDataNode extends DefaultMutableTreeNode
+		implements
+			Serializable {
 	/**
 	 * 
 	 */
@@ -111,8 +112,8 @@ public class RunConfigDataNode extends DefaultMutableTreeNode implements
 		this.selectedFiles = new ArrayList<File>();
 		this.inputs = new ArrayList<CIVL_Input>();
 		this.markedForDelete = false;
-		GMCConfiguration c = new GMCConfiguration(Arrays.asList(CIVLConstants
-				.getAllOptions()));
+		GMCConfiguration c = new GMCConfiguration(
+				Arrays.asList(CIVLConstants.getAllOptions()));
 
 		if (comLine == null) {
 		}
@@ -180,8 +181,8 @@ public class RunConfigDataNode extends DefaultMutableTreeNode implements
 			out.writeObject(this);
 			out.close();
 			fileOut.close();
-			System.out.println("Serialized data is saved in "
-					+ serializeDestination);
+			System.out.println(
+					"Serialized data is saved in " + serializeDestination);
 		} catch (IOException i) {
 			i.printStackTrace();
 		}
@@ -196,8 +197,8 @@ public class RunConfigDataNode extends DefaultMutableTreeNode implements
 	public RunConfigDataNode deserialize() {
 		RunConfigDataNode config = null;
 		try {
-			FileInputStream fileIn = new FileInputStream(serializeDestination
-					+ "/" + name);
+			FileInputStream fileIn = new FileInputStream(
+					serializeDestination + "/" + name);
 			ObjectInputStream in = new ObjectInputStream(fileIn);
 			config = (RunConfigDataNode) in.readObject();
 			System.out.println(config.getNormalCommandKind());
@@ -207,8 +208,8 @@ public class RunConfigDataNode extends DefaultMutableTreeNode implements
 				System.out.println("Deserialized RunConfig...");
 				System.out.println("Name: " + config.name);
 				for (int i = 0; i < config.getSelectedFiles().size(); i++) {
-					System.out.println("File: "
-							+ config.getSelectedFiles().get(i));
+					System.out.println(
+							"File: " + config.getSelectedFiles().get(i));
 				}
 			}
 			return config;
