@@ -103,8 +103,7 @@ public class ConcurrencyTest {
 
 	@Test
 	public void dining() {
-		assertTrue(
-				ui.run(VERIFY, "-inputBOUND=4", QUIET, filename("dining.cvl")));
+		assertTrue(ui.run(VERIFY, "-showTransitions", filename("dining.cvl")));
 	}
 
 	@Test

@@ -6,6 +6,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
+import edu.udel.cis.vsl.civl.kripke.IF.TraceStep;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
@@ -57,10 +58,11 @@ public class ColStateManager extends CommonStateManager {
 
 	@Override
 	public TraceStepIF<State> nextState(State state, Transition transition) {
-		TraceStepIF<State> result;
+		int pid = transition.pid();
+		TraceStep result = new CommonTraceStep(pid);
 
 		try {
-			result = nextStateWork(state, transition);
+			nextStateWork(state, transition, result);
 		} catch (UnsatisfiablePathConditionException e) {
 			// problem is the interface requires an actual State
 			// be returned. There is no concept of executing a
@@ -68,8 +70,12 @@ public class ColStateManager extends CommonStateManager {
 			// since the error has been logged, just return
 			// some state with false path condition, so there
 			// will be no next state...
-			result = new NullTraceStep(stateFactory.addToPathcondition(state,
-					transition.pid(), falseExpr));
+			State lastState = result.getFinalState();
+
+			if (lastState == null)
+				lastState = state;
+			result.setFinalState(
+					stateFactory.addToPathcondition(lastState, pid, falseExpr));
 		}
 
 		State resultState = result.getFinalState();

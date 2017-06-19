@@ -1,12 +1,9 @@
 package edu.udel.cis.vsl.civl.kripke.common;
 
 import java.util.LinkedList;
-import java.util.List;
 
 import edu.udel.cis.vsl.civl.kripke.IF.AtomicStep;
 import edu.udel.cis.vsl.civl.kripke.IF.TraceStep;
-import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
-import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.state.IF.State;
 
 /**
@@ -22,7 +19,7 @@ public class CommonTraceStep implements TraceStep {
 	/**
 	 * The list of atomic steps contained in this trace in sequential order.
 	 */
-	private List<AtomicStep> steps;
+	private LinkedList<AtomicStep> steps;
 
 	/**
 	 * The identifier of the process that this trace belongs to.
@@ -89,18 +86,15 @@ public class CommonTraceStep implements TraceStep {
 	}
 
 	@Override
-	public void complete(State finalState) {
-		if (this.finalState == null)
-			this.finalState = finalState;
-		else
-			throw new CIVLInternalException(
-					"A completed trace step cannot be completed again.",
-					(CIVLSource) null);
+	public void setFinalState(State finalState) {
+		this.finalState = finalState;
 	}
 
 	@Override
 	public State getFinalState() {
-		return finalState;
+		if (finalState == null && !steps.isEmpty()) {
+			return steps.getLast().getPostState();
+		} else
+			return finalState;
 	}
-
 }

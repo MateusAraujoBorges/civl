@@ -121,9 +121,11 @@ public abstract class Player {
 			});
 			civlConfig.setOut(dump);
 			civlConfig.setErr(dump);
+			gmcConfig.setPrintStream(dump);
 		} else {
 			civlConfig.setOut(out);
 			civlConfig.setErr(err);
+			gmcConfig.setPrintStream(out);
 		}
 		// civlConfig.setOut(out);
 		// civlConfig.setErr(err);

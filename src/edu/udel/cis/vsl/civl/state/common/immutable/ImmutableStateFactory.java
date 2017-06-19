@@ -716,8 +716,6 @@ public class ImmutableStateFactory implements StateFactory {
 		// state = this.computeReachableMemUnits(state, 0);
 		state = canonic(state, false, false, false, false, false,
 				emptyHeapErrorSet);
-		if (config.saveStates())
-			state.setNormalizedID(0);
 		return state;
 	}
 

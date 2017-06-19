@@ -260,29 +260,17 @@ public interface State {
 	boolean reachableByProcess(int sid, int pid);
 
 	/**
-	 * Returns the canonic ID of the state. Returns -1 when the state is not yet
-	 * canonicalized.
-	 * 
-	 * @return the canonic ID of the state, or -1 when the state is not yet
-	 *         canonicalized.
-	 */
-	int getNormalizedID();
-
-	/**
-	 * Set the canonic id of this state.
-	 * 
-	 * @param id
-	 *            The id that is set to this state.
-	 */
-	void setNormalizedID(int id);
-
-	/**
 	 * Prints the state to a given print stream.
 	 * 
 	 * @param out
 	 *            The print stream to be used.
 	 */
 	void print(PrintStream out);
+
+	/**
+	 * @return The instance ID of this object.
+	 */
+	long getInstanceId();
 
 	/**
 	 * Returns value of the output variables in the order of the given list of
@@ -310,7 +298,4 @@ public interface State {
 	 *         process of this state will be recorded.
 	 */
 	public boolean isMonitoringWrites(int pid);
-
-	@Override
-	String toString();
 }

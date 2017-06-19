@@ -67,15 +67,6 @@ public class CommonStateManager extends StateManager {
 	private AtomicInteger maxProcs = new AtomicInteger(0);
 
 	/**
-	 * Keep track of the maximal normalized ID of states. Since state will only
-	 * be normalized when saveState option is enabled, this is only updated when
-	 * saveState option is enabled. The motivation to have this field is to
-	 * allow the state manager to print only new states in -savedStates mode,
-	 * for better user experiences.
-	 */
-	private AtomicInteger maxNormalizedId = new AtomicInteger(-1);
-
-	/**
 	 * The unique state factory used by the system.
 	 */
 	protected StateFactory stateFactory;
@@ -169,19 +160,19 @@ public class CommonStateManager extends StateManager {
 	 * @return the resulting trace step after executing the state.
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	protected TraceStepIF<State> nextStateWork(State state,
-			Transition transition) throws UnsatisfiablePathConditionException {
+	protected void nextStateWork(State state, Transition transition,
+			TraceStep traceStep) throws UnsatisfiablePathConditionException {
 		int pid;
 		int numProcs;
 		Transition firstTransition;
 		StateStatus stateStatus;
-		TraceStep traceStep;
+		// TraceStep traceStep;
 		String process;
 		int atomCount = 0;
 
 		pid = transition.pid();
 		process = "p" + pid;
-		traceStep = new CommonTraceStep(pid);
+		// traceStep = new CommonTraceStep(pid);
 		firstTransition = (Transition) transition;
 		if (state.getProcessState(pid).getLocation().enterAtom())
 			atomCount = 1;
@@ -204,7 +195,7 @@ public class CommonStateManager extends StateManager {
 		if (stateStatus.enabledStatus == EnabledStatus.BLOCKED
 				&& stateFactory.lockedByAtomic(state))
 			state = stateFactory.releaseAtomicLock(state);
-		traceStep.complete(state);
+		traceStep.setFinalState(state);
 		numStatesExplored.getAndIncrement();
 		numProcs = state.numLiveProcs();
 		Utils.biggerAndSet(maxProcs, numProcs);
@@ -212,7 +203,6 @@ public class CommonStateManager extends StateManager {
 		// maxProcs = numProcs;
 		if (config.collectOutputs())
 			this.outputCollector.collectOutputs(state);
-		return traceStep;
 	}
 
 	/**
@@ -388,10 +378,16 @@ public class CommonStateManager extends StateManager {
 	 *            The identifier of the process that this transition associates
 	 *            with.
 	 */
-	private void printTransitionPrefix(State state, int processIdentifier) {
+	private void printTransitionPrefix(State state, int processIdentifier,
+			int stateID) {
 		// Executed by p0 from State 1
 		config.out().print("Executed by p");
-		config.out().println(processIdentifier + " from " + state + ":");
+		if (stateID < 0)
+			config.out().println(processIdentifier + " from State " + state);
+		else
+			config.out().println(
+					processIdentifier + " from State " + stateID + " " + state);
+		config.out().flush();
 	}
 
 	/**
@@ -441,10 +437,12 @@ public class CommonStateManager extends StateManager {
 
 	@Override
 	public TraceStepIF<State> nextState(State state, Transition transition) {
-		TraceStepIF<State> result;
+		int pid = transition.pid();
+		TraceStep result = new CommonTraceStep(pid);
+
 		// nextStateCalls++;
 		try {
-			result = nextStateWork(state, transition);
+			nextStateWork(state, transition, result);
 		} catch (UnsatisfiablePathConditionException e) {
 			// problem is the interface requires an actual State
 			// be returned. There is no concept of executing a
@@ -452,8 +450,12 @@ public class CommonStateManager extends StateManager {
 			// since the error has been logged, just return
 			// some state with false path condition, so there
 			// will be no next state...
-			result = new NullTraceStep(stateFactory.addToPathcondition(state,
-					transition.pid(), falseExpr));
+			State lastState = result.getFinalState();
+
+			if (lastState == null)
+				lastState = state;
+			result.setFinalState(
+					stateFactory.addToPathcondition(lastState, pid, falseExpr));
 		}
 		return result;
 	}
@@ -492,7 +494,7 @@ public class CommonStateManager extends StateManager {
 	public void printTraceStep(State source, TraceStepIF<State> traceStepIF) {
 		TraceStep traceStep = (TraceStep) traceStepIF;
 		int pid = traceStep.processIdentifier();
-		int startStateId = source.getNormalizedID();
+		int startStateId = getId(source);
 		int sequenceId = 1;
 		Iterator<AtomicStep> atomicStepIter = traceStep.getAtomicSteps()
 				.iterator();
@@ -503,7 +505,7 @@ public class CommonStateManager extends StateManager {
 		if (printTransitions) {
 			if (this.printSavedStates)
 				config.out().println();
-			printTransitionPrefix(source, pid);
+			printTransitionPrefix(source, pid, startStateId);
 			printStatement(source, atomicStep.getPostState(),
 					atomicStep.getTransition());
 		}
@@ -565,7 +567,7 @@ public class CommonStateManager extends StateManager {
 	}
 
 	@Override
-	public State normalize(TraceStepIF<State> traceStepIF) {
+	public void normalize(TraceStepIF<State> traceStepIF) {
 		TraceStep traceStep = (TraceStep) traceStepIF;
 		State state = traceStep.getFinalState();
 
@@ -626,40 +628,24 @@ public class CommonStateManager extends StateManager {
 			// Since the error has been logged, just return
 			// some state with false path condition, so there
 			// will be no next state...
-			return stateFactory.addToPathcondition(state,
-					traceStep.processIdentifier(), falseExpr);
+			traceStep.setFinalState(stateFactory.addToPathcondition(state,
+					traceStep.processIdentifier(), falseExpr));
 		}
-		return state;
-	}
-
-	@Override
-	public void setId(State normalizedState, int stateId) {
-		normalizedState.setNormalizedID(stateId);
-		if (stateId > maxNormalizedId.get()) {
-			Utils.biggerAndSet(maxNormalizedId, stateId);
-			numStatesExplored.incrementAndGet();
-		}
-		// TODO should the expansion of transitionsequence visible here?
 		if (printSavedStates && !config.saveStates()) {
 			// in -savedStates mode, only print new states.
 			config.out().println();
-			config.out().print(symbolicAnalyzer.stateToString(normalizedState));
+			config.out().print(symbolicAnalyzer.stateToString(state));
 		} else if (config.showPathConditon()) {
-			config.out().print(normalizedState.toString());
+			config.out().print(state.toString());
 			config.out().print(" -- path condition: ");
 			if (config.showPathConditonAsOneLine())
-				config.out().println(
-						normalizedState.getPathCondition(enabler.universe));
+				config.out().println(state.getPathCondition(enabler.universe));
 			else
 				config.out()
 						.println(this.symbolicAnalyzer.pathconditionToString(
-								null, normalizedState, "\t", normalizedState
+								null, state, "\t", state
 										.getPathCondition(enabler.universe)));
 		}
-	}
-
-	@Override
-	public int getId(State normalizedState) {
-		return normalizedState.getNormalizedID();
+		traceStep.setFinalState(state);
 	}
 }

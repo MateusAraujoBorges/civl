@@ -84,7 +84,9 @@ public class CollateExecutor {
 				executor.evaluator().symbolicAnalyzer(), errorLogger, config);
 		DfsSearcher<State, Transition> searcher = new DfsSearcher<State, Transition>(
 				enabler, colStateManager, predicate, gmcConfig);
+		long realStateId = colStateManager.getId(realState);
 
+		realStateId = realStateId < 0 ? realState.getInstanceId() : realStateId;
 		executor.stateFactory().setConfiguration(this.config);
 		executor.evaluator().setConfiguration(this.config);
 		executor.setConfiguration(this.config);
@@ -98,7 +100,7 @@ public class CollateExecutor {
 				|| config.showSavedStates() || config.debugOrVerbose())
 			config.out().println("********************************\n"
 					+ "Process " + realState.getProcessState(pid).name()
-					+ " at State " + realState.getNormalizedID()
+					+ " at State " + realStateId
 					+ ": start executing sub-program on collate states.");
 		if (this.config.showStates() || config.showSavedStates()
 				|| config.debugOrVerbose()) {

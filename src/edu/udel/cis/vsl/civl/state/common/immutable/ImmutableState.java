@@ -112,13 +112,6 @@ public class ImmutableState implements State {
 	private ImmutableDynamicScope[] dyscopes;
 
 	/**
-	 * If this is a canonic state (unique representative of its equivalence
-	 * class), this field is the unique state ID for that class. Otherwise, it
-	 * is -1.
-	 */
-	private int canonicId = -1;
-
-	/**
 	 * If the hashcode has been computed, it is cached here.
 	 */
 	private int hashCode = -1;
@@ -494,15 +487,6 @@ public class ImmutableState implements State {
 	}
 
 	/**
-	 * Is this state canonic?
-	 * 
-	 * @return true iff this is canonic
-	 */
-	boolean isCanonic() {
-		return canonicId >= 0;
-	}
-
-	/**
 	 * Returns a new state equivalent to this one, except that the dyscopes
 	 * field is replaced with the given parameter.
 	 * 
@@ -689,11 +673,6 @@ public class ImmutableState implements State {
 	/* ************************ Methods from State ************************* */
 
 	@Override
-	public int getNormalizedID() {
-		return canonicId;
-	}
-
-	@Override
 	public int getParentId(int scopeId) {
 		return getDyscope(scopeId).getParent();
 	}
@@ -790,10 +769,7 @@ public class ImmutableState implements State {
 
 	@Override
 	public String identifier() {
-		if (canonicId != -1)
-			return String.valueOf(this.canonicId);
-		else
-			return "(" + instanceId + ")";
+		return "(" + instanceId + ")";
 	}
 
 	@Override
@@ -877,13 +853,9 @@ public class ImmutableState implements State {
 			return true;
 		if (object instanceof ImmutableState) {
 			ImmutableState that = (ImmutableState) object;
-			int thatCanonicId = that.canonicId;
 
-			if (canonicId >= 0 && thatCanonicId >= 0)
-				if (canonicId == thatCanonicId)
-					return true;
-				else
-					return false;
+			if (that.instanceId == this.instanceId)
+				return true;
 			if (hashed && that.hashed && hashCode != that.hashCode)
 				return false;
 			if (!pathCondition.equals(that.pathCondition))
@@ -922,7 +894,7 @@ public class ImmutableState implements State {
 
 	@Override
 	public String toString() {
-		return "State " + identifier();
+		return identifier();
 	}
 
 	@Override
@@ -962,13 +934,13 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public void setNormalizedID(int id) {
-		this.canonicId = id;
+	public boolean isMonitoringWrites(int pid) {
+		return processStates[pid].getWriteSets().length > 0;
 	}
 
 	@Override
-	public boolean isMonitoringWrites(int pid) {
-		return processStates[pid].getWriteSets().length > 0;
+	public long getInstanceId() {
+		return instanceId;
 	}
 
 }

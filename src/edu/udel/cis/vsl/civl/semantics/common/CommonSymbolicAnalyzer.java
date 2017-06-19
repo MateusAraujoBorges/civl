@@ -290,12 +290,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		int numScopes = state.numDyscopes();
 		int numProcs = state.numProcs();
 		StringBuffer result = new StringBuffer();
-		int normalizeId = state.getNormalizedID();
 
 		result.append("State ");
-		if (normalizeId != -1)
-			result.append(normalizeId);
-		else if (lastSavedState != -1)
+		if (lastSavedState != -1)
 			result.append(lastSavedState + "." + sequenceId);
 		else
 			result.append(state.identifier());

@@ -46,23 +46,19 @@ public interface TraceStep extends TraceStepIF<State> {
 
 	/**
 	 * <p>
-	 * Completes the trace step with its final state.
-	 * </p>
-	 * 
-	 * <p>
-	 * Precondition:<code> this.getFinalState() == null</code>, otherwise, an
-	 * exception will be thrown.
+	 * Set final state to the trace step.
 	 * </p>
 	 * 
 	 * @param finalState
 	 *            The state to be used as the final state of the trace step.
 	 */
-	void complete(State finalState);
+	void setFinalState(State finalState);
 
 	/**
-	 * Returns the final state of this trace step.
-	 * 
-	 * @return the final state of this trace step.
+	 * @returns the final state of this trace step. If the final state has not
+	 *          been set, it returns the last state after executing the last
+	 *          atomic step; returns null, if there is no atomic step and the
+	 *          final state is null.
 	 */
 	State getFinalState();
 }
