@@ -629,7 +629,7 @@ public class CommonStateManager extends StateManager {
 	}
 
 	@Override
-	public void postNormalize(State normalizedState, int stateId) {
+	public void setId(State normalizedState, int stateId) {
 		normalizedState.setNormalizedID(stateId);
 		if (stateId > maxNormalizedId.get()) {
 			Utils.biggerAndSet(maxNormalizedId, stateId);
