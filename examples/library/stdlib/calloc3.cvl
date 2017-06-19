@@ -1,0 +1,19 @@
+/* Commandline execution:
+ *		civl verify malloc.cvl
+ * */
+#include <civlc.cvh>
+#include <string.h>
+#include <stdlib.h>
+
+void main() {
+  int *p;
+  int *q;
+  
+  *p = 1;
+  p = (p != NULL) ? p : calloc(1, sizeof(int));
+  q = (p != NULL) ? p : (int*)calloc(1, sizeof(int));
+  
+  $assert(*p==1 && *q==1);
+  $free(p);
+  $free(q);
+}   
