@@ -88,8 +88,7 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 		processStates = new LinkedList<>(ampleSetResult.right);
 		if (debugging || showAmpleSet) {
 			if (processStates.size() > 1) {
-				debugOut.print("\nample processes at state "
-						+ state.getInstanceId() + ":\t");
+				debugOut.print("\nample processes at state " + state + ":\t");
 				for (ProcessState p : processStates) {
 					debugOut.print(p.getPid() + "\t");
 				}

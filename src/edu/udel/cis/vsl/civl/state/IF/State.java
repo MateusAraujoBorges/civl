@@ -268,11 +268,6 @@ public interface State {
 	void print(PrintStream out);
 
 	/**
-	 * @return The instance ID of this object.
-	 */
-	long getInstanceId();
-
-	/**
 	 * Returns value of the output variables in the order of the given list of
 	 * output names.
 	 * 

@@ -937,10 +937,4 @@ public class ImmutableState implements State {
 	public boolean isMonitoringWrites(int pid) {
 		return processStates[pid].getWriteSets().length > 0;
 	}
-
-	@Override
-	public long getInstanceId() {
-		return instanceId;
-	}
-
 }
