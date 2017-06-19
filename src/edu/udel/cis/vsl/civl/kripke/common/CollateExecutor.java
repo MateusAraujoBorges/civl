@@ -83,8 +83,7 @@ public class CollateExecutor {
 		ColStateManager colStateManager = new ColStateManager(enabler, executor,
 				executor.evaluator().symbolicAnalyzer(), errorLogger, config);
 		DfsSearcher<State, Transition> searcher = new DfsSearcher<State, Transition>(
-				enabler, colStateManager, predicate, gmcConfig,
-				config.saveStates());
+				enabler, colStateManager, predicate, gmcConfig);
 
 		executor.stateFactory().setConfiguration(this.config);
 		executor.evaluator().setConfiguration(this.config);

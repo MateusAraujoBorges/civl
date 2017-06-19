@@ -111,6 +111,7 @@ public abstract class Player {
 		civlConfig = new CIVLConfiguration(gmcConfig.getAnonymousSection());
 		gmcConfig.setPrintTransition(civlConfig.showTransitions());
 		gmcConfig.setQuiet(civlConfig.isQuiet());
+		gmcConfig.setSaveStates(civlConfig.saveStates());
 		if (civlConfig.isQuiet()) {
 			PrintStream dump = new PrintStream(new OutputStream() {
 				@Override
