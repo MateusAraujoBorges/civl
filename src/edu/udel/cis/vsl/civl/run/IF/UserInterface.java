@@ -263,7 +263,7 @@ public class UserInterface {
 					traceFile = new File(CIVLConstants.CIVLREP, traceFilename);
 				} else
 					traceFile = new File(traceFilename);
-				gmcConfig = parser.newConfig();
+				gmcConfig = parser.newConfig(out);
 				parser.parse(gmcConfig, traceFile);
 				gmcSection = gmcConfig.getAnonymousSection();
 				setToDefault(gmcSection, Arrays.asList(showModelO, verboseO,
@@ -341,7 +341,7 @@ public class UserInterface {
 						traceFilename);
 			} else
 				traceFile = new File(traceFilename);
-			gmcConfig = parser.newConfig();
+			gmcConfig = parser.newConfig(out);
 			parser.parse(gmcConfig, traceFile);
 			anonymousSection = gmcConfig.getAnonymousSection();
 			setToDefault(anonymousSection,
@@ -537,7 +537,8 @@ public class UserInterface {
 					definedOptions.values());
 			ModelTranslator translator = new ModelTranslator(gmcConfig,
 					gmcConfig.getAnonymousSection(), files, files[0]);
-
+			
+			gmcConfig.setPrintStream(out);
 			return translator.getInputVariables();
 		} catch (PreprocessorException | SyntaxException | ParseException
 				| IOException e) {
@@ -610,7 +611,7 @@ public class UserInterface {
 			return false;
 		} else {
 			CommandLine commandLine = CIVLCommandFactory
-					.parseCommand(definedOptions.values(), args);
+					.parseCommand(definedOptions.values(), out, args);
 
 			try {
 				switch (commandLine.commandLineKind()) {

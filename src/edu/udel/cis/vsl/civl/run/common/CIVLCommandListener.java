@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.run.common;
 
+import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -21,7 +22,8 @@ import edu.udel.cis.vsl.gmc.seq.Option;
 import edu.udel.cis.vsl.gmc.seq.Option.OptionType;
 
 public class CIVLCommandListener extends CommandBaseListener
-		implements CommandListener {
+		implements
+			CommandListener {
 
 	// Instance fields...
 
@@ -45,8 +47,8 @@ public class CIVLCommandListener extends CommandBaseListener
 	 */
 	private Map<String, Option> mapOptionMap = new LinkedHashMap<>();
 
-	public CIVLCommandListener(String commandString,
-			Collection<Option> options) {
+	public CIVLCommandListener(String commandString, Collection<Option> options,
+			PrintStream out) {
 		this.commandString = commandString;
 		for (Option option : options) {
 			String name = option.name();
@@ -58,6 +60,7 @@ public class CIVLCommandListener extends CommandBaseListener
 				mapOptionMap.put(name, option);
 		}
 		gmcConfig = new GMCConfiguration(options);
+		gmcConfig.setPrintStream(out);
 	}
 
 	@Override
@@ -80,19 +83,19 @@ public class CIVLCommandListener extends CommandBaseListener
 			commandArg = ctx.children.get(1).getText();
 		if (commandArg != null) {
 			switch (commandArg) {
-			case CommandLine.COMPARE:
-			case CommandLine.GUI:
-			case CommandLine.HELP:
-			case CommandLine.REPLAY:
-			case CommandLine.RUN:
-			case CommandLine.SHOW:
-			case CommandLine.CONFIG:
-			case CommandLine.VERIFY:
-				helpCmd.setArg(commandArg);
-				break;
-			default:
-				throw new RuntimeCommandException(
-						"invalid argument for help: " + commandArg);
+				case CommandLine.COMPARE :
+				case CommandLine.GUI :
+				case CommandLine.HELP :
+				case CommandLine.REPLAY :
+				case CommandLine.RUN :
+				case CommandLine.SHOW :
+				case CommandLine.CONFIG :
+				case CommandLine.VERIFY :
+					helpCmd.setArg(commandArg);
+					break;
+				default :
+					throw new RuntimeCommandException(
+							"invalid argument for help: " + commandArg);
 			}
 		}
 		normalCmd = helpCmd;
@@ -100,7 +103,8 @@ public class CIVLCommandListener extends CommandBaseListener
 
 	@Override
 	public void enterNormal(@NotNull CommandParser.NormalContext ctx) {
-		String cmdString = ctx.COMMAND() != null ? ctx.COMMAND().getText()
+		String cmdString = ctx.COMMAND() != null
+				? ctx.COMMAND().getText()
 				: ctx.REPLAY().getText();
 
 		kind = CommandLineKind.NORMAL;
@@ -109,23 +113,23 @@ public class CIVLCommandListener extends CommandBaseListener
 		this.cmdSection = new GMCSection(GMCConfiguration.ANONYMOUS_SECTION);
 		this.gmcConfig.setAnonymousSection(cmdSection);
 		switch (cmdString) {
-		case "verify":
-			normalCmd.setCommand(NormalCommandKind.VERIFY);
-			break;
-		case "run":
-			normalCmd.setCommand(NormalCommandKind.RUN);
-			break;
-		case "replay":
-			normalCmd.setCommand(NormalCommandKind.REPLAY);
-			break;
-		case "show":
-			normalCmd.setCommand(NormalCommandKind.SHOW);
-			break;
-		case "config":
-			normalCmd.setCommand(NormalCommandKind.CONFIG);
-			break;
-		default: // TODO: why is this default?...
-			normalCmd.setCommand(NormalCommandKind.GUI);
+			case "verify" :
+				normalCmd.setCommand(NormalCommandKind.VERIFY);
+				break;
+			case "run" :
+				normalCmd.setCommand(NormalCommandKind.RUN);
+				break;
+			case "replay" :
+				normalCmd.setCommand(NormalCommandKind.REPLAY);
+				break;
+			case "show" :
+				normalCmd.setCommand(NormalCommandKind.SHOW);
+				break;
+			case "config" :
+				normalCmd.setCommand(NormalCommandKind.CONFIG);
+				break;
+			default : // TODO: why is this default?...
+				normalCmd.setCommand(NormalCommandKind.GUI);
 		}
 	}
 

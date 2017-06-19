@@ -163,7 +163,7 @@ public abstract class Player {
 				civlConfig);
 		this.enabler = Kripkes.newEnabler(stateFactory, this.evaluator,
 				executor, symbolicAnalyzer, memUnitFactory,
-				this.libraryEnablerLoader, log, civlConfig);
+				this.libraryEnablerLoader, log, civlConfig, gmcConfig);
 		this.random = gmcConfig.getAnonymousSection().isTrue(randomO);
 		this.minimize = gmcConfig.getAnonymousSection().isTrue(minO);
 		this.maxdepth = (int) gmcConfig.getAnonymousSection()

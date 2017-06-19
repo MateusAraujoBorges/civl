@@ -19,6 +19,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.seq.EnablerIF;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 
 /**
  * EnablerPOR implements {@link EnablerIF} for CIVL models. Its basic
@@ -58,9 +59,10 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 	public PointeredEnabler(StateFactory stateFactory, Evaluator evaluator,
 			Executor executor, SymbolicAnalyzer symbolicAnalyzer,
 			MemoryUnitFactory memUnitFactory, LibraryEnablerLoader libLoader,
-			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig) {
+			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig,
+			GMCConfiguration gmcConfig) {
 		super(stateFactory, evaluator, executor, symbolicAnalyzer, libLoader,
-				errorLogger, civlConfig);
+				errorLogger, civlConfig, gmcConfig);
 		this.memUnitFactory = memUnitFactory;
 	}
 

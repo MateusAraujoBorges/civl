@@ -45,6 +45,7 @@ import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.gmc.seq.EnablerIF;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
@@ -185,7 +186,7 @@ public abstract class CommonEnabler implements Enabler {
 	protected CommonEnabler(StateFactory stateFactory, Evaluator evaluator,
 			Executor executor, SymbolicAnalyzer symbolicAnalyzer,
 			LibraryEnablerLoader libLoader, CIVLErrorLogger errorLogger,
-			CIVLConfiguration civlConfig) {
+			CIVLConfiguration civlConfig, GMCConfiguration gmcConfig) {
 		this.errorLogger = errorLogger;
 		this.evaluator = evaluator;
 		this.executor = executor;
@@ -207,7 +208,7 @@ public abstract class CommonEnabler implements Enabler {
 		this.procBound = civlConfig.getProcBound();
 		this.civlConfig = civlConfig;
 		collateExecutor = new CollateExecutor(this, this.executor, errorLogger,
-				civlConfig);
+				civlConfig, gmcConfig);
 	}
 
 	/* ************************ Methods from EnablerIF ********************* */

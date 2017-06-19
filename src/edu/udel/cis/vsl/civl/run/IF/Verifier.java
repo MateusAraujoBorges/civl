@@ -244,7 +244,7 @@ public class Verifier extends Player {
 					Predicates.newFunctionalEquivalence(modelFactory.universe(),
 							symbolicAnalyzer, outputNames, specOutputs));
 		searcher = new DfsSearcher<State, Transition>(enabler, stateManager,
-				predicate, civlConfig.saveStates());
+				predicate, config, civlConfig.saveStates(), out);
 		if (civlConfig.debug())
 			searcher.setDebugOut(out);
 		searcher.setName(sessionName);
@@ -392,6 +392,7 @@ public class Verifier extends Player {
 						break;
 					violationFound = true;
 					config.setQuiet(civlConfig.isQuiet());
+					config.setPrintTransition(civlConfig.showTransitions());
 					CIVLLogEntry entry = new CIVLLogEntry(civlConfig, config,
 							this.predicate.getUnreportedViolation(),
 							evaluator.universe());

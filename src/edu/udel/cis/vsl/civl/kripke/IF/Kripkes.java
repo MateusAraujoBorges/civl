@@ -11,6 +11,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 
 /**
  * This is the entry point of the module <strong>kripke</strong>.
@@ -43,10 +44,10 @@ public class Kripkes {
 			Evaluator evaluator, Executor executor,
 			SymbolicAnalyzer symbolicAnalyzer, MemoryUnitFactory memUnitFactory,
 			LibraryEnablerLoader libLoader, CIVLErrorLogger errorLogger,
-			CIVLConfiguration civlConfig) {
+			CIVLConfiguration civlConfig, GMCConfiguration gmcConfig) {
 		return new PointeredEnabler(stateFactory, evaluator, executor,
 				symbolicAnalyzer, memUnitFactory, libLoader, errorLogger,
-				civlConfig);
+				civlConfig, gmcConfig);
 	}
 
 	/**

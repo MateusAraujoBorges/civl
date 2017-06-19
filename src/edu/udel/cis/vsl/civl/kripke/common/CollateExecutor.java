@@ -13,19 +13,23 @@ import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.gmc.seq.DfsSearcher;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 
 public class CollateExecutor {
 	private Enabler enabler;
 	private Executor executor;
 	private CIVLErrorLogger errorLogger;
 	private CIVLConfiguration config;
+	private GMCConfiguration gmcConfig;
 	private CIVLStatePredicate predicate = Predicates.newTrivialPredicate();
 
 	public CollateExecutor(Enabler enabler, Executor executor,
-			CIVLErrorLogger errorLogger, CIVLConfiguration config) {
+			CIVLErrorLogger errorLogger, CIVLConfiguration config,
+			GMCConfiguration gmcConfig) {
 		this.enabler = enabler;
 		this.executor = executor;
 		this.errorLogger = errorLogger;
+		this.gmcConfig = gmcConfig;
 		this.config = new CIVLConfiguration(config);
 		this.config.setCollectHeaps(true);
 		this.config.setCollectScopes(true);
@@ -79,7 +83,8 @@ public class CollateExecutor {
 		ColStateManager colStateManager = new ColStateManager(enabler, executor,
 				executor.evaluator().symbolicAnalyzer(), errorLogger, config);
 		DfsSearcher<State, Transition> searcher = new DfsSearcher<State, Transition>(
-				enabler, colStateManager, predicate, config.saveStates());
+				enabler, colStateManager, predicate, gmcConfig,
+				config.saveStates());
 
 		executor.stateFactory().setConfiguration(this.config);
 		executor.evaluator().setConfiguration(this.config);

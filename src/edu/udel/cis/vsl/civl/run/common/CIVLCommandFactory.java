@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.run.common;
 
+import java.io.PrintStream;
 import java.util.BitSet;
 import java.util.Collection;
 
@@ -34,7 +35,7 @@ public class CIVLCommandFactory {
 	}
 
 	public static CommandLine parseCommand(Collection<Option> options,
-			String... args) throws CommandLineException {
+			PrintStream out, String... args) throws CommandLineException {
 		ANTLRErrorListener myErrorListener = new MyErrorListener();
 		ANTLRErrorStrategy myHandler = new MyErrorStrategy();
 
@@ -60,7 +61,7 @@ public class CIVLCommandFactory {
 			ParseTree tree = parser.start();
 			ParseTreeWalker walker = new ParseTreeWalker();
 			CIVLCommandListener translator = new CIVLCommandListener(command,
-					options);
+					options, out);
 
 			// System.out.println("walking through CIVL command listener...");
 			walker.walk(translator, tree);
