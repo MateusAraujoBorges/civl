@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.run.common;
 
-import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -47,8 +46,8 @@ public class CIVLCommandListener extends CommandBaseListener
 	 */
 	private Map<String, Option> mapOptionMap = new LinkedHashMap<>();
 
-	public CIVLCommandListener(String commandString, Collection<Option> options,
-			PrintStream out) {
+	public CIVLCommandListener(String commandString,
+			Collection<Option> options) {
 		this.commandString = commandString;
 		for (Option option : options) {
 			String name = option.name();
@@ -60,7 +59,6 @@ public class CIVLCommandListener extends CommandBaseListener
 				mapOptionMap.put(name, option);
 		}
 		gmcConfig = new GMCConfiguration(options);
-		gmcConfig.setPrintStream(out);
 	}
 
 	@Override

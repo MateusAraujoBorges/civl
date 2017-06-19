@@ -166,13 +166,11 @@ public class CommonStateManager extends StateManager {
 		int numProcs;
 		Transition firstTransition;
 		StateStatus stateStatus;
-		// TraceStep traceStep;
 		String process;
 		int atomCount = 0;
 
 		pid = transition.pid();
 		process = "p" + pid;
-		// traceStep = new CommonTraceStep(pid);
 		firstTransition = (Transition) transition;
 		if (state.getProcessState(pid).getLocation().enterAtom())
 			atomCount = 1;
