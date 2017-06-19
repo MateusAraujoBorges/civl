@@ -391,8 +391,6 @@ public class Verifier extends Player {
 					if (!workRemains)
 						break;
 					violationFound = true;
-					config.setQuiet(civlConfig.isQuiet());
-					config.setPrintTransition(civlConfig.showTransitions());
 					CIVLLogEntry entry = new CIVLLogEntry(civlConfig, config,
 							this.predicate.getUnreportedViolation(),
 							evaluator.universe());
