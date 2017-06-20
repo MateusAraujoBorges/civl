@@ -491,15 +491,21 @@ public class CommonStateManager extends StateManager {
 
 	@Override
 	public void printTraceStep(State source, TraceStepIF<State> traceStepIF) {
+		if (!(printTransitions || printAllStates || printSavedStates))
+			return;
+
 		TraceStep traceStep = (TraceStep) traceStepIF;
 		int pid = traceStep.processIdentifier();
 		int startStateId = getId(source);
 		int sequenceId = 1;
 		Iterator<AtomicStep> atomicStepIter = traceStep.getAtomicSteps()
 				.iterator();
-		AtomicStep atomicStep = atomicStepIter.next();
 		State oldState = source;
+		AtomicStep atomicStep;
 
+		if (!atomicStepIter.hasNext())
+			return;
+		atomicStep = atomicStepIter.next();
 		// print the first transition from the source state:
 		if (printTransitions) {
 			if (this.printAllStates)
