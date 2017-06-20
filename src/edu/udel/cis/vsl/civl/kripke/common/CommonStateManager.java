@@ -545,6 +545,7 @@ public class CommonStateManager extends CIVLStateManager {
 				stateID += normalizedID + " ";
 			stateID += finalState;
 			this.config.out().println(stateID);
+			config.out().flush();
 		}
 		// I don't like increase "numStatesExplored" here but there is no other
 		// place it can be in without further modification in GMC or CIVL,
@@ -570,6 +571,7 @@ public class CommonStateManager extends CIVLStateManager {
 							.stateToString(finalState, normalizedID, -1));
 				}
 			}
+			config.out().flush();
 		}
 		// Print path conditions:
 		if (config.showPathConditon()) {
@@ -588,6 +590,7 @@ public class CommonStateManager extends CIVLStateManager {
 						.println(this.symbolicAnalyzer.pathconditionToString(
 								null, finalState, "\t", finalState
 										.getPathCondition(enabler.universe)));
+			config.out().flush();
 		}
 	}
 
