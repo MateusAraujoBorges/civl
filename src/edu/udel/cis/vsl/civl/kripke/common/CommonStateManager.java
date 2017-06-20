@@ -577,11 +577,14 @@ public class CommonStateManager extends StateManager {
 		// I don't like increase "numStatesExplored" here but there is no other
 		// place it can be in without further modification in GMC or CIVL,
 		// because it needs to know if the final state is a seen state.
-		if (normalizedID >= 0 && normalizedID > MaxNormalizedId.intValue()) {
-			Utils.biggerAndSet(MaxNormalizedId, normalizedID);
-			numStatesExplored.getAndIncrement();
+		if (normalizedID >= 0) {
+			if (normalizedID > MaxNormalizedId.intValue()) {
+				Utils.biggerAndSet(MaxNormalizedId, normalizedID);
+				numStatesExplored.getAndIncrement();
+			}
 		} else
 			numStatesExplored.getAndIncrement();
+
 	}
 
 	/* ****************** Public Methods from StateManager ***************** */
