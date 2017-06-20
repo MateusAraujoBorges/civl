@@ -293,9 +293,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 		result.append("State ");
 		if (lastSavedState != -1 && sequenceId != -1)
-			result.append(lastSavedState + "." + sequenceId);
+			result.append(lastSavedState + "." + sequenceId + " " + state);
 		else if (lastSavedState != -1)
-			result.append(lastSavedState);
+			result.append(lastSavedState + " " + state);
 		else
 			result.append(state.identifier());
 		result.append("\n");
