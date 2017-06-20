@@ -372,8 +372,9 @@ public class Verifier extends Player {
 			if (civlConfig.debugOrVerbose() || civlConfig.showStates()
 					|| civlConfig.showSavedStates()) {
 				civlConfig.out().println();
-				civlConfig.out()
-						.print(symbolicAnalyzer.stateToString(initialState));
+				civlConfig.out().print(
+						symbolicAnalyzer.stateToString(initialState, 0, -1));
+				civlConfig.out().println();
 			}
 			try {
 				while (true) {

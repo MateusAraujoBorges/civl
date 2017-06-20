@@ -136,7 +136,8 @@ public class CommonStateManager extends StateManager {
 				|| config.debugOrVerbose();
 		printAllStates = this.config.debugOrVerbose()
 				|| this.config.showStates();
-		printSavedStates = printAllStates || this.config.showSavedStates();
+		printSavedStates = this.config.debugOrVerbose()
+				|| this.config.showSavedStates();
 		this.errorLogger = errorLogger;
 		this.symbolicAnalyzer = symbolicAnalyzer;
 		this.falseExpr = symbolicAnalyzer.getUniverse().falseExpression();
@@ -501,7 +502,7 @@ public class CommonStateManager extends StateManager {
 
 		// print the first transition from the source state:
 		if (printTransitions) {
-			if (this.printSavedStates)
+			if (this.printAllStates)
 				config.out().println();
 			printTransitionPrefix(source, pid, startStateId);
 			printStatement(source, atomicStep.getPostState(),
@@ -512,7 +513,7 @@ public class CommonStateManager extends StateManager {
 			atomicStep = atomicStepIter.next();
 			if (this.printAllStates) {
 				config.out().println();
-				config.out().print(this.symbolicAnalyzer.stateToString(oldState,
+				config.out().print(symbolicAnalyzer.stateToString(oldState,
 						startStateId, sequenceId++));
 			}
 			if (printTransitions) {
@@ -522,6 +523,49 @@ public class CommonStateManager extends StateManager {
 						atomicStep.getTransition());
 			}
 			oldState = atomicStep.getPostState();
+		}
+	}
+
+	@Override
+	public void printTraceStepFinalState(State finalState, int normalizedID) {
+		// Print transitions:
+		if (printTransitions) {
+			String prefix = "--> State ";
+			String stateID = normalizedID >= 0
+					? prefix + normalizedID
+					: finalState.toString();
+
+			this.config.out().println(stateID);
+		}
+		// Print states:
+		if (printAllStates) {
+			config.out().println();
+			config.out().println(symbolicAnalyzer.stateToString(finalState,
+					normalizedID, -1));
+		} else if (printSavedStates) {
+			if (normalizedID >= 0) {
+				config.out().println();
+				config.out().println(symbolicAnalyzer.stateToString(finalState,
+						normalizedID, -1));
+			}
+		}
+		// Print path conditions:
+		if (config.showPathConditon()) {
+			String prefix = "--> State ";
+			String stateID = normalizedID >= 0
+					? prefix + normalizedID
+					: finalState.toString();
+
+			config.out().print(stateID);
+			config.out().print(" -- path condition: ");
+			if (config.showPathConditonAsOneLine())
+				config.out()
+						.println(finalState.getPathCondition(enabler.universe));
+			else
+				config.out()
+						.println(this.symbolicAnalyzer.pathconditionToString(
+								null, finalState, "\t", finalState
+										.getPathCondition(enabler.universe)));
 		}
 	}
 
@@ -628,21 +672,6 @@ public class CommonStateManager extends StateManager {
 			// will be no next state...
 			traceStep.setFinalState(stateFactory.addToPathcondition(state,
 					traceStep.processIdentifier(), falseExpr));
-		}
-		if (printSavedStates && !config.saveStates()) {
-			// in -savedStates mode, only print new states.
-			config.out().println();
-			config.out().print(symbolicAnalyzer.stateToString(state));
-		} else if (config.showPathConditon()) {
-			config.out().print(state.toString());
-			config.out().print(" -- path condition: ");
-			if (config.showPathConditonAsOneLine())
-				config.out().println(state.getPathCondition(enabler.universe));
-			else
-				config.out()
-						.println(this.symbolicAnalyzer.pathconditionToString(
-								null, state, "\t", state
-										.getPathCondition(enabler.universe)));
 		}
 		traceStep.setFinalState(state);
 	}

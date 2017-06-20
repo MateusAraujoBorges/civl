@@ -292,8 +292,10 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		StringBuffer result = new StringBuffer();
 
 		result.append("State ");
-		if (lastSavedState != -1)
+		if (lastSavedState != -1 && sequenceId != -1)
 			result.append(lastSavedState + "." + sequenceId);
+		else if (lastSavedState != -1)
+			result.append(lastSavedState);
 		else
 			result.append(state.identifier());
 		result.append("\n");

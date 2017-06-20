@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.util.Collection;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
@@ -62,7 +61,7 @@ public class TracePlayer extends Player {
 		TracePlayer result = new TracePlayer(config, model, out, err);
 		BigInteger seedValue = (BigInteger) config.getAnonymousSection()
 				.getValue(seedO);
-		RandomTransitionChooser<State, Transition, Collection<Transition>> chooser;
+		RandomTransitionChooser<State, Transition> chooser;
 
 		if (seedValue == null)
 			chooser = new RandomTransitionChooser<>(result.enabler);
