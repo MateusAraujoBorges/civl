@@ -96,6 +96,8 @@ public class CommonStateManager extends StateManager {
 
 	private AtomicInteger numStatesExplored = new AtomicInteger(1);
 
+	private AtomicInteger MaxNormalizedId = new AtomicInteger(1);;
+
 	private OutputCollector outputCollector;
 
 	private boolean printTransitions;
@@ -195,7 +197,6 @@ public class CommonStateManager extends StateManager {
 				&& stateFactory.lockedByAtomic(state))
 			state = stateFactory.releaseAtomicLock(state);
 		traceStep.setFinalState(state);
-		numStatesExplored.getAndIncrement();
 		numProcs = state.numLiveProcs();
 		Utils.biggerAndSet(maxProcs, numProcs);
 		// if (numProcs > maxProcs)
@@ -573,6 +574,14 @@ public class CommonStateManager extends StateManager {
 								null, finalState, "\t", finalState
 										.getPathCondition(enabler.universe)));
 		}
+		// I don't like increase "numStatesExplored" here but there is no other
+		// place it can be in without further modification in GMC or CIVL,
+		// because it needs to know if the final state is a seen state.
+		if (normalizedID >= 0 && normalizedID > MaxNormalizedId.intValue()) {
+			Utils.biggerAndSet(MaxNormalizedId, normalizedID);
+			numStatesExplored.getAndIncrement();
+		} else
+			numStatesExplored.getAndIncrement();
 	}
 
 	/* ****************** Public Methods from StateManager ***************** */
