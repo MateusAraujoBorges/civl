@@ -20,7 +20,7 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.Kripkes;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
-import edu.udel.cis.vsl.civl.kripke.IF.StateManager;
+import edu.udel.cis.vsl.civl.kripke.IF.CIVLStateManager;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
@@ -79,7 +79,7 @@ public abstract class Player {
 
 	protected Executor executor;
 
-	protected StateManager stateManager;
+	protected CIVLStateManager stateManager;
 
 	protected boolean random;
 
@@ -216,7 +216,7 @@ public abstract class Player {
 		}
 	}
 
-	public StateManager stateManager() {
+	public CIVLStateManager stateManager() {
 		return this.stateManager;
 	}
 }

@@ -58,7 +58,7 @@ import edu.udel.cis.vsl.civl.analysis.IF.Analysis;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.gui.IF.CIVL_GUI;
-import edu.udel.cis.vsl.civl.kripke.IF.StateManager;
+import edu.udel.cis.vsl.civl.kripke.IF.CIVLStateManager;
 import edu.udel.cis.vsl.civl.kripke.common.WitnessGenerator;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -480,7 +480,7 @@ public class UserInterface {
 
 		// out.print("phase spec done.\n");
 		if (result) {
-			StateManager stateManager = verifier.stateManager();
+			CIVLStateManager stateManager = verifier.stateManager();
 
 			model = implWorker.translate();
 			verifier = new Verifier(gmcConfig, model, out, err, startTime,

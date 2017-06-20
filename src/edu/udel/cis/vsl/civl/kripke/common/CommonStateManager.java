@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.kripke.IF.AtomicStep;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
-import edu.udel.cis.vsl.civl.kripke.IF.StateManager;
+import edu.udel.cis.vsl.civl.kripke.IF.CIVLStateManager;
 import edu.udel.cis.vsl.civl.kripke.IF.TraceStep;
 import edu.udel.cis.vsl.civl.kripke.common.StateStatus.EnabledStatus;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
@@ -45,7 +45,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * @author Stephen F. Siegel (siegel)
  * 
  */
-public class CommonStateManager extends StateManager {
+public class CommonStateManager extends CIVLStateManager {
 
 	/* *************************** Instance Fields ************************* */
 

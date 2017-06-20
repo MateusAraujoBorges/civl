@@ -7,17 +7,17 @@ import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Printable;
-import edu.udel.cis.vsl.gmc.seq.StateManagerIF;
+import edu.udel.cis.vsl.gmc.seq.StateManager;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
- * StateManager extends {@link StateManagerIF} for CIVL models.
+ * StateManager extends {@link StateManager} for CIVL models.
  * 
  * @author Manchun Zheng
  * 
  */
-public abstract class StateManager extends StateManagerIF<State, Transition> {
+public abstract class CIVLStateManager extends StateManager<State, Transition> {
 
 	/**
 	 * Returns the number of objects of type State that have been instantiated

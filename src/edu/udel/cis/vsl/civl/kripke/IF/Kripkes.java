@@ -81,7 +81,7 @@ public class Kripkes {
 	 *            The configuration of the CIVL model.
 	 * @return The new state manager created.
 	 */
-	public static StateManager newStateManager(Enabler enabler,
+	public static CIVLStateManager newStateManager(Enabler enabler,
 			Executor executor, SymbolicAnalyzer symbolicAnalyzer,
 			CIVLErrorLogger errorLogger, CIVLConfiguration config) {
 		return new CommonStateManager(enabler, executor, symbolicAnalyzer,
