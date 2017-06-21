@@ -12,20 +12,24 @@ import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.DfsSearcher;
+import edu.udel.cis.vsl.gmc.seq.DfsSearcher;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 
 public class CollateExecutor {
 	private Enabler enabler;
 	private Executor executor;
 	private CIVLErrorLogger errorLogger;
 	private CIVLConfiguration config;
+	private GMCConfiguration gmcConfig;
 	private CIVLStatePredicate predicate = Predicates.newTrivialPredicate();
 
 	public CollateExecutor(Enabler enabler, Executor executor,
-			CIVLErrorLogger errorLogger, CIVLConfiguration config) {
+			CIVLErrorLogger errorLogger, CIVLConfiguration config,
+			GMCConfiguration gmcConfig) {
 		this.enabler = enabler;
 		this.executor = executor;
 		this.errorLogger = errorLogger;
+		this.gmcConfig = gmcConfig;
 		this.config = new CIVLConfiguration(config);
 		this.config.setCollectHeaps(true);
 		this.config.setCollectScopes(true);
@@ -79,14 +83,18 @@ public class CollateExecutor {
 		ColStateManager colStateManager = new ColStateManager(enabler, executor,
 				executor.evaluator().symbolicAnalyzer(), errorLogger, config);
 		DfsSearcher<State, Transition> searcher = new DfsSearcher<State, Transition>(
-				enabler, colStateManager, predicate);
+				enabler, colStateManager, predicate, gmcConfig);
+		long realStateId = colStateManager.getId(realState);
+		String stateIdentifier = realStateId < 0
+				? "State " + realStateId
+				: realState.toString();
 
 		executor.stateFactory().setConfiguration(this.config);
 		executor.evaluator().setConfiguration(this.config);
 		executor.setConfiguration(this.config);
 		try {
 			initState = executor.stateFactory().canonic(initState, false, false,
-					false, new HashSet<>(0));
+					false, false, false, new HashSet<>(0));
 		} catch (CIVLHeapException e) {
 			// ignore
 		}
@@ -94,7 +102,7 @@ public class CollateExecutor {
 				|| config.showSavedStates() || config.debugOrVerbose())
 			config.out().println("********************************\n"
 					+ "Process " + realState.getProcessState(pid).name()
-					+ " at State " + realState.getCanonicId()
+					+ " at " + stateIdentifier
 					+ ": start executing sub-program on collate states.");
 		if (this.config.showStates() || config.showSavedStates()
 				|| config.debugOrVerbose()) {

@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.Collection;
 
 import edu.udel.cis.vsl.civl.run.IF.CommandLine;
-import edu.udel.cis.vsl.gmc.GMCSection;
+import edu.udel.cis.vsl.gmc.seq.GMCSection;
 
 public class NormalCommandLine extends BaseCommandLine implements CommandLine{
 

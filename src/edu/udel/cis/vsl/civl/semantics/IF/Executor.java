@@ -79,7 +79,6 @@ public interface Executor {
 	 */
 	long getNumSteps();
 
-
 	/**
 	 * Adds a new object to the heap of a certain scope; returns the pointer of
 	 * the object in the heap.
@@ -119,6 +118,8 @@ public interface Executor {
 	 * @param transition
 	 *            a deterministic transition to be executed
 	 * @return The state after the transition is executed.
+	 * @throws UnsatisfiablePathConditionException
+	 *             when an error is encountered during the execution
 	 */
 	State execute(State state, int pid, Transition transition)
 			throws UnsatisfiablePathConditionException;

@@ -39,15 +39,13 @@ import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition.AtomicLockAction;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.civl.util.IF.Utils;
-import edu.udel.cis.vsl.gmc.EnablerIF;
-import edu.udel.cis.vsl.gmc.TransitionSetIF;
+import edu.udel.cis.vsl.gmc.seq.EnablerIF;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
@@ -188,7 +186,7 @@ public abstract class CommonEnabler implements Enabler {
 	protected CommonEnabler(StateFactory stateFactory, Evaluator evaluator,
 			Executor executor, SymbolicAnalyzer symbolicAnalyzer,
 			LibraryEnablerLoader libLoader, CIVLErrorLogger errorLogger,
-			CIVLConfiguration civlConfig) {
+			CIVLConfiguration civlConfig, GMCConfiguration gmcConfig) {
 		this.errorLogger = errorLogger;
 		this.evaluator = evaluator;
 		this.executor = executor;
@@ -210,20 +208,19 @@ public abstract class CommonEnabler implements Enabler {
 		this.procBound = civlConfig.getProcBound();
 		this.civlConfig = civlConfig;
 		collateExecutor = new CollateExecutor(this, this.executor, errorLogger,
-				civlConfig);
+				civlConfig, gmcConfig);
 	}
 
 	/* ************************ Methods from EnablerIF ********************* */
 
 	@Override
-	public TransitionSet ampleSet(State state) {
-		Pair<BooleanExpression, TransitionSet> transitionsAssumption;
+	public Collection<Transition> ampleSet(State state) {
+		Pair<BooleanExpression, Collection<Transition>> transitionsAssumption;
 		List<Transition> transitions = new ArrayList<>();
 
 		if (state.getPathCondition(universe).isFalse())
 			// return empty set of transitions.
-			return Semantics.newTransitionSet(state, true);
-		// return resumable atomic transitions.
+			return transitions;
 		transitionsAssumption = enabledAtomicTransitions(state);
 		if (transitionsAssumption != null
 				&& transitionsAssumption.left != null) {
@@ -234,33 +231,13 @@ public abstract class CommonEnabler implements Enabler {
 		}
 		if (transitionsAssumption != null
 				&& transitionsAssumption.right != null)
-			transitions.addAll(transitionsAssumption.right.transitions());
+			transitions.addAll(transitionsAssumption.right);
 		if (transitionsAssumption == null || transitionsAssumption.right == null
 				|| transitionsAssumption.left != null) {
 			// return ample transitions.
-			transitions.addAll(enabledTransitionsPOR(state).transitions());
+			transitions.addAll(enabledTransitionsPOR(state));
 		}
-		return Semantics.newTransitionSet(state, transitions, false);
-	}
-
-	@Override
-	public TransitionSetIF<State, Transition> ampleSetComplement(
-			TransitionSetIF<State, Transition> transitionSet) {
-		TransitionSet ts = (TransitionSet) transitionSet;
-		State source = ts.source();
-		TransitionSet ampleSet = enabledTransitionsPOR(source);
-		TransitionSet enabledSet = enabledTransitionsOfAllProcesses(source);
-		@SuppressWarnings("unchecked")
-		Collection<Transition> difference = (Collection<Transition>) Utils
-				.subtract(enabledSet.transitions(), ampleSet.transitions());
-		List<Transition> transitions = new ArrayList<>();
-		TransitionSet complementSet;
-
-		transitions.addAll(difference);
-		complementSet = Semantics.newTransitionSet(source, transitions, false);
-		complementSet.setOffSet(ts.size());
-
-		return complementSet;
+		return transitions;
 	}
 
 	@Override
@@ -316,13 +293,14 @@ public abstract class CommonEnabler implements Enabler {
 	 *            The current state.
 	 * @return The enabled transitions computed by a certain POR approach.
 	 */
-	abstract TransitionSet enabledTransitionsPOR(State state);
+	abstract List<Transition> enabledTransitionsPOR(State state);
 
 	List<Transition> enabledTransitionsOfProcess(State state, int pid) {
 		return this.enabledTransitionsOfProcess(state, pid, null);
 	}
 
-	TransitionSet enabledTransitionsOfAllProcesses(State state) {
+	@Override
+	public Collection<Transition> fullSet(State state) {
 		Iterable<? extends ProcessState> processes = state.getProcessStates();
 		List<Transition> transitions = new ArrayList<>();
 
@@ -331,7 +309,7 @@ public abstract class CommonEnabler implements Enabler {
 					this.enabledTransitionsOfProcess(state, process.getPid()));
 		}
 
-		return Semantics.newTransitionSet(state, transitions, true);
+		return transitions;
 	}
 
 	/**
@@ -597,7 +575,7 @@ public abstract class CommonEnabler implements Enabler {
 	 *         process, and an optional boolean expression representing the
 	 *         condition when the process in atomic is blocked.
 	 */
-	private Pair<BooleanExpression, TransitionSet> enabledAtomicTransitions(
+	private Pair<BooleanExpression, Collection<Transition>> enabledAtomicTransitions(
 			State state) {
 		int pidInAtomic;
 
@@ -625,11 +603,12 @@ public abstract class CommonEnabler implements Enabler {
 						state, statement, trueExpression, pidInAtomic, false,
 						AtomicLockAction.NONE);
 
-				return new Pair<>(null, Semantics.newTransitionSet(state,
-						localTransitions, false));
-			} else if (guardValue.isFalse() || (reasoner = reasoner == null
-					? universe.reasoner(state.getPathCondition(universe))
-					: reasoner).isValid(notGuardValue))
+				return new Pair<>(null, localTransitions);
+			} else if (guardValue.isFalse()
+					|| (reasoner = reasoner == null
+							? universe
+									.reasoner(state.getPathCondition(universe))
+							: reasoner).isValid(notGuardValue))
 				return null;
 			// The guard is satisfiable, returns a pair:
 			// Left: the negation of the guard which will be added to the
@@ -640,15 +619,13 @@ public abstract class CommonEnabler implements Enabler {
 					state, statement, guardValue, pidInAtomic, false,
 					AtomicLockAction.NONE);
 
-			return new Pair<>(notGuardValue,
-					Semantics.newTransitionSet(state, localTransitions, false));
+			return new Pair<>(notGuardValue, localTransitions);
 		} else {
 			List<Transition> localTransitions = enabledTransitionsOfProcess(
 					state, pidInAtomic, null);
 
 			if (!localTransitions.isEmpty())
-				return new Pair<>(null, Semantics.newTransitionSet(state,
-						localTransitions, false));
+				return new Pair<>(null, localTransitions);
 			else
 				return null;
 		}

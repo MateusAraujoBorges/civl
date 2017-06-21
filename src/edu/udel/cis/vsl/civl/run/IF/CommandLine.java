@@ -1,6 +1,6 @@
 package edu.udel.cis.vsl.civl.run.IF;
 
-import edu.udel.cis.vsl.gmc.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 
 /**
  * A command line represents the command line information for running CIVL.

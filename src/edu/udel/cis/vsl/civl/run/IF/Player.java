@@ -20,7 +20,7 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.Kripkes;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
-import edu.udel.cis.vsl.civl.kripke.IF.StateManager;
+import edu.udel.cis.vsl.civl.kripke.IF.CIVLStateManager;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
@@ -38,9 +38,9 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.States;
-import edu.udel.cis.vsl.gmc.CommandLineException;
-import edu.udel.cis.vsl.gmc.EnablerIF;
-import edu.udel.cis.vsl.gmc.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.seq.CommandLineException;
+import edu.udel.cis.vsl.gmc.seq.EnablerIF;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 /**
@@ -79,7 +79,7 @@ public abstract class Player {
 
 	protected Executor executor;
 
-	protected StateManager stateManager;
+	protected CIVLStateManager stateManager;
 
 	protected boolean random;
 
@@ -109,6 +109,9 @@ public abstract class Player {
 		this.config = gmcConfig;
 		this.model = model;
 		civlConfig = new CIVLConfiguration(gmcConfig.getAnonymousSection());
+		gmcConfig.setPrintTransition(civlConfig.showTransitions());
+		gmcConfig.setQuiet(civlConfig.isQuiet());
+		gmcConfig.setSaveStates(civlConfig.saveStates());
 		if (civlConfig.isQuiet()) {
 			PrintStream dump = new PrintStream(new OutputStream() {
 				@Override
@@ -118,9 +121,11 @@ public abstract class Player {
 			});
 			civlConfig.setOut(dump);
 			civlConfig.setErr(dump);
+			gmcConfig.setPrintStream(dump);
 		} else {
 			civlConfig.setOut(out);
 			civlConfig.setErr(err);
+			gmcConfig.setPrintStream(out);
 		}
 		// civlConfig.setOut(out);
 		// civlConfig.setErr(err);
@@ -163,7 +168,7 @@ public abstract class Player {
 				civlConfig);
 		this.enabler = Kripkes.newEnabler(stateFactory, this.evaluator,
 				executor, symbolicAnalyzer, memUnitFactory,
-				this.libraryEnablerLoader, log, civlConfig);
+				this.libraryEnablerLoader, log, civlConfig, gmcConfig);
 		this.random = gmcConfig.getAnonymousSection().isTrue(randomO);
 		this.minimize = gmcConfig.getAnonymousSection().isTrue(minO);
 		this.maxdepth = (int) gmcConfig.getAnonymousSection()
@@ -211,7 +216,7 @@ public abstract class Player {
 		}
 	}
 
-	public StateManager stateManager() {
+	public CIVLStateManager stateManager() {
 		return this.stateManager;
 	}
 }

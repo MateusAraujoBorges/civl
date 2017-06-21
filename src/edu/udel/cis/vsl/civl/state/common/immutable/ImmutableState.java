@@ -112,19 +112,6 @@ public class ImmutableState implements State {
 	private ImmutableDynamicScope[] dyscopes;
 
 	/**
-	 * If this is a canonic state (unique representative of its equivalence
-	 * class), this field is the unique state ID for that class. Otherwise, it
-	 * is -1.
-	 */
-	private int canonicId = -1;
-
-	/**
-	 * Minimum depth at which this state has been encountered in DFS; used for
-	 * finding minimal counterexample.
-	 */
-	private int depth = -1;
-
-	/**
 	 * If the hashcode has been computed, it is cached here.
 	 */
 	private int hashCode = -1;
@@ -139,11 +126,6 @@ public class ImmutableState implements State {
 	 * created in this run of the JVM.
 	 */
 	private final long instanceId = instanceCount++;
-
-	/**
-	 * Whether this state is on the DFS search stack.
-	 */
-	private int stackPosition = -1;
 
 	/**
 	 * The iterable object over the process states, created once and cached here
@@ -172,25 +154,9 @@ public class ImmutableState implements State {
 	private boolean scopeHashed = false;
 
 	/**
-	 * Has this state been seen in the DFS search?
-	 */
-	private boolean seen = false;
-
-	/**
 	 * Cached reference to the simplified version of this state.
 	 */
 	ImmutableState simplifiedState = null;
-
-	/**
-	 * True iff all successors during search are on the search stack.
-	 */
-	private boolean expand = true;
-
-	/**
-	 * True iff all successors resulting from the enabled transitions have been
-	 * visited during the search.
-	 */
-	private boolean fullyExpanded = false;
 
 	int[] collectibleCounts;
 
@@ -521,15 +487,6 @@ public class ImmutableState implements State {
 	}
 
 	/**
-	 * Is this state canonic?
-	 * 
-	 * @return true iff this is canonic
-	 */
-	boolean isCanonic() {
-		return canonicId >= 0;
-	}
-
-	/**
 	 * Returns a new state equivalent to this one, except that the dyscopes
 	 * field is replaced with the given parameter.
 	 * 
@@ -716,16 +673,6 @@ public class ImmutableState implements State {
 	/* ************************ Methods from State ************************* */
 
 	@Override
-	public int getCanonicId() {
-		return canonicId;
-	}
-
-	@Override
-	public int getDepth() {
-		return depth;
-	}
-
-	@Override
 	public int getParentId(int scopeId) {
 		return getDyscope(scopeId).getParent();
 	}
@@ -822,10 +769,7 @@ public class ImmutableState implements State {
 
 	@Override
 	public String identifier() {
-		if (canonicId != -1)
-			return String.valueOf(this.canonicId);
-		else
-			return "(" + instanceId + ")";
+		return "(" + instanceId + ")";
 	}
 
 	@Override
@@ -851,11 +795,6 @@ public class ImmutableState implements State {
 	@Override
 	public int numDyscopes() {
 		return dyscopes.length;
-	}
-
-	@Override
-	public int stackPosition() {
-		return stackPosition;
 	}
 
 	@Override
@@ -899,26 +838,6 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public boolean seen() {
-		return seen;
-	}
-
-	@Override
-	public void setDepth(int value) {
-		this.depth = value;
-	}
-
-	@Override
-	public void setStackPosition(int stackIndex) {
-		this.stackPosition = stackIndex;
-	}
-
-	@Override
-	public void setSeen(boolean seen) {
-		this.seen = seen;
-	}
-
-	@Override
 	public SymbolicExpression valueOf(int pid, Variable variable) {
 		DynamicScope scope = getScope(pid, variable);
 		int variableID = scope.lexicalScope().getVid(variable);
@@ -935,8 +854,8 @@ public class ImmutableState implements State {
 		if (object instanceof ImmutableState) {
 			ImmutableState that = (ImmutableState) object;
 
-			if (canonicId >= 0 && that.canonicId >= 0)
-				return false;
+			if (that.instanceId == this.instanceId)
+				return true;
 			if (hashed && that.hashed && hashCode != that.hashCode)
 				return false;
 			if (!pathCondition.equals(that.pathCondition))
@@ -975,7 +894,7 @@ public class ImmutableState implements State {
 
 	@Override
 	public String toString() {
-		return "State " + identifier();
+		return identifier();
 	}
 
 	@Override
@@ -1015,33 +934,7 @@ public class ImmutableState implements State {
 	}
 
 	@Override
-	public void setExpand(boolean value) {
-		expand = value;
-	}
-
-	@Override
-	public boolean getExpand() {
-		return expand;
-	}
-
-	@Override
-	public boolean fullyExpanded() {
-		return fullyExpanded;
-	}
-
-	@Override
-	public void setFullyExpanded(boolean value) {
-		this.fullyExpanded = value;
-	}
-
-	@Override
-	public void setCanonicId(int id) {
-		this.canonicId = id;
-	}
-
-	@Override
 	public boolean isMonitoringWrites(int pid) {
 		return processStates[pid].getWriteSets().length > 0;
 	}
-
 }

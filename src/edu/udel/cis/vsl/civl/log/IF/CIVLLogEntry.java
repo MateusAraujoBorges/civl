@@ -9,8 +9,8 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants.ErrorStateEquivalence;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.GMCConfiguration;
-import edu.udel.cis.vsl.gmc.LogEntry;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.seq.LogEntry;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 /**
@@ -101,12 +101,6 @@ public class CIVLLogEntry extends LogEntry {
 
 					} else if (civlConfig
 							.errorStateEquiv() == ErrorStateEquivalence.FULL) {
-						// compare based on the full state
-						assert errorState1
-								.getCanonicId() != -1 : "Expected error state to be canonic";
-						assert errorState2
-								.getCanonicId() != -1 : "Expected error state to be canonic";
-
 						String stateString1 = errorState1
 								.getPathCondition(universe).toString();
 						String stateString2 = errorState2
@@ -162,12 +156,6 @@ public class CIVLLogEntry extends LogEntry {
 
 					} else if (civlConfig
 							.errorStateEquiv() == ErrorStateEquivalence.FULL) {
-						// compare based on the full state
-						assert errorState1
-								.getCanonicId() != -1 : "Expected error state to be canonic";
-						assert errorState2
-								.getCanonicId() != -1 : "Expected error state to be canonic";
-
 						String stateString1 = errorState1
 								.getPathCondition(universe).toString();
 						String stateString2 = errorState2

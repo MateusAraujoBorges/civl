@@ -11,16 +11,15 @@ import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
-import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
-import edu.udel.cis.vsl.civl.semantics.IF.TransitionSet;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.gmc.EnablerIF;
+import edu.udel.cis.vsl.gmc.seq.EnablerIF;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 
 /**
  * EnablerPOR implements {@link EnablerIF} for CIVL models. Its basic
@@ -60,9 +59,10 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 	public PointeredEnabler(StateFactory stateFactory, Evaluator evaluator,
 			Executor executor, SymbolicAnalyzer symbolicAnalyzer,
 			MemoryUnitFactory memUnitFactory, LibraryEnablerLoader libLoader,
-			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig) {
+			CIVLErrorLogger errorLogger, CIVLConfiguration civlConfig,
+			GMCConfiguration gmcConfig) {
 		super(stateFactory, evaluator, executor, symbolicAnalyzer, libLoader,
-				errorLogger, civlConfig);
+				errorLogger, civlConfig, gmcConfig);
 		this.memUnitFactory = memUnitFactory;
 	}
 
@@ -77,7 +77,7 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 	 * @return The enabled transitions as an instance of TransitionSequence.
 	 */
 	@Override
-	protected TransitionSet enabledTransitionsPOR(State state) {
+	protected List<Transition> enabledTransitionsPOR(State state) {
 		List<Transition> transitions = new ArrayList<>();
 		List<ProcessState> processStates;
 		AmpleSetWorker ampleWorker = new AmpleSetWorker(state, this, evaluator,
@@ -88,8 +88,7 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 		processStates = new LinkedList<>(ampleSetResult.right);
 		if (debugging || showAmpleSet) {
 			if (processStates.size() > 1) {
-				debugOut.print("\nample processes at state "
-						+ state.getCanonicId() + ":\t");
+				debugOut.print("\nample processes at state " + state + ":\t");
 				for (ProcessState p : processStates) {
 					debugOut.print(p.getPid() + "\t");
 				}
@@ -103,7 +102,6 @@ public class PointeredEnabler extends CommonEnabler implements Enabler {
 			transitions.addAll(enabledTransitionsOfProcess(state, p.getPid(),
 					ampleWorker.newGuards));
 		}
-		return Semantics.newTransitionSet(state, transitions,
-				ampleSetResult.left);
+		return transitions;
 	}
 }

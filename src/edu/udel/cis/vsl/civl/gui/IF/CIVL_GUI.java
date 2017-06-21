@@ -29,7 +29,7 @@ import edu.udel.cis.vsl.civl.state.IF.DynamicScope;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.Trace;
+import edu.udel.cis.vsl.gmc.seq.Trace;
 import edu.udel.cis.vsl.sarl.SARL;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
@@ -475,7 +475,7 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 		// Add step information to the name of the transition
 		for (AtomicStep s : transition.getAtomicSteps()) {
 			if (transitionName.length() < 50) {
-				transitionName.append(s.getStatement().toString() + "; ");
+				transitionName.append(s.getTransition().toString() + "; ");
 			} else {
 				transitionName.append("...");
 				break;
@@ -492,7 +492,7 @@ public class CIVL_GUI extends JFrame implements TreeSelectionListener {
 	 * @return StepNode
 	 */
 	private StepNode makeStepNode(AtomicStep step) {
-		Statement stmt = step.getStatement();
+		Statement stmt = step.getTransition().statement();
 
 		String targetString;
 
