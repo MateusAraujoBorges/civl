@@ -6,7 +6,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
-import edu.udel.cis.vsl.civl.kripke.IF.StateManager;
+import edu.udel.cis.vsl.civl.kripke.IF.TraceStep;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
@@ -15,7 +15,7 @@ import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException.HeapErrorKind;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.gmc.TraceStepIF;
+import edu.udel.cis.vsl.gmc.seq.TraceStepIF;
 
 /**
  * A collate state has n processes, where n>=1, 1 process has non-empty call
@@ -30,9 +30,7 @@ import edu.udel.cis.vsl.gmc.TraceStepIF;
  * @author Manchun Zheng
  *
  */
-public class ColStateManager extends CommonStateManager
-		implements
-			StateManager {
+public class ColStateManager extends CommonStateManager {
 
 	/**
 	 * The set of FINAL collate states.
@@ -58,45 +56,13 @@ public class ColStateManager extends CommonStateManager
 		ignoredHeapErrors.add(HeapErrorKind.UNREACHABLE);
 	}
 
-	// @Override
-	// public TraceStepIF<Transition, State> nextStateWork(State state,
-	// Transition transition) throws UnsatisfiablePathConditionException {
-	// int pid = transition.pid();
-	// Transition firstTransition = transition;
-	// State oldState = state;
-	// StateStatus stateStatus;
-	// TraceStep traceStep = new CommonTraceStep(pid);
-	// String process;
-	//
-	// pid = transition.pid();
-	// process = "p" + pid;
-	// state = executor.execute(state, pid, transition);
-	// traceStep.addAtomicStep(new CommonAtomicStep(state, transition));
-	// return null;
-	// }
-
 	@Override
 	public TraceStepIF<State> nextState(State state, Transition transition) {
-		TraceStepIF<State> result;
+		int pid = transition.pid();
+		TraceStep result = new CommonTraceStep(pid);
 
 		try {
-			// reuse the general method, since only one process (the external
-			// process) is enabled
-			result = nextStateWork(state, transition);
-
-			// if (this.config.isEnableMpiContract()
-			// && result.getFinalState().getPathCondition().isFalse()) {
-			//
-			// errorLogger.report(entry);
-			//
-			//
-			// this.errorLogger.logSimpleError(null, result.getFinalState(),
-			// state.getProcessState(transition.pid()).name(),
-			// this.symbolicAnalyzer.stateInformation(
-			// result.getFinalState()),
-			// ErrorKind.CONTRACT,
-			// "unsatisfiable condition encountered in contract specification");
-			// }
+			nextStateWork(state, transition, result);
 		} catch (UnsatisfiablePathConditionException e) {
 			// problem is the interface requires an actual State
 			// be returned. There is no concept of executing a
@@ -104,8 +70,12 @@ public class ColStateManager extends CommonStateManager
 			// since the error has been logged, just return
 			// some state with false path condition, so there
 			// will be no next state...
-			result = new NullTraceStep(stateFactory.addToPathcondition(state,
-					transition.pid(), falseExpr));
+			State lastState = result.getFinalState();
+
+			if (lastState == null)
+				lastState = state;
+			result.setFinalState(
+					stateFactory.addToPathcondition(lastState, pid, falseExpr));
 		}
 
 		State resultState = result.getFinalState();

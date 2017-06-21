@@ -58,7 +58,7 @@ import edu.udel.cis.vsl.civl.analysis.IF.Analysis;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.gui.IF.CIVL_GUI;
-import edu.udel.cis.vsl.civl.kripke.IF.StateManager;
+import edu.udel.cis.vsl.civl.kripke.IF.CIVLStateManager;
 import edu.udel.cis.vsl.civl.kripke.common.WitnessGenerator;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -86,13 +86,13 @@ import edu.udel.cis.vsl.civl.slice.common.ErrorAutomaton;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.BranchConstraints;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.gmc.CommandLineException;
-import edu.udel.cis.vsl.gmc.CommandLineParser;
-import edu.udel.cis.vsl.gmc.GMCConfiguration;
-import edu.udel.cis.vsl.gmc.GMCSection;
-import edu.udel.cis.vsl.gmc.MisguidedExecutionException;
-import edu.udel.cis.vsl.gmc.Option;
-import edu.udel.cis.vsl.gmc.Trace;
+import edu.udel.cis.vsl.gmc.seq.CommandLineException;
+import edu.udel.cis.vsl.gmc.seq.CommandLineParser;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.seq.GMCSection;
+import edu.udel.cis.vsl.gmc.seq.MisguidedExecutionException;
+import edu.udel.cis.vsl.gmc.seq.Option;
+import edu.udel.cis.vsl.gmc.seq.Trace;
 import edu.udel.cis.vsl.sarl.SARL;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.config.Configurations;
@@ -480,7 +480,7 @@ public class UserInterface {
 
 		// out.print("phase spec done.\n");
 		if (result) {
-			StateManager stateManager = verifier.stateManager();
+			CIVLStateManager stateManager = verifier.stateManager();
 
 			model = implWorker.translate();
 			verifier = new Verifier(gmcConfig, model, out, err, startTime,

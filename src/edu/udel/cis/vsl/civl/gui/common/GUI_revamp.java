@@ -66,12 +66,12 @@ import edu.udel.cis.vsl.civl.run.common.CIVLCommand;
 import edu.udel.cis.vsl.civl.run.common.CompareCommandLine;
 import edu.udel.cis.vsl.civl.run.common.NormalCommandLine;
 import edu.udel.cis.vsl.civl.run.common.NormalCommandLine.NormalCommandKind;
-import edu.udel.cis.vsl.gmc.CommandLineException;
-import edu.udel.cis.vsl.gmc.GMCConfiguration;
-import edu.udel.cis.vsl.gmc.GMCSection;
-import edu.udel.cis.vsl.gmc.MisguidedExecutionException;
-import edu.udel.cis.vsl.gmc.Option;
-import edu.udel.cis.vsl.gmc.Option.OptionType;
+import edu.udel.cis.vsl.gmc.seq.CommandLineException;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.seq.GMCSection;
+import edu.udel.cis.vsl.gmc.seq.MisguidedExecutionException;
+import edu.udel.cis.vsl.gmc.seq.Option;
+import edu.udel.cis.vsl.gmc.seq.Option.OptionType;
 
 /**
  * The GUI that is responsible for creating and running CIVL run configurations.

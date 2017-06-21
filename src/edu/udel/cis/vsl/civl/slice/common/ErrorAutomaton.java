@@ -24,8 +24,8 @@ import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.BranchConstraints;
-import edu.udel.cis.vsl.gmc.Trace;
-import edu.udel.cis.vsl.gmc.TraceStepIF;
+import edu.udel.cis.vsl.gmc.seq.Trace;
+import edu.udel.cis.vsl.gmc.seq.TraceStepIF;
 import edu.udel.cis.vsl.sarl.SARL;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -222,13 +222,13 @@ public class ErrorAutomaton {
 			TraceStep step = ((TraceStep) it.next());
 			Iterable<AtomicStep> atomicSteps = step.getAtomicSteps();
 			for (AtomicStep atom : atomicSteps) {
-				Location l = atom.getStatement().source();
+				Location l = atom.getTransition().statement().source();
 				if (notFromOriginalSource(l)) {
 					preState = atom.getPostState();
 					continue;
 				}
 
-				Statement s = atom.getStatement();
+				Statement s = atom.getTransition().statement();
 
 				/* CfaLocation -> CfaTransition logic */
 				ErrorCfaLoc loc = new ErrorCfaLoc(l, preState);

@@ -2,7 +2,6 @@ package edu.udel.cis.vsl.civl.kripke.common;
 
 import edu.udel.cis.vsl.civl.kripke.IF.AtomicStep;
 import edu.udel.cis.vsl.civl.model.IF.location.Location.AtomicKind;
-import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
 
@@ -77,7 +76,7 @@ public class CommonAtomicStep implements AtomicStep {
 	}
 
 	@Override
-	public Statement getStatement() {
-		return transition.statement();
+	public Transition getTransition() {
+		return transition;
 	}
 }

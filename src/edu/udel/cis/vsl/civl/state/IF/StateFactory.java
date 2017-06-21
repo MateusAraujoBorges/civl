@@ -81,7 +81,8 @@ public interface StateFactory {
 	 * @return the canonical version of the given state
 	 */
 	State canonic(State state, boolean collectProcesses, boolean collectScopes,
-			boolean collectHeaps, Set<HeapErrorKind> toBeIgnored)
+			boolean collectHeaps, boolean collectSymbolicConstants,
+			boolean simplify, Set<HeapErrorKind> toBeIgnored)
 			throws CIVLHeapException;
 
 	/**
@@ -394,13 +395,6 @@ public interface StateFactory {
 	 * @return the number of states instantiated
 	 */
 	long getNumStateInstances();
-
-	/**
-	 * Returns the number of states stored by this state factory.
-	 * 
-	 * @return the number of states stored
-	 */
-	int getNumStatesSaved();
 
 	/**
 	 * Performs a garbage collection and canonicalization of heaps.
@@ -818,15 +812,6 @@ public interface StateFactory {
 	 */
 	Pair<Integer, State> saveState(State state);
 
-	/**
-	 * Remove a state from the saved state set, the state reference is no longer
-	 * valid.
-	 * 
-	 * @param stateRef
-	 *            The state reference to the state that will be removed from the
-	 *            saved state set.
-	 */
-	void unsaveStateByReference(int stateRef);
 	/* ****************** End of Snapshots related method ****************** */
 	/**
 	 * Records a collection of pointers to changed memory locations. The change
@@ -900,7 +885,7 @@ public interface StateFactory {
 	 *         has been popped.
 	 */
 	State popAssumption(State state, int pid);
-	
+
 	/**
 	 * Translate an integer scope id into a symbolic expression
 	 * 
@@ -913,6 +898,6 @@ public interface StateFactory {
 	void setConfiguration(CIVLConfiguration config);
 
 	public SymbolicExpression processValue(int pid);
-	
+
 	void setSymbolicUtility(SymbolicUtility symbolicUtility);
 }

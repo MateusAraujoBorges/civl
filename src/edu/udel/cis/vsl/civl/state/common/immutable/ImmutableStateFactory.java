@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -107,24 +106,18 @@ public class ImmutableStateFactory implements StateFactory {
 			100000);
 
 	/**
-	 * The number of canonic states.
+	 * An instance of {@link CollateStateStorage} which is used to save collate
+	 * states.
 	 */
-	private AtomicInteger stateCount = new AtomicInteger(0);
+	private CollateStateStorage collateStateStorage;
 
 	/**
-	 * The map of canonic states. The key and the corresponding value should be
-	 * the same, in order to allow fast checking of existence and returning the
-	 * value.
+	 * When normalizing a state s, there is a set T of states that are referred
+	 * by variables in s must be normalized as well (depth 1). For each state t
+	 * in T, there is a set D of states that are referred by variables in t must
+	 * be normalized as well (depth 2).
 	 */
-	private Map<ImmutableState, ImmutableState> stateMap = new ConcurrentHashMap<>(
-			1000000);
-
-	/**
-	 * The map of a set of saved canonic states. The key is the canonic ID of
-	 * the state and the value if the state.
-	 */
-	private Map<Integer, ImmutableState> savedCanonicStates = new ConcurrentHashMap<>(
-			1000000);
+	private static final int NORMALIZE_REFERRED_STATES_DEPTH = 2;
 
 	protected final SymbolicExpression undefinedProcessValue;
 
@@ -286,6 +279,7 @@ public class ImmutableStateFactory implements StateFactory {
 				new Singleton<SymbolicExpression>(universe.integer(-2)));
 		this.maxProcs = config.getMaxProcs();
 		this.processValues = new SymbolicExpression[maxProcs];
+		this.collateStateStorage = new CollateStateStorage();
 		for (HeapErrorKind kind : HeapErrorKind.class.getEnumConstants())
 			fullHeapErrorSet.add(kind);
 		for (int i = 0; i < maxProcs; i++) {
@@ -331,9 +325,10 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public ImmutableState canonic(State state, boolean collectProcesses,
 			boolean collectScopes, boolean collectHeaps,
+			boolean collectSymbolicConstants, boolean simplify,
 			Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
 		return canonicWork(state, collectProcesses, collectScopes, collectHeaps,
-				toBeIgnored, false);
+				collectSymbolicConstants, simplify, toBeIgnored);
 	}
 
 	/**
@@ -377,8 +372,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 */
 	public ImmutableState canonicWork(State state, boolean collectProcesses,
 			boolean collectScopes, boolean collectHeaps,
-			Set<HeapErrorKind> toBeIgnored, boolean isReferredState)
-			throws CIVLHeapException {
+			boolean collectSymbolicConstants, boolean simplify,
+			Set<HeapErrorKind> toBeIgnored) throws CIVLHeapException {
 		ImmutableState theState = (ImmutableState) state;
 
 		// performance experiment: seems to make no difference
@@ -390,25 +385,11 @@ public class ImmutableStateFactory implements StateFactory {
 		if (collectHeaps)
 			theState = collectHeaps(theState, toBeIgnored);
 		// theState = collectSymbolicConstants(theState, collectHeaps);
-		if (config.collectSymbolicNames() && !isReferredState)
+		if (collectSymbolicConstants)
 			theState = collectHavocVariables(theState);
-		if (this.config.simplify()) {
-			ImmutableState simplifiedState = theState.simplifiedState;
-
-			if (simplifiedState == null) {
-				// variable only for readbility:
-				boolean simplifyReferredState = !isReferredState;
-
-				simplifiedState = simplifyWork(theState, simplifyReferredState);
-			}
-			if (!simplifiedState.isCanonic()) {
-				simplifiedState = flyweight(simplifiedState);
-				theState.simplifiedState = simplifiedState;
-				simplifiedState.simplifiedState = simplifiedState;
-			}
-			return simplifiedState;
-		}
-		theState = flyweight(theState);
+		if (simplify)
+			theState = simplify(theState);
+		theState.makeCanonic(universe, scopeMap, processMap);
 		return theState;
 	}
 
@@ -704,11 +685,6 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public int getNumStatesSaved() {
-		return stateMap.size();
-	}
-
-	@Override
 	public ImmutableState initialState(Model model) throws CIVLHeapException {
 		// HashMap<Integer, Map<SymbolicExpression, Boolean>> reachableMUs = new
 		// HashMap<Integer, Map<SymbolicExpression, Boolean>>();
@@ -738,7 +714,9 @@ public class ImmutableStateFactory implements StateFactory {
 			state = this.setVariable(state, timeCountVar.vid(), 0,
 					universe.zeroInt());
 		// state = this.computeReachableMemUnits(state, 0);
-		return canonic(state, false, false, false, emptyHeapErrorSet);
+		state = canonic(state, false, false, false, false, false,
+				emptyHeapErrorSet);
+		return state;
 	}
 
 	@Override
@@ -1074,7 +1052,12 @@ public class ImmutableStateFactory implements StateFactory {
 
 	@Override
 	public ImmutableState simplify(State state) {
-		return simplifyWork(state, true);
+		ImmutableState theState = (ImmutableState) state;
+
+		theState = simplifyReferencedStates(theState,
+				theState.getPermanentPathCondition(),
+				NORMALIZE_REFERRED_STATES_DEPTH);
+		return simplifyWork(theState);
 	}
 
 	private BooleanExpression getContextOfSizeofSymbols(Reasoner reasoner) {
@@ -1094,8 +1077,7 @@ public class ImmutableStateFactory implements StateFactory {
 		return result;
 	}
 
-	public ImmutableState simplifyWork(State state,
-			boolean simplifyReferredStates) {
+	private ImmutableState simplifyWork(State state) {
 		ImmutableState theState = (ImmutableState) state;
 
 		if (theState.simplifiedState != null)
@@ -1106,10 +1088,7 @@ public class ImmutableStateFactory implements StateFactory {
 		ImmutableDynamicScope[] newDynamicScopes = null;
 		Reasoner reasoner = universe.reasoner(pathCondition);
 		BooleanExpression newPathCondition;
-		boolean hasSimplication = false;
 
-		simplifyReferredStates = simplifyReferredStates
-				&& modelFactory.model().hasStateRefVariables();
 		newPathCondition = reasoner.getReducedContext();
 		if (newPathCondition != pathCondition) {
 			if (nsat(newPathCondition))
@@ -1117,7 +1096,6 @@ public class ImmutableStateFactory implements StateFactory {
 			else
 				newPathCondition = universe.and(newPathCondition,
 						this.getContextOfSizeofSymbols(reasoner));
-			hasSimplication = true;
 		} else
 			newPathCondition = null;
 		for (int i = 0; i < numScopes; i++) {
@@ -1165,8 +1143,6 @@ public class ImmutableStateFactory implements StateFactory {
 				|| processChanged) {
 			theState = ImmutableState.newState(theState, procStates,
 					newDynamicScopes, newPathCondition);
-			if (hasSimplication && simplifyReferredStates)
-				theState = simplifyReferencedStates(theState, pathCondition);
 			theState.simplifiedState = theState;
 		}
 		return theState;
@@ -1174,28 +1150,28 @@ public class ImmutableStateFactory implements StateFactory {
 
 	/**
 	 * Search $state type variables in each dynamic scope (dyscope) of the given
-	 * state. Returns a list of pairs: an dynamic scope ID and a list of
-	 * referred states in it.
+	 * state. Returns a list of pairs: an dynamic scope ID and a list of state
+	 * reference IDs in it.
 	 * 
 	 * @param state
 	 *            The state in which referred states will be returned.
 	 * @return A list of pairs: one is the ID of the dyscope, in which contains
 	 *         at least one $state variable, of the given state; the other is
-	 *         the state referred by a unique $state variable in the
-	 *         aforementioned dyscope.
+	 *         the set of reference IDs of $state objects in aforementioned
+	 *         dyscope.
 	 * 
 	 */
-	private List<Pair<Integer, List<ImmutableState>>> getReferencedStates(
+	private List<Pair<Integer, List<Integer>>> getStateReferences(
 			ImmutableState state) {
 		SymbolicType stateType = modelFactory.typeFactory().stateSymbolicType();
-		List<Pair<Integer, List<ImmutableState>>> allRefStates = new LinkedList<>();
+		List<Pair<Integer, List<Integer>>> allStateRefs = new LinkedList<>();
 		int numDyscopes = state.numDyscopes();
 
 		for (int i = 0; i < numDyscopes; i++) {
 			ImmutableDynamicScope dyscope = state.getDyscope(i);
 			Collection<Variable> variablesWithStateRef = dyscope.lexicalScope()
 					.variablesWithStaterefs();
-			List<ImmutableState> refStates = new LinkedList<>();
+			List<Integer> stateRefIDs = new LinkedList<>();
 
 			for (Variable var : variablesWithStateRef) {
 				int vid = var.vid();
@@ -1204,19 +1180,17 @@ public class ImmutableStateFactory implements StateFactory {
 						stateType, value);
 
 				for (SymbolicExpression stateRef : stateRefs) {
-					int stateID = modelFactory.getStateRef(stateRef);
-					ImmutableState refState = getStateByReference(stateID);
+					int stateRefID = modelFactory.getStateRef(stateRef);
 
 					// If the stateRef value is constant $state_null, refState
 					// will be null
-					if (refState != null)
-						refStates.add(refState);
+					stateRefIDs.add(stateRefID);
 				}
 			}
-			if (!refStates.isEmpty())
-				allRefStates.add(new Pair<>(i, refStates));
+			if (!stateRefIDs.isEmpty())
+				allStateRefs.add(new Pair<>(i, stateRefIDs));
 		}
-		return allRefStates;
+		return allStateRefs;
 	}
 
 	/**
@@ -1231,6 +1205,10 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            The symbolic constant renamer used by the current state, which
 	 *            contains a mapping function from old collected symbolic
 	 *            constants to new ones.
+	 * @param collectReferredStateDepth
+	 *            The depth of collecting symbolic constants in referred states.
+	 *            To understand "depth", see
+	 *            {@link #NORMALIZE_REFERRED_STATES_DEPTH}
 	 * @return A new state which is same as the current state but $state
 	 *         variables in it are updated.
 	 * @throws CIVLHeapException
@@ -1238,14 +1216,17 @@ public class ImmutableStateFactory implements StateFactory {
 	 *             referred states
 	 */
 	private ImmutableState collectHavocVariablesInReferredStates(
-			ImmutableState state, UnaryOperator<SymbolicExpression> renamer)
-			throws CIVLHeapException {
-		List<Pair<Integer, List<ImmutableState>>> dyscopeRefStatePairs = getReferencedStates(
+			ImmutableState state, UnaryOperator<SymbolicExpression> renamer,
+			int collectReferredStateDepth) throws CIVLHeapException {
+		if (collectReferredStateDepth <= 0)
+			return state;
+
+		List<Pair<Integer, List<Integer>>> dyscopeRefStatePairs = getStateReferences(
 				state);
 		ImmutableDynamicScope newDyscopes[] = null;
 		BitSet changedDyscopes = new BitSet(state.numDyscopes());
 
-		for (Pair<Integer, List<ImmutableState>> pair : dyscopeRefStatePairs) {
+		for (Pair<Integer, List<Integer>> pair : dyscopeRefStatePairs) {
 			int refStateDyId = pair.left;
 			TreeMap<SymbolicExpression, SymbolicExpression> substituteMap = new TreeMap<>(
 					universe.comparator());
@@ -1253,12 +1234,16 @@ public class ImmutableStateFactory implements StateFactory {
 
 			// Rename symbolic expressions in dyscopes, processStates and path
 			// conditions in each referred state:
-			for (ImmutableState oldReferredState : pair.right) {
+			for (int oldStateRefID : pair.right) {
+				ImmutableState oldReferredState = collateStateStorage
+						.getSavedState(oldStateRefID);
 				ImmutableState newReferredState;
 				boolean unchange = true;
-				ImmutableDynamicScope[] newReferredDyscopes = oldReferredState
-						.copyScopes();
+				ImmutableDynamicScope[] newReferredDyscopes;
 
+				if (oldReferredState == null)
+					continue;
+				newReferredDyscopes = oldReferredState.copyScopes();
 				// Rename symbolic expressions in each dynamic scope of the
 				// referred state:
 				for (int k = 0; k < newReferredDyscopes.length; k++) {
@@ -1284,19 +1269,18 @@ public class ImmutableStateFactory implements StateFactory {
 						renamer);
 				unchange &= newReferredState == oldReferredState;
 				if (!unchange) {
+					int newStateRefID;
+
 					newReferredState = ImmutableState.newState(newReferredState,
 							null, newReferredDyscopes, newPathCondition);
+					newReferredState = collectHavocVariablesInReferredStates(
+							newReferredState, renamer,
+							collectReferredStateDepth - 1);
 					// no need to collect scopes, processes and symbolic
 					// constants again:
-					newReferredState = canonicWork(newReferredState, false,
-							false, false, fullHeapErrorSet, true);
-					savedCanonicStates.putIfAbsent(
-							newReferredState.getCanonicId(), newReferredState);
-					substituteMap.put(
-							modelFactory.stateValue(
-									oldReferredState.getCanonicId()),
-							modelFactory.stateValue(
-									newReferredState.getCanonicId()));
+					newStateRefID = saveState(newReferredState).left;
+					substituteMap.put(modelFactory.stateValue(oldStateRefID),
+							modelFactory.stateValue(newStateRefID));
 				}
 			}
 			stateValueUpdater = universe.mapSubstituter(substituteMap);
@@ -1324,44 +1308,66 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            The current state.
 	 * @param context
 	 *            The permanent path condition of the current state.
+	 * @param depth
+	 *            The depth of simplification of referred states. To understand
+	 *            the depth, see {@link #NORMALIZE_REFERRED_STATES_DEPTH}
 	 * @return A new state which is the same as the current state but referred
 	 *         states are updated.
 	 */
 	private ImmutableState simplifyReferencedStates(ImmutableState state,
-			BooleanExpression context) {
+			BooleanExpression context, int depth) {
+		if (depth <= 0)
+			return state;
+
 		int numDyscopes = state.numDyscopes();
 		Map<SymbolicExpression, SymbolicExpression> old2NewStateRefs = new TreeMap<>(
 				universe.comparator());
 		BitSet changedDysId = new BitSet(numDyscopes);
 		UnaryOperator<SymbolicExpression> stateValueUpdater;
-		List<Pair<Integer, List<ImmutableState>>> dyScopeReferedStatePairs = getReferencedStates(
+		List<Pair<Integer, List<Integer>>> dyScopeReferedStatePairs = getStateReferences(
 				state);
 		ImmutableDynamicScope newDyscopes[] = null;
-		Reasoner reasoner = universe.reasoner(context);
 
-		for (Pair<Integer, List<ImmutableState>> pair : dyScopeReferedStatePairs) {
+		for (Pair<Integer, List<Integer>> pair : dyScopeReferedStatePairs) {
 			int refStateDysId = pair.left;
 
-			for (ImmutableState oldRefState : pair.right) {
+			for (int oldStateRefID : pair.right) {
+				ImmutableState oldRefState = collateStateStorage
+						.getSavedState(oldStateRefID);
 				ImmutableState newRefState;
-				BooleanExpression oldPC = oldRefState
-						.getPathCondition(universe);
+				Reasoner reasoner;
 
-				// Temporarily add context into the referred state so that the
-				// context will be used to simplify the state.
-				oldRefState = oldRefState.setPermanentPathCondition(
-						universe.and(oldPC, context));
-				newRefState = simplify(oldRefState);
+				if (oldRefState == null)
+					continue;
+				reasoner = universe.reasoner(context);
+				/*
+				 * Recursively simplify states referred by variables in thi
+				 * state
+				 */
+				newRefState = simplifyReferencedStates(oldRefState, context,
+						depth - 1);
+				/*
+				 * Update the path condition of the referred state with the
+				 * current context. Current context should be stronger than (or
+				 * equivalent to) the old path condition...
+				 */
+				newRefState = newRefState
+						.setPermanentPathCondition(reasoner.getFullContext());
+				/*
+				 * Note that here must use full context (from the reasoner) to
+				 * simplify the referred state. It is incorrect to use reduced
+				 * context, because equations like X=0 in the path condition
+				 * will be removed from the full context (the reasoner knows
+				 * that X should be replaced with 0 but this reasoner will not
+				 * be used).
+				 */
+				newRefState = simplifyWork(newRefState);
 				if (newRefState == oldRefState)
 					continue;
-				// Remove the context after simplification.
-				newRefState = newRefState
-						.setPermanentPathCondition(reasoner.simplify(oldPC));
 
 				int newRefStateId = saveState(newRefState).left;
 
-				old2NewStateRefs.put(
-						modelFactory.stateValue(oldRefState.getCanonicId()),
+				old2NewStateRefs.put(modelFactory.stateValue(oldStateRefID),
 						modelFactory.stateValue(newRefStateId));
 			}
 			stateValueUpdater = universe.mapSubstituter(old2NewStateRefs);
@@ -1529,52 +1535,6 @@ public class ImmutableStateFactory implements StateFactory {
 				selfDestructable);
 		theState = theState.setProcessStates(newProcesses);
 		return theState;
-	}
-
-	/**
-	 * Returns the canonicalized version of the given state.
-	 * 
-	 * @param state
-	 *            the old state
-	 * @return the state equivalent to the given state and which is
-	 *         canonicalized.
-	 */
-	private ImmutableState flyweight(State state) {
-		ImmutableState theState = (ImmutableState) state;
-
-		if (theState.isCanonic())
-			return theState;
-		else {
-			ImmutableState result = stateMap.get(theState);
-
-			if (result == null) {
-				result = theState;
-				result.makeCanonic(universe, scopeMap, processMap);
-
-				ImmutableState canonicalState = stateMap.putIfAbsent(result,
-						result);
-
-				if (canonicalState == null) {
-					canonicalState = result;
-
-					synchronized (canonicalState) {
-						canonicalState.setCanonicId(
-								this.stateCount.getAndIncrement());
-						canonicalState.notifyAll();
-					}
-				} else {
-					synchronized (canonicalState) {
-						while (canonicalState.getCanonicId() < 0)
-							try {
-								canonicalState.wait();
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-					}
-				}
-			}
-			return result;
-		}
 	}
 
 	/**
@@ -2359,7 +2319,7 @@ public class ImmutableStateFactory implements StateFactory {
 			theState = ImmutableState.newState(theState, null, newScopes,
 					newPathCondition);
 			theState = collectHavocVariablesInReferredStates(theState,
-					canonicRenamer);
+					canonicRenamer, NORMALIZE_REFERRED_STATES_DEPTH);
 			theState = theState.updateCollectibleCount(
 					ModelConfiguration.HAVOC_PREFIX_INDEX,
 					canonicRenamer.getNumNewNames());
@@ -2754,33 +2714,30 @@ public class ImmutableStateFactory implements StateFactory {
 	}
 
 	@Override
-	public ImmutableState getStateByReference(int canonicId) {
-		return savedCanonicStates.get(canonicId);
+	public ImmutableState getStateByReference(int referenceID) {
+		return collateStateStorage.getSavedState(referenceID);
 	}
 
 	@Override
 	public Pair<Integer, State> saveState(State state) {
 		ImmutableState result;
 
-		if (state.getCanonicId() < 0)
-			try {
-				result = canonicWork(state, true, true, true, fullHeapErrorSet,
-						true);
-			} catch (CIVLHeapException e) {
-				throw new CIVLInternalException(
-						"Canonicalization with ignorance of all kinds of heap errors "
-								+ "still throws an Heap Exception",
-						e.source());
-			}
-		else
-			result = (ImmutableState) state;
-		savedCanonicStates.putIfAbsent(result.getCanonicId(), result);
-		return new Pair<>(result.getCanonicId(), result);
+		try {
+			result = canonicWork(state, true, true, true, false, false,
+					fullHeapErrorSet);
+		} catch (CIVLHeapException e) {
+			throw new CIVLInternalException(
+					"Canonicalization with ignorance of all kinds of heap errors "
+							+ "still throws an Heap Exception",
+					e.source());
+		}
+		return saveStateWorker(result);
 	}
 
-	@Override
-	public void unsaveStateByReference(int stateRef) {
-		savedCanonicStates.remove(stateRef);
+	private Pair<Integer, State> saveStateWorker(ImmutableState state) {
+		int referenceID = collateStateStorage.saveCollateState(state);
+
+		return new Pair<>(referenceID, state);
 	}
 
 	@Override

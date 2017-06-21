@@ -18,8 +18,8 @@ import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.gmc.Trace;
-import edu.udel.cis.vsl.gmc.TraceStepIF;
+import edu.udel.cis.vsl.gmc.seq.Trace;
+import edu.udel.cis.vsl.gmc.seq.TraceStepIF;
 
 /**
  * SV-COMP requires a "witness" to be generated for a violation of any property.
@@ -137,8 +137,8 @@ public class WitnessGenerator {
 
 				if (!compactSourceStr
 						.equals(entrySourceStr)) { /*
-													 * The entry has already been
-													 * declared
+													 * The entry has already
+													 * been declared
 													 */
 					if (statementStr.equals("__VERIFIER_error()")) {
 						writeViolationNode(compactSourceStr);
@@ -191,8 +191,8 @@ public class WitnessGenerator {
 			TraceStep step = ((TraceStep) it.next());
 			Iterable<AtomicStep> atomicSteps = step.getAtomicSteps();
 			for (AtomicStep atom : atomicSteps) {
-				Location l = atom.getStatement().source();
-				Statement s = atom.getStatement();
+				Location l = atom.getTransition().statement().source();
+				Statement s = atom.getTransition().statement();
 				/*
 				 * For witness optimization, only add locations leading to a
 				 * statement which are not system source

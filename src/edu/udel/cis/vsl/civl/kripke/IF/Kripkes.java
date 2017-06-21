@@ -11,6 +11,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
+import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 
 /**
  * This is the entry point of the module <strong>kripke</strong>.
@@ -43,10 +44,10 @@ public class Kripkes {
 			Evaluator evaluator, Executor executor,
 			SymbolicAnalyzer symbolicAnalyzer, MemoryUnitFactory memUnitFactory,
 			LibraryEnablerLoader libLoader, CIVLErrorLogger errorLogger,
-			CIVLConfiguration civlConfig) {
+			CIVLConfiguration civlConfig, GMCConfiguration gmcConfig) {
 		return new PointeredEnabler(stateFactory, evaluator, executor,
 				symbolicAnalyzer, memUnitFactory, libLoader, errorLogger,
-				civlConfig);
+				civlConfig, gmcConfig);
 	}
 
 	/**
@@ -80,7 +81,7 @@ public class Kripkes {
 	 *            The configuration of the CIVL model.
 	 * @return The new state manager created.
 	 */
-	public static StateManager newStateManager(Enabler enabler,
+	public static CIVLStateManager newStateManager(Enabler enabler,
 			Executor executor, SymbolicAnalyzer symbolicAnalyzer,
 			CIVLErrorLogger errorLogger, CIVLConfiguration config) {
 		return new CommonStateManager(enabler, executor, symbolicAnalyzer,

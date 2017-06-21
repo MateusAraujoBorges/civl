@@ -61,6 +61,6 @@ public class NullTraceStep implements TraceStep {
 	}
 
 	@Override
-	public void complete(State finalState) {
+	public void setFinalState(State finalState) {
 	}
 }

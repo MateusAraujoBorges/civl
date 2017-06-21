@@ -26,8 +26,10 @@ import edu.udel.cis.vsl.civl.run.IF.UserInterface;
  */
 public class QuietOptionTest {
 
-	private static File rootDir1 = new File(new File("examples"), "concurrency");
-	private static File rootDir2 = new File(new File("examples"), "compare/adder");
+	private static File rootDir1 = new File(new File("examples"),
+			"concurrency");
+	private static File rootDir2 = new File(new File("examples"),
+			"compare/adder");
 	private static UserInterface ui = new UserInterface();
 
 	private static String filename1(String name) {
@@ -40,30 +42,36 @@ public class QuietOptionTest {
 
 	@Test
 	public void adderRun() {
-		assertTrue(ui.run(RUN, "-inputB=5", QUIET, NO_PRINTF, filename1("adder.cvl")));
+		assertTrue(ui.run(RUN, "-inputB=5", QUIET, NO_PRINTF,
+				filename1("adder.cvl")));
 	}
 
 	@Test
 	public void adderVerify() {
-		assertTrue(ui.run(VERIFY, "-inputB=5", NO_PRINTF, QUIET, filename1("adder.cvl")));
+		assertTrue(ui.run(VERIFY, "-inputB=5", NO_PRINTF, QUIET,
+				filename1("adder.cvl")));
 	}
 
 	@Test
 	public void adderBadVerify() {
-		assertFalse(ui.run(VERIFY, "-inputB=5", NO_PRINTF, QUIET, filename1("adderBad.cvl")));
+		assertFalse(ui.run(VERIFY, "-inputB=5", NO_PRINTF, QUIET,
+				filename1("adderBad.cvl")));
 	}
 
 	@Test
 	public void adderBadReplay() {
-		assertFalse(ui.run(VERIFY, "-inputB=5", NO_PRINTF, QUIET, filename1("adderBad.cvl")));
+		assertFalse(ui.run(VERIFY, "-inputB=5", NO_PRINTF, QUIET,
+				filename1("adderBad.cvl")));
 
-		assertFalse(ui.run(REPLAY, QUIET, NO_PRINTF, filename1("adderBad.cvl")));
+		assertFalse(
+				ui.run(REPLAY, QUIET, NO_PRINTF, filename1("adderBad.cvl")));
 	}
 
 	@Test
 	public void adderCompare() {
-		assertTrue(ui.run(COMPARE, "-inputNB=4", "-input_mpi_nprocs=2", QUIET, NO_PRINTF, IMPL,
-				filename2("adder_par.c"), SPEC, filename2("adder_spec.c")));
+		assertTrue(ui.run(COMPARE, "-inputNB=4", "-input_mpi_nprocs=2", QUIET,
+				NO_PRINTF, IMPL, filename2("adder_par.c"), SPEC,
+				filename2("adder_spec.c")));
 	}
 
 }
