@@ -35,7 +35,7 @@ import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Printable;
 import edu.udel.cis.vsl.civl.util.IF.Utils;
-import edu.udel.cis.vsl.gmc.seq.TraceStepIF;
+import edu.udel.cis.vsl.gmc.TraceStepIF;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 

@@ -12,8 +12,8 @@ import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.CIVLHeapException;
 import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.gmc.seq.DfsSearcher;
-import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 
 public class CollateExecutor {
 	private Enabler enabler;

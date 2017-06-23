@@ -13,14 +13,14 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.CIVLStateException;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.seq.CommandLineException;
-import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
-import edu.udel.cis.vsl.gmc.seq.GuidedTransitionChooser;
-import edu.udel.cis.vsl.gmc.seq.MisguidedExecutionException;
-import edu.udel.cis.vsl.gmc.seq.RandomTransitionChooser;
-import edu.udel.cis.vsl.gmc.seq.Simulator;
-import edu.udel.cis.vsl.gmc.seq.Trace;
-import edu.udel.cis.vsl.gmc.seq.TransitionChooser;
+import edu.udel.cis.vsl.gmc.CommandLineException;
+import edu.udel.cis.vsl.gmc.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.GuidedTransitionChooser;
+import edu.udel.cis.vsl.gmc.MisguidedExecutionException;
+import edu.udel.cis.vsl.gmc.RandomTransitionChooser;
+import edu.udel.cis.vsl.gmc.Simulator;
+import edu.udel.cis.vsl.gmc.Trace;
+import edu.udel.cis.vsl.gmc.TransitionChooser;
 
 /**
  * A tool to replay a trace saved by a previous CIVL session.
