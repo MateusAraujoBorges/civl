@@ -72,7 +72,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.run.IF.CommandLine;
 import edu.udel.cis.vsl.civl.run.IF.CommandLine.CommandLineKind;
 import edu.udel.cis.vsl.civl.run.common.NormalCommandLine.NormalCommandKind;
-import edu.udel.cis.vsl.gmc.seq.Option;
+import edu.udel.cis.vsl.gmc.Option;
 
 public class CIVLCommand {
 

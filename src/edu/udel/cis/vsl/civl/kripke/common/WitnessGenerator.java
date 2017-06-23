@@ -18,8 +18,8 @@ import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.gmc.seq.Trace;
-import edu.udel.cis.vsl.gmc.seq.TraceStepIF;
+import edu.udel.cis.vsl.gmc.Trace;
+import edu.udel.cis.vsl.gmc.TraceStepIF;
 
 /**
  * SV-COMP requires a "witness" to be generated for a violation of any property.

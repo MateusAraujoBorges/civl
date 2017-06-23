@@ -187,7 +187,7 @@ import edu.udel.cis.vsl.civl.model.common.statement.CommonAtomicLockAssignStatem
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.civl.util.IF.Triple;
-import edu.udel.cis.vsl.gmc.seq.CommandLineException;
+import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 

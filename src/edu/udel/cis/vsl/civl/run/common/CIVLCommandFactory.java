@@ -18,8 +18,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import edu.udel.cis.vsl.civl.run.IF.CommandLine;
 import edu.udel.cis.vsl.civl.run.IF.CommandLine.CommandLineKind;
-import edu.udel.cis.vsl.gmc.seq.CommandLineException;
-import edu.udel.cis.vsl.gmc.seq.Option;
+import edu.udel.cis.vsl.gmc.CommandLineException;
+import edu.udel.cis.vsl.gmc.Option;
 
 public class CIVLCommandFactory {
 

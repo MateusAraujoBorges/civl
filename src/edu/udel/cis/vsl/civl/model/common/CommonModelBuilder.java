@@ -10,8 +10,8 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelBuilder;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.gmc.seq.CommandLineException;
-import edu.udel.cis.vsl.gmc.seq.GMCSection;
+import edu.udel.cis.vsl.gmc.CommandLineException;
+import edu.udel.cis.vsl.gmc.GMCSection;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 /**

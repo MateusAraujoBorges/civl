@@ -1,16 +1,16 @@
 package edu.udel.cis.vsl.civl.config.IF;
 
-import static edu.udel.cis.vsl.gmc.seq.Option.OptionType.BOOLEAN;
-import static edu.udel.cis.vsl.gmc.seq.Option.OptionType.INTEGER;
-import static edu.udel.cis.vsl.gmc.seq.Option.OptionType.STRING;
+import static edu.udel.cis.vsl.gmc.Option.OptionType.BOOLEAN;
+import static edu.udel.cis.vsl.gmc.Option.OptionType.INTEGER;
+import static edu.udel.cis.vsl.gmc.Option.OptionType.STRING;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.udel.cis.vsl.gmc.seq.Option;
-import edu.udel.cis.vsl.gmc.seq.Option.OptionType;
+import edu.udel.cis.vsl.gmc.Option;
+import edu.udel.cis.vsl.gmc.Option.OptionType;
 
 /**
  * This class manages all constant configurations of the system.

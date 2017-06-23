@@ -42,9 +42,9 @@ import edu.udel.cis.vsl.civl.model.IF.Models;
 import edu.udel.cis.vsl.civl.run.common.ParseSystemLibrary;
 import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
 import edu.udel.cis.vsl.civl.transform.IF.Transforms;
-import edu.udel.cis.vsl.gmc.seq.CommandLineException;
-import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
-import edu.udel.cis.vsl.gmc.seq.GMCSection;
+import edu.udel.cis.vsl.gmc.CommandLineException;
+import edu.udel.cis.vsl.gmc.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.GMCSection;
 import edu.udel.cis.vsl.sarl.SARL;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
