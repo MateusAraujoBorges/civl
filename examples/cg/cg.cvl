@@ -8,8 +8,7 @@
 
 #include <stdio.h>
  
-$input int N = 2;
-$assume(N >= 1);
+$input int N = 5; // should be greater than 0
 $input double A[N][N]; // only use upper triangle
 $input double B[N]; // right-hand side
 
@@ -43,8 +42,6 @@ void cg(int n, double a[n][n], double b[n], double x[n], int nsteps) {
   for (int i=0; i<n; i++)
     p[i] = r[i];
   for (int step=0; step<nsteps; step++) {
-    printf("Step = %d\n", step);
-    printf("Computing temp=A*p ...\n");
     for (int i=0; i<n; i++) {
       temp[i] = 0.0;
       for (int j=0; j<n; j++)
@@ -53,36 +50,25 @@ void cg(int n, double a[n][n], double b[n], double x[n], int nsteps) {
     alpha = 0.0;
     for (int i=0; i<n; i++)
       alpha += p[i]*temp[i];
-    //$assume(alpha !=0);
-    printf("Computing alpha=rsold/alpha ...\n");
     alpha = rsold/alpha;
     // tempp = r-alpha*temp
-    printf("Computing tempp = r-alpha*temp ...\n");
     for (int i=0; i<n; i++)
       tempp[i] = r[i] - alpha*temp[i];
-    printf("Position 5\n");
     for (int i=0; i<n; i++)
       r[i] = tempp[i];
-    printf("Position 6\n");
     for (int i=0; i<n; i++)
       tempp[i] = x[i] + alpha*p[i];
-    printf("Position 7\n");
     for (int i=0; i<n; i++)
       x[i] = tempp[i];
-    printf("Position 8\n");
     if (step < nsteps-1) {
       // rsnew = <r,r>
       rsnew = 0.0;
-      printf("Position 9\n");
       for (int i=0; i<n; i++)
         rsnew += r[i]*r[i];
-      printf("Position 10\n");
       $assume(rsold !=0);
       rsfrac = rsnew/rsold;
-      printf("Position 11\n");
       for (int i=0; i<n; i++)
         tempp[i] = r[i] + rsfrac*p[i];
-      printf("Position 12\n");
       for (int i=0; i<n; i++)
         p[i] = tempp[i];
       rsold = rsnew;
