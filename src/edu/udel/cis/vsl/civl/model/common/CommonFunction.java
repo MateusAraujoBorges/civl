@@ -81,6 +81,13 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 
 	private boolean isStateFunction = false;
 
+	/**
+	 * A flag (whose true value) indicates if there is no unsafe loops in the
+	 * function body. Unsafe loop is a loop whose start location doesn't satisfy
+	 * that {@link Location#isSafeLoop()} returns true.
+	 */
+	private boolean noUnsafeloop = false;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -700,5 +707,15 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	@Override
 	public boolean isNondet() {
 		return false;
+	}
+
+	@Override
+	public void setFreeOfUnsafeloop(boolean noUnsafeloop) {
+		this.noUnsafeloop = noUnsafeloop;
+	}
+
+	@Override
+	public boolean isFreeOfUnsafeloop() {
+		return noUnsafeloop;
 	}
 }

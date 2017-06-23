@@ -389,6 +389,8 @@ public class AmpleSetWorker {
 			if (this.infiniteLoopProcesses.get(pid))
 				continue;
 			ampleProcSet = ampleSetOfProcess(pid, minimalAmpleSetSize);
+			if (existProcessEnteringUnsafeAtomicBlock(ampleProcSet))
+				ampleProcSet = activeProcesses;
 			this.difference(ampleProcSet, infiniteLoopProcesses);
 			if (!allDeadlockInvisible(ampleProcSet))
 				ampleProcSet = activeProcesses;
@@ -423,6 +425,36 @@ public class AmpleSetWorker {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Checks if there exist a process in the given ample process set that is
+	 * right before an entry of an atomic block and the termination of the
+	 * atomic block cannot be determined.
+	 * 
+	 * @param ampleProcSet
+	 *            An ample processes set
+	 * @return True iff there exist a process in the given ample process set
+	 *         that is right before an entry of an atomic block and the
+	 *         termination of the atomic block cannot be determined.
+	 */
+	private boolean existProcessEnteringUnsafeAtomicBlock(BitSet ampleProcSet) {
+		if (ampleProcSet.cardinality() < activeProcesses.cardinality()) {
+			for (int apid = ampleProcSet.nextSetBit(
+					0); apid >= 0; apid = ampleProcSet.nextSetBit(apid + 1)) {
+				ProcessState procState = state.getProcessState(apid);
+				Location currentLocation;
+
+				if (procState.hasEmptyStack())
+					continue;
+				currentLocation = procState.peekStack().location();
+				if (currentLocation != null
+						&& currentLocation.isEntryOfUnsafeAtomic()) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -686,7 +718,8 @@ public class AmpleSetWorker {
 				}
 			}
 		}
-		return this.intersects(ampleProcessIDs, activeProcesses);
+		ampleProcessIDs = intersects(ampleProcessIDs, activeProcesses);
+		return ampleProcessIDs;
 	}
 
 	/**

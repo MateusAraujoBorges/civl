@@ -3,7 +3,7 @@ package edu.udel.cis.vsl.civl.run.common;
 import java.io.Serializable;
 
 import edu.udel.cis.vsl.civl.run.IF.CommandLine;
-import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.GMCConfiguration;
 
 public abstract class BaseCommandLine implements CommandLine, Serializable {
 	/**

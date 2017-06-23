@@ -11,7 +11,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
-import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.GMCConfiguration;
 
 /**
  * This is the entry point of the module <strong>kripke</strong>.

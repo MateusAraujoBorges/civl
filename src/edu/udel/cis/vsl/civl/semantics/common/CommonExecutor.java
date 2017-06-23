@@ -65,6 +65,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition.AtomicLockAction;
+import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -464,8 +465,13 @@ public class CommonExecutor implements Executor {
 			dynamicElementType = universe.tupleType(
 					universe.stringObject(staticType.name().name()),
 					Arrays.asList(fieldTypes));
-		} else
-			dynamicElementType = statement.getDynamicElementType();
+		} else {
+			TypeEvaluation teval = evaluator.getDynamicType(state, pid,
+					statement.getStaticElementType(), source, false);
+
+			state = teval.state;
+			dynamicElementType = teval.type;
+		}
 		mallocResult = stateFactory.malloc(state, pid, dyScopeID,
 				statement.getMallocId(), dynamicElementType, elementCount);
 		if (state.isMonitoringWrites(pid)) {

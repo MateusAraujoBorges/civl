@@ -44,8 +44,8 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.gmc.seq.EnablerIF;
-import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
@@ -301,14 +301,33 @@ public abstract class CommonEnabler implements Enabler {
 
 	@Override
 	public Collection<Transition> fullSet(State state) {
-		Iterable<? extends ProcessState> processes = state.getProcessStates();
+		Pair<BooleanExpression, Collection<Transition>> transitionsAssumption;
 		List<Transition> transitions = new ArrayList<>();
 
-		for (ProcessState process : processes) {
-			transitions.addAll(
-					this.enabledTransitionsOfProcess(state, process.getPid()));
-		}
+		if (state.getPathCondition(universe).isFalse())
+			// return empty set of transitions.
+			return transitions;
+		transitionsAssumption = enabledAtomicTransitions(state);
+		if (transitionsAssumption != null
+				&& transitionsAssumption.left != null) {
+			int atomicPid = stateFactory.processInAtomic(state);
 
+			state = stateFactory.addToPathcondition(state, atomicPid,
+					transitionsAssumption.left);
+		}
+		if (transitionsAssumption != null
+				&& transitionsAssumption.right != null)
+			transitions.addAll(transitionsAssumption.right);
+		if (transitionsAssumption == null || transitionsAssumption.right == null
+				|| transitionsAssumption.left != null) {
+			Iterable<? extends ProcessState> processes = state
+					.getProcessStates();
+
+			for (ProcessState process : processes) {
+				transitions.addAll(this.enabledTransitionsOfProcess(state,
+						process.getPid()));
+			}
+		}
 		return transitions;
 	}
 

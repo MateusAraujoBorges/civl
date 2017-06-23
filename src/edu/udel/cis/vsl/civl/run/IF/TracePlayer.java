@@ -13,14 +13,14 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.CIVLStateException;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.seq.CommandLineException;
-import edu.udel.cis.vsl.gmc.seq.GMCConfiguration;
-import edu.udel.cis.vsl.gmc.seq.GuidedTransitionChooser;
-import edu.udel.cis.vsl.gmc.seq.MisguidedExecutionException;
-import edu.udel.cis.vsl.gmc.seq.RandomTransitionChooser;
-import edu.udel.cis.vsl.gmc.seq.Replayer;
-import edu.udel.cis.vsl.gmc.seq.Trace;
-import edu.udel.cis.vsl.gmc.seq.TransitionChooser;
+import edu.udel.cis.vsl.gmc.CommandLineException;
+import edu.udel.cis.vsl.gmc.GMCConfiguration;
+import edu.udel.cis.vsl.gmc.GuidedTransitionChooser;
+import edu.udel.cis.vsl.gmc.MisguidedExecutionException;
+import edu.udel.cis.vsl.gmc.RandomTransitionChooser;
+import edu.udel.cis.vsl.gmc.Simulator;
+import edu.udel.cis.vsl.gmc.Trace;
+import edu.udel.cis.vsl.gmc.TransitionChooser;
 
 /**
  * A tool to replay a trace saved by a previous CIVL session.
@@ -35,7 +35,7 @@ public class TracePlayer extends Player {
 
 	private TransitionChooser<State, Transition> chooser;
 
-	private Replayer<State, Transition> replayer;
+	private Simulator<State, Transition> simulator;
 
 	private boolean isRandom = false;
 
@@ -51,7 +51,7 @@ public class TracePlayer extends Player {
 
 		result.civlConfig.setReplay(true);
 		result.chooser = guidedChooser;
-		result.replayer.setLength(guidedChooser.getLength());
+		result.simulator.setLength(guidedChooser.getLength());
 		return result;
 	}
 
@@ -99,12 +99,12 @@ public class TracePlayer extends Player {
 		// civlConfig.setShowTransitions(true);
 		civlConfig.setVerbose(false);
 		log.setSearcher(null);
-		replayer = new Replayer<State, Transition>(stateManager, out);
-		replayer.setPrintAllStates(false);
-		replayer.setQuiet(civlConfig.isQuiet());
+		simulator = new Simulator<State, Transition>(stateManager, out);
+		simulator.setPrintAllStates(false);
+		simulator.setQuiet(civlConfig.isQuiet());
 		// replayer.setPrintAllStates(civlConfig.showStates()
 		// || civlConfig.debugOrVerbose() || civlConfig.showSavedStates());
-		replayer.setPredicate(predicate);
+		simulator.setPredicate(predicate);
 	}
 
 	public TracePlayer(GMCConfiguration config, Model model,
@@ -125,12 +125,12 @@ public class TracePlayer extends Player {
 	public Trace<Transition, State> run() throws MisguidedExecutionException {
 		try {
 			State initialState = stateFactory.initialState(model);
-			Trace<Transition, State> trace = replayer.play(initialState,
+			Trace<Transition, State> trace = simulator.play(initialState,
 					chooser, this.civlConfig.showTransitions())[0];
 			boolean violation = trace.violation();
 
 			violation = violation || log.numErrors() > 0;
-			if (violation && !replayer.isQuiet()) {
+			if (violation && !simulator.isQuiet()) {
 				civlConfig.out().println("Violation(s) found.");
 				civlConfig.out().flush();
 			}

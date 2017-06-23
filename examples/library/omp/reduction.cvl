@@ -21,6 +21,7 @@ void main(){
     $omp_apply_assoc(shared, _SUM, &_sum);
     $omp_barrier_and_flush(team);
     $omp_read(shared, &private, &sum_local);
+    $omp_barrier_and_flush(team);
     $assert(private == 6);
     $omp_shared_destroy(shared);
     $omp_team_destroy(team);

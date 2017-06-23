@@ -175,15 +175,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			SymbolicExpression pointer, CIVLSource source) {
 		CIVLType objType;
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
-		int vid;
 
-		vid = symbolicUtil.getVariableId(source, pointer);
-		// If the pointer is pointing to an memory space, then no need to
-		// continue casting because there won't be any multi-dimensional array
-		// and "&a" and "a" when "a" is a pointer to a memory space is
-		// different.
-		if (vid == 0)
-			return ref;
 		objType = civlTypeOfObjByPointer(source, state, pointer);
 		while (objType.isArrayType()) {
 			ref = universe.arrayElementReference(ref, zero);
@@ -293,9 +285,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 		result.append("State ");
 		if (lastSavedState != -1 && sequenceId != -1)
-			result.append(lastSavedState + "." + sequenceId);
+			result.append(lastSavedState + "." + sequenceId + " " + state);
 		else if (lastSavedState != -1)
-			result.append(lastSavedState);
+			result.append(lastSavedState + " " + state);
 		else
 			result.append(state.identifier());
 		result.append("\n");
@@ -2343,13 +2335,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						if (i != 0)
 							result.append(", ");
-						result.append(
-								this.symbolicExpressionToString(var.getSource(),
-										state, var.type(),
-										state.getVariableValue(
-												state.getDyscope(pid,
-														var.scope()),
-												var.vid())));
+						result.append(this.symbolicExpressionToString(
+								var.getSource(), state, var.type(),
+								state.getVariableValue(
+										state.getDyscope(pid, var.scope()),
+										var.vid())));
 					}
 					result.append(")");
 					break;
@@ -2735,11 +2725,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						claim = reasoner.simplify(claim);
 						if (result == ResultType.YES) {
-							if (!derefable
-									&& reasoner
-											.valid(universe.equals(length,
-													index))
-											.getResultType() != ResultType.NO) {
+							if (!derefable && reasoner
+									.valid(universe.equals(length, index))
+									.getResultType() != ResultType.NO) {
 								return new Triple<>(null, claim, result);
 							} else {
 								return new Triple<>(

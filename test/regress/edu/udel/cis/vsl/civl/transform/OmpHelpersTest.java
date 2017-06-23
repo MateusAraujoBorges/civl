@@ -46,7 +46,7 @@ public class OmpHelpersTest {
 
 	@Test
 	public void write() {
-		assertTrue(ui.run("run", QUIET, NO_PRINTF, filename("write.cvl")));
+		assertFalse(ui.run("run", QUIET, NO_PRINTF, filename("write.cvl")));
 	}
 
 	@Test

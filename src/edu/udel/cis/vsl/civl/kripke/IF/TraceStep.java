@@ -1,7 +1,7 @@
 package edu.udel.cis.vsl.civl.kripke.IF;
 
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.gmc.seq.TraceStepIF;
+import edu.udel.cis.vsl.gmc.TraceStepIF;
 
 /**
  * 

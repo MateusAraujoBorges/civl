@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.9
+                               v1.10
 
 ------------------------------ Overview -------------------------------
 
@@ -45,6 +45,13 @@ CIVL is open source software distributed under the GNU
 General Public License.  However, the libraries used by CIVL
 (and incorporated into the complete distribution) use various
 licenses.  See directory licenses for the license of each component.
+
+
+-------------------------- Updates from v1.9 -------------------------
+- Re-design GMC to enclose all information about states and transitions 
+  in a GMC Node, thus clients only need to implement states.
+- Update CIVL
+
 
 -------------------------- Updates from v1.8 -------------------------
 - Significant performance improvement

@@ -368,4 +368,20 @@ public interface CIVLFunction extends Sourceable {
 	 */
 	boolean isStateFunction();
 
+	/**
+	 * @param noUnsafeloop
+	 *            Set to true iff there is no unsafe loops in the <b>LEXICAL</b>
+	 *            function body. Unsafe loop is a loop whose start location
+	 *            doesn't satisfy that {@link Location#isSafeLoop()} returns
+	 *            true.
+	 */
+	void setFreeOfUnsafeloop(boolean noUnsafeloop);
+
+	/**
+	 * @return true iff there is no unsafe loops in the <b>LEXICAL</b> function
+	 *         body. Unsafe loop is a loop whose start location doesn't satisfy
+	 *         that {@link Location#isSafeLoop()} returns true.
+	 * 
+	 */
+	boolean isFreeOfUnsafeloop();
 }
