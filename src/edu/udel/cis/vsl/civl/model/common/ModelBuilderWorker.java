@@ -52,6 +52,7 @@ import edu.udel.cis.vsl.civl.model.IF.statement.LoopBranchStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.MallocStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.ReturnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
+import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLHeapType;
@@ -138,6 +139,13 @@ public class ModelBuilderWorker {
 	 * package-private since {@link ContractTranslator} needs to access it.
 	 */
 	Map<CallEvent, Function> callEvents;
+
+	/**
+	 * A collection of all atomic blocks in the model. An atomic block is
+	 * represented as an array of two locations: [0]: the entry location and
+	 * [1]: exit location.
+	 */
+	List<Location[]> atomicBlocks = new LinkedList<>();
 
 	// Map<Scope, CIVLFunction> elaborateDomainFunction = new HashMap<>();
 
@@ -788,18 +796,134 @@ public class ModelBuilderWorker {
 			debugOut.println("loop analysis of locations...");
 		}
 		for (CIVLFunction f : model.functions()) {
+			boolean noUnsafeloop = true;
+
 			// purely local locations that enters an atomic block needs future
 			// statements to be checked, thus it can only be
 			// identified after ALL statements have been
 			// checked for being purely local or not
 			for (Location loc : f.locations()) {
-				this.loopAnalysis(loc, addressedOfVariables);
+				boolean isLoop = loopAnalysis(loc, addressedOfVariables);
+
 				// loc.purelyLocalAnalysis();
 				loc.loopAnalysis();
 				factory.computeImpactScopeOfLocation(loc);
+				noUnsafeloop &= (!isLoop || loc.isSafeLoop())
+						&& !loc.isInNoopLoop();
+			}
+			f.setFreeOfUnsafeloop(noUnsafeloop);
+		}
+		// Atomic block termination analysis: attempt to determine if an atomic
+		// block will terminate:
+		for (Location[] atomic : atomicBlocks)
+			atomicBlockTerminationAnalysis(atomic[0], atomic[1]);
+		memUnitAnalyzer.memoryUnitAnalysis(model);
+	}
+
+	/**
+	 * Performs analysis on an atomic block to determine if it will terminate.
+	 * If an atomic block satisfies following conditions, they will be
+	 * determined as "will terminate":
+	 * <li>No un-safe loop in the atomic block. An unsafe loop can be determined
+	 * if {@link Location#isSafeLoop()} returns false, where location is the
+	 * entry location of the loop.</li>
+	 * <li>No regular function call in the atomic block. Regular function calls
+	 * are function calls on non-system functions. Termination of system
+	 * functions is guaranteed</li>
+	 * 
+	 * @param startLocation
+	 *            The entry location of the atomic block, it must has a sole
+	 *            outgoing statement ATOMIC_ENTER
+	 * @param endLocation
+	 *            The exit location of the atomic block, an atomic block must
+	 *            have exact one exit location. //TODO: does GOTO allowed in
+	 *            atomic block ?
+	 */
+	private void atomicBlockTerminationAnalysis(Location startLocation,
+			Location endLocation) {
+		Set<Integer> seenLocations = new HashSet<>();
+		Stack<Location> stack = new Stack<>();
+		Location location = startLocation;
+		boolean terminate = true;
+
+		// About the traverse each location in the atomic block. The traverse is
+		// based on
+		// the fact that there is exact one entry and exit location of the
+		// atomic block. For special statements: RETURN and GOTO, RETURN has no
+		// target location, so it will not affect the termination of this
+		// traverse; We assume there is no GOTO allowed in atomic blocks.
+		stack.push(location);
+		do {
+			location = stack.pop();
+			// If location is an entry of a loop ...
+			if (location.getNumOutgoing() == 2) {
+				Statement outgoing0 = location.getOutgoing(0),
+						outgoing1 = location.getOutgoing(1);
+
+				if (outgoing0 instanceof LoopBranchStatement
+						&& outgoing1 instanceof LoopBranchStatement)
+					if (!location.isSafeLoop()) {
+						terminate = false;
+						break;
+					}
+			}
+			// Proceed along with all outgoing statements ...
+			for (Statement outgoing : location.outgoing()) {
+				if (outgoing.statementKind() == StatementKind.CALL_OR_SPAWN) {
+					CallOrSpawnStatement call = (CallOrSpawnStatement) outgoing;
+
+					// If there is any non-system function call, it may not
+					// terminate
+					if (call.isCall() && !call.isSystemCall()) {
+						CIVLFunction function = call.function();
+
+						if (function != null) {
+							// If the calling function has no more calls inside
+							// it and itself is free of unsafe loops, the call
+							// statement will terminate.
+							terminate &= function.isFreeOfUnsafeloop()
+									&& noCallInFunction(function);
+						} else
+							// call by function pointer, give up ...
+							terminate = false;
+						if (!terminate)
+							break;
+					}
+				}
+				if (outgoing.target() != null) {
+					Location target = outgoing.target();
+					int targetID = target.id();
+
+					if (!seenLocations.contains(targetID)
+							&& target != endLocation) {
+						seenLocations.add(targetID);
+						stack.push(target);
+					}
+				}
+			}
+		} while (!stack.isEmpty());
+		startLocation.setEntryOfUnsafeAtomic(!terminate);
+	}
+
+	/**
+	 * Test if there is any function call inside the function body by traversing
+	 * all locations ({@link CIVLFunction#locations()}).
+	 * 
+	 * @param function
+	 *            The given function will be tested if it has any function call
+	 *            in its body.
+	 * @return True iff there is at least one function call statement in the
+	 *         function body.
+	 */
+	private boolean noCallInFunction(CIVLFunction function) {
+		for (Location loc : function.locations()) {
+			for (Statement stmt : loc.outgoing()) {
+				if (stmt.statementKind() == StatementKind.CALL_OR_SPAWN
+						&& ((CallOrSpawnStatement) stmt).isCall())
+					return false;
 			}
 		}
-		memUnitAnalyzer.memoryUnitAnalysis(model);
+		return true;
 	}
 
 	/**
@@ -815,9 +939,12 @@ public class ModelBuilderWorker {
 	 * 
 	 * @param location
 	 * @param addressedOfVariables
+	 * @return True iff this location is an entry of a loop
 	 */
-	private void loopAnalysis(Location location,
+	private boolean loopAnalysis(Location location,
 			Set<Variable> addressedOfVariables) {
+		boolean isLoopEntry = false;
+
 		if (location.getNumOutgoing() == 2) {
 			Statement outgoing0 = location.getOutgoing(0),
 					outgoing1 = location.getOutgoing(1);
@@ -830,10 +957,10 @@ public class ModelBuilderWorker {
 				Statement increment;
 				LHSExpression iterVar;
 
+				isLoopEntry = true;
 				if (((LoopBranchStatement) outgoing0).isEnter()) {
 					loopEnter = (LoopBranchStatement) outgoing0;
 					loopExit = (LoopBranchStatement) outgoing1;
-
 				} else {
 					loopEnter = (LoopBranchStatement) outgoing1;
 					loopExit = (LoopBranchStatement) outgoing0;
@@ -841,8 +968,8 @@ public class ModelBuilderWorker {
 				condition = loopEnter.guard();
 				if (condition.hasConstantValue()
 						&& condition.constantValue().isTrue())
-					return;
-				increment = this.getIncrement(location, loopEnter);
+					return isLoopEntry;
+				increment = this.getIncrement(location, loopExit);
 				if (increment instanceof AssignStatement) {
 					AssignStatement assign = (AssignStatement) increment;
 					Expression incrExpr = assign.rhs();
@@ -856,11 +983,11 @@ public class ModelBuilderWorker {
 						// iteration variable could be modified through
 						// pointers.
 						if (addressedOfVariables.contains(var))
-							return;
+							return isLoopEntry;
 					}
 					if (modifiesIterVarInBody(loopEnter.target(), iterVar,
 							increment.source(), loopExit.target()))
-						return;
+						return isLoopEntry;
 					if (condition instanceof BinaryExpression) {
 						BinaryExpression binary = (BinaryExpression) condition;
 						Expression condLeft = binary.left(),
@@ -869,7 +996,7 @@ public class ModelBuilderWorker {
 
 						if (condOp != BINARY_OPERATOR.LESS_THAN
 								&& condOp != BINARY_OPERATOR.LESS_THAN_EQUAL)
-							return;
+							return isLoopEntry;
 						if (incrExpr instanceof BinaryExpression) {
 							BinaryExpression incrementExpr = (BinaryExpression) incrExpr;
 							BINARY_OPERATOR incrOp = incrementExpr.operator();
@@ -880,7 +1007,7 @@ public class ModelBuilderWorker {
 								// i < K, then the increment should be i = i + x
 								// or i = x + i;
 								if (incrOp != BINARY_OPERATOR.PLUS)
-									return;
+									return isLoopEntry;
 								if (incrLeft.equals(iterVar)
 										|| incrRight.equals(iterVar)) {
 									location.setSafeLoop(true);
@@ -888,7 +1015,7 @@ public class ModelBuilderWorker {
 							} else if (condRight.equals(iterVar)) {
 								// K < i, then the increment should be i = i - x
 								if (incrOp != BINARY_OPERATOR.MINUS)
-									return;
+									return isLoopEntry;
 								if (incrLeft.equals(iterVar))
 									location.setSafeLoop(true);
 							}
@@ -899,6 +1026,7 @@ public class ModelBuilderWorker {
 
 			}
 		}
+		return isLoopEntry;
 	}
 
 	/**
@@ -953,28 +1081,63 @@ public class ModelBuilderWorker {
 	 * 
 	 * @param loopStart
 	 *            the start location of the loop
-	 * @param loopEnter
-	 *            the enter statement of the loop
+	 * @param loopExit
+	 *            the exit statement of the loop
 	 * @return
 	 */
-	private Statement getIncrement(Location loopStart, Statement loopEnter) {
-		Statement current = loopEnter;
-		int startId = loopStart.id();
+	private Statement getIncrement(Location loopStart, Statement loopExit) {
+		Set<Integer> seenLocations = new HashSet<>();
+		Stack<Location> stack = new Stack<>();
+		Location nextOfLoop = loopExit.target();
 
-		if (current.target() == null)
-			return null;
+		stack.push(loopStart);
 		do {
-			Location next = current.target();
+			Location location = stack.pop();
 
-			current = next.getOutgoing(0);
-			if (current instanceof LoopBranchStatement) {
-				if (((LoopBranchStatement) current).isEnter())
-					current = next.getOutgoing(1);
+			for (Statement stmt : location.outgoing()) {
+				Location target = stmt.target();
+
+				if (target == loopStart)
+					// If the target is the loop start location, the statement
+					// is the last statement of the loop body. Considering that
+					// a safe loop should always have an increment at the end
+					// of loop body, we don't need explore all locations inside
+					// the body which bring the control back to the start
+					// location.
+					return stmt;
+				else if (target != null && target != nextOfLoop) {
+					// If target is not null and target is not the next location
+					// of the loop (outside of the loop), add it to stack.
+					// TODO: goto statement still will bring the traverse out of
+					// loop, need some special handling. e.g. keep track of
+					// gotos in FunctionTranslator...
+					if (!seenLocations.contains(target.id())) {
+						seenLocations.add(target.id());
+						stack.push(target);
+					}
+				}
 			}
-			if (current.target() == null)
-				return null;
-		} while (current.target().id() != startId);
-		return current;
+		} while (!stack.isEmpty());
+		return null;
+		// Statement current = loopEnter;
+		// int startId = loopStart.id();
+		//
+		// if (current.target() == null)
+		// return null;
+		// do {
+		// Location next = current.target();
+		//
+		// current = next.getOutgoing(0);
+		// if (current instanceof LoopBranchStatement) {
+		// if (((LoopBranchStatement) current).isEnter())
+		// current = next.getOutgoing(1);
+		// }
+		// if (current.target() == null)
+		// return null;
+		// } while (current.target().id() != startId);
+		// if (current != null)
+		// System.out.println("Get incremental :" + current.getSource());
+		// return current;
 	}
 
 	/* *************************** Public Methods ************************** */

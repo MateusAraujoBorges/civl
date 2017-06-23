@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.kripke.IF.AtomicStep;
-import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.CIVLStateManager;
+import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.TraceStep;
 import edu.udel.cis.vsl.civl.kripke.common.StateStatus.EnabledStatus;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
@@ -96,7 +96,7 @@ public class CommonStateManager extends CIVLStateManager {
 
 	private AtomicInteger numStatesExplored = new AtomicInteger(1);
 
-	private AtomicInteger MaxNormalizedId = new AtomicInteger(1);;
+	private AtomicInteger MaxNormalizedId = new AtomicInteger(0);;
 
 	private OutputCollector outputCollector;
 
@@ -535,26 +535,43 @@ public class CommonStateManager extends CIVLStateManager {
 
 	@Override
 	public void printTraceStepFinalState(State finalState, int normalizedID) {
+		boolean newState = true;
+
 		// Print transitions:
 		if (printTransitions) {
-			String prefix = "--> State ";
-			String stateID = normalizedID >= 0
-					? prefix + normalizedID
-					: finalState.toString();
+			String stateID = "--> State ";
 
+			if (normalizedID >= 0)
+				stateID += normalizedID + " ";
+			stateID += finalState;
 			this.config.out().println(stateID);
+			config.out().flush();
 		}
+		// I don't like increase "numStatesExplored" here but there is no other
+		// place it can be in without further modification in GMC or CIVL,
+		// because it needs to know if the final state is a seen state.
+		if (normalizedID >= 0) {
+			if (normalizedID > MaxNormalizedId.intValue()) {
+				Utils.biggerAndSet(MaxNormalizedId, normalizedID);
+				numStatesExplored.getAndIncrement();
+			} else
+				newState = false; // a seen state
+		} else
+			numStatesExplored.getAndIncrement();
 		// Print states:
-		if (printAllStates) {
-			config.out().println();
-			config.out().println(symbolicAnalyzer.stateToString(finalState,
-					normalizedID, -1));
-		} else if (printSavedStates) {
-			if (normalizedID >= 0) {
+		if (newState) {
+			if (printAllStates) {
 				config.out().println();
 				config.out().println(symbolicAnalyzer.stateToString(finalState,
 						normalizedID, -1));
+			} else if (printSavedStates) {
+				if (normalizedID >= 0) {
+					config.out().println();
+					config.out().println(symbolicAnalyzer
+							.stateToString(finalState, normalizedID, -1));
+				}
 			}
+			config.out().flush();
 		}
 		// Print path conditions:
 		if (config.showPathConditon()) {
@@ -573,18 +590,8 @@ public class CommonStateManager extends CIVLStateManager {
 						.println(this.symbolicAnalyzer.pathconditionToString(
 								null, finalState, "\t", finalState
 										.getPathCondition(enabler.universe)));
+			config.out().flush();
 		}
-		// I don't like increase "numStatesExplored" here but there is no other
-		// place it can be in without further modification in GMC or CIVL,
-		// because it needs to know if the final state is a seen state.
-		if (normalizedID >= 0) {
-			if (normalizedID > MaxNormalizedId.intValue()) {
-				Utils.biggerAndSet(MaxNormalizedId, normalizedID);
-				numStatesExplored.getAndIncrement();
-			}
-		} else
-			numStatesExplored.getAndIncrement();
-
 	}
 
 	/* ****************** Public Methods from StateManager ***************** */

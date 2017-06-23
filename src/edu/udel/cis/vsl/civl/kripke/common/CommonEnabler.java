@@ -301,14 +301,33 @@ public abstract class CommonEnabler implements Enabler {
 
 	@Override
 	public Collection<Transition> fullSet(State state) {
-		Iterable<? extends ProcessState> processes = state.getProcessStates();
+		Pair<BooleanExpression, Collection<Transition>> transitionsAssumption;
 		List<Transition> transitions = new ArrayList<>();
 
-		for (ProcessState process : processes) {
-			transitions.addAll(
-					this.enabledTransitionsOfProcess(state, process.getPid()));
-		}
+		if (state.getPathCondition(universe).isFalse())
+			// return empty set of transitions.
+			return transitions;
+		transitionsAssumption = enabledAtomicTransitions(state);
+		if (transitionsAssumption != null
+				&& transitionsAssumption.left != null) {
+			int atomicPid = stateFactory.processInAtomic(state);
 
+			state = stateFactory.addToPathcondition(state, atomicPid,
+					transitionsAssumption.left);
+		}
+		if (transitionsAssumption != null
+				&& transitionsAssumption.right != null)
+			transitions.addAll(transitionsAssumption.right);
+		if (transitionsAssumption == null || transitionsAssumption.right == null
+				|| transitionsAssumption.left != null) {
+			Iterable<? extends ProcessState> processes = state
+					.getProcessStates();
+
+			for (ProcessState process : processes) {
+				transitions.addAll(this.enabledTransitionsOfProcess(state,
+						process.getPid()));
+			}
+		}
 		return transitions;
 	}
 

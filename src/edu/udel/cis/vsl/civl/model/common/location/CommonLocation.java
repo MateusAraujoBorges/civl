@@ -99,8 +99,8 @@ public class CommonLocation extends CommonSourceable implements Location {
 	 * <li>if it is not the starting point of an $atomic/$atom block, then all
 	 * its outgoing statements should be purely local;</li>
 	 * <li>if it is the starting point of an $atomic/$atom bloc, then all
-	 * statements reachable within that $atomic/$atom block are purely
-	 * local.</li>
+	 * statements reachable within that $atomic/$atom block are purely local.
+	 * </li>
 	 * </ol>
 	 */
 	private boolean purelyLocal = true;
@@ -157,6 +157,12 @@ public class CommonLocation extends CommonSourceable implements Location {
 	private boolean isGuarded = false;
 
 	private boolean isSleep = false;
+
+	/**
+	 * True iff this location is an atomic block entry and the termination of
+	 * the atomic block is NOT determined.
+	 */
+	private boolean isUnsafeAtomicEntry = false;
 
 	/* **************************** Constructors *************************** */
 
@@ -395,7 +401,7 @@ public class CommonLocation extends CommonSourceable implements Location {
 		}
 		out.println(headString);
 		if (isDebug) {
-			if (!this.impactMemUnits.isEmpty()) {
+			if (impactMemUnits != null && !impactMemUnits.isEmpty()) {
 				out.print(prefix);
 				out.print("impact memory units: ");
 				for (MemoryUnitExpression memUnit : this.impactMemUnits) {
@@ -937,5 +943,15 @@ public class CommonLocation extends CommonSourceable implements Location {
 	@Override
 	public boolean isSwitchOrChooseWithDefault() {
 		return isSwitchOrChooseWithDefault;
+	}
+
+	@Override
+	public boolean isEntryOfUnsafeAtomic() {
+		return this.isUnsafeAtomicEntry;
+	}
+
+	@Override
+	public void setEntryOfUnsafeAtomic(boolean unsafe) {
+		this.isUnsafeAtomicEntry = unsafe;
 	}
 }

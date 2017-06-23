@@ -769,7 +769,7 @@ public class ImmutableState implements State {
 
 	@Override
 	public String identifier() {
-		return "(" + instanceId + ")";
+		return "(id=" + instanceId + ")";
 	}
 
 	@Override

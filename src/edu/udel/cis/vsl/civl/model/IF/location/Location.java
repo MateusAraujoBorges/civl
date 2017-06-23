@@ -329,8 +329,39 @@ public interface Location extends Sourceable {
 
 	void staticAnalysis();
 
+	/**
+	 * Mark if the loop is a safe loop. For "safe loop", see
+	 * {@link #isSafeLoop()}
+	 * 
+	 * @param value
+	 *            True to mark the loop as safe loop; false as may not be a safe
+	 *            loop.
+	 */
 	void setSafeLoop(boolean value);
 
+	/**
+	 * <p>
+	 * Returns true if this loop satisfies the following conditions:
+	 *
+	 * <ol>
+	 * <li>has one iteration variable</li>
+	 * <li>the iteration variable is only modified by the last statement
+	 * (incremental)</li>
+	 * <li>the condition has the form <code>i < N</code> (or <code>i > N</code>)
+	 * </li>
+	 * <li>the loop has finite iterations (can be decided statically)</li>
+	 * </ol>
+	 * </p>
+	 * 
+	 * <p>
+	 * TODO: I (ziqing) added this doc based on where
+	 * {@link #setSafeLoop(boolean)} is called. But it is not necessarily true
+	 * that this is the definition of safe loops since the original developer
+	 * didn't write doc.
+	 * </p>
+	 * 
+	 * @return
+	 */
 	boolean isSafeLoop();
 
 	/**
@@ -403,6 +434,21 @@ public interface Location extends Sourceable {
 	 *         inside a loop.
 	 */
 	boolean isInLoop();
+
+	/**
+	 * @return True iff this location is an atomic block entry and the
+	 *         termination of the atomic block is NOT determined.
+	 */
+	boolean isEntryOfUnsafeAtomic();
+
+	/**
+	 * Set the mark of atomic block termination.
+	 * 
+	 * @param unsafe
+	 *            Set to true if this location is an atomic block entry and the
+	 *            termination of the atomic block is NOT determined.
+	 */
+	void setEntryOfUnsafeAtomic(boolean unsafe);
 
 	/**
 	 * returns true iff this location is the SLEEP location, which has no
