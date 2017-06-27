@@ -659,7 +659,8 @@ public class IntOperationWorker extends BaseWorker {
 			Value v = ((ConstantNode) operand2).getConstantValue();
 
 			if (v.isZero() == Answer.YES)
-				throw new CIVLSyntaxException("denominator can not be zero.");
+				throw new CIVLSyntaxException("denominator can not be zero.",
+						operand2.getSource());
 			return;
 		}
 
