@@ -51,7 +51,7 @@ public class OmpDataracebenchTest {
     private void check(String filenameRoot, boolean raceCondition) throws ABCException, IOException {
         assertEquals(!raceCondition, ui.run("verify",
                 //"-showProgram",
-        		//"-ompNoSimplifier",
+        		//"-ompNoSimplify",
                 "-input_omp_thread_max=2",
                 filename(filenameRoot+".c")));
     }
