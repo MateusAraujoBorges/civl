@@ -18,8 +18,9 @@ public interface MemoryUnitExpressionEvaluator {
 	 *            the current state
 	 * @param pid
 	 *            the PID of the process that triggers this evaluation
-	 * @param memUnit the impact memory unit expression
-	 * @param muSet 
+	 * @param memUnit
+	 *            the impact memory unit expression
+	 * @param muSet
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */

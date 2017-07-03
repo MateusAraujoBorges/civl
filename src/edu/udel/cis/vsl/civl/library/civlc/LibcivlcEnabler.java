@@ -156,6 +156,25 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 				return this.elaborateRectangularDomainWorker(argumentsEval.left,
 						pid, call, call.getSource(), arguments,
 						argumentsEval.right, atomicLockAction);
+			case "$unidirectional_when" :
+				BooleanExpression condition = (BooleanExpression) evaluateArguments(
+						state, pid, arguments).right[0];
+
+				// This function $unidirectional_when is same as $when but is
+				// guaranteed to be invisible for deadlock property by
+				// programmer.
+				if (condition.isTrue())
+					// If condition is simply true, enables a no-op transition:
+					localTransitions.add(Semantics.newNoopTransition(pid,
+							trueValue, call, false, atomicLockAction));
+				else if (!universe.reasoner(state.getPathCondition(universe))
+						.isValid(universe.not(condition)))
+					// If condition is satisfiable (or prover cannot prove it is
+					// unsatisfiable), enables a no-op transition and adds the
+					// condition into the path condition:
+					localTransitions.add(Semantics.newNoopTransition(pid,
+							condition, call, true, atomicLockAction));
+				return localTransitions;
 			default :
 				return super.enabledTransitions(state, call, clause, pid,
 						atomicLockAction);

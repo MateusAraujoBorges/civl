@@ -34,6 +34,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
 import edu.udel.cis.vsl.civl.model.IF.statement.Statement;
+import edu.udel.cis.vsl.civl.model.IF.statement.Statement.StatementKind;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
@@ -244,6 +245,11 @@ public class AmpleSetWorker {
 	private State state;
 
 	/**
+	 * A reference to the {@link Evaluator}
+	 */
+	private Evaluator evaluator;
+
+	/**
 	 * The symbolic utility
 	 */
 	private SymbolicUtility symbolicUtil;
@@ -315,6 +321,7 @@ public class AmpleSetWorker {
 	 */
 	AmpleSetWorker(State state, CommonEnabler enabler, Evaluator evaluator,
 			MemoryUnitFactory muFactory, CIVLConfiguration config) {
+		this.evaluator = evaluator;
 		this.memUnitExprEvaluator = evaluator.memoryUnitEvaluator();
 		this.modelFactory = evaluator.modelFactory();
 		this.typeFactory = this.modelFactory.typeFactory();
@@ -529,6 +536,28 @@ public class AmpleSetWorker {
 				if ((guard.hasConstantValue() && guard.constantValue().isTrue())
 						|| guard.expressionKind() == ExpressionKind.SYSTEM_GUARD)
 					return true;
+				// If the statement is a function call through a pointer,
+				// evaluate it to get the function :
+				if (stmt.statementKind() == StatementKind.CALL_OR_SPAWN) {
+					CallOrSpawnStatement call = (CallOrSpawnStatement) stmt;
+
+					if (call.isCall()) {
+						if (call.function() != null)
+							return !call.function().isSystemFunction();
+						try {
+							return !evaluator.evaluateFunctionIdentifier(state,
+									pid, call.functionExpression(),
+									call.getSource()).second.isSystemFunction();
+						} catch (UnsatisfiablePathConditionException e) {
+							// Evaluate a function identifier error will and
+							// definitely will be reached in later execution, so
+							// for here, just let it pass as invisible since
+							// this path has errors.
+							return true;
+						}
+					} else
+						return true;
+				}
 			}
 		}
 		return false;
