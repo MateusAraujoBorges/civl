@@ -150,8 +150,9 @@ public class IntOperationWorker extends BaseWorker {
 	 * 
 	 * @param node
 	 *            the node to be transformed
+	 * @throws SyntaxException
 	 */
-	private void processIntegerOperation(ASTNode node) {
+	private void processIntegerOperation(ASTNode node) throws SyntaxException {
 		if (node instanceof OperatorNode) {
 			OperatorNode opn = (OperatorNode) node;
 			Operator op = opn.getOperator();
@@ -180,8 +181,9 @@ public class IntOperationWorker extends BaseWorker {
 	 * @param opn
 	 *            Unary {@link OperatorNode} which includes Pre/Postincrement
 	 *            and Pre/Postdecrement.
+	 * @throws SyntaxException
 	 */
-	private void processUnaryNode(OperatorNode opn) {
+	private void processUnaryNode(OperatorNode opn) throws SyntaxException {
 		ExpressionNode operand = opn.getArgument(0);
 
 		if (!this.isUnsignedIntegerType(operand.getConvertedType())
@@ -208,13 +210,8 @@ public class IntOperationWorker extends BaseWorker {
 							intValue = intValue % bound;
 							if (intValue < 0)
 								intValue += bound;
-							try {
-								parent.setChild(childIndex,
-										this.integerConstant(intValue));
-							} catch (SyntaxException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+							parent.setChild(childIndex,
+									this.integerConstant(intValue));
 						}
 						break;
 					}
@@ -231,6 +228,7 @@ public class IntOperationWorker extends BaseWorker {
 
 					FunctionCallNode funcCallNode = functionCall(source,
 							funcName, args);
+
 					funcCallNode.setInitialType(opn.getConvertedType());
 					parent.setChild(childIndex, funcCallNode);
 				}
@@ -238,6 +236,7 @@ public class IntOperationWorker extends BaseWorker {
 			}
 			case POSTINCREMENT : {
 				OperatorNode replacement = postIncrementReplacement(operand);
+
 				opn.remove();
 				replacement.setInitialType(opn.getConvertedType());
 				parent.setChild(childIndex, replacement);
@@ -245,6 +244,7 @@ public class IntOperationWorker extends BaseWorker {
 			}
 			case PREINCREMENT : {
 				OperatorNode replacement = preIncrementReplacement(operand);
+
 				opn.remove();
 				replacement.setInitialType(opn.getConvertedType());
 				parent.setChild(childIndex, replacement);
@@ -252,6 +252,7 @@ public class IntOperationWorker extends BaseWorker {
 			}
 			case POSTDECREMENT : {
 				OperatorNode replacement = postDecrementReplacement(operand);
+
 				opn.remove();
 				replacement.setInitialType(opn.getConvertedType());
 				parent.setChild(childIndex, replacement);
@@ -259,6 +260,7 @@ public class IntOperationWorker extends BaseWorker {
 			}
 			case PREDECREMENT : {
 				OperatorNode replacement = preDecrementReplacement(operand);
+
 				opn.remove();
 				replacement.setInitialType(opn.getConvertedType());
 				parent.setChild(childIndex, replacement);
@@ -282,8 +284,10 @@ public class IntOperationWorker extends BaseWorker {
 	 *            The operand of the unary operator node.
 	 * 
 	 * @return the transformed node which is a conditional operator node.
+	 * @throws SyntaxException
 	 */
-	private OperatorNode preIncrementReplacement(ExpressionNode operand) {
+	private OperatorNode preIncrementReplacement(ExpressionNode operand)
+			throws SyntaxException {
 		IntegerConstantNode constantOne = null, constantZero = null,
 				bound = getBound();
 		OperatorNode boundMinusOneNode = null, assignedZeroNode = null,
@@ -307,26 +311,20 @@ public class IntOperationWorker extends BaseWorker {
 		Source conditionSource = this.newSource(condition,
 				CivlcTokenConstant.IF);
 
-		try {
-			constantOne = this.nodeFactory.newIntegerConstantNode(oneSource,
-					one);
-			constantZero = this.nodeFactory.newIntegerConstantNode(zeroSource,
-					zero);
-			boundMinusOneNode = this.nodeFactory.newOperatorNode(
-					boundMinusOneSource, Operator.MINUS, bound, constantOne);
-			assignedZeroNode = this.nodeFactory.newOperatorNode(
-					assignedZeroSource, Operator.ASSIGN, operand.copy(),
-					constantZero);
-			lessThanNode = this.nodeFactory.newOperatorNode(lessThanSource,
-					Operator.LT, operand.copy(), boundMinusOneNode.copy());
-			preIncreNode = this.nodeFactory.newOperatorNode(preIncreSource,
-					Operator.PREINCREMENT, operand.copy());
-			conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
-					Operator.CONDITIONAL, lessThanNode, preIncreNode,
-					assignedZeroNode);
-		} catch (SyntaxException e) {
-			e.printStackTrace();
-		}
+		constantOne = this.nodeFactory.newIntegerConstantNode(oneSource, one);
+		constantZero = this.nodeFactory.newIntegerConstantNode(zeroSource,
+				zero);
+		boundMinusOneNode = this.nodeFactory.newOperatorNode(
+				boundMinusOneSource, Operator.MINUS, bound, constantOne);
+		assignedZeroNode = this.nodeFactory.newOperatorNode(assignedZeroSource,
+				Operator.ASSIGN, operand.copy(), constantZero);
+		lessThanNode = this.nodeFactory.newOperatorNode(lessThanSource,
+				Operator.LT, operand.copy(), boundMinusOneNode.copy());
+		preIncreNode = this.nodeFactory.newOperatorNode(preIncreSource,
+				Operator.PREINCREMENT, operand.copy());
+		conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
+				Operator.CONDITIONAL, lessThanNode, preIncreNode,
+				assignedZeroNode);
 		return conditionNode;
 	}
 
@@ -342,8 +340,10 @@ public class IntOperationWorker extends BaseWorker {
 	 * @param operand
 	 *            The operand of the unary operator node.
 	 * @return the transformed node which is a conditional operator node.
+	 * @throws SyntaxException
 	 */
-	private OperatorNode postIncrementReplacement(ExpressionNode operand) {
+	private OperatorNode postIncrementReplacement(ExpressionNode operand)
+			throws SyntaxException {
 		IntegerConstantNode constantOne = null, constantZero = null,
 				bound = getBound();
 		OperatorNode boundMinusOneNode = null, assignedZeroNode = null,
@@ -370,28 +370,21 @@ public class IntOperationWorker extends BaseWorker {
 		Source conditionSource = this.newSource(condition,
 				CivlcTokenConstant.IF);
 
-		try {
-			constantOne = this.nodeFactory.newIntegerConstantNode(oneSource,
-					one);
-			constantZero = this.nodeFactory.newIntegerConstantNode(zeroSource,
-					zero);
-			boundMinusOneNode = this.nodeFactory.newOperatorNode(
-					boundMinusOneSource, Operator.MINUS, bound, constantOne);
-			assignedZeroNode = this.nodeFactory.newOperatorNode(
-					assignedZeroSource, Operator.ASSIGN, operand.copy(),
-					constantZero);
-			commaNode = this.nodeFactory.newOperatorNode(commaSource,
-					Operator.COMMA, assignedZeroNode, boundMinusOneNode);
-			lessThanNode = this.nodeFactory.newOperatorNode(lessThanSource,
-					Operator.LT, operand.copy(), boundMinusOneNode.copy());
-			postIncreNode = this.nodeFactory.newOperatorNode(postIncreSource,
-					Operator.POSTINCREMENT, operand.copy());
-			conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
-					Operator.CONDITIONAL, lessThanNode, postIncreNode,
-					commaNode);
-		} catch (SyntaxException e) {
-			e.printStackTrace();
-		}
+		constantOne = this.nodeFactory.newIntegerConstantNode(oneSource, one);
+		constantZero = this.nodeFactory.newIntegerConstantNode(zeroSource,
+				zero);
+		boundMinusOneNode = this.nodeFactory.newOperatorNode(
+				boundMinusOneSource, Operator.MINUS, bound, constantOne);
+		assignedZeroNode = this.nodeFactory.newOperatorNode(assignedZeroSource,
+				Operator.ASSIGN, operand.copy(), constantZero);
+		commaNode = this.nodeFactory.newOperatorNode(commaSource,
+				Operator.COMMA, assignedZeroNode, boundMinusOneNode);
+		lessThanNode = this.nodeFactory.newOperatorNode(lessThanSource,
+				Operator.LT, operand.copy(), boundMinusOneNode.copy());
+		postIncreNode = this.nodeFactory.newOperatorNode(postIncreSource,
+				Operator.POSTINCREMENT, operand.copy());
+		conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
+				Operator.CONDITIONAL, lessThanNode, postIncreNode, commaNode);
 		return conditionNode;
 	}
 
@@ -407,8 +400,10 @@ public class IntOperationWorker extends BaseWorker {
 	 * @param operand
 	 *            The operand of the unary operator node.
 	 * @return the transformed node which is a conditional operator node.
+	 * @throws SyntaxException
 	 */
-	private OperatorNode postDecrementReplacement(ExpressionNode operand) {
+	private OperatorNode postDecrementReplacement(ExpressionNode operand)
+			throws SyntaxException {
 		IntegerConstantNode bound = getBound();
 		OperatorNode assignedMaxNode = null, commaNode = null,
 				isZeroNode = null, postDecreNode = null, conditionNode = null;
@@ -427,22 +422,18 @@ public class IntOperationWorker extends BaseWorker {
 		Source conditionSource = this.newSource(condition,
 				CivlcTokenConstant.IF);
 
-		try {
-			assignedMaxNode = this.nodeFactory.newOperatorNode(
-					assignedMaxSource, Operator.ASSIGN, operand.copy(),
-					nodeFactory.newOperatorNode(assignedMaxSource,
-							Operator.MINUS, bound, this.integerConstant(1)));
-			commaNode = this.nodeFactory.newOperatorNode(commaSource,
-					Operator.COMMA, assignedMaxNode, this.integerConstant(0));
-			isZeroNode = this.nodeFactory.newOperatorNode(lessThanSource,
-					Operator.EQUALS, operand.copy(), this.integerConstant(0));
-			postDecreNode = this.nodeFactory.newOperatorNode(postDecreSource,
-					Operator.POSTDECREMENT, operand.copy());
-			conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
-					Operator.CONDITIONAL, isZeroNode, commaNode, postDecreNode);
-		} catch (SyntaxException e) {
-			e.printStackTrace();
-		}
+		assignedMaxNode = this.nodeFactory.newOperatorNode(assignedMaxSource,
+				Operator.ASSIGN, operand.copy(),
+				nodeFactory.newOperatorNode(assignedMaxSource, Operator.MINUS,
+						bound, this.integerConstant(1)));
+		commaNode = this.nodeFactory.newOperatorNode(commaSource,
+				Operator.COMMA, assignedMaxNode, this.integerConstant(0));
+		isZeroNode = this.nodeFactory.newOperatorNode(lessThanSource,
+				Operator.EQUALS, operand.copy(), this.integerConstant(0));
+		postDecreNode = this.nodeFactory.newOperatorNode(postDecreSource,
+				Operator.POSTDECREMENT, operand.copy());
+		conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
+				Operator.CONDITIONAL, isZeroNode, commaNode, postDecreNode);
 		return conditionNode;
 	}
 
@@ -458,8 +449,10 @@ public class IntOperationWorker extends BaseWorker {
 	 * @param operand
 	 *            The operand of the unary operator node.
 	 * @return the transformed node which is a conditional operator node.
+	 * @throws SyntaxException
 	 */
-	private OperatorNode preDecrementReplacement(ExpressionNode operand) {
+	private OperatorNode preDecrementReplacement(ExpressionNode operand)
+			throws SyntaxException {
 		IntegerConstantNode bound = getBound();
 		OperatorNode assignedMaxNode = null, isZeroNode = null,
 				preDecreNode = null, conditionNode = null;
@@ -474,25 +467,21 @@ public class IntOperationWorker extends BaseWorker {
 		Source conditionSource = this.newSource(condition,
 				CivlcTokenConstant.IF);
 
-		try {
-			assignedMaxNode = this.nodeFactory.newOperatorNode(
-					assignedMaxSource, Operator.ASSIGN, operand.copy(),
-					nodeFactory.newOperatorNode(assignedMaxSource,
-							Operator.MINUS, bound, this.integerConstant(1)));
-			isZeroNode = this.nodeFactory.newOperatorNode(lessThanSource,
-					Operator.EQUALS, operand.copy(), this.integerConstant(0));
-			preDecreNode = this.nodeFactory.newOperatorNode(preDecreSource,
-					Operator.PREDECREMENT, operand.copy());
-			conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
-					Operator.CONDITIONAL, isZeroNode, assignedMaxNode,
-					preDecreNode);
-		} catch (SyntaxException e) {
-			e.printStackTrace();
-		}
+		assignedMaxNode = this.nodeFactory.newOperatorNode(assignedMaxSource,
+				Operator.ASSIGN, operand.copy(),
+				nodeFactory.newOperatorNode(assignedMaxSource, Operator.MINUS,
+						bound, this.integerConstant(1)));
+		isZeroNode = this.nodeFactory.newOperatorNode(lessThanSource,
+				Operator.EQUALS, operand.copy(), this.integerConstant(0));
+		preDecreNode = this.nodeFactory.newOperatorNode(preDecreSource,
+				Operator.PREDECREMENT, operand.copy());
+		conditionNode = this.nodeFactory.newOperatorNode(conditionSource,
+				Operator.CONDITIONAL, isZeroNode, assignedMaxNode,
+				preDecreNode);
 		return conditionNode;
 	}
 
-	private void processOtherNodes(ASTNode node) {
+	private void processOtherNodes(ASTNode node) throws SyntaxException {
 		if (node instanceof FunctionDeclarationNode) {
 			FunctionDeclarationNode funcDeclNode = (FunctionDeclarationNode) node;
 			String name = funcDeclNode.getName();
@@ -532,7 +521,7 @@ public class IntOperationWorker extends BaseWorker {
 
 	}
 
-	private void signedToUnsigned(ExpressionNode en) {
+	private void signedToUnsigned(ExpressionNode en) throws SyntaxException {
 		if (en instanceof IntegerConstantNode) {
 			IntegerConstantNode intNode = (IntegerConstantNode) en;
 			BigInteger value = intNode.getConstantValue().getIntegerValue();
@@ -546,13 +535,9 @@ public class IntOperationWorker extends BaseWorker {
 					intValue = intValue % bound;
 					if (intValue < 0)
 						intValue += bound;
-					try {
-						intNode.parent().setChild(intNode.childIndex(),
-								this.integerConstant(intValue));
-					} catch (SyntaxException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					intNode.parent().setChild(intNode.childIndex(),
+							this.integerConstant(intValue));
+
 				}
 				return;
 			}
@@ -581,11 +566,14 @@ public class IntOperationWorker extends BaseWorker {
 	 * 
 	 * @param opn
 	 *            the binary operator node.
+	 * @throws SyntaxException
 	 */
-	private void processUnsignedArithNode(OperatorNode opn) {
+	private void processUnsignedArithNode(OperatorNode opn)
+			throws SyntaxException {
 		if (opn.getNumberOfArguments() != 2) {
 			throw new CIVLSyntaxException(
-					"plus , minus or substract operator can only have two operands.");
+					"plus , minus or substract operator can only have two operands.",
+					opn.getSource());
 		}
 		ASTNode parent = opn.parent();
 		int childIndex = opn.childIndex();
@@ -640,11 +628,13 @@ public class IntOperationWorker extends BaseWorker {
 	 * 
 	 * @param opn
 	 *            the binary operator node.
+	 * @throws SyntaxException
 	 */
-	private void processIntDivNode(OperatorNode opn) {
+	private void processIntDivNode(OperatorNode opn) throws SyntaxException {
 		if (opn.getNumberOfArguments() != 2) {
 			throw new CIVLSyntaxException(
-					"div or mod operator can only have two operands.");
+					"div or mod operator can only have two operands.",
+					opn.getSource());
 		}
 
 		ASTNode parent = opn.parent();
@@ -782,8 +772,9 @@ public class IntOperationWorker extends BaseWorker {
 	/**
 	 * 
 	 * @return the uppper bound of integer.
+	 * @throws SyntaxException
 	 */
-	private IntegerConstantNode getBound() {
+	private IntegerConstantNode getBound() throws SyntaxException {
 		int numberOfBits = civlConfig.getIntBit();
 		BigInteger bound;
 		IntegerConstantNode boundNode = null;
@@ -798,13 +789,8 @@ public class IntOperationWorker extends BaseWorker {
 		Source boundSource = this.newSource(boundParameter,
 				CivlcTokenConstant.PARAMETER_DECLARATION);
 
-		try {
-			boundNode = this.nodeFactory.newIntegerConstantNode(boundSource,
-					bound.toString());
-		} catch (SyntaxException e) {
-			e.printStackTrace();
-		}
-
+		boundNode = this.nodeFactory.newIntegerConstantNode(boundSource,
+				bound.toString());
 		return boundNode;
 	}
 
