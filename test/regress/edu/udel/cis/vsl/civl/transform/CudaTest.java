@@ -27,21 +27,22 @@ public class CudaTest {
 	@Test
 	public void sum() {
 		assertTrue(
-				ui.run("verify -enablePrintf=false -inputN=8 -inputNBLOCKS=4",
+				ui.run("verify -enablePrintf=false -intOperationTransformer=true -inputN=8 -inputNBLOCKS=4",
 						TestConstants.QUIET, filename("sum.cu")));
 	}
 
 	@Test
 	public void matMult1() {
 		assertTrue(
-				ui.run("verify -enablePrintf=false -inputN=2 -inputTILE_WIDTH=1 ",
+				ui.run("verify -enablePrintf=false -intOperationTransformer=true -inputN=2 -inputTILE_WIDTH=1 ",
 						TestConstants.QUIET, filename("matMult1.cu")));
 	}
 
 	@Test
 	public void dotTest() {
-		assertTrue(ui.run("verify -inputN_B=3 -input threadsPerBlock_B=3",
-				TestConstants.QUIET, filename("dot.cu")));
+		assertTrue(
+				ui.run("verify -intOperationTransformer=true -inputN_B=3 -input threadsPerBlock_B=3",
+						TestConstants.QUIET, filename("dot.cu")));
 	}
 
 	@AfterClass

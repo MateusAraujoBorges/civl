@@ -194,9 +194,9 @@ public class CIVLConfiguration {
 	private int intBit = 32;
 
 	/**
-	 * apply int operation transformer? Default true.
+	 * apply int operation transformer? Default false.
 	 */
-	private boolean intOperationTransiformer = true;
+	private boolean intOperationTransiformer = false;
 
 	/**
 	 * Should CIVL perform a slice analysis on the error trace.
