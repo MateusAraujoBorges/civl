@@ -64,8 +64,7 @@ public class ModelBuilderTest {
 
 	@Test
 	public void ternaryExpression() {
-		assertTrue(ui.run(VERIFY, "-showProgram", "-showModel", QUIET,
-				filename("ternary.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("ternary.cvl")));
 	}
 
 	@AfterClass
