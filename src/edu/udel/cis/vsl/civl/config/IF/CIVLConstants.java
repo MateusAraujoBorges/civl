@@ -594,7 +594,7 @@ public class CIVLConstants {
 	 */
 	public final static Option intOperationTransformer = Option.newScalarOption(
 			INT_OPERATION_TRANSFORMER, BOOLEAN,
-			"apply int operation transformer?", true);
+			"apply int operation transformer?", false);
 
 	/**
 	 * Perform slice analysis on trace? false by default.
