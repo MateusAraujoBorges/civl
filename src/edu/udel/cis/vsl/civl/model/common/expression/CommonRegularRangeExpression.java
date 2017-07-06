@@ -6,6 +6,7 @@ import java.util.Set;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RegularRangeExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -17,8 +18,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 
-public class CommonRegularRangeExpression extends CommonExpression implements
-		RegularRangeExpression {
+public class CommonRegularRangeExpression extends CommonExpression
+		implements
+			RegularRangeExpression {
 
 	private Expression low;
 	private Expression high;
@@ -117,7 +119,8 @@ public class CommonRegularRangeExpression extends CommonExpression implements
 				.getResultType();
 		if (validity == ResultType.YES)
 			return;
-		claim = universe.lessThan(universe.zeroInt(), (NumericExpression) stepValue);
+		claim = universe.lessThan(universe.zeroInt(),
+				(NumericExpression) stepValue);
 		validity = universe.reasoner(universe.trueExpression()).valid(claim)
 				.getResultType();
 		if (validity == ResultType.NO)
@@ -128,9 +131,10 @@ public class CommonRegularRangeExpression extends CommonExpression implements
 			lowValue = highValue;
 			highValue = tmp;
 		}
-		constantValue = universe.tuple((SymbolicTupleType) this.expressionType
-				.getDynamicType(universe), Arrays.asList(lowValue, highValue,
-				stepValue));
+		constantValue = universe.tuple(
+				(SymbolicTupleType) this.expressionType
+						.getDynamicType(universe),
+				Arrays.asList(lowValue, highValue, stepValue));
 	}
 
 	@Override
@@ -140,6 +144,33 @@ public class CommonRegularRangeExpression extends CommonExpression implements
 		return this.low.equals(that.getLow())
 				&& this.high.equals(that.getHigh())
 				&& this.step.equals(that.getStep());
+	}
+
+	@Override
+	public Expression replaceWith(ConditionalExpression oldExpression,
+			Expression newExpression) {
+		CommonRegularRangeExpression result = null;
+		Expression newLow = low.replaceWith(oldExpression, newExpression);
+
+		if (newLow != null)
+			result = new CommonRegularRangeExpression(getSource(),
+					expressionScope(), lowestScope(), expressionType, newLow,
+					high, step);
+
+		Expression newHigh = high.replaceWith(oldExpression, newExpression);
+
+		if (newHigh != null)
+			result = new CommonRegularRangeExpression(getSource(),
+					expressionScope(), lowestScope(), expressionType, low,
+					newHigh, step);
+
+		Expression newStep = step.replaceWith(oldExpression, newExpression);
+
+		if (newStep != null)
+			result = new CommonRegularRangeExpression(getSource(),
+					expressionScope(), lowestScope(), expressionType, low, high,
+					newStep);
+		return result;
 	}
 
 }
