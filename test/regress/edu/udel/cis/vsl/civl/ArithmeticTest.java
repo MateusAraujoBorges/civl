@@ -108,8 +108,7 @@ public class ArithmeticTest {
 
 	@Test
 	public void exp1() {
-		assertFalse(ui.run(RUN, QUIET, "-intOperationTransformer=true",
-				filename("div0.cvl")));
+		assertFalse(ui.run(RUN, QUIET, filename("div0.cvl")));
 	}
 
 	@Test

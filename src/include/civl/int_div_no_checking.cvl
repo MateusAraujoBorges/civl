@@ -4,7 +4,6 @@
 $system[civlc] void $assume(_Bool expr);
 
 int $int_div(int numerator, int denominator) {
-  $assume(denominator != 0);
   if (numerator == 0)
     return 0;
   if (numerator >= 0) {
@@ -21,7 +20,6 @@ int $int_div(int numerator, int denominator) {
 }
 
 int $int_mod(int numerator, int denominator) {
-  $assume(denominator != 0);
   if (numerator == 0)
     return 0;
   if (numerator >= 0) {

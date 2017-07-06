@@ -234,9 +234,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void divisionByZero_Ignore() throws ABCException {
-		assertTrue(ui.run(VERIFY, "-D_NO_CHECK_DIVISION_BY_ZERO",
-				// "-showProgram",
-				QUIET, filename("divisionByZero.cvl")));
+		assertTrue(ui.run(VERIFY, "-checkDivisionByZero=false", QUIET,
+				filename("divisionByZero.cvl")));
 	}
 
 	@Test
