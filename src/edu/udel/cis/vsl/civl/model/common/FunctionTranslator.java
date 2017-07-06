@@ -1304,6 +1304,16 @@ public class FunctionTranslator {
 		Fragment incrementer = null;
 		CIVLSource conditionStart, conditionEnd;
 
+		if (incrementerNode != null) {
+			incrementer = translateExpressionStatementNode(loopScope,
+					incrementerNode);
+			if (modelFactory.hasConditionalExpressions() == true) {
+				incrementer = modelFactory
+						.refineConditionalExpressionOfStatement(
+								incrementer.uniqueFinalStatement(),
+								incrementer.startLocation());
+			}
+		}
 		if (conditionNode == null) {
 			conditionStart = modelFactory.sourceOfBeginning(loopBodyNode);
 			conditionEnd = modelFactory.sourceOfBeginning(loopBodyNode);
@@ -1313,9 +1323,6 @@ public class FunctionTranslator {
 			conditionEnd = modelFactory.sourceOfEnd(conditionNode);
 			condition = translateExpressionNode(conditionNode, loopScope, true);
 		}
-		if (incrementerNode != null)
-			incrementer = translateExpressionStatementNode(loopScope,
-					incrementerNode);
 		return this.composeLoopFragmentWorker(loopScope, conditionStart,
 				conditionEnd, condition, null, loopBodyNode, incrementer,
 				isDoWhile, loopContract);
