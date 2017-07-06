@@ -151,25 +151,16 @@ public class CommonRegularRangeExpression extends CommonExpression
 			Expression newExpression) {
 		CommonRegularRangeExpression result = null;
 		Expression newLow = low.replaceWith(oldExpression, newExpression);
-
-		if (newLow != null)
-			result = new CommonRegularRangeExpression(getSource(),
-					expressionScope(), lowestScope(), expressionType, newLow,
-					high, step);
-
 		Expression newHigh = high.replaceWith(oldExpression, newExpression);
-
-		if (newHigh != null)
-			result = new CommonRegularRangeExpression(getSource(),
-					expressionScope(), lowestScope(), expressionType, low,
-					newHigh, step);
-
 		Expression newStep = step.replaceWith(oldExpression, newExpression);
 
-		if (newStep != null)
-			result = new CommonRegularRangeExpression(getSource(),
-					expressionScope(), lowestScope(), expressionType, low, high,
-					newStep);
+		if (newLow != null || newHigh != null || newStep != null) {
+			return new CommonRegularRangeExpression(getSource(),
+					expressionScope(), lowestScope(), expressionType,
+					newLow != null ? newLow : low,
+					newHigh != null ? newHigh : high,
+					newStep != null ? newStep : step);
+		}
 		return result;
 	}
 
