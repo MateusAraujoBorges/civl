@@ -23,8 +23,10 @@ public class OmpDataracebenchTest {
 
     private PrintStream out = System.out;
 
-    //private static List<String> codes = Arrays.asList("prune", "sef");
+    private boolean simpCompMode = false;   
+    //Simplifier comparison mode: Run each test case twice with/without ompSimplifier and compare the results.
 
+    
 	/* *************************** Helper Methods ************************** */
 
     private static String filename(String name) {
@@ -49,11 +51,24 @@ public class OmpDataracebenchTest {
      * @throws IOException
      */
     private void check(String filenameRoot, boolean raceCondition) throws ABCException, IOException {
-        assertEquals(!raceCondition, ui.run("verify",
+    	if(!simpCompMode){
+    		assertEquals(!raceCondition, ui.run("verify",
                 //"-showProgram",
         		//"-ompNoSimplify",
                 "-input_omp_thread_max=2",
                 filename(filenameRoot+".c")));
+    	}
+    	else{
+    		assertEquals(
+    				ui.run("verify",
+    						"-input_omp_thread_max=2",
+    						filename(filenameRoot+".c")),
+
+    				ui.run("verify",
+    		        		"-ompNoSimplify",
+    		                "-input_omp_thread_max=2",
+    		                filename(filenameRoot+".c")));
+    	}
     }
 
 	/* **************************** Test Methods *************************** */
