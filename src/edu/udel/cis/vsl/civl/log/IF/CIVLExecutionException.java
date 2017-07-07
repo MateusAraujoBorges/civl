@@ -118,7 +118,7 @@ public class CIVLExecutionException extends CIVLException {
 		if (source != null) {
 			result.append("\nat ");
 
-			result.append(this.source.getSummary());
+			result.append(this.source.getSummary(true));
 		}
 		result.append(":\n");
 		result.append(this.getMessage());

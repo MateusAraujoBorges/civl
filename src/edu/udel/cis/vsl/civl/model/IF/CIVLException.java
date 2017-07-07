@@ -71,7 +71,7 @@ public class CIVLException extends RuntimeException {
 		String result = getMessage();
 
 		if (source != null)
-			result += "\nat " + source.getSummary() + ".";
+			result += "\nat " + source.getSummary(false) + ".";
 		return result;
 	}
 

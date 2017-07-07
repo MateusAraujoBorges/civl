@@ -31,8 +31,8 @@ public class ABC_CIVLSource implements CIVLSource {
 	}
 
 	@Override
-	public String getSummary() {
-		return abcSource.getSummary(false);
+	public String getSummary(boolean isException) {
+		return abcSource.getSummary(false, isException);
 	}
 
 	@Override

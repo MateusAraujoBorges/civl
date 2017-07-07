@@ -36,9 +36,12 @@ public interface CIVLSource {
 	/**
 	 * Returns summary of location and text.
 	 * 
+	 * @param isException
+	 *            true iff want to print the detailed information for a thrown
+	 *            exception.
 	 * @return
 	 */
-	String getSummary();
+	String getSummary(boolean isException);
 
 	/**
 	 * Checks if this source is some system source not from input program.

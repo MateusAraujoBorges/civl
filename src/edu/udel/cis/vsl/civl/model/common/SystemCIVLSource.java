@@ -17,7 +17,7 @@ public class SystemCIVLSource implements CIVLSource {
 	}
 
 	@Override
-	public String getSummary() {
+	public String getSummary(boolean isException) {
 		return "CIVL System object";
 	}
 
