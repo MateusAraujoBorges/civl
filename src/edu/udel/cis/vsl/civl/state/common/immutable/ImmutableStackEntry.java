@@ -112,9 +112,11 @@ public class ImmutableStackEntry implements StackEntry {
 	@Override
 	public String toString() {
 		CIVLSource source = location.getSource();
-		String locationString = source == null ? ""
-				: ", " + source.getSummary();
-		String functionString = location.function() == null ? "null"
+		String locationString = source == null
+				? ""
+				: ", " + source.getSummary(false);
+		String functionString = location.function() == null
+				? "null"
 				: location.function().name().name();
 
 		return "Frame[function=" + functionString + ", location="

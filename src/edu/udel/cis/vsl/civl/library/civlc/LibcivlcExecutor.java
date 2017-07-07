@@ -780,7 +780,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			String firstEvaluation, secondEvaluation, result;
 
 			state = messageResult.left;
-			message.append("\nAssertion: ");
+			message.append("Assertion: ");
 			message.append(arguments[0]);
 			message.append("\n        -> ");
 			message.append(messageResult.right);

@@ -4085,8 +4085,8 @@ public class FunctionTranslator {
 						"INT Constant value casting failed\n", source);
 			}
 		} else
-			throw new CIVLSyntaxException(
-					source.getSummary() + " to " + convertedType.toString());
+			throw new CIVLSyntaxException(source.getSummary(true) + " to "
+					+ convertedType.toString());
 
 		result = modelFactory.charLiteralExpression(source, charValues[0]);
 		return result;

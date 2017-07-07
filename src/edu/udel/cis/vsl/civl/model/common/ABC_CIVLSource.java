@@ -31,8 +31,8 @@ public class ABC_CIVLSource implements CIVLSource {
 	}
 
 	@Override
-	public String getSummary() {
-		return abcSource.getSummary(false);
+	public String getSummary(boolean isException) {
+		return abcSource.getSummary(false, isException);
 	}
 
 	@Override
@@ -65,6 +65,10 @@ public class ABC_CIVLSource implements CIVLSource {
 	@Override
 	public String getFileName() {
 		return abcSource.getFirstToken().getFormation().getLastFile().getName();
+	}
+	
+	public String getAbsoluteFilePath(){
+		return abcSource.getFirstToken().getSourceFile().getFile().getAbsolutePath();
 	}
 
 }
