@@ -36,4 +36,9 @@ public class SystemCIVLSource implements CIVLSource {
 		return "CIVL System object";
 	}
 
+	@Override
+	public String getAbsoluteFilePath() {
+		return "CIVL System object";
+	}
+
 }

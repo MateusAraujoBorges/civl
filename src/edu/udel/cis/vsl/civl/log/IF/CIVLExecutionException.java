@@ -2,6 +2,9 @@ package edu.udel.cis.vsl.civl.log.IF;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.location.Location;
+import edu.udel.cis.vsl.civl.model.common.SystemCIVLSource;
+import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
 
 /**
@@ -16,6 +19,8 @@ public class CIVLExecutionException extends CIVLException {
 	 * Added by Eclipse.
 	 */
 	private static final long serialVersionUID = 1L;
+
+	private int pid = -1;
 
 	private State state = null;
 
@@ -54,13 +59,15 @@ public class CIVLExecutionException extends CIVLException {
 		this.state = state;
 		this.kind = kind;
 		this.certainty = certainty;
+		this.pid = -1;
 	}
 
 	public CIVLExecutionException(ErrorKind kind, Certainty certainty,
 			String process, String message, StringBuffer stateString,
-			State state, CIVLSource source) {
+			State state, int pid, CIVLSource source) {
 		this(kind, certainty, process, message, state, source);
 		this.stateString = stateString;
+		this.pid = pid;
 	}
 
 	/**
@@ -103,6 +110,9 @@ public class CIVLExecutionException extends CIVLException {
 	@Override
 	public String toString() {
 		StringBuffer result = new StringBuffer();
+		String sourceAbsPathName = source.getAbsoluteFilePath();
+		String sysResourcePrefix = "/include";
+		String transformersuffix = "Transformer";
 
 		result.append("CIVL execution violation ");
 		if (process != null) {
@@ -115,12 +125,40 @@ public class CIVLExecutionException extends CIVLException {
 		result.append(", certainty: ");
 		result.append(certainty);
 		result.append(")");
-		if (source != null) {
+		// The violation source
+		if (source != null && !(source instanceof SystemCIVLSource)
+				&& !sourceAbsPathName.startsWith(sysResourcePrefix)) {
 			result.append("\nat ");
-
-			result.append(this.source.getSummary(true));
+			if (sourceAbsPathName.endsWith(transformersuffix)) {
+				result.append(this.source.getSummary(false));
+			} else {
+				result.append(this.source.getSummary(true));
+			}
 		}
-		result.append(":\n");
+		// The call stack info
+		else if (pid >= 0) {
+			for (StackEntry e : state.getProcessState(pid).getStackEntries()) {
+				Location location = e.location();
+
+				if (location != null) {
+					CIVLSource tempSource = location.getSource();
+					String tempSourceAbsPath = tempSource.getAbsoluteFilePath();
+
+					if (tempSource != null
+							&& !(tempSource instanceof SystemCIVLSource)
+							&& !tempSourceAbsPath.startsWith(sysResourcePrefix)) {
+						result.append("\nat ");
+						if (tempSourceAbsPath.endsWith(transformersuffix)) {
+							result.append(this.source.getSummary(false));
+						} else {
+							result.append(this.source.getSummary(true));
+						}
+						break;
+					}
+				}
+			}
+		}
+		result.append("\n");
 		result.append(this.getMessage());
 		if (this.stateString != null) {
 			result.append("\n");

@@ -45,4 +45,9 @@ public class ExpandedCIVLSource implements CIVLSource {
 		return expandedSource.getContent() + " from " + baseSource.getContent();
 	}
 
+	@Override
+	public String getAbsoluteFilePath() {
+		return this.expandedSource.getAbsoluteFilePath();
+	}
+
 }

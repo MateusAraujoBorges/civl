@@ -66,5 +66,9 @@ public class ABC_CIVLSource implements CIVLSource {
 	public String getFileName() {
 		return abcSource.getFirstToken().getFormation().getLastFile().getName();
 	}
+	
+	public String getAbsoluteFilePath(){
+		return abcSource.getFirstToken().getSourceFile().getFile().getAbsolutePath();
+	}
 
 }

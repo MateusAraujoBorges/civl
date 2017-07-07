@@ -55,4 +55,5 @@ public interface CIVLSource {
 
 	String getContent();
 
+	String getAbsoluteFilePath();
 }

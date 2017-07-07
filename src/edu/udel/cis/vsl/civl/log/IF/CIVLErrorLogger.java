@@ -193,7 +193,7 @@ public class CIVLErrorLogger extends ErrorLog {
 			}
 		}
 		error = new CIVLExecutionException(errorKind, certainty, process,
-				message, stateString, state, source);
+				message, stateString, state, pid, source);
 		reportError(error);
 		newPc = universe.and(pc, claim);
 		// need to check satisfiability again because failure to do so
@@ -267,8 +267,9 @@ public class CIVLErrorLogger extends ErrorLog {
 			certainty = Certainty.PROVEABLE;
 		}
 		// TODO if pc has no symbolic constant
+		// TODO: add pid for exception.
 		error = new CIVLExecutionException(errorKind, certainty, process,
-				message, stateString, state, source);
+				message, stateString, state, -1, source);
 		reportError(error);
 	}
 }
