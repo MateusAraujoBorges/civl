@@ -72,7 +72,7 @@ while(my $datFile = $datDir->next){
   }
   print "plotting figure for benchmark $benchmark...\n";
   if (defined $lastReleaseVersion) {
-      $cmd = `gnuplot -e "TITLE='$benchmark'" -e "DAT_FILE='$datOut/$datFile'" -e "OUT_FILE='$datOut/$benchmark.pdf'" -e "LAST_DAT_FILE='v$lastReleaseVersion\_bench_dat/$datFile'" -e "LAST_VERSION='v$lastReleaseVersion'"  $scriptPrefix/plotBench.plg`; 
+      $cmd = `gnuplot -e "TITLE='$benchmark'" -e "DAT_FILE='$datOut/$datFile'" -e "OUT_FILE='$datOut/$benchmark.pdf'" -e "LAST_DAT_FILE='$scriptPrefix/v$lastReleaseVersion\_bench_dat/$datFile'" -e "LAST_VERSION='v$lastReleaseVersion'"  $scriptPrefix/plotBench.plg`; 
   } else {
       print "No benchmark running results of previous versions found\n";
       $cmd = `gnuplot -e "TITLE='$benchmark'" -e "DAT_FILE='$datOut/$datFile'" -e "OUT_FILE='$datOut/$benchmark.pdf'" $scriptPrefix/plotBench.plg`; 
