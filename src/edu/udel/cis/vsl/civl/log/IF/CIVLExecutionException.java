@@ -149,9 +149,9 @@ public class CIVLExecutionException extends CIVLException {
 							&& !tempSourceAbsPath.startsWith(sysResourcePrefix)) {
 						result.append("\nat ");
 						if (tempSourceAbsPath.endsWith(transformersuffix)) {
-							result.append(this.source.getSummary(false));
+							result.append(tempSource.getSummary(false));
 						} else {
-							result.append(this.source.getSummary(true));
+							result.append(tempSource.getSummary(true));
 						}
 						break;
 					}
