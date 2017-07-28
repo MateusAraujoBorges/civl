@@ -22,6 +22,7 @@ import java.io.PrintStream;
 
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 public class OmpDataracebenchTest {
 
 	/* *************************** Static Fields *************************** */
