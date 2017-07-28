@@ -1446,7 +1446,6 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 	 * the nested subscript expressions to return the base array identifier.
 	 */
 	private IdentifierExpressionNode baseArray(OperatorNode subscript) {
-		System.out.println(subscript);
 		assert subscript
 				.getOperator() == OperatorNode.Operator.SUBSCRIPT : "Expected subscript expression";
 		if (subscript.getArgument(0) instanceof IdentifierExpressionNode) {
