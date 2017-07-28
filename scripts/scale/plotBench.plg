@@ -1,6 +1,6 @@
 # Upper case variables are input
 # command: gnuplot -e "TITLE='Barrier'" -e "DAT_FILE='out/barrier.dat'" ...
-set title TITLE
+set title TITLE." verification time"
 set xlabel 'max number of processes'
 set ylabel 'time used'
 set logscale y 
@@ -11,5 +11,7 @@ set key top left
 set timestamp
 set terminal pdf
 set output OUT_FILE
-plot DAT_FILE using 1:2 with linespoints title "verification"
+plot DAT_FILE using 1:2 with linespoints title "CIVL current version",\
+     LAST_DAT_FILE using 1:2 with linespoints title "CIVL ".LAST_VERSION
+     
 

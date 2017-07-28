@@ -12,6 +12,7 @@ my $datOut = ".";
 my $benchOut = "bench.scale.out";
 my $hasCivlDir=0;
 my $datDir;
+my $lastReleaseDat;
 
 for(my $i=0; $i < $numArgs; $i++){
   my $arg = $ARGV[$i];
@@ -41,6 +42,18 @@ $benchOut="$datOut/$benchOut";
 
 my $scriptPrefix="$civlDir/scripts/scale";
 
+## Get last release version number ...
+my $lastReleaseVersion;
+
+opendir(my $scriptDir, "$scriptPrefix");
+while (readdir $scriptDir) {
+    if ($_ =~ (/^v(([0-9]+).([0-9]+))_bench_dat$/)) {
+	$lastReleaseVersion = $1;
+	print "Benchmark running results of CIVL v$lastReleaseVersion found\n";
+	last;
+    }
+}
+
 print "running scale benchmarks...\n";
 my $cmd = `$scriptPrefix/runBenchScale.pl $civlDir -o$benchOut`;
 print "scale benchmarks finished, now generating .dat file in $datOut...\n";
@@ -58,6 +71,11 @@ while(my $datFile = $datDir->next){
     $benchmark="Dining philosopher";
   }
   print "plotting figure for benchmark $benchmark...\n";
-  $cmd = `gnuplot -e "TITLE='$benchmark'" -e "DAT_FILE='$datOut/$datFile'" -e "OUT_FILE='$datOut/$benchmark.pdf'" $scriptPrefix/plotBench.plg`;
+  if (defined $lastReleaseVersion) {
+      $cmd = `gnuplot -e "TITLE='$benchmark'" -e "DAT_FILE='$datOut/$datFile'" -e "OUT_FILE='$datOut/$benchmark.pdf'" -e "LAST_DAT_FILE='$scriptPrefix/v$lastReleaseVersion\_bench_dat/$datFile'" -e "LAST_VERSION='v$lastReleaseVersion'"  $scriptPrefix/plotBench.plg`; 
+  } else {
+      print "No benchmark running results of previous versions found\n";
+      $cmd = `gnuplot -e "TITLE='$benchmark'" -e "DAT_FILE='$datOut/$datFile'" -e "OUT_FILE='$datOut/$benchmark.pdf'" $scriptPrefix/plotBench.plg`; 
+  }
 }
 print "scaling figures is successfully generated in $datOut\n";

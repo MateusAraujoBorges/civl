@@ -430,7 +430,7 @@ public class CommonLocation extends CommonSourceable implements Location {
 				guardString = "(" + statement.guard() + ")";
 			}
 			gotoString = prefix + "| " + "when " + guardString + " " + statement
-					+ " @ " + statement.getSource().getSummary() + " ;";
+					+ " @ " + statement.getSource().getSummary(false) + " ;";
 			if (targetLocation != null) {
 				gotoString += " goto location " + targetLocation;
 			}

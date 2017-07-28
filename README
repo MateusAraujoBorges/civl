@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.10
+                               v1.11
 
 ------------------------------ Overview -------------------------------
 
@@ -47,14 +47,11 @@ General Public License.  However, the libraries used by CIVL
 licenses.  See directory licenses for the license of each component.
 
 
--------------------------- Updates from v1.9 -------------------------
-- Re-designed the model checking engine GMC, let a "node" enclosing a
-  generic STATE and other informations related to model checker. A
-  client of GMC can implement a STATE purely based on the client
-  application.
-- Fixed a bug reported by a CIVL user: Run locksbad.cvl with replay gives an exception;
-- Fixed a bug reported by a CIVL user: An unexpected error reported when doing memcpy 
-  on pointers pointing to arrays.
+-------------------------- Updates from v1.10 -------------------------
+- Fixed a bug in model building when there are conditional expressions appear in for loop incrementer.
+- Improving the print of source file informations for error reporting.
+- Disable IntOperationTransformer by default
+- Solved the performance issue related to deadlock freedom property invisibility in CUDA examples
    
 ------------------------- Binary Installation -------------------------
 

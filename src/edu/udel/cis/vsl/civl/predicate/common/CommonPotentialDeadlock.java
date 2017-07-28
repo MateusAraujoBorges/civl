@@ -128,7 +128,7 @@ public class CommonPotentialDeadlock extends CommonCIVLStatePredicate
 
 				explanation.append("at location " + location.id() + ", ");
 				if (source != null)
-					explanation.append(source.getSummary());
+					explanation.append(source.getSummary(false));
 				for (Statement statement : location.outgoing()) {
 					BooleanExpression guard;
 

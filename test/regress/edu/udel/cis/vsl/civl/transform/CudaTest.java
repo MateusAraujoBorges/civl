@@ -7,7 +7,7 @@ import java.io.File;
 import org.junit.AfterClass;
 import org.junit.Test;
 
-import edu.udel.cis.vsl.civl.TestConstants;
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class CudaTest {
@@ -28,20 +28,20 @@ public class CudaTest {
 	public void sum() {
 		assertTrue(
 				ui.run("verify -enablePrintf=false -inputN=8 -inputNBLOCKS=4",
-						TestConstants.QUIET, filename("sum.cu")));
+						QUIET, filename("sum.cu")));
 	}
 
 	@Test
 	public void matMult1() {
 		assertTrue(
 				ui.run("verify -enablePrintf=false -inputN=2 -inputTILE_WIDTH=1 ",
-						TestConstants.QUIET, filename("matMult1.cu")));
+						QUIET, filename("matMult1.cu")));
 	}
 
 	@Test
 	public void dotTest() {
 		assertTrue(ui.run("verify -inputN_B=3 -input threadsPerBlock_B=3",
-				TestConstants.QUIET, filename("dot.cu")));
+				QUIET, filename("dot.cu")));
 	}
 
 	@AfterClass

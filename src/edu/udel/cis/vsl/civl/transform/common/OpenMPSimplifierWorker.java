@@ -46,6 +46,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.ReturnNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.SwitchNode;
+import edu.udel.cis.vsl.abc.ast.node.common.expression.CommonDotNode;
 import edu.udel.cis.vsl.abc.ast.util.ExpressionEvaluator;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -855,11 +856,11 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 				// clauses to single
 
 				SequenceNode<IdentifierExpressionNode> singlePrivateList = ompFor
-						.privateList();
+						.privateList() != null? ompFor.privateList().copy():null;
 				SequenceNode<IdentifierExpressionNode> singleFirstPrivateList = ompFor
-						.firstprivateList();
-				SequenceNode<IdentifierExpressionNode> singleCopyPrivateList = ompFor
-						.copyprivateList();
+						.firstprivateList() != null? ompFor.firstprivateList().copy(): null;
+				SequenceNode<IdentifierExpressionNode> singleCopyPrivateList = ompFor.
+						copyprivateList() != null? ompFor.copyprivateList().copy() : null;
 
 				// Add iteration variable to private list for single
 				IdentifierExpressionNode privateLoopVariable = nodeFactory
@@ -1445,12 +1446,27 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 	 * the nested subscript expressions to return the base array identifier.
 	 */
 	private IdentifierExpressionNode baseArray(OperatorNode subscript) {
+		System.out.println(subscript);
 		assert subscript
 				.getOperator() == OperatorNode.Operator.SUBSCRIPT : "Expected subscript expression";
 		if (subscript.getArgument(0) instanceof IdentifierExpressionNode) {
 			return (IdentifierExpressionNode) subscript.getArgument(0);
 		}
-		return baseArray((OperatorNode) subscript.getArgument(0));
+		else if (subscript.getArgument(0) instanceof OperatorNode){
+			return baseArray((OperatorNode) subscript.getArgument(0));
+		}
+		//dxu: structure array
+		else if (subscript.getArgument(0) instanceof CommonDotNode){
+			ASTNode arrayNode = subscript.getArgument(0).child(0);
+			assert arrayNode instanceof OperatorNode;
+			if (arrayNode instanceof  OperatorNode) {
+				return baseArray((OperatorNode) arrayNode);
+			}
+		}
+		else
+			assert false:"unknow type " + subscript.getArgument(0).getType() ;
+
+		return null;
 	}
 
 	/*

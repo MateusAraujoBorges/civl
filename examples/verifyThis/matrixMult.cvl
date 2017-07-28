@@ -47,9 +47,9 @@
 #include <pointer.cvh>
 
 // upper bound on N, the size of the matrices
-$input int BOUND = 8; // can go up to 16 if you have a few minutes
+$input int BOUND = 4; // can go up to 16 if you have a few minutes
 $assume(BOUND >= 1);
-$input int N; // the size of the matrices
+$input int N=4; // the size of the matrices
 $assume(1<=N && N<=BOUND);
 // some arbitrary input matrices...
 $input float A0[N][N];
@@ -274,10 +274,10 @@ _Bool isPowerOf2(int n) {
 
 /* main: runs the three tests */
 int main() {
-  $elaborate(N); // hint to verifier
+  //$elaborate(N); // hint to verifier
   printf("N=%d\n", N);
-  testMult(N);
-  assoc(N);
-  $assume(isPowerOf2(N));
+  //testMult(N);
+  //assoc(N);
+  //$assume(isPowerOf2(N));
   testStrassen(N);
 }

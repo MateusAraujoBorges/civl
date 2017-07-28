@@ -6,11 +6,6 @@ $system int $remainder(int x, int y);
 $system int $quotient(int x, int y);
 
 int $int_div(int numerator, int denominator) {
-#ifndef _NO_CHECK_DIVISION_BY_ZERO
-#ifndef _SVCOMP
-  $assert(denominator != 0, "Possible division by zero");
-#endif
-#endif
   if (numerator == 0)
     return 0;
   if (numerator >= 0) {
@@ -27,9 +22,6 @@ int $int_div(int numerator, int denominator) {
 }
 
 int $int_mod(int numerator, int denominator) {
-#ifndef _SVCOMP
-  $assert(denominator != 0, "Possible division by zero in modulo");
-#endif
   if (numerator == 0)
     return 0;
   if (numerator >= 0) {

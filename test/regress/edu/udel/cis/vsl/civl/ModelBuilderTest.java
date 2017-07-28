@@ -62,6 +62,11 @@ public class ModelBuilderTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("boolcast.cvl")));
 	}
 
+	@Test
+	public void ternaryExpression() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("ternary.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

@@ -16,7 +16,7 @@ public class ExpandedCIVLSource implements CIVLSource {
 
 	@Override
 	public void print(PrintStream out) {
-		out.print(this.getSummary());
+		out.print(this.getSummary(false));
 	}
 
 	@Override
@@ -25,8 +25,9 @@ public class ExpandedCIVLSource implements CIVLSource {
 	}
 
 	@Override
-	public String getSummary() {
-		return expandedSource.getSummary() + " from " + baseSource.getSummary();
+	public String getSummary(boolean isException) {
+		return expandedSource.getSummary(isException) + " from "
+				+ baseSource.getSummary(isException);
 	}
 
 	@Override
@@ -42,6 +43,11 @@ public class ExpandedCIVLSource implements CIVLSource {
 	@Override
 	public String getContent() {
 		return expandedSource.getContent() + " from " + baseSource.getContent();
+	}
+
+	@Override
+	public String getAbsoluteFilePath() {
+		return this.expandedSource.getAbsoluteFilePath();
 	}
 
 }

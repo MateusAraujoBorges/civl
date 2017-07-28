@@ -581,7 +581,7 @@ public class ImmutableProcessState implements ProcessState {
 				CIVLSource source = location.getSource();
 				String locationString = source == null
 						? ""
-						: " at " + source.getSummary();
+						: " at " + source.getSummary(false);
 				String frameString = (location.function() == null)
 						? "null "
 						: location.function().name() + locationString;

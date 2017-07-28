@@ -228,14 +228,14 @@ public class LanguageFeaturesTest {
 	public void divisionByZero() throws ABCException {
 
 		assertFalse(ui.run(VERIFY, QUIET, errorBound(2),
+				"-intOperationTransformer=true",
 				filename("divisionByZero.cvl")));
 	}
 
 	@Test
 	public void divisionByZero_Ignore() throws ABCException {
-		assertTrue(ui.run(VERIFY, "-D_NO_CHECK_DIVISION_BY_ZERO",
-				// "-showProgram",
-				QUIET, filename("divisionByZero.cvl")));
+		assertTrue(ui.run(VERIFY, "-checkDivisionByZero=false", QUIET,
+				filename("divisionByZero.cvl")));
 	}
 
 	@Test
@@ -635,7 +635,8 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void noopBad() {
-		assertFalse(ui.run(VERIFY, QUIET, filename("noopBad.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, "-intOperationTransformer=true",
+				filename("noopBad.cvl")));
 	}
 
 	@Test

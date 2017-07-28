@@ -73,3 +73,14 @@ civl.cis.udel.edu. Update CIVL component repos under /opt/repos/.
 13. Append "+" to the fields named "version" in edu.udel.cis.vsl.civl.config.CIVLConstants.
 For example, the current version is 1.2, then it becomes 1.2+, which stands for
 unstable release between 1.2 andd 1.3.
+
+14. Create a new directory for the benchmark running data generated
+    during the release.  The name of the directory must be
+    "v[current-version-number]_bench_dat", replace the
+    "[current-version-number]" with the stable version number. For
+    example, if you just did release for version 1.10, the directory
+    name should be "v1.10_bench_dat".  Copy benchmark running data
+    from scripts/scale/figs to the new directory.  Delete the old data
+    directory and "figs". Continue with the aforementioned example,
+    now you need delete "v1.9_bench_dat" and "figs" under
+    "scripts/scale".

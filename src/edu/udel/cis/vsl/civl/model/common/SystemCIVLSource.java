@@ -17,7 +17,7 @@ public class SystemCIVLSource implements CIVLSource {
 	}
 
 	@Override
-	public String getSummary() {
+	public String getSummary(boolean isException) {
 		return "CIVL System object";
 	}
 
@@ -33,6 +33,11 @@ public class SystemCIVLSource implements CIVLSource {
 
 	@Override
 	public String getContent() {
+		return "CIVL System object";
+	}
+
+	@Override
+	public String getAbsoluteFilePath() {
 		return "CIVL System object";
 	}
 

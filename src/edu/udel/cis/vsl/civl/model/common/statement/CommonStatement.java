@@ -303,9 +303,9 @@ public abstract class CommonStatement extends CommonSourceable
 	@Override
 	public String summaryOfSource() {
 		if (getSource() != null)
-			return getSource().getSummary();
+			return getSource().getSummary(false);
 		else
-			return source.getSource().getSummary();
+			return source.getSource().getSummary(false);
 	}
 
 	@Override
