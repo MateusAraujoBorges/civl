@@ -35,9 +35,11 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression.ReferenceKind;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
+import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
@@ -79,10 +81,7 @@ public abstract class LibraryComponent {
 		final NumericExpression sliceSizes[];
 		final SymbolicType baseType;
 
-		ArrayMeasurement(SymbolicExpression array) {
-			assert array.type().typeKind() == SymbolicTypeKind.ARRAY;
-			SymbolicArrayType arrayType = (SymbolicArrayType) array.type();
-
+		ArrayMeasurement(SymbolicArrayType arrayType) {
 			dimensions = arrayType.dimensions();
 			extents = new NumericExpression[dimensions];
 			sliceSizes = new NumericExpression[dimensions];
@@ -847,7 +846,8 @@ public abstract class LibraryComponent {
 			eval.value = universe.array(eval.value.type(),
 					Arrays.asList(eval.value));
 			eval.value = arrayFlatten(state, pid, eval.value,
-					new ArrayMeasurement(eval.value), source);
+					new ArrayMeasurement((SymbolicArrayType) eval.value.type()),
+					source);
 			return eval;
 		}
 		// Else "count" > 1:
@@ -960,7 +960,8 @@ public abstract class LibraryComponent {
 			throws UnsatisfiablePathConditionException {
 		NumericExpression pos = zero, step = one;
 		SymbolicExpression flattenArray;
-		ArrayMeasurement arrayMeasure = new ArrayMeasurement(array);
+		ArrayMeasurement arrayMeasure = new ArrayMeasurement(
+				(SymbolicArrayType) array.type());
 		NumericExpression sliceSizes[] = arrayMeasure.sliceSizes;
 		int i;
 
@@ -1061,94 +1062,134 @@ public abstract class LibraryComponent {
 	 *            The PID of the calling process
 	 * @param oldArray
 	 *            The array before casting
-	 * @param targetTypeArray
-	 *            The array has the type which is the target type of casting
+	 * @param oldArrayMeasurement
+	 *            The {@link ArrayMeasurement} of the oldArray
+	 * @param targetType
+	 *            The target type that the oldArray will be casted to
 	 * @param source
 	 *            The CIVL source of the oldArray or the pointer to OldArray
 	 * @return casted array
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	public SymbolicExpression arrayCasting(State state, int pid,
-			SymbolicExpression oldArray, SymbolicCompleteArrayType typeTemplate,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		BooleanExpression claim;
-		NumericExpression[] coordinatesSizes, arraySlicesSizes;
-		// temporary arrays store dimensional slices
-		SymbolicExpression[] arraySlices;
-		SymbolicExpression flattenOldArray;
-		ResultType resultType;
-		IntegerNumber flattenLength;
-		IntegerNumber dimensionalSpace;
-		SymbolicType elementType;
+			SymbolicExpression oldArray, ArrayMeasurement oldArrayMeasurement,
+			SymbolicCompleteArrayType targetType, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
 		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
-		int dim, numElements;
+		int[] targetExtentNumbers;
+		int dim;
 
-		assert (typeTemplate.typeKind().equals(SymbolicTypeKind.ARRAY));
-		assert typeTemplate.isComplete() : "arrayCasting internal exception";
-		if (oldArray.type().equals(typeTemplate))
+		// Straightforward Optimizations:
+		if (oldArray.type().equals(targetType))
 			return oldArray;
-		flattenOldArray = arrayFlatten(state, pid, oldArray,
-				new ArrayMeasurement(oldArray), source);
-		flattenLength = (IntegerNumber) reasoner
-				.extractNumber(universe.length(flattenOldArray));
-		if (flattenLength == null)
-			throw new CIVLUnimplementedFeatureException(
-					"Transform arrays with non-concrete sizes");
-		arraySlices = new SymbolicExpression[flattenLength.intValue()];
-		coordinatesSizes = symbolicUtil.arrayDimensionExtents(typeTemplate);
-		arraySlicesSizes = symbolicUtil.arraySlicesSizes(coordinatesSizes);
-		elementType = ((SymbolicArrayType) flattenOldArray.type())
-				.elementType();
-		if (!this.civlConfig.svcomp()) {
-			// check if the flatten array is compatible with the given array
-			// type
-			claim = universe.equals(universe.length(flattenOldArray), universe
-					.multiply(arraySlicesSizes[0], coordinatesSizes[0]));
-			resultType = reasoner.valid(claim).getResultType();
-			if (!resultType.equals(ResultType.YES))
-				throw new CIVLInternalException(
-						"Casting an array between incompatiable types", source);
-		}
-		dim = coordinatesSizes.length;
-		// Extracting sub-arrays out of SYMBOLIC flatten array
-		dimensionalSpace = (IntegerNumber) reasoner
-				.extractNumber(coordinatesSizes[dim - 1]);
-		if (dimensionalSpace == null)
-			throw new CIVLUnimplementedFeatureException(
-					"Transform arrays with non-concrete sizes");
-		numElements = flattenLength.intValue();
-		for (int j = 0, i = 0; j < flattenLength
-				.intValue(); j += dimensionalSpace.intValue()) {
-			arraySlices[i++] = symbolicAnalyzer.getSubArray(state, pid,
-					flattenOldArray, universe.integer(j),
-					universe.add(universe.integer(j),
-							coordinatesSizes[dim - 1]),
-					source);
-		}
-		numElements /= dimensionalSpace.intValue();
-		elementType = universe.arrayType(elementType,
-				coordinatesSizes[dim - 1]);
-		// Keep compressing sub-arrays
-		for (int i = dim - 1; --i >= 0;) {
-			SymbolicExpression[] subArray;
+		// Optimization: if oldArray is a symbolic constant, just change type:
+		if (oldArray.operator() == SymbolicOperator.SYMBOLIC_CONSTANT) {
+			SymbolicObject[] args = {oldArray.argument(1)};
 
-			dimensionalSpace = (IntegerNumber) reasoner
-					.extractNumber(coordinatesSizes[i]);
-			if (dimensionalSpace == null)
+			return universe.make(SymbolicOperator.SYMBOLIC_CONSTANT, targetType,
+					args);
+		}
+
+		ArrayMeasurement targetArrayMeasurement = new ArrayMeasurement(
+				targetType);
+
+		dim = targetArrayMeasurement.dimensions;
+		targetExtentNumbers = new int[dim];
+		for (int d = 0; d < dim; ++d) {
+			IntegerNumber extent = (IntegerNumber) reasoner
+					.extractNumber(targetArrayMeasurement.extents[d]);
+
+			if (extent == null)
 				throw new CIVLUnimplementedFeatureException(
-						"Transform arrays with non-concrete sizes");
-			numElements /= dimensionalSpace.intValue();
-			for (int j = 0; j < numElements; j++) {
-				int offset = j * dimensionalSpace.intValue();
-
-				subArray = Arrays.copyOfRange(arraySlices, offset,
-						offset + dimensionalSpace.intValue());
-				arraySlices[j] = universe.array(elementType,
-						Arrays.asList(subArray));
-			}
-			elementType = universe.arrayType(elementType, coordinatesSizes[i]);
+						"Transform symbolic array " + oldArray + " of type "
+								+ oldArray.type() + "to another type "
+								+ targetType);
+			targetExtentNumbers[d] = extent.intValue();
 		}
-		return arraySlices[0];
+
+		SymbolicExpression flattenArray = arrayFlatten(state, pid, oldArray,
+				oldArrayMeasurement, source);
+
+		return flattenToMultiDimensionalArray(targetExtentNumbers,
+				oldArrayMeasurement.baseType, flattenArray);
+	}
+
+	/**
+	 * Transform an flatten array a to a multiple dimensional array b. The
+	 * extent of a equals to the product of the extents of b.
+	 * 
+	 * @param extents
+	 *            An array of extents {e<sub>0</sub>, e<sub>1</sub>, ...,
+	 *            e<sub>n-1</sub>} for a multi-dimensional array
+	 *            <code>T b[e<sub>0</sub>][e<sub>1</sub>][..][e<sub>n-1</sub>]</code>
+	 * @param baseType
+	 *            The base type T of the multi-dimensional array
+	 *            <code>T b[e<sub>0</sub>][e<sub>1</sub>][..][e<sub>n-1</sub>]</code>
+	 * @param flatArray
+	 *            The flatten array T a[e<sub>0</sub> * e<sub>1</sub> * ... *
+	 *            e<sub>n-1</sub>];
+	 * @return The multi-dimensional array b.
+	 */
+	SymbolicExpression flattenToMultiDimensionalArray(int extents[],
+			SymbolicType baseType, SymbolicExpression flatArray) {
+		return this.flattenToMultiDimensionalArrayWorker(extents, 0, baseType,
+				flatArray, 0).left;
+	}
+	/**
+	 * The recursive worker method of
+	 * {@link #flattenToMultiDimensionalArray(int[], SymbolicType, SymbolicExpression)}.
+	 * 
+	 * @param extents
+	 *            An array of extents {e<sub>0</sub>, e<sub>1</sub>, ...,
+	 *            e<sub>n-1</sub>} for a multi-dimensional array
+	 *            <code>T b[e<sub>0</sub>][e<sub>1</sub>][..][e<sub>n-1</sub>]</code>
+	 * @param dim
+	 *            current dimension. This method recursively creates elements
+	 *            for each dimension, this parameter represents the current
+	 *            dimension of this method execution.
+	 * @param baseType
+	 *            The base type T of the multi-dimensional array
+	 *            <code>T b[e<sub>0</sub>][e<sub>1</sub>][..][e<sub>n-1</sub>]</code>
+	 * @param flatArray
+	 *            The flatten array T a[e<sub>0</sub> * e<sub>1</sub> * ... *
+	 *            e<sub>n-1</sub>];
+	 * @param flatArrayOffset
+	 *            Each recursive execution creates an element from a segment on
+	 *            the flatten array. This flatArrayOffset is the start index of
+	 *            the segment.
+	 * @return A sub-array and the number of base elements in this sub-array.
+	 */
+	private Pair<SymbolicExpression, Integer> flattenToMultiDimensionalArrayWorker(
+			int extents[], int dim, SymbolicType baseType,
+			SymbolicExpression flatArray, int flatArrayOffset) {
+		List<SymbolicExpression> components = new LinkedList<>();
+		SymbolicExpression result;
+
+		if (dim < extents.length - 1) {
+			// If this is not the base case...
+			int step = 1;
+
+			for (int i = 0; i < extents[dim]; i++) {
+				Pair<SymbolicExpression, Integer> subResult = flattenToMultiDimensionalArrayWorker(
+						extents, dim + 1, baseType, flatArray, flatArrayOffset);
+
+				step = subResult.right;
+				flatArrayOffset += step;
+				components.add(subResult.left);
+			}
+			// components shall never be empty since the extent of an array
+			// shall never be zero:
+			return new Pair<>(
+					universe.array(components.get(0).type(), components),
+					extents[dim] * step);
+		} else {
+			// base case:
+			for (int i = 0; i < extents[dim]; i++)
+				components.add(universe.arrayRead(flatArray,
+						universe.integer(flatArrayOffset++)));
+			result = universe.array(baseType, components);
+			return new Pair<>(result, extents[dim]);
+		}
 	}
 
 	/**
@@ -1186,10 +1227,11 @@ public abstract class LibraryComponent {
 		int dimensions = arrayMeasurement.dimensions;
 
 		subTreeQueue.add(array);
-		// If the total size of the array is non-concrete, use lambdaFlatten:
-		if (reasoner.extractNumber(
-				universe.multiply(extents[0], sliceSizes[0])) == null)
-			return arrayLambdaFlatten2(state, array, sliceSizes, civlsource);
+		// If any extent of the array is non-concrete, use lambdaFlatten:
+		for (int d = 0; d < dimensions; d++)
+			if (reasoner.extractNumber(extents[d]) == null)
+				return arrayLambdaFlatten2(state, array, sliceSizes,
+						civlsource);
 		// If the totoal size of the array is concrete:
 		for (int d = 0; d < dimensions; d++) {
 			int prevExtent = subTreeQueue.size();
@@ -1294,7 +1336,7 @@ public abstract class LibraryComponent {
 		} // TODO: what if the length of dataSize is non-concrete and cannot be
 			// decided by reasoner?
 		flattenArray = arrayFlatten(state, pid, array,
-				new ArrayMeasurement(array), source);
+				new ArrayMeasurement((SymbolicArrayType) array.type()), source);
 		i = startPos;
 
 		Number dataSizeConcrete = reasoner.extractNumber(dataSize);
@@ -1330,6 +1372,7 @@ public abstract class LibraryComponent {
 			i = universe.add(i, one);
 		}
 		flattenArray = arrayCasting(state, pid, flattenArray,
+				new ArrayMeasurement((SymbolicArrayType) flattenArray.type()),
 				(SymbolicCompleteArrayType) array.type(), source);
 		return new Evaluation(state, flattenArray);
 	}
