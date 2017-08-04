@@ -856,11 +856,17 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 				// clauses to single
 
 				SequenceNode<IdentifierExpressionNode> singlePrivateList = ompFor
-						.privateList() != null? ompFor.privateList().copy():null;
+						.privateList() != null
+								? ompFor.privateList().copy()
+								: null;
 				SequenceNode<IdentifierExpressionNode> singleFirstPrivateList = ompFor
-						.firstprivateList() != null? ompFor.firstprivateList().copy(): null;
-				SequenceNode<IdentifierExpressionNode> singleCopyPrivateList = ompFor.
-						copyprivateList() != null? ompFor.copyprivateList().copy() : null;
+						.firstprivateList() != null
+								? ompFor.firstprivateList().copy()
+								: null;
+				SequenceNode<IdentifierExpressionNode> singleCopyPrivateList = ompFor
+						.copyprivateList() != null
+								? ompFor.copyprivateList().copy()
+								: null;
 
 				// Add iteration variable to private list for single
 				IdentifierExpressionNode privateLoopVariable = nodeFactory
@@ -1211,10 +1217,9 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 
 	/**
 	 * <p>
-	 * This is a worker method of
-	 * {@link #noArrayRefDependences(List, Set, Set)}. For the LHS and RHS
-	 * expression <code>a0[e0] = ... a1[e1] ...;</code>, this method will not
-	 * only check e0 and e1 as described in
+	 * This is a worker method of {@link #noArrayRefDependences(List, Set, Set)}
+	 * . For the LHS and RHS expression <code>a0[e0] = ... a1[e1] ...;</code>,
+	 * this method will not only check e0 and e1 as described in
 	 * {@link #noArrayRefDependences(List, Set, Set)} but also check if a0 and
 	 * a1 are distinct and values of a0 and a1 will not change with loop
 	 * iterations.
@@ -1448,22 +1453,19 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 	private IdentifierExpressionNode baseArray(OperatorNode subscript) {
 		assert subscript
 				.getOperator() == OperatorNode.Operator.SUBSCRIPT : "Expected subscript expression";
-		if (subscript.getArgument(0) instanceof IdentifierExpressionNode) {
+		if (subscript.getArgument(0) instanceof IdentifierExpressionNode)
 			return (IdentifierExpressionNode) subscript.getArgument(0);
-		}
-		else if (subscript.getArgument(0) instanceof OperatorNode){
+		else if (subscript.getArgument(0) instanceof OperatorNode)
 			return baseArray((OperatorNode) subscript.getArgument(0));
-		}
-		//dxu: structure array
-		else if (subscript.getArgument(0) instanceof CommonDotNode){
+		// dxu: structure array
+		else if (subscript.getArgument(0) instanceof CommonDotNode) {
 			ASTNode arrayNode = subscript.getArgument(0).child(0);
+
 			assert arrayNode instanceof OperatorNode;
-			if (arrayNode instanceof  OperatorNode) {
+			if (arrayNode instanceof OperatorNode)
 				return baseArray((OperatorNode) arrayNode);
-			}
-		}
-		else
-			assert false:"unknow type " + subscript.getArgument(0).getType() ;
+		} else
+			assert false : "unknow type " + subscript.getArgument(0).getType();
 
 		return null;
 	}

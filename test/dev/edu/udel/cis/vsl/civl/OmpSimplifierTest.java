@@ -10,12 +10,10 @@ import org.junit.Test;
 import edu.udel.cis.vsl.abc.ast.IF.DifferenceObject;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.main.ABCExecutor;
-import edu.udel.cis.vsl.abc.main.FrontEnd;
 import edu.udel.cis.vsl.abc.main.TranslationTask;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
-import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
 import edu.udel.cis.vsl.civl.transform.IF.Transforms;
 
 public class OmpSimplifierTest {
@@ -54,8 +52,9 @@ public class OmpSimplifierTest {
 			executor = new ABCExecutor(new TranslationTask(file));
 			executor.execute();
 			program = executor.getProgram();
-			program.apply(Transforms.newTransformerFactory(
-					executor.getFrontEnd().getASTFactory())
+			program.apply(Transforms
+					.newTransformerFactory(
+							executor.getFrontEnd().getASTFactory())
 					.getOpenMPSimplifier(new CIVLConfiguration()));
 			out.println("DEBUG: simplified program is ...");
 			program.getAST().prettyPrint(out, true);
@@ -71,10 +70,10 @@ public class OmpSimplifierTest {
 		 * .diff(simplifiedProgram.getAST().getRootNode()); if (diff != null) {
 		 * out.println("For " + fileNameRoot +
 		 * " expected simplified version to be:");
-		 * simplifiedProgram.getAST().prettyPrint(out, true);
-		 * out.println("Computed simplified version was:");
-		 * program.getAST().prettyPrint(out, true);
-		 * out.println("Difference is: "); diff.print(out); assertTrue(false); }
+		 * simplifiedProgram.getAST().prettyPrint(out, true); out.println(
+		 * "Computed simplified version was:");
+		 * program.getAST().prettyPrint(out, true); out.println(
+		 * "Difference is: "); diff.print(out); assertTrue(false); }
 		 */
 	}
 
@@ -194,42 +193,26 @@ public class OmpSimplifierTest {
 	public void defect_num_544() throws ABCException, IOException {
 		check("defect_num_544");
 	}
-	
+
 	@Test
 	public void xsbench() throws ABCException, IOException {
 		String tempRoot = "examples/xsbench/src/";
+		ABCExecutor executor = new ABCExecutor(
+				new TranslationTask(new File(tempRoot + "GridInit.c")));
 
-        ABCExecutor executor = new ABCExecutor(
-                new TranslationTask(new File(tempRoot + "GridInit.c")
-                ));
-        FrontEnd frontEnd = executor.getFrontEnd();
-        TransformerFactory transformerFactory = Transforms
-                .newTransformerFactory(frontEnd.getASTFactory());
-        Program program;
-        CIVLConfiguration config = new CIVLConfiguration();
+		executor.execute();
+		ui.run("show",
+				// "-ast",
+				// "-showProgram",
+				// "-ompNoSimplify",
+				// "-input_omp_thread_max=2",
+				tempRoot + "Main.c", tempRoot + "io.c",
+				tempRoot + "CalculateXS.c", tempRoot + "GridInit.c",
+				tempRoot + "XSutils.c", tempRoot + "Materials.c"
 
-        executor.execute();
-        program = executor.getProgram();
-
-        //PrintStream before = new PrintStream("/Users/edward/Desktop/"+"gridInit.c"+"_before_simplify_prog.txt");
-        //program.getAST().print(before);
-
-        ui.run("show",
-                //"-ast",
-                //"-showProgram",
-                //"-ompNoSimplify",
-                //"-input_omp_thread_max=2",
-                tempRoot + "Main.c",
-                tempRoot + "io.c",
-                tempRoot + "CalculateXS.c",
-                tempRoot + "GridInit.c",
-                tempRoot + "XSutils.c",
-                tempRoot + "Materials.c"
-
-        );
+		);
 	}
 
-	@SuppressWarnings("unused")
 	private static UserInterface ui = new UserInterface();
 
 	/* *************************** Helper Methods ************************** */
