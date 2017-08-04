@@ -1218,6 +1218,8 @@ public class ImmutableStateFactory implements StateFactory {
 	private ImmutableState collectHavocVariablesInReferredStates(
 			ImmutableState state, UnaryOperator<SymbolicExpression> renamer,
 			int collectReferredStateDepth) throws CIVLHeapException {
+		if (!config.isEnableMpiContract())
+			return state;
 		if (collectReferredStateDepth <= 0)
 			return state;
 
@@ -1316,6 +1318,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 */
 	private ImmutableState simplifyReferencedStates(ImmutableState state,
 			BooleanExpression context, int depth) {
+		if (!config.isEnableMpiContract())
+			return state;
 		if (depth <= 0)
 			return state;
 
@@ -1756,8 +1760,13 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            stack may be empty
 	 * @param function
 	 *            the called function that will be pushed onto the stack
-	 * @param functionParentDyscope
-	 *            The dyscope ID of the parent of the new function
+	 * @param functionCallParentDyscope
+	 *            The dyscope ID of the parent of the new function; If the
+	 *            caller has no knowledge about what is suppose to be the
+	 *            correct parent scope, caller can pass "-1" for this argument.
+	 *            This method will attempt to use the dyscope of the static
+	 *            parent scope of the function definition as the parent dyscope.
+	 *            If this is not the case you want, don't pass '-1' here.
 	 * @param arguments
 	 *            the arguments to the function
 	 * @param callerPid
@@ -1771,87 +1780,66 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @return new stack with new frame on call stack of process pid
 	 */
 	protected ImmutableState pushCallStack2(ImmutableState state, int pid,
-			CIVLFunction function, int functionParentDyscope,
+			CIVLFunction function, int functionCallParentDyscope,
 			SymbolicExpression[] arguments, int callerPid) {
-		Scope containingStaticScope = function.containingScope();
-		Scope functionStaticScope = function.outerScope();
+		Scope StaticFuncDefiParent = function.containingScope();
+		Scope StaticFuncOuter = function.outerScope();
 		ImmutableProcessState[] newProcesses = state.copyProcessStates();
 		int numScopes = state.numDyscopes();
 		SymbolicExpression[] values;
 		ImmutableDynamicScope[] newScopes;
 		int sid;
-		int containingDynamicScopeId = functionParentDyscope;// ,
-																// containingDynamicScopeIdentifier;
+		int functionCallParentDyscopeId = functionCallParentDyscope;
 		BitSet bitSet = new BitSet(newProcesses.length);
 
-		if (containingDynamicScopeId < 0)
-			if (callerPid >= 0) {
-				ProcessState caller = state.getProcessState(callerPid);
-				ImmutableDynamicScope containingDynamicScope;
+		if (functionCallParentDyscopeId < 0 && callerPid >= 0) {
+			// Find a dynamic instance of the static parent scope of the calle
+			// function definition as the parent scope:
+			ProcessState caller = state.getProcessState(callerPid);
+			ImmutableDynamicScope containingDynamicScope;
 
-				if (caller.stackSize() == 0)
-					throw new IllegalArgumentException(
-							"Calling process has empty stack: " + callerPid);
-				containingDynamicScopeId = caller.getDyscopeId();
-				while (containingDynamicScopeId >= 0) {
-					containingDynamicScope = (ImmutableDynamicScope) state
-							.getDyscope(containingDynamicScopeId);
-					if (containingStaticScope == containingDynamicScope
-							.lexicalScope())
-						break;
-					containingDynamicScopeId = state
-							.getParentId(containingDynamicScopeId);
-				}
-				if (containingDynamicScopeId < 0)
-					throw new IllegalArgumentException(
-							"Called function not visible:\nfunction: "
-									+ function + "\npid: " + pid
-									+ "\ncallerPid:" + callerPid
-									+ "\narguments: "
-									+ Arrays.toString(arguments));
-			} else {
-				containingDynamicScopeId = -1;
+			functionCallParentDyscopeId = caller.getDyscopeId();
+			while (functionCallParentDyscopeId >= 0) {
+				containingDynamicScope = (ImmutableDynamicScope) state
+						.getDyscope(functionCallParentDyscopeId);
+				// TODO: why comparing with "containingStaticScope" ? When
+				// you push a function f, the parent dyscope of the called f
+				// is not necessarily the static parent scope of the
+				// definitions of f (ziqing). I think this may be incorrect.
+				if (StaticFuncDefiParent == containingDynamicScope
+						.lexicalScope())
+					break;
+				functionCallParentDyscopeId = state
+						.getParentId(functionCallParentDyscopeId);
 			}
+		}
 		newScopes = state.copyAndExpandScopes();
 		sid = numScopes;
-		values = initialValues(functionStaticScope);
+		values = initialValues(StaticFuncOuter);
 		for (int i = 0; i < arguments.length; i++)
 			if (arguments[i] != null)
 				values[i + 1] = arguments[i];
 		bitSet.set(pid);
-		// if (containingDynamicScopeId < 0)
-		// containingDynamicScopeIdentifier = -1;
-		// else
-		// containingDynamicScopeIdentifier =
-		// newScopes[containingDynamicScopeId]
-		// .identifier();
-		newScopes[sid] = new ImmutableDynamicScope(functionStaticScope,
-				containingDynamicScopeId, // containingDynamicScopeIdentifier,
-				values, bitSet);
-		{
-			int id = containingDynamicScopeId;
-			ImmutableDynamicScope scope;
+		newScopes[sid] = new ImmutableDynamicScope(StaticFuncOuter,
+				functionCallParentDyscopeId, values, bitSet);
 
-			while (id >= 0) {
-				scope = newScopes[id];
-				bitSet = newScopes[id].getReachers();
-				if (bitSet.get(pid))
-					break;
-				bitSet = (BitSet) bitSet.clone();
-				bitSet.set(pid);
-				newScopes[id] = scope.setReachers(bitSet);
-				id = scope.getParent();
-			}
+		int id = functionCallParentDyscopeId;
+		ImmutableDynamicScope scope;
+
+		while (id >= 0) {
+			scope = newScopes[id];
+			bitSet = newScopes[id].getReachers();
+			if (bitSet.get(pid))
+				break;
+			bitSet = (BitSet) bitSet.clone();
+			bitSet.set(pid);
+			newScopes[id] = scope.setReachers(bitSet);
+			id = scope.getParent();
 		}
+
 		newProcesses[pid] = state.getProcessState(pid)
 				.push(stackEntry(null, sid));
-		// newProcesses[pid] = addReachableMemUnitsFromDyscope(sid,
-		// newScopes[sid], newProcesses[pid]);
-		// state = new ImmutableState(newProcesses, newScopes,
-		// state.getPathCondition());
 		state = ImmutableState.newState(state, newProcesses, newScopes, null);
-		// state = this.addReachableMemUnitsFromDyscope(new int[] { sid },
-		// newScopes, state, pid, function.startLocation());
 		if (!function.isSystemFunction()) {
 			state = setLocation(state, pid, function.startLocation());
 		}

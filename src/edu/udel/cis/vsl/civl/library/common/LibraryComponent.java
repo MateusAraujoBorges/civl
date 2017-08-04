@@ -775,8 +775,9 @@ public abstract class LibraryComponent {
 			for (int i = 1; !startPtr.equals(endPtr); i++) {
 				startPtr = symbolicUtil.parentPointer(startPtr);
 				endPtr = symbolicUtil.parentPointer(endPtr);
-				startPos = universe.add(startPos, universe.multiply(
-						startIndices[dim - i], arraySlicesSizes[dim - i]));
+				startPos = universe.add(startPos,
+						universe.multiply(startIndices[numIndices - i],
+								arraySlicesSizes[dim - i]));
 			}
 		}
 		// here "startPtr" is already updated as the pointer to the common sub

@@ -7,10 +7,10 @@
 #include <stdlib.h>
 
 $input int N;
+$assume(N > 4);
 $input int inputs1[3][N];
 $input int inputs2[N][3];
 $input int inputs3[2 * N];
-$assume(N > 4);
 
 void main(){
   int * p;
