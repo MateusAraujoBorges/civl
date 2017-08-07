@@ -13,7 +13,7 @@ VERIFY      = no
 BENCHMARK   = no
 BINARY_DUMP = no
 BINARY_READ = no
-CIVL        = civl-1.11
+CIVL        = civl
 
 #===============================================================================
 # Program name & source code list
@@ -141,5 +141,5 @@ run:
 bgqrun:
 	qsub -t 10 -n 1 -O test XSBench
 
-civl: $(source) XSbench_header.h Makefile
-	$(CIVL) verify $(source)
+civl: $(source) XSbench_header.h civl_extras.cvl Makefile
+	$(CIVL) verify $(source) civl_extras.cvl
