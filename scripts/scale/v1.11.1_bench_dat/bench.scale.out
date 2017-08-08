@@ -1,0 +1,1000 @@
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=2 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 1.01
+   memory (bytes)      : 514850816
+   max process count   : 3
+   states              : 87
+   states saved        : 80
+   state matches       : 1
+   transitions         : 85
+   trace steps         : 52
+   valid calls         : 71
+   provers             : z3, cvc4, cvc3
+   prover calls        : 2
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=3 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 0.28
+   memory (bytes)      : 514850816
+   max process count   : 4
+   states              : 205
+   states saved        : 194
+   state matches       : 6
+   transitions         : 207
+   trace steps         : 136
+   valid calls         : 167
+   provers             : z3, cvc4, cvc3
+   prover calls        : 5
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=4 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 0.38
+   memory (bytes)      : 514850816
+   max process count   : 5
+   states              : 476
+   states saved        : 450
+   state matches       : 23
+   transitions         : 494
+   trace steps         : 337
+   valid calls         : 381
+   provers             : z3, cvc4, cvc3
+   prover calls        : 8
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=5 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 0.37
+   memory (bytes)      : 514850816
+   max process count   : 6
+   states              : 1100
+   states saved        : 1028
+   state matches       : 72
+   transitions         : 1166
+   trace steps         : 811
+   valid calls         : 865
+   provers             : z3, cvc4, cvc3
+   prover calls        : 11
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=6 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 0.48
+   memory (bytes)      : 514850816
+   max process count   : 7
+   states              : 2525
+   states saved        : 2328
+   state matches       : 201
+   transitions         : 2719
+   trace steps         : 1910
+   valid calls         : 1955
+   provers             : z3, cvc4, cvc3
+   prover calls        : 14
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=7 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 0.57
+   memory (bytes)      : 514850816
+   max process count   : 8
+   states              : 5743
+   states saved        : 5230
+   state matches       : 522
+   transitions         : 6257
+   trace steps         : 4418
+   valid calls         : 4387
+   provers             : z3, cvc4, cvc3
+   prover calls        : 17
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=8 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 0.72
+   memory (bytes)      : 514850816
+   max process count   : 9
+   states              : 12930
+   states saved        : 11654
+   state matches       : 1291
+   transitions         : 14212
+   trace steps         : 10063
+   valid calls         : 9761
+   provers             : z3, cvc4, cvc3
+   prover calls        : 20
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=9 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 1.05
+   memory (bytes)      : 639107072
+   max process count   : 10
+   states              : 28822
+   states saved        : 25760
+   state matches       : 3084
+   transitions         : 31896
+   trace steps         : 22621
+   valid calls         : 21533
+   provers             : z3, cvc4, cvc3
+   prover calls        : 23
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=10 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 1.43
+   memory (bytes)      : 904921088
+   max process count   : 11
+   states              : 63659
+   states saved        : 56508
+   state matches       : 7181
+   transitions         : 70829
+   trace steps         : 50284
+   valid calls         : 47127
+   provers             : z3, cvc4, cvc3
+   prover calls        : 26
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=11 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 2.43
+   memory (bytes)      : 1218969600
+   max process count   : 12
+   states              : 139457
+   states saved        : 123098
+   state matches       : 16398
+   transitions         : 155843
+   trace steps         : 110716
+   valid calls         : 102415
+   provers             : z3, cvc4, cvc3
+   prover calls        : 29
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=12 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 4.32
+   memory (bytes)      : 1725431808
+   max process count   : 13
+   states              : 303320
+   states saved        : 266490
+   state matches       : 36879
+   transitions         : 340186
+   trace steps         : 241805
+   valid calls         : 221189
+   provers             : z3, cvc4, cvc3
+   prover calls        : 32
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=13 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 10.25
+   memory (bytes)      : 3327655936
+   max process count   : 14
+   states              : 655600
+   states saved        : 573724
+   state matches       : 81936
+   transitions         : 737522
+   trace steps         : 524447
+   valid calls         : 475129
+   provers             : z3, cvc4, cvc3
+   prover calls        : 35
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+16s: mem=3242Mb trans=1235281 traceSteps=878859 explored=1093643 saved=952019 prove=38
+
+=== Command ===
+civl verify -inputB=14 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/adder.cvl 
+
+=== Stats ===
+   time (s)            : 18.74
+   memory (bytes)      : 3397910528
+   max process count   : 15
+   states              : 1409289
+   states saved        : 1229120
+   state matches       : 180241
+   transitions         : 1589515
+   trace steps         : 1130674
+   valid calls         : 1015787
+   provers             : z3, cvc4, cvc3
+   prover calls        : 38
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Barrier <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=2 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/barrier.cvl 
+
+=== Stats ===
+   time (s)            : 1.0
+   memory (bytes)      : 514850816
+   max process count   : 3
+   states              : 431
+   states saved        : 171
+   state matches       : 40
+   transitions         : 466
+   trace steps         : 138
+   valid calls         : 599
+   provers             : z3, cvc4, cvc3
+   prover calls        : 2
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Barrier <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=3 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/barrier.cvl 
+
+=== Stats ===
+   time (s)            : 0.33
+   memory (bytes)      : 514850816
+   max process count   : 4
+   states              : 2067
+   states saved        : 826
+   state matches       : 376
+   transitions         : 2436
+   trace steps         : 788
+   valid calls         : 3341
+   provers             : z3, cvc4, cvc3
+   prover calls        : 3
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Barrier <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=4 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/barrier.cvl 
+
+=== Stats ===
+   time (s)            : 0.42
+   memory (bytes)      : 514850816
+   max process count   : 5
+   states              : 9801
+   states saved        : 3950
+   state matches       : 2460
+   transitions         : 12252
+   trace steps         : 4166
+   valid calls         : 16981
+   provers             : z3, cvc4, cvc3
+   prover calls        : 4
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Barrier <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=5 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/barrier.cvl 
+
+=== Stats ===
+   time (s)            : 0.93
+   memory (bytes)      : 649592832
+   max process count   : 6
+   states              : 46379
+   states saved        : 18627
+   state matches       : 13795
+   transitions         : 60163
+   trace steps         : 20895
+   valid calls         : 82763
+   provers             : z3, cvc4, cvc3
+   prover calls        : 5
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Barrier <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=6 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/barrier.cvl 
+
+=== Stats ===
+   time (s)            : 2.21
+   memory (bytes)      : 1446510592
+   max process count   : 7
+   states              : 217063
+   states saved        : 86345
+   state matches       : 71264
+   transitions         : 288314
+   trace steps         : 100914
+   valid calls         : 393523
+   provers             : z3, cvc4, cvc3
+   prover calls        : 6
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Barrier <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=7 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/barrier.cvl 
+
+=== Stats ===
+   time (s)            : 8.85
+   memory (bytes)      : 3116892160
+   max process count   : 8
+   states              : 1000367
+   states saved        : 393748
+   state matches       : 349994
+   transitions         : 1350346
+   trace steps         : 473878
+   valid calls         : 1837145
+   provers             : z3, cvc4, cvc3
+   prover calls        : 7
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Barrier <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+16s: mem=3020Mb trans=2119287 traceSteps=763138 explored=1584821 saved=626869 prove=8
+31s: mem=3357Mb trans=3962885 traceSteps=1429265 explored=2927359 saved=1175784 prove=8
+
+=== Command ===
+civl verify -inputB=8 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/barrier.cvl 
+
+=== Stats ===
+   time (s)            : 43.59
+   memory (bytes)      : 3284664320
+   max process count   : 9
+   states              : 4540601
+   states saved        : 1770300
+   state matches       : 1661020
+   transitions         : 6201604
+   trace steps         : 2178150
+   valid calls         : 8450321
+   provers             : z3, cvc4, cvc3
+   prover calls        : 8
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=4 -inputW=2 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 1.16
+   memory (bytes)      : 514850816
+   max process count   : 3
+   states              : 399
+   states saved        : 190
+   state matches       : 4
+   transitions         : 402
+   trace steps         : 125
+   valid calls         : 671
+   provers             : z3, cvc4, cvc3
+   prover calls        : 11
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=6 -inputW=3 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 0.61
+   memory (bytes)      : 514850816
+   max process count   : 4
+   states              : 1196
+   states saved        : 644
+   state matches       : 36
+   transitions         : 1231
+   trace steps         : 463
+   valid calls         : 2753
+   provers             : z3, cvc4, cvc3
+   prover calls        : 20
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=8 -inputW=4 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 0.71
+   memory (bytes)      : 514850816
+   max process count   : 5
+   states              : 3067
+   states saved        : 1906
+   state matches       : 184
+   transitions         : 3250
+   trace steps         : 1481
+   valid calls         : 9103
+   provers             : z3, cvc4, cvc3
+   prover calls        : 29
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=10 -inputW=5 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 0.95
+   memory (bytes)      : 514850816
+   max process count   : 6
+   states              : 7436
+   states saved        : 5322
+   state matches       : 720
+   transitions         : 8155
+   trace steps         : 4391
+   valid calls         : 26929
+   provers             : z3, cvc4, cvc3
+   prover calls        : 38
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=12 -inputW=6 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 1.47
+   memory (bytes)      : 514850816
+   max process count   : 7
+   states              : 17855
+   states saved        : 14366
+   state matches       : 2412
+   transitions         : 20266
+   trace steps         : 12373
+   valid calls         : 74639
+   provers             : z3, cvc4, cvc3
+   prover calls        : 47
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=14 -inputW=7 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 2.07
+   memory (bytes)      : 641728512
+   max process count   : 8
+   states              : 43124
+   states saved        : 37760
+   state matches       : 7308
+   transitions         : 50431
+   trace steps         : 33503
+   valid calls         : 198225
+   provers             : z3, cvc4, cvc3
+   prover calls        : 56
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=16 -inputW=8 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 3.35
+   memory (bytes)      : 1236795392
+   max process count   : 9
+   states              : 104715
+   states saved        : 96898
+   state matches       : 20656
+   transitions         : 125370
+   trace steps         : 87761
+   valid calls         : 510303
+   provers             : z3, cvc4, cvc3
+   prover calls        : 65
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -inputB=18 -inputW=9 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 6.92
+   memory (bytes)      : 1757937664
+   max process count   : 10
+   states              : 254180
+   states saved        : 243254
+   state matches       : 55512
+   transitions         : 309691
+   trace steps         : 223543
+   valid calls         : 1281761
+   provers             : z3, cvc4, cvc3
+   prover calls        : 74
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+16s: mem=3152Mb trans=697377 traceSteps=511965 explored=565119 saved=551191 prove=83
+
+=== Command ===
+civl verify -inputB=20 -inputW=10 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 16.01
+   memory (bytes)      : 3305635840
+   max process count   : 11
+   states              : 613471
+   states saved        : 598702
+   state matches       : 143620
+   transitions         : 757090
+   trace steps         : 556061
+   valid calls         : 3154239
+   provers             : z3, cvc4, cvc3
+   prover calls        : 83
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Block adder <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+16s: mem=3103Mb trans=754838 traceSteps=558252 explored=606364 saved=596345 prove=92
+31s: mem=3382Mb trans=1549342 traceSteps=1148337 explored=1243618 saved=1226342 prove=92
+
+=== Command ===
+civl verify -inputB=22 -inputW=11 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/blockAdder.cvl 
+
+=== Stats ===
+   time (s)            : 34.31
+   memory (bytes)      : 3344957440
+   max process count   : 12
+   states              : 1467356
+   states saved        : 1447932
+   state matches       : 360756
+   transitions         : 1828111
+   trace steps         : 1355663
+   valid calls         : 7627553
+   provers             : z3, cvc4, cvc3
+   prover calls        : 92
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=2 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 0.94
+   memory (bytes)      : 514850816
+   max process count   : 3
+   states              : 42
+   states saved        : 30
+   state matches       : 4
+   transitions         : 43
+   trace steps         : 27
+   valid calls         : 155
+   provers             : z3, cvc4, cvc3
+   prover calls        : 0
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=3 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 0.23
+   memory (bytes)      : 514850816
+   max process count   : 4
+   states              : 147
+   states saved        : 103
+   state matches       : 40
+   transitions         : 182
+   trace steps         : 130
+   valid calls         : 786
+   provers             : z3, cvc4, cvc3
+   prover calls        : 2
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=4 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 0.29
+   memory (bytes)      : 514850816
+   max process count   : 5
+   states              : 459
+   states saved        : 306
+   state matches       : 193
+   transitions         : 645
+   trace steps         : 479
+   valid calls         : 3075
+   provers             : z3, cvc4, cvc3
+   prover calls        : 3
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=5 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 0.32
+   memory (bytes)      : 514850816
+   max process count   : 6
+   states              : 1588
+   states saved        : 1013
+   state matches       : 912
+   transitions         : 2491
+   trace steps         : 1897
+   valid calls         : 12530
+   provers             : z3, cvc4, cvc3
+   prover calls        : 4
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=6 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 0.47
+   memory (bytes)      : 514850816
+   max process count   : 7
+   states              : 5086
+   states saved        : 3135
+   state matches       : 3341
+   transitions         : 8416
+   trace steps         : 6439
+   valid calls         : 44771
+   provers             : z3, cvc4, cvc3
+   prover calls        : 5
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=7 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 1.0
+   memory (bytes)      : 649592832
+   max process count   : 8
+   states              : 17899
+   states saved        : 10766
+   state matches       : 13210
+   transitions         : 31096
+   trace steps         : 23929
+   valid calls         : 171825
+   provers             : z3, cvc4, cvc3
+   prover calls        : 6
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=8 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 1.99
+   memory (bytes)      : 1447034880
+   max process count   : 9
+   states              : 56897
+   states saved        : 33556
+   state matches       : 44322
+   transitions         : 101204
+   trace steps         : 77820
+   valid calls         : 588778
+   provers             : z3, cvc4, cvc3
+   prover calls        : 7
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=9 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 6.77
+   memory (bytes)      : 3126853632
+   max process count   : 10
+   states              : 198388
+   states saved        : 115248
+   state matches       : 164564
+   transitions         : 362935
+   trace steps         : 279742
+   valid calls         : 2190268
+   provers             : z3, cvc4, cvc3
+   prover calls        : 8
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+16s: mem=3042Mb trans=780893 traceSteps=592669 explored=467455 saved=279295 prove=9
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=10 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 20.12
+   memory (bytes)      : 3189768192
+   max process count   : 11
+   states              : 619996
+   states saved        : 355589
+   state matches       : 528608
+   transitions         : 1148585
+   trace steps         : 884114
+   valid calls         : 7276913
+   provers             : z3, cvc4, cvc3
+   prover calls        : 9
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Dining philosopher <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+16s: mem=3032Mb trans=743042 traceSteps=563966 explored=449126 saved=270114 prove=10
+31s: mem=3010Mb trans=1390388 traceSteps=1074513 explored=810365 saved=494567 prove=10
+46s: mem=3315Mb trans=1930955 traceSteps=1477035 explored=1174746 saved=720902 prove=10
+61s: mem=3298Mb trans=2741303 traceSteps=2084001 explored=1602462 saved=945235 prove=10
+76s: mem=3225Mb trans=3644457 traceSteps=2784874 explored=2007057 saved=1147548 prove=10
+
+=== Command ===
+civl verify -intOperationTransformer=false -inputBOUND=11 /Users/ziqingluo/Documents/workspace/CIVL//examples/concurrency/dining.cvl 
+
+=== Stats ===
+   time (s)            : 80.28
+   memory (bytes)      : 3370647552
+   max process count   : 12
+   states              : 2130737
+   states saved        : 1209388
+   state matches       : 1890539
+   transitions         : 4021255
+   trace steps         : 3099830
+   valid calls         : 26377866
+   provers             : z3, cvc4, cvc3
+   prover calls        : 10
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Diffusion2d <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify  -inputNSTEPSB=2 -inputNXB=1 -inputNYB=1 -inputNPROCSXB=1 -inputNPROCSYB=1 -enablePrintf=false /Users/ziqingluo/Documents/workspace/CIVL//examples/mpi/diffusion2d.c 
+
+=== Stats ===
+   time (s)            : 3.87
+   memory (bytes)      : 919076864
+   max process count   : 2
+   states              : 1139
+   states saved        : 787
+   state matches       : 0
+   transitions         : 1137
+   trace steps         : 550
+   valid calls         : 2773
+   provers             : z3, cvc4, cvc3
+   prover calls        : 5
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Diffusion2d <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify  -inputNSTEPSB=2 -inputNXB=1 -inputNYB=2 -inputNPROCSXB=1 -inputNPROCSYB=2 -enablePrintf=false /Users/ziqingluo/Documents/workspace/CIVL//examples/mpi/diffusion2d.c 
+
+=== Stats ===
+   time (s)            : 2.37
+   memory (bytes)      : 919076864
+   max process count   : 2
+   states              : 2283
+   states saved        : 1653
+   state matches       : 0
+   transitions         : 2281
+   trace steps         : 1165
+   valid calls         : 6210
+   provers             : z3, cvc4, cvc3
+   prover calls        : 9
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Diffusion2d <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify  -inputNSTEPSB=2 -inputNXB=1 -inputNYB=3 -inputNPROCSXB=1 -inputNPROCSYB=3 -enablePrintf=false /Users/ziqingluo/Documents/workspace/CIVL//examples/mpi/diffusion2d.c 
+
+=== Stats ===
+   time (s)            : 2.12
+   memory (bytes)      : 1492647936
+   max process count   : 2
+   states              : 3604
+   states saved        : 2655
+   state matches       : 0
+   transitions         : 3602
+   trace steps         : 1885
+   valid calls         : 10472
+   provers             : z3, cvc4, cvc3
+   prover calls        : 12
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Diffusion2d <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify  -inputNSTEPSB=2 -inputNXB=2 -inputNYB=2 -inputNPROCSXB=2 -inputNPROCSYB=2 -enablePrintf=false /Users/ziqingluo/Documents/workspace/CIVL//examples/mpi/diffusion2d.c 
+
+=== Stats ===
+   time (s)            : 4.29
+   memory (bytes)      : 1511522304
+   max process count   : 3
+   states              : 14317
+   states saved        : 9950
+   state matches       : 0
+   transitions         : 14314
+   trace steps         : 6863
+   valid calls         : 38798
+   provers             : z3, cvc4, cvc3
+   prover calls        : 19
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Diffusion2d <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify  -inputNSTEPSB=2 -inputNXB=2 -inputNYB=3 -inputNPROCSXB=2 -inputNPROCSYB=3 -enablePrintf=false /Users/ziqingluo/Documents/workspace/CIVL//examples/mpi/diffusion2d.c 
+
+=== Stats ===
+   time (s)            : 4.66
+   memory (bytes)      : 2580021248
+   max process count   : 3
+   states              : 23502
+   states saved        : 16341
+   state matches       : 0
+   transitions         : 23499
+   trace steps         : 11319
+   valid calls         : 66193
+   provers             : z3, cvc4, cvc3
+   prover calls        : 22
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Diffusion2d <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+
+=== Command ===
+civl verify  -inputNSTEPSB=2 -inputNXB=3 -inputNYB=3 -inputNPROCSXB=3 -inputNPROCSYB=3 -enablePrintf=false /Users/ziqingluo/Documents/workspace/CIVL//examples/mpi/diffusion2d.c 
+
+=== Stats ===
+   time (s)            : 14.2
+   memory (bytes)      : 3006791680
+   max process count   : 4
+   states              : 76097
+   states saved        : 50931
+   state matches       : 0
+   transitions         : 76093
+   trace steps         : 34877
+   valid calls         : 213879
+   provers             : z3, cvc4, cvc3
+   prover calls        : 36
+
+=== Result ===
+The standard properties hold for all executions.
+>>>>>>>> Diffusion2d <<<<<<<<
+CIVL v1.11+ of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+17s: mem=2864Mb trans=96558 traceSteps=44627 explored=96562 saved=64715 prove=39
+
+=== Command ===
+civl verify  -inputNSTEPSB=2 -inputNXB=3 -inputNYB=4 -inputNPROCSXB=3 -inputNPROCSYB=4 -enablePrintf=false /Users/ziqingluo/Documents/workspace/CIVL//examples/mpi/diffusion2d.c 
+
+=== Stats ===
+   time (s)            : 18.81
+   memory (bytes)      : 3019374592
+   max process count   : 4
+   states              : 111272
+   states saved        : 74273
+   state matches       : 0
+   transitions         : 111268
+   trace steps         : 50994
+   valid calls         : 320108
+   provers             : z3, cvc4, cvc3
+   prover calls        : 39
+
+=== Result ===
+The standard properties hold for all executions.
