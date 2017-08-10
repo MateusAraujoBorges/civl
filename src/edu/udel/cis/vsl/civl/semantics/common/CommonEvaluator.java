@@ -3179,13 +3179,20 @@ public class CommonEvaluator implements Evaluator {
 						.valid(universe.or(inBound,
 								universe.equals(totalOffset, extent)))
 						.getResultType();
-				if (resultType != ResultType.YES)
+				if (resultType != ResultType.YES) {
+					SymbolicType objType = symbolicAnalyzer
+							.dynamicTypeOfObjByPointer(source, state, pointer);
+					String message = "The pointer points to the " + index
+							+ "th element in a sequence of " + extent
+							+ " objects of " + objType;
+
 					state = errorLogger.logError(source, state, pid,
 							symbolicAnalyzer.stateInformation(state),
 							zeroOffset, resultType, ErrorKind.OUT_OF_BOUNDS,
-							"Pointer addition results in an index out of bound error.\n"
-									+ "Pointer value:" + pointer
-									+ "\nOffset value:" + offset);
+							"Pointer addition results in an index out of bound error. "
+									+ message + ".\n" + "\nPointer value: "
+									+ pointer + "\nOffset value: " + offset);
+				}
 			}
 		} else if (!muteErrorSideEffects)
 			errorLogger.logSimpleError(source, state, process,
