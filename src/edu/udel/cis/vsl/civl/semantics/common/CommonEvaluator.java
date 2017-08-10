@@ -3180,18 +3180,39 @@ public class CommonEvaluator implements Evaluator {
 								universe.equals(totalOffset, extent)))
 						.getResultType();
 				if (resultType != ResultType.YES) {
-					SymbolicType objType = symbolicAnalyzer
-							.dynamicTypeOfObjByPointer(source, state, pointer);
-					String message = "The pointer points to the " + index
-							+ "th element in a sequence of " + extent
-							+ " objects of " + objType;
+					CIVLType eleType = symbolicAnalyzer
+							.civlTypeOfObjByPointer(source, state, pointer);
+					CIVLType objType = symbolicAnalyzer
+							.civlTypeOfObjByPointer(source, state, arrayPtr);
+					StringBuffer message = new StringBuffer();
+					Evaluation arrayDerefEval = dereference(source, state,
+							process, objType, arrayPtr, false, false);
+					String objString = symbolicUtil
+							.isPointer2MemoryBlock(arrayPtr)
+									? "allocated memory region with size of "
+											+ extent + " * sizeof(" + eleType
+											+ ")"
+									: "object " + symbolicAnalyzer
+											.symbolicExpressionToString(source,
+													state, objType,
+													arrayDerefEval.value)
+											+ " of type " + objType;
 
+					message.append("Before addition, the pointer points to the "
+							+ index + "th element of an " + objString + "\n");
+					message.append("Pointer: "
+							+ symbolicAnalyzer.symbolicExpressionToString(
+									source, state, eleType, pointer)
+							+ "\n");
+					message.append("Offset: " + symbolicAnalyzer
+							.symbolicExpressionToString(source, state,
+									typeFactory.integerType(), offset)
+							+ "\n");
 					state = errorLogger.logError(source, state, pid,
 							symbolicAnalyzer.stateInformation(state),
 							zeroOffset, resultType, ErrorKind.OUT_OF_BOUNDS,
-							"Pointer addition results in an index out of bound error. "
-									+ message + ".\n" + "\nPointer value: "
-									+ pointer + "\nOffset value: " + offset);
+							"Pointer addition results in an index out of bound error. \n"
+									+ message);
 				}
 			}
 		} else if (!muteErrorSideEffects)
