@@ -3180,39 +3180,14 @@ public class CommonEvaluator implements Evaluator {
 								universe.equals(totalOffset, extent)))
 						.getResultType();
 				if (resultType != ResultType.YES) {
-					CIVLType eleType = symbolicAnalyzer
-							.civlTypeOfObjByPointer(source, state, pointer);
-					CIVLType objType = symbolicAnalyzer
-							.civlTypeOfObjByPointer(source, state, arrayPtr);
-					StringBuffer message = new StringBuffer();
-					Evaluation arrayDerefEval = dereference(source, state,
-							process, objType, arrayPtr, false, false);
-					String objString = symbolicUtil
-							.isPointer2MemoryBlock(arrayPtr)
-									? "allocated memory region with size of "
-											+ extent + " * sizeof(" + eleType
-											+ ")"
-									: "object " + symbolicAnalyzer
-											.symbolicExpressionToString(source,
-													state, objType,
-													arrayDerefEval.value)
-											+ " of type " + objType;
+					StringBuffer message = printedPointerAdditionErrorMessage(
+							state, pid, process, pointer, arrayPtr, extent,
+							index, offset, source);
 
-					message.append("Before addition, the pointer points to the "
-							+ index + "th element of an " + objString + "\n");
-					message.append("Pointer: "
-							+ symbolicAnalyzer.symbolicExpressionToString(
-									source, state, eleType, pointer)
-							+ "\n");
-					message.append("Offset: " + symbolicAnalyzer
-							.symbolicExpressionToString(source, state,
-									typeFactory.integerType(), offset)
-							+ "\n");
 					state = errorLogger.logError(source, state, pid,
 							symbolicAnalyzer.stateInformation(state),
 							zeroOffset, resultType, ErrorKind.OUT_OF_BOUNDS,
-							"Pointer addition results in an index out of bound error. \n"
-									+ message);
+							message.toString());
 				}
 			}
 		} else if (!muteErrorSideEffects)
@@ -3228,6 +3203,54 @@ public class CommonEvaluator implements Evaluator {
 		eval = new Evaluation(state,
 				symbolicUtil.makePointer(scopeId, vid, newRef));
 		return new Pair<>(eval, null);
+	}
+
+	/**
+	 * Print a "pointer-addition error message" : <code>
+	 *  Pointer addition [pretty printing of pointer] + [offset] results in an index out of bound error. 
+	 *  Object: Variable [a] (or An allocated memory region)
+	 *  Object type :[type-of the Object]
+	 *  Pointer value: [pretty printing of pointer]
+	 *  Offset value: [offset]
+	 *  Violated constraint: 0 &lt [index] + [offset] &lt= [extent]
+	 * </code>
+	 */
+	private StringBuffer printedPointerAdditionErrorMessage(State state,
+			int pid, String process, SymbolicExpression pointer,
+			SymbolicExpression arrayPointer, NumericExpression extent,
+			NumericExpression index, NumericExpression offset,
+			CIVLSource source) {
+		CIVLType objType = symbolicAnalyzer.civlTypeOfObjByPointer(source,
+				state, arrayPointer);
+		String objStr;
+		String prettyPointer = symbolicAnalyzer.symbolicExpressionToString(
+				source, state,
+				typeFactory.pointerType(symbolicAnalyzer
+						.civlTypeOfObjByPointer(source, state, pointer)),
+				pointer);
+		int sid = symbolicUtil.getDyscopeId(source, arrayPointer);
+
+		// different pretty form for heap object and variable :
+		if (symbolicUtil.isPointer2MemoryBlock(arrayPointer))
+			objStr = "An allocated memory region";
+		else {
+			int vid = symbolicUtil.getVariableId(source, arrayPointer);
+
+			objStr = "Variable "
+					+ state.getDyscope(sid).lexicalScope().variable(vid).name();
+		}
+
+		StringBuffer message = new StringBuffer();
+
+		message.append("Pointer addition " + prettyPointer + " + " + offset
+				+ " results in an index out of bound error. \n");
+		message.append("Object: " + objStr + "\n");
+		message.append("Object type :" + objType + "\n");
+		message.append("Pointer value: " + prettyPointer + "\n");
+		message.append("Offset value: " + offset + "\n");
+		message.append("Violated constraint: 0 < " + index + " + " + offset
+				+ " <= " + extent);
+		return message;
 	}
 
 	/**
