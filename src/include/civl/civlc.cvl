@@ -6,8 +6,7 @@
 #define __CIVLC_CIVL__
 
 #include <civlc.cvh>
-//#include <domain.cvh>
-
+#include <bundle.cvh>
 /* Completes the declaration of this type in civlc.cvh */
 struct $int_iter {
   int size;
@@ -19,5 +18,12 @@ struct _mem {
   int size;
   void * pointers[];
 };
+
+$atomic_f void $output_assign(void * output, const void * value, int size) {
+  if(size == 0)
+    return;
+  $bundle bundle = $bundle_pack(value, size);
+  $bundle_unpack(bundle, output);
+}
 
 #endif

@@ -79,3 +79,8 @@ while(my $datFile = $datDir->next){
   }
 }
 print "scaling figures is successfully generated in $datOut\n";
+print "copy benchmark results to Ziqing's directory /home/ziqing ...";
+$cmd = `cp -a $datDir /home/ziqing/ `;
+
+
+

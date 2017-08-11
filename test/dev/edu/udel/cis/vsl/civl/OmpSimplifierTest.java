@@ -52,8 +52,9 @@ public class OmpSimplifierTest {
 			executor = new ABCExecutor(new TranslationTask(file));
 			executor.execute();
 			program = executor.getProgram();
-			program.apply(Transforms.newTransformerFactory(
-					executor.getFrontEnd().getASTFactory())
+			program.apply(Transforms
+					.newTransformerFactory(
+							executor.getFrontEnd().getASTFactory())
 					.getOpenMPSimplifier(new CIVLConfiguration()));
 			out.println("DEBUG: simplified program is ...");
 			program.getAST().prettyPrint(out, true);
@@ -69,10 +70,10 @@ public class OmpSimplifierTest {
 		 * .diff(simplifiedProgram.getAST().getRootNode()); if (diff != null) {
 		 * out.println("For " + fileNameRoot +
 		 * " expected simplified version to be:");
-		 * simplifiedProgram.getAST().prettyPrint(out, true);
-		 * out.println("Computed simplified version was:");
-		 * program.getAST().prettyPrint(out, true);
-		 * out.println("Difference is: "); diff.print(out); assertTrue(false); }
+		 * simplifiedProgram.getAST().prettyPrint(out, true); out.println(
+		 * "Computed simplified version was:");
+		 * program.getAST().prettyPrint(out, true); out.println(
+		 * "Difference is: "); diff.print(out); assertTrue(false); }
 		 */
 	}
 
@@ -193,7 +194,25 @@ public class OmpSimplifierTest {
 		check("defect_num_544");
 	}
 
-	@SuppressWarnings("unused")
+	@Test
+	public void xsbench() throws ABCException, IOException {
+		String tempRoot = "examples/xsbench/src/";
+		ABCExecutor executor = new ABCExecutor(
+				new TranslationTask(new File(tempRoot + "GridInit.c")));
+
+		executor.execute();
+		ui.run("show",
+				// "-ast",
+				// "-showProgram",
+				// "-ompNoSimplify",
+				// "-input_omp_thread_max=2",
+				tempRoot + "Main.c", tempRoot + "io.c",
+				tempRoot + "CalculateXS.c", tempRoot + "GridInit.c",
+				tempRoot + "XSutils.c", tempRoot + "Materials.c"
+
+		);
+	}
+
 	private static UserInterface ui = new UserInterface();
 
 	/* *************************** Helper Methods ************************** */

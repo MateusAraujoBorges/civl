@@ -4598,9 +4598,38 @@ public class FunctionTranslator {
 				case COMPATIBLE_POINTER :// nothing to do
 					break;
 				case COMPATIBLE_STRUCT_UNION : {
-					// TODO think about how to implement this
-					throw new CIVLUnimplementedFeatureException(
-							"compatible structure or union conversion", source);
+					// This variable only used in java assertions so that the
+					// assertion can save one call to translateABCType.
+					CIVLType oldCIVLType;
+
+					assert (oldCIVLType = translateABCType(source, scope,
+							oldType)).equals(
+									translateABCType(source, scope, oldType))
+							&& oldCIVLType
+									.equals(expression.getExpressionType());
+					// The C11 Section 6.2.7 states following about 2 types have
+					// compatible type:
+					/*
+					 * Two types have compatible type if their types are the
+					 * same. Moreover, two structure, union, or enumerated types
+					 * declared in separate translation units are compatible if
+					 * their tags and members satisfy the following
+					 * requirements: If one is declared with a tag, the other
+					 * shall be declared with the same tag. If both are
+					 * completed anywhere within their respective translation
+					 * units, then the following additional requirements apply:
+					 * there shall be a one-to-one correspondence between their
+					 * members such that each pair of corresponding members are
+					 * declared with compatible types; if one member of the pair
+					 * is declared with an alignment specifier, the other is
+					 * declared with an equivalent alignment specifier; and if
+					 * one member of the pair is declared with a name, the other
+					 * is declared with the same name.
+					 */
+					// According to above, any case that two types, which have
+					// compatible type, have different CIVLTypes ? TODO: I think
+					// no (ziqing)
+					break;
 				}
 				case FUNCTION :
 					break;

@@ -163,7 +163,7 @@ typedef struct _bundle $bundle;
 /*@ depends_on \access(ptr);
   @ executes_when $true;
   @*/
-$system[bundle] $bundle $bundle_pack(void* ptr, int size);
+$system[bundle] $bundle $bundle_pack(const void* ptr, int size);
 /*@ depends_on \access(ptr);
   @ executes_when $true;
   @*/

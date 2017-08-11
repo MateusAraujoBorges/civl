@@ -1,0 +1,21 @@
+
+#include <stdio.h>
+
+int fputs(const char * restrict s,
+	  FILE * restrict stream) {
+  return 0;
+}
+
+long atol(const char *nptr) {
+  $abstract long _atol(const char * ptr);
+  
+  return _atol(nptr);
+}
+
+void qsort(void *base, size_t nmemb, size_t size,
+	   int (*compar)(const void *, const void *)) {
+}
+
+int strcasecmp(const char *, const char *) {
+  return 1;
+}

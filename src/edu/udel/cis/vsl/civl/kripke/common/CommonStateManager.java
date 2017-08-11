@@ -639,7 +639,9 @@ public class CommonStateManager extends CIVLStateManager {
 		State state = traceStep.getFinalState();
 
 		try {
-			if (config.saveStates()) {
+			if (config.saveStates() || config.collectProcesses()
+					|| config.collectScopes() || config.collectHeaps()
+					|| config.collectSymbolicNames() || config.simplify()) {
 				Set<HeapErrorKind> ignoredErrorSet = new HashSet<>(
 						ignoredHeapErrors);
 				boolean finished = false;

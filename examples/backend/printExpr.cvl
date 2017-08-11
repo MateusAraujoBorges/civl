@@ -77,7 +77,7 @@ void main(){
   A[x]=9;
   n=A[x];
   n=x+y;
-  n=$seq_length(&_A);
+  n=$seq_length((void *)&_A);
   b = x && y;
   b=x<y;
   b=x<=y;

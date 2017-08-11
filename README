@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.11
+                               v1.11.1
 
 ------------------------------ Overview -------------------------------
 
@@ -47,11 +47,8 @@ General Public License.  However, the libraries used by CIVL
 licenses.  See directory licenses for the license of each component.
 
 
--------------------------- Updates from v1.10 -------------------------
-- Fixed a bug in model building when there are conditional expressions appear in for loop incrementer.
-- Improving the print of source file informations for error reporting.
-- Disable IntOperationTransformer by default
-- Solved the performance issue related to deadlock freedom property invisibility in CUDA examples
+-------------------------- Updates from v1.11 -------------------------
+- Fixed some bugs revealed in running MPI feature test suite.
    
 ------------------------- Binary Installation -------------------------
 
