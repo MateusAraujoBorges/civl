@@ -328,6 +328,18 @@ public interface SymbolicUtility {
 	 */
 	boolean isPointer2MemoryBlock(SymbolicExpression pointer);
 
+	/**
+	 * 
+	 * Takes a pointer to some location inside a memory block <code>m</code>,
+	 * returns the <strong>pointer to m</strong>, where a memory block is
+	 * defined as a space in heap which is allocated by once execution of
+	 * <code>$malloc</code>.
+	 * 
+	 * @param heapPointer
+	 *            A pointer to some location inside a memory block.
+	 *            {@link #isPointerToHeap(heapPointer)} must returns true.
+	 * @return A pointer to the memory block
+	 */
 	SymbolicExpression getPointer2MemoryBlock(SymbolicExpression heapPointer);
 
 	/**

@@ -2335,13 +2335,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						if (i != 0)
 							result.append(", ");
-						result.append(
-								this.symbolicExpressionToString(var.getSource(),
-										state, var.type(),
-										state.getVariableValue(
-												state.getDyscope(pid,
-														var.scope()),
-												var.vid())));
+						result.append(this.symbolicExpressionToString(
+								var.getSource(), state, var.type(),
+								state.getVariableValue(
+										state.getDyscope(pid, var.scope()),
+										var.vid())));
 					}
 					result.append(")");
 					break;
@@ -2727,11 +2725,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						claim = reasoner.simplify(claim);
 						if (result == ResultType.YES) {
-							if (!derefable
-									&& reasoner
-											.valid(universe.equals(length,
-													index))
-											.getResultType() != ResultType.NO) {
+							if (!derefable && reasoner
+									.valid(universe.equals(length, index))
+									.getResultType() != ResultType.NO) {
 								return new Triple<>(null, claim, result);
 							} else {
 								return new Triple<>(
@@ -2828,7 +2824,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		if (!SymbolicAnalyzer.isConcretePointer(pointer))
 			throw new CIVLUnimplementedFeatureException(
 					"\nAbility to deterine whether a non-concrete pointer is defined."
-							+ "\npointer value: " + pointer.toString(),
+							+ "\npointer value: "
+							+ symbolicExpressionToString(civlSource, state,
+									typeFactory.pointerType(
+											typeFactory.voidType()),
+									pointer),
 					civlSource);
 
 		int dyscope = symbolicUtil.getDyscopeId(civlSource, pointer);
