@@ -1054,6 +1054,7 @@ double floor(double x) {
   $abstract double FLOOR(double x);
 
   $assume(FLOOR(x) <= x && FLOOR(x) > (x - 1));
+  $assume((int)FLOOR(x) == (int)x && FLOOR(0) == (int)0);
   return FLOOR(x);
 }
 
