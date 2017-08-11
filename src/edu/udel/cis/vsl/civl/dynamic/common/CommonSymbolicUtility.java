@@ -1497,6 +1497,14 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
+	public SymbolicExpression getPointer2MemoryBlock(
+			SymbolicExpression heapPointer) {
+		while (!isPointer2MemoryBlock(heapPointer))
+			heapPointer = parentPointer(heapPointer);
+		return heapPointer;
+	}
+
+	@Override
 	public boolean isPointer2MemoryBlock(SymbolicExpression pointer) {
 		return heapAnalyzer.isPointer2MemoryBlock(pointer);
 	}

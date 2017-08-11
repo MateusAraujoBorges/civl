@@ -331,6 +331,7 @@ public class HeapAnalyzer {
 	 *            A {@link SymbolicExpression} which is a concrete pointer.
 	 * @return true iff the given pointer is a <strong>pointer to a memory
 	 *         block</strong>
+	 * @author ziqingluo
 	 */
 	boolean isPointer2MemoryBlock(SymbolicExpression pointer) {
 		if (pointer.operator() != SymbolicOperator.TUPLE)

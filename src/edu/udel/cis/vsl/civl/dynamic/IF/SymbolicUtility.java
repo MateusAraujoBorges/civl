@@ -328,6 +328,8 @@ public interface SymbolicUtility {
 	 */
 	boolean isPointer2MemoryBlock(SymbolicExpression pointer);
 
+	SymbolicExpression getPointer2MemoryBlock(SymbolicExpression heapPointer);
+
 	/**
 	 * <p>
 	 * Returns true iff the two pointers are pointing to the same memory block.

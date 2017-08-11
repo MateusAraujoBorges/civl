@@ -3181,8 +3181,8 @@ public class CommonEvaluator implements Evaluator {
 						.getResultType();
 				if (resultType != ResultType.YES) {
 					StringBuffer message = printedPointerAdditionErrorMessage(
-							state, pid, process, pointer, arrayPtr, extent,
-							index, offset, source);
+							state, pid, process, pointer, extent, index, offset,
+							source);
 
 					state = errorLogger.logError(source, state, pid,
 							symbolicAnalyzer.stateInformation(state),
@@ -3217,27 +3217,29 @@ public class CommonEvaluator implements Evaluator {
 	 */
 	private StringBuffer printedPointerAdditionErrorMessage(State state,
 			int pid, String process, SymbolicExpression pointer,
-			SymbolicExpression arrayPointer, NumericExpression extent,
-			NumericExpression index, NumericExpression offset,
-			CIVLSource source) {
-		CIVLType objType = symbolicAnalyzer.civlTypeOfObjByPointer(source,
-				state, arrayPointer);
+			NumericExpression extent, NumericExpression index,
+			NumericExpression offset, CIVLSource source) {
 		String objStr;
 		String prettyPointer = symbolicAnalyzer.symbolicExpressionToString(
 				source, state,
 				typeFactory.pointerType(symbolicAnalyzer
 						.civlTypeOfObjByPointer(source, state, pointer)),
 				pointer);
-		int sid = symbolicUtil.getDyscopeId(source, arrayPointer);
+		int sid = symbolicUtil.getDyscopeId(source, pointer);
+		SymbolicType objType;
 
 		// different pretty form for heap object and variable :
-		if (symbolicUtil.isPointer2MemoryBlock(arrayPointer))
+		if (symbolicUtil.isPointerToHeap(pointer)) {
 			objStr = "An allocated memory region";
-		else {
-			int vid = symbolicUtil.getVariableId(source, arrayPointer);
+			objType = symbolicAnalyzer.dynamicTypeOfObjByPointer(source, state,
+					symbolicUtil.getPointer2MemoryBlock(pointer));
+		} else {
+			int vid = symbolicUtil.getVariableId(source, pointer);
+			Variable variable = state.getDyscope(sid).lexicalScope()
+					.variable(vid);
 
-			objStr = "Variable "
-					+ state.getDyscope(sid).lexicalScope().variable(vid).name();
+			objStr = "Variable " + variable.name();
+			objType = state.getVariableValue(pid, vid).type();
 		}
 
 		StringBuffer message = new StringBuffer();
