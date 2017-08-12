@@ -107,9 +107,9 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	public final static int CIVL_FILE_MODE_APB = 15;
 
 	// file name of stdout/stdin
-	public final static String STDOUT = "CIVL_stdout";
-	public final static String STDIN = "CIVL_stdin";
-	public final static String STDERR = "CIVL_stderr";
+	public final static String STDOUT = "_stdout";
+	public final static String STDIN = "_stdin";
+	public final static String STDERR = "_stderr";
 
 	/**
 	 * The base type of the pointer type $filesystem; a structure type with
@@ -998,6 +998,9 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 				fileName);
 		state = stringResult.first;
 		fileNameString = stringResult.second.toString();
+		//Eliminate the char representing 'EOS'
+		assert(fileNameString.charAt(fileNameString.length()-1) == '\0');
+		fileNameString = fileNameString.substring(0, fileNameString.length()-1);
 		concreteString = this.evaluator.getString(arguments[1].getSource(),
 				state, process, arguments[1], argumentValues[1]);
 		formatBuffer = concreteString.second;
