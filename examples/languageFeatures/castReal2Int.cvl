@@ -1,0 +1,7 @@
+int main() {
+  double x = 3.14;
+  int i = (int)x;
+
+  $assert(i == 3);
+  return 0;
+}

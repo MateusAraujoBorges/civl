@@ -330,6 +330,24 @@ public class LibraryTest {
 	}
 
 	@Test
+	public void floor() throws ABCException {
+		assertTrue(
+				ui.run("verify ", QUIET, NO_PRINTF, filename(MATH, "floor.c")));
+	}
+
+	@Test
+	public void ceil() throws ABCException {
+		assertTrue(
+				ui.run("verify ", QUIET, NO_PRINTF, filename(MATH, "ceil.c")));
+	}
+
+	@Test
+	public void floorCeilCast() throws ABCException {
+		assertTrue(ui.run("verify ", QUIET, NO_PRINTF,
+				filename(MATH, "floor_ceil_cast.c")));
+	}
+
+	@Test
 	public void exitTest() throws ABCException {
 		assertTrue(ui.run("verify", QUIET, filename(STDLIB, "exitTest.c")));
 	}

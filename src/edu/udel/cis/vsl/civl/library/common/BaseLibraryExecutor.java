@@ -24,6 +24,7 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -62,6 +63,11 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 
 	protected LibraryExecutorLoader libExecutorLoader;
 
+	/**
+	 * A reference to a {@link SymbolicUniverse}.
+	 */
+	protected SymbolicUniverse universe;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -92,6 +98,7 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 		this.stateFactory = evaluator.stateFactory();
 		this.errorLogger = primaryExecutor.errorLogger();
 		this.libExecutorLoader = libExecutorLoader;
+		this.universe = evaluator.universe();
 		numbers = new HashSet<Character>(10);
 		for (int i = 0; i < 10; i++) {
 			numbers.add(Character.forDigit(i, 10));
@@ -137,16 +144,19 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 		} else if (!this.symbolicUtil.isPointerToHeap(firstElementPointer)
 				|| !this.symbolicUtil.isMallocPointer(source,
 						firstElementPointer)) {
-			this.errorLogger.logSimpleError(source, state, process,
-					symbolicAnalyzer.stateInformation(state),
-					ErrorKind.MEMORY_MANAGE,
-					"the argument of free "
-							+ symbolicAnalyzer.symbolicExpressionToString(
-									source, state,
-									arguments[0].getExpressionType(),
-									firstElementPointer)
-							+ " is not a pointer returned by a memory "
-							+ "management method");
+			this.errorLogger
+					.logSimpleError(source, state, process,
+							symbolicAnalyzer.stateInformation(state),
+							ErrorKind.MEMORY_MANAGE,
+							"the argument of free "
+									+ symbolicAnalyzer
+											.symbolicExpressionToString(source,
+													state,
+													arguments[0]
+															.getExpressionType(),
+													firstElementPointer)
+									+ " is not a pointer returned by a memory "
+									+ "management method");
 		} else {
 			Evaluation eval;
 			SymbolicExpression heapObject = null;
