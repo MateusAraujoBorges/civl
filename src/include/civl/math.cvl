@@ -1029,10 +1029,13 @@ long double tgammal(long double x) {
   return TGAMMAL(x);
 }
 
+/*  System functions
 double ceil(double x) {
   $abstract double CEIL(double x);
 
   $assume(CEIL(x) >= x && CEIL(x) < (x + 1));
+  $assume(x < 0 => (int)CEIL(x) == (int)x);
+  $assume(CEIL(0) == (int)0);  
   return CEIL(x);
 }
 
@@ -1054,7 +1057,8 @@ double floor(double x) {
   $abstract double FLOOR(double x);
 
   $assume(FLOOR(x) <= x && FLOOR(x) > (x - 1));
-  $assume((int)FLOOR(x) == (int)x && FLOOR(0) == (int)0);
+  $assume(x > 0 => (int)FLOOR(x) == (int)x);
+  $assume(FLOOR(0) == (int)0);
   return FLOOR(x);
 }
 
@@ -1070,7 +1074,7 @@ long double floorl(long double x) {
 
   $assume(FLOORL(x) <= x && FLOORL(x) > (x - 1));
   return FLOORL(x);
-}
+  }*/
 
 double nearbyint(double x) {
   $abstract double NEARBYINT(double x);
