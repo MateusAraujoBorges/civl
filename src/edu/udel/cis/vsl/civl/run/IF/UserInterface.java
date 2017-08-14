@@ -416,8 +416,13 @@ public class UserInterface {
 				civlConfig);
 
 		// implProgram.prettyPrint(out);
-		if (civlConfig.debugOrVerbose())
+		if (civlConfig.debugOrVerbose()) {
+			out.println("Spec program...");
+			specProgram.prettyPrint(out);
+			out.println("Impl program...");
+			implProgram.prettyPrint(out);
 			out.println("Generating composite program...");
+		}
 		// specProgram.prettyPrint(System.out);
 		combinedAST = combiner.combine(specProgram.getAST(),
 				implProgram.getAST());
