@@ -1,0 +1,8 @@
+#include <math.h>
+
+$input double y;
+int main() {
+    double x = floor(y);
+
+    return (int)x;
+}

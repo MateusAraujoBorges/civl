@@ -183,6 +183,11 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
+	public void castReal2Int() throws ABCException {
+		assertTrue(ui.run(VERIFY, QUIET, filename("castReal2Int.cvl")));
+	}
+
+	@Test
 	public void charTest() throws ABCException {
 		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF, filename("char.cvl")));
 	}
