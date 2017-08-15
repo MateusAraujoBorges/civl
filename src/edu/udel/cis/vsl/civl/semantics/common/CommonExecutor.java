@@ -1264,9 +1264,10 @@ public class CommonExecutor implements Executor {
 				hasFieldWidth = false;
 				hasPrecision = false;
 				stringBuffer = new StringBuffer();
-			} else {
+			} else if (current == CIVLConstants.EOS) {
+				break;
+			} else
 				stringBuffer.append(current);
-			}
 		}
 		if (stringBuffer.length() > 0)
 			result.add(new Format(stringBuffer, ConversionType.VOID));
