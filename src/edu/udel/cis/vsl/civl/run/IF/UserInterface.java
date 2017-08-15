@@ -366,6 +366,10 @@ public class UserInterface {
 				gmcConfig.getAnonymousSection());
 		implSection = this.readInputs(implSection,
 				gmcConfig.getAnonymousSection());
+		specSection = this.readVerboseOrDebugOption(specSection,
+				anonymousSection);
+		implSection = this.readVerboseOrDebugOption(implSection,
+				anonymousSection);
 
 		ModelTranslator specWorker = new ModelTranslator(gmcConfig, specSection,
 				spec.files(), spec.getCoreFileName(), universe),
@@ -1009,6 +1013,22 @@ public class UserInterface {
 				result.putMapEntry(CIVLConstants.inputO, entry.getKey(),
 						entry.getValue());
 			}
+		return result;
+	}
+
+	private GMCSection readVerboseOrDebugOption(GMCSection lhs,
+			GMCSection rhs) {
+		GMCSection result = lhs.clone();
+		Object rverbose = rhs.getValue(CIVLConstants.verboseO);
+		Object rdebug = rhs.getValue(CIVLConstants.debugO);
+		boolean lverbose = (boolean) lhs
+				.getValueOrDefault(CIVLConstants.verboseO);
+		boolean ldebug = (boolean) lhs.getValueOrDefault(CIVLConstants.debugO);
+
+		if (rverbose != null && !lverbose)
+			result.setScalarValue(CIVLConstants.verboseO, rverbose);
+		if (rdebug != null && !ldebug)
+			result.setScalarValue(CIVLConstants.debugO, rdebug);
 		return result;
 	}
 
