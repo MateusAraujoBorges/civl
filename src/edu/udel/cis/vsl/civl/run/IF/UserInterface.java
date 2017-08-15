@@ -1017,11 +1017,14 @@ public class UserInterface {
 	}
 
 	/**
-	 * If in rhs, verbose or debug option is set to true, then in lhs the
-	 * verbose or debug option should also be set to true.
+	 * If in rhs (anonymous GMCSection), verbose or debug option is set to true,
+	 * then in lhs (spec or impl GMCSection) the verbose or debug option should
+	 * also be set to true.
 	 * 
 	 * @param lhs
+	 *            spec or impl GMCSection.
 	 * @param rhs
+	 *            Anonymous GMCSection.
 	 * @return A modified copy of lhs.
 	 */
 	private GMCSection readVerboseOrDebugOption(GMCSection lhs,
