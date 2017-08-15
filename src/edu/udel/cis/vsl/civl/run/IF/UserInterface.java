@@ -1025,7 +1025,7 @@ public class UserInterface {
 	 *            spec or impl GMCSection.
 	 * @param rhs
 	 *            Anonymous GMCSection.
-	 * @return A modified copy of lhs.
+	 * @return A modified copy of lhs (spec or impl GMCSection).
 	 */
 	private GMCSection readVerboseOrDebugOption(GMCSection lhs,
 			GMCSection rhs) {
