@@ -1016,6 +1016,14 @@ public class UserInterface {
 		return result;
 	}
 
+	/**
+	 * If in rhs, verbose or debug option is set to true, then in lhs the
+	 * verbose or debug option should also be set to true.
+	 * 
+	 * @param lhs
+	 * @param rhs
+	 * @return A modified copy of lhs.
+	 */
 	private GMCSection readVerboseOrDebugOption(GMCSection lhs,
 			GMCSection rhs) {
 		GMCSection result = lhs.clone();
