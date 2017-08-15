@@ -1264,9 +1264,10 @@ public class CommonExecutor implements Executor {
 				hasFieldWidth = false;
 				hasPrecision = false;
 				stringBuffer = new StringBuffer();
-			} else {
+			} else if (current == CIVLConstants.EOS) {
+				break;
+			} else
 				stringBuffer.append(current);
-			}
 		}
 		if (stringBuffer.length() > 0)
 			result.add(new Format(stringBuffer, ConversionType.VOID));
@@ -1283,14 +1284,6 @@ public class CommonExecutor implements Executor {
 		for (Format format : formats) {
 			String formatString = format.toString();
 
-			/*
-			 * If the output steam is err output, change the color of error
-			 * message into RED and then change it back to BLACK.
-			 */
-			if (printStream.equals(System.err))
-				formatString = CIVLConstants.PRINT_TRIGGER_COLOR_RED
-						+ formatString
-						+ CIVLConstants.PRINT_TRIGGER_CLEAN;
 			switch (format.type) {
 				case VOID :
 					printStream.print(formatString);

@@ -175,19 +175,6 @@ public class CIVLConstants {
 	public static String DIRECT = "direct";
 	public static String INTBIT = "int_bit";
 
-	/**
-	 * Using escape char to change the format of string output on the terminal.
-	 * '[0m' stands for cleaning all formats.
-	 */
-	public static String PRINT_TRIGGER_CLEAN = (char)27 + "[0m";
-	
-	/**
-	 * Using escape char to change the format of string output on the terminal.
-	 * '[31m' stands for changing the color to RED.
-	 */
-	public static String PRINT_TRIGGER_COLOR_RED = (char)27 + "[31m";
-	
-
 	// Option objects
 
 	/**
@@ -698,6 +685,11 @@ public class CIVLConstants {
 	public final static String STDDEF = "stddef.h";
 	public final static String STDINT = "stdint.h";
 	public final static String UNISTD = "unistd.h";
+	
+	/**
+	 * The int value of the char '\0', which represents the end of string.
+	 */
+	public final static int EOS = 0;
 
 	/**
 	 * Returns all CIVL-C libraries.
