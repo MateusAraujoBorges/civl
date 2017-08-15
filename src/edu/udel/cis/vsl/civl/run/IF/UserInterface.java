@@ -1032,13 +1032,12 @@ public class UserInterface {
 		GMCSection result = lhs.clone();
 		Object rverbose = rhs.getValue(CIVLConstants.verboseO);
 		Object rdebug = rhs.getValue(CIVLConstants.debugO);
-		boolean lverbose = (boolean) lhs
-				.getValueOrDefault(CIVLConstants.verboseO);
-		boolean ldebug = (boolean) lhs.getValueOrDefault(CIVLConstants.debugO);
+		Object lverbose = lhs.getValue(CIVLConstants.verboseO);
+		Object ldebug = lhs.getValue(CIVLConstants.debugO);
 
-		if (rverbose != null && !lverbose)
+		if (rverbose != null && lverbose == null)
 			result.setScalarValue(CIVLConstants.verboseO, rverbose);
-		if (rdebug != null && !ldebug)
+		if (rdebug != null && ldebug == null)
 			result.setScalarValue(CIVLConstants.debugO, rdebug);
 		return result;
 	}
