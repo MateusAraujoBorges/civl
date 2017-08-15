@@ -685,6 +685,11 @@ public class CIVLConstants {
 	public final static String STDDEF = "stddef.h";
 	public final static String STDINT = "stdint.h";
 	public final static String UNISTD = "unistd.h";
+	
+	/**
+	 * The int value of the char '\0', which represents the end of string.
+	 */
+	public final static int EOS = 0;
 
 	/**
 	 * Returns all CIVL-C libraries.
