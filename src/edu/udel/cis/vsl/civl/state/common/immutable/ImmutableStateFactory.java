@@ -236,6 +236,11 @@ public class ImmutableStateFactory implements StateFactory {
 	private Map<IntArray, UnaryOperator<SymbolicExpression>> dyscopeSubMap = new ConcurrentHashMap<>();
 
 	/**
+	 * The reasoner for evaluating boolean formulas, provided by SARL.
+	 */
+	private Reasoner trueReasoner;
+
+	/**
 	 * The symbolic universe, provided by SARL.
 	 */
 	protected SymbolicUniverse universe;
@@ -263,6 +268,7 @@ public class ImmutableStateFactory implements StateFactory {
 		this.inputVariables = modelFactory.inputVariables();
 		this.typeFactory = modelFactory.typeFactory();
 		this.universe = modelFactory.universe();
+		this.trueReasoner = universe.reasoner(universe.trueExpression());
 		this.memUnitFactory = (ImmutableMemoryUnitFactory) memFactory;
 		this.undefinedProcessValue = modelFactory
 				.undefinedValue(typeFactory.processSymbolicType());
@@ -1084,10 +1090,14 @@ public class ImmutableStateFactory implements StateFactory {
 		BooleanExpression newPathCondition;
 
 		newPathCondition = reasoner.getReducedContext();
-		if (newPathCondition != pathCondition)
-			newPathCondition = universe.and(newPathCondition,
-					getContextOfSizeofSymbols(reasoner));
-		else
+
+		if (newPathCondition != pathCondition) {
+			if (nsat(newPathCondition))
+				newPathCondition = universe.falseExpression();
+			else
+				newPathCondition = universe.and(newPathCondition,
+						this.getContextOfSizeofSymbols(reasoner));
+		} else
 			newPathCondition = null;
 		for (int i = 0; i < numScopes; i++) {
 			ImmutableDynamicScope oldScope = theState.getDyscope(i);
@@ -1702,6 +1712,17 @@ public class ImmutableStateFactory implements StateFactory {
 			}
 		}
 		return oldToNew;
+	}
+
+	/**
+	 * Checks if a given claim is not satisfiable.
+	 * 
+	 * @param claim
+	 *            The given claim.
+	 * @return True iff the given claim is evaluated to be false.
+	 */
+	private boolean nsat(BooleanExpression claim) {
+		return trueReasoner.isValid(universe.not(claim));
 	}
 
 	/**
