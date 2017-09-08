@@ -725,6 +725,12 @@ public class LanguageFeaturesTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("shortCircuit.c")));
 	}
 
+	@Test
+	public void inputProblem() {
+		assertTrue(ui.run(VERIFY, "-showProgram", filename("inputProblem1.cvl"),
+				filename("inputProblem2.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

@@ -3442,8 +3442,9 @@ public class FunctionTranslator {
 						"Can't find the definition for variable "
 								+ node.getName(),
 						node.getSource());
-			if (!varEntity.getDefinition().equals(node))
-				return null;
+//			System.out.println("var definition:" + varEntity.getDefinition().toString());
+//			if (!varEntity.getDefinition().equals(node))
+//				return null;
 		}
 
 		TypeNode typeNode = node.getTypeNode();

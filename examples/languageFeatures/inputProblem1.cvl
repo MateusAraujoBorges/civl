@@ -1,0 +1,5 @@
+int X;
+$assume(X>0);
+int main() {
+	
+}
