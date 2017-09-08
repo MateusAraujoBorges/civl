@@ -557,18 +557,32 @@ public abstract class CommonEnabler implements Enabler {
 		BooleanExpression pathCondition = state.getPathCondition(universe);
 		Reasoner reasoner = null; // will be created when necessary
 		LinkedList<Transition> transitions = new LinkedList<>();
+		// For the branch condition COND, if valid(COND) returns MAYBE,
+		// valid(!COND) can barely return other results than MAYBE. Hence, once
+		// valid(COND) returns MAYBE directly explore two paths (saves one call
+		// to provers)
+		boolean MAYBE = false;
 
-		if (oneGuard.isTrue() || (reasoner = universe.reasoner(pathCondition))
-				.isValid(oneGuard)) {
+		if (oneGuard.isTrue())
 			return enabledTransitionsOfStatement(state, oneStmt, oneGuard, pid,
 					false, atomicLockAction);
+		else {
+			reasoner = universe.reasoner(pathCondition);
+
+			ResultType resultType = reasoner.valid(oneGuard).getResultType();
+
+			if (resultType == ResultType.YES)
+				return enabledTransitionsOfStatement(state, oneStmt, oneGuard,
+						pid, false, atomicLockAction);
+			else if (resultType == ResultType.MAYBE)
+				MAYBE = true;
 		}
-		if (theOtherGuard.isTrue() || (reasoner = reasoner == null
-				? universe.reasoner(pathCondition)
-				: reasoner).isValid(theOtherGuard)) {
-			return enabledTransitionsOfStatement(state, theOtherStmt,
-					theOtherGuard, pid, false, atomicLockAction);
-		}
+		if (!MAYBE)
+			if (theOtherGuard.isTrue() || (reasoner = reasoner == null
+					? universe.reasoner(pathCondition)
+					: reasoner).isValid(theOtherGuard))
+				return enabledTransitionsOfStatement(state, theOtherStmt,
+						theOtherGuard, pid, false, atomicLockAction);
 		transitions.addAll(enabledTransitionsOfStatement(state, oneStmt,
 				oneGuard, pid, false, atomicLockAction));
 		transitions.addAll(enabledTransitionsOfStatement(state, theOtherStmt,
@@ -623,11 +637,9 @@ public abstract class CommonEnabler implements Enabler {
 						AtomicLockAction.NONE);
 
 				return new Pair<>(null, localTransitions);
-			} else if (guardValue.isFalse()
-					|| (reasoner = reasoner == null
-							? universe
-									.reasoner(state.getPathCondition(universe))
-							: reasoner).isValid(notGuardValue))
+			} else if (guardValue.isFalse() || (reasoner = reasoner == null
+					? universe.reasoner(state.getPathCondition(universe))
+					: reasoner).isValid(notGuardValue))
 				return null;
 			// The guard is satisfiable, returns a pair:
 			// Left: the negation of the guard which will be added to the

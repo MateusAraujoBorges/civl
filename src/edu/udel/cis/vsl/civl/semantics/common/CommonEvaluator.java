@@ -1544,11 +1544,9 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
 		BooleanExpression p = (BooleanExpression) eval.value;
-		BooleanExpression assumption = eval.state.getPathCondition(universe);
-		Reasoner reasoner = universe.reasoner(assumption);
 
 		// If p is false, the implication will evaluate to true.
-		if (reasoner.isValid(universe.not(p))) {
+		if (p.isFalse()) {
 			eval.value = universe.trueExpression();
 			return eval;
 		} else {
@@ -2457,6 +2455,11 @@ public class CommonEvaluator implements Evaluator {
 			ResultType resultType;
 			Reasoner reasoner = universe.reasoner(assumption);
 
+			if (reasoner.isValid(universe.not(assumption))) {
+				state = stateFactory.addToPathcondition(state, pid,
+						universe.falseExpression());
+				return stateFactory.simplify(state);
+			}
 			claim = universe.lessThanEquals(zero, index);
 			resultType = reasoner.valid(claim).getResultType();
 			if (resultType != ResultType.YES) {

@@ -717,6 +717,8 @@ public class CommonExecutor implements Executor {
 				NoopStatement noop = (NoopStatement) statement;
 				Expression expression = noop.expression();
 
+				// Evaluate branch condition, if there is error in evaluation,
+				// report it.
 				if (expression != null) {
 					Evaluation eval = this.evaluator.evaluate(state, pid,
 							expression);
@@ -728,7 +730,7 @@ public class CommonExecutor implements Executor {
 				if (noop.noopKind() == NoopKind.LOOP) {
 					LoopBranchStatement loopBranch = (LoopBranchStatement) noop;
 
-					if (!loopBranch.isEnter() && this.civlConfig.simplify()) {
+					if (!loopBranch.isEnter() && !this.civlConfig.simplify()) {
 						BooleanExpression pc = state.getPathCondition(universe);
 						Reasoner reasoner = universe.reasoner(pc);
 

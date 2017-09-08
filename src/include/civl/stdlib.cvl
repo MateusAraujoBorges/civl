@@ -2,14 +2,33 @@
 
 #ifndef __STDLIB_CIVL__
 #define __STDLIB_CIVL__
-
 #include<stdlib.h>
+#include<stdio.h>
+#include <pointer.cvh>
+#include <bundle.cvh>
 #include<civlc.cvh>
 
-//#define DEFAULT_SEED  99
+void swap(void * a, void * b, size_t size) {
+  $bundle bun_a = $bundle_pack(a, size);
+  $bundle bun_b = $bundle_pack(b, size);  
 
-//unsigned _rand_seed = DEFAULT_SEED;
-//unsigned _random_seed = DEFAULT_SEED;
+  $bundle_unpack(bun_a, b);
+  $bundle_unpack(bun_b, a);
+}
+
+void qsort(void *base, size_t n, size_t es, 
+	   int (*cmp)(const void*, const void*)) {   
+  for (int i = 1; i < n; i++) {
+    for (int j = i; j > 0; j--) {
+      void * p_j_1 = $pointer_add(base, j-1, es);
+      void * p_j = $pointer_add(base, j, es);
+      int comp = cmp(p_j_1, p_j);
+
+      if (comp <= 0) continue;
+      else swap(p_j_1, p_j, es);
+    }
+  }
+}
 
 $atomic_f void free(void*ptr){
   $free(ptr);

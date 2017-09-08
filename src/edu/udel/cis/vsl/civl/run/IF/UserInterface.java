@@ -366,6 +366,10 @@ public class UserInterface {
 				gmcConfig.getAnonymousSection());
 		implSection = this.readInputs(implSection,
 				gmcConfig.getAnonymousSection());
+		specSection = this.readVerboseOrDebugOption(specSection,
+				anonymousSection);
+		implSection = this.readVerboseOrDebugOption(implSection,
+				anonymousSection);
 
 		ModelTranslator specWorker = new ModelTranslator(gmcConfig, specSection,
 				spec.files(), spec.getCoreFileName(), universe),
@@ -416,8 +420,13 @@ public class UserInterface {
 				civlConfig);
 
 		// implProgram.prettyPrint(out);
-		if (civlConfig.debugOrVerbose())
+		if (civlConfig.debugOrVerbose()) {
+			out.println("Spec program...");
+			specProgram.prettyPrint(out);
+			out.println("Impl program...");
+			implProgram.prettyPrint(out);
 			out.println("Generating composite program...");
+		}
 		// specProgram.prettyPrint(System.out);
 		combinedAST = combiner.combine(specProgram.getAST(),
 				implProgram.getAST());
@@ -1004,6 +1013,32 @@ public class UserInterface {
 				result.putMapEntry(CIVLConstants.inputO, entry.getKey(),
 						entry.getValue());
 			}
+		return result;
+	}
+
+	/**
+	 * If in rhs (anonymous GMCSection), verbose or debug option is set to true,
+	 * then in lhs (spec or impl GMCSection) the verbose or debug option should
+	 * also be set to true.
+	 * 
+	 * @param lhs
+	 *            spec or impl GMCSection.
+	 * @param rhs
+	 *            Anonymous GMCSection.
+	 * @return A modified copy of lhs (spec or impl GMCSection).
+	 */
+	private GMCSection readVerboseOrDebugOption(GMCSection lhs,
+			GMCSection rhs) {
+		GMCSection result = lhs.clone();
+		Object rverbose = rhs.getValue(CIVLConstants.verboseO);
+		Object rdebug = rhs.getValue(CIVLConstants.debugO);
+		Object lverbose = lhs.getValue(CIVLConstants.verboseO);
+		Object ldebug = lhs.getValue(CIVLConstants.debugO);
+
+		if (rverbose != null && lverbose == null)
+			result.setScalarValue(CIVLConstants.verboseO, rverbose);
+		if (rdebug != null && ldebug == null)
+			result.setScalarValue(CIVLConstants.debugO, rdebug);
 		return result;
 	}
 
