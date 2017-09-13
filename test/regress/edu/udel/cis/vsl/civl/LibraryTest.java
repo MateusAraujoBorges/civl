@@ -78,6 +78,12 @@ public class LibraryTest {
 	}
 
 	@Test
+	public void memcpy_multi_dim_one() throws ABCException {
+		assertTrue(ui.run("verify", QUIET,
+				filename(STRING, "memcpy_multi_dim_one.c")));
+	}
+
+	@Test
 	public void assertH() throws ABCException {
 		assertTrue(ui.run("verify", QUIET, NO_PRINTF,
 				filename("assert_test.cvl")));
