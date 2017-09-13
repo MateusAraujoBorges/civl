@@ -28,20 +28,20 @@ public class OmpTransformNoSimplifiy {
 
 	@Test
 	public void dotProduct1() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify", "-input_omp_thread_max=2",
-				filename("dotProduct1.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("dotProduct1.c")));
 	}
 
 	@Test
 	public void dotProductCritical() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify", "-input_omp_thread_max=2",
-				filename("dotProduct_critical.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("dotProduct_critical.c")));
 	}
-	
+
 	@Test
 	public void dotProductOrphan() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify", "-input_omp_thread_max=2",
-				filename("dotProduct_orphan.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("dotProduct_orphan.c")));
 	}
 
 	@Test
@@ -52,32 +52,32 @@ public class OmpTransformNoSimplifiy {
 
 	@Test
 	public void parallelfor() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify", "-input_omp_thread_max=2",
-				filename("parallelfor.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("parallelfor.c")));
 	}
-	
+
 	@Test
 	public void sections() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify", "-input_omp_thread_max=2",
-				filename("sections.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("sections.c")));
 	}
-	
+
 	@Test
 	public void threadPrivate() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify", "-input_omp_thread_max=2",
-				filename("threadPrivate.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("threadPrivate.c")));
 	}
-	
+
 	@Test
 	public void lastPrivate() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify", "-input_omp_thread_max=2",
-				filename("lastPrivate.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("lastPrivate.c")));
 	}
-	
+
 	@Test
 	public void vecAdd() {
-		assertFalse(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify", "-input_omp_thread_max=2",
-				filename("vecAdd_deadlock.c")));
+		assertFalse(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("vecAdd_deadlock.c")));
 	}
 
 	@Ignore
@@ -90,14 +90,21 @@ public class OmpTransformNoSimplifiy {
 	@Ignore
 	@Test
 	public void raceCond2() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", "-showProgram -ompNoSimplify",
-				"-input_omp_thread_max=2", filename("raceCond2.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false",
+				"-showProgram -ompNoSimplify", "-input_omp_thread_max=2",
+				filename("raceCond2.c")));
 	}
 
 	@Test
 	public void canonicalForLoops() {
-		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify", "-input_omp_thread_max=2",
-				filename("canonicalForLoops.c")));
+		assertTrue(ui.run("verify", "-enablePrintf=false", "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("canonicalForLoops.c")));
+	}
+
+	@Test
+	public void arrayOutOfBound() {
+		assertFalse(ui.run("verify", TestConstants.QUIET, "-ompNoSimplify",
+				"-input_omp_thread_max=2", filename("array_out_bound.c")));
 	}
 
 }

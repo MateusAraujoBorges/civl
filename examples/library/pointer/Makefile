@@ -17,4 +17,5 @@ assertEqualsFail2: simpleAssertEqualsFail2.cvl
 
 clean:
 	rm -f *~ 
-	rm -r CIVLREP
+	rm -r -f CIVLREP
+	rm -r -f incompatiblePointerTranslation_dir/CIVLREP

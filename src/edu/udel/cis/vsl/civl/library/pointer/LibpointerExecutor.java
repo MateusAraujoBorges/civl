@@ -757,28 +757,29 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			SymbolicExpression newPointer = symbolicUtil.extendPointer(objPtr,
 					reference);
 			CIVLSource objSource = arguments[1].getSource();
-			Pair<BooleanExpression, ResultType> derefableResult = symbolicAnalyzer
-					.isDerefablePointer(state, newPointer);
+			int dyscopeId = symbolicUtil.getDyscopeId(objSource, newPointer);
+			int vid = symbolicUtil.getVariableId(objSource, newPointer);
+			SymbolicExpression objValue = state.getVariableValue(dyscopeId,
+					vid);
 
-			if (derefableResult.right != ResultType.YES) {
-				StringBuffer message = new StringBuffer();
-
-				message.append("the second argument of $translate_ptr() "
-						+ symbolicAnalyzer.symbolicExpressionToString(objSource,
-								state, null, objPtr)
-						+ " doesnot have a compatible type\nhierarchy as the first argument "
-						+ symbolicAnalyzer.symbolicExpressionToString(
-								arguments[0].getSource(), state, null,
-								pointer));
+			reference = (ReferenceExpression) symbolicUtil
+					.getSymRef(newPointer);
+			if (!symbolicUtil.isValidRefOf(reference, objValue.type())) {
 				this.errorLogger.logSimpleError(source, state, process,
 						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.OTHER, message.toString());
+						ErrorKind.OTHER,
+						"the second argument of $translate_ptr() "
+								+ symbolicAnalyzer.symbolicExpressionToString(
+										objSource, state, null, objPtr)
+								+ " doesn't have a compatible type hierarchy as the first argument "
+								+ symbolicAnalyzer.symbolicExpressionToString(
+										arguments[0].getSource(), state, null,
+										pointer));
 				throw new UnsatisfiablePathConditionException();
 			}
 			result = newPointer;
 		}
 		return new Evaluation(state, result);
-
 	}
 
 	/**
