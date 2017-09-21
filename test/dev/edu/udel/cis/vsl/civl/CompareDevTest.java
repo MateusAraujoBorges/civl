@@ -51,7 +51,7 @@ public class CompareDevTest {
 	// TODO: failing
 	@Test
 	public void typeAnalyzerException() {
-		assertTrue(ui.run("compare", "-spec", filename("type_bad", "spec.c"),
+		assertTrue(ui.run("compare", "-showProgram -spec", filename("type_bad", "spec.c"),
 				"-impl", filename("type_bad", "impl.c")));
 	}
 
