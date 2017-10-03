@@ -97,6 +97,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.SwitchNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.UpdateNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.WhenNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.WithNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.type.ArrayTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.EnumerationTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.FunctionTypeNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.PointerTypeNode;
@@ -2596,9 +2597,9 @@ public class FunctionTranslator {
 			FunctionType functionType = entity.getType();
 			FunctionTypeNode functionTypeNode = (FunctionTypeNode) node
 					.getTypeNode();
-			CIVLType returnType = translateABCType(
+			CIVLType returnType = translateABCTypeNode(
 					modelFactory.sourceOf(functionTypeNode.getReturnType()),
-					scope, functionType.getReturnType());
+					scope, functionTypeNode.getReturnType());
 			SequenceNode<VariableDeclarationNode> abcParameters = functionTypeNode
 					.getParameters();
 			int numParameters = abcParameters.numChildren();
@@ -5792,7 +5793,7 @@ public class FunctionTranslator {
 				isSystemType = false;
 		}
 		modelBuilder.typeMap.put(type, result);
-		if (!isSystemType) {
+		if (!isSystemType)
 			switch (tag) {
 				case ModelConfiguration.MEM_TYPE :
 					typeFactory.addSystemType(tag, structType);
@@ -5884,7 +5885,6 @@ public class FunctionTranslator {
 				default :
 					// TODO: set default case
 			}
-		}
 		return result;
 	}
 
@@ -5915,7 +5915,7 @@ public class FunctionTranslator {
 		CIVLType result = modelBuilder.typeMap.get(abcType);
 
 		if (result == null) {
-			TypeKind kind = abcType.kind();
+			TypeNodeKind kind = abcTypeNode.kind();
 
 			switch (kind) {
 				case STRUCTURE_OR_UNION :
@@ -5936,18 +5936,33 @@ public class FunctionTranslator {
 					break;
 				}
 				case ARRAY :
+					ArrayTypeNode arrayTypeNode = (ArrayTypeNode) abcTypeNode;
+					CIVLType elementType = translateABCTypeNode(source, scope,
+							arrayTypeNode.getElementType());
+
+					if (arrayTypeNode.getExtent() != null) {
+						Expression extent = translateExpressionNode(
+								arrayTypeNode.getExtent(), scope, true);
+
+						result = typeFactory.completeArrayType(elementType,
+								extent);
+					} else
+						result = typeFactory.incompleteArrayType(elementType);
+					// cache
+					this.modelBuilder.typeMap.put(abcType, result);
+					break;
+				case FUNCTION :
+				case TYPEDEF_NAME :
 				case BASIC :
-				case HEAP :
-				case OTHER_INTEGER :
-				case PROCESS :
 				case SCOPE :
 				case STATE :
-				case QUALIFIED :
 				case VOID :
-				case FUNCTION :
 				case RANGE :
 				case DOMAIN :
+				case LAMBDA :
+				case MEMORY :
 					return translateABCType(source, scope, abcType);
+				case TYPEOF :
 				case ATOMIC :
 					throw new CIVLUnimplementedFeatureException(
 							"Type " + abcType, source);
