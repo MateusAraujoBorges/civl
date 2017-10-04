@@ -510,6 +510,54 @@ int MPI_Alltoallw(const void* sendbuf, const int sendcounts[], const int sdispls
   return 0;
 }
 
+int MPI_Scan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+	     MPI_Op op, MPI_Comm comm) {
+#ifndef _MPI_CONTRACT
+  $assert(_mpi_state == _MPI_INIT, "MPI_Scan() cannot be invoked without "
+	  "MPI_Init() being called before.\n");
+#endif
+  int place = $comm_place(comm.col);
+  int datatype_enum2int = (int)datatype;
+
+  // check consistency of a group of collective routine calls
+  $bundle checkerEntry = $mpi_create_coroutine_entry(SCAN_TAG, -1, -1, 1, 
+						     &datatype_enum2int);
+  $bundle specEntry = $collate_check(comm.collator, checkerEntry);
+
+  $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
+  if (sendbuf != MPI_IN_PLACE) 
+    $mpi_check_buffer(sendbuf, count, datatype);
+  $mpi_check_buffer(recvbuf, count, datatype);
+  $mpi_scan(sendbuf, recvbuf, count, datatype, op, comm);
+  return 0;
+}
+
+int MPI_Exscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+	     MPI_Op op, MPI_Comm comm) {
+#ifndef _MPI_CONTRACT
+  $assert(_mpi_state == _MPI_INIT, "MPI_Exscan() cannot be invoked without "
+	  "MPI_Init() being called before.\n");
+#endif
+  int place = $comm_place(comm.col);
+  int datatype_enum2int = (int)datatype;
+
+  // check consistency of a group of collective routine calls
+  $bundle checkerEntry = $mpi_create_coroutine_entry(EXSCAN_TAG, -1, -1, 1, 
+						     &datatype_enum2int);
+  $bundle specEntry = $collate_check(comm.collator, checkerEntry);
+
+  $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
+  // MPI_IN_PLACE in this routine simply means that get sendbuf from recvbuf:
+  if (sendbuf != MPI_IN_PLACE) 
+    $mpi_check_buffer(sendbuf, count, datatype);
+  if (place > 0)
+    $mpi_check_buffer(recvbuf, count, datatype);
+  $mpi_exscan(sendbuf, recvbuf, count, datatype, op, comm);
+  return 0;
+}
+
+/* ****************** End of collecitve routines  ********************* */
+
 int MPI_Comm_dup(MPI_Comm comm, MPI_Comm * newcomm) {
   $scope CMPI_PROC_SCOPE = $mpi_proc_scope(comm.col);
 

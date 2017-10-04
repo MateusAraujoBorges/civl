@@ -617,6 +617,92 @@ int $mpi_scatterv(const void* sendbuf, const int sendcounts[], const
   return 0;
 }
 
+/* The helper function for (inclusive) MPI_Scan */
+int $mpi_scan(const void* sendbuf, void* recvbuf, int count,
+	      MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) {
+  int place, nprocs;
+  int size = count * sizeofDatatype(datatype);
+  void * tmp_space = $mpi_malloc(count, datatype);
+  void * tmp_ptr, * tmp_space_const = tmp_space;
+
+  place = $comm_place(comm.col);
+  nprocs = $comm_size(comm.col);
+  /* Each process do reduction from 0 .. rank (inclusive):
+   *  Send to process rank + 1 ... nprocs-1 (inclusive)
+   *  Recv from process 0 .. rank (exclusive)
+   */
+  for (int i = place + 1; i < nprocs; i++)
+    $mpi_collective_send(sendbuf, count, datatype, i, SCAN_TAG, comm);
+  if (sendbuf != MPI_IN_PLACE)
+    memcpy(recvbuf, sendbuf, size);
+  for (int i = 0; i < place; i++) {
+    $message in = $comm_dequeue(comm.col, i, SCAN_TAG);	
+  
+    // so far, unpack_apply requires that 'recvbuf' is not aliasing
+    // 'tmp_space' (can be improved in the future):
+    $bundle_unpack_apply(in.data, recvbuf, op, count, tmp_space);
+    // swap tmp_space with recvbuf
+    tmp_ptr = tmp_space;
+    tmp_space = recvbuf;
+    recvbuf = tmp_ptr;
+    $assert (in.size <= size ,
+	     "Message of size %d exceeds the specified size %d.", in.size, size);
+  }
+  if (recvbuf == tmp_space_const)
+    memcpy(tmp_space, recvbuf, size);
+  free(tmp_space_const);
+  return 0;
+}
+
+/* The helper function for (the exclusive) MPI_Exscan */
+int $mpi_exscan(const void* sendbuf, void* recvbuf, int count,
+	      MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) {
+  int place, nprocs;
+  int size = count * sizeofDatatype(datatype);
+  void * tmp_space = $mpi_malloc(count, datatype);
+  void * tmp_ptr, * tmp_space_const = tmp_space;
+
+  place = $comm_place(comm.col);
+  nprocs = $comm_size(comm.col);
+  /* The “in place” option for intracommunicators is specified by
+   * passing MPI_IN_PLACE in the sendbuf argument. In this case, the
+   * input data is taken from the receive buffer, and replaced by the
+   * output data. The receive buffer on rank 0 is not changed by this
+   * operation. */
+  if (sendbuf == MPI_IN_PLACE)
+    sendbuf = recvbuf;
+  /* Each process do reduction from 0 .. rank (inclusive):
+   *  Send to process rank + 1 ... nprocs-1 (inclusive)
+   *  Recv from process 0 .. rank (exclusive)
+   */
+  for (int i = place + 1; i < nprocs; i++)
+    $mpi_collective_send(sendbuf, count, datatype, i, EXSCAN_TAG, comm);
+  // no-op for rank 0
+  if (place != 0) {
+    $message in = $comm_dequeue(comm.col, 0, EXSCAN_TAG);
+    $bundle_unpack(in.data, recvbuf);
+    for (int i = 1; i < place; i++) {
+      in = $comm_dequeue(comm.col, i, EXSCAN_TAG);
+      // so far, unpack_apply requires that 'recvbuf' is not aliasing
+      // 'tmp_space' (can be improved in the future):
+      $bundle_unpack_apply(in.data, recvbuf, op, count, tmp_space);
+      // swap tmp_space with recvbuf
+      tmp_ptr = tmp_space;
+      tmp_space = recvbuf;
+      recvbuf = tmp_ptr;    
+      $assert (in.size <= size ,
+	       "Message of size %d exceeds the specified size %d.", in.size, size);
+    }
+  }
+  if (recvbuf == tmp_space_const)
+    memcpy(tmp_space, recvbuf, size);
+  free(tmp_space_const);
+  return 0;
+}
+
+
+/* ******************** End of collective routines  ********************* */
+
 int $mpi_comm_dup($scope scope, MPI_Comm comm, MPI_Comm * newcomm, char * routName) {
   int place = $comm_place(comm.col);
   $mpi_gcomm newgcomm;
@@ -812,6 +898,8 @@ char * $mpi_coroutine_name(int tag) {
   case 9987: return "MPI_Barrier";
   case 9986: return "MPI_Commdup";
   case 9985: return "MPI_Commfree";
+  case 9984: return "MPI_Scan";
+  case 9983: return "MPI_Exscan";
   default: $assert($false, "Internal Error: Unexpected MPI routine tag:%d.\n", tag);
   }
 }
