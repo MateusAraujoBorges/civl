@@ -83,6 +83,12 @@ public class MPICollectivePart2Test {
 	}
 
 	@Test
+	public void alltoallw() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=6 ", TestConstants.QUIET,
+				NO_PRINTF, filename("alltoallw.c")));
+	}
+
+	@Test
 	public void reduce() {
 		assertTrue(ui.run("verify -input_mpi_nprocs=6", TestConstants.QUIET,
 				NO_PRINTF, filename("reduce.c")));

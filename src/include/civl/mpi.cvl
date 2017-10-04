@@ -382,6 +382,7 @@ int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcount[]
   int root = 0;
   int displs[nprocs];
   int datatypes[1] = {(int)datatype};
+
   // MPI library defined collective operation checking entries:
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
@@ -424,6 +425,7 @@ int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   int displs[nprocs];
   int sendcounts[nprocs];
   int datatypes[2] = {(int)sendtype, (int)recvtype};
+
   // MPI library defined collective operation checking entries:
   $bundle checkerEntry; //the checking entry of this call
   $bundle specEntry;    //a recorded entry as specification
@@ -493,17 +495,21 @@ int MPI_Alltoallw(const void* sendbuf, const int sendcounts[], const int sdispls
 		  const MPI_Datatype recvtypes[], MPI_Comm comm) {
   int nprocs = $comm_size(comm.col);
   int place = $comm_place(comm.col);
-
+  int sdispls_offset[nprocs];
+  
+  for (int i = 0; i < nprocs; i++) 
+    sdispls_offset[i] = sdispls[i] / sizeofDatatype(sendtypes[i]);
 #ifndef _MPI_CONTRACT
   $assert(_mpi_state == _MPI_INIT, "MPI_Alltoallw() cannot be invoked without "
     "MPI_Init() being called before.\n");
 #endif
   for(int i = 0; i < nprocs; i++) {
-    void * ptr = $mpi_pointer_add(recvbuf, rdispls[i], recvtypes[i]);
-    void * sendptr = $mpi_pointer_add(sendbuf, sdispls[i], sendtypes[i]);
+    int recv_t_size = sizeofDatatype(recvtypes[i]);
+    void * ptr = $mpi_pointer_add(recvbuf, rdispls[i] / recv_t_size, recvtypes[i]);
+    void * sendptr = $mpi_pointer_add(sendbuf, sdispls_offset[i], sendtypes[i]);
 
     $mpi_check_buffer(sendptr, sendcounts[i], sendtypes[i]);
-    $mpi_scatterv(sendbuf, sendcounts, sdispls, sendtypes[i], 
+    $mpi_scatterv(sendbuf, sendcounts, sdispls_offset, sendtypes[i], 
 		  ptr, recvcounts[i], recvtypes[i], i, 
 		  ALLTOALLW_TAG, comm, "MPI_Alltoallw()");
   }
