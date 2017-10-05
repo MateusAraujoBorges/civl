@@ -64,7 +64,7 @@ int main( int argc, char **argv )
         p = rbuf + rdispls[i]/sizeof(int);
         for (j=0; j<rank; j++) {
             if (p[j] != i * 100 + (rank*(rank+1))/2 + j) {
-                fprintf( stderr, "[%d] got %d expected %d for %dth\n",
+                printf("[%d] got %d expected %d for %dth\n",
                                     rank, p[j],(i*(i+1))/2 + j, j );
                 fflush(stderr);
                 err++;

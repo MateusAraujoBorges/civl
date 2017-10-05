@@ -1,0 +1,14 @@
+struct B {
+ int x;
+} foo() {
+  struct B b;
+  
+  return b;
+}
+
+
+int main(){
+   struct B x = foo();
+   return x.x;
+}
+
