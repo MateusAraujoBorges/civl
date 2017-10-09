@@ -14,7 +14,7 @@ struct Books {
 };
 
 #ifdef _CIVL
-$output PetscInt ARRAY[20];
+$output PetscInt ARRAY[5];
 $output struct Books booko;
 #endif
 

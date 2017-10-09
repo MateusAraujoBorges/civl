@@ -63,6 +63,13 @@ public class CompareTest {
 				filename("provesa/head.cn.xb.pp.c")));
 	}
 
+	@Test
+	public void typeAnalyzerException() {
+		assertTrue(ui.run("compare", "-showProgram -spec",
+				filename("type_bad/spec.c"), "-impl",
+				filename("type_bad/impl.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

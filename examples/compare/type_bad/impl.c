@@ -18,7 +18,7 @@ union Data {
 };
 
 #ifdef _CIVL
-$output PetscInt ARRAY[20];
+$output PetscInt ARRAY[5];
 $output struct Books booko;
 #endif
 
@@ -26,9 +26,6 @@ int main() {
   struct Books book;
   union Data data;
   int a[5]={1,2,3,4,5};
-  
-  a[0] += book.book_id;
-  a[0] += data.i;
   
 #ifdef _CIVL
   booko.book_id = 0;
