@@ -31,6 +31,8 @@ public class LibraryTest {
 	private final static String STRING = "string";
 	private final static String TIME = "time";
 	private final static String POINTER = "pointer";
+	private final static String IncompatPtrTranslationDir = POINTER
+			+ "/incompatiblePointerTranslation_dir";
 	@SuppressWarnings("unused")
 	private final static String EXTERNAL = "external";
 	private final static String MATH = "math";
@@ -73,6 +75,12 @@ public class LibraryTest {
 	@Test
 	public void memset() throws ABCException {
 		assertTrue(ui.run("verify", QUIET, filename(STRING, "memset.cvl")));
+	}
+
+	@Test
+	public void memcpy_multi_dim_one() throws ABCException {
+		assertTrue(ui.run("verify", QUIET,
+				filename(STRING, "memcpy_multi_dim_one.c")));
 	}
 
 	@Test
@@ -393,6 +401,54 @@ public class LibraryTest {
 	public void undefinedVarTest() {
 		assertFalse(
 				ui.run("verify", QUIET, filename(POINTER, "undefinedVar.cvl")));
+	}
+
+	@Test
+	public void incomptPointerTranslationStructTest() {
+		assertFalse(ui.run("verify", QUIET, filename(IncompatPtrTranslationDir,
+				"incompatiblePointerTranslationStruct.cvl")));
+	}
+
+	@Test
+	public void incomptPointerTranslationStructFixTest() {
+		assertTrue(ui.run("verify", QUIET, filename(IncompatPtrTranslationDir,
+				"incompatiblePointerTranslationStructFix.cvl")));
+	}
+
+	@Test
+	public void incomptPointerTranslationUnionTest() {
+		assertFalse(ui.run("verify", QUIET, filename(IncompatPtrTranslationDir,
+				"incompatiblePointerTranslationUnion.cvl")));
+	}
+
+	@Test
+	public void incomptPointerTranslationUnionFixTest() {
+		assertTrue(ui.run("verify", QUIET, filename(IncompatPtrTranslationDir,
+				"incompatiblePointerTranslationUnionFix.cvl")));
+	}
+
+	@Test
+	public void incomptPointerTranslationComplexTest() {
+		assertFalse(ui.run("verify", QUIET, filename(IncompatPtrTranslationDir,
+				"incompatiblePointerTranslationComplex.cvl")));
+	}
+
+	@Test
+	public void incomptPointerTranslationComplex2Test() {
+		assertFalse(ui.run("verify", QUIET, filename(IncompatPtrTranslationDir,
+				"incompatiblePointerTranslationComplex2.cvl")));
+	}
+
+	@Test
+	public void incomptPointerTranslationComplex3Test() {
+		assertFalse(ui.run("verify", QUIET, filename(IncompatPtrTranslationDir,
+				"incompatiblePointerTranslationComplex3.cvl")));
+	}
+
+	@Test
+	public void incomptPointerTranslationComplexFixTest() {
+		assertTrue(ui.run("verify", QUIET, filename(IncompatPtrTranslationDir,
+				"incompatiblePointerTranslationComplexFix.cvl")));
 	}
 
 	@AfterClass

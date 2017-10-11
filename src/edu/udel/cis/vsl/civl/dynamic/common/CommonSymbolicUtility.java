@@ -48,6 +48,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType.SymbolicTypeKind;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicTypeSequence;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
 
 public class CommonSymbolicUtility implements SymbolicUtility {
@@ -309,53 +310,75 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	/**
-	 * Is the given reference applicable to the specified symbolic expression?
+	 * Is the given reference applicable to the specified symbolic type?
 	 * 
 	 * @param ref
 	 *            The reference expression to be checked.
-	 * @param value
-	 *            The symbolic expression specified.
+	 * @param type
+	 *            The symbolic type specified.
 	 * @return True iff the given reference is applicable to the specified
-	 *         symbolic expression
+	 *         symbolic type
 	 */
-	private Pair<SymbolicExpression, Boolean> isValidRefOfValue(
-			ReferenceExpression ref, SymbolicExpression value) {
-		if (ref.isIdentityReference())
-			return new Pair<>(value, true);
-		else {
+	private boolean isValidRefOfType(ReferenceExpression ref,
+			SymbolicType type) {
+		// sub-references are ordered starting from the IdentityReference
+		LinkedList<ReferenceExpression> subRefOrderedSet = new LinkedList<>();
+
+		subRefOrderedSet.addFirst(ref);
+		while (ref instanceof NTReferenceExpression) {
 			ReferenceExpression parent = ((NTReferenceExpression) ref)
 					.getParent();
-			Pair<SymbolicExpression, Boolean> parentTest = isValidRefOfValue(
-					parent, value);
-			SymbolicExpression targetValue;
 
-			if (!parentTest.right)
-				return new Pair<>(value, false);
-			targetValue = parentTest.left;
-			if (ref.isArrayElementReference()) {
-				ArrayElementReference arrayEleRef = (ArrayElementReference) ref;
+			subRefOrderedSet.addFirst(parent);
+			ref = parent;
+		}
 
-				if (!(targetValue.type() instanceof SymbolicArrayType))
-					return new Pair<>(targetValue, false);
-				return new Pair<>(
-						universe.arrayRead(targetValue, arrayEleRef.getIndex()),
-						true);
-			} else if (ref.isTupleComponentReference()) {
-				TupleComponentReference tupleCompRef = (TupleComponentReference) ref;
+		ReferenceExpression subRef;
+		SymbolicType subType = type;
 
-				if (!(targetValue.type() instanceof SymbolicTupleType))
-					return new Pair<>(targetValue, false);
-				return new Pair<>(universe.tupleRead(targetValue,
-						tupleCompRef.getIndex()), true);
-			} else {
-				UnionMemberReference unionMemRef = (UnionMemberReference) ref;
+		// Check type against references:
+		while (!subRefOrderedSet.isEmpty()) {
+			subRef = subRefOrderedSet.removeFirst();
+			switch (subRef.referenceKind()) {
+				case ARRAY_ELEMENT :
+					if (subType.typeKind() == SymbolicTypeKind.ARRAY) {
+						subType = ((SymbolicArrayType) subType).elementType();
+						continue;
+					} else
+						return false;
+				case IDENTITY :
+					continue;
+				case TUPLE_COMPONENT :
+					if (subType.typeKind() == SymbolicTypeKind.TUPLE) {
+						int fieldIdx = ((TupleComponentReference) subRef)
+								.getIndex().getInt();
+						SymbolicTypeSequence fieldTypes = ((SymbolicTupleType) subType)
+								.sequence();
 
-				if (!(targetValue.type() instanceof SymbolicUnionType))
-					return new Pair<>(targetValue, false);
-				return new Pair<>(universe.unionExtract(unionMemRef.getIndex(),
-						targetValue), true);
+						if (fieldTypes.numTypes() <= fieldIdx)
+							return false;
+						subType = fieldTypes.getType(fieldIdx);
+						continue;
+					} else
+						return false;
+				case UNION_MEMBER :
+					if (subType.typeKind() == SymbolicTypeKind.UNION) {
+						int fieldIdx = ((UnionMemberReference) subRef)
+								.getIndex().getInt();
+						SymbolicTypeSequence fieldTypes = ((SymbolicUnionType) subType)
+								.sequence();
+
+						if (fieldTypes.numTypes() <= fieldIdx)
+							return false;
+						subType = fieldTypes.getType(fieldIdx);
+						continue;
+					} else
+						return false;
+				default :
+					return false;
 			}
 		}
+		return true;
 	}
 
 	/**
@@ -720,8 +743,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 	@Override
 	public boolean isValidRefOf(ReferenceExpression ref,
-			SymbolicExpression value) {
-		return isValidRefOfValue(ref, value).right;
+			SymbolicType objectValueType) {
+		return isValidRefOfType(ref, objectValueType);
 	}
 
 	@Override

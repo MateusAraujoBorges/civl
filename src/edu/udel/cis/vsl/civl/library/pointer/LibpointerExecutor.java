@@ -764,7 +764,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 
 			reference = (ReferenceExpression) symbolicUtil
 					.getSymRef(newPointer);
-			if (!symbolicUtil.isValidRefOf(reference, objValue)) {
+			if (!symbolicUtil.isValidRefOf(reference, objValue.type())) {
 				this.errorLogger.logSimpleError(source, state, process,
 						symbolicAnalyzer.stateInformation(state),
 						ErrorKind.OTHER,

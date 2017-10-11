@@ -767,6 +767,24 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			result.append('.');
 			result.append(field.name());
 			return new Pair<CIVLType, String>(field.type(), result.toString());
+		} else if (reference.isUnionMemberReference()) {
+			UnionMemberReference unionMemberRef = (UnionMemberReference) reference;
+			IntObject index = unionMemberRef.getIndex();
+			Pair<CIVLType, String> parentResult = this.referenceToString(source,
+					type, unionMemberRef.getParent());
+			String parent = parentResult.right;
+
+			if (!parentResult.left.isStructType())
+				return parentResult;
+
+			CIVLStructOrUnionType structOrUnionType = (CIVLStructOrUnionType) parentResult.left;
+			StructOrUnionField field = structOrUnionType
+					.getField(index.getInt());
+
+			result.append(parent);
+			result.append('.');
+			result.append(field.name());
+			return new Pair<CIVLType, String>(field.type(), result.toString());
 		} else if (reference.isOffsetReference()) {
 			OffsetReference offsetRef = (OffsetReference) reference;
 			NumericExpression offset = offsetRef.getOffset();

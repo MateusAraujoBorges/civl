@@ -711,12 +711,6 @@ public abstract class LibraryComponent {
 				reportOutOfBoundError(state, pid, claim, resultType, pointer,
 						dataSeqLength, count, source);
 		}
-		// If count is one:
-		if (reasoner.isValid(universe.equals(count, one))) {
-			SymbolicExpression data = universe.arrayRead(dataArray, zero);
-
-			return new Pair<>(new Evaluation(state, data), pointer);
-		}
 		// If the type of the object is exact same as the dataArray, then do a
 		// directly assignment:
 		SymbolicType objType = symbolicAnalyzer
@@ -730,6 +724,12 @@ public abstract class LibraryComponent {
 		// "startPtr" may not point to a memory base type object yet
 		symref = symbolicAnalyzer.getLeafNodeReference(state, startPtr, source);
 		if (!symref.isArrayElementReference()) {
+			if (reasoner.isValid(universe.equals(count, one)))
+				return new Pair<>(
+						new Evaluation(state,
+								universe.arrayRead(dataArray, zero)),
+						symbolicUtil.makePointer(pointer, symref));
+			// report error:
 			CIVLType integerType;
 
 			integerType = typeFactory.integerType();

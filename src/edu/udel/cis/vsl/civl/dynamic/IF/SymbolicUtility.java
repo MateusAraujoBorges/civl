@@ -361,18 +361,17 @@ public interface SymbolicUtility {
 			SymbolicExpression ptr1);
 
 	/**
-	 * Checks if the given reference is valid for a certain object or a
-	 * sub-component of some object.
+	 * Checks if the given reference is valid for the symbolic type of a certain
+	 * object value.
 	 * 
 	 * @param ref
 	 *            The reference.
-	 * @param component
-	 *            The given component which can be an object or a sub-component
-	 *            of an object.
+	 * @param objectValueType
+	 *            The symbolic type of the value of the given object.
 	 * @return True iff the given reference expression is applicable for the
-	 *         given object.
+	 *         given object value type.
 	 */
-	boolean isValidRefOf(ReferenceExpression ref, SymbolicExpression component);
+	boolean isValidRefOf(ReferenceExpression ref, SymbolicType objectValueType);
 
 	/**
 	 * Makes a pointer value from the given dynamic scope ID, variable ID, and

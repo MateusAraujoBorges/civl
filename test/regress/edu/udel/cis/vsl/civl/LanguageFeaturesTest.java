@@ -71,6 +71,12 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
+	public void arrayOfStructs() throws ABCException {
+		assertTrue(
+				ui.run(VERIFY, QUIET, NO_PRINTF, filename("arrayOfStruct.c")));
+	}
+
+	@Test
 	public void assertNonNullPointer() throws ABCException {
 		assertTrue(ui.run(VERIFY, QUIET, filename("assertNonNullPointer.cvl")));
 	}
@@ -263,6 +269,12 @@ public class LanguageFeaturesTest {
 	public void functionPrototypeBad() throws ABCException {
 		assertTrue(ui.run(VERIFY, QUIET, NO_PRINTF,
 				filename("functionPrototypeBad.cvl")));
+	}
+
+	@Test
+	public void funcRetStruct() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				filename("functionRetStruct.cvl")));
 	}
 
 	@Test

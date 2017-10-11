@@ -1,0 +1,23 @@
+#include <pointer.cvh>
+
+int main() {
+  struct _3int {
+    int x;
+    union {
+      int a;
+      int b;
+    } y;
+  } c1;
+
+  struct _2int {
+    int x;
+    union {
+      int a;
+    } y;
+  } c2;
+
+  int * p = &c1.y.b;
+  int * q = $translate_ptr(p, &c2);
+  
+  return *p;
+}

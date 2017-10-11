@@ -1,0 +1,19 @@
+#include <pointer.cvh>
+
+int main() {
+  struct _3int {
+    int x;
+    int y;
+    int z;
+  } a;
+
+  struct _2int {
+    int x;
+    int y;
+  } b;
+
+  int * p = &a.z;
+  int * q = $translate_ptr(p, &b);
+  
+  return *q;
+}
