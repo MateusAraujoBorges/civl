@@ -3444,8 +3444,8 @@ public class FunctionTranslator {
 								+ node.getName(),
 						node.getSource());
 //			System.out.println("var definition:" + varEntity.getDefinition().toString());
-//			if (!varEntity.getDefinition().equals(node))
-//				return null;
+			if (!varEntity.getDefinition().equals(node))
+				return null;
 		}
 
 		TypeNode typeNode = node.getTypeNode();
