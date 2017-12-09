@@ -127,7 +127,6 @@ public class GeneralWorker extends BaseWorker {
 		mainDef = mainFunction.getDefinition();
 		checkAgumentsOfMainFunction(mainDef, root);
 		unit = renameStaticVariables(unit);
-		unit = Transform.variableDeclTransiformer(astFactory).transform(unit);
 		unit.release();
 		this.getCIVLMallocDeclaration(root);
 		root = moveStaticVariables(root);
