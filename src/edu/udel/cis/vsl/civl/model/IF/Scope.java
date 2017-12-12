@@ -95,6 +95,17 @@ public interface Scope extends Sourceable {
 	void addVariable(Variable variable);
 
 	/**
+	 * If a variable is already included in this scope, return the included
+	 * variable. Otherwise return null.
+	 * 
+	 * @param variable
+	 *            The variable which is being checked.
+	 * @return included variable iff variable already exists in this scope, null
+	 *         otherwise.
+	 */
+	Variable contains(Variable variable);
+
+	/**
 	 * Get the variable associated with an identifier. If this scope does not
 	 * contain such a variable, parent scopes will be recursively checked.
 	 * 

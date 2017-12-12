@@ -655,4 +655,14 @@ public class CommonScope extends CommonSourceable implements Scope {
 	public CIVLFunction getFunction(int fid) {
 		return this.functions.get(functionNames[fid]);
 	}
+
+	@Override
+	public Variable contains(Variable variable) {
+		for (Variable v : variables) {
+			if (v.name().equals(variable.name().name())) {
+				return v;
+			}
+		}
+		return null;
+	}
 }
