@@ -2376,7 +2376,7 @@ public class FunctionTranslator {
 						continue;
 
 					Variable variable = translateVariableDeclarationNode(
-							declaration, newScope);
+							declaration, newScope).left;
 					Fragment fragment;
 
 					variables.add(variable);
@@ -3358,10 +3358,10 @@ public class FunctionTranslator {
 	private Fragment translateVariableDeclarationNode(Location sourceLocation,
 			Scope scope, VariableDeclarationNode node)
 			throws CommandLineException {
-		Variable variable = translateVariableDeclarationNode(node, scope);
-
-		if (variable == null)
-			return new CommonFragment();
+		Pair<Variable, Boolean> pair = translateVariableDeclarationNode(node,
+				scope);
+		Variable variable = pair.left;
+		Boolean exists = pair.right;
 
 		CIVLType type = variable.type();
 		Fragment result = null, initialization = null;
@@ -3388,7 +3388,7 @@ public class FunctionTranslator {
 					modelBuilder.initializedInputs.add(name);
 				}
 			}
-			if (rhs == null && node.getInitializer() == null)
+			if (rhs == null && node.getInitializer() == null && !exists)
 				rhs = modelFactory.initialValueExpression(source, variable);
 			if (sourceLocation == null)
 				sourceLocation = modelFactory
@@ -3424,14 +3424,21 @@ public class FunctionTranslator {
 	 *            the Model scope in which the variable declaration occurs
 	 * @param node
 	 *            the AST variable declaration node.
-	 * @return The variable
+	 * @return a pair whose left (pair.left) is variable in the declaration node
+	 *         and its right is a boolean value indicates whether the variable
+	 *         already exists in this scope.
 	 */
-	protected Variable translateVariableDeclarationNode(
+	protected Pair<Variable, Boolean> translateVariableDeclarationNode(
 			VariableDeclarationNode node, Scope scope) {
 		return translateVariableDeclarationNodeWork(node, scope, false);
 	}
 
-	private Variable translateVariableDeclarationNodeWork(
+	/**
+	 * @return a pair whose left (pair.left) is variable in the declaration node
+	 *         and its right is a boolean value indicates whether the variable
+	 *         already exists in this scope.
+	 */
+	private Pair<Variable, Boolean> translateVariableDeclarationNodeWork(
 			VariableDeclarationNode node, Scope scope, boolean isBound) {
 		if (!isBound) {
 			edu.udel.cis.vsl.abc.ast.entity.IF.Variable varEntity = node
@@ -3443,9 +3450,8 @@ public class FunctionTranslator {
 						"Can't find the definition for variable "
 								+ node.getName(),
 						node.getSource());
-//			System.out.println("var definition:" + varEntity.getDefinition().toString());
-			if (!varEntity.getDefinition().equals(node))
-				return null;
+			// System.out.println("var definition:" +
+			// varEntity.getDefinition().toString());
 		}
 
 		TypeNode typeNode = node.getTypeNode();
@@ -3459,6 +3465,11 @@ public class FunctionTranslator {
 		if (!isBound) {
 			if (typeNode.isConstQualified())
 				variable.setConst(true);
+
+			Variable searchVar = scope.contains(variable);
+			if (searchVar != null)
+				return new Pair<>(searchVar, Boolean.valueOf(true));
+
 			scope.addVariable(variable);
 			if (node.getTypeNode().isInputQualified()) {
 				variable.setIsInput(true);
@@ -3474,7 +3485,7 @@ public class FunctionTranslator {
 				variable.setStatic(true);
 			}
 		}
-		return variable;
+		return new Pair<>(variable, Boolean.valueOf(false));
 	}
 
 	/**
@@ -4397,7 +4408,7 @@ public class FunctionTranslator {
 			for (VariableDeclarationNode variableNode : variableDeclSubList
 					.getLeft()) {
 				Variable variable = this.translateVariableDeclarationNodeWork(
-						variableNode, scope, true);
+						variableNode, scope, true).left;
 
 				functionInfo.addBoundVariable(variable);
 				variableSubList.add(variable);
@@ -4431,7 +4442,8 @@ public class FunctionTranslator {
 
 		functionInfo.addBoundVariableSet();
 
-		Variable freeVar = translateVariableDeclarationNode(freeVarDecl, scope);
+		Variable freeVar = translateVariableDeclarationNode(freeVarDecl,
+				scope).left;
 
 		functionInfo.addBoundVariable(freeVar);
 

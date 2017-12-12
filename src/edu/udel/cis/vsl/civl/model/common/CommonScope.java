@@ -182,6 +182,20 @@ public class CommonScope extends CommonSourceable implements Scope {
 		variable.setScope(this);
 	}
 
+	// /**
+	// * Check whether a variable is already been added into the scope.
+	// *
+	// * @return true iff variable is already in scope
+	// */
+	// private Variable variableExist(Variable variable) {
+	// String variableNameStr = variable.name().name();
+	//
+	// for (Variable v : variables)
+	// if (v.name().name().equals(variableNameStr))
+	// return v;
+	// return null;
+	// }
+
 	/**
 	 * Get the variable associated with an identifier. If this scope does not
 	 * contain such a variable, parent scopes will be recursively checked.
@@ -654,5 +668,15 @@ public class CommonScope extends CommonSourceable implements Scope {
 	@Override
 	public CIVLFunction getFunction(int fid) {
 		return this.functions.get(functionNames[fid]);
+	}
+
+	@Override
+	public Variable contains(Variable variable) {
+		for (Variable v : variables) {
+			if (v.name().equals(variable.name().name())) {
+				return v;
+			}
+		}
+		return null;
 	}
 }
