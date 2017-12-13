@@ -1,0 +1,7 @@
+#include <assert.h>
+
+int X;
+$assume(X>0);
+int main() {
+	assert(X == 1);
+}
