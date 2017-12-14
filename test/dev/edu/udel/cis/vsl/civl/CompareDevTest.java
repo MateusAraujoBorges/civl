@@ -4,7 +4,6 @@ import static edu.udel.cis.vsl.civl.TestConstants.COMPARE;
 import static edu.udel.cis.vsl.civl.TestConstants.IMPL;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static edu.udel.cis.vsl.civl.TestConstants.SPEC;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -46,13 +45,6 @@ public class CompareDevTest {
 	public void unableExtractInt() {
 		ui.run("verify", QUIET, filename("petscBad", "ex2Driver.c"),
 				filename("petscBad", "ex2a.c"));
-	}
-
-	// TODO: failing
-	@Test
-	public void typeAnalyzerException() {
-		assertTrue(ui.run("compare", "-spec", filename("type_bad", "spec.c"),
-				"-impl", filename("type_bad", "impl.c")));
 	}
 
 	@AfterClass

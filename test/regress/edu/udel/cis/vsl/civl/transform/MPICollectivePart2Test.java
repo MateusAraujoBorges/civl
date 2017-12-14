@@ -158,26 +158,26 @@ public class MPICollectivePart2Test {
 	public void simpleScan() {
 		assertTrue(
 				ui.run("verify -input_mpi_nprocs_lo=2 -input_mpi_nprocs_hi=5",
-						filename("simpleScan.c")));
+						TestConstants.QUIET, filename("simpleScan.c")));
 	}
 
 	@Test
 	public void simpleExscan() {
 		assertTrue(
 				ui.run("verify -input_mpi_nprocs_lo=2 -input_mpi_nprocs_hi=5",
-						filename("simpleExscan.c")));
+						TestConstants.QUIET, filename("simpleExscan.c")));
 	}
 
 	@Test
 	public void simpleScanBad() {
-		assertFalse(ui.run("verify -input_mpi_nprocs=3",
+		assertFalse(ui.run("verify -input_mpi_nprocs=3", TestConstants.QUIET,
 				filename("simpleScan_bad.c")));
 	}
 
 	@Test
 	public void simpleScanExscanBad() {
-		assertFalse(ui.run("verify -input_mpi_nprocs=3",
-				filename("simpleScanExscan_bad.c")));
+		assertFalse(ui.run("verify -input_mpi_nprocs=3", TestConstants.QUIET,
+				filename("simpleScanExscanMix_bad.c")));
 	}
 
 	@AfterClass

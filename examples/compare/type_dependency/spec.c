@@ -9,8 +9,13 @@
 
 typedef int PetscInt;
 
+struct Books {
+   int   book_id;
+};
+
 #ifdef _CIVL
-$output PetscInt ARRAY[20];
+$output PetscInt ARRAY[5];
+$output struct Books booko;
 #endif
 
 int main() {
@@ -20,6 +25,7 @@ int main() {
     b[i] = i+1;
   }
 #ifdef _CIVL
+  booko.book_id = 0;
   for(int i=0; i<5; i++) {
     ARRAY[i] = b[i];
   } 
