@@ -66,8 +66,8 @@ public class CompareTest {
 	@Test
 	public void typeAnalyzerException() {
 		assertTrue(ui.run("compare", "-showProgram -spec",
-				filename("type_bad/spec.c"), "-impl",
-				filename("type_bad/impl.c")));
+				filename("type_dependency/spec.c"), "-impl",
+				filename("type_dependency/impl.c")));
 	}
 
 	@AfterClass
