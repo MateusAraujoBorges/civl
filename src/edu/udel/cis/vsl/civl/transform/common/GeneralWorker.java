@@ -116,11 +116,12 @@ public class GeneralWorker extends BaseWorker {
 
 		// unit.prettyPrint(System.out, false);
 		if (mainEntity == null) {
-			throw new SyntaxException("missing main function",
+			throw new CIVLSyntaxException("missing main function",
 					unit.getRootNode().getSource());
 		}
 		if (!(mainEntity instanceof Function)) {
-			throw new SyntaxException("non-function entity with name \"main\"",
+			throw new CIVLSyntaxException(
+					"non-function entity with name \"main\"",
 					mainEntity.getFirstDeclaration().getSource());
 		}
 		mainFunction = (Function) mainEntity;
@@ -299,11 +300,10 @@ public class GeneralWorker extends BaseWorker {
 	 */
 	private ExpressionStatementNode argcAssumption(Source source,
 			String argcName) throws SyntaxException {
-		ExpressionNode lowerBound = nodeFactory
-				.newOperatorNode(source, Operator.LT,
-						Arrays.asList(
-								nodeFactory.newIntegerConstantNode(source, "0"),
-								this.identifierExpression(source, argcName)));
+		ExpressionNode lowerBound = nodeFactory.newOperatorNode(source,
+				Operator.LT,
+				Arrays.asList(nodeFactory.newIntegerConstantNode(source, "0"),
+						this.identifierExpression(source, argcName)));
 
 		return nodeFactory.newExpressionStatementNode(
 				this.functionCall(source, ASSUME, Arrays.asList(lowerBound)));

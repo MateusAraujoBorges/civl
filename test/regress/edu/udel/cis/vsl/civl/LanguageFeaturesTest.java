@@ -17,6 +17,7 @@ import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.front.IF.ParseException;
 import edu.udel.cis.vsl.abc.front.IF.PreprocessorException;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
 public class LanguageFeaturesTest {
@@ -741,6 +742,11 @@ public class LanguageFeaturesTest {
 	public void inputProblem() {
 		assertTrue(ui.run(VERIFY, "-showProgram", filename("inputProblem1.cvl"),
 				filename("inputProblem2.cvl")));
+	}
+
+	@Test
+	public void imNoMain() throws CIVLSyntaxException {
+		assertFalse(ui.run(VERIFY, QUIET, filename("imNoMain.c")));
 	}
 
 	@AfterClass
