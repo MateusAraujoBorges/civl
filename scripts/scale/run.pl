@@ -47,7 +47,7 @@ my $lastReleaseVersion;
 
 opendir(my $scriptDir, "$scriptPrefix");
 while (readdir $scriptDir) {
-    if ($_ =~ (/^v(([0-9]+).([0-9]+))_bench_dat$/)) {
+    if ($_ =~ (/^v(([0-9]+).([0-9]+).([0-9]*))_bench_dat$/)) {
 	$lastReleaseVersion = $1;
 	print "Benchmark running results of CIVL v$lastReleaseVersion found\n";
 	last;
@@ -79,8 +79,8 @@ while(my $datFile = $datDir->next){
   }
 }
 print "scaling figures is successfully generated in $datOut\n";
-print "copy benchmark results to Ziqing's directory /home/ziqing ...";
-$cmd = `cp -a $datDir /home/ziqing/ `;
+#print "copy benchmark results to Ziqing's directory /home/ziqing ...";
+#$cmd = `cp -a $datDir /home/ziqing/ `;
 
 
 
