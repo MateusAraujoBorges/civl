@@ -84,3 +84,11 @@ unstable release between 1.2 andd 1.3.
     directory and "figs". Continue with the aforementioned example,
     now you need delete "v1.9_bench_dat" and "figs" under
     "scripts/scale".
+    
+    TODO: compare with multiple previous results.
+    TODO: let server save the latest benchmark running results somewhere.
+    TODO: nice to let server commit the latest benchmark running  (low priority)
+    NOTES: running results pdfs in server are under : 
+           /var/www/html/lib/sw/civl/1.12/latest/release/figs
+    NOTES: command fpr generating benchmark results : 
+           ./run.pl -d[CIVL-dir] -o[temporary output dir]
