@@ -56,13 +56,13 @@ public class CIVLConstants {
 			new File(File.separator + "include"), "civl");
 
 	/** The version of this release of CIVL. */
-	public final static String version = "1.11.1+";
+	public final static String version = "1.12";
 
 	/**
 	 * The date of this release of CIVL. Format: YYYY-MM-DD in accordance with
 	 * ISO 8601.
 	 */
-	public final static String date = "2017-08-08";
+	public final static String date = "2017-12-15";
 
 	/**
 	 * The prefix of the full name of the class of a library enabler/executor.
@@ -685,7 +685,7 @@ public class CIVLConstants {
 	public final static String STDDEF = "stddef.h";
 	public final static String STDINT = "stdint.h";
 	public final static String UNISTD = "unistd.h";
-	
+
 	/**
 	 * The int value of the char '\0', which represents the end of string.
 	 */
