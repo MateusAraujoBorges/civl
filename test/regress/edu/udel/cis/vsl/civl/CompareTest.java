@@ -1,8 +1,8 @@
 package edu.udel.cis.vsl.civl;
 
+import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 
 import java.io.File;
 
@@ -65,7 +65,7 @@ public class CompareTest {
 
 	@Test
 	public void typeAnalyzerException() {
-		assertTrue(ui.run("compare", "-showProgram -spec",
+		assertTrue(ui.run("compare", QUIET, "-spec",
 				filename("type_dependency/spec.c"), "-impl",
 				filename("type_dependency/impl.c")));
 	}
