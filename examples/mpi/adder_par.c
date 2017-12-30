@@ -48,6 +48,9 @@ double computeGlobalSum() {
 }
     
 int main(int argc, char *argv[]) {
+#ifdef _CIVL
+  $assume(1 < argc);
+#endif
   int n = atoi(argv[1]);
   #pragma CIVL $assume(0 < n && n <= NB);
   MPI_Init(&argc, &argv);

@@ -449,10 +449,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            false only when executing $copy function.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @return A possibly new state and the value of memory space pointed by the
 	 *         pointer.
@@ -483,21 +483,23 @@ public class CommonEvaluator implements Evaluator {
 			SymbolicExpression variableValue;
 			int vid = symbolicUtil.getVariableId(source, pointer);
 			int sid = symbolicUtil.getDyscopeId(source, pointer);
+			Variable variable;
 
 			if (sid == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE) {
-				variableValue = modelFactory.model().staticConstantScope()
-						.variable(vid).constantValue();
+				variable = modelFactory.model().staticConstantScope()
+						.variable(vid);
+				variableValue = variable.constantValue();
 			} else {
+				variable = state.getDyscope(sid).lexicalScope().variable(vid);
 				if (!analysisOnly && checkOutput) {
-					Variable variable = state.getDyscope(sid).lexicalScope()
-							.variable(vid);
-
 					if (variable.isOutput()) {
-						errorLogger.logSimpleError(source, state, process,
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.OUTPUT_READ,
-								"Attempt to read output variable "
-										+ variable.name().name());
+						errorLogger
+								.logSimpleError(source, state, process,
+										symbolicAnalyzer.stateInformation(
+												state),
+										ErrorKind.OUTPUT_READ,
+										"Attempt to read output variable "
+												+ variable.name().name());
 						throwPCException = true;
 					}
 				}
@@ -511,19 +513,39 @@ public class CommonEvaluator implements Evaluator {
 								+ "to an object with undefined value");
 				throwPCException = true;
 			}
-			try {
+
+			Pair<BooleanExpression, ResultType> derefablePointer = symbolicAnalyzer
+					.isDerefablePointer(state, pointer);
+
+			if (derefablePointer.right == ResultType.YES)
 				deref = universe.dereference(variableValue, symRef);
-			} catch (SARLException e) {
-				if (muteErrorSideEffects) {
-					deref = totalDereferenceFunction(referredType, pointer);
-				} else
+			else if (muteErrorSideEffects)
+				deref = universe.dereference(variableValue, symRef);
+			else {
+				boolean error = derefablePointer.right == ResultType.NO;
+
+				if (derefablePointer.right == ResultType.MAYBE)
+					if (universe.reasoner(state.getPathCondition(universe))
+							.isValid(derefablePointer.left)) {
+						deref = universe.dereference(variableValue, symRef);
+						error = false;
+					}
+				if (error) {
+					CIVLType variableType = variable.type();
+					String variableValueToString = symbolicAnalyzer
+							.symbolicExpressionToString(source, state,
+									variableType, variableValue);
+
 					errorLogger.logSimpleError(source, state, process,
 							symbolicAnalyzer.stateInformation(state),
 							ErrorKind.DEREFERENCE,
-							"Illegal pointer dereference: " + e.getMessage()
-									+ "\n"
-									+ symbolicAnalyzer.stateInformation(state));
-				throwPCException = true;
+							"Illegal pointer dereference:\n" + "Pointer : "
+									+ pointer + " \nReferred variable : "
+									+ variableValueToString
+									+ " \nReferred variable type : "
+									+ variableType);
+					throwPCException = true;
+				}
 			}
 		}
 		if (throwPCException)
@@ -552,10 +574,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            The pointer to be dereferenced.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @param source
 	 *            The {@link CIVLSource} associates with the dereference
@@ -3941,11 +3963,13 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger.logSimpleError(source, state, process,
-							this.symbolicAnalyzer.stateInformation(state),
-							ErrorKind.OTHER,
-							"Try to obtain a string from a sequence of char has length"
-									+ " less than or equal to one");
+					this.errorLogger
+							.logSimpleError(source, state, process,
+									this.symbolicAnalyzer.stateInformation(
+											state),
+									ErrorKind.OTHER,
+									"Try to obtain a string from a sequence of char has length"
+											+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;

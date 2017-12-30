@@ -2353,11 +2353,13 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						if (i != 0)
 							result.append(", ");
-						result.append(this.symbolicExpressionToString(
-								var.getSource(), state, var.type(),
-								state.getVariableValue(
-										state.getDyscope(pid, var.scope()),
-										var.vid())));
+						result.append(
+								this.symbolicExpressionToString(var.getSource(),
+										state, var.type(),
+										state.getVariableValue(
+												state.getDyscope(pid,
+														var.scope()),
+												var.vid())));
 					}
 					result.append(")");
 					break;
@@ -2682,13 +2684,16 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
 
 		int dyscope = symbolicUtil.getDyscopeId(null, pointer);
-
-		if (dyscope < 0)
-			return new Pair<>(universe.falseExpression(), ResultType.NO);
-
 		int vid = symbolicUtil.getVariableId(null, pointer);
-		SymbolicExpression value = state.getVariableValue(dyscope, vid);
+		SymbolicExpression value;
 
+		if (dyscope == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE) {
+			value = modelFactory.model().staticConstantScope().variable(vid)
+					.constantValue();
+		} else if (dyscope < 0)
+			return new Pair<>(universe.falseExpression(), ResultType.NO);
+		else
+			value = state.getVariableValue(dyscope, vid);
 		if (value == null)
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
 		return this.checkReference(true,
@@ -2743,9 +2748,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						claim = reasoner.simplify(claim);
 						if (result == ResultType.YES) {
-							if (!derefable && reasoner
-									.valid(universe.equals(length, index))
-									.getResultType() != ResultType.NO) {
+							if (!derefable
+									&& reasoner
+											.valid(universe.equals(length,
+													index))
+											.getResultType() != ResultType.NO) {
 								return new Triple<>(null, claim, result);
 							} else {
 								return new Triple<>(

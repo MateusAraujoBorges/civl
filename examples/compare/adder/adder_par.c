@@ -54,6 +54,9 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &NPROCS);
   MPI_Comm_rank(MPI_COMM_WORLD, &PID);
+#ifdef _CIVL
+  $assume(1 < argc);
+#endif
   n = atoi(argv[1]);
 #ifdef _CIVL
   $assume(0 < n && n <= NB);
