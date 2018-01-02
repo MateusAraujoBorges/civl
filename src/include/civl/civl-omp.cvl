@@ -5,7 +5,7 @@
 #include<seq.cvh>
 #include<concurrency.cvh>
 #include<domain.cvh>
-#pragma PARSE_ACSL 
+#pragma CIVL ACSL 
 /* Completes the definition of struct OMP_gshared given in civlc-omp.cvh.
  */
 struct OMP_gshared {

@@ -8,7 +8,7 @@
 #include<comm.cvh>
 #include<seq.cvh>
 #include<pointer.cvh>
-#pragma PARSE_ACSL 
+#pragma CIVL ACSL 
 /* *********************** Types *********************** */
 
 /* A datatype representing a queue of messages.  All message

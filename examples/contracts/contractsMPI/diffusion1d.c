@@ -1,7 +1,7 @@
 #include<mpi.h>
 #include<civlc.cvh>
 
-#pragma PARSE_ACSL
+#pragma CIVL ACSL
 #define DATA_LIMIT 1024
 
 int left, right, nxl, nx, rank, nprocs;

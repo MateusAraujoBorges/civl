@@ -1,7 +1,7 @@
 #include <mpi.h>
 #include <stdlib.h>
 #include <civlc.cvh>
-#pragma PARSE_ACSL
+#pragma CIVL ACSL
 
 
 #define HYPRE_BigInt int

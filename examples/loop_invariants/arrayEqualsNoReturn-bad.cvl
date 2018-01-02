@@ -1,6 +1,6 @@
 #include<assert.h>
 
-#pragma PARSE_ACSL
+#pragma CIVL ACSL
 
 $input int N;
 $assume(N > 0);

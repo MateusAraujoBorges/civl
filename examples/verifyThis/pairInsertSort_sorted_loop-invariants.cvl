@@ -3,7 +3,7 @@
  * second inner loop.
  **/
 #include <stdio.h>
-#pragma PARSE_ACSL
+#pragma CIVL ACSL
 $input int N = 6; // upper bound on n
 $input int n; // size of array
 $assume(1<=n && n<=N);

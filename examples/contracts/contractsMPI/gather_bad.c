@@ -5,7 +5,7 @@
 #include<string.h>
 
 #define DATA_LIMIT 1024
-#pragma PARSE_ACSL
+#pragma CIVL ACSL
 /*@ 
   @ \mpi_collective(comm, P2P) :
   @   requires \mpi_agree(root) && \mpi_agree(sendcount * \mpi_extent(sendtype));

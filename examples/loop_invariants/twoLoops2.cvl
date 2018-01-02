@@ -1,5 +1,5 @@
 #include <civlc.cvh>
-#pragma PARSE_ACSL
+#pragma CIVL ACSL
 
 int main() {
   int i = 0;
