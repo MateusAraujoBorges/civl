@@ -89,6 +89,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryLoaderException;
 import edu.udel.cis.vsl.civl.semantics.IF.MemoryUnitExpressionEvaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
+import edu.udel.cis.vsl.civl.semantics.common.CIVLDereferenceOperator.DereferencedResult;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.State;
@@ -157,6 +158,13 @@ public class CommonEvaluator implements Evaluator {
 	protected static String BOUNDED_PROCESS_IDENTIFIER = "_p";
 
 	/* *************************** Instance Fields ************************* */
+	/**
+	 * A reference to {@link CIVLDereferenceOperator}, which dereferences a
+	 * variable value according to a {@link ReferenceExpression}. The
+	 * dereference operation succeeds if and only if the pointer is dereferable.
+	 */
+	CIVLDereferenceOperator derefOperator;
+
 	protected LibraryExecutorLoader libExeLoader;
 
 	protected MemoryUnitFactory memUnitFactory;
@@ -371,6 +379,7 @@ public class CommonEvaluator implements Evaluator {
 		this.universe = stateFactory.symbolicUniverse();
 		this.memUnitEvaluator = new CommonMemoryUnitEvaluator(symbolicUtil,
 				this, memUnitFactory, universe);
+		this.derefOperator = new CIVLDereferenceOperator(universe);
 		pointerType = typeFactory.pointerSymbolicType();
 		functionPointerType = typeFactory.functionPointerSymbolicType();
 		heapType = typeFactory.heapSymbolicType();
@@ -463,7 +472,6 @@ public class CommonEvaluator implements Evaluator {
 			boolean checkOutput, boolean analysisOnly, boolean strict,
 			boolean muteErrorSideEffects)
 			throws UnsatisfiablePathConditionException {
-		boolean throwPCException = false;
 		SymbolicExpression deref;
 
 		// C11 6.5.3.2: If an invalid value has been assigned to the
@@ -485,13 +493,14 @@ public class CommonEvaluator implements Evaluator {
 			int sid = symbolicUtil.getDyscopeId(source, pointer);
 			Variable variable;
 
+			// Get the variable value:
 			if (sid == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE) {
 				variable = modelFactory.model().staticConstantScope()
 						.variable(vid);
 				variableValue = variable.constantValue();
 			} else {
 				variable = state.getDyscope(sid).lexicalScope().variable(vid);
-				if (!analysisOnly && checkOutput) {
+				if (!analysisOnly && checkOutput)
 					if (variable.isOutput()) {
 						errorLogger
 								.logSimpleError(source, state, process,
@@ -500,58 +509,53 @@ public class CommonEvaluator implements Evaluator {
 										ErrorKind.OUTPUT_READ,
 										"Attempt to read output variable "
 												+ variable.name().name());
-						throwPCException = true;
+						throw new UnsatisfiablePathConditionException();
 					}
-				}
 				variableValue = state.getDyscope(sid).getValue(vid);
 			}
-			if (variableValue.isNull() && strict && !muteErrorSideEffects) {
-				errorLogger.logSimpleError(source, state, process,
-						symbolicAnalyzer.stateInformation(state),
-						ErrorKind.UNDEFINED_VALUE,
-						"Attempt to dereference a pointer that refers "
-								+ "to an object with undefined value");
-				throwPCException = true;
-			}
-
-			Pair<BooleanExpression, ResultType> derefablePointer = symbolicAnalyzer
-					.isDerefablePointer(state, pointer);
-
-			if (derefablePointer.right == ResultType.YES)
-				deref = universe.dereference(variableValue, symRef);
-			else if (muteErrorSideEffects)
-				deref = universe.dereference(variableValue, symRef);
-			else {
-				boolean error = derefablePointer.right == ResultType.NO;
-
-				if (derefablePointer.right == ResultType.MAYBE)
-					if (universe.reasoner(state.getPathCondition(universe))
-							.isValid(derefablePointer.left)) {
-						deref = universe.dereference(variableValue, symRef);
-						error = false;
-					}
-				if (error) {
-					CIVLType variableType = variable.type();
-					String variableValueToString = symbolicAnalyzer
-							.symbolicExpressionToString(source, state,
-									variableType, variableValue);
-
+			// Check if variable is uninitialized :
+			if (variableValue.isNull())
+				if (!strict && symRef.isIdentityReference())
+					return new Evaluation(state, variableValue);
+				else if (!muteErrorSideEffects) {
 					errorLogger.logSimpleError(source, state, process,
 							symbolicAnalyzer.stateInformation(state),
-							ErrorKind.DEREFERENCE,
-							"Illegal pointer dereference:\n" + "Pointer : "
-									+ pointer + " \nReferred variable : "
-									+ variableValueToString
-									+ " \nReferred variable type : "
-									+ variableType);
-					throwPCException = true;
+							ErrorKind.UNDEFINED_VALUE,
+							"Attempt to dereference a pointer that refers "
+									+ "to an object with undefined value");
+					throw new UnsatisfiablePathConditionException();
+				} else
+					return new Evaluation(state,
+							universe.dereference(variableValue, symRef));
+			// Dereference the variable value according to the
+			// ReferenceExpression:
+			if (muteErrorSideEffects) {
+				deref = universe.dereference(variableValue, symRef);
+				return new Evaluation(state, deref);
+			} else {
+				DereferencedResult derefResult = derefOperator
+						.dereference(variableValue, symRef);
+
+				if (universe.reasoner(state.getPathCondition(universe))
+						.isValid(derefResult.validCondition)) {
+					deref = derefResult.value;
+					return new Evaluation(state, deref);
 				}
 			}
-		}
-		if (throwPCException)
+
+			CIVLType variableType = variable.type();
+			String variableValueToString = symbolicAnalyzer
+					.symbolicExpressionToString(source, state, variableType,
+							variableValue);
+
+			errorLogger.logSimpleError(source, state, process,
+					symbolicAnalyzer.stateInformation(state),
+					ErrorKind.DEREFERENCE,
+					"Illegal pointer dereference:\n" + "Pointer : " + pointer
+							+ " \nReferred variable : " + variableValueToString
+							+ " \nReferred variable type : " + variableType);
 			throw new UnsatisfiablePathConditionException();
-		else
-			return new Evaluation(state, deref);
+		}
 	}
 
 	/**
