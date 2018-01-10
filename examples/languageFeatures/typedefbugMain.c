@@ -1,5 +1,5 @@
 #include "typedefbugHeader.h"
 
-int r() {
-  V v0;
+int f() {
+  return 0;
 }

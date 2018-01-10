@@ -8,3 +8,9 @@ int getVal(V *v) {
   return v->val;
 }
 
+int main() {
+	V v0;
+	
+	return v0.val;
+}
+

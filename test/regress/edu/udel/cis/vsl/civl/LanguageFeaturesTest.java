@@ -751,7 +751,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void typedefRemoverBug() {
-		assertTrue(ui.run(VERIFY, filename("typedefbugMain.c"),
+		assertTrue(ui.run(VERIFY, "-showProgram", filename("typedefbugMain.c"),
 				filename("typedefbugSource.c")));
 	}
 
