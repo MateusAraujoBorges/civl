@@ -1051,7 +1051,7 @@ public class ImmutableStateFactory implements StateFactory {
 		theState = simplifyReferencedStates(theState,
 				theState.getPermanentPathCondition(),
 				NORMALIZE_REFERRED_STATES_DEPTH);
-		return simplifyWork(theState);
+		return simplifyWork(theState, true);
 	}
 
 	private BooleanExpression getContextOfSizeofSymbols(Reasoner reasoner) {
@@ -1071,7 +1071,15 @@ public class ImmutableStateFactory implements StateFactory {
 		return result;
 	}
 
-	private ImmutableState simplifyWork(State state) {
+	/**
+	 * Simplify the given state.
+	 * 
+	 * @param state
+	 *            the state that will gets simplified
+	 * @return
+	 */
+	private ImmutableState simplifyWork(State state,
+			boolean reducePathcondition) {
 		ImmutableState theState = (ImmutableState) state;
 
 		if (theState.simplifiedState != null)
@@ -1137,7 +1145,9 @@ public class ImmutableStateFactory implements StateFactory {
 		if (newDynamicScopes != null || newPathCondition != null
 				|| processChanged) {
 			theState = ImmutableState.newState(theState, procStates,
-					newDynamicScopes, newPathCondition);
+					newDynamicScopes, reducePathcondition
+							? newPathCondition
+							: reasoner.getFullContext());
 			theState.simplifiedState = theState;
 		}
 		return theState;
@@ -1360,7 +1370,7 @@ public class ImmutableStateFactory implements StateFactory {
 				 * that X should be replaced with 0 but this reasoner will not
 				 * be used).
 				 */
-				newRefState = simplifyWork(newRefState);
+				newRefState = simplifyWork(newRefState, false);
 				if (newRefState == oldRefState)
 					continue;
 
