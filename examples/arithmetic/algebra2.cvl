@@ -1,0 +1,16 @@
+#include<math.h>
+#include<stdio.h>
+#include<assert.h>
+
+int main() {
+  double a = (pow((7.0/3), 0.5) + (1.0/3)*pow(3,0.5));
+
+  printf("a = %f\n", a);
+  a = a * a;
+  printf("a = %f\n", a);
+  a = (-2.0/9) * (a + (-27.0 / 2));
+  printf("a = %f\n", a);
+  a = pow(a, 0.5);
+  printf("a = %f\n", a);
+  assert(a >= 0);
+}
