@@ -42,6 +42,11 @@ public class ArithmeticTest {
 	}
 
 	@Test
+	public void algebra2() {
+		check("algebra2.cvl");
+	}
+
+	@Test
 	public void assoc() {
 		assertTrue(ui.run(VERIFY, QUIET, "-inputB=10", filename("assoc.cvl")));
 	}
