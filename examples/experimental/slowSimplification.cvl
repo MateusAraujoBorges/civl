@@ -1,0 +1,11 @@
+$input int a[5][5];
+$input int x, y;
+$assume(0 <= x < 5 && 0 <= y < 5);
+int main() {
+
+  $assume($forall (int i | i == 0 || i == x)
+	  ($forall (int j | j == 0 || j == y) a[i][j] == 0)
+	  );
+  
+  return 0;
+}
