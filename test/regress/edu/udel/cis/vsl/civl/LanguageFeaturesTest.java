@@ -749,6 +749,12 @@ public class LanguageFeaturesTest {
 		assertFalse(ui.run(VERIFY, QUIET, filename("imNoMain.c")));
 	}
 
+	@Test
+	public void typedefRemoverBug() {
+		assertTrue(ui.run(VERIFY, filename("typedefbugMain.c"),
+				filename("typedefbugSource.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
