@@ -19,7 +19,7 @@ void main(){
   FILE *file0 = fopen(&filename[4], "r");
   int a[5];
   int count = fscanf(file0, "%d", a);	
-  int fooLength = text_file_length("foo");
+  int fooLength = $text_file_length("foo");
 
 #ifdef NCINDEX                               //non-concrete index
   FILE *file1 = fopen(&filename[x], "r");    

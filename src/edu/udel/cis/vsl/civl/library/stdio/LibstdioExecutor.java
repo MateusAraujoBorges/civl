@@ -611,7 +611,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 				callEval = execute_filesystem_copy_output(source, state, pid,
 						process, arguments, argumentValues);
 				break;
-			case "$text_file_length" :
+			case "$civl_text_file_length" :
 				callEval = execute_text_file_length(source, state, pid, process,
 						arguments, argumentValues);
 				break;
@@ -632,7 +632,6 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		Expression fileSystemExpression = arguments[0];
-		Evaluation eval = evaluator.evaluate(state, pid, fileSystemExpression);
 		SymbolicExpression filesystemPointer;
 		SymbolicExpression fileSystemStructure;
 		SymbolicExpression fileArray;
@@ -641,9 +640,9 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		int fileIndex;
 		SymbolicExpression theFile = null;
 		SymbolicExpression length;
+		Evaluation eval;
 
-		filesystemPointer = eval.value;
-		state = eval.state;
+		filesystemPointer = argumentValues[0];
 		eval = evaluator
 				.dereference(fileSystemExpression.getSource(), state, process,
 						typeFactory.systemType(

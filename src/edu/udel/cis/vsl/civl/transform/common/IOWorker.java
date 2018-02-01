@@ -106,14 +106,14 @@ public class IOWorker extends BaseWorker {
 	private static String FOPEN_NEW = "$fopen";
 
 	/**
-	 * The name of text_file_length function.
+	 * The name of $text_file_length function.
 	 */
-	private static String TEXT_FILE_LENGTH = "text_file_length";
+	private static String TEXT_FILE_LENGTH = "$text_file_length";
 
 	/**
 	 * The name of $text_file_length function (CIVL's stdio implementation).
 	 */
-	private static String TEXT_FILE_LENGTH_NEW = "$text_file_length";
+	private static String TEXT_FILE_LENGTH_NEW = "$civl_text_file_length";
 
 	private static String IO_HEADER = "stdio.h";
 

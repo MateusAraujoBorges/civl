@@ -4,7 +4,7 @@
 
 void main(){
   FILE *file = fopen("fooaaa", "r");
-  int fooLength = text_file_length("foo");
+  int fooLength = $text_file_length("foo");
 //  int fooLength = $textFileLength("testFile1.txt");
 
 //  printf("\n\ntext file length:%d \n\n", fooLength);
