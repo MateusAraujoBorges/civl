@@ -9,7 +9,7 @@
 #include<stdio.h>
 #include<civl-stdio.cvh>
 
-int fooLength = $textFileLength("foo");
+int fooLength = text_file_length("foo");
 
 $assume(fooLength == 5);
 

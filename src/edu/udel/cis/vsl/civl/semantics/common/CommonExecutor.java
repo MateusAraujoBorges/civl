@@ -697,7 +697,7 @@ public class CommonExecutor implements Executor {
 			throws UnsatisfiablePathConditionException {
 		String process = "p" + pid;
 		StatementKind kind = statement.statementKind();
-
+		
 		numSteps.getAndIncrement();
 		switch (kind) {
 			case ASSIGN :

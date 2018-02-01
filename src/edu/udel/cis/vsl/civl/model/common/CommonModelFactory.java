@@ -262,8 +262,6 @@ public class CommonModelFactory implements ModelFactory {
 
 	private Variable brokenTimeVariable;
 
-	private VariableExpression civlFilesystemVariableExpression;
-
 	/**
 	 * The number of conditional expressions that have been encountered, used to
 	 * create temporal variable.
@@ -1611,10 +1609,6 @@ public class CommonModelFactory implements ModelFactory {
 		Variable variable = new CommonVariable(source, type, name, vid,
 				isParameter);
 
-		if (name.name().equals(ModelConfiguration.FILESYSTEM)) {
-			this.civlFilesystemVariableExpression = this
-					.variableExpression(source, variable);
-		}
 		return variable;
 	}
 
@@ -1775,11 +1769,6 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public Model model() {
 		return this.modelBuilder.getModel();
-	}
-
-	@Override
-	public VariableExpression civlFilesystemVariableExpression() {
-		return this.civlFilesystemVariableExpression;
 	}
 
 	@Override

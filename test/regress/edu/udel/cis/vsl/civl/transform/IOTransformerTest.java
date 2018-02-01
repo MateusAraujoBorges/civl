@@ -35,8 +35,8 @@ public class IOTransformerTest {
 
 	@Test
 	public void scanf() {
-		assertTrue(ui
-				.run("verify", TestConstants.QUIET, filename("fscanf.cvl")));
+		assertTrue(
+				ui.run("verify", TestConstants.QUIET, filename("fscanf.cvl")));
 	}
 
 	@Test
@@ -55,6 +55,13 @@ public class IOTransformerTest {
 				filename("fileOpen.cvl")));
 		assertFalse(ui.run("verify -DSCHAR", TestConstants.QUIET,
 				filename("fileOpen.cvl")));
+	}
+
+	@Test
+	public void textFileLengthCompare() {
+		assertTrue(ui.run("compare", "-showProgram", TestConstants.QUIET,
+				TestConstants.SPEC, filename("textFileLengthSpec.cvl"),
+				TestConstants.IMPL, filename("textFileLengthImpl.cvl")));
 	}
 
 	@AfterClass

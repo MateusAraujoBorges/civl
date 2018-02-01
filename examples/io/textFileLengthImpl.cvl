@@ -1,0 +1,9 @@
+#include<civlc.cvh>
+#include<stdio.h>
+#include<civl-stdio.cvh>
+
+void main(){
+  FILE *file = fopen("foo", "r");
+
+  $free(file);
+}

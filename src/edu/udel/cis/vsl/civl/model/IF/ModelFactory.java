@@ -1680,8 +1680,6 @@ public interface ModelFactory {
 	Expression functionGuardExpression(CIVLSource source, Expression function,
 			List<Expression> arguments);
 
-	VariableExpression civlFilesystemVariableExpression();
-
 	/**
 	 * Returns a new fragment containing a CivlForStatement.
 	 * 
