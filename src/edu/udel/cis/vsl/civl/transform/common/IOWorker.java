@@ -48,7 +48,8 @@ import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
  * </li>
  * <li>new global variable declaration
  * <ul>
- * <li><code>$filesystem CIVL_filesystem = $filesystem_create($here);</code></li>
+ * <li><code>$filesystem CIVL_filesystem = $filesystem_create($here);</code>
+ * </li>
  * <li><code>$output $file  CIVL_output_filesystem[];</code></li>
  * <li>
  * <code>extern FILE* stdout = $fopen(CIVL_filesystem, "CIVL_stdout", CIVL_FILE_MODE_WX);</code>
@@ -103,6 +104,16 @@ public class IOWorker extends BaseWorker {
 	 * The name of $fopen function (CIVL's stdio implementation).
 	 */
 	private static String FOPEN_NEW = "$fopen";
+
+	/**
+	 * The name of $text_file_length function.
+	 */
+	private static String TEXT_FILE_LENGTH = "$text_file_length";
+
+	/**
+	 * The name of $text_file_length function (CIVL's stdio implementation).
+	 */
+	private static String TEXT_FILE_LENGTH_NEW = "$civl_text_file_length";
 
 	private static String IO_HEADER = "stdio.h";
 
@@ -573,8 +584,45 @@ public class IOWorker extends BaseWorker {
 
 				functionNameIdentifer.setName(FFLUSH_NEW);
 				functionCall.setArguments(arguments);
+			} else if (functionName.equals(TEXT_FILE_LENGTH)) {
+				// deal with $text_file_length function
+				functionNameIdentifer.setName(TEXT_FILE_LENGTH_NEW);
+				processTextFileLenth(functionCall);
 			}
 		}
+	}
+
+	/**
+	 * $text_file_length(char* file) --> $text_file_length($filesystem fs, char*
+	 * file)
+	 * 
+	 * @param functionCall
+	 * @throws SyntaxException
+	 */
+	private void processTextFileLenth(FunctionCallNode functionCall)
+			throws SyntaxException {
+		Source source = functionCall.getFunction().getSource();
+		IdentifierExpressionNode civlFileSystem = nodeFactory
+				.newIdentifierExpressionNode(source,
+						nodeFactory.newIdentifierNode(source, FILESYSTEM));
+		int oldCount = functionCall.getNumberOfArguments();
+		List<ExpressionNode> arguments = new ArrayList<>(oldCount + 1);
+		ExpressionNode fileNameArg = functionCall.getArgument(0);
+
+		arguments.add(civlFileSystem);
+		if (fileNameArg instanceof StringLiteralNode) {
+			arguments.add(fileNameArg);
+		} else {
+			throw new ABCUnsupportedException(
+					"non-string-literal file name of $text_file_length");
+		}
+		for (int i = 0; i < oldCount; i++) {
+			ExpressionNode argument = functionCall.getArgument(i);
+
+			argument.parent().removeChild(argument.childIndex());
+		}
+		functionCall.setArguments(nodeFactory.newSequenceNode(source,
+				"ActualParameterList", arguments));
 	}
 
 	/**

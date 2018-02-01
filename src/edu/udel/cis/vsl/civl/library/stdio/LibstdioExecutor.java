@@ -280,22 +280,24 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 								Arrays.asList(stringSymbolicType,
 										universe.integerType()),
 								stringSymbolicType));
-		doubleToStringFunction = universe.symbolicConstant(
-				universe.stringObject("doubleToString"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, universe.realType()),
-						stringSymbolicType));
+		doubleToStringFunction = universe
+				.symbolicConstant(universe.stringObject("doubleToString"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										universe.realType()),
+								stringSymbolicType));
 		charToStringFunction = universe
 				.symbolicConstant(universe.stringObject("charToString"),
 						universe.functionType(
 								Arrays.asList(stringSymbolicType,
 										universe.characterType()),
 								stringSymbolicType));
-		stringDataToStringFunction = universe.symbolicConstant(
-				universe.stringObject("stringDataToString"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						stringSymbolicType));
+		stringDataToStringFunction = universe
+				.symbolicConstant(universe.stringObject("stringDataToString"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								stringSymbolicType));
 		pointerToStringFunction = universe
 				.symbolicConstant(
 						universe.stringObject("pointerToString"), universe
@@ -311,31 +313,36 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	 * abstract functions to convert a string to a data of certain type.
 	 */
 	private void createStringToDataFunctions() {
-		stringToIntFunction = universe.symbolicConstant(
-				universe.stringObject("stringToInt"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						universe.integerType()));
-		stringToDoubleFunction = universe.symbolicConstant(
-				universe.stringObject("stringToDouble"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						universe.realType()));
-		stringToCharFunction = universe.symbolicConstant(
-				universe.stringObject("stringToChar"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						universe.characterType()));
-		stringToStringDataFunction = universe.symbolicConstant(
-				universe.stringObject("stringToStringData"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						stringSymbolicType));
-		stringToPointerFunction = universe.symbolicConstant(
-				universe.stringObject("stringToPointer"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						typeFactory.pointerSymbolicType()));
+		stringToIntFunction = universe
+				.symbolicConstant(universe.stringObject("stringToInt"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								universe.integerType()));
+		stringToDoubleFunction = universe
+				.symbolicConstant(universe.stringObject("stringToDouble"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								universe.realType()));
+		stringToCharFunction = universe
+				.symbolicConstant(universe.stringObject("stringToChar"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								universe.characterType()));
+		stringToStringDataFunction = universe
+				.symbolicConstant(universe.stringObject("stringToStringData"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								stringSymbolicType));
+		stringToPointerFunction = universe
+				.symbolicConstant(universe.stringObject("stringToPointer"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								typeFactory.pointerSymbolicType()));
 	}
 
 	/* *************************** Private Methods ************************* */
@@ -400,10 +407,11 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression filesystemPointer = argumentValues[0];
-		Evaluation eval = evaluator.dereference(expressions[0].getSource(),
-				state, process,
-				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
-				filesystemPointer, false, true);
+		Evaluation eval = evaluator
+				.dereference(expressions[0].getSource(), state, process,
+						typeFactory.systemType(
+								ModelConfiguration.FILE_SYSTEM_TYPE),
+						filesystemPointer, false, true);
 		CIVLSource modeSource = expressions[2].getSource();
 		int mode = symbolicUtil.extractInt(modeSource,
 				(NumericExpression) argumentValues[2]);
@@ -603,7 +611,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 				callEval = execute_filesystem_copy_output(source, state, pid,
 						process, arguments, argumentValues);
 				break;
-			case "$textFileLength" :
+			case "$civl_text_file_length" :
 				callEval = execute_text_file_length(source, state, pid, process,
 						arguments, argumentValues);
 				break;
@@ -623,9 +631,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			int pid, String process, Expression[] arguments,
 			SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
-		Expression fileSystemExpression = modelFactory
-				.civlFilesystemVariableExpression();
-		Evaluation eval = evaluator.evaluate(state, pid, fileSystemExpression);
+		Expression fileSystemExpression = arguments[0];
 		SymbolicExpression filesystemPointer;
 		SymbolicExpression fileSystemStructure;
 		SymbolicExpression fileArray;
@@ -634,18 +640,19 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		int fileIndex;
 		SymbolicExpression theFile = null;
 		SymbolicExpression length;
+		Evaluation eval;
 
-		filesystemPointer = eval.value;
-		state = eval.state;
-		eval = evaluator.dereference(fileSystemExpression.getSource(), state,
-				process,
-				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
-				filesystemPointer, false, true);
+		filesystemPointer = argumentValues[0];
+		eval = evaluator
+				.dereference(fileSystemExpression.getSource(), state, process,
+						typeFactory.systemType(
+								ModelConfiguration.FILE_SYSTEM_TYPE),
+						filesystemPointer, false, true);
 		state = eval.state;
 		fileSystemStructure = eval.value;
 		fileArray = universe.tupleRead(fileSystemStructure, oneObject);
 		eval = evaluator.getStringExpression(state, process,
-				arguments[0].getSource(), argumentValues[0]);
+				arguments[1].getSource(), argumentValues[1]);
 		state = eval.state;
 		filename = eval.value;
 
@@ -653,7 +660,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		// assume all are concrete.
 		if (fileArray.operator() != SymbolicOperator.ARRAY)
 			throw new CIVLUnimplementedFeatureException(
-					"non-concrete file system", arguments[0]);
+					"non-concrete file system", arguments[1]);
 		// fileSequence = (SymbolicSequence<?>) fileArray.argument(0);
 		numFiles = fileArray.numArguments();
 		for (fileIndex = 0; fileIndex < numFiles; fileIndex++) {
@@ -690,7 +697,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			if (!isBinary.equals(this.zero)) {
 				throw new CIVLExecutionException(ErrorKind.OTHER,
 						Certainty.CONCRETE, process,
-						"The file " + arguments[0].toString()
+						"The file " + arguments[1].toString()
 								+ " is not a text file.",
 						state, source);
 			}
@@ -998,9 +1005,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 				fileName);
 		state = stringResult.first;
 		fileNameString = stringResult.second.toString();
-		//Eliminate the char representing 'EOS'
-		assert(fileNameString.charAt(fileNameString.length()-1) == '\0');
-		fileNameString = fileNameString.substring(0, fileNameString.length()-1);
+		// Eliminate the char representing 'EOS'
+		assert (fileNameString.charAt(fileNameString.length() - 1) == '\0');
+		fileNameString = fileNameString.substring(0,
+				fileNameString.length() - 1);
 		concreteString = this.evaluator.getString(arguments[1].getSource(),
 				state, process, arguments[1], argumentValues[1]);
 		formatBuffer = concreteString.second;
