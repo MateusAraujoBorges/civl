@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.12
+                               v1.13
 
 ------------------------------ Overview -------------------------------
 
@@ -26,18 +26,18 @@ For more information, visit http://vsl.cis.udel.edu/civl
 Active Developers:
 Matthew B. Dwyer
 Mitchell Gerrard
-Si Li
 Ziqing Luo
 Stephen F. Siegel
 Wenhao Wu
 Yihao Yan
-Manchun Zheng
 
 Inactive Developers:
 John Edenhofner
 Andre Marianiello
 Michael Rogers
 Timothy K. Zirkel
+Si Li
+Manchun Zheng
 
 ------------------------------- License -------------------------------
 
@@ -47,15 +47,16 @@ General Public License.  However, the libraries used by CIVL
 licenses.  See directory licenses for the license of each component.
 
 
--------------------------- Updates from v1.11.1 -------------------------
-- Fixed the bug in memcpy 
-- Fixed a bug in one primitive---$translate_ptr, which is
-  used by OpenMP memory model .
-- Fixed a bug which happened when array of 'struct's are declared
-- Fixed a bug in compare combiner
-- Fixed the bug which causes CIVL crash when there is no main function
-- Fixed a bug in model translator, which happens when a variable is declared, read 
-  then defined. 
+-------------------------- Updates from v1.12 -------------------------
+- Fixed the int-to-pointer casting bug 
+- Fixed the typedef definition bug in compare mode
+- Fixed the file system incorrect file reference bug in compare mode
+- Fixed a bug in IntervalUnionSet, which arose when there were multiple infinite intervals
+- Fixed a bug related to the sign of Ranges
+- Fixed a bug in IntervalUnion Factory, which arose when interval union sets are empty
+- Improved the simplifier for all symbolic expressions by re-implementing with new designs.
+- Highly optimized probabilistic evaluation for boolean expression "polynomial == 0"
+- The pragma that triggers the parsing of ACSL now is changed to "#pragma CIVL ACSL"
   
    
 ------------------------- Binary Installation -------------------------
