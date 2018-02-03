@@ -58,7 +58,8 @@ public class Int2PointerCaster
 
 			if (castedValue != null)
 				value = castedValue;
-			else if (!((CIVLPointerType) castType).baseType().isVoidType()) {
+			else {// if (!((CIVLPointerType) castType).baseType().isVoidType())
+					// {
 				value = universe.apply(this.int2PointerFunc,
 						Arrays.asList(value));
 				// state = errorLogger.logError(arg.getSource(), state,

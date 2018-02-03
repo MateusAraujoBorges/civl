@@ -11,6 +11,9 @@
 #include <pointer.cvh>
 #include <collate.cvh>
 
+
+extern const int MPI_IN_PLACE_SPOT = 0;
+
 /* Completed definition for mpi-common.h */
 struct MPI_Request{
   MPI_Status status;
