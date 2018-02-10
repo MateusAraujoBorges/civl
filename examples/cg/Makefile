@@ -3,7 +3,8 @@
 CIVL=civl
 VERIFY=${CIVL} verify -checkDivisionByZero=false 
 
-all: cg2_cholesky cg2_sylvester cg2
+cg5_prob: cg.cvl
+	${VERIFY} -prob cg.cvl 
 
 cg2_cholesky: cg2_cholesky.cvl
 	${VERIFY}  cg2_cholesky.cvl
