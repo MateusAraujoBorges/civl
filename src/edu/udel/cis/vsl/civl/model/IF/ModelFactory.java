@@ -1358,6 +1358,29 @@ public interface ModelFactory {
 			Scope parameterScope, List<Variable> parameters,
 			CIVLType returnType, Scope containingScope, Location startLocation);
 
+	/**
+	 * Create a new ACSL predicate ({@link ACSLPredicate}). An ACSL predicate
+	 * shall only be used in ACSL annotations.
+	 * 
+	 * @param source
+	 *            The {@link CIVLSource} related to this ACSL predicate
+	 * @param name
+	 *            The name of the predicate
+	 * @param parameterScope
+	 *            the scope of the predicate parameters
+	 * @param parameters
+	 *            a list of parameters of the predicate
+	 * @param containingScope
+	 *            the scope where the predicate is defined
+	 * @param definition
+	 *            the predicate definition which is an instance of
+	 *            {@link Expression}
+	 * @return a new instance of {@link ACSLPredicate}
+	 */
+	ACSLPredicate acslPredicate(CIVLSource source, Identifier name,
+			Scope parameterScope, List<Variable> parameters,
+			Scope containingScope, Expression definition);
+
 	CIVLFunction nondetFunction(CIVLSource source, Identifier name,
 			CIVLType returnType, Scope containingScope);
 

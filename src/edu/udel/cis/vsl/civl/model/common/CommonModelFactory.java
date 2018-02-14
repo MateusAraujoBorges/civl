@@ -22,6 +22,7 @@ import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.model.IF.ACSLPredicate;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -2424,5 +2425,15 @@ public class CommonModelFactory implements ModelFactory {
 		return new CommonDifferentiableExpression(source, lscope, rscope,
 				typeFactory.booleanType, function, degree, lowerBounds,
 				upperBounds);
+	}
+
+	@Override
+	public ACSLPredicate acslPredicate(CIVLSource source, Identifier name,
+			Scope parameterScope, List<Variable> parameters,
+			Scope containingScope, Expression definition) {
+		return new CommonACSLPredicate(source, name, parameterScope, parameters,
+				containingScope,
+				containingScope != null ? containingScope.numFunctions() : -1,
+				this, definition);
 	}
 }

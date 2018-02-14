@@ -31,6 +31,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.InvariantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractConstantNode.MPIConstantKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
+import edu.udel.cis.vsl.abc.ast.node.IF.acsl.PredicateNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundInitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundLiteralObject;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.LiteralObject;
@@ -127,6 +128,7 @@ import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.StringLiteral;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.model.IF.ACSLPredicate;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
 import edu.udel.cis.vsl.civl.model.IF.AccuracyAssumptionBuilder;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
@@ -2086,6 +2088,10 @@ public class FunctionTranslator {
 				modelFactory.sourceOfBeginning(statementNode), newScope);
 		for (int i = 0; i < statementNode.numChildren(); i++) {
 			BlockItemNode node = statementNode.getSequenceChild(i);
+
+			if (node == null)
+				continue;
+
 			Fragment fragment = translateASTNode(node, newScope,
 					usedLocation ? null : location);
 
@@ -2630,9 +2636,13 @@ public class FunctionTranslator {
 				}
 			}
 			if (entity.getDefinition() != null)
-				result = buildRegularCIVLFunction(entity, node, scope,
-						parameterScope, parameters, functionIdentifier,
-						functionType, returnType, nodeSource);
+				if (entity.isAbstract())
+					result = buildACSLPredicate(entity, scope, parameterScope,
+							parameters, functionIdentifier, nodeSource);
+				else
+					result = buildRegularCIVLFunction(entity, node, scope,
+							parameterScope, parameters, functionIdentifier,
+							functionType, returnType, nodeSource);
 			else if (entity.isSystemFunction())
 				result = buildSystemCIVLFunction(entity, node, scope,
 						parameterScope, parameters, functionIdentifier,
@@ -2660,6 +2670,26 @@ public class FunctionTranslator {
 			contractTranslator.translateFunctionContract(contract);
 		}
 		return fragment;
+	}
+
+	private ACSLPredicate buildACSLPredicate(Function entity, Scope scope,
+			Scope parameterScope, ArrayList<Variable> parameters,
+			Identifier functionIdentifier, CIVLSource functionSource) {
+		CIVLFunction result = modelBuilder.functionMap.get(entity);
+		FunctionDefinitionNode funcDefinition = entity.getDefinition();
+
+		assert funcDefinition instanceof PredicateNode;
+
+		PredicateNode predicate = (PredicateNode) funcDefinition;
+		Expression definition = translateExpressionNode(
+				predicate.getExpressionBody(), parameterScope, true);
+
+		if (result == null)
+			result = modelFactory.acslPredicate(functionSource,
+					functionIdentifier, parameterScope, parameters, scope,
+					definition);
+		assert result instanceof ACSLPredicate;
+		return (ACSLPredicate) result;
 	}
 
 	/**
