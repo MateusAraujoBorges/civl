@@ -755,6 +755,11 @@ public class LanguageFeaturesTest {
 				filename("typedefbugSource.c")));
 	}
 
+	@Test
+	public void compoundRange_compoundUpperBound() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("compoundRange.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
