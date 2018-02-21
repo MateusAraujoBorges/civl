@@ -251,6 +251,20 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
+	public void divisionByZeroConstant() throws ABCException {
+
+		assertFalse(ui.run(VERIFY, QUIET, errorBound(2),
+				"-intOperationTransformer=true",
+				filename("divisionByZeroConstant.cvl")));
+	}
+
+	@Test
+	public void divisionByZeroConstant_Ignore() throws ABCException {
+		assertTrue(ui.run(VERIFY, "-checkDivisionByZero=false", QUIET,
+				filename("divisionByZeroConstant.cvl")));
+	}
+
+	@Test
 	public void emptyWhen() throws ABCException {
 		assertTrue(ui.run(VERIFY, QUIET, filename("emptyWhen.cvl")));
 	}
