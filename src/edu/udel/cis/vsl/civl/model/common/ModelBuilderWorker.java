@@ -136,7 +136,7 @@ public class ModelBuilderWorker {
 	 * entity. This is built up as call events are processed. On a later pass,
 	 * we iterate over this map and set the function fields of the call event to
 	 * the corresponding {@link CIVLFunction} object. Visibility make it
-	 * package-private since {@link ContractTranslator} needs to access it.
+	 * package-private since {@link FunctionContractTranslator} needs to access it.
 	 */
 	Map<CallEvent, Function> callEvents;
 

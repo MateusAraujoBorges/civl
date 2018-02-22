@@ -16,6 +16,7 @@ import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
 import edu.udel.cis.vsl.civl.model.IF.contract.LoopContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
+import edu.udel.cis.vsl.civl.model.IF.expression.ACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
@@ -46,8 +47,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
-import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
@@ -1359,8 +1358,7 @@ public interface ModelFactory {
 			CIVLType returnType, Scope containingScope, Location startLocation);
 
 	/**
-	 * Create a new ACSL predicate ({@link ACSLPredicate}). An ACSL predicate
-	 * shall only be used in ACSL annotations.
+	 * Create a new ACSL predicate ({@link ACSLPredicate}).
 	 * 
 	 * @param source
 	 *            The {@link CIVLSource} related to this ACSL predicate
@@ -1380,6 +1378,24 @@ public interface ModelFactory {
 	ACSLPredicate acslPredicate(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
 			Scope containingScope, Expression definition);
+
+	/**
+	 * Create a new ACSL predicate call expression, an instance of
+	 * {@link ACSLPredicateCall}.
+	 * 
+	 * @param source
+	 *            the {@link CIVLSource} related to this expression
+	 * @param expressionScope
+	 *            the {@link Scope} where the scope gets called
+	 * @param predicate
+	 *            The {@link ACSLPredicate} that is called
+	 * @param actualArguments
+	 *            The list of actual argument {@link Expression}s
+	 * @return a new ACSL predicate call expression.
+	 */
+	ACSLPredicateCall acslPredicateCall(CIVLSource source,
+			Scope expressionScope, ACSLPredicate predicate,
+			List<Expression> actualArguments);
 
 	CIVLFunction nondetFunction(CIVLSource source, Identifier name,
 			CIVLType returnType, Scope containingScope);
@@ -1761,24 +1777,6 @@ public interface ModelFactory {
 	void addInputVariable(Variable variable);
 
 	/**
-	 * Creates a {@link PointerSetExpression}.
-	 * 
-	 * @param source
-	 *            The CIVLSource of the expression
-	 * @param scope
-	 *            The scope where this expression appears
-	 * @param basePointer
-	 *            The base pointer expression, it must be a
-	 *            {@link LHSExpression}
-	 * @param range
-	 *            The range, it can be null if the expression is a singleton
-	 *            pointer set.
-	 * @return
-	 */
-	PointerSetExpression pointerSetExpression(CIVLSource source, Scope scope,
-			LHSExpression basePointer, Expression range);
-
-	/**
 	 * Creates a wildcard expression <code>...</code>, which is only used in
 	 * contract.
 	 * 
@@ -1898,14 +1896,8 @@ public interface ModelFactory {
 			Expression pid, Expression expression);
 
 	/**
-	 * creates a new <code>$original</code> expression.
-	 * 
-	 * @param source
-	 *            the source of the <code>$original</code> expression.
-	 * @param expression
-	 *            the expression to be evaluated
-	 * @return the new <code>$original</code> expression.
+	 * @return A list of all translated {@link ACSLPredicate}s during model
+	 *         building
 	 */
-	OriginalExpression originalExpression(CIVLSource source,
-			Expression expression);
+	List<ACSLPredicate> getAllACSLPredicates();
 }

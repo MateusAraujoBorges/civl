@@ -28,7 +28,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RecDomainLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.RegularRangeExpression;
@@ -634,13 +633,7 @@ public class MemoryUnitExpressionAnalyzer {
 						derefCount);
 				break;
 			}
-			case ORIGINAL : {
-				this.computeImpactMemoryUnitsOfExpression(writableVars,
-						((OriginalExpression) expression).expression(), result,
-						derefCount);
-				break;
-			}
-			case POINTER_SET :
+			case ACSL_PREDICATE_CALL :
 				break;
 			default :
 				throw new CIVLUnimplementedFeatureException(

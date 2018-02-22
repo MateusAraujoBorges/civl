@@ -51,7 +51,7 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.model.common.contract.CommonContractFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 
-public class ContractTranslator extends FunctionTranslator {
+public class FunctionContractTranslator extends FunctionTranslator {
 
 	private CIVLFunction function;
 
@@ -84,7 +84,7 @@ public class ContractTranslator extends FunctionTranslator {
 	private Pair<Expression, MPICommunicationPattern> currentMPICollectiveTitle;
 
 	/******************** Constructor ********************/
-	ContractTranslator(ModelBuilderWorker modelBuilder,
+	FunctionContractTranslator(ModelBuilderWorker modelBuilder,
 			ModelFactory modelFactory, CIVLTypeFactory typeFactory,
 			CIVLFunction function, CIVLConfiguration civlConfig) {
 		super(modelBuilder, modelFactory, function, civlConfig);

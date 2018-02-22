@@ -75,8 +75,14 @@ public class ReasoningTest {
 
 	@Test
 	public void cg5Probabilistic() {
-		assertTrue(ui.run(VERIFY, QUIET, "-inputN=5", TestConstants.ENABLE_PROB,
+		assertTrue(ui.run(VERIFY, "-inputN=5", TestConstants.ENABLE_PROB,
 				TestConstants.NO_CHECK_DIVISION_BY_ZERO, cgfilename("cg.cvl")));
+	}
+
+	@Test
+	public void squareRootPoly() {
+		assertTrue(ui.run(VERIFY, "-showTransitions -showStates",
+				cgfilename("../experimental/powerSimplify.cvl")));
 	}
 
 	@AfterClass

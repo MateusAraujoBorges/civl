@@ -4,7 +4,13 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 
 /**
  * An ACSL predicate. See ACSL: ANSI/ISO C Specification Language v1.12 secction
- * 2.6.1
+ * 2.6.1.
+ * 
+ * <p>
+ * An ACSL predicate in CIVL model is a boolean type function which is
+ * guaranteed to be side-effect free since one cannot write an ACSL predicate
+ * with side-effects.
+ * </p>
  * 
  * @author ziqing
  *

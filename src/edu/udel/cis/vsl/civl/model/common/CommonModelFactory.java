@@ -38,6 +38,7 @@ import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.contract.LoopContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
+import edu.udel.cis.vsl.civl.model.IF.expression.ACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
@@ -70,8 +71,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
 import edu.udel.cis.vsl.civl.model.IF.expression.MemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Nothing;
-import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ProcnullExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
@@ -117,6 +116,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.model.common.contract.CommonLoopContract;
+import edu.udel.cis.vsl.civl.model.common.expression.CommonACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonAbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonAddressOfExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonArrayLiteralExpression;
@@ -144,8 +144,6 @@ import edu.udel.cis.vsl.civl.model.common.expression.CommonLambdaExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonMPIContractExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonMemoryUnitExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonNothing;
-import edu.udel.cis.vsl.civl.model.common.expression.CommonOriginalExpression;
-import edu.udel.cis.vsl.civl.model.common.expression.CommonPointerSetExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonProcnullExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonRealLiteralExpression;
@@ -366,6 +364,13 @@ public class CommonModelFactory implements ModelFactory {
 
 	private FunctionIdentifierExpression elaborateDomainFuncPointer = null;
 
+	/**
+	 * All translated {@link ACSLPredicate} during model building:
+	 */
+	// doesn't have to be a list since the FunctionTranslator does cache during
+	// model building:
+	private List<ACSLPredicate> seenACSLPredicate = null;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -486,6 +491,7 @@ public class CommonModelFactory implements ModelFactory {
 			case LESS_THAN_EQUAL :
 			case NOT_EQUAL :
 			case OR :
+			case VALID :
 				return new CommonBinaryExpression(source, expressionScope,
 						lowestScope, typeFactory.booleanType, operator, left,
 						right);
@@ -864,10 +870,6 @@ public class CommonModelFactory implements ModelFactory {
 						operand.getExpressionType(), operator, operand);
 			case NOT :
 				assert operand.getExpressionType().isBoolType();
-				return new CommonUnaryExpression(source,
-						typeFactory.booleanType, operator, operand);
-			case VALID :
-				assert operand instanceof PointerSetExpression;
 				return new CommonUnaryExpression(source,
 						typeFactory.booleanType, operator, operand);
 			case BIT_NOT :
@@ -2233,29 +2235,6 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public PointerSetExpression pointerSetExpression(CIVLSource source,
-			Scope scope, LHSExpression basePointer, Expression range) {
-		Scope expressionScope;
-		Scope lowestScope;
-
-		if (range != null) {
-			expressionScope = join(basePointer.expressionScope(),
-					range.expressionScope());
-			lowestScope = getLower(basePointer.lowestScope(),
-					range.lowestScope());
-		} else {
-			expressionScope = basePointer.expressionScope();
-			lowestScope = basePointer.lowestScope();
-		}
-		expressionScope = join(scope, expressionScope);
-		lowestScope = getLower(scope, lowestScope);
-		return new CommonPointerSetExpression(
-				source, expressionScope, lowestScope, typeFactory
-						.incompleteArrayType(basePointer.getExpressionType()),
-				basePointer, range);
-	}
-
-	@Override
 	public MPIContractExpression mpiContractExpression(CIVLSource source,
 			Scope scope, Expression communicator, Expression[] arguments,
 			MPI_CONTRACT_EXPRESSION_KIND kind,
@@ -2400,12 +2379,6 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public OriginalExpression originalExpression(CIVLSource source,
-			Expression expression) {
-		return new CommonOriginalExpression(source, expression);
-	}
-
-	@Override
 	public CIVLFunction nondetFunction(CIVLSource source, Identifier name,
 			CIVLType returnType, Scope containingScope) {
 		return new CommonNondetFunction(source, name, returnType,
@@ -2431,9 +2404,30 @@ public class CommonModelFactory implements ModelFactory {
 	public ACSLPredicate acslPredicate(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
 			Scope containingScope, Expression definition) {
-		return new CommonACSLPredicate(source, name, parameterScope, parameters,
-				containingScope,
+		ACSLPredicate predicate = new CommonACSLPredicate(source, name,
+				parameterScope, parameters, containingScope,
 				containingScope != null ? containingScope.numFunctions() : -1,
 				this, definition);
+
+		if (seenACSLPredicate == null)
+			seenACSLPredicate = new LinkedList<>();
+		seenACSLPredicate.add(predicate);
+		return predicate;
+	}
+
+	@Override
+	public ACSLPredicateCall acslPredicateCall(CIVLSource source,
+			Scope expressionScope, ACSLPredicate predicate,
+			List<Expression> actualArguments) {
+		return new CommonACSLPredicateCall(source, expressionScope,
+				expressionScope, typeFactory.booleanType, predicate,
+				actualArguments);
+	}
+
+	@Override
+	public List<ACSLPredicate> getAllACSLPredicates() {
+		if (seenACSLPredicate == null)
+			seenACSLPredicate = new LinkedList<>();
+		return seenACSLPredicate;
 	}
 }

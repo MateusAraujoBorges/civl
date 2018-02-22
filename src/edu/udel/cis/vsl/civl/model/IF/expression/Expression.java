@@ -22,6 +22,10 @@ public interface Expression extends Sourceable {
 
 	public enum ExpressionKind {
 		/**
+		 * A call of an ACSL predicate, instance of {@link ACSLPredicateCall}.
+		 */
+		ACSL_PREDICATE_CALL,
+		/**
 		 * A call to an abstract (mathematical) expression; instance of
 		 * {@link AbstractFunctionCallExpression}.
 		 */

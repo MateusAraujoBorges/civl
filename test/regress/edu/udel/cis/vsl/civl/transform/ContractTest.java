@@ -71,4 +71,16 @@ public class ContractTest {
 				TestConstants.QUIET, "-collectSymbolicConstants=true",
 				filename("/contractsMPI/gather_bad.c")));
 	}
+
+	@Test
+	public void acslPredicate() {
+		assertTrue(ui.run(VERIFY, TestConstants.QUIET,
+				filename("/../contracts/pred.cvl")));
+	}
+
+	@Test
+	public void acslPredicateBad() {
+		assertFalse(ui.run(VERIFY, TestConstants.QUIET,
+				filename("/../contracts/pred_bad.cvl")));
+	}
 }
