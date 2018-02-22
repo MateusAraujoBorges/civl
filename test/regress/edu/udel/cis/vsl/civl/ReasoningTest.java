@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 
 import org.junit.AfterClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
@@ -75,13 +76,14 @@ public class ReasoningTest {
 
 	@Test
 	public void cg5Probabilistic() {
-		assertTrue(ui.run(VERIFY, "-inputN=5", TestConstants.ENABLE_PROB,
+		assertTrue(ui.run(VERIFY, QUIET, "-inputN=5", TestConstants.ENABLE_PROB,
 				TestConstants.NO_CHECK_DIVISION_BY_ZERO, cgfilename("cg.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void squareRootPoly() {
-		assertTrue(ui.run(VERIFY, "-showTransitions -showStates",
+		// this test is suppose to be reported as containing an error:
+		assertFalse(ui.run(VERIFY, "-showTransitions -showStates",
 				cgfilename("../experimental/powerSimplify.cvl")));
 	}
 

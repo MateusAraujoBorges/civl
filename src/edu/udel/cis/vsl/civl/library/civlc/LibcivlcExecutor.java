@@ -41,7 +41,6 @@ import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
-import edu.udel.cis.vsl.sarl.prove.IF.ProverPredicate;
 
 /**
  * Implementation of the execution for system functions declared civlc.h.
@@ -770,15 +769,18 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		valid = reasoner.valid(assertValue);
 		resultType = valid.getResultType();
 
-		ProverPredicate[] proverPredicates = ACSLPredicateEvaluator
-				.evaluateACSLPredicate(modelFactory.getAllACSLPredicates(),
-						state, pid, errSideEffectFreeEvaluator);
-
-		if (resultType == ResultType.MAYBE || proverPredicates != null) {
+		if (resultType != ResultType.YES
+				|| !modelFactory.getAllACSLPredicates().isEmpty()) {
 			assertValue.setValidity(null);
-			reasoner = universe.why3Reasoner(state.getPathCondition(universe),
-					proverPredicates);
-			resultType = reasoner.valid(assertValue).getResultType();
+
+			Reasoner why3Reasoner = universe.why3Reasoner(
+					state.getPathCondition(universe),
+					ACSLPredicateEvaluator.evaluateACSLPredicate(
+							modelFactory.getAllACSLPredicates(), state, pid,
+							errSideEffectFreeEvaluator));
+
+			if (why3Reasoner != reasoner)
+				resultType = why3Reasoner.valid(assertValue).getResultType();
 			// resultType = HeuristicProveHelper.heuristicsValid(reasoner,
 			// universe, assertValue);
 		}
