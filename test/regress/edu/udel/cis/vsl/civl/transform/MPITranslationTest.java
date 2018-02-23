@@ -105,7 +105,7 @@ public class MPITranslationTest {
 
 	@Test
 	public void mpi_diff1d() throws ABCException {
-		assertTrue(ui.run("verify", TestConstants.QUIET,
+		assertTrue(ui.run("verify", "-inputnsteps=2", TestConstants.QUIET,
 				filename("diffusion1d.c")));
 	}
 
