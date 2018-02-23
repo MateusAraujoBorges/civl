@@ -769,10 +769,21 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		valid = reasoner.valid(assertValue);
 		resultType = valid.getResultType();
 
-		if (resultType == ResultType.MAYBE)
-			resultType = HeuristicProveHelper.heuristicsValid(reasoner,
-					universe, assertValue);
+		if (resultType != ResultType.YES
+				|| !modelFactory.getAllACSLPredicates().isEmpty()) {
+			assertValue.setValidity(null);
 
+			Reasoner why3Reasoner = universe.why3Reasoner(
+					state.getPathCondition(universe),
+					ACSLPredicateEvaluator.evaluateACSLPredicate(
+							modelFactory.getAllACSLPredicates(), state, pid,
+							errSideEffectFreeEvaluator));
+
+			if (why3Reasoner != reasoner)
+				resultType = why3Reasoner.valid(assertValue).getResultType();
+			// resultType = HeuristicProveHelper.heuristicsValid(reasoner,
+			// universe, assertValue);
+		}
 		if (resultType != ResultType.YES) {
 			StringBuilder message = new StringBuilder();
 			Pair<State, String> messageResult = this.symbolicAnalyzer

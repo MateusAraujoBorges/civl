@@ -1,13 +1,20 @@
 package edu.udel.cis.vsl.civl.semantics.common;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
+import edu.udel.cis.vsl.civl.model.IF.expression.ACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
@@ -24,6 +31,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
  * An error side-effects free alternative of {@link CommonEvaluator}. This
@@ -37,6 +47,45 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 		implements
 			Evaluator {
 
+	/**
+	 * The {@link Exception} that will be thrown only by
+	 * {@link ErrorSideEffectFreeEvaluator} when an erroneous side effect
+	 * happens.
+	 * 
+	 * @author ziqing
+	 */
+	static public class ErroneousSideEffectException
+			extends
+				UnsatisfiablePathConditionException {
+		/**
+		 * The {@link SymbolicExpression} that really causes the side effect
+		 * error, which will be used to as a key for generating a unique
+		 * undefined value
+		 */
+		public final SymbolicExpression keyValue;
+		/**
+		 * generated serial ID
+		 */
+		private static final long serialVersionUID = -1237052183722755533L;
+
+		/**
+		 * @param keyValue
+		 *            The {@link SymbolicExpression} that really causes the side
+		 *            effect error, which will be used to as a key for
+		 *            generating a unique undefined value
+		 */
+		public ErroneousSideEffectException(SymbolicExpression keyValue) {
+			this.keyValue = keyValue;
+		}
+	}
+
+	/**
+	 * The name of an abstract function which will wrap a
+	 * {@link ErroneousSideEffectException#keyValue}. A such function call
+	 * represents a unique undefined value of some type.
+	 */
+	private static String SEError_ABSTRACT_FUNCTION_NAME = "SEError_undefined";
+
 	public ErrorSideEffectFreeEvaluator(ModelFactory modelFactory,
 			StateFactory stateFactory, LibraryEvaluatorLoader loader,
 			LibraryExecutorLoader loaderExec, SymbolicUtility symbolicUtil,
@@ -44,6 +93,30 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 			CIVLErrorLogger errorLogger, CIVLConfiguration config) {
 		super(modelFactory, stateFactory, loader, loaderExec, symbolicUtil,
 				symbolicAnalyzer, memUnitFactory, errorLogger, config);
+	}
+
+	@Override
+	public Evaluation evaluate(State state, int pid, Expression expression)
+			throws UnsatisfiablePathConditionException {
+		try {
+			switch (expression.expressionKind()) {
+				case ACSL_PREDICATE_CALL :
+					return evaluateACSLPredicateCall(state, pid,
+							(ACSLPredicateCall) expression);
+				default :
+					return super.evaluate(state, pid, expression);
+			}
+		} catch (ErroneousSideEffectException e) {
+			SymbolicType exprType = expression.getExpressionType()
+					.getDynamicType(universe);
+			SymbolicFunctionType funcType = universe
+					.functionType(Arrays.asList(e.keyValue.type()), exprType);
+
+			return new Evaluation(state, universe.apply(
+					universe.symbolicConstant(universe.stringObject(
+							SEError_ABSTRACT_FUNCTION_NAME), funcType),
+					Arrays.asList(e.keyValue)));
+		}
 	}
 
 	@Override
@@ -121,5 +194,47 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 						"Pointer addition for anything other than array elements or variables",
 						expression);
 		}
+	}
+
+	/**
+	 * <p>
+	 * An {@link ACSLPredicateCall} evaluates to an symbolic expression of
+	 * {@link SymbolicOperator#APPLY} operator. Actual parameters are applied to
+	 * a symbolic constant which represents the ACSL predicate function.
+	 * </p>
+	 * 
+	 * @param state
+	 * @param pid
+	 * @param acslPredCall
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private Evaluation evaluateACSLPredicateCall(State state, int pid,
+			ACSLPredicateCall acslPredCall)
+			throws UnsatisfiablePathConditionException {
+		List<SymbolicExpression> argumentValues = new LinkedList<>();
+		Evaluation eval;
+		int numArgs = acslPredCall.actualArguments().length;
+
+		for (int i = 0; i < numArgs; i++) {
+			eval = evaluate(state, pid, acslPredCall.actualArguments()[i]);
+			assert state == eval.state : "ACSL predicate argument has side-effects.";
+			argumentValues.add(eval.value);
+		}
+
+		CIVLFunctionType predType = acslPredCall.predicate().functionType();
+		List<SymbolicType> paraTypes = new LinkedList<>();
+		SymbolicFunctionType funcType;
+
+		for (CIVLType type : predType.parameterTypes())
+			paraTypes.add(type.getDynamicType(universe));
+		funcType = universe.functionType(paraTypes, universe.booleanType());
+
+		SymbolicExpression predCallValue = universe.symbolicConstant(
+				universe.stringObject(acslPredCall.predicate().name().name()),
+				funcType);
+
+		return new Evaluation(state,
+				universe.apply(predCallValue, argumentValues));
 	}
 }

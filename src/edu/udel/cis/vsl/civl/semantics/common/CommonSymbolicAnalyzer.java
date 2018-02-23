@@ -18,6 +18,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
+import edu.udel.cis.vsl.civl.model.IF.expression.ACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
@@ -34,7 +35,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression.LHSExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
-import edu.udel.cis.vsl.civl.model.IF.expression.OriginalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ValueAtExpression;
@@ -84,6 +84,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.TupleComponentReference;
 import edu.udel.cis.vsl.sarl.IF.expr.UnionMemberReference;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
@@ -98,6 +99,12 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
 public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 	/* *************************** Instance Fields ************************* */
+
+	/**
+	 * The size threshold that decides if a symbolic expression is printed in a
+	 * full way or a compressed way.
+	 */
+	private static int PRINT_SIZE_THRESHOLD = 100;
 
 	private final String SEF_START = "[";
 	private final String SEF = ":=";
@@ -968,6 +975,18 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			SymbolicExpression symbolicExpression, boolean atomize,
 			String prefix, String separator) {
 		StringBuffer result = new StringBuffer();
+
+		if (symbolicExpression.size() >= PRINT_SIZE_THRESHOLD) {
+			symbolicExpression.printCompressedTree(prefix, result);
+
+			// insert the first new line character and deletes the last
+			// character if it is a new line:
+			result.insert(0, "\n");
+			if (result.charAt(result.length() - 1) == '\n')
+				result.delete(result.length() - 1, result.length());
+			return result;
+		}
+
 		SymbolicType type = symbolicExpression.type();
 		SymbolicType charType = typeFactory.charType().getDynamicType(universe);
 
@@ -2460,24 +2479,21 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 									: evaluator.stateFactory()
 											.getStateByReference(modelFactory
 													.getStateRef(eval.value));
-					int newPid;
+					Number newPid;
 
 					eval = evaluator.evaluate(eval.state, pid, valueAt.pid());
 					state = eval.state;
-					newPid = this.symbolicUtil.extractInt(null,
-							(NumericExpression) eval.value);
-					temp = this.expressionEvaluationWorker(newState, newPid,
-							valueAt.expression(), false, true);
-					result.append(temp.right);
+					newPid = universe
+							.extractNumber((NumericExpression) eval.value);
+					if (newPid == null)
+						result.append(valueAt.expression());
+					else {
+						temp = this.expressionEvaluationWorker(newState,
+								((IntegerNumber) newPid).intValue(),
+								valueAt.expression(), false, true);
+						result.append(temp.right);
+					}
 					result.append(")");
-					break;
-				}
-				case ORIGINAL : {
-					OriginalExpression original = (OriginalExpression) expression;
-
-					// result.append("$original (");
-					result.append(original.expression());
-					// result.append(")");
 					break;
 				}
 				case ADDRESS_OF :
@@ -2522,6 +2538,21 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				case STATE_NULL :
 				case STATE_REF :
 					result.append(expression.toString());
+					break;
+				case ACSL_PREDICATE_CALL :
+					ACSLPredicateCall acslPredCall = (ACSLPredicateCall) expression;
+					Expression[] actualParams = acslPredCall.actualArguments();
+
+					result.append(acslPredCall.predicate().name() + " (");
+
+					for (int i = 0; i < actualParams.length - 1; i++)
+						result.append(expressionEvaluationWorker(state, pid,
+								actualParams[i], true, false).right + ", ");
+					if (actualParams.length > 0)
+						result.append(expressionEvaluationWorker(state, pid,
+								actualParams[actualParams.length - 1], true,
+								false).right);
+					result.append(")");
 					break;
 				default :
 					throw new CIVLUnimplementedFeatureException(

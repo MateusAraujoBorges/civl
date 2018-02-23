@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.TestConstants;
@@ -70,5 +71,17 @@ public class ContractTest {
 		assertFalse(ui.run(VERIFY, "-input_mpi_nprocs=2", "-mpiContract=gather",
 				TestConstants.QUIET, "-collectSymbolicConstants=true",
 				filename("/contractsMPI/gather_bad.c")));
+	}
+
+	@Ignore
+	public void acslPredicate() {
+		assertTrue(ui.run(VERIFY, TestConstants.QUIET,
+				filename("/../contracts/pred.cvl")));
+	}
+
+	@Ignore
+	public void acslPredicateBad() {
+		assertFalse(ui.run(VERIFY, TestConstants.QUIET,
+				filename("/../contracts/pred_bad.cvl")));
 	}
 }

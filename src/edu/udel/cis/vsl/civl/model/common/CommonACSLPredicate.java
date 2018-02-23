@@ -34,4 +34,9 @@ public class CommonACSLPredicate extends CommonFunction
 		return definition;
 	}
 
+	@Override
+	public int hashCode() {
+		// no over-loading, so parameters are not part of the hash:
+		return definition.hashCode() ^ this.name().hashCode() ^ 897653;
+	}
 }

@@ -91,7 +91,7 @@ public class HeuristicProveHelper {
 			}
 		}
 		if (subMap == null)
-			return ResultType.MAYBE;
+			return reasoner.valid(newPredicate).getResultType();
 		return reasoner.valid((BooleanExpression) universe
 				.mapSubstituter(subMap).apply(newPredicate)).getResultType();
 	}

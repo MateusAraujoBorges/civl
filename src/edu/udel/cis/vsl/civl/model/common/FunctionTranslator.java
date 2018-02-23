@@ -54,7 +54,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.expression.DerivativeExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.DotNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.EnumerationConstantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.HereOrRootNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
@@ -157,10 +156,8 @@ import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.MPIContractExpression.MPI_CONTRACT_EXPRESSION_KIND;
-import edu.udel.cis.vsl.civl.model.IF.expression.PointerSetExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression.Quantifier;
-import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.UnaryExpression.UNARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.VariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
@@ -2441,10 +2438,9 @@ public class FunctionTranslator {
 		int typesLen = 0;
 		int numOfArgs = functionCallNode.getNumberOfArguments();
 
-		if (functionExpression instanceof IdentifierExpressionNode) {
+		if (functionExpression instanceof IdentifierExpressionNode)
 			civlFunction = getFunction(
 					(IdentifierExpressionNode) functionExpression).right;
-		}
 		if (civlFunction != null) {
 			functionType = civlFunction.functionType();
 			types = functionType.parameterTypes();
@@ -2664,7 +2660,7 @@ public class FunctionTranslator {
 			modelBuilder.functionMap.put(entity, result);
 		}
 		if (contract != null) {
-			ContractTranslator contractTranslator = new ContractTranslator(
+			FunctionContractTranslator contractTranslator = new FunctionContractTranslator(
 					modelBuilder, modelFactory, typeFactory, result,
 					this.civlConfig);
 			contractTranslator.translateFunctionContract(contract);
@@ -2680,10 +2676,17 @@ public class FunctionTranslator {
 
 		assert funcDefinition instanceof PredicateNode;
 
+		this.functionInfo.addBoundVariableSet();
+		for (Variable var : parameters)
+			this.functionInfo.addBoundVariable(var);
+
 		PredicateNode predicate = (PredicateNode) funcDefinition;
 		Expression definition = translateExpressionNode(
 				predicate.getExpressionBody(), parameterScope, true);
 
+		// TODO: what is the difference in between "popBoundVariableStackNew"
+		// and "popBoundVariableStack" ???
+		this.functionInfo.popBoundVariableStackNew();
 		if (result == null)
 			result = modelFactory.acslPredicate(functionSource,
 					functionIdentifier, parameterScope, parameters, scope,
@@ -3227,7 +3230,7 @@ public class FunctionTranslator {
 	/**
 	 * Translates a ResultNode as an new variable, and adds it into a
 	 * corresponding scope. The $result expression can only be translated by
-	 * {@link ContractTranslator}.
+	 * {@link FunctionContractTranslator}.
 	 * 
 	 * @param resultNode
 	 *            The {@link ResultNode} appears in a contract clause
@@ -3480,8 +3483,6 @@ public class FunctionTranslator {
 						"Can't find the definition for variable "
 								+ node.getName(),
 						node.getSource());
-			// System.out.println("var definition:" +
-			// varEntity.getDefinition().toString());
 		}
 
 		TypeNode typeNode = node.getTypeNode();
@@ -4925,22 +4926,25 @@ public class FunctionTranslator {
 							+ functionExpression.getSource());
 		civlFunction = modelBuilder.functionMap.get(callee);
 		assert civlFunction != null;
-		if (civlFunction.isAbstractFunction()) {
-			List<Expression> arguments = new ArrayList<Expression>();
 
-			for (int i = 0; i < callNode.getNumberOfArguments(); i++) {
-				Expression actual = translateExpressionNode(
-						callNode.getArgument(i), scope, true);
+		// translate actual arguments:
+		List<Expression> arguments = new ArrayList<Expression>();
 
-				actual = arrayToPointer(actual);
-				arguments.add(actual);
-			}
-			result = modelFactory.abstractFunctionCallExpression(source,
+		for (int i = 0; i < callNode.getNumberOfArguments(); i++) {
+			Expression actual = translateExpressionNode(callNode.getArgument(i),
+					scope, true);
+
+			actual = arrayToPointer(actual);
+			arguments.add(actual);
+		}
+		if (civlFunction instanceof ACSLPredicate)
+			return modelFactory.acslPredicateCall(source, scope,
+					(ACSLPredicate) civlFunction, arguments);
+		if (civlFunction.isAbstractFunction())
+			return modelFactory.abstractFunctionCallExpression(source,
 					(AbstractFunction) civlFunction, arguments);
-			return result;
-		} else if ((civlFunction.isSystemFunction())
-				&& (civlFunction.isPureFunction()
-						|| civlFunction.isStateFunction())) {
+		if ((civlFunction.isSystemFunction()) && (civlFunction.isPureFunction()
+				|| civlFunction.isStateFunction())) {
 			Fragment fragment = this.translateFunctionCallNode(scope, callNode,
 					source);
 			CallOrSpawnStatement callStmt = (CallOrSpawnStatement) fragment
@@ -5008,6 +5012,8 @@ public class FunctionTranslator {
 
 		if (operator == Operator.SUBSCRIPT)
 			return translateSubscriptNode(operatorNode, scope);
+		if (operator == Operator.VALID)
+			return translateValidExpression(operatorNode, scope);
 
 		int numArgs = operatorNode.getNumberOfArguments();
 		List<Expression> arguments = new ArrayList<Expression>();
@@ -5272,23 +5278,9 @@ public class FunctionTranslator {
 			}
 				break;
 			case PLUS : {
-				ExpressionNode arg0, arg1;
-
-				arg0 = operatorNode.getArgument(0);
-				arg1 = operatorNode.getArgument(1);
-				if (arg0.expressionKind().equals(ExpressionKind.REGULAR_RANGE)
-						|| arg1.expressionKind()
-								.equals(ExpressionKind.REGULAR_RANGE))
-					result = translatePointerSet(
-							modelFactory.sourceOf(operatorNode),
-							this.translateExpressionNode(arg0, scope, true),
-							this.translateExpressionNode(arg1, scope, true),
-							BINARY_OPERATOR.PLUS, scope);
-				else {
-					result = translatePlusOperation(source,
-							modelFactory.numericExpression(arguments.get(0)),
-							modelFactory.numericExpression(arguments.get(1)));
-				}
+				result = translatePlusOperation(source,
+						modelFactory.numericExpression(arguments.get(0)),
+						modelFactory.numericExpression(arguments.get(1)));
 				break;
 			}
 			case SUBSCRIPT :
@@ -5307,11 +5299,6 @@ public class FunctionTranslator {
 			case UNARYPLUS :
 				result = modelFactory.numericExpression(arguments.get(0));
 				break;
-			case VALID :
-				Expression arg = translateExpressionNode(
-						operatorNode.getArgument(0), scope, true);
-				return translateValidOperator(
-						modelFactory.sourceOf(operatorNode), arg, scope);
 			default :
 				throw new CIVLUnimplementedFeatureException(
 						"Unsupported operator: " + operatorNode.getOperator()
@@ -5321,68 +5308,52 @@ public class FunctionTranslator {
 	}
 
 	/**
-	 * Translate an operation which is a pointer add a range into an
-	 * {@link MemExpression}
+	 * Translate a <code>\valid</code> expression, which is a
+	 * {@link OperatorNode} who has {@link Operator#VALID}.
 	 * 
-	 * @param source
-	 *            The CIVLSource of the operation expression
-	 * @param arg0
-	 *            One of the operand
-	 * @param arg1
-	 *            One of the operand
-	 * @param op
-	 *            BINARY_OPERATOR, can be either PLUS or MINUS
-	 * @param scope
-	 * @return
+	 * @param validExpression
+	 * @return The translated CIVL {@link Expression}
 	 */
-	private Expression translatePointerSet(CIVLSource source, Expression arg0,
-			Expression arg1, BINARY_OPERATOR op, Scope scope) {
-		Expression result, pointer, range;
-
-		if (arg0.getExpressionType().isPointerType()) {
-			pointer = arg0;
-			range = arg1;
-		} else {
-			assert arg1.getExpressionType().isPointerType();
-			pointer = arg1;
-			range = arg0;
-		}
-		// TODO:LHSExpression
-		result = modelFactory.pointerSetExpression(source, scope,
-				(LHSExpression) pointer, range);
-		return result;
-	}
-
-	/**
-	 * Translate an valid operation into an {@link UnaryExpression}
-	 * 
-	 * @param source
-	 *            The CIVLSource of the valid operation
-	 * @param arg
-	 *            The operand of the valid operation
-	 * @param scope
-	 * @return
-	 */
-	private Expression translateValidOperator(CIVLSource source, Expression arg,
+	private Expression translateValidExpression(OperatorNode validExpression,
 			Scope scope) {
-		PointerSetExpression mem;
-		UnaryExpression result;
+		ExpressionNode argNode = validExpression.getArgument(0);
+		ExpressionNode ptr, offsets;
+		Expression ptrExpr, offsetsExpr;
 
-		// TODO: check if pointer is LHSExpression:
-		// \valid operator syntactically accepts either [pointer + range] or
-		// [pointer]:
-		if (arg.getExpressionType().isPointerType()) {
-			if (arg instanceof LHSExpression)
-				mem = modelFactory.pointerSetExpression(arg.getSource(), scope,
-						(LHSExpression) arg, null);
-			else
+		// For the argument: currently we can only handle the pattern:
+		// pointer +/- (l .. h), where "(l .. h)" is optional ...
+		if (argNode instanceof OperatorNode) {
+			OperatorNode opNode = (OperatorNode) argNode;
+
+			if (opNode.getOperator() != Operator.PLUS)
 				throw new CIVLUnimplementedFeatureException(
-						"Singleton pointer set but the element is not a LHSExpression.");
-		} else
-			mem = (PointerSetExpression) arg;
-		result = modelFactory.unaryExpression(source, UNARY_OPERATOR.VALID,
-				mem);
-		return result;
+						"Translate the argument of \\valid expression:"
+								+ argNode.prettyRepresentation()
+								+ ". CIVL currently only can deal with the argument"
+								+ " in a specific pattern: pointer + (low .. high), "
+								+ "where '(low .. high)' is optional.",
+						argNode.getSource());
+
+			ptr = opNode.getArgument(0);
+			offsets = opNode.getArgument(1);
+			offsetsExpr = translateExpressionNode(offsets, scope, true);
+		} else {
+			ptr = argNode;
+			offsetsExpr = modelFactory.integerLiteralExpression(
+					modelFactory.sourceOf(argNode), BigInteger.ZERO);
+		}
+		ptrExpr = translateExpressionNode(ptr, scope, true);
+		if (!ptrExpr.getExpressionType().isPointerType())
+			throw new CIVLUnimplementedFeatureException(
+					"Translate the argument of \\valid expression:"
+							+ argNode.prettyRepresentation()
+							+ ". CIVL currently only can deal with the argument"
+							+ " in a specific pattern: pointer + (low .. high), "
+							+ "where '(low .. high)' is optional.",
+					argNode.getSource());
+		return modelFactory.binaryExpression(
+				modelFactory.sourceOf(validExpression), BINARY_OPERATOR.VALID,
+				ptrExpr, offsetsExpr);
 	}
 
 	/**

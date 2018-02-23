@@ -1,0 +1,6 @@
+#pragma CIVL ACSL
+/*@ predicate gt(int x, int y) = x > y;
+  @*/
+int main() {
+  $assert(gt(0, 1));
+}
