@@ -100,6 +100,12 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 	/* *************************** Instance Fields ************************* */
 
+	/**
+	 * The size threshold that decides if a symbolic expression is printed in a
+	 * full way or a compressed way.
+	 */
+	private static int PRINT_SIZE_THRESHOLD = 100;
+
 	private final String SEF_START = "[";
 	private final String SEF = ":=";
 	private final String SEF_END = "]";
@@ -969,6 +975,18 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			SymbolicExpression symbolicExpression, boolean atomize,
 			String prefix, String separator) {
 		StringBuffer result = new StringBuffer();
+
+		if (symbolicExpression.size() >= PRINT_SIZE_THRESHOLD) {
+			symbolicExpression.printCompressedTree(prefix, result);
+
+			// insert the first new line character and deletes the last
+			// character if it is a new line:
+			result.insert(0, "\n");
+			if (result.charAt(result.length() - 1) == '\n')
+				result.delete(result.length() - 1, result.length());
+			return result;
+		}
+
 		SymbolicType type = symbolicExpression.type();
 		SymbolicType charType = typeFactory.charType().getDynamicType(universe);
 
