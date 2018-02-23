@@ -773,6 +773,16 @@ public class LanguageFeaturesTest {
 	public void compoundRange_compoundUpperBound() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("compoundRange.c")));
 	}
+	
+	@Test
+	public void equals_ignore_qualifiers() {
+		assertTrue(ui.run(VERIFY, filename("equivQualifier.c")));
+	}
+
+	@Test
+	public void equals_ignore_qualifiers_bad() {
+		assertFalse(ui.run(VERIFY, filename("equivQualifier_bad.c")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
