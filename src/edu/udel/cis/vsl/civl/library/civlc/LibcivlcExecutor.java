@@ -785,6 +785,14 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			// universe, assertValue);
 		}
 		if (resultType != ResultType.YES) {
+			// uncomment the following for debugging:
+			// Why3Translator translator = new Why3Translator(
+			// (PreUniverse) universe, state.getPathCondition(universe),
+			// new ProverPredicate[0]);
+			// String goal = translator.translateGoal(assertValue);
+			//
+			// System.out.println(translator.getExecutableOutput(
+			// universe.numProverValidCalls() - 1, goal));
 			StringBuilder message = new StringBuilder();
 			Pair<State, String> messageResult = this.symbolicAnalyzer
 					.expressionEvaluation(state, pid, arguments[0], false);
