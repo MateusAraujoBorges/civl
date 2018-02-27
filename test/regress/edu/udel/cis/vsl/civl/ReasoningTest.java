@@ -80,10 +80,17 @@ public class ReasoningTest {
 				TestConstants.NO_CHECK_DIVISION_BY_ZERO, cgfilename("cg.cvl")));
 	}
 
+	@Test
+	public void powerDecomposeSimplification() {
+		// this test is suppose to be reported as containing an error:
+		assertTrue(ui.run(VERIFY, QUIET,
+				reasoningfilename("powerSimplify.cvl")));
+	}
+
 	@Ignore
 	public void squareRootPoly() {
 		// this test is suppose to be reported as containing an error:
-		assertFalse(ui.run(VERIFY, "-showTransitions -showStates",
+		assertFalse(ui.run(VERIFY, "-showTransitions",
 				cgfilename("../experimental/powerSimplify.cvl")));
 	}
 
