@@ -8,6 +8,6 @@ int main() {
   
   $assume(y != 0);
   y = pow(y, 1./2.);	
-  $assert(y >= 0);
+  $assert(y - 1>= 0);
   return (int)y;
 }
