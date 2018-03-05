@@ -1900,6 +1900,7 @@ public class CommonEvaluator implements Evaluator {
 			NumericExpression denominator, boolean muteErrorSideEffects)
 			throws UnsatisfiablePathConditionException {
 		BooleanExpression assumption = state.getPathCondition(universe);
+		SymbolicExpression result = null;
 
 		if (civlConfig.svcomp() || muteErrorSideEffects) {
 			BooleanExpression leftPositive = universe.lessThan(zero, numerator);
@@ -1923,7 +1924,13 @@ public class CommonEvaluator implements Evaluator {
 						claim, resultType, ErrorKind.DIVISION_BY_ZERO,
 						"Modulus denominator is zero");
 		}
-		return new Evaluation(state, universe.modulo(numerator, denominator));
+		try {
+			result = universe.modulo(numerator, denominator);
+		} catch (ArithmeticException e) {
+			System.err.println("Warning: Found Modulo (Division) by Zero, trace back");
+			throw new UnsatisfiablePathConditionException();
+		}
+		return new Evaluation(state, result);
 	}
 
 	/**
@@ -2011,6 +2018,7 @@ public class CommonEvaluator implements Evaluator {
 			result = universe.divide((NumericExpression) numerator,
 					denominator);
 		} catch (ArithmeticException e) {
+			System.err.println("Warning: Found Division by Zero, trace back");
 			throw new UnsatisfiablePathConditionException();
 		}
 		return new Evaluation(state, result);
