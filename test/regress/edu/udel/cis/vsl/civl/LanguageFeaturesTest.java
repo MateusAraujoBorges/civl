@@ -251,6 +251,20 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
+	public void divisionByZeroConstant() throws ABCException {
+
+		assertFalse(ui.run(VERIFY, QUIET, errorBound(2),
+				"-intOperationTransformer=true",
+				filename("divisionByZeroConstant.cvl")));
+	}
+
+	@Test
+	public void divisionByZeroConstant_Ignore() throws ABCException {
+		assertTrue(ui.run(VERIFY, "-checkDivisionByZero=false", QUIET,
+				filename("divisionByZeroConstant.cvl")));
+	}
+
+	@Test
 	public void emptyWhen() throws ABCException {
 		assertTrue(ui.run(VERIFY, QUIET, filename("emptyWhen.cvl")));
 	}
@@ -753,6 +767,21 @@ public class LanguageFeaturesTest {
 	public void typedefRemoverBug() {
 		assertTrue(ui.run(VERIFY, filename("typedefbugMain.c"),
 				filename("typedefbugSource.c")));
+	}
+
+	@Test
+	public void compoundRange_compoundUpperBound() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("compoundRange.c")));
+	}
+	
+	@Test
+	public void equals_ignore_qualifiers() {
+		assertTrue(ui.run(VERIFY, filename("equivQualifier.c")));
+	}
+
+	@Test
+	public void equals_ignore_qualifiers_bad() {
+		assertFalse(ui.run(VERIFY, filename("equivQualifier_bad.c")));
 	}
 
 	@AfterClass
