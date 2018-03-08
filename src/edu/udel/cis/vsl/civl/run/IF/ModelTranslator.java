@@ -32,6 +32,7 @@ import edu.udel.cis.vsl.abc.main.TranslationTask;
 import edu.udel.cis.vsl.abc.main.TranslationTask.TranslationStage;
 import edu.udel.cis.vsl.abc.main.UnitTask;
 import edu.udel.cis.vsl.abc.program.IF.Program;
+import edu.udel.cis.vsl.abc.transform.common.ExternLinkageVariableRenamer;
 import edu.udel.cis.vsl.abc.transform.common.Pruner;
 import edu.udel.cis.vsl.abc.transform.common.SideEffectRemover;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -321,6 +322,9 @@ public class ModelTranslator {
 		if (config.isIntOperationTransiformer())
 			task.addTransformRecord(transformerFactory
 					.getIntOperationTransformerRecord(macros, config));
+		// Add renamer for external-linkage variables that have declarations in
+		// block scope:
+		task.addTransformCode(ExternLinkageVariableRenamer.CODE);
 		task.addTransformCode(SideEffectRemover.CODE);
 		// Add short circhuit transformer:
 		task.addTransformRecord(
