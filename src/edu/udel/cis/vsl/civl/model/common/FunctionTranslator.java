@@ -573,10 +573,6 @@ public class FunctionTranslator {
 								+ statementNode.statementKind(),
 						modelFactory.sourceOf(statementNode));
 		}
-		// if (modelFactory.hasConditionalExpressions() == true) {
-		// result = modelFactory.refineConditionalExpressionOfStatement(
-		// result.uniqueFinalStatement(), result.startLocation());
-		// }
 		modelFactory.popConditionaExpressionStack();
 		if (!modelFactory.anonFragment().isEmpty()) {
 			result = modelFactory.anonFragment().combineWith(result);
@@ -1299,12 +1295,6 @@ public class FunctionTranslator {
 		if (incrementerNode != null) {
 			incrementer = translateExpressionStatementNode(loopScope,
 					incrementerNode);
-			// if (modelFactory.hasConditionalExpressions() == true) {
-			// incrementer = modelFactory
-			// .refineConditionalExpressionOfStatement(
-			// incrementer.uniqueFinalStatement(),
-			// incrementer.startLocation());
-			// }
 		}
 		if (conditionNode == null) {
 			conditionStart = modelFactory.sourceOfBeginning(loopBodyNode);
@@ -3573,12 +3563,6 @@ public class FunctionTranslator {
 						.combineWith(initFragment);
 				modelFactory.clearAnonFragment();
 			}
-			// if (modelFactory.hasConditionalExpressions()) {
-			// initFragment = modelFactory
-			// .refineConditionalExpressionOfStatement(
-			// initFragment.startLocation().getOutgoing(0),
-			// location);
-			// }
 		}
 		return initFragment;
 	}
