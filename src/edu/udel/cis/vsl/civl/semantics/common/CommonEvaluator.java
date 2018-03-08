@@ -31,6 +31,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATO
 import edu.udel.cis.vsl.civl.model.IF.expression.BooleanLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CharLiteralExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DerivativeCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
@@ -806,6 +807,46 @@ public class CommonEvaluator implements Evaluator {
 					(BooleanExpression) eval.value);
 			// eval.state = tmp;
 			return eval;
+		}
+	}
+
+	/**
+	 * Evaluate a conditional expression (ternary expression): condition ?
+	 * trueBranch : falseBranch.
+	 * 
+	 * @param state
+	 *            The pre-state.
+	 * @param pid
+	 *            PID of the process evaluating this expression
+	 * @param conditionalExpression.
+	 *            The conditional expression to be evaluated.
+	 * @return The evaluation result of the conditional expression.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	protected Evaluation evaluateConditionalExpression(State state, int pid,
+			ConditionalExpression conditionalExpression)
+			throws UnsatisfiablePathConditionException {
+		Evaluation eva = evaluate(state, pid,
+				conditionalExpression.getCondition());
+		BooleanExpression conEval = (BooleanExpression) eva.value;
+		SymbolicExpression trueBranch, falseBranch;
+
+		if (conEval.isTrue())
+			return evaluate(eva.state, pid,
+					conditionalExpression.getTrueBranch());
+		if (conEval.isFalse())
+			return evaluate(eva.state, pid,
+					conditionalExpression.getFalseBranch());
+		else {
+			eva = evaluate(eva.state, pid,
+					conditionalExpression.getTrueBranch());
+			trueBranch = eva.value;
+			eva = evaluate(eva.state, pid,
+					conditionalExpression.getFalseBranch());
+			falseBranch = eva.value;
+			eva.value = universe.cond(conEval, trueBranch, falseBranch);
+
+			return eva;
 		}
 	}
 
@@ -3501,10 +3542,9 @@ public class CommonEvaluator implements Evaluator {
 						(CharLiteralExpression) expression);
 				break;
 			case COND :
-				throw new CIVLInternalException(
-						"Conditional expressions should "
-								+ "be translated away by CIVL model builder ",
-						expression.getSource());
+				result = evaluateConditionalExpression(state, pid,
+						(ConditionalExpression) expression);
+				break;
 			case DEREFERENCE :
 				result = evaluateDereference(state, pid, process,
 						(DereferenceExpression) expression);

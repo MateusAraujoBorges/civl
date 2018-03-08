@@ -573,10 +573,10 @@ public class FunctionTranslator {
 								+ statementNode.statementKind(),
 						modelFactory.sourceOf(statementNode));
 		}
-		if (modelFactory.hasConditionalExpressions() == true) {
-			result = modelFactory.refineConditionalExpressionOfStatement(
-					result.uniqueFinalStatement(), result.startLocation());
-		}
+		// if (modelFactory.hasConditionalExpressions() == true) {
+		// result = modelFactory.refineConditionalExpressionOfStatement(
+		// result.uniqueFinalStatement(), result.startLocation());
+		// }
 		modelFactory.popConditionaExpressionStack();
 		if (!modelFactory.anonFragment().isEmpty()) {
 			result = modelFactory.anonFragment().combineWith(result);
@@ -1208,14 +1208,9 @@ public class FunctionTranslator {
 			StatementNode loopBodyNode, Fragment incrementer, boolean isDoWhile,
 			LoopContract loopContract) {
 		Set<Statement> continues, breaks, switchExits;
-		Fragment beforeCondition, loopEntrance, loopBody, loopExit, result;
+		Fragment loopEntrance, loopBody, loopExit, result;
 		Location loopEntranceLocation, continueLocation;
-		Pair<Fragment, Expression> refineConditional;
 
-		refineConditional = modelFactory.refineConditionalExpression(loopScope,
-				condition, condStartSource, condStartSource);
-		beforeCondition = refineConditional.left;
-		condition = refineConditional.right;
 		try {
 			condition = modelFactory.booleanExpression(condition);
 		} catch (ModelFactoryException err) {
@@ -1238,9 +1233,6 @@ public class FunctionTranslator {
 						modelFactory.unaryExpression(condition.getSource(),
 								UNARY_OPERATOR.NOT, condition),
 						false, loopContract));
-		if (beforeCondition != null) {
-			loopEntrance = beforeCondition.combineWith(loopEntrance);
-		}
 		functionInfo.addContinueSet(new LinkedHashSet<Statement>());
 		functionInfo.addBreakSet(new LinkedHashSet<Statement>());
 		loopBody = translateStatementNode(loopScope, loopBodyNode);
@@ -1307,12 +1299,12 @@ public class FunctionTranslator {
 		if (incrementerNode != null) {
 			incrementer = translateExpressionStatementNode(loopScope,
 					incrementerNode);
-			if (modelFactory.hasConditionalExpressions() == true) {
-				incrementer = modelFactory
-						.refineConditionalExpressionOfStatement(
-								incrementer.uniqueFinalStatement(),
-								incrementer.startLocation());
-			}
+			// if (modelFactory.hasConditionalExpressions() == true) {
+			// incrementer = modelFactory
+			// .refineConditionalExpressionOfStatement(
+			// incrementer.uniqueFinalStatement(),
+			// incrementer.startLocation());
+			// }
 		}
 		if (conditionNode == null) {
 			conditionStart = modelFactory.sourceOfBeginning(loopBodyNode);
@@ -2931,18 +2923,12 @@ public class FunctionTranslator {
 		ExpressionNode conditionNode = ifNode.getCondition();
 		Expression expression = translateExpressionNode(conditionNode, scope,
 				true);
-		Fragment beforeCondition = null, trueBranch, trueBranchBody,
-				falseBranch, falseBranchBody, result;
+		Fragment trueBranch, trueBranchBody, falseBranch, falseBranchBody,
+				result;
 		Location location = modelFactory
 				.location(modelFactory.sourceOfBeginning(ifNode), scope);
-		Pair<Fragment, Expression> refineConditional = modelFactory
-				.refineConditionalExpression(scope, expression,
-						modelFactory.sourceOfBeginning(conditionNode),
-						modelFactory.sourceOfEnd(conditionNode));
 		Fragment anonFragment = null;
 
-		beforeCondition = refineConditional.left;
-		expression = refineConditional.right;
 		try {
 			expression = modelFactory.booleanExpression(expression);
 		} catch (ModelFactoryException err) {
@@ -2972,12 +2958,8 @@ public class FunctionTranslator {
 			falseBranch = falseBranch.combineWith(falseBranchBody);
 		}
 		result = trueBranch.parallelCombineWith(falseBranch);
-		if (!beforeCondition.isEmpty()) {
-			result = beforeCondition.combineWith(result);
-		} else {
-			result = this.insertNoopAtBeginning(
-					modelFactory.sourceOfBeginning(ifNode), scope, result);
-		}
+		result = this.insertNoopAtBeginning(
+				modelFactory.sourceOfBeginning(ifNode), scope, result);
 		if (anonFragment != null)
 			result = anonFragment.combineWith(result);
 		return result;
@@ -3591,12 +3573,12 @@ public class FunctionTranslator {
 						.combineWith(initFragment);
 				modelFactory.clearAnonFragment();
 			}
-			if (modelFactory.hasConditionalExpressions()) {
-				initFragment = modelFactory
-						.refineConditionalExpressionOfStatement(
-								initFragment.startLocation().getOutgoing(0),
-								location);
-			}
+			// if (modelFactory.hasConditionalExpressions()) {
+			// initFragment = modelFactory
+			// .refineConditionalExpressionOfStatement(
+			// initFragment.startLocation().getOutgoing(0),
+			// location);
+			// }
 		}
 		return initFragment;
 	}
@@ -3720,18 +3702,12 @@ public class FunctionTranslator {
 	 * @return the fragment of the when statement
 	 */
 	private Fragment translateWhenNode(Scope scope, WhenNode whenNode) {
-		ExpressionNode whenGuardNode = whenNode.getGuard();
 		Expression whenGuard = translateExpressionNode(whenNode.getGuard(),
 				scope, true);
-		Pair<Fragment, Expression> refineConditional = modelFactory
-				.refineConditionalExpression(scope, whenGuard,
-						modelFactory.sourceOfBeginning(whenGuardNode),
-						modelFactory.sourceOfEnd(whenGuardNode));
-		Fragment beforeGuardFragment = refineConditional.left, result;
+		Fragment result;
 		Location whenLocation = modelFactory
 				.location(modelFactory.sourceOfBeginning(whenNode), scope);
 
-		whenGuard = refineConditional.right;
 		try {
 			whenGuard = modelFactory.booleanExpression(whenGuard);
 		} catch (ModelFactoryException err) {
@@ -3748,9 +3724,6 @@ public class FunctionTranslator {
 			result.addGuardToStartLocation(whenGuard, modelFactory);
 		}
 		result.updateStartLocation(whenLocation);
-		if (beforeGuardFragment != null) {
-			result = beforeGuardFragment.combineWith(result);
-		}
 		return result;
 	}
 
