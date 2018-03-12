@@ -773,7 +773,7 @@ public class LanguageFeaturesTest {
 	public void compoundRange_compoundUpperBound() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("compoundRange.c")));
 	}
-	
+
 	@Test
 	public void equals_ignore_qualifiers() {
 		assertTrue(ui.run(VERIFY, filename("equivQualifier.c")));
@@ -782,6 +782,12 @@ public class LanguageFeaturesTest {
 	@Test
 	public void equals_ignore_qualifiers_bad() {
 		assertFalse(ui.run(VERIFY, filename("equivQualifier_bad.c")));
+	}
+
+	@Test
+	public void quantifiedConditionalExpression() {
+		assertTrue(ui.run(VERIFY, "-showProverQueries",
+				filename("quantifiedConditionalExpression.cvl")));
 	}
 
 	@AfterClass

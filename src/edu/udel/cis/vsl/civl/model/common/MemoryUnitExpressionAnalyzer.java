@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.Stack;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
-import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
@@ -18,6 +17,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
@@ -451,11 +451,18 @@ public class MemoryUnitExpressionAnalyzer {
 			case CHAR_LITERAL :
 				break;
 			case COND :
-				throw new CIVLInternalException(
-						"Encounter conditional expression in "
-								+ "memory unit analyzer which should already been translated away in the "
-								+ "model translator",
-						expression.getSource());
+				ConditionalExpression conditionalExpression = (ConditionalExpression) expression;
+
+				computeImpactMemoryUnitsOfExpression(writableVars,
+						conditionalExpression.getCondition(), result,
+						derefCount);
+				computeImpactMemoryUnitsOfExpression(writableVars,
+						conditionalExpression.getTrueBranch(), result,
+						derefCount);
+				computeImpactMemoryUnitsOfExpression(writableVars,
+						conditionalExpression.getFalseBranch(), result,
+						derefCount);
+				break;
 			case DEREFERENCE :
 				computeImpactMemoryUnitsOfExpression(writableVars,
 						((DereferenceExpression) expression).pointer(), result,

@@ -31,6 +31,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATO
 import edu.udel.cis.vsl.civl.model.IF.expression.BooleanLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.CharLiteralExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DerivativeCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
@@ -458,10 +459,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            false only when executing $copy function.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @return A possibly new state and the value of memory space pointed by the
 	 *         pointer.
@@ -502,11 +503,13 @@ public class CommonEvaluator implements Evaluator {
 				variable = state.getDyscope(sid).lexicalScope().variable(vid);
 				if (!analysisOnly && checkOutput)
 					if (variable.isOutput()) {
-						errorLogger.logSimpleError(source, state, process,
-								symbolicAnalyzer.stateInformation(state),
-								ErrorKind.OUTPUT_READ,
-								"Attempt to read output variable "
-										+ variable.name().name());
+						errorLogger
+								.logSimpleError(source, state, process,
+										symbolicAnalyzer.stateInformation(
+												state),
+										ErrorKind.OUTPUT_READ,
+										"Attempt to read output variable "
+												+ variable.name().name());
 						throw new UnsatisfiablePathConditionException();
 					}
 				variableValue = state.getDyscope(sid).getValue(vid);
@@ -576,10 +579,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            The pointer to be dereferenced.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @param source
 	 *            The {@link CIVLSource} associates with the dereference
@@ -807,6 +810,41 @@ public class CommonEvaluator implements Evaluator {
 			// eval.state = tmp;
 			return eval;
 		}
+	}
+
+	/**
+	 * Evaluate a conditional expression (ternary expression): condition ?
+	 * trueBranch : falseBranch.
+	 * 
+	 * @param state
+	 *            The pre-state.
+	 * @param pid
+	 *            PID of the process evaluating this expression
+	 * @param conditionalExpression.
+	 *            The conditional expression to be evaluated.
+	 * @return The evaluation result of the conditional expression.
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	protected Evaluation evaluateConditionalExpression(State state, int pid,
+			ConditionalExpression conditionalExpression)
+			throws UnsatisfiablePathConditionException {
+		Evaluation eva = evaluate(state, pid,
+				conditionalExpression.getCondition());
+		BooleanExpression conEval = (BooleanExpression) eva.value;
+		SymbolicExpression trueBranch, falseBranch;
+
+		if (conEval.isTrue())
+			return evaluate(eva.state, pid,
+					conditionalExpression.getTrueBranch());
+		if (conEval.isFalse())
+			return evaluate(eva.state, pid,
+					conditionalExpression.getFalseBranch());
+		eva = evaluate(eva.state, pid, conditionalExpression.getTrueBranch());
+		trueBranch = eva.value;
+		eva = evaluate(eva.state, pid, conditionalExpression.getFalseBranch());
+		falseBranch = eva.value;
+		eva.value = universe.cond(conEval, trueBranch, falseBranch);
+		return eva;
 	}
 
 	/**
@@ -1927,7 +1965,8 @@ public class CommonEvaluator implements Evaluator {
 		try {
 			result = universe.modulo(numerator, denominator);
 		} catch (ArithmeticException e) {
-			System.err.println("Warning: Found Modulo (Division) by Zero, trace back");
+			System.err.println(
+					"Warning: Found Modulo (Division) by Zero, trace back");
 			throw new UnsatisfiablePathConditionException();
 		}
 		return new Evaluation(state, result);
@@ -3501,10 +3540,9 @@ public class CommonEvaluator implements Evaluator {
 						(CharLiteralExpression) expression);
 				break;
 			case COND :
-				throw new CIVLInternalException(
-						"Conditional expressions should "
-								+ "be translated away by CIVL model builder ",
-						expression.getSource());
+				result = evaluateConditionalExpression(state, pid,
+						(ConditionalExpression) expression);
+				break;
 			case DEREFERENCE :
 				result = evaluateDereference(state, pid, process,
 						(DereferenceExpression) expression);
@@ -3978,11 +4016,13 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger.logSimpleError(source, state, process,
-							this.symbolicAnalyzer.stateInformation(state),
-							ErrorKind.OTHER,
-							"Try to obtain a string from a sequence of char has length"
-									+ " less than or equal to one");
+					this.errorLogger
+							.logSimpleError(source, state, process,
+									this.symbolicAnalyzer.stateInformation(
+											state),
+									ErrorKind.OTHER,
+									"Try to obtain a string from a sequence of char has length"
+											+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;
