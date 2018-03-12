@@ -659,7 +659,7 @@ public class CommonScope extends CommonSourceable implements Scope {
 	@Override
 	public Variable contains(Variable variable) {
 		for (Variable v : variables) {
-			if (v.name().equals(variable.name().name())) {
+			if (v.name().name().equals(variable.name().name())) {
 				return v;
 			}
 		}
