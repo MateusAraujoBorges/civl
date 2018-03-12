@@ -2,6 +2,7 @@ package edu.udel.cis.vsl.civl;
 
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -28,8 +29,7 @@ public class ModelBuilderTest {
 	/* **************************** Test Methods *************************** */
 	@Test
 	public void arrayext() {
-		assertTrue(ui.run(VERIFY, "-verbose=false", QUIET,
-				filename("arrayext.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("arrayext.c")));
 	}
 
 	@Test
@@ -65,6 +65,47 @@ public class ModelBuilderTest {
 	@Test
 	public void ternaryExpression() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("ternary.cvl")));
+	}
+
+	@Test
+	public void blockScopeExtern() {
+		assertTrue(ui.run(VERIFY, QUIET,
+				filename("block_scope_extern.c")));
+	}
+
+	@Test
+	public void blockScopeExtern2() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("block_scope_extern2.c")));
+	}
+
+	@Test
+	public void blockScopeExtern2Bad() {
+		assertFalse(
+				ui.run(VERIFY, QUIET, filename("block_scope_extern2-bad.c")));
+	}
+
+	@Test
+	public void fileScopeExtern() {
+		assertTrue(
+				ui.run(VERIFY, QUIET, filename("file_scope_extern.c")));
+	}
+
+	@Test
+	public void fileScopeExtern2() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("file_scope_extern2.c")));
+	}
+
+	@Test
+	public void fileScopeExtern3() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("file_scope_extern3.c"),
+				filename("file_scope_extern3_lib.c")));
+	}
+
+	@Test
+	public void fileScopeExtern4() {
+		assertTrue(
+				ui.run(VERIFY, QUIET, filename("file_scope_extern4.c"),
+						filename("file_scope_extern4_lib.c")));
 	}
 
 	@AfterClass
