@@ -147,7 +147,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLiteralExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
-import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.IntegerLiteralExpression;
@@ -368,7 +367,6 @@ public class FunctionTranslator {
 		Fragment initialization = new CommonFragment();
 		Fragment body;
 
-		modelFactory.addConditionalExpressionQueue();
 		for (int i = 0; i < rootNode.numChildren(); i++) {
 			ASTNode node = rootNode.child(i);
 			Fragment fragment;
@@ -379,7 +377,6 @@ public class FunctionTranslator {
 					initialization = initialization.combineWith(fragment);
 			}
 		}
-		modelFactory.popConditionaExpressionStack();
 		if (modelBuilder.mainFunctionNode == null) {
 			throw new CIVLSyntaxException("program must have a main function,",
 					modelFactory.sourceOf(rootNode));
@@ -489,7 +486,6 @@ public class FunctionTranslator {
 			StatementNode statementNode) {
 		Fragment result = null;
 
-		modelFactory.addConditionalExpressionQueue();
 		switch (statementNode.statementKind()) {
 			// case ASSUME:
 			// result = translateAssumeNode(scope, (AssumeNode) statementNode);
@@ -573,7 +569,6 @@ public class FunctionTranslator {
 								+ statementNode.statementKind(),
 						modelFactory.sourceOf(statementNode));
 		}
-		modelFactory.popConditionaExpressionStack();
 		if (!modelFactory.anonFragment().isEmpty()) {
 			result = modelFactory.anonFragment().combineWith(result);
 			modelFactory.clearAnonFragment();
@@ -5067,8 +5062,6 @@ public class FunctionTranslator {
 				}
 				result = modelFactory.conditionalExpression(source, booleanArg0,
 						arguments.get(1), arguments.get(2));
-				modelFactory.addConditionalExpression(
-						(ConditionalExpression) result);
 				break;
 			case DIV :
 				result = modelFactory.binaryExpression(source,
