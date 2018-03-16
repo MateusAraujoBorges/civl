@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.13
+                               v1.14
 
 ------------------------------ Overview -------------------------------
 
@@ -47,17 +47,24 @@ General Public License.  However, the libraries used by CIVL
 licenses.  See directory licenses for the license of each component.
 
 
--------------------------- Updates from v1.12 -------------------------
-- Fixed the int-to-pointer casting bug 
-- Fixed the typedef definition bug in compare mode
-- Fixed the file system incorrect file reference bug in compare mode
-- Fixed a bug in IntervalUnionSet, which arose when there were multiple infinite intervals
-- Fixed a bug related to the sign of Ranges
-- Fixed a bug in IntervalUnion Factory, which arose when interval union sets are empty
-- Improved the simplifier for all symbolic expressions by re-implementing with new designs.
-- Highly optimized probabilistic evaluation for boolean expression "polynomial == 0"
-- The pragma that triggers the parsing of ACSL now is changed to "#pragma CIVL ACSL"
-  
+-------------------------- Updates from v1.13 -------------------------
+-- added headers for all C standard libraries
+-- fixed a bug and improved the simplification in SARL for power expressions
+-- fixed a bug that $equal cannot compare objects with different qualifiers
+-- theorem provers now translate queries in a compressed pattern using 
+   "let .. in .."
+-- fixed some bugs in why3 translator
+-- the printing of symbolic expressions will switch to compressed tree if the
+   size of the symbolic expression exceeds some threshold.
+-- fixed a bug that can may CIVL crash when user disable the check of division by
+   zero and a division by zero still happens
+-- fixed a bug in SARL which is casued by caching negations of boolean expressions
+-- improved ABC for "normalizing" variable declarations with external linkages.
+   After normalization, variable declarations with external linkage will only 
+   appear in file scope.  In addition, back-ends use ABC have no need to deal with
+   "extern" and "const" specifiers and qualifiers.
+-- Added support for ACSL predicate. 
+   
    
 ------------------------- Binary Installation -------------------------
 
