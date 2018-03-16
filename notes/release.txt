@@ -68,10 +68,11 @@ click Apply changes. Ditto for setting the default version.
 11. Send an email to civl-dev and civl-users announcing the new release.
 
 12. Update the CIVL web app's virtual machine. Log on
-civl.cis.udel.edu. Update CIVL component repos under /opt/repos/.
+civl.cis.udel.edu. Update CIVL component repos under /opt/repos/. Svn update 
+all four components of CIVL and then re-build all of them.
 
 13. Append "+" to the fields named "version" in edu.udel.cis.vsl.civl.config.CIVLConstants.
-For example, the current version is 1.2, then it becomes 1.2+, which stands for
+For example, the just released version is 1.2, then it becomes 1.2+, which stands for
 unstable release between 1.2 andd 1.3.
 
 14. Create a new directory for the benchmark running data generated

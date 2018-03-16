@@ -1443,13 +1443,6 @@ long double fmal(long double x, long double y, long double z) {
   return FMAL(x,y,z);
 }
 
-#define isgreater(X,Y) ((X)>(Y))
-#define isgreaterequal(X,Y) ((X)>=(Y))
-#define isless(X,Y) ((X)<(Y))
-#define islessequal(X,Y) ((X)<=(Y))
-#define islessgreater(X,Y) ((X)<(Y))||((X)>(Y))
-#define isunordered(X,Y) (X>Y)?1:0
-
 #endif
 
 

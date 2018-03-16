@@ -298,6 +298,9 @@ public class ModelTranslator {
 				transformerFactory.getGeneralTransformerRecord());
 		task.addTransformRecord(
 				transformerFactory.getIOTransformerRecord(config));
+		// Add renamer for external-linkage variables that have declarations in
+		// block scope:
+		task.addTransformCode(ExternLinkageVariableRenamer.CODE);
 		if (!config.svcomp()) {
 			task.addTransformRecord(
 					transformerFactory.getOpenMPSimplifierRecord(config));
@@ -322,9 +325,6 @@ public class ModelTranslator {
 		if (config.isIntOperationTransiformer())
 			task.addTransformRecord(transformerFactory
 					.getIntOperationTransformerRecord(macros, config));
-		// Add renamer for external-linkage variables that have declarations in
-		// block scope:
-		task.addTransformCode(ExternLinkageVariableRenamer.CODE);
 		task.addTransformCode(SideEffectRemover.CODE);
 		// Add short circhuit transformer:
 		task.addTransformRecord(

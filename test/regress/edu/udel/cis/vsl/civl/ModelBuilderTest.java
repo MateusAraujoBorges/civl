@@ -69,8 +69,7 @@ public class ModelBuilderTest {
 
 	@Test
 	public void blockScopeExtern() {
-		assertTrue(ui.run(VERIFY, QUIET,
-				filename("block_scope_extern.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("block_scope_extern.c")));
 	}
 
 	@Test
@@ -86,8 +85,7 @@ public class ModelBuilderTest {
 
 	@Test
 	public void fileScopeExtern() {
-		assertTrue(
-				ui.run(VERIFY, QUIET, filename("file_scope_extern.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("file_scope_extern.c")));
 	}
 
 	@Test
@@ -103,9 +101,8 @@ public class ModelBuilderTest {
 
 	@Test
 	public void fileScopeExtern4() {
-		assertTrue(
-				ui.run(VERIFY, QUIET, filename("file_scope_extern4.c"),
-						filename("file_scope_extern4_lib.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("file_scope_extern4.c"),
+				filename("file_scope_extern4_lib.c")));
 	}
 
 	@AfterClass
