@@ -39,6 +39,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -47,6 +48,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * 
  * @author Manchun Zheng (zmanchun)
  * @author zirkel
+ * @author Wenhao Wu (wuwenhao@udel.edu)
  * 
  */
 public class LibstringExecutor extends BaseLibraryExecutor
@@ -297,10 +299,34 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		return new Evaluation(state, result);
 	}
 
+	/**
+	 * <code>int strlen(const char * s)</code> Returns the length of the string
+	 * pointed by s. </br>
+	 * If the given pointer s pointing to a symbolic value , then it will return
+	 * an application of uninterpreted function, and the returned value of that
+	 * function should be bounded. (e.g., For '$input char IN[10]', it will
+	 * return strlen(&IN[0]), which is in range [0, 10].) <br>
+	 * 
+	 * @param state
+	 *            the current state
+	 * @param pid
+	 *            the PID of the process
+	 * @param process
+	 *            the information of the process
+	 * @param arguments
+	 *            the expressions of arguments
+	 * @param argumentValues
+	 *            the symbolic expressions of arguments
+	 * @param source
+	 *            the CIVL source of the statement
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private Evaluation execute_strlen(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		Evaluation eval;
+		Evaluation result = null;
 		SymbolicExpression charPointer = argumentValues[0];
 		int startIndex;
 		SymbolicExpression originalArray = null;
@@ -321,8 +347,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
 
-			eval = evaluator.dereference(source,
-					state, process, symbolicAnalyzer
+			eval = evaluator.dereference(
+					source, state, process, symbolicAnalyzer
 							.civlTypeOfObjByPointer(source, state, charPointer),
 					arrayPointer, false, true);
 			state = eval.state;
@@ -330,16 +356,45 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			startIndex = symbolicUtil.extractInt(source, arrayIndex);
 		}
 		numChars = originalArray.numArguments();
-		for (int i = 0; i < numChars - startIndex; i++) {
-			SymbolicExpression charExpr = (SymbolicExpression) originalArray
-					.argument(i + startIndex);
-			Character theChar = universe.extractCharacter(charExpr);
+		if (originalArray.operator() == SymbolicOperator.ARRAY) {
+			for (int i = 0; i < numChars - startIndex; i++) {
+				SymbolicExpression charExpr = (SymbolicExpression) originalArray
+						.argument(i + startIndex);
+				Character theChar = universe.extractCharacter(charExpr);
 
-			if (theChar == '\0')
-				break;
-			length++;
+				if (theChar == '\0')
+					break;
+				length++;
+			}
+			result = new Evaluation(state, universe.integer(length));
+		} else if (originalArray
+				.operator() == SymbolicOperator.SYMBOLIC_CONSTANT) {
+			// If the given char-array is symbolic (e.g. $input char s[10])
+			// Create uninterpreted function: int strlen(char* arg0)
+			assert (originalArray.type() instanceof SymbolicCompleteArrayType);
+			SymbolicFunctionType funcType = universe.functionType(
+					Arrays.asList(charPointer.type()), universe.integerType());
+			SymbolicExpression func = universe.symbolicConstant(
+					universe.stringObject("strlen"), funcType);
+			SymbolicExpression symResult = universe.apply(func,
+					Arrays.asList(charPointer));
+			// Add PC: 0 <= strlen(arg0) && strlen(arg0) <= maxLength
+			NumericExpression maxLength = ((SymbolicCompleteArrayType) originalArray
+					.type()).extent();
+			BooleanExpression pc = universe.and(
+					universe.lessThanEquals(zero,
+							(NumericExpression) symResult),
+					universe.lessThanEquals((NumericExpression) symResult,
+							maxLength));
+
+			state = stateFactory.addToPathcondition(state, pid, pc);
+			result = new Evaluation(state, symResult);
+		} else {
+			throw new CIVLUnimplementedFeatureException(
+					"Do strlen() on an unexpected type of string", source);
 		}
-		return new Evaluation(state, universe.integer(length));
+		assert (result != null);
+		return result;
 	}
 
 	/**

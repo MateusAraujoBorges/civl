@@ -232,7 +232,7 @@ done so.
    by right-clicking (or ctrl-click on OS X) the build.xml file and
    Run As->Ant Build. 
    
-9. Shortcut for running CIVL
+9. Shortcuts for running CIVL
    
    1). Executable Script (Recommended)
    Somewhere on your system, create a plain text file containing
@@ -245,7 +245,7 @@ java -jar /Path/To/Your/workspace/CIVL/civl.jar $@
    to your Eclipse workspace directory.  Name this file "civl",
    put it in your PATH, and make it executable (chmod ugo+x civl).
    
-   2). Alias (Optional, alias 'civl' will not work in scripts)
+   2). Alias (Optional, the alias 'civl' will not work in scripts)
    Alternatively, you can define an alias in your .profile,
    .bash_profile, .bashrc, or equivalent:
 
