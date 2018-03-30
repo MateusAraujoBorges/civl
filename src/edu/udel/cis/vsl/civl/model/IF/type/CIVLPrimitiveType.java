@@ -1,9 +1,7 @@
 package edu.udel.cis.vsl.civl.model.IF.type;
 
-import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
  * A primitive type is a type of which there is only one instance. In addition,
@@ -45,7 +43,4 @@ public interface CIVLPrimitiveType extends CIVLType {
 	 * @return predicate which must hold concerning this type
 	 */
 	BooleanExpression getFacts();
-
-	SymbolicExpression initialValue(SymbolicUniverse universe);
-
 }

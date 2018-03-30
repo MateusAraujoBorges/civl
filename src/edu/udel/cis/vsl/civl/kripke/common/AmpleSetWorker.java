@@ -1543,7 +1543,8 @@ public class AmpleSetWorker {
 				if (expr.operator() != SymbolicOperator.TUPLE)
 					return;
 
-				int dyscopeid = symbolicUtil.getDyscopeId(null, expr);
+				int dyscopeid = evaluator.stateFactory()
+						.getDyscopeId(symbolicUtil.getScopeValue(expr));
 
 				if (dyscopeid < 0)
 					return;
@@ -1552,7 +1553,7 @@ public class AmpleSetWorker {
 						.variable(symbolicUtil.getVariableId(null, expr));
 				if (variable.isConst() || variable.isInput())
 					return;
-				this.memUnitFactory.add(result, expr);
+				this.memUnitFactory.add(result, expr, evaluator.stateFactory());
 				if (expr.operator() == SymbolicOperator.TUPLE) {
 					/*
 					 * If the expression is an arrayElementReference expression,
@@ -1638,7 +1639,8 @@ public class AmpleSetWorker {
 	 */
 	private SymbolicExpression dereference(State state,
 			SymbolicExpression pointer) {
-		int sid = symbolicUtil.getDyscopeId(null, pointer);
+		int sid = evaluator.stateFactory()
+				.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 		int vid = symbolicUtil.getVariableId(null, pointer);
 		ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
 		SymbolicExpression variableValue;

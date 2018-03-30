@@ -65,6 +65,7 @@ import edu.udel.cis.vsl.civl.state.IF.MemoryUnit;
 import edu.udel.cis.vsl.civl.state.IF.ProcessState;
 import edu.udel.cis.vsl.civl.state.IF.StackEntry;
 import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.state.common.immutable.ImmutableDynamicScope;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -140,7 +141,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 	private SymbolicTupleType procType;
 
-	private SymbolicTupleType scopeType;
+	private SymbolicType scopeType;
 
 	private SymbolicTupleType functionPointerType;
 	private Evaluator evaluator;
@@ -339,7 +340,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	public CIVLType civlTypeOfObjByPointer(CIVLSource soruce, State state,
 			SymbolicExpression pointer) {
 		ReferenceExpression reference = this.symbolicUtil.getSymRef(pointer);
-		int dyscopeId = symbolicUtil.getDyscopeId(soruce, pointer);
+		int dyscopeId = evaluator.stateFactory()
+				.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 		int vid = symbolicUtil.getVariableId(soruce, pointer);
 		Scope lexicalScope;
 		CIVLType varType;
@@ -356,7 +358,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	public SymbolicType dynamicTypeOfObjByPointer(CIVLSource soruce,
 			State state, SymbolicExpression pointer) {
 		ReferenceExpression reference = symbolicUtil.getSymRef(pointer);
-		int dyscopeId = symbolicUtil.getDyscopeId(soruce, pointer);
+		int dyscopeId = evaluator.stateFactory()
+				.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 		int vid = symbolicUtil.getVariableId(soruce, pointer);
 		SymbolicExpression varValue;
 
@@ -494,7 +497,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				|| pointer.operator() != SymbolicOperator.TUPLE)
 			return result.append(pointer);
 		else {
-			int dyscopeId = this.symbolicUtil.getDyscopeId(source, pointer);
+			int dyscopeId = evaluator.stateFactory()
+					.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 
 			if (dyscopeId < 0)
 				result.append("UNDEFINED");
@@ -837,7 +841,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						pointer, "", "");
 			}
 			return this.variableReferenceToString(state, source, false,
-					this.symbolicUtil.getDyscopeId(source, pointer),
+					evaluator.stateFactory()
+							.getDyscopeId(symbolicUtil.getScopeValue(pointer)),
 					symbolicUtil.getVariableId(source, pointer),
 					symbolicUtil.getSymRef(pointer));
 		}
@@ -1038,9 +1043,10 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 			if (symbolicExpression.operator() != SymbolicOperator.TUPLE)
 				result.append(symbolicExpression);
 			else {
-				int scopeId = modelFactory.getScopeId(symbolicExpression);
+				StateFactory stateFactory = evaluator.stateFactory();
+				int scopeId = stateFactory.getDyscopeId(symbolicExpression);
 
-				if (!modelFactory.isScopeIdDefined(scopeId))
+				if (!stateFactory.isScopeIdDefined(scopeId))
 					result.append("UNDEFINED");
 				else
 					result.append("d" + scopeId);
@@ -2372,13 +2378,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						if (i != 0)
 							result.append(", ");
-						result.append(
-								this.symbolicExpressionToString(var.getSource(),
-										state, var.type(),
-										state.getVariableValue(
-												state.getDyscope(pid,
-														var.scope()),
-												var.vid())));
+						result.append(this.symbolicExpressionToString(
+								var.getSource(), state, var.type(),
+								state.getVariableValue(
+										state.getDyscope(pid, var.scope()),
+										var.vid())));
 					}
 					result.append(")");
 					break;
@@ -2681,7 +2685,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		SymbolicExpression result = null;
 
 		if (isSubtract) {
-			assert this.symbolicUtil.getDyscopeId(source, offset) == -1;
+			assert evaluator.stateFactory()
+					.getDyscopeId(symbolicUtil.getScopeValue(offset)) == -1;
 			assert this.symbolicUtil.getVariableId(source, offset) == -1;
 
 			ReferenceExpression offsetRef = symbolicUtil.getSymRef(offset);
@@ -2714,7 +2719,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 		if (this.symbolicUtil.isNullPointer(pointer) || pointer.isNull())
 			return new Pair<>(universe.falseExpression(), ResultType.NO);
 
-		int dyscope = symbolicUtil.getDyscopeId(null, pointer);
+		int dyscope = evaluator.stateFactory()
+				.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 		int vid = symbolicUtil.getVariableId(null, pointer);
 		SymbolicExpression value;
 
@@ -2779,11 +2785,9 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						claim = reasoner.simplify(claim);
 						if (result == ResultType.YES) {
-							if (!derefable
-									&& reasoner
-											.valid(universe.equals(length,
-													index))
-											.getResultType() != ResultType.NO) {
+							if (!derefable && reasoner
+									.valid(universe.equals(length, index))
+									.getResultType() != ResultType.NO) {
 								return new Triple<>(null, claim, result);
 							} else {
 								return new Triple<>(
@@ -2887,7 +2891,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 									pointer),
 					civlSource);
 
-		int dyscope = symbolicUtil.getDyscopeId(civlSource, pointer);
+		int dyscope = evaluator.stateFactory()
+				.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 
 		if (dyscope == ModelConfiguration.DYNAMIC_CONSTANT_SCOPE)
 			return new Pair<>(universe.trueExpression(), ResultType.YES);

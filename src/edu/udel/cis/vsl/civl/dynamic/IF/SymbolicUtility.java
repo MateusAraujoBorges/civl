@@ -153,16 +153,14 @@ public interface SymbolicUtility {
 	int getArrayIndex(CIVLSource source, SymbolicExpression pointer);
 
 	/**
-	 * Given a pointer value, returns the dynamic scope ID component of that
+	 * Given a pointer value, returns the dynamic scope type component of that
 	 * pointer value.
 	 * 
-	 * @param source
-	 *            the source code information for error report.
 	 * @param pointer
 	 *            a pointer value
-	 * @return the dynamic scope ID component of that pointer value
+	 * @return dynamic scope type value which is a component of a pointer
 	 */
-	int getDyscopeId(CIVLSource source, SymbolicExpression pointer);
+	SymbolicExpression getScopeValue(SymbolicExpression pointer);
 
 	/**
 	 * Given a pointer value, returns the symbolic reference component of that

@@ -17,6 +17,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLHeapType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLScopeType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.type.StructOrUnionField;
@@ -83,7 +84,8 @@ public interface CIVLTypeFactory {
 	 *            array
 	 * @return the complete array type, as specified
 	 */
-	CIVLCompleteArrayType completeArrayType(CIVLType elementType, Expression extent);
+	CIVLCompleteArrayType completeArrayType(CIVLType elementType,
+			Expression extent);
 
 	/**
 	 * Creates a complete regular domain type, which is has the given dimension
@@ -219,7 +221,7 @@ public interface CIVLTypeFactory {
 	 * 
 	 * @return The scope primitive type.
 	 */
-	CIVLPrimitiveType scopeType();
+	CIVLScopeType scopeType();
 
 	SymbolicTupleType stateSymbolicType();
 
@@ -320,8 +322,8 @@ public interface CIVLTypeFactory {
 	 * 
 	 * @return the symbolic type used to represent scope values
 	 */
-	SymbolicTupleType scopeSymbolicType();
-	
+	SymbolicType scopeSymbolicType();
+
 	SymbolicType voidSymbolicType();
 
 	/*
@@ -377,7 +379,8 @@ public interface CIVLTypeFactory {
 	 *            sequence of malloc statements that can access heaps of that
 	 *            type
 	 */
-	void completeHeapType(CIVLHeapType heapType, Collection<MallocStatement> mallocs);
+	void completeHeapType(CIVLHeapType heapType,
+			Collection<MallocStatement> mallocs);
 
 	/**
 	 * Returns the type of the heap field of the given index. A CIVL model has

@@ -10,6 +10,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLScopeType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -236,7 +237,9 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		SymbolicExpression collateState = argumentValues[0];
 		SymbolicExpression scopeValue = argumentValues[2];
 		SymbolicExpression gcollateStateHandle, gcollateState, symStateRef;
-		int scopeId = modelFactory.getScopeId(scopeValue);
+		CIVLScopeType scopeType = typeFactory.scopeType();
+		int scopeId = scopeType.scopeValueToIdentityOperator(universe)
+				.apply(scopeValue).intValue();
 		int stateRef, nprocs, place, resultRef;
 		Evaluation eval;
 		State mono, resultState, coState;

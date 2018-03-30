@@ -757,7 +757,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			SymbolicExpression newPointer = symbolicUtil.extendPointer(objPtr,
 					reference);
 			CIVLSource objSource = arguments[1].getSource();
-			int dyscopeId = symbolicUtil.getDyscopeId(objSource, newPointer);
+			int dyscopeId = stateFactory
+					.getDyscopeId(symbolicUtil.getScopeValue(newPointer));
 			int vid = symbolicUtil.getVariableId(objSource, newPointer);
 			SymbolicExpression objValue = state.getVariableValue(dyscopeId,
 					vid);

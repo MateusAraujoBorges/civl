@@ -333,12 +333,6 @@ public class CommonModelFactory implements ModelFactory {
 	private Scope staticScope;
 
 	/**
-	 * The unique symbolic expression for the undefined scope value, which has
-	 * the integer value -1.
-	 */
-	private SymbolicExpression undefinedScopeValue;
-
-	/**
 	 * An instance of a <code>$wait</code> system function identifier expression
 	 */
 	private FunctionIdentifierExpression waitFuncPointer = null;
@@ -374,9 +368,6 @@ public class CommonModelFactory implements ModelFactory {
 		this.nullStateValue = universe.tuple(typeFactory.stateSymbolicType,
 				new Singleton<SymbolicExpression>(universe.integer(-1)));
 		this.anonFragment = new CommonFragment();
-		this.undefinedScopeValue = universe.tuple(
-				typeFactory.scopeSymbolicType(),
-				new Singleton<SymbolicExpression>(universe.integer(-1)));
 	}
 
 	/* ********************** Methods from ModelFactory ******************** */
@@ -1390,23 +1381,21 @@ public class CommonModelFactory implements ModelFactory {
 	public void setScopes(Scope scope) {
 		this.systemScope = scope;
 		this.staticScope = scope.parent();
-		this.systemScopeId = universe.tuple(typeFactory.scopeSymbolicType,
-				new Singleton<SymbolicExpression>(
-						universe.integer(scope.id())));
-	}
-
-	@Override
-	public int getScopeId(SymbolicExpression scopeValue) {
-		return extractIntField(scopeValue, zeroObj);
+		// TODO : why model factory has to deal with scope values ? -z
+		this.systemScopeId = typeFactory.scopeType
+				.scopeIdentityToValueOperator(universe).apply(scope.id());
 	}
 
 	/* *************************** Private Methods ************************* */
+	// TODO: why model factory has to deal with undefined values ?! Semantics
+	// package is where this should be in. -z
 	@Override
 	public SymbolicExpression undefinedValue(SymbolicType type) {
 		if (type.equals(typeFactory.processSymbolicType))
 			return this.undefinedProcessValue;
 		else if (type.equals(typeFactory.scopeSymbolicType))
-			return this.undefinedScopeValue;
+			return typeFactory.scopeType.scopeIdentityToValueOperator(universe)
+					.apply(ModelConfiguration.DYNAMIC_UNDEFINED_SCOPE);
 		else {
 			SymbolicExpression result = universe
 					.symbolicConstant(universe.stringObject("UNDEFINED"), type);
@@ -1543,13 +1532,6 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public boolean isPocessIdDefined(int pid) {
 		if (pid == -1)
-			return false;
-		return true;
-	}
-
-	@Override
-	public boolean isScopeIdDefined(int scopeId) {
-		if (scopeId == -1)
 			return false;
 		return true;
 	}

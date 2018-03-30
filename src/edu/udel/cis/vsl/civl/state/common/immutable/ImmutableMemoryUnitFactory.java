@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnit;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitFactory;
 import edu.udel.cis.vsl.civl.state.IF.MemoryUnitSet;
+import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -39,8 +39,6 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 	private Map<ImmutableMemoryUnit, ImmutableMemoryUnit> muMap = new HashMap<>(
 			100000);
 
-	private ModelFactory modelFactory;
-
 	/**
 	 * The symbolic universe, provided by SARL.
 	 */
@@ -50,13 +48,11 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 	private IntObject one;
 	private IntObject two;
 
-	public ImmutableMemoryUnitFactory(SymbolicUniverse universe,
-			ModelFactory factory) {
+	public ImmutableMemoryUnitFactory(SymbolicUniverse universe) {
 		this.universe = universe;
 		this.zero = universe.intObject(0);
 		this.one = universe.intObject(1);
 		this.two = universe.intObject(2);
-		this.modelFactory = factory;
 	}
 
 	@Override
@@ -186,8 +182,10 @@ public class ImmutableMemoryUnitFactory implements MemoryUnitFactory {
 	}
 
 	@Override
-	public void add(MemoryUnitSet muSet, SymbolicExpression pointer) {
-		int scope = modelFactory.getScopeId(universe.tupleRead(pointer, zero));
+	public void add(MemoryUnitSet muSet, SymbolicExpression pointer,
+			StateFactory stateFactory) {
+		int scope = stateFactory
+				.getDyscopeId(universe.tupleRead(pointer, zero));
 		int var = ((IntegerNumber) universe.extractNumber(
 				(NumericExpression) universe.tupleRead(pointer, one)))
 						.intValue();

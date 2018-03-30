@@ -409,7 +409,7 @@ public class CommonExecutor implements Executor {
 		eval = evaluator.evaluate(state, pid, statement.getScopeExpression());
 		state = eval.state;
 		scopeValue = eval.value;
-		dyScopeID = modelFactory.getScopeId(scopeValue);
+		dyScopeID = stateFactory.getDyscopeId(scopeValue);
 		eval = evaluator.evaluate(state, pid, statement.getSizeExpression());
 		state = eval.state;
 		mallocSize = (NumericExpression) eval.value;
@@ -697,7 +697,7 @@ public class CommonExecutor implements Executor {
 			throws UnsatisfiablePathConditionException {
 		String process = "p" + pid;
 		StatementKind kind = statement.statementKind();
-		
+
 		numSteps.getAndIncrement();
 		switch (kind) {
 			case ASSIGN :
@@ -1350,7 +1350,8 @@ public class CommonExecutor implements Executor {
 		// } else {
 
 		int vid = symbolicUtil.getVariableId(source, pointer);
-		int sid = symbolicUtil.getDyscopeId(source, pointer);
+		int sid = stateFactory
+				.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 		ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
 		State result;
 		Variable variable;
@@ -1530,7 +1531,7 @@ public class CommonExecutor implements Executor {
 		SymbolicExpression heapObject;
 		Pair<State, SymbolicExpression> result;
 
-		dyscopeID = modelFactory.getScopeId(scopeValue);
+		dyscopeID = stateFactory.getDyscopeId(scopeValue);
 		heapObject = universe.array(objectType.getDynamicType(universe),
 				Arrays.asList(objectValue));
 		result = stateFactory.malloc(state, dyscopeID, mallocId, heapObject);

@@ -375,7 +375,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 					&& !symbolicUtil.isPointer2MemoryBlock(pointer))
 				pointer = symbolicUtil.parentPointer(pointer);
 			// some dyscopes referred by the pointer may gone already:
-			if (symbolicUtil.getDyscopeId(source, pointer) >= 0) {
+			if (stateFactory
+					.getDyscopeId(symbolicUtil.getScopeValue(pointer)) >= 0) {
 				pointedType = symbolicAnalyzer.dynamicTypeOfObjByPointer(
 						memObjExpr.getSource(), state, pointer);
 				eval = evaluator.havoc(state, pointedType);
@@ -507,8 +508,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 	private Evaluation executeScopeDefined(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
-		int scopeValue = modelFactory.getScopeId(argumentValues[0]);
-		SymbolicExpression result = modelFactory.isScopeIdDefined(scopeValue)
+		int scopeValue = stateFactory.getDyscopeId(argumentValues[0]);
+		SymbolicExpression result = stateFactory.isScopeIdDefined(scopeValue)
 				? trueValue
 				: falseValue;
 
@@ -737,7 +738,9 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		state = stateFactory.popWriteSet(state, pid);
 		memValueType = (SymbolicTupleType) memType.getDynamicType(universe);
 		for (SymbolicExpression pointer : writeSet) {
-			int referredDyscope = symbolicUtil.getDyscopeId(source, pointer);
+			SymbolicExpression referredScopeValue = symbolicUtil
+					.getScopeValue(pointer);
+			int referredDyscope = stateFactory.getDyscopeId(referredScopeValue);
 
 			if (referredDyscope < 0)
 				continue;

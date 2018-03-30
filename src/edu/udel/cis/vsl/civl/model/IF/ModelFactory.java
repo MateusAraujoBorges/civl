@@ -1454,19 +1454,6 @@ public interface ModelFactory {
 	 */
 
 	/**
-	 * Translate a symbolic scope id into an integer. A symbolic scope id is a
-	 * tuple with one element of integer type. A CIVL internal exception is
-	 * thrown if the value can't be computed.
-	 * 
-	 * @param scopeValue
-	 *            The symbolic object of the scope id
-	 * @return The concrete scope id
-	 */
-	int getScopeId(SymbolicExpression scopeValue);
-
-	boolean isScopeIdDefined(int scopeId);
-
-	/**
 	 * Translate an integer canonical state id into a symbolic expression
 	 * 
 	 * @param canonicalId
