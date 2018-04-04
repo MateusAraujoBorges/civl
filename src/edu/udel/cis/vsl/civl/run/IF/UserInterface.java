@@ -196,6 +196,8 @@ public class UserInterface {
 			err.println(e.getMessage());
 			err.println("Type \"civl help\" for command line syntax.");
 			err.flush();
+		} catch (OutOfMemoryError oome) {
+			throw new CIVLException("JVM is running out of memory.", null);
 		}
 		return false;
 	}

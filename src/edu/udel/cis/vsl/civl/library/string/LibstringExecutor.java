@@ -337,7 +337,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			startIndex = symbolicUtil.getArrayIndex(source, charPointer);
 		else
 			throw new CIVLUnimplementedFeatureException(
-					"Do strlen() on a non-concrete string", source);
+					"Do strlen() with a non-concrete index", source);
 		if (charPointer.type() instanceof SymbolicArrayType) {
 			originalArray = charPointer;
 		} else {
@@ -367,31 +367,45 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				length++;
 			}
 			result = new Evaluation(state, universe.integer(length));
-		} else if (originalArray
-				.operator() == SymbolicOperator.SYMBOLIC_CONSTANT) {
-			// If the given char-array is symbolic (e.g. $input char s[10])
-			// Create uninterpreted function: int strlen(char* arg0)
-			assert (originalArray.type() instanceof SymbolicCompleteArrayType);
-			SymbolicFunctionType funcType = universe.functionType(
-					Arrays.asList(charPointer.type()), universe.integerType());
-			SymbolicExpression func = universe.symbolicConstant(
-					universe.stringObject("strlen"), funcType);
-			SymbolicExpression symResult = universe.apply(func,
-					Arrays.asList(charPointer));
-			// Add PC: 0 <= strlen(arg0) && strlen(arg0) <= maxLength
-			NumericExpression maxLength = ((SymbolicCompleteArrayType) originalArray
-					.type()).extent();
-			BooleanExpression pc = universe.and(
-					universe.lessThanEquals(zero,
-							(NumericExpression) symResult),
-					universe.lessThanEquals((NumericExpression) symResult,
-							maxLength));
-
-			state = stateFactory.addToPathcondition(state, pid, pc);
-			result = new Evaluation(state, symResult);
 		} else {
-			throw new CIVLUnimplementedFeatureException(
-					"Do strlen() on an unexpected type of string", source);
+			// If the given char-array is symbolic (e.g. $input char s[10])
+			// Abstract function: int strlen(char* arg0, refType arg1)
+			// Construct arg0
+			// 1. get the variable referenced by the actual argument of strlen
+			SymbolicExpression rootPointer = symbolicUtil
+					.makePointer(charPointer, universe.identityReference());
+			Evaluation evalRootPointer = evaluator.dereference(
+					arguments[0].getSource(), state, process,
+					typeFactory.charType(), rootPointer, true, true);
+			SymbolicExpression rawRootVar = evalRootPointer.value;
+			// 2. Cast the root variable to the type of array-of-char
+			SymbolicType rawRootVarType = rawRootVar.type();
+			SymbolicType ArrayOfCharType = universe
+					.arrayType(universe.characterType());
+			SymbolicFunctionType typeCastFuncType = universe.functionType(
+					Arrays.asList(rawRootVarType), ArrayOfCharType);
+			SymbolicExpression typeCastFunc = universe.symbolicConstant(
+					universe.stringObject("CIVL_dycast2ArrChar"),
+					typeCastFuncType);
+			SymbolicExpression castedRootVar = universe.apply(typeCastFunc,
+					Arrays.asList(rawRootVar));
+			// Construct arg1
+			SymbolicExpression refExpr = symbolicUtil.getSymRef(charPointer);
+			// Construct CIVL_strlen abstract function for symbolic string
+			SymbolicFunctionType funcType = universe.functionType(
+					Arrays.asList(ArrayOfCharType, universe.referenceType()),
+					universe.integerType());
+			SymbolicExpression func = universe.symbolicConstant(
+					universe.stringObject("CIVL_strlen"), funcType);
+			SymbolicExpression symResult = universe.apply(func,
+					Arrays.asList(castedRootVar, refExpr));
+			// Add PC: 0 <= CIVL_strlen(arg0, arg1)
+			BooleanExpression pc = universe.lessThanEquals(zero,
+					(NumericExpression) symResult);
+
+			state = stateFactory.addToPathcondition(evalRootPointer.state, pid,
+					pc);
+			result = new Evaluation(state, symResult);
 		}
 		assert (result != null);
 		return result;
