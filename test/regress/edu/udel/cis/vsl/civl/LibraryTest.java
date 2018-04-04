@@ -174,8 +174,7 @@ public class LibraryTest {
 
 	@Test
 	public void strlen_symbolic() throws ABCException {
-		assertTrue(
-				ui.run("verify", QUIET, filename(STRING, "strlen_symbolic.c")));
+		assertTrue(ui.run("verify", filename(STRING, "strlen_symbolic.c")));
 	}
 
 	@Test
