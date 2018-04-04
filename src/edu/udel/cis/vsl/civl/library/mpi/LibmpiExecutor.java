@@ -331,7 +331,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression mpiRootScope = argumentValues[0];
 		SymbolicExpression newCMPIGcomm = argumentValues[1];
-		int sid = modelFactory.getScopeId(mpiRootScope);
+		int sid = stateFactory.getDyscopeId(mpiRootScope);
 		Variable gcommsVar = state.getDyscope(sid).lexicalScope()
 				.variable("_mpi_gcomms");
 		SymbolicExpression gcomms;
@@ -350,7 +350,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 		NumericExpression index = (NumericExpression) argumentValues[1];
 		SymbolicExpression scope = argumentValues[0];
 		SymbolicExpression gcomms, gcomm;
-		int sid = modelFactory.getScopeId(scope);
+		int sid = stateFactory.getDyscopeId(scope);
 		Variable gcommsVar = state.getDyscope(sid).lexicalScope()
 				.variable("_mpi_gcomms");
 
@@ -373,7 +373,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 				commHandle, false, true);
 		state = eval.state;
 		gcommHandle = universe.tupleRead(eval.value, oneObject);
-		sid = symbolicUtil.getDyscopeId(source, gcommHandle);
+		sid = stateFactory
+				.getDyscopeId(symbolicUtil.getScopeValue(gcommHandle));
 		scopeVal = stateFactory.scopeValue(sid);
 		return new Evaluation(state, scopeVal);
 	}
@@ -385,7 +386,7 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 		SymbolicExpression scopeVal;
 		int sid;
 
-		sid = symbolicUtil.getDyscopeId(source, commHandle);
+		sid = stateFactory.getDyscopeId(symbolicUtil.getScopeValue(commHandle));
 		scopeVal = stateFactory.scopeValue(sid);
 		return new Evaluation(state, scopeVal);
 	}

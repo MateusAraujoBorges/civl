@@ -33,8 +33,8 @@ public class States {
 	}
 
 	public static MemoryUnitFactory newImmutableMemoryUnitFactory(
-			SymbolicUniverse universe, ModelFactory factory) {
-		return new ImmutableMemoryUnitFactory(universe, factory);
+			SymbolicUniverse universe) {
+		return new ImmutableMemoryUnitFactory(universe);
 	}
 
 }

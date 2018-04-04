@@ -459,10 +459,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            false only when executing $copy function.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects
-	 *            <strong> results an undefined value of the same type as the
-	 *            dereference expression </strong> iff this parameter set to
-	 *            true. Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects <strong>
+	 *            results an undefined value of the same type as the dereference
+	 *            expression </strong> iff this parameter set to true.
+	 *            Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @return A possibly new state and the value of memory space pointed by the
 	 *         pointer.
@@ -491,7 +491,8 @@ public class CommonEvaluator implements Evaluator {
 			ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
 			SymbolicExpression variableValue;
 			int vid = symbolicUtil.getVariableId(source, pointer);
-			int sid = symbolicUtil.getDyscopeId(source, pointer);
+			int sid = stateFactory
+					.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 			Variable variable;
 
 			// Get the variable value:
@@ -503,13 +504,11 @@ public class CommonEvaluator implements Evaluator {
 				variable = state.getDyscope(sid).lexicalScope().variable(vid);
 				if (!analysisOnly && checkOutput)
 					if (variable.isOutput()) {
-						errorLogger
-								.logSimpleError(source, state, process,
-										symbolicAnalyzer.stateInformation(
-												state),
-										ErrorKind.OUTPUT_READ,
-										"Attempt to read output variable "
-												+ variable.name().name());
+						errorLogger.logSimpleError(source, state, process,
+								symbolicAnalyzer.stateInformation(state),
+								ErrorKind.OUTPUT_READ,
+								"Attempt to read output variable "
+										+ variable.name().name());
 						throw new UnsatisfiablePathConditionException();
 					}
 				variableValue = state.getDyscope(sid).getValue(vid);
@@ -579,10 +578,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            The pointer to be dereferenced.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects
-	 *            <strong> results an undefined value of the same type as the
-	 *            dereference expression </strong> iff this parameter set to
-	 *            true. Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects <strong>
+	 *            results an undefined value of the same type as the dereference
+	 *            expression </strong> iff this parameter set to true.
+	 *            Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @param source
 	 *            The {@link CIVLSource} associates with the dereference
@@ -624,7 +623,8 @@ public class CommonEvaluator implements Evaluator {
 						"attempt to deference a null pointer");
 			throwPCException = true;
 		} else {
-			int sid = symbolicUtil.getDyscopeId(source, pointer);
+			int sid = stateFactory
+					.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 
 			if (sid == ModelConfiguration.DYNAMIC_NULL_SCOPE) {
 				if (!muteErrorSideEffects)
@@ -2411,14 +2411,14 @@ public class CommonEvaluator implements Evaluator {
 			BinaryExpression expression)
 			throws UnsatisfiablePathConditionException {
 		Evaluation eval = evaluate(state, pid, expression.left());
-		int left = modelFactory.getScopeId(eval.value);
+		int left = stateFactory.getDyscopeId(eval.value);
 		int right;
 		boolean result;
 
 		state = eval.state;
 		eval = evaluate(state, pid, expression.right());
 		state = eval.state;
-		right = modelFactory.getScopeId(eval.value);
+		right = stateFactory.getDyscopeId(eval.value);
 		switch (expression.operator()) {
 			case PLUS :
 				int lowestCommonAncestor = stateFactory
@@ -2606,8 +2606,8 @@ public class CommonEvaluator implements Evaluator {
 						.pointer();
 
 				eval = evaluate(state, pid, pointer);
-				int sid = symbolicUtil.getDyscopeId(pointer.getSource(),
-						eval.value);
+				int sid = stateFactory
+						.getDyscopeId(symbolicUtil.getScopeValue(eval.value));
 				state = eval.state;
 				if (sid < 0) {
 					errorLogger.logSimpleError(pointer.getSource(), state,
@@ -3055,7 +3055,7 @@ public class CommonEvaluator implements Evaluator {
 				CIVLPrimitiveType primitiveType = (CIVLPrimitiveType) type;
 
 				eval = new Evaluation(state,
-						primitiveType.initialValue(universe));
+						primitiveTypeInitialValue(primitiveType));
 				break;
 			}
 			default :// STRUCT_OR_UNION{ // TODO: don't make this the default!
@@ -3088,6 +3088,36 @@ public class CommonEvaluator implements Evaluator {
 			}
 		}
 		return eval;
+	}
+
+	private SymbolicExpression primitiveTypeInitialValue(
+			CIVLPrimitiveType type) {
+		switch (type.primitiveTypeKind()) {
+			case BOOL :
+				return universe.bool(false);
+			case DYNAMIC :
+				return null;
+			case INT :
+				return universe.integer(0);
+			case PROCESS :
+				return universe.tuple(
+						(SymbolicTupleType) type.getDynamicType(universe),
+						new Singleton<SymbolicExpression>(
+								universe.integer(-2)));
+			case STATE :
+				return universe.tuple(
+						(SymbolicTupleType) type.getDynamicType(universe),
+						new Singleton<SymbolicExpression>(
+								universe.integer(-1)));
+			case SCOPE :
+				return stateFactory.undefinedScopeValue();
+			case REAL :
+				return universe.rational(0);
+			case CHAR :
+				return universe.character('\0');
+			default :
+		}
+		return null;
 	}
 
 	/**
@@ -3140,7 +3170,8 @@ public class CommonEvaluator implements Evaluator {
 			if (expressionValue.operator() != SymbolicOperator.TUPLE)
 				return;
 			// try {
-			int scopeID = symbolicUtil.getDyscopeId(source, expressionValue);
+			int scopeID = stateFactory
+					.getDyscopeId(symbolicUtil.getScopeValue(expressionValue));
 
 			if (scopeID < 0) {
 				StringBuffer message = new StringBuffer();
@@ -3231,7 +3262,8 @@ public class CommonEvaluator implements Evaluator {
 		NumericExpression extent, index;
 		BooleanExpression zeroOffset, inBound;
 		Evaluation eval;
-		int scopeId = symbolicUtil.getDyscopeId(source, pointer);
+		int scopeId = stateFactory
+				.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 		int vid = symbolicUtil.getVariableId(source, pointer);
 		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
@@ -3339,7 +3371,8 @@ public class CommonEvaluator implements Evaluator {
 				typeFactory.pointerType(symbolicAnalyzer
 						.civlTypeOfObjByPointer(source, state, pointer)),
 				pointer);
-		int sid = symbolicUtil.getDyscopeId(source, pointer);
+		int sid = stateFactory
+				.getDyscopeId(symbolicUtil.getScopeValue(pointer));
 		SymbolicType objType;
 
 		// different pretty form for heap object and variable :
@@ -3921,7 +3954,8 @@ public class CommonEvaluator implements Evaluator {
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		CIVLFunction function;
 		Evaluation eval = this.evaluate(state, pid, functionIdentifier);
-		int scopeId = symbolicUtil.getDyscopeId(source, eval.value);
+		int scopeId = stateFactory
+				.getDyscopeId(symbolicUtil.getScopeValue(eval.value));
 		int fid = symbolicUtil.getVariableId(source, eval.value);
 		// String funcName = "";
 		Scope containingScope;
@@ -4016,13 +4050,11 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger
-							.logSimpleError(source, state, process,
-									this.symbolicAnalyzer.stateInformation(
-											state),
-									ErrorKind.OTHER,
-									"Try to obtain a string from a sequence of char has length"
-											+ " less than or equal to one");
+					this.errorLogger.logSimpleError(source, state, process,
+							this.symbolicAnalyzer.stateInformation(state),
+							ErrorKind.OTHER,
+							"Try to obtain a string from a sequence of char has length"
+									+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;
@@ -4216,12 +4248,12 @@ public class CommonEvaluator implements Evaluator {
 		// element reference pointers.
 		leftVid = symbolicUtil.getVariableId(expression.left().getSource(),
 				leftPtr);
-		leftSid = symbolicUtil.getDyscopeId(expression.left().getSource(),
-				leftPtr);
+		leftSid = stateFactory
+				.getDyscopeId(symbolicUtil.getScopeValue(leftPtr));
 		rightVid = symbolicUtil.getVariableId(expression.right().getSource(),
 				rightPtr);
-		rightSid = symbolicUtil.getDyscopeId(expression.right().getSource(),
-				rightPtr);
+		rightSid = stateFactory
+				.getDyscopeId(symbolicUtil.getScopeValue(rightPtr));
 
 		if (rightSid == -1 && rightVid == -1) {
 			// offset subtraction

@@ -83,7 +83,7 @@ public class LibscopeExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression scopeValue = argumentValues[0];
-		int scopeID = modelFactory.getScopeId(scopeValue);
+		int scopeID = stateFactory.getDyscopeId(scopeValue);
 		int parentID = state.getParentId(scopeID);
 		SymbolicExpression parentScope = stateFactory.scopeValue(parentID);
 

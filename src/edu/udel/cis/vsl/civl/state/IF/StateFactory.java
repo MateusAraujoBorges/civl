@@ -625,8 +625,8 @@ public interface StateFactory {
 	 *            The pre-state.
 	 * @param heapObjectPointer
 	 *            The pointer which points to the heap object to be removed.
-	 * @param dyscopeId
-	 *            The ID of the dyscope where the pointer points to.
+	 * @param scopeOfPointer
+	 *            The scope that is referred by the heapObjectPointer
 	 * @param mallocId
 	 *            The malloc ID of the heap object to be removed, i.e., the
 	 *            index of the heap field in the heap.
@@ -636,7 +636,7 @@ public interface StateFactory {
 	 *         corresponding pointers updated.
 	 */
 	State deallocate(State state, SymbolicExpression heapObjectPointer,
-			int dyscopeId, int mallocId, int index);
+			SymbolicExpression scopeOfPointer, int mallocId, int index);
 
 	/**
 	 * returns the memory unit factory associated with this state factory, which
@@ -887,13 +887,36 @@ public interface StateFactory {
 	State popAssumption(State state, int pid);
 
 	/**
-	 * Translate an integer scope id into a symbolic expression
+	 * Converts an integer dynamic scope id into a symbolic expression
 	 * 
 	 * @param sid
 	 *            The scope id to be translated
 	 * @return The symbolic expression representing the scope id
 	 */
 	SymbolicExpression scopeValue(int sid);
+
+	/**
+	 * Converts a value of scope type to a dynamic scope ID.
+	 * 
+	 * @param scopeValue
+	 *            a value of scope type
+	 * @return The dynamic scope ID which is associated with the given scope
+	 *         type value.
+	 */
+	int getDyscopeId(SymbolicExpression scopeValue);
+
+	/**
+	 * @return constant value of scope type which represents an undefined scope.
+	 */
+	SymbolicExpression undefinedScopeValue();
+
+	/**
+	 * 
+	 * @param sid
+	 *            a dynamic scope ID
+	 * @return true iff the given dynamic scope ID stands for an undefined scope
+	 */
+	boolean isScopeIdDefined(int sid);
 
 	void setConfiguration(CIVLConfiguration config);
 

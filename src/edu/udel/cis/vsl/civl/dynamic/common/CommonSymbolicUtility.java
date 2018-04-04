@@ -61,11 +61,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	private SymbolicUniverse universe;
 
 	/**
-	 * The model factory of the CIVL model.
-	 */
-	private ModelFactory modelFactory;
-
-	/**
 	 * The type factory of the CIVL model.
 	 */
 	private CIVLTypeFactory typeFactory;
@@ -176,7 +171,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 
 		this.stateFactory = stateFactory;
 		this.universe = universe;
-		this.modelFactory = modelFactory;
 		this.typeFactory = modelFactory.typeFactory();
 		this.heapAnalyzer = new HeapAnalyzer(universe, this);
 		dynamicType = typeFactory.dynamicSymbolicType();
@@ -625,8 +619,8 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public int getDyscopeId(CIVLSource source, SymbolicExpression pointer) {
-		return modelFactory.getScopeId(universe.tupleRead(pointer, zeroObj));
+	public SymbolicExpression getScopeValue(SymbolicExpression pointer) {
+		return universe.tupleRead(pointer, zeroObj);
 	}
 
 	@Override

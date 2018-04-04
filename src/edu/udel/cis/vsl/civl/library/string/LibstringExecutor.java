@@ -139,7 +139,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		SymbolicExpression originalArray = null;
 		int numChars;
 		int vid = symbolicUtil.getVariableId(source, lhsPointer);
-		int scopeId = symbolicUtil.getDyscopeId(source, lhsPointer);
+		int scopeId = stateFactory
+				.getDyscopeId(symbolicUtil.getScopeValue(lhsPointer));
 		ReferenceExpression symRef = ((ArrayElementReference) symbolicUtil
 				.getSymRef(lhsPointer)).getParent();
 

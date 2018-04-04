@@ -87,7 +87,6 @@ public class CommonMemoryUnitEvaluator
 
 	private MemoryUnitFactory muFactory;
 
-	@SuppressWarnings("unused")
 	private StateFactory stateFactory;
 
 	private SymbolicTupleType pointerType;
@@ -106,6 +105,7 @@ public class CommonMemoryUnitEvaluator
 		this.typeFactory = this.modelFactory.typeFactory();
 		this.pointerType = typeFactory.pointerSymbolicType();
 		this.rangeType = typeFactory.rangeType().getDynamicType(universe);
+		this.stateFactory = evaluator.stateFactory();
 	}
 
 	/**
@@ -142,7 +142,8 @@ public class CommonMemoryUnitEvaluator
 				if (!pointer.isNull() && pointer.type()
 						.equals(this.typeFactory.pointerSymbolicType()))
 					muFactory.add(result, this.muFactory.newMemoryUnit(
-							this.symbolicUtil.getDyscopeId(null, pointer),
+							stateFactory.getDyscopeId(
+									symbolicUtil.getScopeValue(pointer)),
 							this.symbolicUtil.getVariableId(null, pointer),
 							symbolicUtil.getSymRef(pointer)));
 			}
@@ -280,13 +281,15 @@ public class CommonMemoryUnitEvaluator
 
 				this.muFactory.add(set,
 						this.muFactory.newMemoryUnit(
-								this.symbolicUtil.getDyscopeId(null, expr),
+								stateFactory.getDyscopeId(
+										symbolicUtil.getScopeValue(expr)),
 								this.symbolicUtil.getVariableId(null, expr),
 								symbolicUtil.getSymRef(expr)));
 				// set.add(expr);
 				try {
 					if (expr.operator() == SymbolicOperator.TUPLE
-							&& symbolicUtil.getDyscopeId(null, expr) >= 0) {
+							&& stateFactory.getDyscopeId(
+									symbolicUtil.getScopeValue(expr)) >= 0) {
 						/*
 						 * If the expression is an arrayElementReference
 						 * expression, and finally it turns that the array type
@@ -444,7 +447,8 @@ public class CommonMemoryUnitEvaluator
 				} else
 					value = state.valueOf(pid, variable);
 				if (isPointer(value)) {
-					int dyscopeID = this.symbolicUtil.getDyscopeId(null, value),
+					int dyscopeID = stateFactory
+							.getDyscopeId(symbolicUtil.getScopeValue(value)),
 							vid = this.symbolicUtil.getVariableId(null, value);
 					Variable object = state.getDyscope(dyscopeID).lexicalScope()
 							.variable(vid);
@@ -525,13 +529,13 @@ public class CommonMemoryUnitEvaluator
 
 	private boolean isPointer(SymbolicExpression value) {
 		return value.type().equals(this.pointerType)
-				&& symbolicUtil.getDyscopeId(null,
-						value) != ModelConfiguration.DYNAMIC_CONSTANT_SCOPE;
+				&& stateFactory.getDyscopeId(symbolicUtil.getScopeValue(
+						value)) != ModelConfiguration.DYNAMIC_CONSTANT_SCOPE;
 	}
 
 	private MemoryUnit pointer2MemoryUnit(SymbolicExpression pointer) {
 		return this.muFactory.newMemoryUnit(
-				this.symbolicUtil.getDyscopeId(null, pointer),
+				stateFactory.getDyscopeId(symbolicUtil.getScopeValue(pointer)),
 				symbolicUtil.getVariableId(null, pointer),
 				this.symbolicUtil.getSymRef(pointer));
 	}

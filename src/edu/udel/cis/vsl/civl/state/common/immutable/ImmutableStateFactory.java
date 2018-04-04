@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.function.Function;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
@@ -252,6 +253,19 @@ public class ImmutableStateFactory implements StateFactory {
 
 	protected Set<HeapErrorKind> fullHeapErrorSet = new HashSet<>();
 
+	/**
+	 * An operator that converts a scope value which is an instance of
+	 * {@link SymbolicExpression} to a dyscope ID in the form of
+	 * {@link IntegerNumber}.
+	 */
+	private Function<SymbolicExpression, IntegerNumber> scopeValueToDyscopeID = null;
+
+	/**
+	 * An operator that converts a dyscope ID in the form {@link IntegerNumber}
+	 * to a scope value which is an instance of {@link SymbolicExpression}.
+	 */
+	private Function<Integer, SymbolicExpression> dyscopeIDToScopeValue = null;
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -280,15 +294,16 @@ public class ImmutableStateFactory implements StateFactory {
 			processValues[i] = universe.tuple(typeFactory.processSymbolicType(),
 					new Singleton<SymbolicExpression>(universe.integer(i)));
 		}
-		this.undefinedScopeValue = universe.tuple(
-				typeFactory.scopeSymbolicType(),
-				new Singleton<SymbolicExpression>(universe.integer(-1)));
-		this.nullScopeValue = universe.tuple(typeFactory.scopeSymbolicType(),
-				new Singleton<SymbolicExpression>(universe.integer(-2)));
+		this.scopeValueToDyscopeID = typeFactory.scopeType()
+				.scopeValueToIdentityOperator(universe);
+		this.dyscopeIDToScopeValue = typeFactory.scopeType()
+				.scopeIdentityToValueOperator(universe);
+		this.undefinedScopeValue = dyscopeIDToScopeValue
+				.apply(ModelConfiguration.DYNAMIC_UNDEFINED_SCOPE);
+		this.nullScopeValue = dyscopeIDToScopeValue
+				.apply(ModelConfiguration.DYNAMIC_NULL_SCOPE);
 		for (int i = 0; i < SCOPE_VALUES_INIT_SIZE; i++) {
-			smallScopeValues[i] = universe.tuple(
-					typeFactory.scopeSymbolicType(),
-					new Singleton<SymbolicExpression>(universe.integer(i)));
+			smallScopeValues[i] = dyscopeIDToScopeValue.apply(i);
 		}
 		for (int i = 0; i < CACHE_INCREMENT; i++)
 			nullList.add(null);
@@ -1487,7 +1502,8 @@ public class ImmutableStateFactory implements StateFactory {
 
 	@Override
 	public State deallocate(State state, SymbolicExpression heapObjectPointer,
-			int dyscopeId, int mallocId, int index) {
+			SymbolicExpression scopeOfPointer, int mallocId, int index) {
+		int dyscopeId = getDyscopeId(scopeOfPointer);
 		SymbolicExpression heapValue = state.getDyscope(dyscopeId).getValue(0);
 		IntObject mallocIndex = universe.intObject(mallocId);
 		SymbolicExpression heapField = universe.tupleRead(heapValue,
@@ -2106,7 +2122,8 @@ public class ImmutableStateFactory implements StateFactory {
 		} else if (value.type()
 				.equals(this.typeFactory.pointerSymbolicType())) {
 			// other pointers
-			int dyscopeId = this.symbolicUtil.getDyscopeId(null, value);
+			SymbolicExpression scopeVal = symbolicUtil.getScopeValue(value);
+			int dyscopeId = scopeValueToDyscopeID.apply(scopeVal).intValue();
 
 			if (dyscopeId >= 0) {
 				int vid = this.symbolicUtil.getVariableId(null, value);
@@ -2877,9 +2894,7 @@ public class ImmutableStateFactory implements StateFactory {
 		result = bigScopeValues.get(sid);
 		scopeValueReadLock.unlock();
 		if (result == null) {
-			result = universe.tuple(typeFactory.scopeSymbolicType(),
-					new Singleton<SymbolicExpression>(universe.integer(sid)));
-			scopeValueWriteLock.lock();
+			result = dyscopeIDToScopeValue.apply(sid);
 			bigScopeValues.set(sid, result);
 			scopeValueWriteLock.unlock();
 		}
@@ -2889,5 +2904,20 @@ public class ImmutableStateFactory implements StateFactory {
 	@Override
 	public void setSymbolicUtility(SymbolicUtility symbolicUtility) {
 		this.symbolicUtil = symbolicUtility;
+	}
+
+	@Override
+	public boolean isScopeIdDefined(int sid) {
+		return ModelConfiguration.DYNAMIC_UNDEFINED_SCOPE == sid;
+	}
+
+	@Override
+	public int getDyscopeId(SymbolicExpression scopeValue) {
+		return scopeValueToDyscopeID.apply(scopeValue).intValue();
+	}
+
+	@Override
+	public SymbolicExpression undefinedScopeValue() {
+		return this.undefinedScopeValue;
 	}
 }

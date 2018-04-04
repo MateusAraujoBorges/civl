@@ -16,7 +16,8 @@ public interface MemoryUnitFactory {
 	 */
 	void add(MemoryUnitSet muSet, MemoryUnit mu);
 
-	void add(MemoryUnitSet muSet, SymbolicExpression pointer);
+	void add(MemoryUnitSet muSet, SymbolicExpression pointer,
+			StateFactory stateFactory);
 
 	/**
 	 * Return the "canonical" version of the given memory unit set.

@@ -17,10 +17,10 @@ import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants.DeadlockKind;
 import edu.udel.cis.vsl.civl.dynamic.IF.Dynamics;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.kripke.IF.CIVLStateManager;
 import edu.udel.cis.vsl.civl.kripke.IF.Enabler;
 import edu.udel.cis.vsl.civl.kripke.IF.Kripkes;
 import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
-import edu.udel.cis.vsl.civl.kripke.IF.CIVLStateManager;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
@@ -139,8 +139,7 @@ public abstract class Player {
 					universe.numberFactory().zeroRational());
 		this.solve = (Boolean) gmcConfig.getAnonymousSection()
 				.getValueOrDefault(solveO);
-		this.memUnitFactory = States.newImmutableMemoryUnitFactory(universe,
-				modelFactory);
+		this.memUnitFactory = States.newImmutableMemoryUnitFactory(universe);
 		this.stateFactory = States.newImmutableStateFactory(modelFactory,
 				memUnitFactory, civlConfig);
 		this.symbolicUtil = Dynamics.newSymbolicUtility(universe, modelFactory,

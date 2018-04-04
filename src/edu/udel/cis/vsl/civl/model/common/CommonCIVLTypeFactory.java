@@ -27,6 +27,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType.PrimitiveTypeKind;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLRegularRangeType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLScopeType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.type.StructOrUnionField;
@@ -41,6 +42,7 @@ import edu.udel.cis.vsl.civl.model.common.type.CommonHeapType;
 import edu.udel.cis.vsl.civl.model.common.type.CommonPointerType;
 import edu.udel.cis.vsl.civl.model.common.type.CommonPrimitiveType;
 import edu.udel.cis.vsl.civl.model.common.type.CommonRegularRangeType;
+import edu.udel.cis.vsl.civl.model.common.type.CommonScopeType;
 import edu.udel.cis.vsl.civl.model.common.type.CommonStructOrUnionField;
 import edu.udel.cis.vsl.civl.model.common.type.CommonStructOrUnionType;
 import edu.udel.cis.vsl.civl.util.IF.Singleton;
@@ -168,12 +170,12 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 	/**
 	 * The unique scope type used in the system.
 	 */
-	CIVLPrimitiveType scopeType;
+	CIVLScopeType scopeType;
 
 	/**
 	 * The unique symbolic scope type used in the system.
 	 */
-	SymbolicTupleType scopeSymbolicType;
+	SymbolicType scopeSymbolicType;
 
 	/**
 	 * The map of types of system libraries, e.g., $gcomm/$comm for comm, $file
@@ -221,9 +223,9 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 
 		this.config = config;
 		this.universe = universe;
-		scopeSymbolicType = universe.tupleType(universe.stringObject("scope"),
-				intTypeSingleton);
-		scopeType = primitiveType(PrimitiveTypeKind.SCOPE, scopeSymbolicType);
+		scopeType = (CIVLScopeType) primitiveType(PrimitiveTypeKind.SCOPE,
+				null);
+		scopeSymbolicType = scopeType.getDynamicType(universe);
 		processSymbolicType = universe
 				.tupleType(universe.stringObject("process"), intTypeSingleton);
 		processType = primitiveType(PrimitiveTypeKind.PROCESS,
@@ -373,7 +375,7 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 	}
 
 	@Override
-	public CIVLPrimitiveType scopeType() {
+	public CIVLScopeType scopeType() {
 		return scopeType;
 	}
 
@@ -476,7 +478,7 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 	}
 
 	@Override
-	public SymbolicTupleType scopeSymbolicType() {
+	public SymbolicType scopeSymbolicType() {
 		return scopeSymbolicType;
 	}
 
@@ -571,7 +573,10 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 			fact = universe.trueExpression();
 		else
 			fact = universe.lessThan(universe.zeroInt(), size);
-		result = new CommonPrimitiveType(kind, dynamicType, size, fact);
+		if (kind == PrimitiveTypeKind.SCOPE)
+			result = new CommonScopeType(size, fact);
+		else
+			result = new CommonPrimitiveType(kind, dynamicType, size, fact);
 		return result;
 	}
 

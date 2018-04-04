@@ -134,7 +134,8 @@ public abstract class BaseLibraryEnabler extends LibraryComponent
 		CIVLSource source = handleObj.getSource();
 
 		handleObjMemUnits.add(memUnitFactory.newMemoryUnit(
-				symbolicUtil.getDyscopeId(source, handleObjValue),
+				stateFactory.getDyscopeId(
+						symbolicUtil.getScopeValue(handleObjValue)),
 				symbolicUtil.getVariableId(source, handleObjValue),
 				symbolicUtil.getSymRef(handleObjValue)));
 		// try {
