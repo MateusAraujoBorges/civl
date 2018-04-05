@@ -656,8 +656,6 @@ public class UserInterface {
 				if (!quiet) {
 					err.println(e);
 				}
-			} catch (OutOfMemoryError oome) {
-				throw new CIVLException("JVM is running out of memory.", null);
 			}
 			err.flush();
 			return false;
@@ -813,6 +811,10 @@ public class UserInterface {
 					| InterruptedException e) {
 				// time out
 				verifier.terminateUpdater();
+			} catch (VirtualMachineError vme) {
+				verifier.terminateUpdater();
+				throw new CIVLException("VirtualMachineError Encountered",
+						null);
 			}
 			if (result) {
 				if (modelTranslator.config.collectOutputs()) {
