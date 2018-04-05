@@ -813,7 +813,9 @@ public class UserInterface {
 				verifier.terminateUpdater();
 			} catch (VirtualMachineError vme) {
 				verifier.terminateUpdater();
-				throw new CIVLException("VirtualMachineError Encountered",
+				throw new CIVLException(
+						"CIVL encountered a VirtualMachineError: "
+								+ vme.getMessage(),
 						null);
 			}
 			if (result) {
