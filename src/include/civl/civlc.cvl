@@ -14,11 +14,6 @@ struct $int_iter {
   int index; //initialized as 0
 };
 
-struct _mem {
-  int size;
-  void * pointers[];
-};
-
 $atomic_f void $output_assign(void * output, const void * value, int size) {
   if(size == 0)
     return;

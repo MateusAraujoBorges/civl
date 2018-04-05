@@ -1,0 +1,12 @@
+#ifndef __CIVLC_MEM__
+#define __CIVLC_MEM__
+
+#include <civlc.cvh>
+#include <mem.cvh>
+
+struct _mem {
+  int size;
+  void * pointers[];
+};
+
+#endif
