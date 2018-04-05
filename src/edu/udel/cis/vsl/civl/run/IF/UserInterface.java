@@ -813,10 +813,7 @@ public class UserInterface {
 				verifier.terminateUpdater();
 			} catch (VirtualMachineError vme) {
 				verifier.terminateUpdater();
-				throw new CIVLException(
-						"CIVL encountered a VirtualMachineError: "
-								+ vme.getMessage(),
-						null);
+				throw vme;
 			}
 			if (result) {
 				if (modelTranslator.config.collectOutputs()) {
@@ -968,8 +965,7 @@ public class UserInterface {
 			return false;
 		} catch (VirtualMachineError vme) {
 			verifier.terminateUpdater();
-			throw new CIVLException("CIVL encountered a VirtualMachineError: "
-					+ vme.getMessage(), null);
+			throw vme;
 		} catch (Exception e) {
 			verifier.terminateUpdater();
 			throw e;
