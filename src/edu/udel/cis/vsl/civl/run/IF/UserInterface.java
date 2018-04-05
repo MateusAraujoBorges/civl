@@ -966,6 +966,10 @@ public class UserInterface {
 				out.println("Error: " + unimplemented.toString());
 			}
 			return false;
+		} catch (VirtualMachineError vme) {
+			verifier.terminateUpdater();
+			throw new CIVLException("CIVL encountered a VirtualMachineError: "
+					+ vme.getMessage(), null);
 		} catch (Exception e) {
 			verifier.terminateUpdater();
 			throw e;
