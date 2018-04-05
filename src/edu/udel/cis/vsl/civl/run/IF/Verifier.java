@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
 import edu.udel.cis.vsl.civl.log.IF.CIVLLogEntry;
+import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Model;
@@ -190,6 +191,9 @@ public class Verifier extends Player {
 					Thread.sleep(millis);
 					stateManager.printUpdate();
 				} catch (InterruptedException e) {
+				} catch (OutOfMemoryError oome) {
+					throw new CIVLException("JVM is running out of memory.",
+							null);
 				}
 			}
 		}
