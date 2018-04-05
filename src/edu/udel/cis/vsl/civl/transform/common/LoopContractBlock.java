@@ -103,7 +103,7 @@ class LoopContractBlock {
 	 *            A reference to a {@link NodeFactory}
 	 * @return
 	 */
-	Iterable<ExpressionNode> getLoopAssignSet() {
+	List<ExpressionNode> getLoopAssignSet() {
 		return assignClauses;
 	}
 

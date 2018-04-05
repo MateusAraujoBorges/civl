@@ -48,6 +48,7 @@ import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.StructureOrUnionType;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
+import edu.udel.cis.vsl.abc.ast.value.IF.IntegerValue;
 import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
 import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
@@ -66,6 +67,7 @@ import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.abc.token.IF.TransformFormation;
 import edu.udel.cis.vsl.abc.transform.IF.Transformer;
+import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 
@@ -82,8 +84,11 @@ public abstract class BaseWorker {
 	final static String MAIN = "main";
 	public final static String ASSUME = "$assume";
 	public final static String ASSERT = "$assert";
+	public final static String CHOOSE_INT = "$choose_int";
 	public final static String ELABORATE_LOOP_VAR = "_elab_i";
+	public final static String HAVOC = "$havoc";
 	public final static String DEREFRABLE = "$is_derefable";
+	public final static String MEMCPY = "memcpy";
 	final static String EXTENT_MPI_DATATYPE = "$mpi_extentof";
 
 	protected String identifierPrefix;
@@ -440,14 +445,16 @@ public abstract class BaseWorker {
 						"formal parameter types",
 						new LinkedList<VariableDeclarationNode>()),
 				false);
-		newMainFunction = nodeFactory.newFunctionDefinitionNode(
-				this.newSource("new main function",
-						CivlcTokenConstant.FUNCTION_DEFINITION),
-				this.identifier(MAIN), mainFuncType, null,
-				nodeFactory.newCompoundStatementNode(
+		newMainFunction = nodeFactory
+				.newFunctionDefinitionNode(
 						this.newSource("new main function",
-								CivlcTokenConstant.BODY),
-						blockItems));
+								CivlcTokenConstant.FUNCTION_DEFINITION),
+						this.identifier(MAIN), mainFuncType, null,
+						nodeFactory
+								.newCompoundStatementNode(
+										this.newSource("new main function",
+												CivlcTokenConstant.BODY),
+										blockItems));
 		root.addSequenceChild(newMainFunction);
 	}
 
@@ -842,7 +849,12 @@ public abstract class BaseWorker {
 	}
 
 	protected TypeNode typeNode(Source source, Type type) {
-		return typeNode(source, type, nodeFactory);
+		try {
+			return typeNode(source, type, nodeFactory);
+		} catch (SyntaxException e) {
+			throw new CIVLInternalException(
+					"Unexpected syntax exception in type: " + type, source);
+		}
 	}
 
 	/**
@@ -853,9 +865,10 @@ public abstract class BaseWorker {
 	 * @param type
 	 *            the specified type
 	 * @return the new type node
+	 * @throws SyntaxException
 	 */
 	public static TypeNode typeNode(Source source, Type type,
-			NodeFactory nodeFactory) {
+			NodeFactory nodeFactory) throws SyntaxException {
 
 		switch (type.kind()) {
 			case VOID :
@@ -866,10 +879,19 @@ public abstract class BaseWorker {
 			case OTHER_INTEGER :
 				return nodeFactory.newBasicTypeNode(source, BasicTypeKind.INT);
 			case ARRAY :
-				return nodeFactory.newArrayTypeNode(source,
-						typeNode(source, ((ArrayType) type).getElementType(),
-								nodeFactory),
-						((ArrayType) type).getVariableSize().copy());
+				ExpressionNode extent;
+				ArrayType arrayType = (ArrayType) type;
+
+				if (arrayType.hasKnownConstantSize()) {
+					IntegerValue constExtent = arrayType.getConstantSize();
+
+					extent = nodeFactory.newIntegerConstantNode(source,
+							constExtent.toString());
+				} else
+					extent = arrayType.getVariableSize().copy();
+				return nodeFactory.newArrayTypeNode(source, typeNode(source,
+						((ArrayType) type).getElementType(), nodeFactory),
+						extent);
 			case POINTER :
 				return nodeFactory.newPointerTypeNode(source, typeNode(source,
 						((PointerType) type).referencedType(), nodeFactory));
@@ -1209,18 +1231,23 @@ public abstract class BaseWorker {
 					ExpressionNode extent = arrayType.getVariableSize();
 
 					if (extent != null) {
-						condition = this.nodeFactory.newOperatorNode(expr
-								.getSource(), Operator.LAND, Arrays.asList(
-										nodeFactory.newOperatorNode(
-												expr.getSource(),
-												Operator.LEQ,
-												Arrays.asList(
-														this.integerConstant(0),
-														index.copy())),
-										nodeFactory.newOperatorNode(
-												expr.getSource(), Operator.LEQ,
-												Arrays.asList(index.copy(),
-														extent.copy()))));
+						condition = this.nodeFactory
+								.newOperatorNode(expr.getSource(),
+										Operator.LAND,
+										Arrays.asList(
+												nodeFactory.newOperatorNode(
+														expr.getSource(),
+														Operator.LEQ,
+														Arrays.asList(
+																this.integerConstant(
+																		0),
+																index.copy())),
+												nodeFactory.newOperatorNode(
+														expr.getSource(),
+														Operator.LEQ,
+														Arrays.asList(
+																index.copy(),
+																extent.copy()))));
 					}
 				}
 			} else if (op == Operator.DEREFERENCE) {
