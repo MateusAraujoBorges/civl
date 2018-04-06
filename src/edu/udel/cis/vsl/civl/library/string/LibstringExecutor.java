@@ -47,11 +47,30 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
  * 
  * @author Manchun Zheng (zmanchun)
  * @author zirkel
+ * @author Wenhao Wu (wuwenhao@udel.edu)
  * 
  */
 public class LibstringExecutor extends BaseLibraryExecutor
 		implements
 			LibraryExecutor {
+
+	/**
+	 * The name of CIVL uninterpreted function:<br>
+	 * char[] CIVL_dycast2ArrChar(DYNAMIC_TYPE arg0); <br>
+	 * This function will convert the given <code>arg0</code> from its original
+	 * type to the type of array-of-char. The function definition is dynamically
+	 * generated according to the original type of <code>arg0</code>.
+	 */
+	static final private String CIVL_DYCAST_ARRCHAR = "CIVL_dycast2ArrChar";
+
+	/**
+	 * The name of CIVL uninterpreted function:<br>
+	 * int CIVL_strlen(char[] arg0, refType arg1); <br>
+	 * This function is used for handling the symbolic char array and returns a
+	 * symbolic non-nagative value representing the length of the char array,
+	 * which is the actual argument of the function 'strlen'.
+	 */
+	static final private String CIVL_STRLEN = "CIVL_strlen";
 
 	/* **************************** Constructors *************************** */
 
@@ -293,10 +312,34 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		return new Evaluation(state, result);
 	}
 
+	/**
+	 * <code>int strlen(const char * s)</code> Returns the length of the string
+	 * pointed by s. </br>
+	 * If the given pointer s pointing to a symbolic value , then it will return
+	 * an application of uninterpreted function, and the returned value of that
+	 * function should be bounded. (e.g., For '$input char IN[10]', it will
+	 * return strlen(&IN[0]), which is in range [0, 10].) <br>
+	 * 
+	 * @param state
+	 *            the current state
+	 * @param pid
+	 *            the PID of the process
+	 * @param process
+	 *            the information of the process
+	 * @param arguments
+	 *            the expressions of arguments
+	 * @param argumentValues
+	 *            the symbolic expressions of arguments
+	 * @param source
+	 *            the CIVL source of the statement
+	 * @return
+	 * @throws UnsatisfiablePathConditionException
+	 */
 	private Evaluation execute_strlen(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		Evaluation eval;
+		Evaluation result = null;
 		SymbolicExpression charPointer = argumentValues[0];
 		int startIndex;
 		SymbolicExpression originalArray = null;
@@ -307,7 +350,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			startIndex = symbolicUtil.getArrayIndex(source, charPointer);
 		else
 			throw new CIVLUnimplementedFeatureException(
-					"Do strlen() on a non-concrete string", source);
+					"Do strlen() with a non-concrete index", source);
 		if (charPointer.type() instanceof SymbolicArrayType) {
 			originalArray = charPointer;
 		} else {
@@ -319,21 +362,66 @@ public class LibstringExecutor extends BaseLibraryExecutor
 
 			eval = evaluator.dereference(source, state, process, arrayPointer,
 					false, true);
+			eval = evaluator.dereference(source, state, process, arrayPointer,
+					false, true);
 			state = eval.state;
 			originalArray = eval.value;
 			startIndex = symbolicUtil.extractInt(source, arrayIndex);
 		}
 		numChars = originalArray.numArguments();
-		for (int i = 0; i < numChars - startIndex; i++) {
-			SymbolicExpression charExpr = (SymbolicExpression) originalArray
-					.argument(i + startIndex);
-			Character theChar = universe.extractCharacter(charExpr);
+		if (originalArray.operator() == SymbolicOperator.ARRAY) {
+			for (int i = 0; i < numChars - startIndex; i++) {
+				SymbolicExpression charExpr = (SymbolicExpression) originalArray
+						.argument(i + startIndex);
+				Character theChar = universe.extractCharacter(charExpr);
 
-			if (theChar == '\0')
-				break;
-			length++;
+				if (theChar == '\0')
+					break;
+				length++;
+			}
+			result = new Evaluation(state, universe.integer(length));
+		} else {
+			// If the given char-array is symbolic (e.g. $input char s[10])
+			// Abstract function: int strlen(char* arg0, refType arg1)
+			// Construct arg0
+			// 1. get the variable referenced by the actual argument of strlen
+			SymbolicExpression rootPointer = symbolicUtil
+					.makePointer(charPointer, universe.identityReference());
+			Evaluation evalRootPointer = evaluator.dereference(
+					arguments[0].getSource(), state, process, rootPointer, true,
+					true);
+			SymbolicExpression rawRootVar = evalRootPointer.value;
+			// 2. Cast the root variable to the type of array-of-char
+			SymbolicType rawRootVarType = rawRootVar.type();
+			SymbolicType ArrayOfCharType = universe
+					.arrayType(universe.characterType());
+			SymbolicFunctionType typeCastFuncType = universe.functionType(
+					Arrays.asList(rawRootVarType), ArrayOfCharType);
+			SymbolicExpression typeCastFunc = universe.symbolicConstant(
+					universe.stringObject(CIVL_DYCAST_ARRCHAR),
+					typeCastFuncType);
+			SymbolicExpression castedRootVar = universe.apply(typeCastFunc,
+					Arrays.asList(rawRootVar));
+			// Construct arg1
+			SymbolicExpression refExpr = symbolicUtil.getSymRef(charPointer);
+			// Construct CIVL_strlen abstract function for symbolic string
+			SymbolicFunctionType funcType = universe.functionType(
+					Arrays.asList(ArrayOfCharType, universe.referenceType()),
+					universe.integerType());
+			SymbolicExpression func = universe.symbolicConstant(
+					universe.stringObject(CIVL_STRLEN), funcType);
+			SymbolicExpression symResult = universe.apply(func,
+					Arrays.asList(castedRootVar, refExpr));
+			// Add PC: 0 <= CIVL_strlen(arg0, arg1)
+			BooleanExpression pc = universe.lessThanEquals(zero,
+					(NumericExpression) symResult);
+
+			state = stateFactory.addToPathcondition(evalRootPointer.state, pid,
+					pc);
+			result = new Evaluation(state, symResult);
 		}
-		return new Evaluation(state, universe.integer(length));
+		assert (result != null);
+		return result;
 	}
 
 	/**

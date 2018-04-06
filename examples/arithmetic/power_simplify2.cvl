@@ -1,0 +1,14 @@
+#include "math.h"
+
+$input double m, expo;
+$assume(m != 0 && expo > 0);
+
+int main() {
+  double x = -4. * m;
+
+  x = pow(x, expo);
+  x = pow(x, 1. / 2.);
+  x = pow(x, 1. / expo);
+  $assert(x == 2. * pow(-m, 1. / 2.));
+  return 0;
+}

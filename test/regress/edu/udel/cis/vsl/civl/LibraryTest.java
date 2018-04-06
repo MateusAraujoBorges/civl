@@ -167,6 +167,17 @@ public class LibraryTest {
 	}
 
 	@Test
+	public void strlen_concrete() throws ABCException {
+		assertTrue(
+				ui.run("verify", QUIET, filename(STRING, "strlen_concrete.c")));
+	}
+
+	@Test
+	public void strlen_symbolic() throws ABCException {
+		assertTrue(ui.run("verify", QUIET, filename(STRING, "strlen_symbolic.c")));
+	}
+
+	@Test
 	public void messageUnpackBad1() throws ABCException {
 		assertFalse(ui.run("verify", QUIET, NO_PRINTF,
 				filename(CIVLC, "messageUnpackBad1.cvl")));

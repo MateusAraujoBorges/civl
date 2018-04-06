@@ -811,6 +811,9 @@ public class UserInterface {
 					| InterruptedException e) {
 				// time out
 				verifier.terminateUpdater();
+			} catch (VirtualMachineError vme) {
+				verifier.terminateUpdater();
+				throw vme;
 			}
 			if (result) {
 				if (modelTranslator.config.collectOutputs()) {
@@ -960,6 +963,9 @@ public class UserInterface {
 				out.println("Error: " + unimplemented.toString());
 			}
 			return false;
+		} catch (VirtualMachineError vme) {
+			verifier.terminateUpdater();
+			throw vme;
 		} catch (Exception e) {
 			verifier.terminateUpdater();
 			throw e;
