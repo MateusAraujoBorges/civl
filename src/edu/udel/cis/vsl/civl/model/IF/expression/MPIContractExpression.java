@@ -60,14 +60,6 @@ public interface MPIContractExpression extends Expression {
 	MPI_CONTRACT_EXPRESSION_KIND mpiContractKind();
 
 	/**
-	 * The communicator associates with the MPI contract expression. The MPI
-	 * communicator should be defined at the MPI collective behavior block.
-	 * 
-	 * @return
-	 */
-	Expression communicator();
-
-	/**
 	 * Returns an array of arguments of an MPI contract expression.
 	 * 
 	 * @return

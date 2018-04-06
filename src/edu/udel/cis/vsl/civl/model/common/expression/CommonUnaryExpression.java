@@ -26,8 +26,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  * @author Timothy K. Zirkel (zirkel)
  * 
  */
-public class CommonUnaryExpression extends CommonExpression implements
-		UnaryExpression {
+public class CommonUnaryExpression extends CommonExpression
+		implements
+			UnaryExpression {
 
 	private UNARY_OPERATOR operator;
 	private Expression operand;
@@ -162,19 +163,19 @@ public class CommonUnaryExpression extends CommonExpression implements
 		if (operandValue == null)
 			return;
 		switch (operator) {
-		case NEGATIVE:
-			this.constantValue = universe
-					.minus((NumericExpression) operandValue);
-			break;
-		case NOT:
-			this.constantValue = universe.not((BooleanExpression) operandValue);
-			break;
-		case BIG_O:
-		case VALID:
-			break;
-		default:
-			throw new CIVLInternalException("Unknown unary operator: "
-					+ operator, this);
+			case NEGATIVE :
+				this.constantValue = universe
+						.minus((NumericExpression) operandValue);
+				break;
+			case NOT :
+				this.constantValue = universe
+						.not((BooleanExpression) operandValue);
+				break;
+			case BIG_O :
+				break;
+			default :
+				throw new CIVLInternalException(
+						"Unknown unary operator: " + operator, this);
 		}
 	}
 
@@ -193,24 +194,21 @@ public class CommonUnaryExpression extends CommonExpression implements
 		String op = "";
 
 		switch (operator) {
-		case NEGATIVE:
-			op = "-";
-			break;
-		case NOT:
-			op = "!";
-			break;
-		case BIG_O:
-			op = "$O";
-			break;
-		case VALID:
-			op = "\\valid";
-			break;
-		case BIT_NOT:
-			op = "~";
-			break;
-		default:
-			throw new CIVLInternalException("Unknown unary operator: "
-					+ operator, this);
+			case NEGATIVE :
+				op = "-";
+				break;
+			case NOT :
+				op = "!";
+				break;
+			case BIG_O :
+				op = "$O";
+				break;
+			case BIT_NOT :
+				op = "~";
+				break;
+			default :
+				throw new CIVLInternalException(
+						"Unknown unary operator: " + operator, this);
 		}
 		return op;
 	}

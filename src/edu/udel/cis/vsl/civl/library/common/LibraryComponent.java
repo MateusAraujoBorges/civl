@@ -32,7 +32,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression.ReferenceKind;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
@@ -74,7 +73,7 @@ public abstract class LibraryComponent {
 	 * @author ziqing
 	 *
 	 */
-	private class ArrayMeasurement {
+	public class ArrayMeasurement {
 		final int dimensions;
 		final NumericExpression extents[];
 		final NumericExpression sliceSizes[];
@@ -718,10 +717,17 @@ public abstract class LibraryComponent {
 		if (dataArray.type().equals(objType))
 			return new Pair<>(new Evaluation(state, dataArray), pointer);
 
+		// "pointer" may not point to a memory base type object yet
+		symref = symbolicAnalyzer.getLeafNodeReference(state, pointer, source);
+
+		// If count is one:
+		if (reasoner.isValid(universe.equals(count, one))) {
+			SymbolicExpression data = universe.arrayRead(dataArray, zero);
+
+			return new Pair<>(new Evaluation(state, data),
+					symbolicUtil.makePointer(pointer, symref));
+		}
 		// Else, count greater than one:
-		startPtr = pointer;
-		// "startPtr" may not point to a memory base type object yet
-		symref = symbolicAnalyzer.getLeafNodeReference(state, startPtr, source);
 		if (!symref.isArrayElementReference()) {
 			if (reasoner.isValid(universe.equals(count, one)))
 				return new Pair<>(
@@ -745,32 +751,28 @@ public abstract class LibraryComponent {
 							+ "\n");
 		}
 		eval_and_slices = evaluator.arrayElementReferenceAdd(state, pid,
-				startPtr, count, source);
+				pointer, count, source);
 		eval = eval_and_slices.left;
 		endPtr = eval.value;
 		state = eval.state;
 		arraySlicesSizes = eval_and_slices.right;
-		// If the pointer addition happens to be done within one dimensional
-		// space, the "arraySlicesSizes" is null and we don't really need it.
+		// If the pointer addition happens to be done within the minimal array
+		// slice, the "arraySlicesSizes" is null and we don't really need it.
+		// Otherwise, we can reuse it.
 		if (arraySlicesSizes == null) {
 			arraySlicesSizes = new NumericExpression[1];
 			arraySlicesSizes[0] = one;
 		}
 		dim = arraySlicesSizes.length;
-		startPtr = symbolicUtil.makePointer(startPtr, symref);
+		startPtr = symbolicUtil.makePointer(pointer, symref);
 		startPos = zero;
 		if (symref.isArrayElementReference()) {
 			NumericExpression[] startIndices = symbolicUtil
 					.extractArrayIndicesFrom(startPtr);
 			int numIndices = startIndices.length;
 
-			// If stratPtr is not pointing to a leaf element, the number of
-			// indices will be less than the dimension:
-			if (startIndices.length < dim) {
-				startIndices = Arrays.copyOf(startIndices, dim);
-				for (int i = numIndices; i < dim; i++)
-					startIndices[i] = zero;
-			}
+			assert numIndices >= dim;
+			// Loop until startPtr and endPtr point to the common array slice:
 			for (int i = 1; !startPtr.equals(endPtr); i++) {
 				startPtr = symbolicUtil.parentPointer(startPtr);
 				endPtr = symbolicUtil.parentPointer(endPtr);
@@ -779,13 +781,11 @@ public abstract class LibraryComponent {
 								arraySlicesSizes[dim - i]));
 			}
 		}
-		// here "startPtr" is already updated as the pointer to the common sub
-		// array.
 		eval = evaluator.dereference(source, state, process, startPtr, false,
 				true);
 		state = eval.state;
 		if (eval.value.type().typeKind().equals(SymbolicTypeKind.ARRAY)) {
-			eval = this.setDataBetween(state, pid, eval.value, arraySlicesSizes,
+			eval = setDataBetween(state, pid, eval.value, arraySlicesSizes,
 					startPos, count, pointer, dataArray, source);
 		} else {
 			reportOutOfBoundError(state, pid, null, null, startPtr, one, count,
@@ -916,7 +916,7 @@ public abstract class LibraryComponent {
 
 	/**
 	 * <p>
-	 * <b>Pre-condition:</b> <br>
+	 * <b>Pre-condition</b> <br>
 	 * 1. The dimensions of the array must be greater than or equal to
 	 * "indices.length"; <br>
 	 * 2. Values in "indices" array are ordered from left to right as same as
@@ -960,6 +960,32 @@ public abstract class LibraryComponent {
 		NumericExpression sliceSizes[] = arrayMeasure.sliceSizes;
 		int i;
 
+		// Attempt to avoid array flatten for multi-dimensional arrays.
+		// If the size of the smallest (1 dimentional, if single cell is NOT
+		// counted as an array slice) array slice is greater than or equal to
+		// the index (or 'offset') of the smallest array slice plus the count,
+		// then directly return a sub-array of that slice ...
+		if (arrayMeasure.dimensions > 1) {
+			// The size of the smallest array slice:
+			NumericExpression minSliceSize = sliceSizes[sliceSizes.length - 2];
+			// The index of the smallest array slice:
+			NumericExpression index = indices.length == arrayMeasure.dimensions
+					? indices[indices.length - 1]
+					: zero;
+			BooleanExpression indexPlusCountLteSize = universe
+					.lessThanEquals(universe.add(index, count), minSliceSize);
+			Reasoner reasoner = universe
+					.reasoner(state.getPathCondition(universe));
+
+			if (reasoner.isValid(indexPlusCountLteSize)) {
+				for (i = 0; i < arrayMeasure.dimensions - 1; i++)
+					array = i < indices.length
+							? universe.arrayRead(array, indices[i])
+							: universe.arrayRead(array, zero);
+				return symbolicAnalyzer.getSubArray(state, pid, array, index,
+						universe.add(index, count), source);
+			}
+		}
 		flattenArray = arrayFlatten(state, pid, array, arrayMeasure, source);
 		for (i = 0; i < indices.length; i++)
 			pos = universe.add(pos,
@@ -1114,15 +1140,15 @@ public abstract class LibraryComponent {
 	 * extent of a equals to the product of the extents of b.
 	 * 
 	 * @param extents
-	 *            An array of extents {e<sub>0</sub>, e<sub>1</sub>, ...,
-	 *            e<sub>n-1</sub>} for a multi-dimensional array
+	 *            An array of extents {e<sub>0</sub>, e<sub>1</sub>, ..., e
+	 *            <sub>n-1</sub>} for a multi-dimensional array
 	 *            <code>T b[e<sub>0</sub>][e<sub>1</sub>][..][e<sub>n-1</sub>]</code>
 	 * @param baseType
 	 *            The base type T of the multi-dimensional array
 	 *            <code>T b[e<sub>0</sub>][e<sub>1</sub>][..][e<sub>n-1</sub>]</code>
 	 * @param flatArray
-	 *            The flatten array T a[e<sub>0</sub> * e<sub>1</sub> * ... *
-	 *            e<sub>n-1</sub>];
+	 *            The flatten array T a[e<sub>0</sub> * e<sub>1</sub> * ... * e
+	 *            <sub>n-1</sub>];
 	 * @return The multi-dimensional array b.
 	 */
 	SymbolicExpression flattenToMultiDimensionalArray(int extents[],
@@ -1132,11 +1158,12 @@ public abstract class LibraryComponent {
 	}
 	/**
 	 * The recursive worker method of
-	 * {@link #flattenToMultiDimensionalArray(int[], SymbolicType, SymbolicExpression)}.
+	 * {@link #flattenToMultiDimensionalArray(int[], SymbolicType, SymbolicExpression)}
+	 * .
 	 * 
 	 * @param extents
-	 *            An array of extents {e<sub>0</sub>, e<sub>1</sub>, ...,
-	 *            e<sub>n-1</sub>} for a multi-dimensional array
+	 *            An array of extents {e<sub>0</sub>, e<sub>1</sub>, ..., e
+	 *            <sub>n-1</sub>} for a multi-dimensional array
 	 *            <code>T b[e<sub>0</sub>][e<sub>1</sub>][..][e<sub>n-1</sub>]</code>
 	 * @param dim
 	 *            current dimension. This method recursively creates elements
@@ -1146,8 +1173,8 @@ public abstract class LibraryComponent {
 	 *            The base type T of the multi-dimensional array
 	 *            <code>T b[e<sub>0</sub>][e<sub>1</sub>][..][e<sub>n-1</sub>]</code>
 	 * @param flatArray
-	 *            The flatten array T a[e<sub>0</sub> * e<sub>1</sub> * ... *
-	 *            e<sub>n-1</sub>];
+	 *            The flatten array T a[e<sub>0</sub> * e<sub>1</sub> * ... * e
+	 *            <sub>n-1</sub>];
 	 * @param flatArrayOffset
 	 *            Each recursive execution creates an element from a segment on
 	 *            the flatten array. This flatArrayOffset is the start index of
@@ -1225,7 +1252,7 @@ public abstract class LibraryComponent {
 		// If any extent of the array is non-concrete, use lambdaFlatten:
 		for (int d = 0; d < dimensions; d++)
 			if (reasoner.extractNumber(extents[d]) == null)
-				return arrayLambdaFlatten2(state, array, sliceSizes,
+				return arrayLambdaFlatten2(state, array, sliceSizes, extents,
 						civlsource);
 		// If the totoal size of the array is concrete:
 		for (int d = 0; d < dimensions; d++) {
@@ -1395,16 +1422,39 @@ public abstract class LibraryComponent {
 	 *            The array that will be flattened.
 	 * @param arraySliceSizes
 	 *            An sequence of size of slices of the parameter 'array'
+	 * @param arrayExtents
+	 *            An sequence of extents of the parameter 'array'
 	 * @param civlsource
 	 *            The {@link CIVLSource} corresponding to this method call
 	 * @return A flattened array
 	 */
 	private SymbolicExpression arrayLambdaFlatten2(State state,
 			SymbolicExpression array, NumericExpression[] arraySliceSizes,
-			CIVLSource civlsource) {
+			NumericExpression[] arrayExtents, CIVLSource civlsource) {
 		SymbolicCompleteArrayType arrayType = (SymbolicCompleteArrayType) array
 				.type();
 		int dim = arrayType.dimensions();
+		int newDim;
+		// pre-process: preprocess an array
+		// a[1][1][...][1][n][...][m] to a'[n][...][m]:
+		for (int i = 0; i < dim - 1; i++)
+			if (arrayExtents[i].isOne()) {
+				array = universe.arrayRead(array, zero);
+			} else
+				break;
+		// this cast is guaranteed to be correct since the loop above loops from
+		// 0 to dim - 1...
+		arrayType = (SymbolicCompleteArrayType) array.type();
+		newDim = arrayType.dimensions();
+		if (newDim == 1)
+			return array;
+		if (newDim < dim) {
+			arraySliceSizes = Arrays.copyOfRange(arraySliceSizes, dim - newDim,
+					dim);
+			dim = newDim;
+		}
+		// end of pre-process
+
 		NumericSymbolicConstant symConst = (NumericSymbolicConstant) universe
 				.symbolicConstant(universe.stringObject("i"),
 						universe.integerType());
@@ -1472,201 +1522,5 @@ public abstract class LibraryComponent {
 					symbolicAnalyzer.stateInformation(state),
 					ErrorKind.OUT_OF_BOUNDS, message);
 		throw new UnsatisfiablePathConditionException();
-	}
-
-	/**
-	 * TODO: Once sizeof (struct/union type) can be represented more precisely,
-	 * what should we do for this method ? It will be more easier to compare
-	 * size and sizeofObj. May not need typingDown/Up any more, the comparion of
-	 * size and sizeofObj should indicate the structure.
-	 * 
-	 * 
-	 * <p>
-	 * <b>Pre:</b><br>
-	 * 1. pointer must be valid (in the ACSL term of valid); <br>
-	 * 2. size > 0.
-	 * </p>
-	 * <p>
-	 * A sequence of heap objects in memory in C language can be represented as
-	 * the form <code>objs (p, s)</code> where p is a pointer (base address) and
-	 * s is the total size (in bytes) of the object sequence. Then given such a
-	 * pair, this method returns another pair which represents the same sequence
-	 * of objects: <code> {p', c} </code> where <code>
-	 * (void *) p' == (void *) p
-	 * &&
-	 * sizeof( typeof (*p') ) * c == s
-	 * </code>
-	 * 
-	 * Or returns a pair of nulls when cannot find such a pair of p' and c.
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state when calling this method.
-	 * @param pid
-	 *            The PID of the calling process
-	 * @param pointer
-	 *            The {@link SymbolicExpression} of the pointer
-	 * @param size
-	 *            The size of the sequence of objects represents by 'pointer'
-	 *            and 'size' togather.
-	 * @param source
-	 *            The {@link CIVLSource} associates to this call.
-	 * @return A {@link Pair} of pointer and count
-	 * @throws UnsatisfiablePathConditionException
-	 *             when problems happen in
-	 *             {@link Evaluator#getDynamicType(State, int, CIVLType, CIVLSource, boolean)}
-	 */
-	public Pair<SymbolicExpression, NumericExpression> pointerTyping(
-			State state, int pid, SymbolicExpression pointer,
-			NumericExpression size, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
-		SymbolicExpression newPointer;
-		NumericExpression sizeofObj;
-		BooleanExpression query;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
-		ResultType resultType;
-		// Termination:
-		boolean term = false;
-		// Flag: keep searching down to the end, then turns to false:
-		boolean keepDown = true;
-
-		newPointer = pointer;
-		// while loop : change from recursion to loop:
-		while (!term) {
-			// update sizeofObj:
-			SymbolicType dynamicObjType = symbolicAnalyzer
-					.dynamicTypeOfObjByPointer(source, state, newPointer);
-
-			// TODO: by looking at the implementation of this
-			// symbolicUtil.sizeof method, I have no idea why a CIVLType
-			// parameter is necessary:
-			sizeofObj = symbolicUtil.sizeof(source, null, dynamicObjType);
-			// Case 1: sizeof(obj(pointer)) > size:
-			query = universe.lessThan(size, sizeofObj);
-			resultType = reasoner.valid(query).getResultType();
-			if (resultType == ResultType.YES) {
-				newPointer = typingDown(newPointer, dynamicObjType);
-				if (newPointer != null)
-					continue;
-				else
-					return new Pair<>(null, null);
-			}
-			// Case 2: sizeof(obj(pointer)) <= size:
-			query = universe.lessThanEquals(sizeofObj, size);
-			resultType = reasoner.valid(query).getResultType();
-			if (resultType == ResultType.YES) {
-				query = universe.equals(zero, universe.modulo(size, sizeofObj));
-				resultType = reasoner.valid(query).getResultType();
-				if (resultType == ResultType.YES)
-					return new Pair<>(newPointer,
-							universe.divide(size, sizeofObj));
-			}
-			// Case 3: UNKNOWN:
-			if (keepDown) {
-				newPointer = typingDown(newPointer, dynamicObjType);
-				if (newPointer != null)
-					continue;
-			}
-			// searching down ends here.
-			// upward searching starts from 'pointer' since newPointer may be
-			// polluted by 'typingDown()':
-			if (keepDown)
-				newPointer = pointer;
-			keepDown = false;
-			newPointer = typingUp(newPointer);
-			if (newPointer != null)
-				continue;
-			term = true;
-		}
-		return new Pair<>(null, null);
-	}
-
-	/**
-	 * <p>
-	 * <b>Type tree:</b>T Suppose there is an object o in memory, the type
-	 * structure of the object can be represented as a type tree t: A node can
-	 * have multiple children. For a node n, denotes a child of n as child(n, i)
-	 * where i is the index of the child. If n represents a sturct/union type,
-	 * i-th child represents the type of the i-th field of n; if n represents an
-	 * array type, i-th child represents the type of the i-th element of n. Only
-	 * Leaf nodes represent scalar types.
-	 * </p>
-	 * <p>
-	 * <b>Spec:</b>This method requires a valid pointer p and the type t of the
-	 * object pointed by p. Returns a new pointer p' such that <br>
-	 * <code> (void *)p' == (void *)p </code>.<br>
-	 * && the type t' of the object pointed by p' must be a sub-tree of t.<br>
-	 * && root(t') is 0-th child of root(t).
-	 * </p>
-	 * 
-	 * @param pointer
-	 *            {@link SymbolicExpression} of A valid pointer
-	 * @param objType
-	 *            The {@link CIVLType} of the object pointed by the pointer.
-	 * @return A new pointer p' or null if the objType is already a scalar type.
-	 */
-	private SymbolicExpression typingDown(SymbolicExpression pointer,
-			SymbolicType objType) {
-		SymbolicTypeKind kind = objType.typeKind();
-		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
-
-		switch (kind) {
-			case ARRAY :
-				ref = universe.arrayElementReference(ref, zero);
-				return symbolicUtil.setSymRef(pointer, ref);
-			case TUPLE :
-			case UNION :
-				ref = universe.tupleComponentReference(ref, zeroObject);
-				return symbolicUtil.setSymRef(pointer, ref);
-			default :
-				return null;
-		}
-	}
-
-	/**
-	 * <p>
-	 * <b>type tree:</b> see {@link #typingDown(SymbolicExpression, CIVLType)}.
-	 * </p>
-	 * <p>
-	 * <b>Spec:</b> This method requires a valid pointer p and the type t of the
-	 * object pointed by p. Returns a new pointer p' such that <br>
-	 * <code> (void *)p' == (void *)p </code>.<br>
-	 * && t must be a sub-tree of the type t' of the object pointed by p'.<br>
-	 * && root(t) is 0-th child of root(t').
-	 * </p>
-	 * 
-	 * @param pointer
-	 *            {@link SymbolicExpression} of A valid pointer.
-	 * @return A new pointer p' or null if no parent node can be found for the
-	 *         type of the object pointed by 'pointer'.
-	 */
-	private SymbolicExpression typingUp(SymbolicExpression pointer) {
-		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
-		ReferenceKind kind = ref.referenceKind();
-
-		// Contraint: memory heap structure: a tuple of 2d-arrays. Thus, if
-		// pointer points to heap locations, the ReferenceExpression of the
-		// returned pointer p'must starts with a
-		// tupleComponentRef(ArrayElementRef i), j):
-		if (symbolicUtil.isPointerToHeap(pointer)) {
-			if (ref.isArrayElementReference()) {
-				ref = symbolicUtil
-						.getSymRef(symbolicUtil.parentPointer(pointer));
-				if (ref.isTupleComponentReference()) {
-					ref = symbolicUtil
-							.getSymRef(symbolicUtil.parentPointer(pointer));
-					if (ref.isIdentityReference())
-						return null;
-				}
-			}
-		}
-		switch (kind) {
-			case ARRAY_ELEMENT :
-			case TUPLE_COMPONENT :
-			case UNION_MEMBER :
-				return symbolicUtil.parentPointer(pointer);
-			default :
-				return null;
-		}
 	}
 }

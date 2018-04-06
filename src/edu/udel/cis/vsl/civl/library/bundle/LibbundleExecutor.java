@@ -1,15 +1,18 @@
 package edu.udel.cis.vsl.civl.library.bundle;
 
+import java.util.Arrays;
+
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
-import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.civl.semantics.IF.ArrayToolBox;
+import edu.udel.cis.vsl.civl.semantics.IF.ArrayToolBox.ArrayShape;
+import edu.udel.cis.vsl.civl.semantics.IF.ArrayToolBox.ArraySlice;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -23,14 +26,19 @@ import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
+import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType.SymbolicTypeKind;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
+import edu.udel.cis.vsl.sarl.object.common.SimpleSequence;
 
 /**
  * <p>
@@ -82,6 +90,27 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
 public class LibbundleExecutor extends BaseLibraryExecutor
 		implements
 			LibraryExecutor {
+	/**
+	 * The reference to {@link ArrayToolBox}
+	 */
+	private ArrayToolBox arrayToolBox;
+
+	/**
+	 * <p>
+	 * This is the name of a abstract function :
+	 * <code>$bundle_subarray(array, indices, count)</code> which represents
+	 * consecutive part of "count" elements of the "array", starting from the
+	 * "indices".
+	 * </p>
+	 * 
+	 * <p>
+	 * The purpose of this abstract function is to relieve the $bundle_pack
+	 * function from getting data of non-concrete size from an array of
+	 * non-concrete sizes, since the data will later be unpack by $bundle_unpack
+	 * and what shape it eventually will be is unknown to $bundle_pack.
+	 * </p>
+	 */
+	private static String BUNDLE_SUBARRAY_FUNCTION_NAME = "$bundle_slice";
 
 	/* **************************** Constructors *************************** */
 
@@ -93,6 +122,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		super(name, primaryExecutor, modelFactory, symbolicUtil,
 				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
+		arrayToolBox = evaluator.newArrayToolBox(universe);
 	}
 
 	/*
@@ -118,10 +148,6 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 			case "$bundle_unpack" :
 				callEval = executeBundleUnpack(state, pid, process, arguments,
 						argumentValues, source);
-				break;
-			case "$bundle_unpack_apply" :
-				callEval = executeBundleUnpackApply(state, pid, process,
-						arguments, argumentValues, source);
 				break;
 		}
 		return callEval;
@@ -182,10 +208,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 	 * 
 	 * Pre-Condition : The size of the object pointed by the given address
 	 * should larger than or equal to the other parameter "size".<br>
-	 * Post-Condition: The data in bundle is in the form of an unrolled one
-	 * dimensional array.<br>
 	 * 
-	 * @author Ziqing Luo
 	 * @param state
 	 *            The current state.
 	 * @param pid
@@ -212,60 +235,148 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 	private Evaluation executeBundlePack(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
-		SymbolicExpression pointer = argumentValues[0];
+		CIVLSource ptrSource = arguments[0].getSource();
+		SymbolicExpression pointer = argumentValues[0], rootPointer, rootArray;
 		NumericExpression size = (NumericExpression) argumentValues[1];
-		SymbolicUnionType symbolicBundleType;
-		SymbolicExpression bundleContent = null;
-		SymbolicExpression bundle = null;
-		IntObject elementTypeIndexObj;
 		Evaluation eval;
-		int elementTypeIndex;
-		CIVLBundleType bundleType = this.typeFactory.bundleType();
-		BooleanExpression isPtrValid, isSizeGTZ;
+
+		rootPointer = symbolicUtil.arrayRootPtr(pointer);
+		eval = evaluator.dereference(ptrSource, state, process, rootPointer,
+				true, true);
+		state = eval.state;
+		rootArray = eval.value;
+
+		// error checking
+		NumericExpression availableSize, baseSize;
+		BooleanExpression inBound, baseDivides;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
 		ResultType resultType;
+		// rootArrayShape is null if data is not an array:
+		ArrayShape rootArrayShape = null;
+		// startIndices is null if data is not an array:
+		NumericExpression[] startIndices = null;
 
-		// requires : pointer is valid:
-		isPtrValid = symbolicAnalyzer.isDerefablePointer(state, pointer).left;
-		// requires : size > 0:
-		isSizeGTZ = universe.lessThan(zero, size);
-		if (isPtrValid.isFalse() || reasoner.valid(isPtrValid)
-				.getResultType() != ResultType.YES) {
-			errorLogger.logSimpleError(arguments[0].getSource(), state, process,
-					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
-					"Attempt to read/write a invalid pointer type variable.");
-			throw new UnsatisfiablePathConditionException();
-		}
-		resultType = reasoner.valid(isSizeGTZ).getResultType();
-		if (isSizeGTZ.isFalse() || resultType != ResultType.YES) {
-			errorLogger.logError(arguments[1].getSource(), state, pid,
-					symbolicAnalyzer.stateInformation(state), isSizeGTZ,
-					resultType, ErrorKind.OTHER, "Attempt to pack data of "
-							+ size + " size, which can be zero\n");
-			throw new UnsatisfiablePathConditionException();
-		}
-		// test:
-		Pair<SymbolicExpression, NumericExpression> ptr_count = pointerTyping(
-				state, pid, pointer, size, source);
-
-		eval = getDataFrom(state, pid, process, arguments[0], ptr_count.left,
-				ptr_count.right, true, false, arguments[0].getSource());
-		state = eval.state;
-		bundleContent = eval.value;
-		assert (bundleContent != null
-				&& bundleContent.type().typeKind() == SymbolicTypeKind.ARRAY);
-
-		SymbolicType bundleContentElementType = ((SymbolicArrayType) bundleContent
-				.type()).elementType();
-
+		if (rootArray.type().typeKind() == SymbolicTypeKind.ARRAY) {
+			rootArrayShape = arrayToolBox
+					.newArrayShape((SymbolicArrayType) rootArray.type());
+			startIndices = symbolicUtil.extractArrayIndicesFrom(pointer);
+			availableSize = bytewiseDataSize(rootArrayShape, startIndices);
+			baseSize = symbolicUtil.sizeof(ptrSource, null,
+					rootArrayShape.baseType);
+		} else
+			baseSize = availableSize = symbolicUtil.sizeof(ptrSource, null,
+					rootArray.type());
+		inBound = universe.lessThanEquals(size, availableSize);
+		baseDivides = universe.divides(baseSize, availableSize);
+		resultType = reasoner.valid(universe.and(baseDivides, inBound))
+				.getResultType();
+		if (resultType != ResultType.YES)
+			eval.state = reportBundlePackError(state, pid, pointer,
+					availableSize, size, universe.and(baseDivides, inBound),
+					resultType, source);
+		eval.value = pack(reasoner, rootArray, rootArrayShape, startIndices,
+				size, source);
 		// Packing bundle:
-		symbolicBundleType = bundleType.getDynamicType(universe);
-		elementTypeIndex = bundleType
-				.getIndexOf(universe.pureType(bundleContentElementType));
-		elementTypeIndexObj = universe.intObject(elementTypeIndex);
-		bundle = universe.unionInject(symbolicBundleType, elementTypeIndexObj,
-				bundleContent);
-		return new Evaluation(state, bundle);
+		eval.value = universe
+				.unionInject(typeFactory.bundleType().getDynamicType(universe),
+						universe.intObject(typeFactory.bundleType().getIndexOf(
+								universe.pureType(eval.value.type()))),
+						eval.value);
+		return eval;
+	}
+
+	/**
+	 * pack the data, assuming no error can happen. If the data is a single
+	 * object, pack the object, otherwise, pack the data as an array slice whose
+	 * base type is a non-array type.
+	 */
+	private SymbolicExpression pack(Reasoner reasoner,
+			SymbolicExpression rootMemoryArray, ArrayShape rootMemoryArrayShape,
+			NumericExpression startIndices[], NumericExpression size,
+			CIVLSource source) {
+		assert rootMemoryArrayShape == null || startIndices != null;
+
+		if (rootMemoryArrayShape == null)
+			return rootMemoryArray;
+
+		NumericExpression baseSize = symbolicUtil.sizeof(source, null,
+				rootMemoryArrayShape.baseType);
+		NumericExpression count = universe.divide(size, baseSize);
+		Number concreteCount = reasoner.extractNumber(count);
+
+		if (concreteCount != null) {
+			startIndices = zeroFill(startIndices,
+					rootMemoryArrayShape.dimensions);
+			return arrayToolBox.arraySliceRead(rootMemoryArray, startIndices,
+					((IntegerNumber) concreteCount).intValue());
+		}
+
+		NumericExpression[] startTrimedIndices = zeroTrim(reasoner,
+				startIndices);
+
+		startIndices = zeroFill(startIndices, rootMemoryArrayShape.dimensions);
+		if (startTrimedIndices.length == 0) // if all indices are zeroes
+			if (reasoner.isValid(
+					universe.equals(count, rootMemoryArrayShape.arraySize)))
+				packAsSliceFunction(rootMemoryArray, startIndices, count,
+						universe.arrayType(rootMemoryArrayShape.baseType,
+								count),
+						source);
+
+		ArraySlice slice = arrayToolBox.newArraySlice(rootMemoryArray,
+				startIndices, count, rootMemoryArrayShape.baseType);
+		ArraySlice narrowedSlice = arraySliceNarrower(reasoner, slice,
+				rootMemoryArrayShape);
+		ArrayShape narrowerArrayShape = narrowedSlice == slice
+				? rootMemoryArrayShape
+				: arrayToolBox.newArrayShape(
+						(SymbolicArrayType) narrowedSlice.array.type());
+
+		return packAsSliceFunction(narrowedSlice.array,
+				zeroFill(narrowedSlice.startIndices,
+						narrowerArrayShape.dimensions),
+				narrowedSlice.count,
+				universe.arrayType(narrowedSlice.baseType, narrowedSlice.count),
+				source);
+	}
+
+	/**
+	 * <p>
+	 * read an array slice, which is represented by an array <code>a</code>, a
+	 * group of starting indices
+	 * <code>{i<sub>0</sub>, i<sub>1</sub>, ..., i<sub>n-1</sub>}</code> and a
+	 * count <code>c</code> and <code>c</code> is non-concrete.
+	 * </p>
+	 * 
+	 * <p>
+	 * In this case, the slice will be wrapped by an uninterpreted function
+	 * {@link #BUNDLE_SUBARRAY_FUNCTION_NAME}
+	 * </p>
+	 * 
+	 * @throws UnsatisfiablePathConditionException
+	 */
+	private SymbolicExpression packAsSliceFunction(SymbolicExpression array,
+			NumericExpression indices[], NumericExpression count,
+			SymbolicType sliceType, CIVLSource source) {
+		/*
+		 * The idea is not deal with non-concrete array reading at bundle
+		 * packing time since no one knows what the shape of the data (array)
+		 * would be at unpack time. Just wrapping all necessary information with
+		 * a unique protocol to bundle_unpack.
+		 */
+		SymbolicExpression indicesArray = universe.array(universe.integerType(),
+				Arrays.asList(indices));
+		SymbolicType outputType = sliceType;
+		SymbolicFunctionType funcType;
+
+		funcType = universe.functionType(Arrays.asList(array.type(),
+				indicesArray.type(), universe.integerType()), outputType);
+
+		SymbolicExpression symConst = universe.symbolicConstant(
+				universe.stringObject(BUNDLE_SUBARRAY_FUNCTION_NAME), funcType);
+
+		return universe.apply(symConst,
+				Arrays.asList(array, indicesArray, count));
 	}
 
 	/**
@@ -299,204 +410,576 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 	private Evaluation executeBundleUnpack(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
+		// do error checking, then call "unpack" ...
+		CIVLSource bundleSource = arguments[0].getSource();
+		CIVLSource ptrSource = arguments[1].getSource();
 		SymbolicExpression bundle = argumentValues[0];
 		SymbolicExpression pointer = argumentValues[1];
-		SymbolicExpression targetObject = null;
-		SymbolicExpression bufPointer = null;
-		Evaluation eval;
-		Pair<Evaluation, SymbolicExpression> eval_and_pointer;
+		SymbolicExpression bundleData = (SymbolicExpression) bundle.argument(1);
+		SymbolicExpression rootPointer = symbolicUtil.arrayRootPtr(pointer);
+		Evaluation eval = evaluator.dereference(ptrSource, state, process,
+				rootPointer, false, false);
+		SymbolicExpression wrtArray = eval.value;
 
-		// checking if pointer is valid
-		if (pointer.operator() != SymbolicOperator.TUPLE) {
-			errorLogger.logSimpleError(arguments[1].getSource(), state, process,
-					symbolicAnalyzer.stateInformation(state), ErrorKind.POINTER,
-					"attempt to read/write an uninitialized variable by the pointer "
-							+ pointer);
-			throw new UnsatisfiablePathConditionException();
-		}
-		eval_and_pointer = this.bundleUnpack(state, pid, process,
-				(SymbolicExpression) bundle.argument(1), arguments[0], pointer,
-				source);
-		eval = eval_and_pointer.left;
-		// bufPointer is the pointer to targetObj which may be the ancestor
-		// of the original pointer.
-		bufPointer = eval_and_pointer.right;
-		state = eval.state;
-		// targetObject is the object will be assigned to the output
-		// argument.
-		targetObject = eval.value;
-		// If it's assigned to an array or an object
-		if (bufPointer != null && targetObject != null)
-			state = primaryExecutor.assign(source, state, pid, bufPointer,
-					targetObject);
-		else
-			throw new CIVLInternalException(
-					"Cannot complete unpack.\nAssigned pointer: " + bufPointer
-							+ "\nAssigning object: " + targetObject,
-					source);
-
-		return new Evaluation(state, null);
-	}
-
-	/**
-	 * bundle unpack then do an operation. This method corresponding to the
-	 * CIVL-C function:
-	 * <code>$bundle_unpack_apply($bundle bundle, void * buf, int count, $operation op);</code>
-	 * Bundle contains the first operand which is going to be used in the
-	 * operation. The pointer "buf" points to the object stores the second
-	 * operand which is going to be used in the operation.
-	 * 
-	 * @author Ziqing Luo
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The pid of the process
-	 * @param process
-	 *            The identifier of the process
-	 * @param arguments
-	 *            The expression of arguments of the CIVL-C function
-	 *            <code>$bundle_unpack_apply($bundle bundle, void * buf, int count, $operation op);</code>
-	 * @param argumentValues
-	 *            The symbolic expression of arguments of the CIVL-C function
-	 *            <code>$bundle_unpack_apply($bundle bundle, void * buf, int count, $operation op);</code>
-	 * @param source
-	 *            The civl source of this statement
-	 * @return the state after execution.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation executeBundleUnpackApply(State state, int pid,
-			String process, Expression[] arguments,
-			SymbolicExpression[] argumentValues, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
-		// SymbolicExpression bundle = argumentValues[0],
-		// pointer = argumentValues[1];
-		// SymbolicExpression assignedPtr;
-		// NumericExpression count = (NumericExpression) argumentValues[2],
-		// totalUnits;
-		// // Enumerator number of the operation
-		// NumericExpression operation = (NumericExpression) argumentValues[3];
-		// CIVLOperator CIVL_Op;
-		// Pair<Evaluation, SymbolicExpression> eval_and_pointer;
-		// SymbolicExpression[] operands = new SymbolicExpression[2];
-		// SymbolicType operandElementType;
-		// BooleanExpression pathCondition = state.getPathCondition();
-		// Reasoner reasoner = universe.reasoner(pathCondition);
-		// Evaluation eval = null;
-		// int countStep;
-		// // TODO: support struct operands, i.e. struct in bundle and buf ->
-		// // struct
-		// // Checking if pointer is valid.
-		// if (pointer.operator() != SymbolicOperator.TUPLE) {
-		// errorLogger.logSimpleError(source, state, process,
-		// this.symbolicAnalyzer.stateInformation(state),
-		// ErrorKind.POINTER,
-		// "attempt to read/write an invalid pointer type variable");
-		// throw new UnsatisfiablePathConditionException();
-		// }
-		// // In executor, operation must be concrete.
-		// // Translate operation
-		// CIVL_Op = operandCounts(
-		// ((IntegerNumber) reasoner.extractNumber(operation)).intValue());
-		// countStep = (CIVL_Op == CIVLOperator.CIVL_MINLOC
-		// || CIVL_Op == CIVLOperator.CIVL_MAXLOC) ? 2 : 1;
-		// totalUnits = universe.multiply(count, universe.integer(countStep));
-		// eval = getDataFrom(state, pid, process, arguments[1], pointer,
-		// totalUnits, true, false, arguments[1].getSource());
-		// state = eval.state;
-		// operands[1] = eval.value;
-		// // Obtain data form bundle
-		// operands[0] = (SymbolicExpression) bundle.argument(1);
-		// // convert operand0 to array type if it is a single element
-		// if (operands[0].type().typeKind() != SymbolicTypeKind.ARRAY)
-		// operands[0] = universe.array(operands[0].type(),
-		// Arrays.asList(operands[0]));
-		// // type checking for two operands:
-		// operandElementType = ((SymbolicArrayType) operands[0].type())
-		// .elementType();
-		// if (!((SymbolicArrayType) operands[1].type()).elementType()
-		// .equals(operandElementType)) {
-		// int bundleTypeIdx = ((IntObject) bundle.argument(0)).getInt();
-		// CIVLPointerType bufPtrType = (CIVLPointerType) arguments[1]
-		// .getExpressionType();
-		//
-		// errorLogger.logSimpleError(source, state, process,
-		// symbolicAnalyzer.stateInformation(state), ErrorKind.OTHER,
-		// "Operands of $bundle_unpack_apply has different types:"
-		// + "data in bundle has type: "
-		// + modelFactory.typeFactory().bundleType()
-		// .getElementType(bundleTypeIdx)
-		// + "\n " + arguments[1]
-		// + " points to objects of type: "
-		// + bufPtrType.baseType());
-		// throw new UnsatisfiablePathConditionException();
-		// }
-		// eval.value = applyCIVLOperation(state, pid, process, operands,
-		// CIVL_Op,
-		// count, operandElementType, source);
-		// eval_and_pointer = setDataFrom(state, pid, process, arguments[1],
-		// pointer, totalUnits, eval.value, false, source);
-		// eval = eval_and_pointer.left;
-		// assignedPtr = eval_and_pointer.right;
-		// state = eval.state;
-		// state = primaryExecutor.assign(source, state, process, assignedPtr,
-		// eval.value);
-		return new Evaluation(state, null);
-	}
-
-	/**
-	 * Evaluating for bundle_unpack execution. This function returns the value
-	 * of the object and the pointer to that object(the return type is a Pair).
-	 * The reason that why this function need. <br>
-	 * Note: Data in bundle is in the form of a unrolled one dimensional array.
-	 * 
-	 * Implementation details: First, it's guaranteed that the data in bundle is
-	 * always in the form of a one dimensional array(also can be understood as a
-	 * unrolled array or a sequence of data).<br>
-	 * Second, inside this function, it contains a cast from the one dimensional
-	 * array mentioned above to another type specified by the parameter
-	 * "pointer". A correct CIVL program or C program should make sure that cast
-	 * is legal, otherwise an error will be reported.<br>
-	 * Third, the object used to store the data in bundle can have a larger size
-	 * than the data itself.
-	 * 
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param process
-	 *            The identifier of the process
-	 * @param bundle
-	 *            The bundle type object
-	 * @param pointer
-	 *            The pointer to the address of the object which will be
-	 *            assigned by bundle data
-	 * @param civlsource
-	 *            The CIVL Source of the bundle_unpack statement
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	Pair<Evaluation, SymbolicExpression> bundleUnpack(State state, int pid,
-			String process, SymbolicExpression bundleData,
-			Expression pointerExpr, SymbolicExpression pointer,
-			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
-		SymbolicExpression data = bundleData;
-		NumericExpression dataSize;
-		Evaluation eval;
+		NumericExpression availableSize, sizeofBundleData;
+		SymbolicType wrtArrayBase_t, bundleDataBase_t;
+		ArrayShape wrtArrayShape = null, dataArrayShape = null;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
-		Pair<Evaluation, SymbolicExpression> eval_and_pointer;
+		NumericExpression wrtStartIndices[] = symbolicUtil
+				.extractArrayIndicesFrom(pointer);
+		SymbolicType wrtArrayType = !wrtArray.isNull()
+				? wrtArray.type()
+				: symbolicAnalyzer
+						.civlTypeOfObjByPointer(ptrSource, state, rootPointer)
+						.getDynamicType(universe);
 
-		// Since bundle unpack is called by executeBundleUnpack, it has no need
-		// to check pointer validation here.
-		dataSize = universe.length(data);
-		// If data size is zero, do nothing.
-		if (reasoner.isValid(universe.equals(dataSize, zero))) {
-			eval = evaluator.dereference(civlsource, state, process, pointer,
-					false, true);
-			return new Pair<Evaluation, SymbolicExpression>(eval, pointer);
+		// compute available size ...
+		if (wrtArrayType.typeKind() == SymbolicTypeKind.ARRAY) {
+			wrtArrayShape = arrayToolBox
+					.newArrayShape((SymbolicArrayType) wrtArrayType);
+			wrtArrayBase_t = wrtArrayShape.baseType;
+			availableSize = bytewiseDataSize(wrtArrayShape, wrtStartIndices);
+		} else {
+			availableSize = symbolicUtil.sizeof(ptrSource, null, wrtArrayType);
+			wrtArrayBase_t = wrtArrayType;
 		}
-		// If data size larger than one, return an array and the corresponding
-		// pointer.
-		eval_and_pointer = this.setDataFrom(state, pid, process, pointerExpr,
-				pointer, dataSize, data, false, civlsource);
-		return eval_and_pointer;
+		// compute bundle data size ...
+		if (bundleData.type().typeKind() == SymbolicTypeKind.ARRAY) {
+			NumericExpression zero[] = {universe.zeroInt()};
+
+			dataArrayShape = arrayToolBox
+					.newArrayShape((SymbolicArrayType) bundleData.type());
+			sizeofBundleData = bytewiseDataSize(dataArrayShape, zero);
+			bundleDataBase_t = dataArrayShape.baseType;
+		} else {
+			bundleDataBase_t = bundleData.type();
+			sizeofBundleData = symbolicUtil.sizeof(bundleSource, null,
+					bundleDataBase_t);
+		}
+
+		ResultType errorCheckingResult = ResultType.NO;
+		BooleanExpression inBoundClaim = universe
+				.lessThanEquals(sizeofBundleData, availableSize);
+
+		if (bundleDataBase_t.equals(wrtArrayBase_t)) {
+			errorCheckingResult = reasoner.valid(inBoundClaim).getResultType();
+			if (errorCheckingResult != ResultType.NO) {
+				wrtArray = unpack(reasoner, bundleData, dataArrayShape,
+						wrtArray, wrtArrayShape, wrtStartIndices);
+				state = primaryExecutor.assign(source, state, pid, rootPointer,
+						wrtArray);
+			}
+		}
+		if (errorCheckingResult != ResultType.YES)
+			state = reportBundleUnpackError(state, pid, pointer, bundleData,
+					typeFactory.bundleType(), sizeofBundleData, availableSize,
+					inBoundClaim, errorCheckingResult, source);
+		return new Evaluation(state, universe.nullExpression());
+	}
+
+	/**
+	 * Unpack the bundle and write it to the receiving array. Assuming no error
+	 * can happen.
+	 * 
+	 * @param reasoner
+	 *            a {@link Reasoner} based on current context
+	 * @param bundleData
+	 *            the data in bundle
+	 * @param bundleSliceShape
+	 *            the shape of the slice in bundle, generated from the slice
+	 *            type (i.e. the type of bundleData). null iff the bundle data
+	 *            does not have an array type
+	 * @param memoryArr
+	 *            the array that will be written
+	 * @param memoryArrShape
+	 *            the {@link ArrayShape} of the array that will be written. null
+	 *            iff the receiving object does not have an array type
+	 * @param memoryArrStartIdx
+	 *            the start indices referring to the position of writing
+	 * @return the updated receiving array
+	 */
+	private SymbolicExpression unpack(Reasoner reasoner,
+			SymbolicExpression bundleData, ArrayShape bundleSliceShape,
+			SymbolicExpression memoryArr, ArrayShape memoryArrShape,
+			NumericExpression memoryArrStartIdx[]) {
+		if (bundleSliceShape == null || memoryArrShape == null) {
+			// data is a single object
+			if (bundleSliceShape == null && memoryArrShape == null)
+				return bundleData;
+			else if (memoryArrShape != null) {
+				memoryArrStartIdx = zeroFill(memoryArrStartIdx,
+						memoryArrShape.dimensions);
+				return arrayToolBox.mdArrayWrite(memoryArr, memoryArrStartIdx,
+						bundleData);
+			} else {
+				ArraySlice bundleSlice = extractBundleData(bundleData);
+
+				return universe.arrayRead(
+						arrayToolBox.extractArraySlice(bundleSlice), zero);
+			}
+		}
+		// base types are all non-array types :
+		assert bundleSliceShape.baseType.typeKind() != SymbolicTypeKind.ARRAY;
+		assert memoryArrShape.baseType.typeKind() != SymbolicTypeKind.ARRAY;
+
+		ArraySlice bundleSlice = extractBundleData(bundleData);
+
+		SymbolicExpression quick_result = unpack_bundleSliceFitInMemorySubArray(
+				reasoner, bundleSlice, bundleSliceShape, memoryArr,
+				memoryArrShape, zeroTrim(reasoner, memoryArrStartIdx));
+
+		if (quick_result != null)
+			return quick_result;
+		memoryArrStartIdx = zeroFill(memoryArrStartIdx,
+				memoryArrShape.dimensions);
+
+		// the exact memory slice that will be written :
+		ArraySlice memorySlice = arrayToolBox.newArraySlice(memoryArr,
+				memoryArrStartIdx, bundleSliceShape.arraySize,
+				memoryArrShape.baseType);
+		ArraySlice narrowedMemorySlice = arraySliceNarrower(reasoner,
+				memorySlice, memoryArrShape);
+		// indices for writing the memory slice to memory array :
+		NumericExpression memorySliceIndices[] = null;
+
+		if (memorySlice != narrowedMemorySlice) {
+			ArrayShape memorySliceArrayShape = arrayToolBox.newArrayShape(
+					(SymbolicArrayType) narrowedMemorySlice.array.type());
+
+			memorySliceIndices = new NumericExpression[memoryArrShape.dimensions
+					- memorySliceArrayShape.dimensions];
+			if (memorySliceIndices.length <= memoryArrStartIdx.length)
+				System.arraycopy(memoryArrStartIdx, 0, memorySliceIndices, 0,
+						memorySliceIndices.length);
+			else
+				Arrays.fill(memorySliceIndices, zero);
+			memoryArrShape = memorySliceArrayShape;
+		}
+
+		// find out the largest common base type of the bundle slice and the
+		// memory slice:
+		Pair<ArraySlice[], ArrayShape[]> commonBaseSlicesAndShapes = commonBaseType(
+				reasoner, bundleSlice,
+				arrayToolBox.newArrayShape(
+						(SymbolicArrayType) bundleSlice.array.type()),
+				narrowedMemorySlice, memoryArrShape);
+
+		bundleSlice = commonBaseSlicesAndShapes.left[0];
+		memorySlice = commonBaseSlicesAndShapes.left[1];
+		memoryArrShape = commonBaseSlicesAndShapes.right[1];
+
+		SymbolicExpression updatedMemroySliceValue = arrayToolBox
+				.arraySliceWrite(bundleSlice, memorySlice.array, memoryArrShape,
+						zeroFill(memorySlice.startIndices,
+								memoryArrShape.dimensions));
+
+		// write updated memory slice back to memory array:
+		if (memorySliceIndices != null)
+			return arrayToolBox.mdArrayWrite(memoryArr, memorySliceIndices,
+					updatedMemroySliceValue);
+		else
+			return updatedMemroySliceValue;
+	}
+
+	/**
+	 * given an array slice: array <code>a</code>, indices
+	 * <code>{i<sub>0</sub>, i<sub>1</sub>...}</code>, number of base type
+	 * elements <code>c</code>. Returns the same slice but the array
+	 * <code>a</code> may change to its sub-array <code>a'</code>, and indices
+	 * may have corresponding changes.
+	 * 
+	 * @param reasoner
+	 *            a {@link Reasoner} based on the current context
+	 * @param slice
+	 *            an array slice
+	 * @param sliceArrayShape
+	 *            the shape of the array where the slice is carved out
+	 * @return an {@link ArraySlice} represent the same slice that is
+	 *         represented by the given inputs
+	 */
+	private ArraySlice arraySliceNarrower(Reasoner reasoner, ArraySlice slice,
+			ArrayShape sliceArrayShape) {
+		int dims = sliceArrayShape.dimensions;
+
+		if (dims <= 1)
+			return slice;
+
+		NumericExpression size;
+		NumericExpression sliceIndices[] = zeroFill(slice.startIndices, dims);
+		NumericExpression narrowingIndices[];
+		SymbolicExpression narrowedArray;
+
+		for (int i = 1; i < dims; i++) {
+			size = universe.multiply(sliceArrayShape.subArraySizes[i], universe
+					.subtract(sliceArrayShape.extents[i], sliceIndices[i]));
+			if (!reasoner.isValid(universe.lessThanEquals(slice.count, size))) {
+				if (i == 1)
+					return slice;
+
+				narrowingIndices = Arrays.copyOfRange(sliceIndices, 0, i - 1);
+				narrowedArray = arrayToolBox.mdArrayRead(slice.array,
+						narrowingIndices);
+				return arrayToolBox.newArraySlice(narrowedArray,
+						Arrays.copyOfRange(sliceIndices, i - 1, dims),
+						slice.count, slice.baseType);
+			}
+		}
+		narrowingIndices = Arrays.copyOfRange(sliceIndices, 0, dims - 1);
+		narrowedArray = arrayToolBox.mdArrayRead(slice.array, narrowingIndices);
+		return arrayToolBox.newArraySlice(narrowedArray,
+				Arrays.copyOfRange(sliceIndices, dims - 1, dims), slice.count,
+				slice.baseType);
+	}
+
+	/**
+	 * Find the common base type of two array shapes. TODO: so far it requires
+	 * that the given two array shapes are not sub-array of each other. Such
+	 * restriction should be lifted.
+	 */
+	private Pair<ArraySlice[], ArrayShape[]> commonBaseType(Reasoner reasoner,
+			ArraySlice s0, ArrayShape s0ArrayShape, ArraySlice s1,
+			ArrayShape s1ArrayShape) {
+		assert s0.baseType.typeKind() != SymbolicTypeKind.ARRAY;
+		assert s1.baseType.typeKind() != SymbolicTypeKind.ARRAY;
+		assert reasoner.isValid(universe.equals(s0.count, s1.count));
+
+		NumericExpression count = s0.count, newCount;
+		NumericExpression[] trimedS0Indices = zeroTrim(reasoner,
+				s0.startIndices);
+		NumericExpression[] trimedS1Indices = zeroTrim(reasoner,
+				s1.startIndices);
+		int s0BaseMaxDims = s0ArrayShape.dimensions - trimedS0Indices.length;
+		int s1BaseMaxDims = s1ArrayShape.dimensions - trimedS1Indices.length;
+		int maxDims = s0BaseMaxDims > s1BaseMaxDims
+				? s1BaseMaxDims
+				: s0BaseMaxDims;
+		int s0Dims = s0ArrayShape.dimensions;
+		int s1Dims = s1ArrayShape.dimensions;
+		ArraySlice resultSlices[] = {s0, s1};
+		ArrayShape resultShapes[] = {s0ArrayShape, s1ArrayShape};
+
+		if (maxDims < 1)
+			return new Pair<>(resultSlices, resultShapes);
+
+		for (int i = 0; i < maxDims; i++) {
+			BooleanExpression divides = universe
+					.divides(s0ArrayShape.extents[s0Dims - 1 - i], count);
+			BooleanExpression equals = universe.equals(
+					s0ArrayShape.extents[s0Dims - 1 - i],
+					s1ArrayShape.extents[s1Dims - 1 - i]);
+
+			if (!reasoner.isValid(universe.and(divides, equals))) {
+				if (i != 0) {
+					newCount = universe.divide(count,
+							s0ArrayShape.subArraySizes[s0Dims - 1 - i]);
+					resultShapes[0] = arrayToolBox.switchBaseType(s0ArrayShape,
+							i);
+					resultShapes[1] = arrayToolBox.switchBaseType(s1ArrayShape,
+							i);
+					resultSlices[0] = arrayToolBox.newArraySlice(s0.array,
+							zeroFill(trimedS0Indices, s0Dims - i), newCount,
+							resultShapes[0].baseType);
+					resultSlices[1] = arrayToolBox.newArraySlice(s1.array,
+							zeroFill(trimedS1Indices, s1Dims - i), newCount,
+							resultShapes[1].baseType);
+				}
+				return new Pair<>(resultSlices, resultShapes);
+			}
+		}
+		// maxDims should never be greater than or equal to array dimensions,
+		// otherwise, count can only be one, the control will not reach here
+		newCount = universe.divide(count,
+				s0ArrayShape.subArraySizes[s0Dims - 1 - maxDims]);
+		resultShapes[0] = arrayToolBox.switchBaseType(s0ArrayShape, maxDims);
+		resultShapes[1] = arrayToolBox.switchBaseType(s1ArrayShape, maxDims);
+		resultSlices[0] = arrayToolBox.newArraySlice(s0.array,
+				zeroFill(trimedS0Indices, s0Dims - maxDims), newCount,
+				resultShapes[0].baseType);
+		resultSlices[1] = arrayToolBox.newArraySlice(s1.array,
+				zeroFill(trimedS1Indices, s1Dims - maxDims), newCount,
+				resultShapes[1].baseType);
+		return new Pair<>(resultSlices, resultShapes);
+	}
+
+	/**
+	 * Deal with two special cases:
+	 * 
+	 * <p>
+	 * If the given bundle slice type is a sub-type of the written array,
+	 * directly written the slice to the referred position.
+	 * </p>
+	 * 
+	 * <p>
+	 * If the given bundle slice type is physically equivalent to a sub-type of
+	 * the written array, directly written the reshaped slice to the referred
+	 * position.
+	 * </p>
+	 * 
+	 * <p>
+	 * returns the bundle unpack result if the given slice and the written array
+	 * falls into the above cases, otherwise null.
+	 * </p>
+	 * 
+	 * @param reasoner
+	 *            a reasoner based on the current context
+	 * @param bundleSlice
+	 *            the bundle data in {@link ArraySlice} form
+	 * @param bundleSliceShape
+	 *            the {@link ArrayShape} based on the
+	 *            {@link ArraySlice#sliceType} of the bundle data
+	 * @param memoryArray
+	 *            the written array
+	 * @param memoryArrayShape
+	 *            the {@link ArrayShape} of the written array
+	 * @param memoryStartTrimedIndices
+	 *            the starting indices for writing the array without zero suffix
+	 * @return the bundle unpack result if the given slice and the written array
+	 *         falls into the above cases, otherwise null.
+	 */
+	private SymbolicExpression unpack_bundleSliceFitInMemorySubArray(
+			Reasoner reasoner, ArraySlice bundleSlice,
+			ArrayShape bundleSliceShape, SymbolicExpression memoryArray,
+			ArrayShape memoryArrayShape,
+			NumericExpression memoryStartTrimedIndices[]) {
+		int memorySubarrayDimsMax = memoryArrayShape.dimensions
+				- memoryStartTrimedIndices.length;
+
+		if (memorySubarrayDimsMax >= bundleSliceShape.dimensions)
+			if (isSubArray(reasoner, bundleSliceShape, memoryArrayShape)) {
+				// case 1
+				// adjust the written array indices s.t. they must refer to the
+				// element who has the same type as the data array type ...
+				NumericExpression[] wrtIndices = zeroFill(
+						memoryStartTrimedIndices, memoryArrayShape.dimensions
+								- bundleSliceShape.dimensions);
+				SymbolicExpression sliceValue = arrayToolBox
+						.extractArraySlice(bundleSlice);
+
+				return wrtIndices.length > 0
+						? arrayToolBox.mdArrayWrite(memoryArray, wrtIndices,
+								sliceValue)
+						: sliceValue;
+			} else {
+				// case 2
+				// any physically equivalent sub-array ?
+				ArrayShape wrtSubArrayShape;
+
+				do {
+					wrtSubArrayShape = arrayToolBox.subArrayShape(
+							memoryArrayShape, memorySubarrayDimsMax--);
+					if (reasoner.isValid(
+							arrayToolBox.areArrayShapesPhysicallyEquivalent(
+									bundleSliceShape, wrtSubArrayShape))) {
+						SymbolicExpression reshapedSliceValue = arrayToolBox
+								.arrayReshape(arrayToolBox.extractArraySlice(
+										bundleSlice), wrtSubArrayShape);
+						NumericExpression[] wrtIndices = zeroFill(
+								memoryStartTrimedIndices,
+								memoryArrayShape.dimensions
+										- wrtSubArrayShape.dimensions);
+
+						return wrtIndices.length > 0
+								? arrayToolBox.mdArrayWrite(memoryArray,
+										wrtIndices, reshapedSliceValue)
+								: reshapedSliceValue;
+					}
+				} while (memorySubarrayDimsMax >= bundleSliceShape.dimensions);
+			}
+		return null;
+	}
+
+	/**
+	 * Extract bundle data to an {@link ArraySlice}
+	 */
+	private ArraySlice extractBundleData(SymbolicExpression bundleData) {
+		if (isBundleSubarrayFunction(bundleData)) {
+			@SuppressWarnings("unchecked")
+			SimpleSequence<SymbolicExpression> args = (SimpleSequence<SymbolicExpression>) bundleData
+					.argument(1);
+			SymbolicExpression array = args.get(0);
+			SymbolicExpression indicesArray = args.get(1);
+			NumericExpression count = (NumericExpression) args.get(2);
+			NumericExpression readStartIndices[] = new NumericExpression[((IntegerNumber) universe
+					.extractNumber(universe.length(indicesArray))).intValue()];
+			SymbolicType sliceBaseType = ((SymbolicArrayType) bundleData.type())
+					.elementType();
+
+			for (int i = 0; i < readStartIndices.length; i++)
+				readStartIndices[i] = (NumericExpression) universe
+						.arrayRead(indicesArray, universe.integer(i));
+			return arrayToolBox.newArraySlice(array, readStartIndices, count,
+					sliceBaseType);
+		} else {
+			SymbolicCompleteArrayType dataArrayType = (SymbolicCompleteArrayType) bundleData
+					.type();
+			NumericExpression indices[] = {universe.zeroInt()};
+
+			return arrayToolBox.newArraySlice(bundleData, indices,
+					dataArrayType.extent(), dataArrayType.elementType());
+		}
+	}
+
+	/**
+	 * return byte-wise size of data in an array of the given array shape that
+	 * starting from the given indices. e.g. given <code>int a[N][M]</code> and
+	 * indices <code>{1,1}</code>, the data size is
+	 * <code>sizeof_int * ( M * N - (M + 1))</code>
+	 * 
+	 * @param arrayShape
+	 * @param startIndices
+	 * @return
+	 */
+	private NumericExpression bytewiseDataSize(ArrayShape arrayShape,
+			NumericExpression[] startIndices) {
+		NumericExpression base = symbolicUtil.sizeof(null, null,
+				arrayShape.baseType);
+		NumericExpression total = universe.multiply(Arrays.asList(base,
+				arrayShape.extents[0], arrayShape.subArraySizes[0]));
+
+		NumericExpression unavailable = universe.zeroInt();
+
+		for (int i = 0; i < startIndices.length; i++)
+			unavailable = universe.add(unavailable, universe
+					.multiply(startIndices[i], arrayShape.subArraySizes[i]));
+		unavailable = universe.multiply(unavailable, base);
+		return universe.subtract(total, unavailable);
+	}
+
+	/**
+	 * @param expr
+	 * @return true iff the bundle data is encoded as a special abstract
+	 *         function {@link #BUNDLE_SUBARRAY_FUNCTION_NAME}
+	 * 
+	 */
+	private static boolean isBundleSubarrayFunction(SymbolicExpression expr) {
+		if (expr.operator() == SymbolicOperator.APPLY) {
+			SymbolicConstant funcIdent = (SymbolicConstant) expr.argument(0);
+
+			return funcIdent.name().getString()
+					.equals(BUNDLE_SUBARRAY_FUNCTION_NAME);
+		}
+		return false;
+	}
+
+	/**
+	 * @param reasoner
+	 * @param s0
+	 * @param s1
+	 * @return true iff s0 is a sub-array of s1
+	 */
+	private boolean isSubArray(Reasoner reasoner, ArrayShape s0,
+			ArrayShape s1) {
+		if (s0.baseType.equals(s1.baseType) && s0.dimensions <= s1.dimensions) {
+			int d0 = s0.dimensions;
+			int d1 = s1.dimensions;
+			BooleanExpression extentsEquals = universe.trueExpression();
+
+			for (int i = 0; i < d0; i++)
+				extentsEquals = universe.and(extentsEquals, universe.equals(
+						s0.extents[d0 - i - 1], s1.extents[d1 - i - 1]));
+			return reasoner.isValid(extentsEquals);
+		}
+		return false;
+	}
+
+	/**
+	 * Shrink the array via removing all integral zero suffixes
+	 * 
+	 * @param reasoner
+	 * @param arr
+	 * @return a new array if the given array is shrunk, otherwise the given
+	 *         array
+	 */
+	private NumericExpression[] zeroTrim(Reasoner reasoner,
+			NumericExpression arr[]) {
+		int i;
+		for (i = arr.length - 1; i >= 0; i--)
+			if (!reasoner.isValid(universe.equals(zero, arr[i])))
+				break;
+		return Arrays.copyOfRange(arr, 0, i + 1);
+	}
+
+	/**
+	 * Extends the length of the given array to "len", sets extended cells to
+	 * SARL integral zero. No op if the length of the array is greater than or
+	 * equal to "len"
+	 * 
+	 * @param arr
+	 * @param len
+	 * @return a new array if the array is extended, otherwise the given array
+	 */
+	private NumericExpression[] zeroFill(NumericExpression arr[], int len) {
+		if (arr.length >= len)
+			return arr;
+
+		NumericExpression[] result = new NumericExpression[len];
+
+		System.arraycopy(arr, 0, result, 0, arr.length);
+		Arrays.fill(result, arr.length, len, zero);
+		return result;
+	}
+
+	private State reportBundleUnpackError(State state, int pid,
+			SymbolicExpression pointer, SymbolicExpression bundleData,
+			CIVLType bundleDataType, NumericExpression dataSize,
+			NumericExpression memSize, BooleanExpression claim,
+			ResultType resultType, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		StringBuffer message = new StringBuffer();
+		ArraySlice slice = extractBundleData(bundleData);
+		SymbolicExpression sliceExpr = arrayToolBox.extractArraySlice(slice);
+		CIVLType voidPointerType = typeFactory
+				.pointerType(typeFactory.voidType());
+
+		message.append(
+				"Cannot unpack the bundle data into the pointed memory region.\n");
+		message.append(
+				"Bundle data: " + symbolicAnalyzer.symbolicExpressionToString(
+						source, state, bundleDataType, sliceExpr) + "\n");
+		message.append(
+				"Bundle data size: "
+						+ symbolicAnalyzer.symbolicExpressionToString(source,
+								state, typeFactory.integerType(), dataSize)
+						+ "\n");
+		message.append(
+				"Pointer :" + symbolicAnalyzer.symbolicExpressionToString(
+						source, state, voidPointerType, pointer) + "\n");
+		message.append("Memory region size: "
+				+ symbolicAnalyzer.symbolicExpressionToString(source, state,
+						typeFactory.integerType(), memSize));
+		state = errorLogger.logError(source, state, pid,
+				symbolicAnalyzer.stateInformation(state), claim, resultType,
+				ErrorKind.OUT_OF_BOUNDS, message.toString());
+		state = stateFactory.addToPathcondition(state, pid, claim);
+		return state;
+	}
+
+	private State reportBundlePackError(State state, int pid,
+			SymbolicExpression pointer, NumericExpression memSize,
+			NumericExpression specifiedSize, BooleanExpression claim,
+			ResultType resultType, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		StringBuffer message = new StringBuffer();
+		CIVLType voidPointerType = typeFactory
+				.pointerType(typeFactory.voidType());
+
+		message.append(
+				"Cannot pack data of the specified size from the pointed memory region into a bundle .\n");
+		message.append(
+				"Specified size: "
+						+ symbolicAnalyzer.symbolicExpressionToString(source,
+								state, typeFactory.integerType(), specifiedSize)
+						+ "\n");
+		message.append(
+				"Pointer :" + symbolicAnalyzer.symbolicExpressionToString(
+						source, state, voidPointerType, pointer) + "\n");
+		message.append("Memory region size: "
+				+ symbolicAnalyzer.symbolicExpressionToString(source, state,
+						typeFactory.integerType(), memSize));
+		state = errorLogger.logError(source, state, pid,
+				symbolicAnalyzer.stateInformation(state), claim, resultType,
+				ErrorKind.OUT_OF_BOUNDS, message.toString());
+		state = stateFactory.addToPathcondition(state, pid, claim);
+		return state;
 	}
 }

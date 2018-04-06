@@ -294,6 +294,7 @@ public class CommonBinaryExpression extends CommonExpression
 			case POINTER_SUBTRACT :
 			case SHIFTLEFT :
 			case SHIFTRIGHT :
+			case VALID :
 				break;
 			default :
 				throw new CIVLInternalException("Unknown operator: " + operator,
@@ -372,6 +373,9 @@ public class CommonBinaryExpression extends CommonExpression
 				break;
 			case REMOTE :
 				op = "$on";
+				break;
+			case VALID :
+				op = " valid-operator ";
 				break;
 			default :
 				throw new CIVLInternalException("Unknown operator: " + operator,

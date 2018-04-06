@@ -288,13 +288,6 @@ public class LibmpiEvaluator extends BaseLibraryEvaluator
 		eval = getDataFrom(state, pid, process, ptrExpr, mpiPtr, realCount,
 				false, false, expression.getSource());
 		state = eval.state;
-		// getDataFrom always return a sequence of objects (i.e. an array of
-		// objects), but here if the count is equal to one, the receiver is
-		// expecting a single object:
-		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
-
-		if (reasoner.isValid(universe.equals(one, universe.length(eval.value))))
-			eval.value = universe.arrayRead(eval.value, zero);
 		return eval;
 	}
 
