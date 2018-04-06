@@ -169,9 +169,8 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator
 				startIndex = ((IntegerNumber) startIdxNum).intValue();
 			}
 			parentPtr = symbolicUtil.parentPointer(procsPointer);
-			eval = evaluator.dereference(procsSource, state, process,
-					typeFactory.incompleteArrayType(typeFactory.processType()),
-					parentPtr, false, true);
+			eval = evaluator.dereference(procsSource, state, process, parentPtr,
+					false, true);
 			state = eval.state;
 			procArray = eval.value;
 			stopIndex = startIndex + numOfProcs_int;
@@ -198,7 +197,7 @@ public class LibcivlcEvaluator extends BaseLibraryEvaluator
 				procPointer = eval.value;
 				state = eval.state;
 				eval = evaluator.dereference(procsSource, state, process,
-						typeFactory.processType(), procPointer, false, true);
+						procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
 				pidValue = modelFactory.getProcessId(proc);

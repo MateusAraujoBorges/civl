@@ -249,25 +249,6 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 
 	/**
 	 * @param expr
-	 * @return True if and only if the expression is part of an ACSL predicate
-	 */
-	static private boolean isACSLPredicate(ExpressionNode expr) {
-		if (expr.parent().nodeKind() == NodeKind.STATEMENT) {
-			StatementNode stmt = (StatementNode) expr.parent();
-
-			if (stmt instanceof ReturnNode
-					&& stmt.parent().nodeKind() == NodeKind.STATEMENT) {
-				StatementNode compStmt = (StatementNode) stmt.parent();
-
-				return (compStmt.statementKind() == StatementKind.COMPOUND
-						&& compStmt.parent() instanceof PredicateNode);
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * @param expr
 	 *            An instance of a {@link ExpressionNode}.
 	 * @return True iff the given expression is either a quantified expression
 	 *         (exist or forall) or a lambda expression (lambda or array
@@ -293,6 +274,25 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 			StatementNode stmt = (StatementNode) expr.parent();
 
 			return stmt.statementKind() == StatementKind.WHEN;
+		}
+		return false;
+	}
+
+	/**
+	 * @param expr
+	 * @return True if and only if the expression is part of an ACSL predicate
+	 */
+	static private boolean isACSLPredicate(ExpressionNode expr) {
+		if (expr.parent().nodeKind() == NodeKind.STATEMENT) {
+			StatementNode stmt = (StatementNode) expr.parent();
+
+			if (stmt instanceof ReturnNode
+					&& stmt.parent().nodeKind() == NodeKind.STATEMENT) {
+				StatementNode compStmt = (StatementNode) stmt.parent();
+
+				return (compStmt.statementKind() == StatementKind.COMPOUND
+						&& compStmt.parent() instanceof PredicateNode);
+			}
 		}
 		return false;
 	}

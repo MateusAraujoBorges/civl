@@ -163,11 +163,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
 
-			eval = evaluator
-					.dereference(source, state, process,
-							symbolicAnalyzer.civlTypeOfObjByPointer(source,
-									state, arrayPointer),
-							arrayPointer, false, true);
+			eval = evaluator.dereference(source, state, process, arrayPointer,
+					false, true);
 			state = eval.state;
 			// TODO: implement getStringConcrete() as an underneath
 			// implementation of getString()
@@ -262,13 +259,11 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				Evaluation eval;
 
 				eval = evaluator.dereference(arguments[0].getSource(), state,
-						process, typeFactory.charType(), charPointer1, true,
-						true);
+						process, charPointer1, true, true);
 				state = eval.state;
 				strObj1 = eval.value;
 				eval = evaluator.dereference(arguments[1].getSource(), state,
-						process, typeFactory.charType(), charPointer2, true,
-						true);
+						process, charPointer2, true, true);
 				state = eval.state;
 				strObj2 = eval.value;
 				if (strObj1.equals(strObj2))
@@ -347,10 +342,10 @@ public class LibstringExecutor extends BaseLibraryExecutor
 					.getSymRef(charPointer);
 			NumericExpression arrayIndex = arrayRef.getIndex();
 
-			eval = evaluator.dereference(
-					source, state, process, symbolicAnalyzer
-							.civlTypeOfObjByPointer(source, state, charPointer),
-					arrayPointer, false, true);
+			eval = evaluator.dereference(source, state, process, arrayPointer,
+					false, true);
+			eval = evaluator.dereference(source, state, process, arrayPointer,
+					false, true);
 			state = eval.state;
 			originalArray = eval.value;
 			startIndex = symbolicUtil.extractInt(source, arrayIndex);
@@ -375,8 +370,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			SymbolicExpression rootPointer = symbolicUtil
 					.makePointer(charPointer, universe.identityReference());
 			Evaluation evalRootPointer = evaluator.dereference(
-					arguments[0].getSource(), state, process,
-					typeFactory.charType(), rootPointer, true, true);
+					arguments[0].getSource(), state, process, rootPointer, true,
+					true);
 			SymbolicExpression rawRootVar = evalRootPointer.value;
 			// 2. Cast the root variable to the type of array-of-char
 			SymbolicType rawRootVarType = rawRootVar.type();

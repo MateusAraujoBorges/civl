@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.TreeMap;
 
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.ExtendedQuantifiedExpressionNode.ExtendedQuantifier;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -16,12 +17,14 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.BoundVariableExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.ExtendedQuantifiedExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LambdaExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.QuantifiedExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.RegularRangeExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLCompleteArrayType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -35,7 +38,6 @@ import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
-import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
@@ -179,7 +181,7 @@ public class QuantifiedExpressionEvaluator
 
 		boundVariables = new NumericSymbolicConstant[exprType.dimension()];
 		state = typeEval.state;
-		boundVariableStack.push(new HashMap<>());
+		boundVariableStack.push(new TreeMap<>());
 		for (Pair<List<Variable>, Expression> boundVariableSubList : boundVariableList) {
 			if (boundVariableSubList.right != null)
 				throw new CIVLUnimplementedFeatureException(
@@ -265,59 +267,38 @@ public class QuantifiedExpressionEvaluator
 		state = eval.state;
 		restriction = universe.and(restriction, (BooleanExpression) eval.value);
 
-		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
+		// Temporarily add restriction into path condition:
+		State newState = stateFactory.addToPathcondition(state, pid,
+				restriction);
+		BooleanExpression predicate = (BooleanExpression) evaluate(newState,
+				pid, expression.expression()).value;
 
-		if (reasoner.valid(universe.not(restriction))
-				.getResultType() == ResultType.YES) {
-			// restriction unsatisfied
-			switch (expression.quantifier()) {
-				case EXISTS :
-					eval = new Evaluation(state, universe.falseExpression());
-					break;
-				case FORALL :
-					eval = new Evaluation(state, universe.trueExpression());
-					break;
-				default :
-					throw new CIVLUnimplementedFeatureException(
-							expression.quantifier()
-									+ " quantified expression with unsatisfiable restriction",
-							expression.getSource());
-			}
-			return eval;
-		} else {
-			// Temporarily add restriction into path condition:
-			State newState = stateFactory.addToPathcondition(state, pid,
-					restriction);
-			BooleanExpression predicate = (BooleanExpression) evaluate(newState,
-					pid, expression.expression()).value;
+		// function references:
+		// Either "restriction AND predicate" or "restriction IMPLIES
+		// predicate" ?
+		LogicalOperation restirctionCombiner;
+		// Either "exists" or "forall" ?
+		ApplyConstantOperation quantifiedExpression;
 
-			// function references:
-			// Either "restriction AND predicate" or "restriction IMPLIES
-			// predicate" ?
-			LogicalOperation restirctionCombiner;
-			// Either "exists" or "forall" ?
-			ApplyConstantOperation quantifiedExpression;
-
-			switch (expression.quantifier()) {
-				case EXISTS :
-					restirctionCombiner = universe::and;
-					quantifiedExpression = universe::exists;
-					break;
-				case FORALL :
-					restirctionCombiner = universe::implies;
-					quantifiedExpression = universe::forall;
-					break;
-				default :
-					throw new CIVLInternalException(
-							"Unknown quantifier: " + expression.quantifier(),
-							expression.getSource());
-			}
-			predicate = restirctionCombiner.operation(restriction, predicate);
-			for (SymbolicConstant complexBoundVar : boundVariables)
-				predicate = quantifiedExpression.operation(complexBoundVar,
-						predicate);
-			eval = new Evaluation(state, predicate);
+		switch (expression.quantifier()) {
+			case EXISTS :
+				restirctionCombiner = universe::and;
+				quantifiedExpression = universe::exists;
+				break;
+			case FORALL :
+				restirctionCombiner = universe::implies;
+				quantifiedExpression = universe::forall;
+				break;
+			default :
+				throw new CIVLInternalException(
+						"Unknown quantifier: " + expression.quantifier(),
+						expression.getSource());
 		}
+		predicate = restirctionCombiner.operation(restriction, predicate);
+		for (SymbolicConstant complexBoundVar : boundVariables)
+			predicate = quantifiedExpression.operation(complexBoundVar,
+					predicate);
+		eval = new Evaluation(state, predicate);
 		boundVariableStack.pop();
 		return eval;
 	}
@@ -510,7 +491,7 @@ public class QuantifiedExpressionEvaluator
 				freeVariable.getSource(), false);
 		state = typeEval.state;
 		varType = typeEval.type;
-		boundVariableStack.push(new HashMap<>());
+		boundVariableStack.push(new TreeMap<>());
 		freeVariableValue = (NumericSymbolicConstant) universe
 				.symbolicConstant(freeVariable.name().stringObject(), varType);
 		boundVariableStack.peek().put(freeVariableValue.name().getString(),
@@ -534,6 +515,61 @@ public class QuantifiedExpressionEvaluator
 		eval.value = universe.lambda(freeVariableValue, eval.value);
 		boundVariableStack.pop();
 		return eval;
+	}
+
+	@Override
+	protected Evaluation evaluateValid(State state, int pid, Expression pointer,
+			Expression offsets, CIVLSource source)
+			throws UnsatisfiablePathConditionException {
+		Evaluation eval;
+
+		if (offsets.getExpressionType().isIntegerType()) {
+			Expression singlePointer = modelFactory.binaryExpression(source,
+					BINARY_OPERATOR.PLUS, pointer, offsets);
+
+			eval = evaluate(state, pid, singlePointer);
+			eval.value = symbolicAnalyzer.isDerefablePointer(state,
+					eval.value).left;
+			return eval;
+		} else {
+			// for \valid(p + range), it is evaluated as
+			// forall int i. i in range -> dereferable(p + i)
+			RegularRangeExpression range = (RegularRangeExpression) offsets;
+			// step is always one ...
+			NumericExpression lowVal, highVal;
+			NumericSymbolicConstant offset = (NumericSymbolicConstant) universe
+					.symbolicConstant(
+							universe.stringObject(BOUNDED_OFFSET_IDENTIFIER),
+							universe.integerType());
+
+			eval = evaluate(state, pid, range);
+			state = eval.state;
+			lowVal = symbolicUtil.getLowOfRegularRange(eval.value);
+			highVal = symbolicUtil.getHighOfRegularRange(eval.value);
+
+			BooleanExpression offsetBounds = universe.and(
+					universe.lessThanEquals(lowVal, offset),
+					universe.lessThanEquals(offset, highVal));
+			Expression boundVar = modelFactory.boundVariableExpression(
+					offsets.getSource(),
+					modelFactory.identifier(offsets.getSource(),
+							BOUNDED_OFFSET_IDENTIFIER),
+					typeFactory.integerType());
+			Expression eachPointer = modelFactory.binaryExpression(source,
+					BINARY_OPERATOR.POINTER_ADD, pointer, boundVar);
+
+			state = stateFactory.pushAssumption(state, pid, offsetBounds);
+			boundVariableStack.push(new TreeMap<>());
+			boundVariableStack.peek().put(BOUNDED_OFFSET_IDENTIFIER, offset);
+			eval = evaluate(state, pid, eachPointer);
+			eval.value = symbolicAnalyzer.isDerefablePointer(state,
+					eval.value).left;
+			boundVariableStack.pop();
+			eval.state = stateFactory.popAssumption(eval.state, pid);
+			eval.value = universe.forallInt(offset, lowVal, highVal,
+					(BooleanExpression) eval.value);
+			return eval;
+		}
 	}
 
 	/* ********************** Private helper methods ************************ */

@@ -1,0 +1,22 @@
+#include <assert.h>
+
+#pragma CIVL ACSL
+
+$input int N;
+$assume(N > 0);     
+$input double a[N];
+
+int main() {
+  int i = 0;
+  double max = a[0];
+  
+  /*@ loop invariant 1 <= i && i <= N;
+    @ loop invariant \forall int t; 0 <= t && t < i ==>
+    @                               a[t] <= max;
+    @*/
+  for (i = 1; i < N; i++)
+    if (a[i] > max)
+      max = a[i];
+
+  assert($forall (int t : 0 .. N-1) a[t] < max);
+}

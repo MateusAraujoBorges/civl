@@ -1,0 +1,46 @@
+#include <stdio.h>
+#ifdef _CIVL
+#include <civlc.cvh>
+#pragma CIVL ACSL
+#endif
+
+#ifdef _CIVL
+$input int ni,nj;
+$assume(ni>1);
+//$assume(ni<10);
+$assume(nj>1);
+//$assume(nj<10);
+$input double uin[ni][nj];
+#endif
+
+int main(int argc, char** argv) {
+  int i,j,ir,jr;
+  double u1[ni][nj];
+  double u2[ni][nj];
+  
+  $assume($forall (int i : 0 .. ni-1) 
+	  ($forall (int j : 0 .. nj-1) u1[i][j] == 0 && u2[i][j] == 0)
+	  );
+
+  // straightforward loop nest
+  /*@ loop invariant 1 <= i && i < ni;
+    @ loop invariant \forall int t, k; 1 <= t && t < i && 1 <= k && k < nj-1 
+    @                                  ==> u1[t][k] == uin[t][k] * uin[t][k];
+    @ loop assigns  u1[1 .. ni-2][1 .. nj-2], i, j;
+    @*/
+  for(i=1;i<ni-1;i++) {
+  /*@ loop invariant 1 <= i && i < ni;
+    @ loop invariant 1 <= j && j < nj;
+    @ loop invariant \forall int k; 1 <= k && k < j 
+    @                                  ==> u1[i][k] == uin[i][k] * uin[i][k];
+    @ loop assigns  u1[i][1 .. nj-2], j;
+    @*/
+    for(j=1;j<nj-1;j++) {
+      u1[i][j] = uin[i][j]*uin[i][j];
+    }
+  }
+  $assert($forall (int i : 1 .. ni-2) 
+	  ($forall (int j : 1 .. nj-2) u1[i][j] == uin[i][j] * uin[i][j])
+	  );
+}
+

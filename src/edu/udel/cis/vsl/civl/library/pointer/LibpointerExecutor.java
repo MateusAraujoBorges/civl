@@ -268,10 +268,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		for (ReferenceExpression ref : leafs)
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers) {
-			eval = evaluator.dereference(
-					source, state, process, symbolicAnalyzer
-							.civlTypeOfObjByPointer(source, state, leafPtr),
-					leafPtr, false, true);
+			eval = evaluator.dereference(source, state, process, leafPtr, false,
+					true);
 			state = eval.state;
 			if (universe.equals(eval.value, argumentValues[1]).isTrue()) {
 				result = trueValue;
@@ -303,10 +301,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 		for (ReferenceExpression ref : leafs)
 			leafPointers.add(this.symbolicUtil.setSymRef(objectPointer, ref));
 		for (SymbolicExpression leafPtr : leafPointers) {
-			eval = evaluator.dereference(
-					source, state, process, symbolicAnalyzer
-							.civlTypeOfObjByPointer(source, state, leafPtr),
-					leafPtr, false, true);
+			eval = evaluator.dereference(source, state, process, leafPtr, false,
+					true);
 			state = eval.state;
 			if (universe.equals(eval.value, argumentValues[1]).isFalse()) {
 				result = falseValue;
@@ -445,7 +441,6 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression left = argumentValues[0];
-		Expression rightExpr = arguments[1];
 		SymbolicExpression right = argumentValues[1];
 		Evaluation eval;
 		CIVLSource sourceLeft = arguments[0].getSource();
@@ -515,11 +510,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 						ErrorKind.DEREFERENCE, msg.toString());
 				throw new UnsatisfiablePathConditionException();
 			}
-			CIVLPointerType ptrType = (CIVLPointerType) rightExpr
-					.getExpressionType();
-
-			eval = evaluator.dereference(sourceRight, state, process,
-					ptrType.baseType(), right, false, false);
+			eval = evaluator.dereference(sourceRight, state, process, right,
+					false, false);
 			state = eval.state;
 			rightValue = eval.value;
 			state = primaryExecutor.assign(source, state, pid, left,
@@ -547,17 +539,14 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression first, second, rhs;
-		CIVLPointerType ptrType = (CIVLPointerType) arguments[0]
-				.getExpressionType();
 		Evaluation eval = evaluator.dereference(arguments[0].getSource(), state,
-				process, ptrType.baseType(), argumentValues[0], false, true);
+				process, argumentValues[0], false, true);
 		int invalidArg = -1;
 
 		state = eval.state;
 		first = eval.value;
-		ptrType = (CIVLPointerType) arguments[1].getExpressionType();
 		eval = evaluator.dereference(arguments[1].getSource(), state, process,
-				ptrType.baseType(), argumentValues[1], false, true);
+				argumentValues[1], false, true);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))
@@ -640,16 +629,12 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 					"Attempt to dereference a invalid pointer:" + msg);
 			return new Evaluation(state, null);
 		}
-		CIVLPointerType ptrType = (CIVLPointerType) arguments[0]
-				.getExpressionType();
-
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				ptrType.baseType(), argumentValues[0], false, true);
+				argumentValues[0], false, true);
 		state = eval.state;
 		first = eval.value;
-		ptrType = (CIVLPointerType) arguments[1].getExpressionType();
 		eval = evaluator.dereference(arguments[1].getSource(), state, process,
-				ptrType.baseType(), argumentValues[1], false, true);
+				argumentValues[1], false, true);
 		state = eval.state;
 		second = eval.value;
 		if (!symbolicUtil.isInitialized(first))

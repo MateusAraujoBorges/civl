@@ -1,0 +1,38 @@
+/*
+ * COST Verification Competition. vladimir@cost-ic0701.org
+ *
+ * Challenge 1: Maximum in an array
+ *
+ * Given: A non-empty integer array a.
+ *
+ * Verify that the index returned by the method max() given below points to
+ * an element maximal in the array.
+ */
+
+#pragma CIVL ACSL
+
+$input int n;
+$assume(n > 0);
+$input int a[n];
+
+int max(int *a, int len) {
+  int x = 0;
+  int y = len-1;
+
+  /*@ loop invariant 0 <= x && x <= y && y < len ;
+    @ loop invariant \forall int i; (0 <= i && i < x || y < i && i < len) 
+    @                                ==> a[i] <= (a[x] > a[y] ? a[x] : a[y]);
+    @ loop assigns x, y;
+    @*/
+  while (x != y) {
+    if (a[x] <= a[y]) x++;
+    else y--;
+  }
+  return x;
+}
+
+int main() {
+  int ret = max(a, n);
+
+  $assert($forall (int i : 0 .. (n-1)) a[i] < a[ret]);
+}

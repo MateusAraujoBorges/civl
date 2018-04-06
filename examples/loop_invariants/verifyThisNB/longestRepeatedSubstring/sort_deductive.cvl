@@ -1,0 +1,120 @@
+/* 
+ * Function 'compare' are all abstracted, too many unnecessary non-determinisms.
+ * 
+ * Command: civl verify -collectSymbolicConstants sort_deductive.cvl
+ */
+#include <stdlib.h>
+#include <string.h>
+#include <civlc.cvh>
+#include <assert.h>
+
+#pragma CIVL ACSL
+
+$input int N;
+$assume(N > 0);
+$input int X1[N];
+
+/* string 'x' is not greater than string 'y' with the specific length */
+/*@
+  @  predicate ngt_len(int x, int y, int l) = 
+  @                   0 <= l && l <= N && x + l <= N && y + l <= N 
+  @                          && (x + l == N || (y + l < N ==> X1[y+l] > X1[x+l]))
+  @                          && (\forall int k1; 0 <= k1 && k1 < l ==> X1[(x)+k1] == X1[(y)+k1]);
+ */
+
+/* string 'x' is NOT greater than string 'y' */
+/*@ 
+  @  predicate ngt(int x, int y) = 
+  @            (\exists int l; ngt_len(x, y, l) &&
+  @             !(\exists int o; ngt_len(x, y, o) && o != l)
+  @            );
+  @*/
+
+int lcp(int *arr, int n, int x, int y) {
+  int l = 0;
+
+  /*@ loop invariant 0 <= l && l <= n;
+    @ loop invariant 0 <= x + l && x + l <= n;
+    @ loop invariant 0 <= y + l && y + l <= n;
+    @ loop invariant \forall int i; 0 <= i && i < l ==> arr[x+i]==arr[y+i];
+    @ loop assigns l;
+    @*/
+  while (x+l<n && y+l<n && arr[x+l]==arr[y+l]) {
+      l++;
+  }
+  return l;
+}
+
+/* returns:
+ *   0 if x and y points to the same suffix;
+ *   poistive value if x "is greater than" y;
+ *   negative or zero value if x "is NO greater than" y;
+ */
+int compare(int *a, int n, int x, int y) {
+  if (x == y) return 0;
+  
+  int c = $choose_int(2);
+  int ret;	
+
+  $havoc(&ret);	
+  if (c == 0) {
+    $assume(ngt(x, y) && ret <= 0);
+    return ret;
+  } else {
+    $assume(ngt(y, x) && ret > 0);
+    return ret;
+  }
+}
+
+void sort(int *a, int n, int *data) {
+  /*@ loop invariant 1 <= i && i <= n;
+    @ loop invariant \forall int k; 1 <= k && k < i ==> ngt(data[k-1],data[k]);
+    @ loop invariant \forall int k; 0 <= k && k < n ==> 0 <= data[k] && data[k] < n;           // data elements are valid
+    @ loop invariant \forall int t, k; 0 <= k && k < n && 0 <= t && t < n && k != t ==> 
+    @                                  data[k] != data[t];
+    @ loop assigns i, data[0 .. n-1];
+    @*/
+  for(int i = 1; i < n; i++) {
+    int comp = compare(a, n, data[i - 1], data[i]);
+
+    /*@ loop invariant 0 <= j && j <= i;
+      @ loop invariant \forall int k; 0 <= k && k < n ==> 0 <= data[k] && data[k] < n;           // data elements are valid
+      @ loop invariant \forall int t, k; 0 <= k && k < n && 0 <= t && t < n && k != t ==> 
+      @                                  data[k] != data[t];
+      @ loop invariant \forall int k; j < k && k <= i ==> ngt(data[k-1],data[k]);
+      @ loop invariant \forall int k; 0 < k && k < j ==> ngt(data[k-1],data[k]);
+      @ loop invariant comp <= 0 ==> (\forall int k; 0 < k && k <= j ==> ngt(data[k-1],data[k]));
+      @ loop invariant (comp > 0  && 0 < j) ==>  ngt(data[j], data[j-1]);
+      @ loop invariant (comp > 0 && 0 < j && j < i) ==> ngt(data[j-1], data[j+1]) ;
+      @ loop assigns j, comp, data[0 .. n-1];
+      @*/
+    for(int j = i; j > 0 && comp > 0;) {
+      // swap:
+      int tmp = data[j];
+      
+      data[j] = data[j-1];
+      data[j-1] = tmp;
+      j--;
+      if (j > 0)
+	comp = compare(a, n, data[j - 1], data[j]);
+    }
+  }
+  $assert($forall (int i : 1 .. N-1) ngt(data[i - 1], data[i]));
+}
+
+int main() {
+  int result[2] = {0, 0};
+  int n = N;
+  int suffixes[n];
+
+  /*@ loop invariant 0 <= i  && i <= n;
+    @ loop invariant \forall int t; 0 <= t && t < i ==> suffixes[t] == t;
+    @ loop assigns suffixes[0 .. n-1], i;
+    @*/
+  for(int i=0; i<n; i++) {
+    suffixes[i] = i;
+  }
+  sort(X1, n, suffixes);
+  return 0;
+}
+

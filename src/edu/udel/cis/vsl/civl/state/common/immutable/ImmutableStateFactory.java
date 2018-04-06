@@ -77,6 +77,10 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 public class ImmutableStateFactory implements StateFactory {
 
 	/* ************************** Instance Fields ************************** */
+	/**
+	 * A reference to a reasoner whose context is literal true.
+	 */
+	private Reasoner trueContextReasoner = null;
 
 	/**
 	 * The number of instances of states that have been created.
@@ -307,6 +311,7 @@ public class ImmutableStateFactory implements StateFactory {
 		}
 		for (int i = 0; i < CACHE_INCREMENT; i++)
 			nullList.add(null);
+		this.trueContextReasoner = universe.reasoner(universe.trueExpression());
 	}
 
 	/* ********************** Methods from StateFactory ******************** */
@@ -1069,6 +1074,8 @@ public class ImmutableStateFactory implements StateFactory {
 		return simplifyWork(theState, true);
 	}
 
+	// TODO: why need this ?
+	@SuppressWarnings("unused")
 	private BooleanExpression getContextOfSizeofSymbols(Reasoner reasoner) {
 		Map<SymbolicConstant, SymbolicExpression> map = reasoner
 				.constantSubstitutionMap();
@@ -1108,14 +1115,9 @@ public class ImmutableStateFactory implements StateFactory {
 
 		newPathCondition = reasoner.getReducedContext();
 
-		if (newPathCondition != pathCondition) {
-			if (nsat(reasoner, newPathCondition))
+		if (newPathCondition != pathCondition)
+			if (nsat(newPathCondition))
 				newPathCondition = universe.falseExpression();
-			else
-				newPathCondition = universe.and(newPathCondition,
-						this.getContextOfSizeofSymbols(reasoner));
-		} else
-			newPathCondition = null;
 		for (int i = 0; i < numScopes; i++) {
 			ImmutableDynamicScope oldScope = theState.getDyscope(i);
 			int numVars = oldScope.numberOfVariables();
@@ -1238,8 +1240,8 @@ public class ImmutableStateFactory implements StateFactory {
 	private ImmutableState collectHavocVariablesInReferredStates(
 			ImmutableState state, UnaryOperator<SymbolicExpression> renamer,
 			int collectReferredStateDepth) throws CIVLHeapException {
-		if (!config.isEnableMpiContract())
-			return state;
+		// if (!config.isEnableMpiContract())
+		// return state;
 		if (collectReferredStateDepth <= 0)
 			return state;
 
@@ -1741,8 +1743,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 *            The given claim.
 	 * @return True iff the given claim is evaluated to be false.
 	 */
-	private boolean nsat(Reasoner reasoner, BooleanExpression claim) {
-		return reasoner.isValid(universe.not(claim));
+	private boolean nsat(BooleanExpression claim) {
+		return trueContextReasoner.isValid(universe.not(claim));
 	}
 
 	/**
@@ -2741,13 +2743,10 @@ public class ImmutableStateFactory implements StateFactory {
 							+ "still throws an Heap Exception",
 					e.source());
 		}
-		return saveStateWorker(result);
-	}
 
-	private Pair<Integer, State> saveStateWorker(ImmutableState state) {
-		int referenceID = collateStateStorage.saveCollateState(state);
+		int referenceID = collateStateStorage.saveCollateState(result);
 
-		return new Pair<>(referenceID, state);
+		return new Pair<>(referenceID, result);
 	}
 
 	@Override
@@ -2822,9 +2821,12 @@ public class ImmutableStateFactory implements StateFactory {
 		ImmutableState imuState = ((ImmutableState) state);
 		DynamicWriteSet[] wsStack = imuState.getProcessState(pid)
 				.getWriteSets();
-		int head = wsStack.length - 1;
+		if (wsStack.length > 0) {
+			int head = wsStack.length - 1;
 
-		return wsStack[head];
+			return wsStack[head];
+		} else
+			return null;
 	}
 
 	@Override

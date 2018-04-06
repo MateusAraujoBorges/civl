@@ -23,6 +23,7 @@ import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
 import edu.udel.cis.vsl.civl.model.IF.expression.CastExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.ConditionalExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DereferenceExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DomainGuardExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.DotExpression;
@@ -105,7 +106,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * The size threshold that decides if a symbolic expression is printed in a
 	 * full way or a compressed way.
 	 */
-	private static int PRINT_SIZE_THRESHOLD = 100;
+	private static int PRINT_SIZE_THRESHOLD = 700;
 
 	private final String SEF_START = "[";
 	private final String SEF = ":=";
@@ -2349,10 +2350,21 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 					break;
 				}
 				case COND : {
-					throw new CIVLInternalException(
-							"Conditional expression is unreachable because it should"
-									+ " have been traslated away by the model builder.",
-							expression.getSource());
+					ConditionalExpression condExpr = (ConditionalExpression) expression;
+
+					temp = expressionEvaluationWorker(state, pid,
+							condExpr.getCondition(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					temp = expressionEvaluationWorker(state, pid,
+							condExpr.getTrueBranch(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					temp = expressionEvaluationWorker(state, pid,
+							condExpr.getFalseBranch(), resultOnly, false);
+					state = temp.left;
+					result.append(temp.right);
+					break;
 				}
 				case DEREFERENCE : {
 					DereferenceExpression dereference = (DereferenceExpression) expression;
@@ -2378,11 +2390,13 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						if (i != 0)
 							result.append(", ");
-						result.append(this.symbolicExpressionToString(
-								var.getSource(), state, var.type(),
-								state.getVariableValue(
-										state.getDyscope(pid, var.scope()),
-										var.vid())));
+						result.append(
+								this.symbolicExpressionToString(var.getSource(),
+										state, var.type(),
+										state.getVariableValue(
+												state.getDyscope(pid,
+														var.scope()),
+												var.vid())));
 					}
 					result.append(")");
 					break;
@@ -2785,9 +2799,11 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 
 						claim = reasoner.simplify(claim);
 						if (result == ResultType.YES) {
-							if (!derefable && reasoner
-									.valid(universe.equals(length, index))
-									.getResultType() != ResultType.NO) {
+							if (!derefable
+									&& reasoner
+											.valid(universe.equals(length,
+													index))
+											.getResultType() != ResultType.NO) {
 								return new Triple<>(null, claim, result);
 							} else {
 								return new Triple<>(

@@ -835,7 +835,7 @@ public interface StateFactory {
 	 *            The PID of the calling process whose write set stack will be
 	 *            peeked.
 	 * @return the top frame in the write set stack associates to the given
-	 *         process.
+	 *         process or Java null if the stack is empty.
 	 */
 	DynamicWriteSet peekWriteSet(State state, int pid);
 

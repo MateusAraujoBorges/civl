@@ -1,0 +1,67 @@
+/* Partially verify the sorting algorithm for unbounded number of
+ * elements.  So far one can not express "permutation" in CIVL and the
+ * ACSL subset supported by CIVL.
+ */
+#include <stdio.h>
+#pragma CIVL ACSL
+$input int n; // size of array
+$assume(1<=n);
+$input int LEFT;
+$input int RIGHT;
+$assume(1<=LEFT && LEFT < RIGHT && RIGHT<n-1);
+
+int main() {
+  int a[n];
+
+  // assumption: a[LEFT-1] is less than every thing of right of LEFT:
+  $assume($forall (int j : LEFT .. RIGHT) a[j] >= a[LEFT-1]);
+  int left = LEFT, right = RIGHT;
+  int k = left;
+  
+  left++;
+  /*@ loop invariant 2 <= left && left <= right + 2;
+    @ loop invariant k == left - 1;
+    @ loop invariant LEFT <= k && k <= RIGHT+1 && k == left - 1;
+    @ loop invariant \forall int t; LEFT <= t && t < k ==> a[t - 1] <= a[t];
+    @ loop invariant \forall int t; LEFT <= t && t <= RIGHT ==> a[LEFT-1] <= a[t];
+    @ loop assigns k, left, a[LEFT .. n-1];
+    @*/
+  for (;left <= right;) {
+    int a1 = a[k], a2 = a[left];
+
+    if (a1 < a2) {
+      a2 = a1; a1 = a[left];
+    }
+    k--;
+    /*@ loop invariant LEFT - 1 <= k && k < left - 1;
+      @ loop invariant a1 < a[k] ==> k >= LEFT;
+      @ loop invariant \forall int t; LEFT <= t && t <= k ==> a[t - 1] <= a[t];
+      @ loop invariant \forall int t; k + 3 < t && t <= left ==> a[t - 1] <= a[t];
+      @ loop invariant \forall int t; LEFT <= t && t <= RIGHT ==> a[LEFT-1] <= a[t];
+      @ loop invariant k + 3 <= left ==> a[k + 3] >= a1 && a[k+3] >= a[k];
+      @ loop assigns k, a[LEFT .. n-1];
+      @*/
+    while (a1 < a[k]) {
+      a[k + 2] = a[k];
+      k--;
+    }
+    a[++k + 1] = a1;
+    k--;
+    /*@ loop invariant LEFT - 1 <= k && k < left - 1;
+      @ loop invariant a2 < a[k] ==> k >= LEFT;
+      @ loop invariant \forall int t; LEFT <= t && t <= k ==> a[t - 1] <= a[t];
+      @ loop invariant \forall int t; k + 2 < t && t <= left ==> a[t - 1] <= a[t];
+      @ loop invariant \forall int t; LEFT <= t && t <= RIGHT ==> a[LEFT-1] <= a[t];
+      @ loop invariant k + 2 <= left ==> a[k + 2] >= a2 && a[k + 2] >= a[k];
+      @ loop assigns k, a[LEFT .. n-1];
+      @*/
+    while (a2 < a[k]) {
+      a[k + 1] = a[k]; 
+      k--;
+    }
+    a[k + 1] = a2;
+    k = ++left;
+    left++;
+  }
+  $assert( $forall (int i : (LEFT-2) .. RIGHT-2) a[i] <= a[i+1] );
+}

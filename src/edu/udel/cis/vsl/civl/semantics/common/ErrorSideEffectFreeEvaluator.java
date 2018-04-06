@@ -121,13 +121,12 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 
 	@Override
 	public Evaluation dereference(CIVLSource source, State state,
-			String process, CIVLType referredType, SymbolicExpression pointer,
-			boolean checkOutput, boolean strict)
-			throws UnsatisfiablePathConditionException {
+			String process, SymbolicExpression pointer, boolean checkOutput,
+			boolean strict) throws UnsatisfiablePathConditionException {
 		boolean muteErrorSideEffects = true; // mute error side effects
 
-		return dereferenceWorker(source, state, process, referredType, pointer,
-				checkOutput, false, strict, muteErrorSideEffects);
+		return dereferenceWorker(source, state, process, pointer, checkOutput,
+				false, strict, muteErrorSideEffects);
 	}
 
 	@Override

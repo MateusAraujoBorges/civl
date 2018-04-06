@@ -1,0 +1,29 @@
+#include<assert.h>
+
+#pragma CIVL ACSL
+
+$input int N;
+$assume(N > 0);
+$input double a[N];
+$input double b[N];
+
+int arrayEquals(double * a, double * b, int n) {
+  int i;
+  
+  /*@ loop invariant 0 <= i && i <= n;
+    @ loop invariant \forall int j; 0<=j && j<i ==> a[j] == b[j];  
+    @*/
+  for (i = 0; i < n; i++) 
+    if (a[i] != b[i])
+      break;
+  return i;
+}
+
+int main() {
+  int ret = arrayEquals(a, b, N);
+  
+
+  assert($forall (int i: 0 .. ret-1) a[i] == b[i]);
+  if (ret < N)
+    assert(a[ret] != b[ret]);
+}

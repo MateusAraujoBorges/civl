@@ -13,7 +13,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
@@ -91,7 +90,6 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression arrayPtr = argumentValues[0];
 		NumericExpression count = (NumericExpression) argumentValues[1];
-		Expression elePointerExpr = arguments[2];
 		SymbolicExpression elePointer = argumentValues[2];
 		CIVLSource arrayPtrSource = arguments[0].getSource();
 		CIVLSource elePtrSource = arguments[2].getSource();
@@ -163,11 +161,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 					return new Evaluation(state, null);
 				} else {
 					SymbolicExpression eleValue, arrayValue;
-					CIVLPointerType ptrType = (CIVLPointerType) elePointerExpr
-							.getExpressionType();
 					Evaluation eval = evaluator.dereference(elePtrSource, state,
-							process, ptrType.baseType(), elePointer, false,
-							true);
+							process, elePointer, false, true);
 
 					state = eval.state;
 					eleValue = eval.value;
@@ -243,7 +238,6 @@ public class LibseqExecutor extends BaseLibraryExecutor
 	private Evaluation executeSeqLength(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
-		Expression seqPtrExpr = arguments[0];
 		SymbolicExpression seqPtr = argumentValues[0];
 		CIVLSource seqSource = arguments[0].getSource();
 		SymbolicExpression result = null;
@@ -258,10 +252,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 									seqSource, state, null, seqPtr));
 			throw new UnsatisfiablePathConditionException();
 		} else {
-			CIVLPointerType ptrType = (CIVLPointerType) seqPtrExpr
-					.getExpressionType();
 			Evaluation eval = evaluator.dereference(seqSource, state, process,
-					ptrType.baseType(), seqPtr, false, true);
+					seqPtr, false, true);
 			SymbolicExpression seq;
 
 			state = eval.state;
@@ -364,8 +356,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 				throw new UnsatisfiablePathConditionException();
 			}
 		}
-		eval = evaluator.dereference(arrayPtrSource, state, process, arrayType,
-				arrayPtr, false, true);
+		eval = evaluator.dereference(arrayPtrSource, state, process, arrayPtr,
+				false, true);
 		state = eval.state;
 		arrayValue = eval.value;
 		if (arrayValue.operator() != SymbolicOperator.ARRAY) {
@@ -417,11 +409,8 @@ public class LibseqExecutor extends BaseLibraryExecutor
 			} else
 				valuePtr = valuesPtr;
 			if (isInsert) {
-				eval = evaluator
-						.dereference(source, state, process,
-								symbolicAnalyzer.civlTypeOfObjByPointer(source,
-										state, valuePtr),
-								valuePtr, false, true);
+				eval = evaluator.dereference(source, state, process, valuePtr,
+						false, true);
 				state = eval.state;
 				value = eval.value;
 

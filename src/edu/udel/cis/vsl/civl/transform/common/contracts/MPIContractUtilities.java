@@ -24,6 +24,8 @@ public class MPIContractUtilities {
 
 	static final String EXTENT_VAR_PREFIX = CIVL_CONTRACT_PREFIX + "_extent_";
 
+	static final String BOUND_VAR_PREFIX = CIVL_CONTRACT_PREFIX + "_bv_";
+
 	/* **************** Artificial identifier names: *****************/
 
 	static final String MPI_COMM_RANK_CONST = "$mpi_comm_rank";
