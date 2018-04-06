@@ -54,6 +54,24 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		implements
 			LibraryExecutor {
 
+	/**
+	 * The name of CIVL uninterpreted function:<br>
+	 * char[] CIVL_dycast2ArrChar(DYNAMIC_TYPE arg0); <br>
+	 * This function will convert the given <code>arg0</code> from its original
+	 * type to the type of array-of-char. The function definition is dynamically
+	 * generated according to the original type of <code>arg0</code>.
+	 */
+	static final private String CIVL_DYCAST_ARRCHAR = "CIVL_dycast2ArrChar";
+
+	/**
+	 * The name of CIVL uninterpreted function:<br>
+	 * int CIVL_strlen(char[] arg0, refType arg1); <br>
+	 * This function is used for handling the symbolic char array and returns a
+	 * symbolic non-nagative value representing the length of the char array,
+	 * which is the actual argument of the function 'strlen'.
+	 */
+	static final private String CIVL_STRLEN = "CIVL_strlen";
+
 	/* **************************** Constructors *************************** */
 
 	/**
@@ -380,7 +398,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			SymbolicFunctionType typeCastFuncType = universe.functionType(
 					Arrays.asList(rawRootVarType), ArrayOfCharType);
 			SymbolicExpression typeCastFunc = universe.symbolicConstant(
-					universe.stringObject("CIVL_dycast2ArrChar"),
+					universe.stringObject(CIVL_DYCAST_ARRCHAR),
 					typeCastFuncType);
 			SymbolicExpression castedRootVar = universe.apply(typeCastFunc,
 					Arrays.asList(rawRootVar));
@@ -391,7 +409,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 					Arrays.asList(ArrayOfCharType, universe.referenceType()),
 					universe.integerType());
 			SymbolicExpression func = universe.symbolicConstant(
-					universe.stringObject("CIVL_strlen"), funcType);
+					universe.stringObject(CIVL_STRLEN), funcType);
 			SymbolicExpression symResult = universe.apply(func,
 					Arrays.asList(castedRootVar, refExpr));
 			// Add PC: 0 <= CIVL_strlen(arg0, arg1)
