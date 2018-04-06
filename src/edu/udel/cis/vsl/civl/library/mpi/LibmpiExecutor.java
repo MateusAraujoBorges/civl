@@ -8,7 +8,6 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.contract.FunctionContract.ContractKind;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -294,8 +293,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 							+ "] of"
 							+ " MPI routines is not consistent with the specified MPI_Datatype.");
 		}
-		eval = evaluator.dereference(source, state, process, mpiType2Civl.left,
-				pointer, false, true);
+		eval = evaluator.dereference(source, state, process, pointer, false,
+				true);
 		state = eval.state;
 		count = universe.multiply(primitiveTypeCount, count);
 		// TODO: here needs be improved:
@@ -368,9 +367,8 @@ public class LibmpiExecutor extends BaseLibraryExecutor
 		Evaluation eval;
 		int sid;
 
-		eval = evaluator.dereference(source, state, process,
-				typeFactory.systemType(ModelConfiguration.COMM_TYPE),
-				commHandle, false, true);
+		eval = evaluator.dereference(source, state, process, commHandle, false,
+				true);
 		state = eval.state;
 		gcommHandle = universe.tupleRead(eval.value, oneObject);
 		sid = stateFactory

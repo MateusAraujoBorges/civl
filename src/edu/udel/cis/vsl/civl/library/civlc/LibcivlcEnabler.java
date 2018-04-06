@@ -299,7 +299,7 @@ public class LibcivlcEnabler extends BaseLibraryEnabler
 						pointerAdd, procsPointer, offSetV);
 				procPointer = eval.value;
 				state = eval.state;
-				eval = evaluator.dereference(procsSource, state, process, null,
+				eval = evaluator.dereference(procsSource, state, process,
 						procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;

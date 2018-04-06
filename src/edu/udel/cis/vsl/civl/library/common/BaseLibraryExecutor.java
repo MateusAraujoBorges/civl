@@ -13,7 +13,6 @@ import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
 import edu.udel.cis.vsl.civl.model.IF.location.Location;
 import edu.udel.cis.vsl.civl.model.IF.statement.CallOrSpawnStatement;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Executor;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -161,11 +160,8 @@ public abstract class BaseLibraryExecutor extends LibraryComponent
 					.isDerefablePointer(state, firstElementPointer);
 
 			if (checkDerefable.right == ResultType.YES) {
-				CIVLPointerType ptrType = (CIVLPointerType) arguments[0]
-						.getExpressionType();
-
 				eval = evaluator.dereference(source, state, process,
-						ptrType.baseType(), firstElementPointer, false, true);
+						firstElementPointer, false, true);
 				heapObject = eval.value;
 				state = eval.state;
 			}

@@ -18,8 +18,6 @@ import edu.udel.cis.vsl.civl.kripke.IF.LibraryEnablerLoader;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
@@ -93,11 +91,6 @@ public abstract class CommonEnabler implements Enabler {
 	 * The unique model factory used by the system.
 	 */
 	protected ModelFactory modelFactory;
-
-	/**
-	 * A reference to the {@link CIVLTypeFactory}
-	 */
-	private CIVLTypeFactory typeFactory;
 
 	/**
 	 * The option to enable/disable the printing of ample sets of each state.
@@ -198,7 +191,6 @@ public abstract class CommonEnabler implements Enabler {
 				|| civlConfig.showAmpleSetWtStates();
 		this.showAmpleSetWtStates = civlConfig.showAmpleSetWtStates();
 		this.modelFactory = evaluator.modelFactory();
-		this.typeFactory = modelFactory.typeFactory();
 		this.universe = modelFactory.universe();
 		falseExpression = universe.falseExpression();
 		trueExpression = universe.trueExpression();
@@ -764,9 +756,8 @@ public abstract class CommonEnabler implements Enabler {
 		place = symbolicUtil.extractInt(csSource, (NumericExpression) universe
 				.tupleRead(colStateComp, universe.intObject(0)));
 		gstateHandle = universe.tupleRead(colStateComp, universe.intObject(1));
-		eval = evaluator.dereference(csSource, state, "p" + pid,
-				typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
-				gstateHandle, false, true);
+		eval = evaluator.dereference(csSource, state, "p" + pid, gstateHandle,
+				false, true);
 		state = eval.state;
 		colStateID = this.modelFactory.getStateRef(
 				universe.tupleRead(eval.value, universe.intObject(1)));
@@ -835,7 +826,6 @@ public abstract class CommonEnabler implements Enabler {
 			state = eval.state;
 		}
 		eval = evaluator.dereference(collator.getSource(), state, process,
-				typeFactory.systemType(ModelConfiguration.COLLATOR_TYPE),
 				collatorHandle, false, true);
 		collatorComp = eval.value;
 		state = eval.state;
@@ -845,7 +835,6 @@ public abstract class CommonEnabler implements Enabler {
 		gcollatorHandle = universe.tupleRead(collatorComp,
 				universe.intObject(1));
 		eval = evaluator.dereference(collator.getSource(), state, process,
-				typeFactory.systemType(ModelConfiguration.GCOLLATOR_TYPE),
 				gcollatorHandle, false, true);
 		gcollatorComp = eval.value;
 		state = eval.state;
@@ -939,9 +928,8 @@ public abstract class CommonEnabler implements Enabler {
 			BooleanExpression isIdleState;
 			ResultType result;
 
-			eval = evaluator.dereference(source, state, process,
-					typeFactory.systemType(ModelConfiguration.GCOLLATE_STATE),
-					gstateHandle, false, true);
+			eval = evaluator.dereference(source, state, process, gstateHandle,
+					false, true);
 			gstate = eval.value;
 			state = eval.state;
 			mystatus = universe.arrayRead(

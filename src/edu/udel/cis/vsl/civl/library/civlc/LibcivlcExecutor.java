@@ -474,7 +474,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 						procsPointer, offSetV, procsSource).left;
 				procPointer = eval.value;
 				state = eval.state;
-				eval = evaluator.dereference(procsSource, state, process, null,
+				eval = evaluator.dereference(procsSource, state, process,
 						procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;

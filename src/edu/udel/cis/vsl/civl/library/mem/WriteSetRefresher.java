@@ -74,15 +74,15 @@ public class WriteSetRefresher {
 		// Note: not strict, some "useless" variable may be UNDEFINED at
 		// pre-state
 		if (unrolledRef.isSingleLocation) {
-			eval = evaluator.dereference(source, state, process, null, pointer,
-					false, false);
+			eval = evaluator.dereference(source, state, process, pointer, false,
+					false);
 			eval = evaluator.havoc(state, eval.value.type());
 			return new Pair<>(eval.state,
 					WriteSetOperations.assignableRefreshment(pointer,
 							eval.value, universe.trueExpression()));
 		} else
-			eval = evaluator.dereference(source, preState, process, null,
-					rootPointer, false, false);
+			eval = evaluator.dereference(source, preState, process, rootPointer,
+					false, false);
 		oldValue = eval.value;
 		eval.state = state;
 		if (oldValue.isNull()) {
@@ -91,8 +91,8 @@ public class WriteSetRefresher {
 			// current state. Since this location has been written, the
 			// dereference should always result in a NON-SARL-NULL object which
 			// has a type
-			eval = evaluator.dereference(source, state, process, null,
-					rootPointer, false, false);
+			eval = evaluator.dereference(source, state, process, rootPointer,
+					false, false);
 			eval = evaluator.havoc(state, eval.value.type());
 		} else
 			eval = evaluator.havoc(state, oldValue.type());

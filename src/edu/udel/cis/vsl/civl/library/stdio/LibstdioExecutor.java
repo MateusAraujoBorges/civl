@@ -401,9 +401,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			throws UnsatisfiablePathConditionException {
 		SymbolicExpression filesystemPointer = argumentValues[0];
 		Evaluation eval = evaluator.dereference(expressions[0].getSource(),
-				state, process,
-				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
-				filesystemPointer, false, true);
+				state, process, filesystemPointer, false, true);
 		CIVLSource modeSource = expressions[2].getSource();
 		int mode = symbolicUtil.extractInt(modeSource,
 				(NumericExpression) argumentValues[2]);
@@ -636,9 +634,7 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 
 		filesystemPointer = argumentValues[0];
 		eval = evaluator.dereference(fileSystemExpression.getSource(), state,
-				process,
-				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
-				filesystemPointer, false, true);
+				process, filesystemPointer, false, true);
 		state = eval.state;
 		fileSystemStructure = eval.value;
 		fileArray = universe.tupleRead(fileSystemStructure, oneObject);
@@ -715,7 +711,6 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		SymbolicExpression outputArray;
 
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				typeFactory.systemType(ModelConfiguration.FILE_SYSTEM_TYPE),
 				civlFileSystemPointer, false, true);
 		state = eval.state;
 		fileArray = universe.tupleRead(eval.value, oneObject);
@@ -774,7 +769,6 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		// TODO: position is never cleared if another process open and read the
 		// file.
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				typeFactory.systemType(ModelConfiguration.FILE_STREAM_TYPE),
 				argumentValues[0], false, true);
 		fileStream = eval.value;
 		state = eval.state;
@@ -782,7 +776,6 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		position = (NumericExpression) universe.tupleRead(fileStream,
 				twoObject);
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				typeFactory.systemType(ModelConfiguration.REAL_FILE_TYPE),
 				filePointer, false, true);
 		state = eval.state;
 		fileObject = eval.value;
@@ -981,13 +974,11 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 		List<Format> formats;
 
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				typeFactory.systemType(ModelConfiguration.FILE_STREAM_TYPE),
 				argumentValues[0], false, true);
 		fileStream = eval.value;
 		state = eval.state;
 		filePointer = universe.tupleRead(fileStream, zeroObject);
 		eval = evaluator.dereference(arguments[0].getSource(), state, process,
-				typeFactory.systemType(ModelConfiguration.REAL_FILE_TYPE),
 				filePointer, false, true);
 		fileObject = eval.value;
 		state = eval.state;

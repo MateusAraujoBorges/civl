@@ -48,8 +48,6 @@ public interface Evaluator {
 	 *            The state where the operation happens.
 	 * @param process
 	 *            The process information (name, PID) for error report.
-	 * @param referredType
-	 *            The {@link CIVLType} of the dereference operation.
 	 * @param pointer
 	 *            A pointer value which refers to some sub-structure in the
 	 *            state, and is to dereferenced.
@@ -65,8 +63,7 @@ public interface Evaluator {
 	 * @throws UnsatisfiablePathConditionException
 	 */
 	Evaluation dereference(CIVLSource source, State state, String process,
-			CIVLType referredType, SymbolicExpression pointer,
-			boolean checkedOutput, boolean strict)
+			SymbolicExpression pointer, boolean checkedOutput, boolean strict)
 			throws UnsatisfiablePathConditionException;
 
 	/**
@@ -97,6 +94,7 @@ public interface Evaluator {
 	 * @throws UnsatisfiablePathConditionException
 	 *             if a side effect that results from evaluating the expression
 	 *             causes the path condition to become unsatisfiable
+	 * 
 	 */
 	Evaluation evaluate(State state, int pid, Expression expression,
 			boolean checkUndefinedValue)
@@ -351,10 +349,10 @@ public interface Evaluator {
 	 *            The numeric offset will be added to a pointer
 	 * @param source
 	 *            The CIVLSource of the statement.
-	 * @return A pair of evaluation of the result of the operation and a map
-	 *         contains the array elements sizes information of the array
-	 *         pointed by the given pointer which helps saving computing time
-	 *         for caller functions.
+	 * @return A pair of evaluation of the result of the operation and a
+	 *         Java-array of the array slice sizes information of the array
+	 *         pointed by the given pointer which may helps saving computing
+	 *         time for caller functions.
 	 */
 	public Pair<Evaluation, NumericExpression[]> arrayElementReferenceAdd(
 			State state, int pid, SymbolicExpression ptr,

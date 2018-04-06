@@ -105,7 +105,7 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 	 * The size threshold that decides if a symbolic expression is printed in a
 	 * full way or a compressed way.
 	 */
-	private static int PRINT_SIZE_THRESHOLD = 100;
+	private static int PRINT_SIZE_THRESHOLD = 700;
 
 	private final String SEF_START = "[";
 	private final String SEF = ":=";

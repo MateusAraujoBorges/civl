@@ -10,7 +10,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLPointerType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
@@ -117,9 +116,7 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 		SymbolicExpression resultPointer = argumentValues[0];
 		String process = state.getProcessState(pid).name();
 		Evaluation eval = this.evaluator.dereference(arguments[3].getSource(),
-				state, process,
-				typeFactory.systemType(ModelConfiguration.TM_TYPE),
-				argumentValues[3], false, true);
+				state, process, argumentValues[3], false, true);
 		SymbolicExpression tmValue, sizeValue, tmStr;
 
 		resultPointer = this.symbolicUtil.parentPointer(resultPointer);
@@ -161,10 +158,8 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues)
 			throws UnsatisfiablePathConditionException {
 		String process = state.getProcessState(pid).name();
-		CIVLPointerType ptrType = (CIVLPointerType) arguments[0]
-				.getExpressionType();
 		Evaluation eval = evaluator.dereference(arguments[0].getSource(), state,
-				process, ptrType.baseType(), argumentValues[0], false, true);
+				process, argumentValues[0], false, true);
 		SymbolicExpression result;
 		Variable brokenTimeVar = this.modelFactory.brokenTimeVariable();
 		SymbolicExpression brokenTimePointer;
