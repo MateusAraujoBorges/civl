@@ -164,6 +164,21 @@ public class ArithmeticTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("sqrtCall.cvl")));
 	}
 
+	@Test
+	public void powerSimplify_posConstant_SymbolMonic() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("power_simplify1.cvl")));
+	}
+
+	@Test
+	public void powerSimplify_negConstant_SymbolMonic() {
+		assertFalse(ui.run(VERIFY, QUIET, filename("power_simplify2.cvl")));
+	}
+
+	@Test
+	public void powerSimplify_negConstant_negMonic() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("power_simplify3.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
