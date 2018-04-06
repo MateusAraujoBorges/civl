@@ -280,22 +280,24 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 								Arrays.asList(stringSymbolicType,
 										universe.integerType()),
 								stringSymbolicType));
-		doubleToStringFunction = universe.symbolicConstant(
-				universe.stringObject("doubleToString"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, universe.realType()),
-						stringSymbolicType));
+		doubleToStringFunction = universe
+				.symbolicConstant(universe.stringObject("doubleToString"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										universe.realType()),
+								stringSymbolicType));
 		charToStringFunction = universe
 				.symbolicConstant(universe.stringObject("charToString"),
 						universe.functionType(
 								Arrays.asList(stringSymbolicType,
 										universe.characterType()),
 								stringSymbolicType));
-		stringDataToStringFunction = universe.symbolicConstant(
-				universe.stringObject("stringDataToString"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						stringSymbolicType));
+		stringDataToStringFunction = universe
+				.symbolicConstant(universe.stringObject("stringDataToString"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								stringSymbolicType));
 		pointerToStringFunction = universe
 				.symbolicConstant(
 						universe.stringObject("pointerToString"), universe
@@ -311,31 +313,36 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	 * abstract functions to convert a string to a data of certain type.
 	 */
 	private void createStringToDataFunctions() {
-		stringToIntFunction = universe.symbolicConstant(
-				universe.stringObject("stringToInt"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						universe.integerType()));
-		stringToDoubleFunction = universe.symbolicConstant(
-				universe.stringObject("stringToDouble"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						universe.realType()));
-		stringToCharFunction = universe.symbolicConstant(
-				universe.stringObject("stringToChar"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						universe.characterType()));
-		stringToStringDataFunction = universe.symbolicConstant(
-				universe.stringObject("stringToStringData"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						stringSymbolicType));
-		stringToPointerFunction = universe.symbolicConstant(
-				universe.stringObject("stringToPointer"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						typeFactory.pointerSymbolicType()));
+		stringToIntFunction = universe
+				.symbolicConstant(universe.stringObject("stringToInt"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								universe.integerType()));
+		stringToDoubleFunction = universe
+				.symbolicConstant(universe.stringObject("stringToDouble"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								universe.realType()));
+		stringToCharFunction = universe
+				.symbolicConstant(universe.stringObject("stringToChar"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								universe.characterType()));
+		stringToStringDataFunction = universe
+				.symbolicConstant(universe.stringObject("stringToStringData"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								stringSymbolicType));
+		stringToPointerFunction = universe
+				.symbolicConstant(universe.stringObject("stringToPointer"),
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								typeFactory.pointerSymbolicType()));
 	}
 
 	/* *************************** Private Methods ************************* */

@@ -487,8 +487,11 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
-		queue = universe.arrayRead(universe.arrayRead(
-				universe.tupleRead(gcomm, threeObject), source), dest);
+		queue = universe
+				.arrayRead(
+						universe.arrayRead(
+								universe.tupleRead(gcomm, threeObject), source),
+						dest);
 		queueLength = universe.tupleRead(queue, zeroObject);
 		messages = universe.tupleRead(queue, oneObject);
 		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages,

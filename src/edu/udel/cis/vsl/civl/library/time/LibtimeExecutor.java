@@ -49,26 +49,33 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 			this.tmSymbolicType = tmType.getDynamicType(universe);
 		this.stringSymbolicType = universe.arrayType(universe.characterType());
 		if (tmType != null)
-			this.localtimeFunc = universe.symbolicConstant(
-					universe.stringObject("localtime"),
-					universe.functionType(Arrays.asList(universe.realType()),
-							this.tmSymbolicType));
+			this.localtimeFunc = universe
+					.symbolicConstant(universe.stringObject("localtime"),
+							universe.functionType(
+									Arrays.asList(universe.realType()),
+									this.tmSymbolicType));
 		if (tmType != null)
-			this.tmToStrFunc = universe.symbolicConstant(
-					universe.stringObject("strftime"),
-					universe.functionType(
-							Arrays.asList(universe.integerType(),
-									typeFactory.pointerSymbolicType(),
-									this.tmSymbolicType),
-							this.stringSymbolicType));
+			this.tmToStrFunc = universe
+					.symbolicConstant(
+							universe.stringObject("strftime"), universe
+									.functionType(
+											Arrays.asList(
+													universe.integerType(),
+													typeFactory
+															.pointerSymbolicType(),
+													this.tmSymbolicType),
+											this.stringSymbolicType));
 		if (tmType != null)
-			this.tmToStrSizeFunc = universe.symbolicConstant(
-					universe.stringObject("strftimeSize"),
-					universe.functionType(
-							Arrays.asList(universe.integerType(),
-									typeFactory.pointerSymbolicType(),
-									this.tmSymbolicType),
-							universe.integerType()));
+			this.tmToStrSizeFunc = universe
+					.symbolicConstant(
+							universe.stringObject("strftimeSize"), universe
+									.functionType(
+											Arrays.asList(
+													universe.integerType(),
+													typeFactory
+															.pointerSymbolicType(),
+													this.tmSymbolicType),
+											universe.integerType()));
 	}
 
 	@Override
