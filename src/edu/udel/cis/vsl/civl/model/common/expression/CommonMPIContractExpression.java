@@ -18,8 +18,6 @@ public class CommonMPIContractExpression extends CommonExpression
 
 	private Expression[] arguments;
 
-	private Expression communicator;
-
 	private MPICommunicationPattern pattern;
 
 	public CommonMPIContractExpression(CIVLSource source, Scope hscope,
@@ -27,7 +25,6 @@ public class CommonMPIContractExpression extends CommonExpression
 			Expression communicator, Expression[] arguments,
 			MPICommunicationPattern pattern) {
 		super(source, hscope, lscope, type);
-		this.communicator = communicator;
 		this.arguments = arguments;
 		this.mpiContractKind = kind;
 		this.pattern = pattern;
@@ -74,11 +71,6 @@ public class CommonMPIContractExpression extends CommonExpression
 	}
 
 	@Override
-	public Expression communicator() {
-		return communicator;
-	}
-
-	@Override
 	public Expression[] arguments() {
 		return arguments;
 	}
@@ -89,14 +81,12 @@ public class CommonMPIContractExpression extends CommonExpression
 			MPIContractExpression mpiConcExpr = (MPIContractExpression) expression;
 
 			if (mpiConcExpr.mpiContractKind().equals(mpiContractKind)) {
-				if (mpiConcExpr.communicator().equals(communicator)) {
-					if (mpiConcExpr.arguments().length == arguments.length) {
-						Expression[] otherArgs = mpiConcExpr.arguments();
-						for (int i = 0; i < arguments.length; i++)
-							if (!otherArgs[i].equals(arguments[i]))
-								return false;
-						return true;
-					}
+				if (mpiConcExpr.arguments().length == arguments.length) {
+					Expression[] otherArgs = mpiConcExpr.arguments();
+					for (int i = 0; i < arguments.length; i++)
+						if (!otherArgs[i].equals(arguments[i]))
+							return false;
+					return true;
 				}
 			}
 		}

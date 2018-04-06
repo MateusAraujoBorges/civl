@@ -42,7 +42,8 @@ public interface BinaryExpression extends Expression {
 	public enum BINARY_OPERATOR {
 		AND, BIT_AND, BITCOMPLEMENT, BIT_OR, BIT_XOR, DIVIDE, EQUAL, IMPLIES, LESS_THAN, LESS_THAN_EQUAL, MINUS, MODULO, NOT_EQUAL, OR, PLUS, POINTER_ADD, POINTER_SUBTRACT, REMOTE, SHIFTLEFT, SHIFTRIGHT, TIMES,
 		/**
-		 * The ACSL \valid construct
+		 * VALID: a binary operator on a pair of a pointer p and an offsets
+		 * expression e: (p + e) is/are valid pointers
 		 */
 		VALID
 	};

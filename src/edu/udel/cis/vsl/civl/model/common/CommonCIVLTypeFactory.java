@@ -4,9 +4,11 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
@@ -490,14 +492,26 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 	@Override
 	public void completeBundleType(CIVLBundleType bundleType,
 			List<CIVLType> eleTypes, Collection<SymbolicType> elementTypes) {
-		LinkedList<SymbolicType> arrayTypes = new LinkedList<SymbolicType>();
+		LinkedList<SymbolicType> includedTypes = new LinkedList<SymbolicType>();
 		SymbolicUnionType dynamicType;
+		Set<SymbolicType> seenTypes = new HashSet<>();
 
-		for (SymbolicType type : elementTypes)
-			arrayTypes.add(universe.arrayType(type));
+		for (SymbolicType type : elementTypes) {
+			if (!seenTypes.contains(type)) {
+				includedTypes.add(type);
+				seenTypes.add(type);
+			}
+
+			SymbolicType arrayType = universe.arrayType(type);
+
+			if (!seenTypes.contains(arrayType)) {
+				includedTypes.add(arrayType);
+				seenTypes.add(arrayType);
+			}
+		}
 		dynamicType = universe.unionType(universe.stringObject("$bundle"),
-				arrayTypes);
-		bundleType.complete(eleTypes, elementTypes, dynamicType);
+				includedTypes);
+		bundleType.complete(eleTypes, includedTypes, dynamicType);
 		this.bundleType = bundleType;
 		this.bundleSymbolicType = dynamicType;
 	}
