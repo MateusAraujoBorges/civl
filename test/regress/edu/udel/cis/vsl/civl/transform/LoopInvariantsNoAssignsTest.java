@@ -5,15 +5,16 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
+import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.TestConstants;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
-public class LoopInvariantsTest {
+public class LoopInvariantsNoAssignsTest {
 	private static File rootDir = new File(new File("examples"),
-			"loop_invariants");
+			"loop_invariants/loop_assigns_gen");
 
 	private static UserInterface ui = new UserInterface();
 
@@ -27,6 +28,20 @@ public class LoopInvariantsTest {
 	public void arrayEquals() {
 		assertTrue(ui.run("verify", TestConstants.QUIET,
 				"-collectSymbolicConstants=true", filename("arrayEquals.cvl")));
+	}
+
+	@Test
+	public void arrayEqualsBug() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true",
+				filename("arrayEquals-bug.cvl")));
+	}
+
+	@Test
+	public void arrayEqualsEarlyReturn() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true",
+				filename("arrayEquals_early_return.cvl")));
 	}
 
 	@Test
@@ -44,10 +59,17 @@ public class LoopInvariantsTest {
 	}
 
 	@Test
-	public void arrayEqualsNoReturnBad() {
+	public void arrayEqualsNoReturnBadImpl() {
 		assertFalse(ui.run("verify", TestConstants.QUIET,
 				"-collectSymbolicConstants=true",
-				filename("arrayEqualsNoReturn-bad.cvl")));
+				filename("arrayEqualsNoReturn-bad_impl.cvl")));
+	}
+
+	@Test
+	public void arrayEqualsNoReturnBadAssert() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true",
+				filename("arrayEqualsNoReturn-bad_assert.cvl")));
 	}
 
 	@Test
@@ -66,9 +88,57 @@ public class LoopInvariantsTest {
 
 	@Test
 	public void arrayZeroes2d() {
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename("arrayZeroes2d.cvl")));
+	}
+
+	@Test
+	public void arrayZeroes2dColumn() {
 		assertTrue(ui.run("verify", TestConstants.QUIET,
 				"-collectSymbolicConstants=true",
-				filename("arrayZeroes2d.cvl")));
+				filename("arrayZeroes2d_column.cvl")));
+	}
+
+	@Test
+	public void arrayZeroes2d2Columns() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true",
+				filename("arrayZeroes2d_2columns.cvl")));
+	}
+
+	@Test
+	public void arrayZeroes2dColumnPreserve() {
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET,
+				filename("arrayZeroes2d_2columns_preserve.cvl")));
+	}
+
+	@Test
+	public void arrayZeroes2d2ColumnsPreserve() {
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET,
+				filename("arrayZeroes2d_2columns_preserve.cvl")));
+	}
+
+	@Test
+	public void arrayZeroes2d2ColumnsPreserveBadAssert() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET,
+				filename("arrayZeroes2d_2columns_preserve-bad_assert.cvl")));
+	}
+
+	@Test
+	public void arrayZeroes2dColumnBadAssert() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true",
+				filename("arrayZeroes2d_column-bad_assert.cvl")));
+	}
+
+	@Test
+	public void arrayZeroes2dColumnBadInvariant() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true",
+				filename("arrayZeroes2d_column-bad_invariant.cvl")));
 	}
 
 	@Test
@@ -86,8 +156,13 @@ public class LoopInvariantsTest {
 	}
 	@Ignore
 	public void max() {
-		assertTrue(ui.run("verify", TestConstants.QUIET, "-showTransitions",
-				filename("max.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, filename("max.cvl")));
+	}
+
+	@Test
+	public void foVeOOS_max() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename("max2.cvl")));
 	}
 
 	@Test
@@ -104,11 +179,12 @@ public class LoopInvariantsTest {
 				filename("max-bad_invariants.cvl")));
 	}
 
-	@Ignore
+	@Test
 	public void selectSort() {
-		assertTrue(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename("selectSort.cvl")));
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename("selectSort.cvl")));
 	}
+
 	@Test
 	public void selectSortBadAssert() {
 		assertFalse(ui.run("verify", TestConstants.QUIET,
@@ -142,16 +218,43 @@ public class LoopInvariantsTest {
 				"-collectSymbolicConstants=true", filename("twoLoops2.cvl")));
 	}
 
-	@Ignore
+	@Test
 	public void summation() {
 		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
 				TestConstants.QUIET, filename("summation.cvl")));
 	}
 
 	@Test
-	public void summationBad() {
+	public void summationBadInvariant() {
 		assertFalse(ui.run("verify", TestConstants.QUIET,
 				"-collectSymbolicConstants=true",
-				filename("summation-bad.cvl")));
+				filename("summation-bad_invariant.cvl")));
+	}
+
+	@Test
+	public void summationBadAssert() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true",
+				filename("summation-bad_assert.cvl")));
+	}
+
+	@Test
+	public void relaxPrefix() {
+		assertTrue(ui.run("verify", //TestConstants.QUIET,
+				"-collectSymbolicConstants=true",
+				filename("relaxedPrefix_loop.cvl")));
+	}
+
+	@Ignore // Need why3 with timeout > 15 seconds
+	public void lcp2() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename("lcp2.cvl")));
+	}
+
+	@AfterClass
+	public static void tearDownAfterClass() throws Exception {
+		ui = null;
+		rootDir = null;
+		System.gc();
 	}
 }
