@@ -1,15 +1,12 @@
 package edu.udel.cis.vsl.civl.library.civlc;
 
-import java.util.LinkedList;
-
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
-import edu.udel.cis.vsl.civl.dynamic.IF.DynamicWriteSet;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
+import edu.udel.cis.vsl.civl.library.civlc.Heuristics.Query;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.expression.LHSExpression;
@@ -30,17 +27,15 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
-import edu.udel.cis.vsl.sarl.IF.ValidityResult;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
-import edu.udel.cis.vsl.sarl.IF.number.Number;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
+import edu.udel.cis.vsl.sarl.preuniverse.IF.PreUniverse;
+import edu.udel.cis.vsl.sarl.prove.IF.ProverPredicate;
+import edu.udel.cis.vsl.sarl.prove.why3.Why3Translator;
 
 /**
  * Implementation of the execution for system functions declared civlc.h.
@@ -160,8 +155,12 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				callEval = executeExit(state, pid);
 				break;
 			case "$get_state" :
-				callEval = this.executeGetState(state, pid, process, arguments,
-						argumentValues, source);
+				callEval = executeGetState(state, pid, process, arguments,
+						argumentValues, false, source);
+				break;
+			case "$get_full_state" :
+				callEval = executeGetState(state, pid, process, arguments,
+						argumentValues, true, source);
 				break;
 			case "$free" :
 				callEval = executeFree(state, pid, process, arguments,
@@ -169,10 +168,6 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				break;
 			case "$havoc" :
 				callEval = executeHavoc(state, pid, process, arguments,
-						argumentValues, source);
-				break;
-			case "$havoc_mem" :
-				callEval = executeHavocMem(state, pid, arguments,
 						argumentValues, source);
 				break;
 			case "$is_concrete_int" :
@@ -212,14 +207,6 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				callEval = executeWaitAll(state, pid, arguments, argumentValues,
 						source);
 				break;
-			case "$write_set_push" :
-				callEval = executeWriteSetPush(state, pid, arguments,
-						argumentValues, source);
-				break;
-			case "$write_set_pop" :
-				callEval = executeWriteSetPop(state, pid, arguments,
-						argumentValues, source);
-				break;
 			case "$variable_reference" :
 				callEval = executeVariableReference(state, pid, process,
 						arguments, argumentValues);
@@ -230,7 +217,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				break;
 			default :
 				throw new CIVLInternalException(
-						"Unknown civlc function: " + name, source);
+						"Unknown civlc function: " + functionName, source);
 		}
 		return callEval;
 	}
@@ -239,10 +226,14 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 
 	private Evaluation executeGetState(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) {
-		int stateID = this.stateFactory.saveState(state).left;
+			boolean isFull, CIVLSource source) {
+		int topDyscope = state.getProcessState(pid).peekStack().scope();
+		State snapshot = isFull
+				? state
+				: stateFactory.getStateSnapshot(state, pid, topDyscope);
+		int snapshotStateID = stateFactory.saveState(snapshot).left;
 
-		return new Evaluation(state, modelFactory.stateValue(stateID));
+		return new Evaluation(state, modelFactory.stateValue(snapshotStateID));
 	}
 
 	private Evaluation executeIsDerefable(State state, int pid, String process,
@@ -292,102 +283,6 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		havocEval = this.evaluator.havoc(teval.state, teval.type);
 		state = this.primaryExecutor.assign(source, havocEval.state, pid,
 				pointer, havocEval.value);
-		return new Evaluation(state, null);
-	}
-
-	/**
-	 * <p>
-	 * Executing the system function:<code>$havoc_mem($mem m)</code>. <br>
-	 * <br>
-	 * Semantics: The function assigns a fresh new symbolic constant to every
-	 * memory location in the memory location set represented by m. <br>
-	 * 
-	 * Notice that currently we do an <strong>compromise</strong> for refreshing
-	 * array elements in m: For an array element e in array a in m, we do NOT
-	 * assign e a fresh new constant but instead assign the array a a fresh new
-	 * constant. The reason is: A non-concrete array write will prevent states
-	 * from being canonicalized into a seen state. For example:
-	 * 
-	 * <code>
-	 * $input int N, X;
-	 * $assume(N > 0 && X > 0 && N > X);
-	 * int a[N];
-	 * 
-	 * LOOP_0: while (true) {
-	 *   a[X] = 0;
-	 *   $havoc(&a[X]);
-	 * }
-	 * 
-	 * LOOP_1: while (true) {
-	 *   a[X] = 0;
-	 *   $havoc(&a);
-	 * }
-	 * </code> Loop 1 will never converge but the value of a keeps growing. Loop
-	 * 2 will converge.
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state.
-	 * @param pid
-	 *            The ID of the process that the function call belongs to.
-	 * @param arguments
-	 *            The static representation of the arguments of the function
-	 *            call.
-	 * @param argumentValues
-	 *            The dynamic representation of the arguments of the function
-	 *            call.
-	 * @param source
-	 *            The {@link CIVLSource} associates to the function call.
-	 * @return The new state after executing the function call.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation executeHavocMem(State state, int pid,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		SymbolicExpression memObj = argumentValues[0];
-		NumericExpression memSize;
-		SymbolicExpression pointerArray;
-		Number memSizeConcrete;
-		Evaluation eval = null;
-
-		// mem obj structure:
-		// struct _mem {
-		// int size;
-		// void * ptrArray[];
-		// }
-		memSize = (NumericExpression) universe.tupleRead(memObj, zeroObject);
-		pointerArray = universe.tupleRead(memObj, oneObject);
-		memSizeConcrete = universe.extractNumber(memSize);
-		assert memSizeConcrete != null : "The size of $mem obj shall never be non-concrete";
-
-		int memSizeInt = ((IntegerNumber) memSizeConcrete).intValue();
-		Expression memObjExpr = arguments[0];
-
-		for (int i = 0; i < memSizeInt; i++) {
-			SymbolicExpression pointer = universe.arrayRead(pointerArray,
-					universe.integer(i));
-			SymbolicType pointedType;
-			ReferenceExpression symRef = symbolicUtil.getSymRef(pointer);
-
-			// compromise: if the given pointer points to an array element,
-			// havoc the whole array:
-			if (symRef.isArrayElementReference()
-					&& !symbolicUtil.isPointer2MemoryBlock(pointer))
-				pointer = symbolicUtil.parentPointer(pointer);
-			// some dyscopes referred by the pointer may gone already:
-			if (stateFactory
-					.getDyscopeId(symbolicUtil.getScopeValue(pointer)) >= 0) {
-				pointedType = symbolicAnalyzer.dynamicTypeOfObjByPointer(
-						memObjExpr.getSource(), state, pointer);
-				eval = evaluator.havoc(state, pointedType);
-				state = primaryExecutor.assign(source, eval.state, pid, pointer,
-						eval.value);
-			}
-		}
-		if (eval != null) {
-			eval.value = null;
-			eval.state = state;
-		}
 		return new Evaluation(state, null);
 	}
 
@@ -579,8 +474,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 						procsPointer, offSetV, procsSource).left;
 				procPointer = eval.value;
 				state = eval.state;
-				eval = evaluator.dereference(procsSource, state, process,
-						typeFactory.processType(), procPointer, false, true);
+				eval = evaluator.dereference(procsSource, state, process, null,
+						procPointer, false, true);
 				proc = eval.value;
 				state = eval.state;
 				pidValue = modelFactory.getProcessId(proc);
@@ -658,144 +553,60 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		return new Evaluation(state, null);
 	}
 
-	/**
-	 * <p>
-	 * Executing the system function:<code>$write_set_push()</code>. <br>
-	 * <br>
-	 * 
-	 * Push an empty write set onto write set stack associated with the calling
-	 * process.
-	 * 
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state.
-	 * @param pid
-	 *            The ID of the process that the function call belongs to.
-	 * @param arguments
-	 *            The static representation of the arguments of the function
-	 *            call.
-	 * @param argumentValues
-	 *            The dynamic representation of the arguments of the function
-	 *            call.
-	 * @param source
-	 *            The {@link CIVLSource} associates to the function call.
-	 * @return The new state after executing the function call.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation executeWriteSetPush(State state, int pid,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) {
-		state = stateFactory.pushEmptyWrite(state, pid);
-		return new Evaluation(state, null);
-	}
-
-	/**
-	 * <p>
-	 * Executing the system function:<code>$write_set_pop($mem * m)</code>. <br>
-	 * <br>
-	 * 
-	 * Pop a write set w out of the write set stack associated with the calling
-	 * process. Assign write set w' to the object refered by the given reference
-	 * m, where w' is a subset of w. <code>w - w'</code> is a set of unreachable
-	 * memory locaiton references.
-	 * 
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state.
-	 * @param pid
-	 *            The ID of the process that the function call belongs to.
-	 * @param arguments
-	 *            The static representation of the arguments of the function
-	 *            call.
-	 * @param argumentValues
-	 *            The dynamic representation of the arguments of the function
-	 *            call.
-	 * @param source
-	 *            The {@link CIVLSource} associates to the function call.
-	 * @return The new state after executing the function call.
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation executeWriteSetPop(State state, int pid,
-			Expression[] arguments, SymbolicExpression[] argumentValues,
-			CIVLSource source) throws UnsatisfiablePathConditionException {
-		SymbolicExpression memPointer = argumentValues[0];
-		String process = state.getProcessState(pid).name();
-		CIVLType memType = typeFactory.systemType(ModelConfiguration.MEM_TYPE);
-		Evaluation eval = evaluator.dereference(source, state, process, memType,
-				memPointer, false, true);
-
-		state = eval.state;
-
-		SymbolicExpression memValue = eval.value;
-		SymbolicExpression pointerArray;
-		SymbolicTupleType memValueType;
-		LinkedList<SymbolicExpression> memValueComponents = new LinkedList<>();
-		DynamicWriteSet writeSet = stateFactory.peekWriteSet(state, pid);
-		int size = 0;
-
-		state = stateFactory.popWriteSet(state, pid);
-		memValueType = (SymbolicTupleType) memType.getDynamicType(universe);
-		for (SymbolicExpression pointer : writeSet) {
-			SymbolicExpression referredScopeValue = symbolicUtil
-					.getScopeValue(pointer);
-			int referredDyscope = stateFactory.getDyscopeId(referredScopeValue);
-
-			if (referredDyscope < 0)
-				continue;
-			memValueComponents.add(pointer);
-			size++;
-		}
-		pointerArray = universe.array(typeFactory.pointerSymbolicType(),
-				memValueComponents);
-		memValueComponents.clear();
-		memValueComponents.add(universe.integer(size));
-		memValueComponents.add(pointerArray);
-		memValue = universe.tuple(memValueType, memValueComponents);
-		state = primaryExecutor.assign(source, state, pid, memPointer,
-				memValue);
-		eval.state = state;
-		eval.value = null;
-		return eval;
-	}
-
 	private State executeAssert(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		BooleanExpression assertValue = (BooleanExpression) argumentValues[0];
-		Reasoner reasoner;
-		ValidityResult valid;
-		ResultType resultType;
+		BooleanExpression context = state.getPathCondition(universe);
+		ResultType resultType = ResultType.MAYBE;
+		ProverPredicate[] acslPredicates2why3 = ACSLPredicateEvaluator
+				.evaluateACSLPredicate(modelFactory.getAllACSLPredicates(),
+						state, pid, errSideEffectFreeEvaluator);
 
-		reasoner = universe.reasoner(state.getPathCondition(universe));
-		valid = reasoner.valid(assertValue);
-		resultType = valid.getResultType();
+		if (!civlConfig.prob()) {
+			Query query = (new Heuristics(universe))
+					.applyHeuristicSimplifications(context, assertValue);
 
-		if (resultType != ResultType.YES
-				|| !modelFactory.getAllACSLPredicates().isEmpty()) {
-			assertValue.setValidity(null);
+			if (acslPredicates2why3.length == 0)
+				resultType = universe.reasoner(query.context).valid(query.query)
+						.getResultType();
+			if (resultType == ResultType.MAYBE)
+				resultType = universe
+						.why3Reasoner(query.context, acslPredicates2why3)
+						.valid(query.query).getResultType();
+			if (resultType == ResultType.MAYBE) {
+				UniversalNormalization uniNorm = new UniversalNormalization(
+						universe);
 
-			Reasoner why3Reasoner = universe.why3Reasoner(
-					state.getPathCondition(universe),
-					ACSLPredicateEvaluator.evaluateACSLPredicate(
-							modelFactory.getAllACSLPredicates(), state, pid,
-							errSideEffectFreeEvaluator));
-
-			if (why3Reasoner != reasoner)
-				resultType = why3Reasoner.valid(assertValue).getResultType();
-			// resultType = HeuristicProveHelper.heuristicsValid(reasoner,
-			// universe, assertValue);
-		}
+				context = (BooleanExpression) uniNorm.apply(query.context);
+				assertValue = (BooleanExpression) uniNorm.apply(query.query);
+				resultType = universe.why3Reasoner(context, acslPredicates2why3)
+						.valid(assertValue).getResultType();
+			}
+		} else
+			resultType = universe.reasoner(context).valid(assertValue)
+					.getResultType();
 		if (resultType != ResultType.YES) {
-			// uncomment the following for debugging:
-			// Why3Translator translator = new Why3Translator(
-			// (PreUniverse) universe, state.getPathCondition(universe),
-			// new ProverPredicate[0]);
-			// String goal = translator.translateGoal(assertValue);
-			//
-			// System.out.println(translator.getExecutableOutput(
-			// universe.numProverValidCalls() - 1, goal));
+			// uncomment the following when debug:
+			PreUniverse preU = (PreUniverse) universe;
+			Why3Translator trans = new Why3Translator(preU,
+					preU.cleanBoundVariables(context), acslPredicates2why3);
+			String goals[];
+
+			assertValue = (BooleanExpression) preU
+					.cleanBoundVariables(assertValue);
+			if (assertValue.operator() == SymbolicOperator.AND) {
+				goals = new String[assertValue.numArguments()];
+				for (int i = 0; i < goals.length; i++)
+					goals[i] = trans.translateGoal(
+							(SymbolicExpression) assertValue.argument(i));
+			} else {
+				goals = new String[1];
+				goals[0] = trans.translateGoal(assertValue);
+			}
+			System.out.println(trans.getExecutableOutput(
+					universe.numProverValidCalls(), goals));
+
 			StringBuilder message = new StringBuilder();
 			Pair<State, String> messageResult = this.symbolicAnalyzer
 					.expressionEvaluation(state, pid, arguments[0], false);
@@ -804,7 +615,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			state = messageResult.left;
 			message.append("Assertion: ");
 			message.append(arguments[0]);
-			message.append("\n        -> ");
+			message.append("\n -> ");
 			message.append(messageResult.right);
 			firstEvaluation = messageResult.right;
 			messageResult = this.symbolicAnalyzer.expressionEvaluation(state,
@@ -812,7 +623,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			state = messageResult.left;
 			secondEvaluation = messageResult.right;
 			if (!firstEvaluation.equals(secondEvaluation)) {
-				message.append("\n        -> ");
+				message.append("\n -> ");
 				message.append(secondEvaluation);
 			}
 			result = this.symbolicAnalyzer
@@ -820,7 +631,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 							null, assertValue)
 					.toString();
 			if (!secondEvaluation.equals(result)) {
-				message.append("\n        -> ");
+				message.append("\n -> ");
 				message.append(result);
 			}
 			state = this.reportAssertionFailure(state, pid, process, resultType,
