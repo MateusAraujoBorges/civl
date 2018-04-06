@@ -43,27 +43,6 @@ public class LoopInvariantsWithAssignsTest_part2 {
 				filename("foVeOOS/max/max-bad_invariant.cvl")));
 	}
 
-	@Test
-	public void foVeOOS_duplets() {
-		assertTrue(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true",
-				filename("foVeOOS/twoEqualElements/two_equal_elements.cvl")));
-	}
-
-	@Test
-	public void foVeOOS_dupletsBadAssert() {
-		assertFalse(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename(
-						"foVeOOS/twoEqualElements/two_equal_elements-bad_assert.cvl")));
-	}
-
-	@Test
-	public void foVeOOS_dupletsBadInvariant() {
-		assertFalse(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename(
-						"foVeOOS/twoEqualElements/two_equal_elements-bad_invariant.cvl")));
-	}
-
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
