@@ -234,7 +234,6 @@ done so.
    
 9. Shortcuts for running CIVL
    
-   1). Executable Script (Recommended)
    Somewhere on your system, create a plain text file containing
    exactly the following two lines:
    
@@ -244,12 +243,6 @@ java -jar /Path/To/Your/workspace/CIVL/civl.jar $@
    where "/Path/To/Your/workspace" is replaced with the path
    to your Eclipse workspace directory.  Name this file "civl",
    put it in your PATH, and make it executable (chmod ugo+x civl).
-   
-   2). Alias (Optional, the alias 'civl' will not work in scripts)
-   Alternatively, you can define an alias in your .profile,
-   .bash_profile, .bashrc, or equivalent:
-
-alias civl='java -jar /Path/To/Your/workspace/CIVL/civl.jar'
 
 10. From a terminal window, execute "civl config".  This should
     find the theorem provers in your PATH and create a file
