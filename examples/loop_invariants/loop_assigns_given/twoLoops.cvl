@@ -1,0 +1,20 @@
+#include <civlc.cvh>
+#pragma CIVL ACSL
+
+int main() {
+  int i = 0;
+
+  /*@ loop invariant i >= 0 ;
+    @ loop assigns i;
+    @*/
+  while (1) {    
+    i++;   
+  }
+
+  // The second loop will never executes
+
+  /*@ loop invariant i >= 0 ;
+    @ loop assigns i;
+    @*/
+  while(1) i--;
+}

@@ -1,0 +1,12 @@
+loop init;
+assert( invari );
+if (cond)
+  while(true) {
+    assume_push(cond && invari);
+    body;
+    increment;
+    assert
+    havoc
+    if (!cond) break;
+    assume_pop();
+  }

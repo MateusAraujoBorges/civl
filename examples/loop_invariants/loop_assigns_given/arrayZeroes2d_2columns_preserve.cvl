@@ -1,0 +1,29 @@
+#include<assert.h>
+
+#pragma CIVL ACSL
+
+$input int N;
+$assume(N > 10);
+int a[N][N];
+
+void arrayZeroes(int n) {
+  int i;
+  
+  /*@ loop invariant 0 <= i && i <= n;
+    @ loop invariant \forall int t; 0<=t && t<i ==> (a[t][1] == 0 && a[t][5] == 0);
+    @ loop assigns   a[0 .. n-1][1], a[0 .. n-1][5], i;   
+    @*/
+  for (i = 0; i < n; i++) {
+    a[i][1] = 0;
+    a[i][5] = 0;
+  }   
+  $assert(i == n && a[5][0] == 1 && a[5][7] == 1);
+}
+
+int main() {
+  $havoc(&a);
+  a[5][0] = 1;
+  a[5][7] = 1;
+  arrayZeroes(N);
+  $assert($forall (int i : 0 .. N-1) a[i][1] == 0 && a[i][5] == 0);
+}

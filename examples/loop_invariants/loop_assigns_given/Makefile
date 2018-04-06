@@ -8,4 +8,4 @@ verify_%:  %.cvl
 	$(VERIFY) $<
 
 clean:
-	rm -rf CIVLREP SARL_Why3 *~
+	rm -rf CIVLREP *~

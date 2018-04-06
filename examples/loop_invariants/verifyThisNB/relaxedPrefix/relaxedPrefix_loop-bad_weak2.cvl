@@ -1,0 +1,42 @@
+#pragma CIVL ACSL
+
+#define EXISTS(bv,rst,pred) (!(\forall int (bv); (rst) ==> !(pred)))
+
+$input int patLen, aLen;
+$assume(patLen > 0 && aLen > 0);
+$input int pat[patLen];
+$input int a[aLen];
+
+int main() {
+  int shift = 0;
+  int i;
+
+  if(patLen > aLen+1) return 0;
+
+  int isRePre = -1;
+
+  /*@ loop invariant (0 <= i && i <= patLen) && (-1 <= isRePre && isRePre <= 1);
+    @ loop invariant 0 <= shift && shift <= 1;
+    @ loop invariant i == aLen ==> isRePre != -1;
+    @ loop invariant (shift == 0) ==> (\forall int t; 0 <= t && t < i ==> a[t] == pat[t]);
+    @ loop invariant (shift == 1) ==> EXISTS(k, (0 <= k && k < i), (
+    @                                          (\forall int t; 0 <= t && t < k ==> a[t] == pat[t])));
+    @ loop invariant (shift == 1) ==> EXISTS(k, (0 <= k && k < i), (
+    @                                          (\forall int t; k < t && t < i  ==> a[t-1] == pat[t]))); 
+    @ loop invariant (shift == 1) ==> EXISTS(k, (0 <= k && k < i), (
+    @                                          (a[k] != pat[k]))
+    @                                       );
+    @ loop assigns shift, isRePre, i;
+    @*/
+  for(i=0; i<patLen && isRePre == -1; i++) { 
+    if(pat[i] != a[i-shift]) 
+      if(shift == 0)
+        shift = 1;
+      else 
+        isRePre = 0;
+    if(isRePre == -1 && i == aLen - 1 && shift == 0) 
+      isRePre = 1;
+  }
+  return isRePre == -1 ? 1 : isRePre;
+}
+

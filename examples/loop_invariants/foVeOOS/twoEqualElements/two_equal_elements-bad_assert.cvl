@@ -1,0 +1,96 @@
+/*
+COST Verification Competition. vladimir@cost-ic0701.org
+
+Challenge 3: Two equal elements
+
+Given: An integer array a of length n+2 with n>=2. It is known that at
+least two values stored in the array appear twice (i.e., there are at
+least two duplets).
+
+Implement and verify a program finding such two values.
+
+You may assume that the array contains values between 0 and n-1.
+*/
+#pragma CIVL ACSL
+#ifndef NULL
+#define NULL (void*)0
+#endif
+
+/* duplet(a) returns the indexes (i,j) of a duplet in a.
+ * moreover, if except is not null, the value of this duplet must
+ * be different from it.
+ */
+
+$input int N;
+$assume(N > 2);
+$input int a[N + 2];
+
+/* A duplet in array a is a pair of indexes (i,j) in the bounds of array
+   a such that a[i] = a[j] */
+
+/*@ predicate is_duplet(integer len, integer i, integer j) =
+  @    0 <= i && i < j && j < len && a[i] == a[j];
+  @*/
+
+/* equality between an integer and a possibly null int* */
+#define eq_opt(x, o) (((x)==*(o))&&(o!=NULL))
+
+_Bool duplet(int len, int *except, int *pi, int *pj) {
+  _Bool found = 0;
+
+  /*@ loop invariant 0 <= i && i <= len - 1;
+    @ loop invariant \forall int k, l; 
+    @                        0 <= k && k < i-1 && 
+    @                        k < l && l < len ==>
+    @                        (!eq_opt(a[k], except) ==> !is_duplet(len, k, l));
+    @ loop invariant !found ==> (\forall int l; 
+    @                             0 < l && i <= l && l < len ==>
+    @                             (!eq_opt(a[i-1], except) ==> !is_duplet(len, i-1, l))
+    @                           );
+    @ loop invariant found ==> (is_duplet(len, *pi, *pj) && *pi == i-1 && *pj > *pi && *pj < len &&
+    @                           !eq_opt(a[*pi], except)
+    @                          );
+    @ loop invariant !found ==> *pi == 0;
+    @ loop invariant i == 0 ==> !found;
+    @ loop assigns *pi, *pj, found, i;
+    @*/
+  for(int i=0; i <= len - 2 && !found; i++) {
+    int v = a[i];
+    
+    if (except == NULL || *except != v) {
+      /*@ loop invariant i + 1 <= j && j <= len;
+        @ loop invariant \forall int l; i < l && l < j - 1 ==> !is_duplet(len, i, l);
+	@ loop invariant !found ==> !is_duplet(len, i, j - 1);
+	@ loop invariant !found ==> *pi == 0;
+	@ loop invariant found ==> (is_duplet(len, i, j - 1) && (*pi == i && *pj == j - 1));
+	@ loop assigns *pi, *pj, found, j;
+        @*/
+      for (int j = i + 1; j < len && !found; j++) {
+        if (a[j] == v) {
+          *pi = i; 
+	  *pj = j; 
+	  found = 1;
+	}
+      }
+    }
+  }
+  $assert(!found => ($forall (int i, j | 0 <= i && i < j && j < len) 
+		     !eq_opt(a[i], except) => !is_duplet(len, i, j))
+	 );
+  $assert(found => ($forall (int i, j | 0 <= i && i < *pi && *pi < j && j < len) 
+		     !eq_opt(a[i], except) => !is_duplet(len, i, j))
+		     );
+  $assert(is_duplet(len, *pi, *pj));
+  return found;
+}
+
+int pi, pj, pk, pl;
+
+int main() {
+  _Bool found_one = duplet(N, NULL, &pi, &pj);
+  _Bool found_two = duplet(N, &a[pi], &pk, &pl);
+
+  $assert(found_one => 
+	  (is_duplet(N, pi, pj) && is_duplet(N, pk, pl) && a[pi] != a[pk]));
+}
+

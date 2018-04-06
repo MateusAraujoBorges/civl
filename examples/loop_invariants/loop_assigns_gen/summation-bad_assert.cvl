@@ -1,0 +1,21 @@
+#pragma CIVL ACSL
+$input int N;
+$assume(N > 0);
+$input int a[N];
+$input int b[N];
+
+int main() {
+  int sum = 0;
+  int i = 0;
+  
+  /*@
+    @ loop invariant 0<=i && i <=N;
+    @ loop invariant sum == \sum(0, i-1, \lambda int t; a[t] + b[t]);
+    @*/
+  while (i < N) {
+    sum += a[i] + b[i];
+    i++;
+  }
+  $assert(sum == 0);
+  return 0;
+}

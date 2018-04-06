@@ -1,0 +1,47 @@
+#include <stdio.h>
+#ifdef _CIVL
+#include <civlc.cvh>
+#pragma CIVL ACSL
+#endif
+
+#ifdef _CIVL
+$input int ni,nj;
+$assume(ni>1);
+//$assume(ni<10);
+$assume(nj>1);
+//$assume(nj<10);
+$input double uin[ni][nj];
+#endif
+
+int main(int argc, char** argv) {
+  int i,j,ir,jr;
+  double u1[ni][nj];
+  double u2[ni][nj];
+  
+  $havoc(&i); $havoc(&j);
+    // remainder
+  if(i==ni-2) {
+    /*@ loop invariant 1 <= jr && jr <= nj-1;
+      @ loop invariant \forall int t; 1 <= t && t < jr ==>
+      @                    u2[i][t] == uin[i][t]*uin[i][t];
+      @ loop assigns   jr, u2[i][1 .. nj-2];
+      @*/
+    for(jr=1;jr<nj-1;jr++) {
+      u2[i][jr] = uin[i][jr]*uin[i][jr];
+    }
+  }
+  if(j==nj-2) {
+    /*@ loop invariant 1 <= ir && ir <= ni-1;
+      @ loop invariant \forall int t; 1 <= t && t < ir ==>
+      @                    u2[t][j] == uin[t][j]*uin[t][j];
+      @ loop assigns   ir, u2[1 .. ni-2][j];
+      @*/
+    for(ir=1;ir<ni-1;ir++) {
+      u2[ir][j] = uin[ir][j]*uin[ir][j];
+    }
+  }
+  if(i==ni-2 && j==nj-2) u2[i][j] = uin[i][j]*uin[i][j];
+
+}
+
+
