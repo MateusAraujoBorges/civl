@@ -776,17 +776,17 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void equals_ignore_qualifiers() {
-		assertTrue(ui.run(VERIFY, filename("equivQualifier.c")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("equivQualifier.c")));
 	}
 
 	@Test
 	public void equals_ignore_qualifiers_bad() {
-		assertFalse(ui.run(VERIFY, filename("equivQualifier_bad.c")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("equivQualifier_bad.c")));
 	}
 
 	@Test
 	public void quantifiedConditionalExpression() {
-		assertTrue(ui.run(VERIFY, "-showProverQueries",
+		assertTrue(ui.run(VERIFY, "-showProverQueries", QUIET,
 				filename("quantifiedConditionalExpression.cvl")));
 	}
 

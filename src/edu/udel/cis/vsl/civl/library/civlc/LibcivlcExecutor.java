@@ -33,9 +33,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
-import edu.udel.cis.vsl.sarl.preuniverse.IF.PreUniverse;
 import edu.udel.cis.vsl.sarl.prove.IF.ProverPredicate;
-import edu.udel.cis.vsl.sarl.prove.why3.Why3Translator;
 
 /**
  * Implementation of the execution for system functions declared civlc.h.
@@ -588,24 +586,24 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 					.getResultType();
 		if (resultType != ResultType.YES) {
 			// uncomment the following when debug:
-			PreUniverse preU = (PreUniverse) universe;
-			Why3Translator trans = new Why3Translator(preU,
-					preU.cleanBoundVariables(context), acslPredicates2why3);
-			String goals[];
-
-			assertValue = (BooleanExpression) preU
-					.cleanBoundVariables(assertValue);
-			if (assertValue.operator() == SymbolicOperator.AND) {
-				goals = new String[assertValue.numArguments()];
-				for (int i = 0; i < goals.length; i++)
-					goals[i] = trans.translateGoal(
-							(SymbolicExpression) assertValue.argument(i));
-			} else {
-				goals = new String[1];
-				goals[0] = trans.translateGoal(assertValue);
-			}
-			System.out.println(trans.getExecutableOutput(
-					universe.numProverValidCalls(), goals));
+			// PreUniverse preU = (PreUniverse) universe;
+			// Why3Translator trans = new Why3Translator(preU,
+			// preU.cleanBoundVariables(context), acslPredicates2why3);
+			// String goals[];
+			//
+			// assertValue = (BooleanExpression) preU
+			// .cleanBoundVariables(assertValue);
+			// if (assertValue.operator() == SymbolicOperator.AND) {
+			// goals = new String[assertValue.numArguments()];
+			// for (int i = 0; i < goals.length; i++)
+			// goals[i] = trans.translateGoal(
+			// (SymbolicExpression) assertValue.argument(i));
+			// } else {
+			// goals = new String[1];
+			// goals[0] = trans.translateGoal(assertValue);
+			// }
+			// System.out.println(trans.getExecutableOutput(
+			// universe.numProverValidCalls(), goals));
 
 			StringBuilder message = new StringBuilder();
 			Pair<State, String> messageResult = this.symbolicAnalyzer
