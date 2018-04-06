@@ -417,5 +417,14 @@ public interface Evaluator {
 			CIVLSource source, boolean isDefinition)
 			throws UnsatisfiablePathConditionException;
 
+	/**
+	 * Return a new {@link ArrayToolBox}
+	 * 
+	 * @param universe
+	 *            A reference to a {@link SymbolicUniverse}
+	 * @return a new {@link ArrayToolBox}
+	 */
+	ArrayToolBox newArrayToolBox(SymbolicUniverse universe);
+
 	void setConfiguration(CIVLConfiguration config);
 }
