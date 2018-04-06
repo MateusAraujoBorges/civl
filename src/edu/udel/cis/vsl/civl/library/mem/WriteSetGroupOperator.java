@@ -50,8 +50,7 @@ public class WriteSetGroupOperator extends WriteSetOperator {
 		for (SymbolicExpression pointer : pointers) {
 			key[0] = scopeValueToKey.apply(symbolicUtil.getScopeValue(pointer))
 					.intValue();
-			key[1] = scopeValueToKey.apply(symbolicUtil.getScopeValue(pointer))
-					.intValue();
+			key[1] = symbolicUtil.getVariableId(null, pointer);
 
 			counter.add(Arrays.hashCode(key));
 		}

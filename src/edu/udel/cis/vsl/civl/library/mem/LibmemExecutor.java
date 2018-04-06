@@ -26,7 +26,6 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
-import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -303,7 +302,7 @@ public class LibmemExecutor extends BaseLibraryExecutor
 
 		for (TreeSet<SymbolicExpression> ret : wsUnionOperator.apply(mem0ptrs,
 				mem1ptrs))
-			set.addAll(filterOutUndefinedPointers(ret));
+			set.addAll(ret);
 		int newSize = set.size();
 		SymbolicExpression newPointerArray = universe
 				.array(typeFactory.pointerSymbolicType(), set);
@@ -351,9 +350,8 @@ public class LibmemExecutor extends BaseLibraryExecutor
 		List<SymbolicExpression> groupsArray = new LinkedList<>();
 
 		for (TreeSet<SymbolicExpression> group : groups) {
-			SymbolicExpression pointerArray = universe.array(
-					typeFactory.pointerSymbolicType(),
-					filterOutUndefinedPointers(group));
+			SymbolicExpression pointerArray = universe
+					.array(typeFactory.pointerSymbolicType(), group);
 
 			memValueComponents.clear();
 			memValueComponents.add(universe.integer(group.size()));
@@ -408,7 +406,7 @@ public class LibmemExecutor extends BaseLibraryExecutor
 
 		for (TreeSet<SymbolicExpression> ret : wsWideningOperator
 				.apply(pointers))
-			widenedPointers.addAll(filterOutUndefinedPointers(ret));
+			widenedPointers.addAll(ret);
 		SymbolicExpression pointerArray = universe
 				.array(typeFactory.pointerSymbolicType(), widenedPointers);
 		SymbolicExpression newSize = universe.length(pointerArray);
@@ -562,28 +560,5 @@ public class LibmemExecutor extends BaseLibraryExecutor
 		memValueComponents.add(universe.integer(pointers.length));
 		memValueComponents.add(pointerArray);
 		return universe.tuple(memValueType, memValueComponents);
-	}
-
-	/**
-	 * Delete pointers whose scope values equal to
-	 * {@link StateFactory#undefinedScopeValue}.
-	 * 
-	 * @param pointerGroup
-	 *            a group of pointers.
-	 * @return a new group of pointer that undefined pointers are removed.
-	 */
-	private TreeSet<SymbolicExpression> filterOutUndefinedPointers(
-			TreeSet<SymbolicExpression> pointerGroup) {
-		TreeSet<SymbolicExpression> newPointerGroup = new TreeSet<>(
-				pointerGroup);
-
-		for (SymbolicExpression pointer : pointerGroup) {
-			if (stateFactory
-					.getDyscopeId(symbolicUtil.getScopeValue(pointer)) < 0)
-				// if (symbolicUtil.getScopeValue(pointer)
-				// .equals(stateFactory.undefinedScopeValue()))
-				newPointerGroup.remove(pointer);
-		}
-		return newPointerGroup;
 	}
 }
