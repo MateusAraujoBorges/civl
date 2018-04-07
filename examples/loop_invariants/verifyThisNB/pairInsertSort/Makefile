@@ -1,10 +1,14 @@
-all: sort sortBad
+CIVL=civl
+OPTION=-collectSymbolicConstants=true
+VERIFY=$(CIVL) verify $(OPTION) 
 
-sort: pairInsertSort_partial.cvl
-	contract verify -collectSymbolicConstants $<
+all : loop
 
-sortBad: pairInsertSort_partial-bad_assert.cvl
-	contract verify -collectSymbolicConstants $<
+loop : pairInsertSort_partial.cvl
+	$(VERIFY) $<
+
+verify_%:  %.cvl
+	$(VERIFY) $<
 
 clean:
-	rm -rf *~ CIVLREP SARL_Why3
+	rm -rf CIVLREP SARL_Why3 *~
