@@ -2867,14 +2867,16 @@ public class ImmutableStateFactory implements StateFactory {
 		if (sid < SCOPE_VALUES_INIT_SIZE)
 			return smallScopeValues[sid];
 
-		int ex_key = sid - SCOPE_VALUES_INIT_SIZE;
+		// key := sid - INIT_SIZE;
+		// value := scope_value_of(sid);
+		int key = sid - SCOPE_VALUES_INIT_SIZE;
 
-		while (ex_key >= bigScopeValues.size())
+		while (key >= bigScopeValues.size())
 			bigScopeValues.addAll(nullList);
-		result = bigScopeValues.get(ex_key);
+		result = bigScopeValues.get(key);
 		if (result == null) {
 			result = dyscopeIDToScopeValue.apply(sid);
-			bigScopeValues.set(ex_key, result);
+			bigScopeValues.set(key, result);
 		}
 		return result;
 	}
