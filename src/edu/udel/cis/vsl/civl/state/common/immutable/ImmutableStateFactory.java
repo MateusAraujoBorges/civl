@@ -15,9 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Function;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -188,24 +185,6 @@ public class ImmutableStateFactory implements StateFactory {
 	 * 
 	 */
 	private List<SymbolicExpression> bigScopeValues = new ArrayList<SymbolicExpression>();
-
-	/**
-	 * The lock used to make sure the access of {@link #bigScopeValues} is
-	 * thread-safe.
-	 */
-	private ReentrantReadWriteLock scopeValueReadWriteLock = new ReentrantReadWriteLock();
-
-	/**
-	 * The read lock used to access {@link #bigScopeValues}. Readers can read at
-	 * the same time but writers are exclusive.
-	 */
-	private ReadLock scopeValueReadLock = scopeValueReadWriteLock.readLock();
-
-	/**
-	 * The write lock used to access {@link #bigScopeValues}. A writer has the
-	 * exclusive access.
-	 */
-	private WriteLock scopeValueWriteLock = scopeValueReadWriteLock.writeLock();
 
 	/**
 	 * Class used to wrap integer arrays so they can be used as keys in hash
@@ -2887,18 +2866,15 @@ public class ImmutableStateFactory implements StateFactory {
 			return this.undefinedScopeValue;
 		if (sid < SCOPE_VALUES_INIT_SIZE)
 			return smallScopeValues[sid];
-		sid -= SCOPE_VALUES_INIT_SIZE;
-		scopeValueWriteLock.lock();
-		while (sid >= bigScopeValues.size())
+
+		int ex_key = sid - SCOPE_VALUES_INIT_SIZE;
+
+		while (ex_key >= bigScopeValues.size())
 			bigScopeValues.addAll(nullList);
-		scopeValueWriteLock.unlock();
-		scopeValueReadLock.lock();
-		result = bigScopeValues.get(sid);
-		scopeValueReadLock.unlock();
+		result = bigScopeValues.get(ex_key);
 		if (result == null) {
 			result = dyscopeIDToScopeValue.apply(sid);
-			bigScopeValues.set(sid, result);
-			scopeValueWriteLock.unlock();
+			bigScopeValues.set(ex_key, result);
 		}
 		return result;
 	}
