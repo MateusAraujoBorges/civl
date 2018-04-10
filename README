@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.15
+                               v1.15.1
 
 ------------------------------ Overview -------------------------------
 
@@ -47,11 +47,9 @@ General Public License.  However, the libraries used by CIVL
 licenses.  See directory licenses for the license of each component.
 
 
--------------------------- Updates from v1.14 -------------------------
--- support loop invariants
--- fixed a bug related to simplification of power operations
--- fixed a bug related to executing C "strlen" function
--- improve the handling of JVM errors.
+-------------------------- Updates from v1.15 -------------------------
+-- fixed an important bug related to cache of scope values
+-- fixed bugs related to math functions in Fortran programs
    
    
 ------------------------- Binary Installation -------------------------
