@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.model.common.type;
 
-import java.util.Arrays;
 import java.util.function.Function;
 
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLScopeType;
@@ -9,8 +8,9 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
-import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
+import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicUninterpretedType;
 
 /**
  * An implementation of {@link CIVLScopeType}.
@@ -30,17 +30,20 @@ public class CommonScopeType extends CommonPrimitiveType
 	public class ScopeValueToIdentity
 			implements
 				Function<SymbolicExpression, IntegerNumber> {
+
+		private Function<SymbolicExpression, IntObject> selector;
+
 		private SymbolicUniverse universe;
 
-		private ScopeValueToIdentity(SymbolicUniverse universe) {
+		private ScopeValueToIdentity(SymbolicUniverse universe,
+				Function<SymbolicExpression, IntObject> selector) {
+			this.selector = selector;
 			this.universe = universe;
 		}
 
 		@Override
 		public IntegerNumber apply(SymbolicExpression t) {
-			return (IntegerNumber) universe
-					.extractNumber((NumericExpression) universe.tupleRead(t,
-							universe.intObject(0)));
+			return universe.numberFactory().integer(selector.apply(t).getInt());
 		}
 	}
 
@@ -65,9 +68,9 @@ public class CommonScopeType extends CommonPrimitiveType
 
 		@Override
 		public SymbolicExpression apply(Integer t) {
-			SymbolicExpression[] arg = {universe.integer(t)};
-			return universe.tuple((SymbolicTupleType) getDynamicType(universe),
-					arg);
+			return universe.concreteValueOfUninterpretedType(
+					(SymbolicUninterpretedType) getDynamicType(universe),
+					universe.intObject(t));
 		}
 	}
 
@@ -94,9 +97,8 @@ public class CommonScopeType extends CommonPrimitiveType
 	@Override
 	public SymbolicType getDynamicType(SymbolicUniverse universe) {
 		if (dynamicType == null)
-			dynamicType = universe.tupleType(
-					universe.stringObject(DYNAMIC_SCOPE_TYPE_NAME),
-					Arrays.asList(universe.integerType()));
+			dynamicType = universe
+					.symbolicUninterpretedType(DYNAMIC_SCOPE_TYPE_NAME);
 		return dynamicType;
 	}
 
@@ -198,9 +200,13 @@ public class CommonScopeType extends CommonPrimitiveType
 	@Override
 	public Function<SymbolicExpression, IntegerNumber> scopeValueToIdentityOperator(
 			SymbolicUniverse universe) {
-		if (this.scopeValue2IdentityOperator == null)
-			this.scopeValue2IdentityOperator = new ScopeValueToIdentity(
+		if (this.scopeValue2IdentityOperator == null) {
+			SymbolicUninterpretedType unintType = (SymbolicUninterpretedType) getDynamicType(
 					universe);
+
+			this.scopeValue2IdentityOperator = new ScopeValueToIdentity(
+					universe, unintType.soleSelector());
+		}
 		return this.scopeValue2IdentityOperator;
 	}
 

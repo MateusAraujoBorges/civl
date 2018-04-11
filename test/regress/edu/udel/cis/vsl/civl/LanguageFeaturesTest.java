@@ -50,6 +50,18 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
+	public void arbitraryPointer() {
+		assertFalse(ui.run(VERIFY, QUIET, NO_PRINTF,
+				filename("arbitrary_pointer.cvl")));
+	}
+
+	@Test
+	public void arbitraryPointerBad() {
+		assertFalse(ui.run(VERIFY, QUIET, NO_PRINTF,
+				filename("arbitrary_pointer_bad.cvl")));
+	}
+
+	@Test
 	public void arrayLiteral() throws ABCException {
 		assertTrue(
 				ui.run(VERIFY, QUIET, NO_PRINTF, filename("arrayLiteral.cvl")));

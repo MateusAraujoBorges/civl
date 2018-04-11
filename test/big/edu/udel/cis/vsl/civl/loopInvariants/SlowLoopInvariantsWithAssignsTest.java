@@ -1,4 +1,4 @@
-package edu.udel.cis.vsl.civl;
+package edu.udel.cis.vsl.civl.loopInvariants;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -9,17 +9,16 @@ import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import edu.udel.cis.vsl.civl.TestConstants;
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
-public class SlowLoopInvariantsNoAssignsTest {
-
+public class SlowLoopInvariantsWithAssignsTest {
 	private static File rootDir = new File(new File("examples"),
-			"loop_invariants/loop_assigns_gen");
+			"loop_invariants/loop_assigns_given");
 
 	private static UserInterface ui = new UserInterface();
 
 	/* *************************** Helper Methods ************************** */
-
 	private static String filename(String name) {
 		return new File(rootDir, name).getPath();
 	}
@@ -108,8 +107,8 @@ public class SlowLoopInvariantsNoAssignsTest {
 
 	@Test
 	public void arrayZeroes2dColumnPreserve() {
-		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
-				TestConstants.QUIET,
+		assertTrue(ui.run("verify",
+				"-collectSymbolicConstants=true -showTransitions",
 				filename("arrayZeroes2d_2columns_preserve.cvl")));
 	}
 
@@ -157,12 +156,6 @@ public class SlowLoopInvariantsNoAssignsTest {
 	@Ignore
 	public void max() {
 		assertTrue(ui.run("verify", TestConstants.QUIET, filename("max.cvl")));
-	}
-
-	@Test
-	public void foVeOOS_max() {
-		assertTrue(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename("max2.cvl")));
 	}
 
 	@Test
@@ -239,16 +232,171 @@ public class SlowLoopInvariantsNoAssignsTest {
 	}
 
 	@Test
-	public void relaxPrefix() {
-		assertTrue(ui.run("verify", // TestConstants.QUIET,
-				"-collectSymbolicConstants=true",
-				filename("relaxedPrefix_loop.cvl")));
+	public void JanLoop1st() {
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET,
+				filename("../Jans_example/invariant_1st_loop.cvl")));
 	}
 
-	@Ignore // Need why3 with timeout > 15 seconds
+	@Test
+	public void JanLoop1stBadAssert() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET,
+				filename("../Jans_example/invariant_1st_loop-bad_assert.cvl")));
+	}
+
+	@Test
+	public void JanLoop1stBadAssigns() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename(
+						"../Jans_example/invariant_1st_loop-bad_assigns.cvl")));
+	}
+
+	@Test
+	public void JanLoop2nd() {
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET,
+				filename("../Jans_example/invariant_2nd_loop.cvl")));
+	}
+
+	@Test
+	public void JanLoop2ndBadAssert() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET,
+				filename("../Jans_example/invariant_2nd_loop_bad-assert.cvl")));
+	}
+
+	@Test
+	public void JanLoop2ndBadAssigns() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename(
+						"../Jans_example/invariant_2nd_loop_bad-assigns.cvl")));
+	}
+
+	@Test
+	public void JanLoop3rd() {
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET,
+				filename("../Jans_example/invariant_3rd_loop.cvl")));
+	}
+
+	@Test
+	public void JanLoop3rdBadAssert() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET,
+				filename("../Jans_example/invariant_3rd_loop-bad_assert.cvl")));
+	}
+
+	@Test
+	public void JanLoop3rdBadAssigns() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename(
+						"../Jans_example/invariant_3rd_loop-bad_assigns.cvl")));
+	}
+
+	@Test
+	public void JanLoop() {
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+
+				filename("../Jans_example/invariant.cvl")));
+	}
+
+	@Test
+	public void relaxedPrefix() {
+		assertTrue(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename(
+						"../verifyThisNB/relaxedPrefix/relaxedPrefix_loop.cvl")));
+	}
+
+	@Test
+	public void relaxedPrefixWeak() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename(
+						"../verifyThisNB/relaxedPrefix/relaxedPrefix_loop-bad_weak.cvl")));
+	}
+
+	@Test
+	public void relaxedPrefixWeak2() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename(
+						"../verifyThisNB/relaxedPrefix/relaxedPrefix_loop-bad_weak2.cvl")));
+	}
+
+	@Test
+	public void relaxedPrefixBadAssert() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename(
+						"../verifyThisNB/relaxedPrefix/relaxedPrefix_loop-bad_assert.cvl")));
+	}
+
+	@Test
+	public void relaxedPrefixWeak4Assert() {
+		assertFalse(ui.run("verify", "-collectSymbolicConstants=true",
+				TestConstants.QUIET, filename(
+						"../verifyThisNB/relaxedPrefix/relaxedPrefix_loop-bad_weak4assert.cvl")));
+	}
+
+	@Test
+	public void sort() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename(
+						"../verifyThisNB/longestRepeatedSubstring/sort_deductive.cvl")));
+	}
+
+	@Test
+	public void sortBadInvariant() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename(
+						"../verifyThisNB/longestRepeatedSubstring/sort-bad_invariant.cvl")));
+	}
+
+	@Test
+	public void sortBadAssert() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename(
+						"../verifyThisNB/longestRepeatedSubstring/sort-bad_assert.cvl")));
+	}
+
+	@Test
+	public void lrsBadInvariant() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename(
+						"../verifyThisNB/longestRepeatedSubstring/lrs-bad_invariant.cvl")));
+	}
+
+	@Test
+	public void lrsBadAssert() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename(
+						"../verifyThisNB/longestRepeatedSubstring/lrs-bad_assert.cvl")));
+	}
+
+	@Test
+	public void lrs() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename(
+						"../verifyThisNB/longestRepeatedSubstring/lrs_deductive.cvl ")));
+	}
+
+	@Test
+	public void pairInsertion() {
+		assertTrue(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename(
+						"../verifyThisNB/pairInsertSort/pairInsertSort_partial.cvl")));
+	}
+
+	@Test
+	public void pairInsertionBadAssert() {
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-collectSymbolicConstants=true", filename(
+						"../verifyThisNB/pairInsertSort/pairInsertSort_partial-bad_assert.cvl")));
+	}
+
+	@Ignore // requires why3 with TIMEOUT > 10 seconds
 	public void lcp2() {
 		assertTrue(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename("lcp2.cvl")));
+				"-collectSymbolicConstants=true", filename(
+						"../verifyThisNB/longestRepeatedSubstring/lcp2.cvl ")));
 	}
 
 	@AfterClass
