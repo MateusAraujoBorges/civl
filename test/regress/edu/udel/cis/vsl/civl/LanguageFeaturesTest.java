@@ -51,7 +51,7 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void arbitraryPointer() {
-		assertFalse(ui.run(VERIFY, QUIET, filename("arbitrary_pointer.cvl")));
+		assertTrue(ui.run(VERIFY, QUIET, filename("arbitrary_pointer.cvl")));
 	}
 
 	@Test
