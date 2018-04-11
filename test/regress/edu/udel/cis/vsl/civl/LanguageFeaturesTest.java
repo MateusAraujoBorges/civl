@@ -51,14 +51,13 @@ public class LanguageFeaturesTest {
 
 	@Test
 	public void arbitraryPointer() {
-		assertFalse(ui.run(VERIFY, QUIET, NO_PRINTF,
-				filename("arbitrary_pointer.cvl")));
+		assertFalse(ui.run(VERIFY, QUIET, filename("arbitrary_pointer.cvl")));
 	}
 
 	@Test
 	public void arbitraryPointerBad() {
-		assertFalse(ui.run(VERIFY, QUIET, NO_PRINTF,
-				filename("arbitrary_pointer_bad.cvl")));
+		assertFalse(
+				ui.run(VERIFY, QUIET, filename("arbitrary_pointer_bad.cvl")));
 	}
 
 	@Test
