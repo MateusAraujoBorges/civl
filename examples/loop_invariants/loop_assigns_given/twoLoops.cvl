@@ -6,9 +6,11 @@ int main() {
 
   /*@ loop invariant i >= 0 ;
     @ loop assigns i;
+    @ loop variant i;
     @*/
   while (1) {    
     i++;   
+    //@ assert i >= 0;
   }
 
   // The second loop will never executes

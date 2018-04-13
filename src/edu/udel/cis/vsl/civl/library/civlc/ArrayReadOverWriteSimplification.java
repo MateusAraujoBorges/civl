@@ -2,7 +2,6 @@ package edu.udel.cis.vsl.civl.library.civlc;
 
 import java.util.Iterator;
 
-import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
@@ -26,13 +25,10 @@ public class ArrayReadOverWriteSimplification extends ExpressionVisitor
 
 	private SymbolicUniverse universe;
 
-	private Reasoner reasoner;
-
 	ArrayReadOverWriteSimplification(SymbolicUniverse universe,
 			BooleanExpression context) {
 		super(universe);
 		this.universe = universe;
-		this.reasoner = universe.reasoner(context);
 	}
 
 	@Override
@@ -47,7 +43,7 @@ public class ArrayReadOverWriteSimplification extends ExpressionVisitor
 		BooleanExpression neq = universe.neq(wrtIndex, index);
 		BooleanExpression eq = universe.equals(wrtIndex, index);
 
-		if (reasoner.isValid(neq)) {
+		if (neq.isTrue()) {
 			if (array.operator() == SymbolicOperator.ARRAY_WRITE)
 				return readArrayWrite(array, index);
 
@@ -55,7 +51,7 @@ public class ArrayReadOverWriteSimplification extends ExpressionVisitor
 				return readDenseArrayWrite(array, index);
 			return universe.arrayRead(array, index);
 		}
-		if (reasoner.isValid(eq))
+		if (eq.isTrue())
 			return (SymbolicExpression) arrayWrite.argument(2);
 		return universe.arrayRead(arrayWrite, index);
 	}
@@ -82,14 +78,14 @@ public class ArrayReadOverWriteSimplification extends ExpressionVisitor
 		BooleanExpression neq = universe.neq(wrtIndex, index);
 		BooleanExpression eq = universe.equals(wrtIndex, index);
 
-		if (reasoner.isValid(neq)) {
+		if (neq.isTrue()) {
 			if (array.operator() == SymbolicOperator.ARRAY_WRITE)
 				return readArrayWrite(array, index);
 			if (array.operator() == SymbolicOperator.DENSE_ARRAY_WRITE)
 				return readDenseArrayWrite(array, index);
 			return universe.arrayRead(array, index);
 		}
-		if (reasoner.isValid(eq))
+		if (eq.isTrue())
 			return values.iterator().next();
 		return universe.arrayRead(arrayDenseWrite, index);
 	}
