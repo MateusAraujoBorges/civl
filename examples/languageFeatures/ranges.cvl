@@ -1,0 +1,25 @@
+#include<assert.h>
+
+int main() {
+ int m = 0;
+ int n = 10;
+ int k = n-1;
+ int a[n];
+
+ for (int i = 0; i < n; i++)
+   a[i] = 0;
+
+ $assert($forall (int j:0.. k) a[j]==0);
+ $assert($forall (int j:0..n-1) a[j]==0);
+ $assert($forall (int j:0.. n-1) a[j]==0);
+ $assert($forall (int j:0 .. n-1) a[j]==0);
+ $assert($forall (int j:0 ..n-1) a[j]==0);
+ $assert($forall (int j:0..(n-1)) a[j]==0);
+ $assert($forall (int j:m ..9) a[j]==0);
+ $assert($forall (int j:m +0..9) a[j]==0);
+ $assert($forall (int j:m -0..9) a[j]==0);
+ $assert($forall (int j:0..+9) a[j]==0);
+ $assert($forall (int j:0..-9+18) a[j]==0);
+ $assert($forall (double j: m ..k) a[j]==0);
+ $assert($forall (double j: m..k) a[j]==0);
+}

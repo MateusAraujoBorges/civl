@@ -801,6 +801,11 @@ public class LanguageFeaturesTest {
 				filename("quantifiedConditionalExpression.cvl")));
 	}
 
+	@Test
+	public void ranges() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("ranges.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
