@@ -383,7 +383,8 @@ public class CIVLConfiguration {
 		if (this.isEnableMpiContract())
 			this.intOperationTransiformer = false;
 		this.collectSymbolicNames = config
-				.isTrue(CIVLConstants.collectSymbolicConstantsO);
+				.isTrue(CIVLConstants.collectSymbolicConstantsO)
+				|| config.isTrue(CIVLConstants.loopO);
 		this.setCheckDivisionByZero(
 				config.isTrue(CIVLConstants.checkDivisionByZeroO));
 		this.checkMemoryLeak = config.isTrue(CIVLConstants.checkMemoryLeakO);

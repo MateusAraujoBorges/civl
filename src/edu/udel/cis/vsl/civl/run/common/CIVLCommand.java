@@ -19,7 +19,10 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.guidedO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.idO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.inputO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.intBit;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.intOperationTransformer;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.loopO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.macroO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.maxProcsO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.maxdepthO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.minO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.mpiContractO;
@@ -59,8 +62,6 @@ import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.unpreprocO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.userIncludePathO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.verboseO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.witnessO;
-import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.intOperationTransformer;
-import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.maxProcsO;
 
 import java.io.PrintStream;
 import java.util.Collection;
@@ -92,8 +93,8 @@ public class CIVLCommand {
 		CIVLCommand.addVerifyOrCompareOption(errorBoundO, verboseO, debugO,
 				userIncludePathO, sysIncludePathO, showTransitionsO,
 				showStatesO, showSavedStatesO, showQueriesO, showProverQueriesO,
-				inputO, minO, mpiContractO, maxdepthO, procBoundO, saveStatesO,
-				simplifyO, solveO, enablePrintfO, showAmpleSetO,
+				inputO, minO, loopO, mpiContractO, maxdepthO, procBoundO,
+				saveStatesO, simplifyO, solveO, enablePrintfO, showAmpleSetO,
 				showAmpleSetWtStatesO, statelessPrintfO, deadlockO, svcomp16O,
 				svcomp17O, showProgramO, showPathConditionO, ompNoSimplifyO,
 				ompLoopDecompO, collectProcessesO, collectScopesO,

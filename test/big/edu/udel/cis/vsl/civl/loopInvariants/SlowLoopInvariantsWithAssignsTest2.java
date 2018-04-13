@@ -25,42 +25,42 @@ public class SlowLoopInvariantsWithAssignsTest2 {
 	@Test
 	public void foVeOOS_max() {
 		assertTrue(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true",
+				"-loop=true",
 				filename("foVeOOS/max/max.cvl")));
 	}
 
 	@Test
 	public void foVeOOS_maxBadAssert() {
 		assertFalse(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true",
+				"-loop=true",
 				filename("foVeOOS/max/max-bad_assert.cvl")));
 	}
 
 	@Test
 	public void foVeOOS_maxBadInvariant() {
 		assertFalse(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true",
+				"-loop=true",
 				filename("foVeOOS/max/max-bad_invariant.cvl")));
 	}
 
 	@Test
 	public void foVeOOS_duplets() {
 		assertTrue(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true",
+				"-loop=true",
 				filename("foVeOOS/twoEqualElements/two_equal_elements.cvl")));
 	}
 
 	@Test
 	public void foVeOOS_dupletsBadAssert() {
 		assertFalse(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename(
+				"-loop=true", filename(
 						"foVeOOS/twoEqualElements/two_equal_elements-bad_assert.cvl")));
 	}
 
 	@Test
 	public void foVeOOS_dupletsBadInvariant() {
 		assertFalse(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename(
+				"-loop=true", filename(
 						"foVeOOS/twoEqualElements/two_equal_elements-bad_invariant.cvl")));
 	}
 

@@ -129,6 +129,7 @@ OPTION_NAME
     | '-id'
     | '-int_bit'
     | '-direct'
+    | '-loop'
     | '-maxdepth'
     | '-min'
     | '-mpiContract'

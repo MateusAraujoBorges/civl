@@ -122,6 +122,7 @@ public class CIVLConstants {
 	public static String MIN = "min";
 
 	public static String MPI_CONTRACT = "mpiContract";
+	public static String LOOP_INV = "loop";
 	public static String PROC_BOUND = "procBound";
 	public static String RANDOM = "random";
 	public static String SAVE_STATES = "saveStates";
@@ -268,6 +269,15 @@ public class CIVLConstants {
 			MPI_CONTRACT, STRING,
 			"MPI contract mode, specify the name of the function to be verified",
 			null);
+
+	/**
+	 * Enable all settings that are required for verifying with loop invariants.
+	 * Disable by default.
+	 */
+	public final static Option loopO = Option.newScalarOption(LOOP_INV, BOOLEAN,
+			"Enable all settings that are required for verifying with loop invariants. "
+					+ "(e.g. collect symbolic constants will be enabled)",
+			false);
 
 	/**
 	 * The bound on number of live processes (no bound if negative). No bound by
@@ -631,9 +641,9 @@ public class CIVLConstants {
 		return new Option[]{astO, collectHeapsO, collectProcessesO,
 				collectScopesO, collectSymbolicConstantsO, deadlockO, debugO,
 				enablePrintfO, errorBoundO, errorStateEquivO, guiO, guidedO,
-				idO, inputO, linkO, macroO, maxdepthO, minO, mpiContractO,
-				ompLoopDecompO, ompNoSimplifyO, probO, preprocO, procBoundO,
-				randomO, saveStatesO, seedO, showAmpleSetO,
+				idO, inputO, linkO, loopO, macroO, maxdepthO, minO,
+				mpiContractO, ompLoopDecompO, ompNoSimplifyO, probO, preprocO,
+				procBoundO, randomO, saveStatesO, seedO, showAmpleSetO,
 				showAmpleSetWtStatesO, showInputVarsO, showMemoryUnitsO,
 				showModelO, showPathConditionO, showProgramO,
 				showProverQueriesO, showQueriesO, showSavedStatesO, showStatesO,
