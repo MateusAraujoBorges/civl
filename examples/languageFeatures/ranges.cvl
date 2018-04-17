@@ -20,6 +20,6 @@ int main() {
  $assert($forall (int j:m -0..9) a[j]==0);
  $assert($forall (int j:0..+9) a[j]==0);
  $assert($forall (int j:0..-9+18) a[j]==0);
- $assert($forall (double j: m ..k) a[j]==0);
- $assert($forall (double j: m..k) a[j]==0);
+ $assert($forall (int j: m ..k) a[j]==0);
+ $assert($forall (int j: m..k) a[j]==0);
 }
