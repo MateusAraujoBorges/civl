@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.transform.common;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,15 +35,12 @@ import edu.udel.cis.vsl.abc.ast.type.IF.ObjectType;
 import edu.udel.cis.vsl.abc.ast.type.IF.StandardBasicType.BasicTypeKind;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type;
 import edu.udel.cis.vsl.abc.ast.type.IF.Type.TypeKind;
-import edu.udel.cis.vsl.abc.config.IF.Configurations.Language;
-import edu.udel.cis.vsl.abc.err.IF.ABCException;
 import edu.udel.cis.vsl.abc.front.IF.CivlcTokenConstant;
 import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Formation;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.StringLiteral;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
-import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.transform.common.contracts.MemoryLocationManager;
 import edu.udel.cis.vsl.civl.transform.common.contracts.MemoryLocationManager.MemoryBlock;
@@ -54,18 +50,6 @@ public class LoopContractTransformerWorker extends BaseWorker {
 	 * A reference to {@link NodeFactory}
 	 */
 	private NodeFactory nodeFactory;
-
-	private final static String LOOP_ASSIGNS_AUTO_GEN_HEADER = "/include/abc/loop_assigns_gen.cvh";
-
-	private final static String MEM_HEADER = "/include/abc/mem.cvh";
-
-	private final static String LOOP_ASSIGNS_AUTO_GEN_IMPL = "/include/civl/loop_assigns_gen.cvl";
-
-	private final static String MEM_IMPL = "/include/civl/mem.cvl";
-
-	// private final static String STRING_HEADER = "/include/abc/string.h";
-
-	// private final static String STRING_IMPL = "/include/civl/string.cvl";
 
 	/* ************************ Static fields ****************************** */
 
@@ -332,41 +316,11 @@ public class LoopContractTransformerWorker extends BaseWorker {
 			return astFactory.newAST(root, ast.getSourceFiles(),
 					ast.isWholeProgram());;
 
-		root.insertChildren(0, addLibrary(LOOP_ASSIGNS_AUTO_GEN_IMPL));
-		root.insertChildren(0, addLibrary(MEM_IMPL));
-		root.insertChildren(0, addLibrary(LOOP_ASSIGNS_AUTO_GEN_HEADER));
-		root.insertChildren(0, addLibrary(MEM_HEADER));
 		completeSources(root);
 		ast = astFactory.newAST(root, ast.getSourceFiles(),
 				ast.isWholeProgram());
 		// ast.prettyPrint(System.out, true);
 		return ast;
-	}
-
-	/**
-	 * Adds an library AST to the given AST
-	 * 
-	 * @param filePath
-	 * @return
-	 */
-	private List<BlockItemNode> addLibrary(String filePath) {
-		try {
-			AST ast = astFactory.getASTofLibrary(new File(filePath),
-					Language.CIVL_C);
-			SequenceNode<BlockItemNode> root = ast.getRootNode();
-			List<BlockItemNode> result = new LinkedList<>();
-
-			ast.release();
-			for (BlockItemNode node : root) {
-				node.remove();
-				result.add(node);
-			}
-			return result;
-		} catch (ABCException e) {
-			throw new CIVLSyntaxException(
-					"Unexpected error happens during parsing library: "
-							+ filePath + "\n" + e.getMessage());
-		}
 	}
 
 	/* **************** Main transformation logic methods ****************** */
@@ -692,10 +646,12 @@ public class LoopContractTransformerWorker extends BaseWorker {
 		results.add(createAssumptionPop(source));
 		// ND choice of enter or exit:
 		if (!loop.getLoopAssignSet().isEmpty())
-			results.add(nodeFactory.newExpressionStatementNode(
-					nodeFactory.newOperatorNode(source, Operator.ASSIGN,
-							identifierExpression(auxVarNames.loop_new_cond),
-							createNDBinaryChoice(source))));
+			results.add(
+					nodeFactory.newExpressionStatementNode(
+							nodeFactory.newOperatorNode(source, Operator.ASSIGN,
+									identifierExpression(
+											auxVarNames.loop_new_cond),
+									createNDBinaryChoice(source))));
 
 		StatementNode newBody = nodeFactory.newCompoundStatementNode(source,
 				results);
@@ -1176,11 +1132,12 @@ public class LoopContractTransformerWorker extends BaseWorker {
 			throws SyntaxException {
 		ExpressionNode assertIdentifier = identifierExpression(
 				BaseWorker.ASSERT);
-		StringLiteralNode messageNode = nodeFactory.newStringLiteralNode(
-				predicate.getSource(), violationMessage,
-				astFactory.getTokenFactory()
-						.newStringToken(loopInvariantsViolationMessageToken)
-						.getStringLiteral());
+		StringLiteralNode messageNode = nodeFactory
+				.newStringLiteralNode(predicate.getSource(), violationMessage,
+						astFactory.getTokenFactory()
+								.newStringToken(
+										loopInvariantsViolationMessageToken)
+								.getStringLiteral());
 
 		FunctionCallNode assumeCall = nodeFactory.newFunctionCallNode(
 				predicate.getSource(), assertIdentifier,
@@ -1456,10 +1413,12 @@ public class LoopContractTransformerWorker extends BaseWorker {
 				identifierExpression(LOOP_WRITE_SET_WIDENING),
 				Arrays.asList(identifierExpression(auxVarNames.loop_write_set)),
 				null);
-		wideningThenNDChoice.add(nodeFactory.newExpressionStatementNode(
-				nodeFactory.newOperatorNode(source, Operator.ASSIGN,
-						identifierExpression(auxVarNames.loop_write_set),
-						wideningCall)));
+		wideningThenNDChoice
+				.add(nodeFactory.newExpressionStatementNode(
+						nodeFactory.newOperatorNode(source, Operator.ASSIGN,
+								identifierExpression(
+										auxVarNames.loop_write_set),
+								wideningCall)));
 		wideningThenNDChoice.add(nodeFactory.newExpressionStatementNode(
 				nodeFactory.newOperatorNode(source, Operator.ASSIGN,
 						termCondVar, createNDBinaryChoice(source))));

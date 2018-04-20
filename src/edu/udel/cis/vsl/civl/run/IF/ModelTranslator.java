@@ -41,6 +41,7 @@ import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelBuilder;
 import edu.udel.cis.vsl.civl.model.IF.Models;
 import edu.udel.cis.vsl.civl.run.common.ParseSystemLibrary;
+import edu.udel.cis.vsl.civl.transform.IF.LoopContractTransformer;
 import edu.udel.cis.vsl.civl.transform.IF.TransformerFactory;
 import edu.udel.cis.vsl.civl.transform.IF.Transforms;
 import edu.udel.cis.vsl.gmc.CommandLineException;
@@ -128,7 +129,7 @@ public class ModelTranslator {
 	FrontEnd frontEnd;
 
 	// private fields
-	private List<File> files = new ArrayList<>();
+	private ArrayList<File> files = new ArrayList<>();
 
 	/**
 	 * The system include paths specified in the command line section.
@@ -241,9 +242,13 @@ public class ModelTranslator {
 
 	Program buildProgram() throws ABCException {
 		TranslationTask task;
-		UnitTask[] unitTasks = new UnitTask[files.size()];
+		UnitTask[] unitTasks;
 		Map<String, String> macros = this.getMacros();
 
+		if (config.loopInvariantEnabled())
+			files.addAll(0,
+					Arrays.asList(LoopContractTransformer.additionalLibraries));
+		unitTasks = new UnitTask[files.size()];
 		for (int i = 0; i < unitTasks.length; i++) {
 			unitTasks[i] = new UnitTask(new File[]{files.get(i)});
 			unitTasks[i].setMacros(macros);
@@ -251,9 +256,6 @@ public class ModelTranslator {
 			unitTasks[i].setUserIncludes(userIncludes);
 		}
 		task = new TranslationTask(unitTasks);
-		// if (this.config.showAST())
-		// task.setPrettyPrint(false);
-		// else
 		task.setPrettyPrint(true);
 		task.setLinkLanguage(Language.CIVL_C);
 		task.setStage(TranslationStage.TRANSFORM_PROGRAM);
@@ -269,12 +271,12 @@ public class ModelTranslator {
 		frontEnd = executor.getFrontEnd();
 		this.transformerFactory = Transforms
 				.newTransformerFactory(frontEnd.getASTFactory());
-		addTransformations(frontEnd, task, macros);
+		addTransformations(task, macros);
 		executor.execute();
 		return executor.getProgram();
 	}
 
-	private void addTransformations(FrontEnd frontEnd, TranslationTask task,
+	private void addTransformations(TranslationTask task,
 			Map<String, String> macros) throws ABCException {
 		if (config.svcomp())
 			for (UnitTask unitTask : task.getUnitTasks()) {
@@ -288,8 +290,9 @@ public class ModelTranslator {
 			}
 		task.addTransformRecord(
 				transformerFactory.getSvcompTransformerRecord(config));
-		task.addTransformRecord(
-				transformerFactory.getLoopContractTransformerRecord());
+		if (config.loopInvariantEnabled())
+			task.addTransformRecord(
+					transformerFactory.getLoopContractTransformerRecord());
 		if (config.isEnableMpiContract())
 			task.addTransformRecord(
 					transformerFactory.getContractTransformerRecord(

@@ -4225,7 +4225,7 @@ public class FunctionTranslator {
 						modelFactory.sourceOf(expressionNode));
 		}
 		if (translateConversions) {
-			result = this.applyConversions(scope, expressionNode, result);
+			result = applyConversions(scope, expressionNode, result);
 		}
 		return result;
 	}
@@ -4557,6 +4557,18 @@ public class FunctionTranslator {
 							|| oldCIVLType.isRealType()
 									&& newCIVLType.isRealType()) {
 						// nothing to do
+					} else if (oldCIVLType.isCharType()
+							&& newCIVLType.isBoolType()) {
+						// "(bool) c" where c has char type can always be
+						// converted to "c != NUL", where NUL is the character
+						// of value 0 defined in ASCII.
+						char NUL = 0;
+
+						expression = modelFactory.binaryExpression(
+								expression.getSource(),
+								BINARY_OPERATOR.NOT_EQUAL, expression,
+								modelFactory.charLiteralExpression(
+										expression.getSource(), NUL));
 					} else {
 						// Sometimes the conversion might have been done during
 						// the translating the expression node, for example,

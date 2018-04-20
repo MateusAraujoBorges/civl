@@ -267,6 +267,11 @@ public class CIVLConfiguration {
 
 	private boolean isInSubprogram = false;
 
+	/**
+	 * set to true iff loop invariant option is enabled.
+	 */
+	private boolean loopInvariantEnabled = false;
+
 	// private boolean pthreadOnly = true;
 
 	/**
@@ -382,9 +387,10 @@ public class CIVLConfiguration {
 				(String) config.getValueOrDefault(CIVLConstants.mpiContractO));
 		if (this.isEnableMpiContract())
 			this.intOperationTransiformer = false;
+		this.loopInvariantEnabled = config.isTrue(CIVLConstants.loopO);
 		this.collectSymbolicNames = config
 				.isTrue(CIVLConstants.collectSymbolicConstantsO)
-				|| config.isTrue(CIVLConstants.loopO);
+				|| loopInvariantEnabled;
 		this.setCheckDivisionByZero(
 				config.isTrue(CIVLConstants.checkDivisionByZeroO));
 		this.checkMemoryLeak = config.isTrue(CIVLConstants.checkMemoryLeakO);
@@ -977,5 +983,12 @@ public class CIVLConfiguration {
 
 	public void setMaxProcs(int maxProcs) {
 		this.maxProcs = maxProcs;
+	}
+
+	/**
+	 * @return true iff loop invariant is enabled
+	 */
+	public boolean loopInvariantEnabled() {
+		return this.loopInvariantEnabled;
 	}
 }
