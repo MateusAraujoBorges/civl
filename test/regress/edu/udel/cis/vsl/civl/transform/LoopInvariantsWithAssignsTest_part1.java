@@ -23,8 +23,14 @@ public class LoopInvariantsWithAssignsTest_part1 {
 
 	@Test
 	public void arrayEquals() {
-		assertTrue(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename("arrayEquals.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop",
+				filename("arrayEquals.cvl")));
+	}
+
+	@Test
+	public void add() {
+		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop",
+				filename("add.cvl")));
 	}
 
 	@AfterClass

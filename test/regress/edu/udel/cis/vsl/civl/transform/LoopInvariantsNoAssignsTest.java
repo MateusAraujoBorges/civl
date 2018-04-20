@@ -24,8 +24,8 @@ public class LoopInvariantsNoAssignsTest {
 
 	@Test
 	public void arrayEquals() {
-		assertTrue(ui.run("verify", TestConstants.QUIET,
-				"-collectSymbolicConstants=true", filename("arrayEquals.cvl")));
+		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop",
+				filename("arrayEquals.cvl")));
 	}
 
 	@AfterClass

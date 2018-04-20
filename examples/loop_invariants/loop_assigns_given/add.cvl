@@ -1,0 +1,20 @@
+#pragma CIVL ACSL
+$input int n;
+$assume(n>=1);
+$input int a[n], b[n];
+void f(int n, int *a, int *b, int *c) {
+  /*@ loop invariant 0<=i && i<=n;
+    @ loop invariant \forall int j; 0<=j && j<i ==> c[j]==a[j]+b[j];
+    //    @ loop assigns i;
+    @ loop assigns i, c[0 .. (n-1)];
+    @*/
+  for (int i=0; i<n; i++) {
+    c[i] = a[i] + b[i];
+  }
+}
+
+int main() {
+  int c[n];
+  f(n, a, b, c);
+  $assert($forall (int j: 0..n-1) c[j]==a[j]+b[j]);
+}
