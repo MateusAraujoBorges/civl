@@ -40,6 +40,12 @@ public class LoopInvariantsWithAssignsTest_part2 {
 				filename("foVeOOS/max/max-bad_invariant.cvl")));
 	}
 
+	@Test
+	public void arrayTwoSection() {
+		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop",
+				filename("loop_assigns_given/twoSectionArray.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
