@@ -1,0 +1,48 @@
+#include "treebuffer.h"
+#include <stdlib.h>
+
+// bounded number of new nodes that will be added
+$input int N;
+$assume(0 < N && N <= 5);
+$input int HISTORY_SIZE;
+$assume(0 < HISTORY_SIZE && HISTORY_SIZE < N);
+$input int Data[N];
+
+$scope root = $here;
+
+int main() {
+  Tree * tree = empty(HISTORY_SIZE);
+  Tree * forest[N + 1]; // N new tree + the empty tree
+  int num_trees = 0;
+  size_t max_bounds = 0;
+
+  $elaborate(N);
+  forest[num_trees++] = tree;
+  while (num_trees <= N) {  
+    int pick = $choose_int(num_trees);
+    
+    tree = forest[pick];
+    $elaborate(HISTORY_SIZE);
+    $atomic{
+      Tree * new_tree = add(tree, Data[num_trees-1]);
+      
+      forest[num_trees++] = new_tree;
+      tree = new_tree;
+    }
+    // the heap size is bounded within the HISTORY_SIZE if all cached
+    // historical trees are deleted:
+    $choose{
+      $when($true) {
+	for (int i = 0; i < num_trees-1; i++) 
+	  delete(forest[i]);
+	check_heap_inbound($heap_size(root), HISTORY_SIZE, tree, &max_bounds);
+	delete(tree);
+	return 0;
+      }
+      $when($true) continue;
+    }
+  }
+  for (int i = 0; i < num_trees; i++) 
+    delete(forest[i]);
+  return 0;
+}

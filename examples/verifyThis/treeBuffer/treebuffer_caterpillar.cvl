@@ -1,0 +1,127 @@
+#include <seq.cvh>
+#include <stdlib.h>
+#include "treebuffer.h"
+
+struct Node {
+  Node * parent;
+  int data;
+  // reference counter. A Node object can be deleted iff its 
+  // ref_count == 0 :
+  int ref_count;  
+  // number of ancesters. Node.num_ancest == Node.parent->num_ancest + 1
+  int num_ancest;
+};
+
+struct Tree {
+  int history;
+  Node * xs;    // reference to the last added node
+  Node * ys;    // caterpillar
+};
+
+/* ********** helper functions ********** */
+// garbage collection ...
+void gc(Node * node) {
+  if (node == NULL || node->ref_count > 0) 
+    return;
+  
+  Node * next = node->parent;
+  
+  free(node);
+  if (next != NULL) {
+    next->ref_count--;
+    gc(next);
+  }
+}
+
+/* ********** functions implements interfaces ********** */
+Node * make_node(int data) {
+  Node * node = (Node*)malloc(sizeof(Node));
+  
+  node->parent = NULL;
+  node->data = data;
+  node->ref_count = 0;
+  node->num_ancest = 0;
+  return node;
+}
+
+int get_data(Node * node) {
+  $assert(node, "attempt to get data from a invalid node reference");
+  return node->data;
+}
+
+Tree * empty(int history) {
+  Tree * tree = (Tree*)malloc(sizeof(Tree));
+  
+  tree->history = history;
+  tree->xs = NULL;
+  tree->ys = NULL;
+  return tree;
+}
+
+Tree * add(Tree * tree, int data) {
+  Node * node = make_node(data);
+  Tree * new_tree = empty(tree->history);
+
+  if (tree->xs == NULL) {
+    new_tree->xs = node;
+    new_tree->xs->ref_count++;
+    new_tree->ys = tree->ys;
+    if (tree->ys!=NULL)
+      tree->ys->ref_count++;
+  } else if(tree->xs->num_ancest < tree->history - 2) {
+    node->parent = tree->xs;
+    node->parent->ref_count++;
+    node->num_ancest = node->parent->num_ancest + 1;
+    new_tree->xs = node;
+    new_tree->xs->ref_count++;
+    new_tree->ys = tree->ys;
+    if (tree->ys != NULL)
+      new_tree->ys->ref_count++;
+  } else {
+    node->parent = tree->xs;
+    node->parent->ref_count++;
+    node->num_ancest = node->parent->num_ancest + 1;
+    new_tree->ys = node;
+    new_tree->ys->ref_count++;
+  }
+  return new_tree;
+}
+
+// Note: "ancestors" is an 0-terminated array:
+void take(Tree * tree, Node * ancestors[]) {
+  int history = tree->history;
+  int i = 0;
+  Node * ancestor = tree->xs;
+  
+  while (i < history && ancestor != NULL) {
+    ancestors[i++] = ancestor;
+    ancestor = ancestor->parent;
+  }
+  ancestor = tree->ys;
+  while (i < history && ancestor != NULL) {
+    ancestors[i++] = ancestor;
+    ancestor = ancestor->parent;
+  }
+  ancestors[i] = 0;
+}
+
+void delete(Tree * tree) {
+  // took ys off and garbage collection:
+  if (tree->ys != NULL) {
+    Node * ys = tree->ys;
+    
+    tree->ys = NULL;
+    ys->ref_count--;
+    gc(ys);
+  }  
+  if (tree->xs != NULL) {
+    Node * xs = tree->xs;
+    
+    tree->xs = NULL;
+    xs->ref_count--;
+    gc(xs);
+  }
+  free(tree);
+}
+
+

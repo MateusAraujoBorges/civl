@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl;
 
+import static edu.udel.cis.vsl.civl.TestConstants.COMPARE;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
 import static org.junit.Assert.assertTrue;
@@ -70,4 +71,19 @@ public class VerifyThisTest {
 		assertTrue(ui.run(VERIFY, QUIET, filename("treeBarrier.cvl")));
 	}
 
+	@Test
+	public void treeBuffer() {
+		assertTrue(ui.run(COMPARE, QUIET, "-checkMemoryLeak=false", "-inputN=3",
+				"-spec", filename("treeBuffer/driver.cvl"),
+				filename("treeBuffer/treebuffer_naive.cvl"), "-impl",
+				filename("treeBuffer/driver.cvl"),
+				filename("treeBuffer/treebuffer.cvl")));
+	}
+
+	@Test
+	public void treeBufferBound() {
+		assertTrue(ui.run(VERIFY, QUIET, "-inputN=3",
+				filename("treeBuffer/driver_heap_bound.cvl"),
+				filename("treeBuffer/treebuffer.cvl")));
+	}
 }

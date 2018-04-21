@@ -1,0 +1,58 @@
+#include "treebuffer.h"
+#include <stdlib.h>
+
+// bounded number of new nodes that will be added
+$input int N;
+$assume(0 < N && N <= 5);
+$input int HISTORY_SIZE;
+$assume(0 < HISTORY_SIZE && HISTORY_SIZE < N);
+$input int Data[N];
+// the non-deterministic pick of an existing tree as a parent
+$input int TreePicks[N + 1];
+$assume($forall (int i : 0 .. N) 0 <= TreePicks[i] && TreePicks[i] <= i);
+// all possible results: N iterations *  trace-size
+$output int Traces[N][HISTORY_SIZE];
+
+void write_to_output(int iter, Node * history[]) {
+  // read trace:
+  int h = 0;
+  
+  for (; h < HISTORY_SIZE; h++) 
+    if (history[h] != 0)
+      Traces[iter][h] = get_data(history[h]);
+    else  
+      break;
+  // make all unused elements -1 in Traces:
+  for (; h < HISTORY_SIZE; h++) 
+    Traces[iter][h] = -1;
+}
+
+int main() {
+  Tree * tree = empty(HISTORY_SIZE);
+  Tree * forest[N + 1]; // N new tree + the empty tree
+  int num_trees = 0;
+  
+  $elaborate(N);
+  forest[num_trees++] = tree;
+  while (num_trees <= N) {    
+    tree = forest[TreePicks[num_trees-1]];
+    $elaborate(TreePicks[num_trees-1]);
+    $atomic{
+      Tree * new_tree = add(tree, Data[num_trees-1]);
+      
+      forest[num_trees++] = new_tree;
+      tree = new_tree;
+    }
+    $atomic{
+      Node * history[HISTORY_SIZE + 1];   // 0-terminated array (i.e. extra element at the end as 0)
+      int h = 0;
+      
+      take(tree, history);
+      write_to_output(num_trees - 2, history);
+    }
+  }
+  // delete forest
+  for (int i = 0; i < num_trees; i++)
+    delete(forest[i]);
+  return 0;
+}

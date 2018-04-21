@@ -1,0 +1,64 @@
+#include <seq.cvh>
+#include <stdlib.h>
+#include "treeBuffer.h"
+
+struct Node {
+  Node * parent;
+  int data;
+};
+
+struct Tree {
+  int history;
+  Node * last;    // reference to the last added node
+};
+
+Node * make_node(int data) {
+  Node * node = (Node*)malloc(sizeof(Node));
+  
+  node->parent = NULL;
+  node->data = data;
+  return node;
+}
+
+int get_data(Node * node) {
+  $assert(node, "attempt to get data from a invalid node reference");
+  return node->data;
+}
+
+Tree * empty(int history) {
+  Tree * tree = (Tree*)malloc(sizeof(Tree));
+  
+  tree->history = history;
+  tree->last = NULL;
+  return tree;
+}
+
+Tree * add(Tree * tree, int data) {
+  Node * child = make_node(data);
+  Tree * new_tree = empty(tree->history);  
+
+  if (tree->last == NULL)
+    new_tree->last = child;
+  else {
+    child->parent = tree->last;
+    new_tree->last = child;
+  }
+  return new_tree;
+}
+
+// Note: "ancestors" is an 0-terminated array:
+void take(Tree * tree, Node * ancestors[]) {
+  int history = tree->history;
+  int i = 0;
+  Node * ancestor = tree->last;
+  
+  while (i < history && ancestor != NULL) {
+    ancestors[i++] = ancestor;
+    ancestor = ancestor->parent;
+  }
+  ancestors[i] = 0;
+}
+
+void delete(Tree * tree) {}
+
+
