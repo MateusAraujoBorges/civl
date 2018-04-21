@@ -23,6 +23,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
+import edu.udel.cis.vsl.civl.state.IF.DynamicScope;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
@@ -33,6 +34,10 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
+import edu.udel.cis.vsl.sarl.IF.type.SymbolicTypeSequence;
 import edu.udel.cis.vsl.sarl.prove.IF.ProverPredicate;
 
 /**
@@ -147,6 +152,10 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			case "$choose_int_work" :
 				callEval = new Evaluation(state, argumentValues[0]);
 				break;
+			case "$heap_size" :
+				callEval = executeGetHeapSize(state, pid, process, arguments,
+						argumentValues, source);
+				break;
 			case "$exit" :// return immediately since no transitions needed
 							// after an
 				// exit, because the process no longer exists.
@@ -221,6 +230,58 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 	}
 
 	/* ************************** Private Methods ************************** */
+	/**
+	 * <p>
+	 * The <code>$heap_size($scope s)</code> system function returns the size of
+	 * the heap of the given scope.
+	 * </p>
+	 * <p>
+	 * The heap value is a tuple of 2d-arrays. Each tuple field is associated to
+	 * a unique lexical "malloc". The heap size is computed with the following
+	 * algorithm:<code>
+	 *   for each tule-field t:
+	 *     for each 2d-array element e: 
+	 *       result += sizeof(e);
+	 * </code> Note that the extent of the 2d array must concrete since it is
+	 * the number times a same lexical malloc gets called.
+	 * </p>
+	 * 
+	 * @return the evaluation of this function call.
+	 */
+	private Evaluation executeGetHeapSize(State state, int pid, String process,
+			Expression[] arguments, SymbolicExpression[] argumentValues,
+			CIVLSource source) {
+		int dyscopeId = stateFactory.getDyscopeId(argumentValues[0]);
+		DynamicScope dyscope = state.getDyscope(dyscopeId);
+		SymbolicExpression heap = dyscope.getValue(0);
+
+		// computing heap size:
+		SymbolicTupleType heapTupleType = (SymbolicTupleType) heap.type();
+		SymbolicTypeSequence typesInHeap = heapTupleType.sequence();
+		int numTypes = typesInHeap.numTypes();
+		NumericExpression result = universe.zeroInt();
+
+		for (int i = 0; i < numTypes; i++) {
+			SymbolicExpression array2d, array1d;
+			SymbolicType elementType;
+			int array2dExtent; // must be concrete
+
+			array2d = universe.tupleRead(heap, universe.intObject(i));
+			elementType = ((SymbolicArrayType) ((SymbolicArrayType) array2d
+					.type()).elementType()).elementType();
+			array2dExtent = ((IntegerNumber) universe
+					.extractNumber(universe.length(array2d))).intValue();
+			for (int j = 0; j < array2dExtent; j++) {
+				array1d = universe.arrayRead(array2d, universe.integer(j));
+				if (array1d == symbolicUtil.invalidHeapObject(array1d.type()))
+					continue;
+				result = universe.add(result, universe.multiply(
+						universe.length(array1d),
+						symbolicUtil.sizeof(source, null, elementType)));
+			}
+		}
+		return new Evaluation(state, result);
+	}
 
 	private Evaluation executeGetState(State state, int pid, String process,
 			Expression[] arguments, SymbolicExpression[] argumentValues,
