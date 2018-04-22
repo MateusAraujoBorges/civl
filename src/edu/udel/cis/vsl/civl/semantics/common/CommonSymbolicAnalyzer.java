@@ -18,7 +18,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
-import edu.udel.cis.vsl.civl.model.IF.expression.ACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression.BINARY_OPERATOR;
@@ -2556,21 +2555,6 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 				case STATE_NULL :
 				case STATE_REF :
 					result.append(expression.toString());
-					break;
-				case ACSL_PREDICATE_CALL :
-					ACSLPredicateCall acslPredCall = (ACSLPredicateCall) expression;
-					Expression[] actualParams = acslPredCall.actualArguments();
-
-					result.append(acslPredCall.predicate().name() + " (");
-
-					for (int i = 0; i < actualParams.length - 1; i++)
-						result.append(expressionEvaluationWorker(state, pid,
-								actualParams[i], true, false).right + ", ");
-					if (actualParams.length > 0)
-						result.append(expressionEvaluationWorker(state, pid,
-								actualParams[actualParams.length - 1], true,
-								false).right);
-					result.append(")");
 					break;
 				default :
 					throw new CIVLUnimplementedFeatureException(

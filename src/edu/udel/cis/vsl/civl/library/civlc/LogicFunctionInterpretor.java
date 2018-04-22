@@ -3,9 +3,9 @@ package edu.udel.cis.vsl.civl.library.civlc;
 import java.util.Arrays;
 import java.util.List;
 
-import edu.udel.cis.vsl.civl.model.IF.ACSLPredicate;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
+import edu.udel.cis.vsl.civl.model.IF.LogicFunction;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -21,37 +21,32 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.prove.IF.ProverPredicate;
 
 /**
- * Translates all defined {@link ACSLPredicate}s in the CIVL model to
- * {@link ProverPredicate}s. A ProverPredicate mainly encompasses a boolean
- * expression which is the value of the definition of an ACSL predicate. The
- * value of the definition varies in different states because the definition may
- * involve global variables.
  * 
  * @author ziqing
  *
  */
-public class ACSLPredicateEvaluator {
+public class LogicFunctionInterpretor {
 
 	/**
 	 * Translates (evaluates) a set of {@link ACSLPredicate}s to P
 	 * {@link ProverPredicate}s on the given state.
 	 * 
 	 */
-	static public ProverPredicate[] evaluateACSLPredicate(
-			List<ACSLPredicate> acslPredicates, State state, int pid,
+	static public ProverPredicate[] evaluateLogicFunctions(
+			List<LogicFunction> logicFunctions, State state, int pid,
 			Evaluator evaluator) throws UnsatisfiablePathConditionException {
-		ProverPredicate why3Preds[] = new ProverPredicate[acslPredicates
+		ProverPredicate why3Preds[] = new ProverPredicate[logicFunctions
 				.size()];
 		int i = 0;
 
-		for (ACSLPredicate pred : acslPredicates)
-			why3Preds[i++] = evaluateACSLPredicateWorker(pred, state, pid,
+		for (LogicFunction pred : logicFunctions)
+			why3Preds[i++] = evaluateLogicFunctionWorker(pred, state, pid,
 					evaluator);
 		return why3Preds;
 	}
 
-	static private ProverPredicate evaluateACSLPredicateWorker(
-			ACSLPredicate acslPredicate, State state, int pid,
+	static private ProverPredicate evaluateLogicFunctionWorker(
+			LogicFunction acslPredicate, State state, int pid,
 			Evaluator evaluator) throws UnsatisfiablePathConditionException {
 		String name = acslPredicate.name().name();
 		SymbolicConstant[] parameters = new SymbolicConstant[acslPredicate

@@ -16,7 +16,6 @@ import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
 import edu.udel.cis.vsl.civl.model.IF.contract.LoopContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
-import edu.udel.cis.vsl.civl.model.IF.expression.ACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
@@ -1255,44 +1254,26 @@ public interface ModelFactory {
 			CIVLType returnType, Scope containingScope, Location startLocation);
 
 	/**
-	 * Create a new ACSL predicate ({@link ACSLPredicate}).
+	 * Create a new logic function ({@link LogicFunction}).
 	 * 
 	 * @param source
-	 *            The {@link CIVLSource} related to this ACSL predicate
+	 *            The {@link CIVLSource} related to this logic function
 	 * @param name
-	 *            The name of the predicate
+	 *            The name of the logic function
 	 * @param parameterScope
-	 *            the scope of the predicate parameters
+	 *            the scope of the logic function parameters
 	 * @param parameters
-	 *            a list of parameters of the predicate
+	 *            a list of parameters of the logic function
 	 * @param containingScope
-	 *            the scope where the predicate is defined
+	 *            the scope where the logic function is defined
 	 * @param definition
-	 *            the predicate definition which is an instance of
-	 *            {@link Expression}
-	 * @return a new instance of {@link ACSLPredicate}
+	 *            the logic function definition which is an instance of
+	 *            {@link Expression}, can be null if it has no definition.
+	 * @return a new instance of {@link LogicFunction}
 	 */
-	ACSLPredicate acslPredicate(CIVLSource source, Identifier name,
+	LogicFunction logicFunction(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
 			Scope containingScope, Expression definition);
-
-	/**
-	 * Create a new ACSL predicate call expression, an instance of
-	 * {@link ACSLPredicateCall}.
-	 * 
-	 * @param source
-	 *            the {@link CIVLSource} related to this expression
-	 * @param expressionScope
-	 *            the {@link Scope} where the scope gets called
-	 * @param predicate
-	 *            The {@link ACSLPredicate} that is called
-	 * @param actualArguments
-	 *            The list of actual argument {@link Expression}s
-	 * @return a new ACSL predicate call expression.
-	 */
-	ACSLPredicateCall acslPredicateCall(CIVLSource source,
-			Scope expressionScope, ACSLPredicate predicate,
-			List<Expression> actualArguments);
 
 	CIVLFunction nondetFunction(CIVLSource source, Identifier name,
 			CIVLType returnType, Scope containingScope);
@@ -1780,8 +1761,7 @@ public interface ModelFactory {
 			Expression pid, Expression expression);
 
 	/**
-	 * @return A list of all translated {@link ACSLPredicate}s during model
-	 *         building
+	 * @return All seen {@link LogicFunction}s that are with definitions.
 	 */
-	List<ACSLPredicate> getAllACSLPredicates();
+	List<LogicFunction> getAllLogicFunctions();
 }

@@ -7,12 +7,15 @@ import java.util.List;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
+import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.expression.ACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
+import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
+import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -100,9 +103,21 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 			throws UnsatisfiablePathConditionException {
 		try {
 			switch (expression.expressionKind()) {
-				case ACSL_PREDICATE_CALL :
-					return evaluateACSLPredicateCall(state, pid,
-							(ACSLPredicateCall) expression);
+				case FUNC_CALL :
+					FunctionCallExpression funcCallExpr = (FunctionCallExpression) expression;
+					Expression funcExpr = ((FunctionCallExpression) expression)
+							.callStatement().functionExpression();
+
+					if (funcExpr
+							.expressionKind() == ExpressionKind.FUNCTION_IDENTIFIER) {
+						FunctionIdentifierExpression funcId = (FunctionIdentifierExpression) funcExpr;
+
+						if (funcId.function().isLogic())
+							return evaluateLogicFunctionCall(state, pid,
+									funcCallExpr);
+					} else
+						return super.evaluateFunctionCallExpression(state, pid,
+								funcCallExpr);
 				default :
 					return super.evaluate(state, pid, expression);
 			}
@@ -208,20 +223,20 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	private Evaluation evaluateACSLPredicateCall(State state, int pid,
-			ACSLPredicateCall acslPredCall)
+	private Evaluation evaluateLogicFunctionCall(State state, int pid,
+			FunctionCallExpression logicCall)
 			throws UnsatisfiablePathConditionException {
 		List<SymbolicExpression> argumentValues = new LinkedList<>();
 		Evaluation eval;
-		int numArgs = acslPredCall.actualArguments().length;
+		CIVLFunction logicFunction = logicCall.callStatement().function();
 
-		for (int i = 0; i < numArgs; i++) {
-			eval = evaluate(state, pid, acslPredCall.actualArguments()[i]);
-			assert state == eval.state : "ACSL predicate argument has side-effects.";
+		for (Expression actualArg : logicCall.callStatement().arguments()) {
+			eval = evaluate(state, pid, actualArg);
+			assert state == eval.state : "Logic function call argument has side-effects.";
 			argumentValues.add(eval.value);
 		}
 
-		CIVLFunctionType predType = acslPredCall.predicate().functionType();
+		CIVLFunctionType predType = logicFunction.functionType();
 		List<SymbolicType> paraTypes = new LinkedList<>();
 		SymbolicFunctionType funcType;
 
@@ -230,8 +245,7 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 		funcType = universe.functionType(paraTypes, universe.booleanType());
 
 		SymbolicExpression predCallValue = universe.symbolicConstant(
-				universe.stringObject(acslPredCall.predicate().name().name()),
-				funcType);
+				universe.stringObject(logicFunction.name().name()), funcType);
 
 		return new Evaluation(state,
 				universe.apply(predCallValue, argumentValues));

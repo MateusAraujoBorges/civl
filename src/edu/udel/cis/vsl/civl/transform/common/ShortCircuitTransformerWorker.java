@@ -12,7 +12,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.PredicateNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.OrdinaryDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.OrdinaryDeclarationNode.OrdinaryDeclarationKind;
@@ -31,7 +31,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.IfNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.LoopNode.LoopKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.ReturnNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode.StatementKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.type.StructureOrUnionTypeNode;
@@ -244,7 +243,7 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 
 	static private boolean isInErrorSEFreeContext(ExpressionNode expr) {
 		return isBoundedExpression(expr) || isGuard(expr) || isAssumption(expr)
-				|| isACSLPredicate(expr) || isAssertion(expr);
+				|| isAssertion(expr);
 	}
 
 	/**
@@ -274,25 +273,6 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 			StatementNode stmt = (StatementNode) expr.parent();
 
 			return stmt.statementKind() == StatementKind.WHEN;
-		}
-		return false;
-	}
-
-	/**
-	 * @param expr
-	 * @return True if and only if the expression is part of an ACSL predicate
-	 */
-	static private boolean isACSLPredicate(ExpressionNode expr) {
-		if (expr.parent().nodeKind() == NodeKind.STATEMENT) {
-			StatementNode stmt = (StatementNode) expr.parent();
-
-			if (stmt instanceof ReturnNode
-					&& stmt.parent().nodeKind() == NodeKind.STATEMENT) {
-				StatementNode compStmt = (StatementNode) stmt.parent();
-
-				return (compStmt.statementKind() == StatementKind.COMPOUND
-						&& compStmt.parent() instanceof PredicateNode);
-			}
 		}
 		return false;
 	}
@@ -510,6 +490,11 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 	 */
 	private void searchSCExpressionInSubTreeWorker(ASTNode subTree,
 			BlockItemNode location, List<ShortCircuitOperation> output) {
+		// no short-circut transformation for logic function definitions:
+		if (location instanceof FunctionDeclarationNode)
+			if (((FunctionDeclarationNode) location).isLogicFunction())
+				return;
+
 		for (ASTNode child : subTree.children()) {
 			if (child == null)
 				continue;
@@ -521,10 +506,10 @@ public class ShortCircuitTransformerWorker extends BaseWorker {
 					searchSCInExpression((ExpressionNode) child, location,
 							output);
 			} else {
-				if (child instanceof BlockItemNode)
+				if (child instanceof BlockItemNode) {
 					searchSCExpressionInSubTreeWorker(child,
 							(BlockItemNode) child, output);
-				else
+				} else
 					searchSCExpressionInSubTreeWorker(child, location, output);
 			}
 		}

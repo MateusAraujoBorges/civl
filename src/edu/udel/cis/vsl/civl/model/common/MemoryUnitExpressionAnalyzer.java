@@ -640,8 +640,6 @@ public class MemoryUnitExpressionAnalyzer {
 						derefCount);
 				break;
 			}
-			case ACSL_PREDICATE_CALL :
-				break;
 			default :
 				throw new CIVLUnimplementedFeatureException(
 						"computing the impact memory units"

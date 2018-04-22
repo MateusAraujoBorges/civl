@@ -384,4 +384,19 @@ public interface CIVLFunction extends Sourceable {
 	 * 
 	 */
 	boolean isFreeOfUnsafeloop();
+
+	/**
+	 * @return true iff this function is a logic function. A call to a logic
+	 *         function is side-effect free.
+	 */
+	boolean isLogic();
+
+	/**
+	 * Set weather this function is a logic function.
+	 * 
+	 * @param value
+	 *            true, to set the function as a logic function; false,
+	 *            otherwise.
+	 */
+	void setLogic(boolean value);
 }

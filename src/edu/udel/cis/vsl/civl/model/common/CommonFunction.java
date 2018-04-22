@@ -82,6 +82,11 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	private boolean isStateFunction = false;
 
 	/**
+	 * a flag indicating if this function is a logic function
+	 */
+	private boolean isLogic = false;
+
+	/**
 	 * A flag (whose true value) indicates if there is no unsafe loops in the
 	 * function body. Unsafe loop is a loop whose start location doesn't satisfy
 	 * that {@link Location#isSafeLoop()} returns true.
@@ -717,5 +722,15 @@ public class CommonFunction extends CommonSourceable implements CIVLFunction {
 	@Override
 	public boolean isFreeOfUnsafeloop() {
 		return noUnsafeloop;
+	}
+
+	@Override
+	public boolean isLogic() {
+		return isLogic;
+	}
+
+	@Override
+	public void setLogic(boolean value) {
+		this.isLogic = value;
 	}
 }

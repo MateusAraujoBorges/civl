@@ -31,7 +31,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.acsl.InvariantNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractConstantNode.MPIConstantKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.acsl.MPIContractExpressionNode.MPIContractExpressionKind;
-import edu.udel.cis.vsl.abc.ast.node.IF.acsl.PredicateNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundInitializerNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.CompoundLiteralObject;
 import edu.udel.cis.vsl.abc.ast.node.IF.compound.LiteralObject;
@@ -127,7 +126,6 @@ import edu.udel.cis.vsl.abc.token.IF.CivlcToken;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.StringLiteral;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
-import edu.udel.cis.vsl.civl.model.IF.ACSLPredicate;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
 import edu.udel.cis.vsl.civl.model.IF.AccuracyAssumptionBuilder;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
@@ -2608,14 +2606,13 @@ public class FunctionTranslator {
 					parameterScope.addVariable(parameter);
 				}
 			}
-			if (entity.getDefinition() != null)
-				if (entity.isAbstract())
-					result = buildACSLPredicate(entity, scope, parameterScope,
-							parameters, functionIdentifier, nodeSource);
-				else
-					result = buildRegularCIVLFunction(entity, node, scope,
-							parameterScope, parameters, functionIdentifier,
-							functionType, returnType, nodeSource);
+			if (entity.isLogic())
+				result = buildLogicFunction(entity, scope, parameterScope,
+						parameters, functionIdentifier, nodeSource);
+			else if (entity.getDefinition() != null)
+				result = buildRegularCIVLFunction(entity, node, scope,
+						parameterScope, parameters, functionIdentifier,
+						functionType, returnType, nodeSource);
 			else if (entity.isSystemFunction())
 				result = buildSystemCIVLFunction(entity, node, scope,
 						parameterScope, parameters, functionIdentifier,
@@ -2645,31 +2642,39 @@ public class FunctionTranslator {
 		return fragment;
 	}
 
-	private ACSLPredicate buildACSLPredicate(Function entity, Scope scope,
+	private CIVLFunction buildLogicFunction(Function entity, Scope scope,
 			Scope parameterScope, ArrayList<Variable> parameters,
 			Identifier functionIdentifier, CIVLSource functionSource) {
 		CIVLFunction result = modelBuilder.functionMap.get(entity);
 		FunctionDefinitionNode funcDefinition = entity.getDefinition();
 
-		assert funcDefinition instanceof PredicateNode;
-
+		assert funcDefinition == null || funcDefinition.isLogicFunction();
 		this.functionInfo.addBoundVariableSet();
 		for (Variable var : parameters)
 			this.functionInfo.addBoundVariable(var);
 
-		PredicateNode predicate = (PredicateNode) funcDefinition;
-		Expression definition = translateExpressionNode(
-				predicate.getExpressionBody(), parameterScope, true);
+		Expression definition = null;
+
+		if (funcDefinition != null) {
+			ExpressionNode defnExpression = funcDefinition.getLogicDefinition();
+
+			if (!defnExpression.isSideEffectFree(false))
+				throw new CIVLSyntaxException(
+						"A logic function (or predicate) "
+								+ "definition must be a side-effect free expression.",
+						defnExpression.getSource());
+			definition = translateExpressionNode(defnExpression, parameterScope,
+					true);
+		}
 
 		// TODO: what is the difference in between "popBoundVariableStackNew"
 		// and "popBoundVariableStack" ???
 		this.functionInfo.popBoundVariableStackNew();
 		if (result == null)
-			result = modelFactory.acslPredicate(functionSource,
+			result = modelFactory.logicFunction(functionSource,
 					functionIdentifier, parameterScope, parameters, scope,
 					definition);
-		assert result instanceof ACSLPredicate;
-		return (ACSLPredicate) result;
+		return result;
 	}
 
 	/**
@@ -4901,14 +4906,12 @@ public class FunctionTranslator {
 			actual = arrayToPointer(actual);
 			arguments.add(actual);
 		}
-		if (civlFunction instanceof ACSLPredicate)
-			return modelFactory.acslPredicateCall(source, scope,
-					(ACSLPredicate) civlFunction, arguments);
 		if (civlFunction.isAbstractFunction())
 			return modelFactory.abstractFunctionCallExpression(source,
 					(AbstractFunction) civlFunction, arguments);
-		if ((civlFunction.isSystemFunction()) && (civlFunction.isPureFunction()
-				|| civlFunction.isStateFunction())) {
+		if (civlFunction.isLogic() || ((civlFunction.isSystemFunction())
+				&& (civlFunction.isPureFunction()
+						|| civlFunction.isStateFunction()))) {
 			Fragment fragment = this.translateFunctionCallNode(scope, callNode,
 					source);
 			CallOrSpawnStatement callStmt = (CallOrSpawnStatement) fragment

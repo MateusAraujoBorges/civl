@@ -2,24 +2,24 @@ package edu.udel.cis.vsl.civl.model.common;
 
 import java.util.List;
 
-import edu.udel.cis.vsl.civl.model.IF.ACSLPredicate;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
+import edu.udel.cis.vsl.civl.model.IF.LogicFunction;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 
-public class CommonACSLPredicate extends CommonFunction
+public class CommonLogicFunction extends CommonFunction
 		implements
-			ACSLPredicate {
+			LogicFunction {
 
 	/**
 	 * {@linkplain ACSLPredicate#definition()}
 	 */
 	private final Expression definition;
 
-	public CommonACSLPredicate(CIVLSource source, Identifier name,
+	public CommonLogicFunction(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
 			Scope containingScope, int fid, ModelFactory factory,
 			Expression definition) {

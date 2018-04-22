@@ -20,7 +20,6 @@ import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.TokenFactory;
 import edu.udel.cis.vsl.civl.analysis.IF.CodeAnalyzer;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
-import edu.udel.cis.vsl.civl.model.IF.ACSLPredicate;
 import edu.udel.cis.vsl.civl.model.IF.AbstractFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
@@ -29,6 +28,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.Fragment;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
+import edu.udel.cis.vsl.civl.model.IF.LogicFunction;
 import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
@@ -36,7 +36,6 @@ import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.SystemFunction;
 import edu.udel.cis.vsl.civl.model.IF.contract.LoopContract;
 import edu.udel.cis.vsl.civl.model.IF.contract.MPICollectiveBehavior.MPICommunicationPattern;
-import edu.udel.cis.vsl.civl.model.IF.expression.ACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.IF.expression.AbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.AddressOfExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.ArrayLambdaExpression;
@@ -114,7 +113,6 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.model.common.contract.CommonLoopContract;
-import edu.udel.cis.vsl.civl.model.common.expression.CommonACSLPredicateCall;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonAbstractFunctionCallExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonAddressOfExpression;
 import edu.udel.cis.vsl.civl.model.common.expression.CommonArrayLiteralExpression;
@@ -340,11 +338,9 @@ public class CommonModelFactory implements ModelFactory {
 	private FunctionIdentifierExpression elaborateDomainFuncPointer = null;
 
 	/**
-	 * All translated {@link ACSLPredicate} during model building:
+	 * All translated {@link LogicFunction}s during model building:
 	 */
-	// doesn't have to be a list since the FunctionTranslator does cache during
-	// model building:
-	private List<ACSLPredicate> seenACSLPredicate = null;
+	private List<LogicFunction> seenLogicFunctions = null;
 
 	/* **************************** Constructors *************************** */
 
@@ -2097,33 +2093,25 @@ public class CommonModelFactory implements ModelFactory {
 	}
 
 	@Override
-	public ACSLPredicate acslPredicate(CIVLSource source, Identifier name,
+	public LogicFunction logicFunction(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
 			Scope containingScope, Expression definition) {
-		ACSLPredicate predicate = new CommonACSLPredicate(source, name,
+		LogicFunction logicFunction = new CommonLogicFunction(source, name,
 				parameterScope, parameters, containingScope,
 				containingScope != null ? containingScope.numFunctions() : -1,
 				this, definition);
 
-		if (seenACSLPredicate == null)
-			seenACSLPredicate = new LinkedList<>();
-		seenACSLPredicate.add(predicate);
-		return predicate;
+		if (seenLogicFunctions == null)
+			seenLogicFunctions = new LinkedList<>();
+		seenLogicFunctions.add(logicFunction);
+		logicFunction.setLogic(true);
+		return logicFunction;
 	}
 
 	@Override
-	public ACSLPredicateCall acslPredicateCall(CIVLSource source,
-			Scope expressionScope, ACSLPredicate predicate,
-			List<Expression> actualArguments) {
-		return new CommonACSLPredicateCall(source, expressionScope,
-				expressionScope, typeFactory.booleanType, predicate,
-				actualArguments);
-	}
-
-	@Override
-	public List<ACSLPredicate> getAllACSLPredicates() {
-		if (seenACSLPredicate == null)
-			seenACSLPredicate = new LinkedList<>();
-		return seenACSLPredicate;
+	public List<LogicFunction> getAllLogicFunctions() {
+		if (seenLogicFunctions == null)
+			seenLogicFunctions = new LinkedList<>();
+		return seenLogicFunctions;
 	}
 }

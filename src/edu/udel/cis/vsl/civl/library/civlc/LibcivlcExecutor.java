@@ -618,8 +618,8 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		BooleanExpression assertValue = (BooleanExpression) argumentValues[0];
 		BooleanExpression context = state.getPathCondition(universe);
 		ResultType resultType = ResultType.MAYBE;
-		ProverPredicate[] acslPredicates2why3 = ACSLPredicateEvaluator
-				.evaluateACSLPredicate(modelFactory.getAllACSLPredicates(),
+		ProverPredicate[] acslPredicates2why3 = LogicFunctionInterpretor
+				.evaluateLogicFunctions(modelFactory.getAllLogicFunctions(),
 						state, pid, errSideEffectFreeEvaluator);
 
 		if (!civlConfig.prob()) {
