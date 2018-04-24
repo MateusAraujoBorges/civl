@@ -277,11 +277,11 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		eval.value = pack(reasoner, rootArray, rootArrayShape, startIndices,
 				size, source);
 		// Packing bundle:
-		eval.value = universe
-				.unionInject(typeFactory.bundleType().getDynamicType(universe),
-						universe.intObject(typeFactory.bundleType().getIndexOf(
-								universe.pureType(eval.value.type()))),
-						eval.value);
+		eval.value = universe.unionInject(
+				typeFactory.bundleType().getDynamicType(universe),
+				universe.intObject(typeFactory.bundleType()
+						.getIndexOf(universe.pureType(eval.value.type()))),
+				eval.value);
 		return eval;
 	}
 
@@ -926,8 +926,6 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 			ResultType resultType, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
 		StringBuffer message = new StringBuffer();
-		ArraySlice slice = extractBundleData(bundleData);
-		SymbolicExpression sliceExpr = arrayToolBox.extractArraySlice(slice);
 		CIVLType voidPointerType = typeFactory
 				.pointerType(typeFactory.voidType());
 
@@ -935,7 +933,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 				"Cannot unpack the bundle data into the pointed memory region.\n");
 		message.append(
 				"Bundle data: " + symbolicAnalyzer.symbolicExpressionToString(
-						source, state, bundleDataType, sliceExpr) + "\n");
+						source, state, bundleDataType, bundleData) + "\n");
 		message.append(
 				"Bundle data size: "
 						+ symbolicAnalyzer.symbolicExpressionToString(source,
