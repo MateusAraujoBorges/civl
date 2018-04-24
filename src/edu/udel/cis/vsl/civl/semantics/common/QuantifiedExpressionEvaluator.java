@@ -270,9 +270,18 @@ public class QuantifiedExpressionEvaluator
 		// Temporarily add restriction into path condition:
 		State newState = stateFactory.addToPathcondition(state, pid,
 				restriction);
-		BooleanExpression predicate = (BooleanExpression) evaluate(newState,
-				pid, expression.expression()).value;
+		BooleanExpression predicate;
 
+		try {
+			predicate = (BooleanExpression) evaluate(newState, pid,
+					expression.expression()).value;
+		} catch (UnsatisfiablePathConditionException e) {
+			// since the restriction is pushed into the context for evaluating
+			// the predicate, if an unsatisfiable exception was caught, which
+			// means the "restriction && context" is unsatisfiable hence this
+			// expression evaluates to true.
+			return new Evaluation(state, universe.trueExpression());
+		}
 		// function references:
 		// Either "restriction AND predicate" or "restriction IMPLIES
 		// predicate" ?
