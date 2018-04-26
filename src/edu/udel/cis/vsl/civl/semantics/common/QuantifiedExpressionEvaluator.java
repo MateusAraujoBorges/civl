@@ -279,8 +279,17 @@ public class QuantifiedExpressionEvaluator
 			// since the restriction is pushed into the context for evaluating
 			// the predicate, if an unsatisfiable exception was caught, which
 			// means the "restriction && context" is unsatisfiable hence this
-			// expression evaluates to true.
-			return new Evaluation(state, universe.trueExpression());
+			// expression evaluates to either true (forall) or false (exists).
+			switch (expression.quantifier()) {
+				case EXISTS :
+					return new Evaluation(state, universe.falseExpression());
+				case FORALL :
+					return new Evaluation(state, universe.trueExpression());
+				default :
+					throw new CIVLInternalException(
+							"Unknown quantifier: " + expression.quantifier(),
+							expression.getSource());
+			}
 		}
 		// function references:
 		// Either "restriction AND predicate" or "restriction IMPLIES
