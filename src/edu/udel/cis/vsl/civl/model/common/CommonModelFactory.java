@@ -474,11 +474,7 @@ public class CommonModelFactory implements ModelFactory {
 
 				// Types should be the same unless we're doing pointer
 				// arithmetic.
-				if (leftType.equals(rightType)) {
-					// ((CommonBinaryExpression)
-					// result).setExpressionType(leftType);
-					resultType = leftType;
-				} else if (leftType instanceof CIVLPointerType
+				if (leftType instanceof CIVLPointerType
 						&& rightType instanceof CIVLPrimitiveType) {
 					assert ((CIVLPrimitiveType) rightType)
 							.primitiveTypeKind() == PrimitiveTypeKind.INT;
@@ -505,6 +501,10 @@ public class CommonModelFactory implements ModelFactory {
 								leftType + " and " + rightType
 										+ " are not pointers to compatiable types",
 								source);
+				} else if (leftType.equals(rightType)) {
+					// ((CommonBinaryExpression)
+					// result).setExpressionType(leftType);
+					resultType = leftType;
 				} else
 					throw new CIVLException("Incompatible types to +", source);
 				return new CommonBinaryExpression(source, expressionScope,

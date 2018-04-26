@@ -167,6 +167,12 @@ public class MPITranslationTest {
 				TestConstants.QUIET, filename("gaussJordan_elimination.c")));
 	}
 
+	@Test
+	public void sendIntRecvDouble() {
+		assertFalse(ui.run("verify -input_mpi_nprocs=2", // TestConstants.QUIET,
+				filename("simple/send_int_recv_double.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
