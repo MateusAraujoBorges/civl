@@ -73,7 +73,7 @@ public class VerifyThisTest {
 
 	@Test
 	public void treeBuffer() {
-		assertTrue(ui.run(COMPARE, QUIET, "-checkMemoryLeak=false", "-inputN=3",
+		assertTrue(ui.run(COMPARE, "-checkMemoryLeak=false", "-inputN=3",
 				"-spec", filename("treeBuffer/driver.cvl"),
 				filename("treeBuffer/treebuffer_naive.cvl"), "-impl",
 				filename("treeBuffer/driver.cvl"),
