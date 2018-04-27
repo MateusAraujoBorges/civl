@@ -1,6 +1,6 @@
 #include <seq.cvh>
 #include <stdlib.h>
-#include "treeBuffer.h"
+#include "treebuffer.h"
 
 struct Node {
   Node * parent;
