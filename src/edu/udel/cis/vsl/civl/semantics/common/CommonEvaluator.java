@@ -107,6 +107,7 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NTReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.OffsetReference;
@@ -343,7 +344,7 @@ public class CommonEvaluator implements Evaluator {
 	@SuppressWarnings("unused")
 	private SymbolicCompleteArrayType bitVectorType;
 
-	private FunctionCallExecutor functionCallExecutor;
+	protected FunctionCallExecutor functionCallExecutor;
 
 	private SymbolicExpression offsetFunction;
 
@@ -3877,8 +3878,86 @@ public class CommonEvaluator implements Evaluator {
 	protected Evaluation evaluateFunctionCallExpression(State state, int pid,
 			FunctionCallExpression expression)
 			throws UnsatisfiablePathConditionException {
+		FunctionCallExpression funcCallExpr = (FunctionCallExpression) expression;
+		Expression funcExpr = ((FunctionCallExpression) expression)
+				.callStatement().functionExpression();
+
+		if (funcExpr.expressionKind() == ExpressionKind.FUNCTION_IDENTIFIER) {
+			FunctionIdentifierExpression funcId = (FunctionIdentifierExpression) funcExpr;
+
+			if (funcId.function().isLogic())
+				return evaluateLogicFunctionCall(state, pid, funcCallExpr);
+		}
 		return this.functionCallExecutor.evaluateAtomicPureFunction(state, pid,
 				expression.callStatement());
+	}
+
+	/**
+	 * <p>
+	 * Evaluate logic function calls to symbolic expressions with APPLY
+	 * operators, which is applications of function-type symbolic constants with
+	 * actual parameters.
+	 * </p>
+	 * 
+	 * <p>
+	 * Logic function definitions are state-independent, hence pointer-type
+	 * actual parameters will be converted to arrays which containing the
+	 * element pointed by those pointers.
+	 * </p>
+	 * 
+	 * @throws UnsatisfiablePathConditionException
+	 *             if any error side-effect happens during evaluation.
+	 */
+	private Evaluation evaluateLogicFunctionCall(State state, int pid,
+			FunctionCallExpression logicCall)
+			throws UnsatisfiablePathConditionException {
+		List<SymbolicExpression> argumentValues = new LinkedList<>();
+		List<SymbolicType> paraTypes = new LinkedList<>();
+		CIVLFunction logicFunction = logicCall.callStatement().function();
+		SymbolicType symbolicPointerType = modelFactory.typeFactory()
+				.pointerSymbolicType();
+		Evaluation eval;
+
+		for (Expression actualArg : logicCall.callStatement().arguments()) {
+			eval = evaluate(state, pid, actualArg);
+			if (eval.value.type().equals(symbolicPointerType))
+				eval = evaluatePointerTypeLogicFunctionArgument(state, pid,
+						actualArg);
+			assert state == eval.state : "Logic function call argument has side-effects.";
+			argumentValues.add(eval.value);
+			paraTypes.add(eval.value.type());
+		}
+
+		SymbolicFunctionType funcType = universe.functionType(paraTypes,
+				universe.booleanType());
+		SymbolicExpression predCallValue = universe.symbolicConstant(
+				universe.stringObject(logicFunction.name().name()), funcType);
+
+		return new Evaluation(state,
+				universe.apply(predCallValue, argumentValues));
+	}
+
+	/**
+	 * This method evaluates pointer-type expressions with a special semantics:
+	 * <p>
+	 * <li>If the pointer points to an element in an array, the evaluation is
+	 * the array. Note that here the "array" refers to a physical array instead
+	 * of a logical array, which means the evaluation array is never an element
+	 * of some other array.</li>
+	 * <li>Otherwise, the evaluation is the dereference of the pointer.</li>
+	 * </p>
+	 */
+	private Evaluation evaluatePointerTypeLogicFunctionArgument(State state,
+			int pid, Expression pointer)
+			throws UnsatisfiablePathConditionException {
+		Evaluation eval = evaluate(state, pid, pointer);
+		ReferenceExpression ref = symbolicUtil.getSymRef(eval.value);
+
+		while (ref.isArrayElementReference())
+			ref = ((NTReferenceExpression) ref).getParent();
+		eval.value = symbolicUtil.makePointer(eval.value, ref);
+		return dereference(pointer.getSource(), state,
+				state.getProcessState(pid).name(), eval.value, false, true);
 	}
 
 	@Override

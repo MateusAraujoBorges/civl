@@ -1,0 +1,12 @@
+#pragma CIVL ACSL
+
+/*@ predicate eq(double a[], int len, int * b) =
+  @   \forall int i; 0 <= i && i < len ==> a[i] == b[i];
+  @*/
+
+int main(){
+  double a[10];
+  int b[10];
+  
+  $assert(eq(a, 10, b));
+}

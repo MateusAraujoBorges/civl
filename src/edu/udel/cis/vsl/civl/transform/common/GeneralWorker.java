@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import edu.udel.cis.vsl.abc.ast.entity.IF.Function;
 import edu.udel.cis.vsl.abc.ast.entity.IF.OrdinaryEntity;
 import edu.udel.cis.vsl.abc.ast.entity.IF.Variable;
 import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.ASTNode.NodeKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.IdentifierNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.DeclarationNode;
@@ -26,6 +28,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ArrayLambdaNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.CastNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.OperatorNode;
@@ -124,11 +127,23 @@ public class GeneralWorker extends BaseWorker {
 					"non-function entity with name \"main\"",
 					mainEntity.getFirstDeclaration().getSource());
 		}
+
+		Iterator<OrdinaryEntity> entityIter = unit.getExternalEntities();
+		List<OrdinaryEntity> entities = new LinkedList<>();
+
+		while (entityIter.hasNext())
+			entities.add(entityIter.next());
+		entityIter = unit.getInternalEntities();
+		while (entityIter.hasNext())
+			entities.add(entityIter.next());
+
 		mainFunction = (Function) mainEntity;
 		mainDef = mainFunction.getDefinition();
 		checkAgumentsOfMainFunction(mainDef, root);
 		unit = renameStaticVariables(unit);
 		unit.release();
+		// transform logic functions to stateless form:
+		transformLogicFunctions(root, entities);
 		this.getCIVLMallocDeclaration(root);
 		root = moveStaticVariables(root);
 		processMalloc(root);
@@ -300,10 +315,11 @@ public class GeneralWorker extends BaseWorker {
 	 */
 	private ExpressionStatementNode argcAssumption(Source source,
 			String argcName) throws SyntaxException {
-		ExpressionNode lowerBound = nodeFactory.newOperatorNode(source,
-				Operator.LT,
-				Arrays.asList(nodeFactory.newIntegerConstantNode(source, "0"),
-						this.identifierExpression(source, argcName)));
+		ExpressionNode lowerBound = nodeFactory
+				.newOperatorNode(source, Operator.LT,
+						Arrays.asList(
+								nodeFactory.newIntegerConstantNode(source, "0"),
+								this.identifierExpression(source, argcName)));
 
 		return nodeFactory.newExpressionStatementNode(
 				this.functionCall(source, ASSUME, Arrays.asList(lowerBound)));
@@ -887,5 +903,54 @@ public class GeneralWorker extends BaseWorker {
 		}
 		return nodeFactory.newTranslationUnitNode(root.getSource(),
 				newChildren);
+	}
+
+	private void transformLogicFunctions(ASTNode root,
+			List<OrdinaryEntity> entities) throws SyntaxException {
+		LogicFunctionTransformer logicFunctionTransformer = new LogicFunctionTransformer(
+				nodeFactory, astFactory.getTokenFactory());
+		boolean hasLogicFunction = false;
+
+		for (OrdinaryEntity entity : entities) {
+			if (entity.getEntityKind() == EntityKind.FUNCTION) {
+				Function function = (Function) entity;
+
+				if (function.isLogic()) {
+					if (function.getNumDeclarations() != 1)
+						throw new CIVLSyntaxException(
+								"Logic function " + function.getName()
+										+ " has been declared twice.");
+					logicFunctionTransformer.transformDefinition(
+							(FunctionDeclarationNode) function
+									.getFirstDeclaration());
+					hasLogicFunction = true;
+				}
+			}
+		}
+		if (!hasLogicFunction)
+			return;
+
+		// traverse the ast for logic function calls outside of predicate
+		// definition:
+		ASTNode node = root;
+
+		do {
+			if (node.nodeKind() == NodeKind.FUNCTION_DEFINITION) {
+				FunctionDefinitionNode funcDefi = (FunctionDefinitionNode) node;
+
+				if (funcDefi.isLogicFunction()) {
+					node = nextDFSSkip(node);
+					continue;
+				}
+			}
+			if (node.nodeKind() == NodeKind.EXPRESSION) {
+				ExpressionNode expr = (ExpressionNode) node;
+
+				if (expr.expressionKind() == ExpressionKind.FUNCTION_CALL)
+					logicFunctionTransformer
+							.transformCall((FunctionCallNode) expr);
+			}
+			node = node.nextDFS();
+		} while (node != null);
 	}
 }

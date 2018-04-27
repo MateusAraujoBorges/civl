@@ -169,7 +169,7 @@ public class MPITranslationTest {
 
 	@Test
 	public void sendIntRecvDouble() {
-		assertFalse(ui.run("verify -input_mpi_nprocs=2", // TestConstants.QUIET,
+		assertFalse(ui.run("verify -input_mpi_nprocs=2", TestConstants.QUIET,
 				filename("simple/send_int_recv_double.c")));
 	}
 

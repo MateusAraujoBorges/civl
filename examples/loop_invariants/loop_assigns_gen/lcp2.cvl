@@ -18,7 +18,7 @@ $input int X1[N];
 
 /* string 'x' is not greater than string 'y' with the specific length */
 /*@
-  @  predicate ngt_len(int x, int y, int l) = 
+  @  predicate ngt_len(int * X1, int N, int x, int y, int l) = 
   @                   0 <= l && l <= N && x + l <= N && y + l <= N 
   @                          && (x + l == N || (y + l < N ==> X1[y+l] > X1[x+l]))
   @                          && (\forall int k1; 0 <= k1 && k1 < l ==> X1[(x)+k1] == X1[(y)+k1]);
@@ -26,9 +26,9 @@ $input int X1[N];
 
 /* string 'x' is NOT greater than string 'y' */
 /*@ 
-  @  predicate ngt(int x, int y) = 
-  @            (\exists int l; ngt_len(x, y, l) &&
-  @             !(\exists int o; ngt_len(x, y, o) && o != l)
+  @  predicate ngt(int * X1, int N, int x, int y) = 
+  @            (\exists int l; ngt_len(X1, N, x, y, l) &&
+  @             !(\exists int o; ngt_len(X1, N, x, y, o) && o != l)
   @            );
   @*/
 
@@ -59,17 +59,17 @@ int compare(int *a, int n, int x, int y) {
 
   $havoc(&ret);	
   if (c == 0) {
-    $assume(ngt(x, y) && ret <= 0);
+    $assume(ngt(X1, N, x, y) && ret <= 0);
     return ret;
   } else {
-    $assume(ngt(y, x) && ret > 0);
+    $assume(ngt(X1, N, y, x) && ret > 0);
     return ret;
   }
 }
 
 void sort(int *a, int n, int *data) {
   /*@ loop invariant 1 <= i && i <= n;
-    @ loop invariant \forall int k; 1 <= k && k < i ==> ngt(data[k-1],data[k]);
+    @ loop invariant \forall int k; 1 <= k && k < i ==> ngt(a, n, data[k-1],data[k]);
     @ loop invariant \forall int k; 0 <= k && k < n ==> 0 <= data[k] && data[k] < n;           // data elements are valid
     @ loop invariant \forall int t, k; 0 <= k && k < n && 0 <= t && t < n && k != t ==> 
     @                                  data[k] != data[t];
@@ -82,11 +82,11 @@ void sort(int *a, int n, int *data) {
       @ loop invariant \forall int k; 0 <= k && k < n ==> 0 <= data[k] && data[k] < n;           // data elements are valid
       @ loop invariant \forall int t, k; 0 <= k && k < n && 0 <= t && t < n && k != t ==> 
       @                                  data[k] != data[t];
-      @ loop invariant \forall int k; j < k && k <= i ==> ngt(data[k-1],data[k]);
-      @ loop invariant \forall int k; 0 < k && k < j ==> ngt(data[k-1],data[k]);
-      @ loop invariant comp <= 0 ==> (\forall int k; 0 < k && k <= j ==> ngt(data[k-1],data[k]));
-      @ loop invariant (comp > 0  && 0 < j) ==>  ngt(data[j], data[j-1]);
-      @ loop invariant (comp > 0 && 0 < j && j < i) ==> ngt(data[j-1], data[j+1]) ;
+      @ loop invariant \forall int k; j < k && k <= i ==> ngt(a, n, data[k-1],data[k]);
+      @ loop invariant \forall int k; 0 < k && k < j ==> ngt(a, n, data[k-1],data[k]);
+      @ loop invariant comp <= 0 ==> (\forall int k; 0 < k && k <= j ==> ngt(a, n, data[k-1],data[k]));
+      @ loop invariant (comp > 0  && 0 < j) ==>  ngt(a, n, data[j], data[j-1]);
+      @ loop invariant (comp > 0 && 0 < j && j < i) ==> ngt(a, n, data[j-1], data[j+1]) ;
       @ loop assigns j, comp, data[0 .. n-1];
       @*/
     for(int j = i; j > 0 && comp > 0;) {
@@ -100,7 +100,7 @@ void sort(int *a, int n, int *data) {
 	comp = compare(a, n, data[j - 1], data[j]);
     }
   }
-  $assert($forall (int i : 1 .. N-1) ngt(data[i - 1], data[i]));
+  $assert($forall (int i : 1 .. N-1) ngt(a, n, data[i - 1], data[i]));
 }
 
 /* An abstraction of the 'sort' function */
@@ -108,7 +108,7 @@ void sort2(int *a, int n, int *data) {
   int new_data[n];
 
   memcpy(data, new_data, sizeof(int) * n);
-  $assume($forall (int i : 1 .. N-1) ngt(data[i - 1], data[i]));
+  $assume($forall (int i : 1 .. N-1) ngt(a, n, data[i - 1], data[i]));
   $assume($forall (int i : 0 .. N-1) 0 <= data[i] && data[i] < n);
   $assume($forall (int i : 0 .. N-1) 
 	  ($forall (int j | 0 <= j && j < N && j != i) data[i] != data[j])
@@ -142,7 +142,7 @@ void lrs(int* a, int n, int *result) {
   $havoc(&arbi_idx);
   $assume(0 < arbi_idx && arbi_idx < n);
   len = lcp2(a, n, arbi_idx, suffixes);
-  $assert(ngt_len(suffixes[arbi_idx-1], suffixes[arbi_idx], len));
+  $assert(ngt_len(a, n, suffixes[arbi_idx-1], suffixes[arbi_idx], len));
 }
 
 int main() {

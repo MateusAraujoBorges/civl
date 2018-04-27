@@ -30,7 +30,9 @@ import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NTReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
@@ -38,7 +40,7 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTypeSequence;
-import edu.udel.cis.vsl.sarl.prove.IF.ProverPredicate;
+import edu.udel.cis.vsl.sarl.prove.IF.ProverFunctionInterpretation;
 
 /**
  * Implementation of the execution for system functions declared civlc.h.
@@ -220,6 +222,10 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				break;
 			case "$next_time_count" :
 				callEval = this.executeNextTimeCount(state, pid, process,
+						arguments, argumentValues);
+				break;
+			case "$array_base_address_of" :
+				callEval = executeArrayBaseAddressof(state, pid, process,
 						arguments, argumentValues);
 				break;
 			default :
@@ -414,6 +420,47 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		state = stateFactory.setVariable(state, timeCountVar, pid,
 				universe.add(timeCountValue, one));
 		return new Evaluation(state, timeCountValue);
+	}
+
+	/**
+	 * <p>
+	 * This system function returns the base address of a pointer <code>p</code>
+	 * </p>
+	 * <p>
+	 * The base address <code>q</code> of a pointer <code>p</code> is:
+	 *
+	 * 1. <code>q = p</code>, if p points anything other than an array element.
+	 *
+	 * 2. <code>q</code> := a pointer to the first element of the array referred
+	 * by <code>p</code>, if <code>p</code> points an array element.
+	 *
+	 * Note that an "array" here means the physical array which is always
+	 * one-dimensional. And a sequence of memory spaces allocated by malloc will
+	 * be seen as an array.
+	 * </p>
+	 */
+	private Evaluation executeArrayBaseAddressof(State state, int pid,
+			String process, Expression[] arguments,
+			SymbolicExpression[] argumentValues)
+			throws UnsatisfiablePathConditionException {
+		SymbolicExpression pointer = argumentValues[0];
+		ReferenceExpression ref = symbolicUtil.getSymRef(pointer);
+
+		if (!ref.isArrayElementReference())
+			return new Evaluation(state, pointer);
+
+		int depth = 0;
+
+		while (ref.isArrayElementReference()) {
+			depth++;
+			ref = ((NTReferenceExpression) ref).getParent();
+		}
+		// make new reference expression which points to the first element:
+		while (depth > 0) {
+			ref = universe.arrayElementReference(ref, zero);
+			depth--;
+		}
+		return new Evaluation(state, symbolicUtil.makePointer(pointer, ref));
 	}
 
 	/**
@@ -618,7 +665,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		BooleanExpression assertValue = (BooleanExpression) argumentValues[0];
 		BooleanExpression context = state.getPathCondition(universe);
 		ResultType resultType = ResultType.MAYBE;
-		ProverPredicate[] acslPredicates2why3 = LogicFunctionInterpretor
+		ProverFunctionInterpretation[] acslPredicates2why3 = LogicFunctionInterpretor
 				.evaluateLogicFunctions(modelFactory.getAllLogicFunctions(),
 						state, pid, errSideEffectFreeEvaluator);
 

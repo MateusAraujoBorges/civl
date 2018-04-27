@@ -1,24 +1,16 @@
 package edu.udel.cis.vsl.civl.semantics.common;
 
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.log.IF.CIVLErrorLogger;
-import edu.udel.cis.vsl.civl.model.IF.CIVLFunction;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.BinaryExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.expression.Expression.ExpressionKind;
-import edu.udel.cis.vsl.civl.model.IF.expression.FunctionCallExpression;
-import edu.udel.cis.vsl.civl.model.IF.expression.FunctionIdentifierExpression;
 import edu.udel.cis.vsl.civl.model.IF.expression.SubscriptExpression;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLFunctionType;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.semantics.IF.LibraryEvaluatorLoader;
@@ -34,7 +26,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -102,25 +93,7 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 	public Evaluation evaluate(State state, int pid, Expression expression)
 			throws UnsatisfiablePathConditionException {
 		try {
-			switch (expression.expressionKind()) {
-				case FUNC_CALL :
-					FunctionCallExpression funcCallExpr = (FunctionCallExpression) expression;
-					Expression funcExpr = ((FunctionCallExpression) expression)
-							.callStatement().functionExpression();
-
-					if (funcExpr
-							.expressionKind() == ExpressionKind.FUNCTION_IDENTIFIER) {
-						FunctionIdentifierExpression funcId = (FunctionIdentifierExpression) funcExpr;
-
-						if (funcId.function().isLogic())
-							return evaluateLogicFunctionCall(state, pid,
-									funcCallExpr);
-					} else
-						return super.evaluateFunctionCallExpression(state, pid,
-								funcCallExpr);
-				default :
-					return super.evaluate(state, pid, expression);
-			}
+			return super.evaluate(state, pid, expression);
 		} catch (ErroneousSideEffectException e) {
 			SymbolicType exprType = expression.getExpressionType()
 					.getDynamicType(universe);
@@ -208,46 +181,5 @@ public class ErrorSideEffectFreeEvaluator extends CommonEvaluator
 						"Pointer addition for anything other than array elements or variables",
 						expression);
 		}
-	}
-
-	/**
-	 * <p>
-	 * An {@link ACSLPredicateCall} evaluates to an symbolic expression of
-	 * {@link SymbolicOperator#APPLY} operator. Actual parameters are applied to
-	 * a symbolic constant which represents the ACSL predicate function.
-	 * </p>
-	 * 
-	 * @param state
-	 * @param pid
-	 * @param acslPredCall
-	 * @return
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private Evaluation evaluateLogicFunctionCall(State state, int pid,
-			FunctionCallExpression logicCall)
-			throws UnsatisfiablePathConditionException {
-		List<SymbolicExpression> argumentValues = new LinkedList<>();
-		Evaluation eval;
-		CIVLFunction logicFunction = logicCall.callStatement().function();
-
-		for (Expression actualArg : logicCall.callStatement().arguments()) {
-			eval = evaluate(state, pid, actualArg);
-			assert state == eval.state : "Logic function call argument has side-effects.";
-			argumentValues.add(eval.value);
-		}
-
-		CIVLFunctionType predType = logicFunction.functionType();
-		List<SymbolicType> paraTypes = new LinkedList<>();
-		SymbolicFunctionType funcType;
-
-		for (CIVLType type : predType.parameterTypes())
-			paraTypes.add(type.getDynamicType(universe));
-		funcType = universe.functionType(paraTypes, universe.booleanType());
-
-		SymbolicExpression predCallValue = universe.symbolicConstant(
-				universe.stringObject(logicFunction.name().name()), funcType);
-
-		return new Evaluation(state,
-				universe.apply(predCallValue, argumentValues));
 	}
 }

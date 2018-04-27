@@ -9,6 +9,7 @@ import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
+import edu.udel.cis.vsl.sarl.prove.IF.ProverFunctionInterpretation;
 
 public class CommonLogicFunction extends CommonFunction
 		implements
@@ -19,14 +20,23 @@ public class CommonLogicFunction extends CommonFunction
 	 */
 	private final Expression definition;
 
+	private final int[] pointerToArrayMap;
+
+	/**
+	 * The constant evaluation of this logic function definition, which is an
+	 * instance of {@link ProverFunctionInterpretation}.
+	 */
+	private ProverFunctionInterpretation constantValue = null;
+
 	public CommonLogicFunction(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
-			Scope containingScope, int fid, ModelFactory factory,
-			Expression definition) {
+			int[] pointerToArrayMap, Scope containingScope, int fid,
+			ModelFactory factory, Expression definition) {
 		super(source, true, name, parameterScope, parameters,
 				factory.typeFactory().booleanType(), containingScope, fid,
 				factory.location(source, parameterScope), factory);
 		this.definition = definition;
+		this.pointerToArrayMap = pointerToArrayMap;
 	}
 
 	@Override
@@ -37,6 +47,25 @@ public class CommonLogicFunction extends CommonFunction
 	@Override
 	public int hashCode() {
 		// no over-loading, so parameters are not part of the hash:
-		return definition.hashCode() ^ this.name().hashCode() ^ 897653;
+		if (definition != null)
+			return definition.hashCode() ^ this.name().hashCode() ^ 897653;
+		else
+			return this.name().hashCode() ^ 897653;
+	}
+
+	@Override
+	public void setConstantValue(ProverFunctionInterpretation constantValue) {
+		assert this.definition != null;
+		this.constantValue = constantValue;
+	}
+
+	@Override
+	public ProverFunctionInterpretation getConstantValue() {
+		return this.constantValue;
+	}
+
+	@Override
+	public int[] pointerToHeapVidMap() {
+		return this.pointerToArrayMap;
 	}
 }

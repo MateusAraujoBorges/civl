@@ -472,8 +472,8 @@ public class CommonModelFactory implements ModelFactory {
 				CIVLType rightType = right.getExpressionType();
 				CIVLType resultType;
 
-				// Types should be the same unless we're doing pointer
-				// arithmetic.
+				// If we are not doing pointer arithmetic or pointer
+				// subtraction, types should be the same:
 				if (leftType instanceof CIVLPointerType
 						&& rightType instanceof CIVLPrimitiveType) {
 					assert ((CIVLPrimitiveType) rightType)
@@ -2095,9 +2095,9 @@ public class CommonModelFactory implements ModelFactory {
 	@Override
 	public LogicFunction logicFunction(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
-			Scope containingScope, Expression definition) {
+			int[] pointerToHeap, Scope containingScope, Expression definition) {
 		LogicFunction logicFunction = new CommonLogicFunction(source, name,
-				parameterScope, parameters, containingScope,
+				parameterScope, parameters, pointerToHeap, containingScope,
 				containingScope != null ? containingScope.numFunctions() : -1,
 				this, definition);
 

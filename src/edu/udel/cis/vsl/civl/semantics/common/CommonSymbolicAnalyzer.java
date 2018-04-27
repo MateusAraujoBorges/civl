@@ -1197,8 +1197,8 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						break;
 					}
 					case ARRAY_WRITE : {
-						boolean needNewLine = !civlType.areSubtypesScalar()
-								&& !separator.isEmpty();
+						boolean needNewLine = // !civlType.areSubtypesScalar()
+								!separator.isEmpty();
 						String padding = "\n" + prefix + separator;
 						String newPrefix = needNewLine
 								? prefix + separator
@@ -1223,11 +1223,15 @@ public class CommonSymbolicAnalyzer implements SymbolicAnalyzer {
 						result.append(symbolicExpression.argument(1)
 								.toStringBuffer(false));
 						result.append("]=");
-						result.append(this.symbolicExpressionToString(source,
-								state, ((CIVLArrayType) civlType).elementType(),
-								(SymbolicExpression) symbolicExpression
-										.argument(2),
-								true, newPrefix, separator));
+						result.append(
+								this.symbolicExpressionToString(source, state,
+										civlType != null
+												? ((CIVLArrayType) civlType)
+														.elementType()
+												: null,
+										(SymbolicExpression) symbolicExpression
+												.argument(2),
+										true, newPrefix, separator));
 						result.append("}");
 						break;
 					}

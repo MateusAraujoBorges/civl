@@ -1264,6 +1264,8 @@ public interface ModelFactory {
 	 *            the scope of the logic function parameters
 	 * @param parameters
 	 *            a list of parameters of the logic function
+	 * @param pointerToHeapMap
+	 *            see {@link LogicFunction#pointerToHeapVidMap()}
 	 * @param containingScope
 	 *            the scope where the logic function is defined
 	 * @param definition
@@ -1273,7 +1275,8 @@ public interface ModelFactory {
 	 */
 	LogicFunction logicFunction(CIVLSource source, Identifier name,
 			Scope parameterScope, List<Variable> parameters,
-			Scope containingScope, Expression definition);
+			int[] pointerToHeapMap, Scope containingScope,
+			Expression definition);
 
 	CIVLFunction nondetFunction(CIVLSource source, Identifier name,
 			CIVLType returnType, Scope containingScope);

@@ -137,6 +137,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Fragment;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
+import edu.udel.cis.vsl.civl.model.IF.LogicFunction;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
@@ -2642,39 +2643,96 @@ public class FunctionTranslator {
 		return fragment;
 	}
 
+	/**
+	 * Build logic function. Defintions of logic functions will be translated in
+	 * this method.
+	 */
 	private CIVLFunction buildLogicFunction(Function entity, Scope scope,
 			Scope parameterScope, ArrayList<Variable> parameters,
 			Identifier functionIdentifier, CIVLSource functionSource) {
 		CIVLFunction result = modelBuilder.functionMap.get(entity);
 		FunctionDefinitionNode funcDefinition = entity.getDefinition();
 
-		assert funcDefinition == null || funcDefinition.isLogicFunction();
-		this.functionInfo.addBoundVariableSet();
-		for (Variable var : parameters)
-			this.functionInfo.addBoundVariable(var);
+		if (result != null)
+			return result;
 
-		Expression definition = null;
+		assert funcDefinition == null || funcDefinition.isLogicFunction();
 
 		if (funcDefinition != null) {
 			ExpressionNode defnExpression = funcDefinition.getLogicDefinition();
+			Expression definition;
 
 			if (!defnExpression.isSideEffectFree(false))
 				throw new CIVLSyntaxException(
 						"A logic function (or predicate) "
 								+ "definition must be a side-effect free expression.",
 						defnExpression.getSource());
+
+			int pointerToArrayMap[] = new int[parameters.size()];
+			int i = 0;
+
+			// initialize:
+			Arrays.fill(pointerToArrayMap, -1);
+			// add dummy heap variable for pointer type formal parameters of
+			// this logic function....
+			// This is the way how pointers in logic function definitions become
+			// state-independent: when evaluating the logic function
+			// definitions, pointers will point to those dummy heap variables
+			// and those heap variables will have unique arbitrary array values.
+			for (Variable param : parameters) {
+				if (param.type().isPointerType()) {
+					checkSupportedFormalType(param);
+					CIVLType arrayType = modelFactory.typeFactory()
+							.incompleteArrayType(
+									((CIVLPointerType) param.type())
+											.baseType());
+					Identifier ptrHeapName = modelFactory.identifier(
+							param.getSource(),
+							LogicFunction.heapVariableName(param));
+
+					pointerToArrayMap[i] = parameterScope.numVariables();
+					parameterScope.addVariable(modelFactory.variable(
+							param.getSource(), arrayType, ptrHeapName,
+							parameterScope.numVariables()));
+				}
+				i++;
+			}
 			definition = translateExpressionNode(defnExpression, parameterScope,
 					true);
+			result = modelFactory.logicFunction(functionSource,
+					functionIdentifier, parameterScope, parameters,
+					pointerToArrayMap, scope, definition);
 		}
-
-		// TODO: what is the difference in between "popBoundVariableStackNew"
-		// and "popBoundVariableStack" ???
-		this.functionInfo.popBoundVariableStackNew();
 		if (result == null)
 			result = modelFactory.logicFunction(functionSource,
-					functionIdentifier, parameterScope, parameters, scope,
-					definition);
+					functionIdentifier, parameterScope, parameters,
+					new int[parameters.size()], scope, null);
 		return result;
+	}
+
+	/**
+	 * Check if logic function formal parameter type is supported
+	 * 
+	 * @param formal
+	 */
+	void checkSupportedFormalType(Variable formal) {
+		CIVLType type = formal.type();
+
+		if (type.isScalar() && !type.isPointerType())
+			return;
+		if (type.isPointerType()) {
+			CIVLType referredType = ((CIVLPointerType) type).baseType();
+
+			if (referredType.isScalar() && !referredType.isPointerType())
+				return;
+		}
+		// this error is triggered only if the supported type checking in
+		// transformer has changed but the model translation doesn't get
+		// changed.
+		throw new CIVLInternalException(
+				"Cannot translate logic function with a formal parameter of type :"
+						+ type,
+				formal.getSource());
 	}
 
 	/**

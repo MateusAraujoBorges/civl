@@ -3,94 +3,112 @@ package edu.udel.cis.vsl.civl.library.civlc;
 import java.util.Arrays;
 import java.util.List;
 
-import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.LogicFunction;
-import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
+import edu.udel.cis.vsl.civl.model.IF.Scope;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluation;
 import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
-import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
-import edu.udel.cis.vsl.sarl.prove.IF.ProverPredicate;
+import edu.udel.cis.vsl.sarl.prove.IF.ProverFunctionInterpretation;
 
 /**
+ * Evaluates {@link LogicFunction}s to their interpretations which can be fed to
+ * SARL. Since logic functions are stateless, the evaluation of each logic
+ * function is only need to be done once.
  * 
  * @author ziqing
- *
  */
 public class LogicFunctionInterpretor {
 
 	/**
 	 * Translates (evaluates) a set of {@link ACSLPredicate}s to P
-	 * {@link ProverPredicate}s on the given state.
+	 * {@link ProverFunctionInterpretation}s. This evaluation is
+	 * state-independent.
 	 * 
 	 */
-	static public ProverPredicate[] evaluateLogicFunctions(
+	static public ProverFunctionInterpretation[] evaluateLogicFunctions(
 			List<LogicFunction> logicFunctions, State state, int pid,
 			Evaluator evaluator) throws UnsatisfiablePathConditionException {
-		ProverPredicate why3Preds[] = new ProverPredicate[logicFunctions
+		ProverFunctionInterpretation why3Preds[] = new ProverFunctionInterpretation[logicFunctions
 				.size()];
 		int i = 0;
 
-		for (LogicFunction pred : logicFunctions)
-			why3Preds[i++] = evaluateLogicFunctionWorker(pred, state, pid,
-					evaluator);
-		return why3Preds;
+		for (LogicFunction pred : logicFunctions) {
+			if (pred.definition() != null)
+				why3Preds[i++] = evaluateLogicFunction(pred, state, pid,
+						evaluator);
+		}
+		return Arrays.copyOf(why3Preds, i);
 	}
 
-	static private ProverPredicate evaluateLogicFunctionWorker(
-			LogicFunction acslPredicate, State state, int pid,
-			Evaluator evaluator) throws UnsatisfiablePathConditionException {
-		String name = acslPredicate.name().name();
-		SymbolicConstant[] parameters = new SymbolicConstant[acslPredicate
-				.parameters().size()];
-		ModelFactory mf = evaluator.modelFactory();
-		CIVLTypeFactory tf = mf.typeFactory();
-		Evaluation eval;
-		CIVLSource source = acslPredicate.definition().getSource();
-		Expression asLambda = acslPredicate.definition();
+	/**
+	 * 
+	 * @throws UnsatisfiablePathConditionException
+	 *             if the definition of the logic function is unsatisfiable.
+	 */
+	static private ProverFunctionInterpretation evaluateLogicFunction(
+			LogicFunction pred, State state, int pid, Evaluator evaluator)
+			throws UnsatisfiablePathConditionException {
+		ProverFunctionInterpretation result = pred.getConstantValue();
+		SymbolicUniverse su = evaluator.universe();
+		StateFactory sf = evaluator.stateFactory();
 
-		// For easily evaluating the predicate definition, evaluate the
-		// predicate definition as a lambda expression. NOTICE: that the
-		// parameters must be encoded in Lambda Expression in a inverse order:
-		Variable[] inverseParams = new Variable[acslPredicate.parameters()
+		if (result != null)
+			return result;
+
+		// evaluate arguments:
+		SymbolicConstant[] actualArg = new SymbolicConstant[pred.parameters()
 				.size()];
-		int i = inverseParams.length - 1;
+		int i = 0;
 
-		for (Variable param : acslPredicate.parameters())
-			inverseParams[i--] = param;
-		for (Variable param : inverseParams) {
-			CIVLType inputType[] = {param.type()};
-
-			asLambda = mf.lambdaExpression(source,
-					tf.functionType(tf.booleanType(), inputType), param,
-					asLambda);
+		// TODO: check pointer restriction:
+		for (Variable var : pred.parameters()) {
+			if (var.type().isPointerType())
+				actualArg[i++] = null; // will be set later
+			else
+				actualArg[i++] = su.symbolicConstant(
+						su.stringObject(var.name().name()),
+						var.type().getDynamicType(su));
 		}
-		eval = evaluator.evaluate(state, pid, asLambda);
-		assert state == eval.state;
+		state = sf.pushCallStack(state, pid, pred, actualArg);
 
-		SymbolicExpression definitionValue = eval.value;
+		// the parameter dynamic scope
+		int dyscopeId = state.getProcessState(pid).getDyscopeId();
+		// the parameter lexical scope, note that if there is any pointer type
+		// argument, this scope will contain dummy "heap" variable for it.
+		// This is the way of achieving the state-independent. The pointer type
+		// argument will be set to point to its unique dummy heap.
+		Scope lexScope = state.getDyscope(dyscopeId).lexicalScope();
 
 		i = 0;
-		while (definitionValue.operator() == SymbolicOperator.LAMBDA) {
-			SymbolicConstant paramVal = (SymbolicConstant) definitionValue
-					.argument(0);
+		// set pointer to dummy heap; set heap to arbitrary arrayof T:
+		for (Variable var : pred.parameters()) {
+			if (var.type().isPointerType()) {
+				int heapVid = pred.pointerToHeapVidMap()[i];
+				Variable heapVar = lexScope.variable(heapVid);
+				SymbolicConstant heapVal = su.symbolicConstant(
+						su.stringObject(heapVar.name().name()),
+						heapVar.type().getDynamicType(su));
 
-			parameters[i++] = paramVal;
-			definitionValue = (SymbolicExpression) definitionValue.argument(1);
+				state = sf.setVariable(state, var.vid(), dyscopeId,
+						evaluator.symbolicUtility().makePointer(dyscopeId,
+								heapVid, su.arrayElementReference(
+										su.identityReference(), su.zeroInt())));
+				state = sf.setVariable(state, heapVid, dyscopeId, heapVal);
+				actualArg[i] = heapVal;
+			}
+			i++;
 		}
-		assert definitionValue.type().isBoolean();
-		if (i < parameters.length)
-			parameters = Arrays.copyOfRange(parameters, 0, i);
-		return ProverPredicate.newProverPredicate(name, parameters,
-				(BooleanExpression) definitionValue);
-	}
 
+		Evaluation eval = evaluator.evaluate(state, pid, pred.definition());
+
+		result = ProverFunctionInterpretation
+				.newProverPredicate(pred.name().name(), actualArg, eval.value);
+		pred.setConstantValue(result);
+		return result;
+	}
 }

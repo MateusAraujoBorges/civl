@@ -16,7 +16,7 @@ $input int X1[N];
 
 /* string 'x' is not greater than string 'y' with the specific length */
 /*@
-  @  predicate ngt_len(int x, int y, int l) = 
+  @  predicate ngt_len(int * X1, int N, int x, int y, int l) = 
   @                   0 <= l && l <= N && x + l <= N && y + l <= N 
   @                          && (x + l == N || (y + l < N ==> X1[y+l] > X1[x+l]))
   @                          && (\forall int k1; 0 <= k1 && k1 < l ==> X1[(x)+k1] == X1[(y)+k1]);
@@ -24,9 +24,9 @@ $input int X1[N];
 
 /* string 'x' is NOT greater than string 'y' */
 /*@ 
-  @  predicate ngt(int x, int y) = 
-  @            (\exists int l; ngt_len(x, y, l) &&
-  @             !(\exists int o; ngt_len(x, y, o) && o != l)
+  @  predicate ngt(int * X1, int N, int x, int y) = 
+  @            (\exists int l; ngt_len(X1, N, x, y, l) &&
+  @             !(\exists int o; ngt_len(X1, N, x, y, o) && o != l)
   @            );
   @*/
 
@@ -58,17 +58,17 @@ int compare(int *a, int n, int x, int y) {
 
   $havoc(&ret);	
   if (c == 0) {
-    $assume(ngt(x, y) && ret <= 0);
+    $assume(ngt(a, n, x, y) && ret <= 0);
     return ret;
   } else {
-    $assume(ngt(y, x) && ret > 0);
+    $assume(ngt(a, n, y, x) && ret > 0);
     return ret;
   }
 }
 
 void sort(int *a, int n, int *data) {
   /*@ loop invariant 1 <= i && i <= n;
-    @ loop invariant \forall int k; 1 <= k && k < i ==> ngt(data[k-1],data[k]);
+    @ loop invariant \forall int k; 1 <= k && k < i ==> ngt(a, n, data[k-1],data[k]);
     @ loop invariant \forall int k; 0 <= k && k < n ==> 0 <= data[k] && data[k] < n;           // data elements are valid
     @ loop invariant \forall int t, k; 0 <= k && k < n && 0 <= t && t < n && k != t ==> 
     @                                  data[k] != data[t];
@@ -81,11 +81,11 @@ void sort(int *a, int n, int *data) {
       @ loop invariant \forall int k; 0 <= k && k < n ==> 0 <= data[k] && data[k] < n;           // data elements are valid
       @ loop invariant \forall int t, k; 0 <= k && k < n && 0 <= t && t < n && k != t ==> 
       @                                  data[k] != data[t];
-      @ loop invariant \forall int k; j < k && k <= i ==> ngt(data[k-1],data[k]);
-      @ loop invariant \forall int k; 0 < k && k < j ==> ngt(data[k-1],data[k]);
-      @ loop invariant comp <= 0 ==> (\forall int k; 0 < k && k <= j ==> ngt(data[k-1],data[k]));
-      @ loop invariant (comp > 0  && 0 < j) ==>  ngt(data[j], data[j-1]);
-      @ loop invariant (comp > 0 && 0 < j && j < i) ==> ngt(data[j-1], data[j+1]) ;
+      @ loop invariant \forall int k; j < k && k <= i ==> ngt(a, n, data[k-1],data[k]);
+      @ loop invariant \forall int k; 0 < k && k < j ==> ngt(a, n, data[k-1],data[k]);
+      @ loop invariant comp <= 0 ==> (\forall int k; 0 < k && k <= j ==> ngt(a, n, data[k-1],data[k]));
+      @ loop invariant (comp > 0  && 0 < j) ==>  ngt(a, n, data[j], data[j-1]);
+      @ loop invariant (comp > 0 && 0 < j && j < i) ==> ngt(a, n, data[j-1], data[j+1]) ;
       @ loop assigns j, comp, data[0 .. n-1];
       @*/
     for(int j = i; j > 0 && comp > 0;) {
@@ -99,7 +99,7 @@ void sort(int *a, int n, int *data) {
 	comp = compare(a, n, data[j - 1], data[j]);
     }
   }
-  $assert($forall (int i : 1 .. N-1) ngt(data[i - 1], data[i]));
+  $assert($forall (int i : 1 .. N-1) ngt(a, n, data[i - 1], data[i]));
 }
 
 /* An abstraction of the 'sort' function */
@@ -107,7 +107,7 @@ void sort2(int *a, int n, int *data) {
   int new_data[n];
 
   memcpy(data, new_data, sizeof(int) * n);
-  $assume($forall (int i : 1 .. N-1) ngt(data[i - 1], data[i]));
+  $assume($forall (int i : 1 .. N-1) ngt(a, n, data[i - 1], data[i]));
   $assume($forall (int i : 0 .. N-1) 0 <= data[i] && data[i] < n);
   $assume($forall (int i : 0 .. N-1) 
 	  ($forall (int j | 0 <= j && j < N && j != i) data[i] != data[j])
@@ -119,7 +119,7 @@ int lcp2(int *a, int n, int index, int* suffixes) {
   int ret;
   
   $havoc(&ret);
-  $assume(ngt_len(suffixes[index-1], suffixes[index], ret));
+  $assume(ngt_len(a, n, suffixes[index-1], suffixes[index], ret));
   return ret;
 }
 
@@ -145,14 +145,14 @@ void lrs(int* a, int n, int *result) {
     @ loop invariant 0 <= result[1] && result[1] <= n && (result[0] + result[1]) <= n &&
     @                                  0 <= result[0] && result[0] < n;
     @ loop invariant \forall int k; 1 <= k && k < i ==> (
-    @                                 \exists int l; ngt_len(suffixes[k-1], suffixes[k], l) &&
-    @                                 !(\exists int l2; ngt_len(suffixes[k-1], suffixes[k], l2) && l2 != l) &&
+    @                                 \exists int l; ngt_len(a, n, suffixes[k-1], suffixes[k], l) &&
+    @                                 !(\exists int l2; ngt_len(a, n, suffixes[k-1], suffixes[k], l2) && l2 != l) &&
     @                                 l <= result[1]
     @                               );    
     @ loop invariant \exists int k; 0 <= k && k < i && result[0] == suffixes[k] &&
-    @                               (k > 0 ==> ngt_len(suffixes[k-1], result[0], result[1]));
+    @                               (k > 0 ==> ngt_len(a, n, suffixes[k-1], result[0], result[1]));
     @ loop invariant (result[0] != suffixes[0]) ==> 
-    @                (\exists int k; 0 <= k && k < n && ngt_len(suffixes[k], result[0], result[1]));
+    @                (\exists int k; 0 <= k && k < n && ngt_len(a, n, suffixes[k], result[0], result[1]));
     @ loop assigns   i, result[0 .. 1];
     @*/
   for(int i=1; i<n; i++) {
@@ -164,12 +164,12 @@ void lrs(int* a, int n, int *result) {
     }
   }
   $assert($exists (int i : 0 .. n-1) suffixes[i] == result[0]);
-  $assert((result[0] != suffixes[0]) => ($exists (int i : 0 .. n-1) ngt_len(suffixes[i], result[0], result[1])));
-  $assert($forall (int i : 1 .. n-1) ngt(suffixes[i-1], suffixes[i]));
+  $assert((result[0] != suffixes[0]) => ($exists (int i : 0 .. n-1) ngt_len(a, n, suffixes[i], result[0], result[1])));
+  $assert($forall (int i : 1 .. n-1) ngt(a, n, suffixes[i-1], suffixes[i]));
   $assert($forall (int i : 1 .. n-1) 
 	   ($exists (int l) 
-	    ngt_len(suffixes[i-1], suffixes[i], l) &&
-	    !($exists (int l2) ngt_len(suffixes[i-1], suffixes[i], l2) && l2 != l) &&
+	    ngt_len(a, n, suffixes[i-1], suffixes[i], l) &&
+	    !($exists (int l2) ngt_len(a, n, suffixes[i-1], suffixes[i], l2) && l2 != l) &&
 	    l <= result[1]
 	    ));
 }

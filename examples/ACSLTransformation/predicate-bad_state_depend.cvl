@@ -1,0 +1,15 @@
+#pragma CIVL ACSL
+
+int x = 9;
+
+/*@ predicate eq(int a, int b) =
+  @   a == x && b == x;
+  @*/
+int main(){
+  int a = 9;
+  int b = 9;
+  
+  $assert(eq(a, b));
+  x = 8;
+  $assert(!eq(a, b));
+}
