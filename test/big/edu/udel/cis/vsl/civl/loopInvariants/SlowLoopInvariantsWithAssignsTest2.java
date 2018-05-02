@@ -60,6 +60,12 @@ public class SlowLoopInvariantsWithAssignsTest2 {
 						"foVeOOS/twoEqualElements/two_equal_elements-bad_invariant.cvl")));
 	}
 
+	@Test
+	public void JanLoop() {
+		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop",
+				filename("/Jans_example/invariant.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

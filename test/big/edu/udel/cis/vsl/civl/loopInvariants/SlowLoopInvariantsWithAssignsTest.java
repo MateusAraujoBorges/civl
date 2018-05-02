@@ -263,13 +263,6 @@ public class SlowLoopInvariantsWithAssignsTest {
 	}
 
 	@Test
-	public void JanLoop() {
-		assertTrue(ui.run("verify", "-showProgram " + "-loop",
-
-				filename("../Jans_example/invariant.cvl")));
-	}
-
-	@Test
 	public void relaxedPrefix() {
 		assertTrue(ui.run("verify", "-loop", TestConstants.QUIET, filename(
 				"../verifyThisNB/relaxedPrefix/relaxedPrefix_loop.cvl")));
