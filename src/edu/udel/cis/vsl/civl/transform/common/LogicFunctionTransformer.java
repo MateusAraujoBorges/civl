@@ -136,8 +136,8 @@ public class LogicFunctionTransformer {
 		if (!logicFunctionDecl.isLogicFunction())
 			return;
 
-		System.out.println(
-				"Transform " + logicFunctionDecl.prettyRepresentation());
+		// System.out.println(
+		// "Transform " + logicFunctionDecl.prettyRepresentation());
 
 		FunctionTypeNode typeNode = (FunctionTypeNode) logicFunctionDecl
 				.getTypeNode();
@@ -176,12 +176,13 @@ public class LogicFunctionTransformer {
 
 			definition = tranformExpression(definition, pointersStack);
 
-			System.out.println(" ==> " + definition.prettyRepresentation());
+			// System.out.println(" ==> " + definition.prettyRepresentation());
 		}
 		typeNode.getParameters().remove();
 		typeNode.setParameters(nodeFactory.newSequenceNode(newParamSource,
 				"logic function params", newParams));
-		System.out.println(" ==> " + logicFunctionDecl.prettyRepresentation());
+		// System.out.println(" ==> " +
+		// logicFunctionDecl.prettyRepresentation());
 	}
 
 	private ExpressionNode tranformExpression(ExpressionNode definition,
@@ -400,7 +401,8 @@ public class LogicFunctionTransformer {
 		if (!funcEntity.isLogic())
 			return;
 
-		System.out.println("Transform: " + expression.prettyRepresentation());
+		// System.out.println("Transform: " +
+		// expression.prettyRepresentation());
 		// transform arguments:
 		SequenceNode<ExpressionNode> args = expression.getArguments();
 		List<ExpressionNode> newArgs = new LinkedList<>();
@@ -425,7 +427,7 @@ public class LogicFunctionTransformer {
 		args.remove();
 		expression.setArguments(nodeFactory.newSequenceNode(args.getSource(),
 				"logic-function arguments", newArgs));
-		System.out.println(" ==> " + expression.prettyRepresentation());
+		// System.out.println(" ==> " + expression.prettyRepresentation());
 	}
 
 	/**

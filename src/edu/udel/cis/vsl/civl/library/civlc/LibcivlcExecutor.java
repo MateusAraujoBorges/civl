@@ -676,7 +676,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			if (acslPredicates2why3.length == 0)
 				resultType = universe.reasoner(query.context).valid(query.query)
 						.getResultType();
-			universe.setUseBackwardSubstitution(true);
+			// universe.setUseBackwardSubstitution(true);
 			if (resultType == ResultType.MAYBE)
 				resultType = universe
 						.why3Reasoner(query.context, acslPredicates2why3)
@@ -693,7 +693,7 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 		} else
 			resultType = universe.reasoner(context).valid(assertValue)
 					.getResultType();
-		universe.setUseBackwardSubstitution(false);
+		// universe.setUseBackwardSubstitution(false);
 		if (resultType != ResultType.YES) {
 			// uncomment the following when debug:
 			// PreUniverse preU = (PreUniverse) universe;
