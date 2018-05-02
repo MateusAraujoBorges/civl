@@ -18,6 +18,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSyntaxException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
+import edu.udel.cis.vsl.civl.model.IF.LogicFunction;
 import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.Scope;
@@ -3913,7 +3914,8 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		List<SymbolicExpression> argumentValues = new LinkedList<>();
 		List<SymbolicType> paraTypes = new LinkedList<>();
-		CIVLFunction logicFunction = logicCall.callStatement().function();
+		LogicFunction logicFunction = (LogicFunction) logicCall.callStatement()
+				.function();
 		SymbolicType symbolicPointerType = modelFactory.typeFactory()
 				.pointerSymbolicType();
 		Evaluation eval;
@@ -3927,7 +3929,18 @@ public class CommonEvaluator implements Evaluator {
 			argumentValues.add(eval.value);
 			paraTypes.add(eval.value.type());
 		}
+		// check if the predicate is a reserved predicate:
+		if (logicFunction.isReservedFunction()) {
+			SymbolicExpression[] argValArray = new SymbolicExpression[argumentValues
+					.size()];
 
+			argumentValues.toArray(argValArray);
+			return new Evaluation(state,
+					ReservedLogicFunctionCallEvaluator.applyReservedFunction(
+							this, logicFunction, argValArray,
+							logicCall.getSource()));
+		}
+		// else, it is a user-defined predicate:
 		SymbolicFunctionType funcType = universe.functionType(paraTypes,
 				universe.booleanType());
 		SymbolicExpression predCallValue = universe.symbolicConstant(

@@ -1,0 +1,206 @@
+/* VerifyThis 2017: CIVL Solution to Challenge 1 : Pair Insertion Sort
+ * Stephen Siegel
+ *
+ * Modification by Ziqing Luo: 
+ *  1. Got rid of the upper bound over n.
+ *
+ *  2. Manual side-effect removing.  The loop invariants transformer
+ *  relies on the fact of side-effect free in loop conditions. It
+ *  copies and moves the loop conditions hence side-effects can make
+ *  it wrong.  Applying side-effect remover introduces jump statements
+ *  which are not handled well by the loop invariants transformer.
+ */
+#include <stdio.h>
+#include <string.h>
+#pragma CIVL ACSL
+
+$input int n; // size of array
+$assume(1<=n);
+$input int A[n];
+$input int LEFT;
+$input int RIGHT;
+$assume(1<=LEFT && LEFT < RIGHT && RIGHT<n-1);
+
+/* 'p' is a permutation of 'q', where both 'p' and 'q' are arrays of
+ *  length 'len': */
+/*@ predicate permut(int * p, int * q, int l, int u);
+  @
+  @ predicate slice_eq(int * a, int * b, int l, int u) =
+  @              \forall int i; l <= i && i < u ==> a[i] == b[i];
+  @*/
+
+int main() {
+  // this is the "sentinel" assumption...
+  $assume($forall (int j : LEFT .. RIGHT) A[j] >= A[LEFT-1]);
+
+  int a[n], pre_a[n];
+
+  memcpy(a, A, n * sizeof(int));
+  printf("n=%d\n", n);
+
+  int left = LEFT, right = RIGHT;
+  int k = left;
+  
+  memcpy(pre_a, a, sizeof(int) * n);
+  left++;
+  /*@ loop invariant 2 <= left && left <= right + 2;
+    @ loop invariant k == left - 1;
+    @ loop invariant LEFT <= k && k <= RIGHT+1 && k == left - 1;
+    @ loop invariant \forall int t; LEFT <= t && t < k ==> a[t - 1] <= a[t];
+    @ loop invariant \forall int t; LEFT <= t && t <= RIGHT ==> a[LEFT-1] <= a[t];
+    @ loop invariant permut(pre_a, a, LEFT, k);
+    @ loop invariant slice_eq(pre_a, a, k, RIGHT+1);
+    @ loop assigns k, left, a[LEFT .. n-1];
+    @*/
+  for (; left <= right; k = left++) {
+    int a1 = a[k], a2 = a[left];
+
+    if (a1 < a2) {
+      a2 = a1; a1 = a[left];
+    }
+    k--;
+
+    // ghost variable:
+    int ghost_a[n];
+    
+    // ghost variable update 
+    memcpy(ghost_a, a, n * sizeof(int));
+    // end of ghost variable update
+
+    /*@ loop invariant LEFT - 1 <= k && k < left - 1;
+      @ loop invariant a1 < a[k] ==> k >= LEFT;
+      @ loop invariant \forall int t; LEFT <= t && t <= k ==> a[t - 1] <= a[t];
+      @ loop invariant \forall int t; k + 3 < t && t <= left ==> a[t - 1] <= a[t];
+      @ loop invariant \forall int t; LEFT <= t && t <= RIGHT ==> a[LEFT-1] <= a[t];
+      @ loop invariant k + 3 <= left ==> a[k + 3] >= a1 && a[k+3] >= a[k];
+      @ loop invariant slice_eq(pre_a, a, left+1, RIGHT+1);
+      @ loop invariant permut(pre_a, ghost_a, LEFT, left+1);
+      @ loop assigns k, a[LEFT .. n-1], ghost_a[0 .. n-1];
+      @*/
+    while (a1 < a[k]) {
+      a[k + 2] = a[k];
+      k--;
+      // ghost variable update 
+       memcpy(ghost_a, a, n * sizeof(int));
+       ghost_a[k+2] = a1;
+       ghost_a[k+1] = a2;
+       // end of ghost variable update 
+    }
+    a[++k + 1] = a1;
+    k--;
+
+    // ghost variable update 
+    memcpy(ghost_a, a, n * sizeof(int));
+    ghost_a[k+1] = a2;
+    // end of ghost variable update
+
+    /*@ loop invariant LEFT - 1 <= k && k < left - 1;
+      @ loop invariant a2 < a[k] ==> k >= LEFT;
+      @ loop invariant \forall int t; LEFT <= t && t <= k ==> a[t - 1] <= a[t];
+      @ loop invariant \forall int t; k + 2 < t && t <= left ==> a[t - 1] <= a[t];
+      @ loop invariant \forall int t; LEFT <= t && t <= RIGHT ==> a[LEFT-1] <= a[t];
+      @ loop invariant k + 2 <= left ==> a[k + 2] >= a2 && a[k + 2] >= a[k];
+      @ loop invariant slice_eq(pre_a, a, left+1, RIGHT + 1);
+      @ loop invariant permut(pre_a, ghost_a, LEFT, left+1);
+      @ loop assigns k, a[LEFT .. n-1], ghost_a[0 .. n-1];
+      @*/
+    while (a2 < a[k]) {
+      printf("k=%d, LEFT=%d\n", k, LEFT);
+      a[k + 1] = a[k];
+      k--;
+      // ghost variable update 
+      memcpy(ghost_a, a, n * sizeof(int));
+      ghost_a[k+1] = a2;
+      // end of ghost variable update 
+    }
+    a[k + 1] = a2;
+    left++;
+  }
+
+  $assert( $forall (int i : LEFT .. RIGHT-2) a[i] <= a[i+1] );
+  
+  int last = a[right--];
+  
+  /*@ loop invariant LEFT-1 <= right && right <= RIGHT-1;
+    @ loop invariant right < RIGHT-1 ==>
+    @                   (\forall int i; LEFT <= i && i <= RIGHT ==>
+    @                     a[i-1] <= a[i]); 
+    @ loop invariant right == RIGHT-1 ==> 
+    @                 (\forall int i; LEFT <= i && i <= RIGHT-1 ==>
+    @                     a[i-1] <= a[i]);
+    @ loop invariant right < RIGHT-1 ==> last < a[right+1];
+    @ loop assigns right, a[LEFT .. RIGHT];
+    @*/
+  while (last < a[right]) {
+    a[right + 1] = a[right];
+    right--;
+  }
+  a[right + 1] = last;
+  $assert( $forall (int i : LEFT .. RIGHT-1) a[i] <= a[i+1] );
+}
+/*
+  CIVL v1.15.1+ of 2018-04-10 -- http://vsl.cis.udel.edu/civl
+  === Command ===
+  civl verify -loop -enablePrintf=false challenge1_ub.cvl 
+  
+  === Stats ===
+  time (s)            : 61.05
+  memory (bytes)      : 1091567616
+  max process count   : 1
+  states              : 1066
+  states saved        : 908
+  state matches       : 27
+  transitions         : 1092
+  trace steps         : 660
+  valid calls         : 484
+  provers             : cvc4, z3, cvc3
+  prover calls        : 425
+  
+  === Result ===
+  The standard properties hold for all executions.
+*/
+
+/*
+VerifyThis2017 siegel$ civl-1.11 verify -inputN=6 challenge1d.cvl 
+CIVL v1.11 of 2017-07-07 -- http://vsl.cis.udel.edu/civl
+n=6
+k=X_LEFT+1, LEFT=X_LEFT
+k=X_LEFT, LEFT=X_LEFT
+k=X_LEFT, LEFT=X_LEFT
+k=X_LEFT+1, LEFT=X_LEFT
+k=X_LEFT, LEFT=X_LEFT
+k=X_LEFT, LEFT=X_LEFT
+k=X_LEFT+1, LEFT=X_LEFT
+k=X_LEFT, LEFT=X_LEFT
+17s: mem=281Mb trans=452 traceSteps=241 explored=452 saved=304 prove=540
+k=X_LEFT, LEFT=X_LEFT
+k=X_LEFT+1, LEFT=X_LEFT
+k=X_LEFT, LEFT=X_LEFT
+k=X_LEFT, LEFT=X_LEFT
+n=6
+n=5
+n=6
+n=5
+32s: mem=382Mb trans=991 traceSteps=533 explored=991 saved=676 prove=1153
+n=4
+
+=== Command ===
+civl verify -inputN=6 challenge1d.cvl 
+
+=== Stats ===
+   time (s)            : 33.3
+   memory (bytes)      : 401080320
+   max process count   : 1
+   states              : 1072
+   states saved        : 729
+   state matches       : 0
+   transitions         : 1071
+   trace steps         : 574
+   valid calls         : 1950
+   provers             : cvc4, z3
+   prover calls        : 1237
+
+=== Result ===
+The standard properties hold for all executions.
+ */
+

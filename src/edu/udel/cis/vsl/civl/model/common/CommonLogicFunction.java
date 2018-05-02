@@ -68,4 +68,9 @@ public class CommonLogicFunction extends CommonFunction
 	public int[] pointerToHeapVidMap() {
 		return this.pointerToArrayMap;
 	}
+
+	@Override
+	public boolean isReservedFunction() {
+		return LogicFunction.ReservedLogicFunctionNames.contains(name().name());
+	}
 }

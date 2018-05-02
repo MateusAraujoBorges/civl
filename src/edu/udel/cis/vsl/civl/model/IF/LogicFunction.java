@@ -1,5 +1,9 @@
 package edu.udel.cis.vsl.civl.model.IF;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.sarl.prove.IF.ProverFunctionInterpretation;
@@ -33,6 +37,23 @@ import edu.udel.cis.vsl.sarl.prove.IF.ProverFunctionInterpretation;
  *
  */
 public interface LogicFunction extends CIVLFunction {
+
+	/**
+	 * A reserved logic function
+	 * <code>(int *a, int *b, int l, int h) : bool</code> has a dynamic type
+	 * <code>(int a[], int oft_a, int b[], int oft_b, int l, int h) : bool</code>
+	 * after stateless transformation.
+	 */
+	static final String RESERVED_PERMUT = "permut";
+
+	/**
+	 * Reserved logic functions are defined by CIVL/SARL
+	 * 
+	 * @author ziqing
+	 *
+	 */
+	static final Set<String> ReservedLogicFunctionNames = new HashSet<>(
+			Arrays.asList(new String[]{RESERVED_PERMUT}));
 
 	static String heapVariableName(Variable formal) {
 		return "_hp_" + formal.name().name();
@@ -74,4 +95,10 @@ public interface LogicFunction extends CIVLFunction {
 	 *         spot in the parameter scope for these pointers to point to.
 	 */
 	int[] pointerToHeapVidMap();
+
+	/**
+	 * @return true iff this logic function is defined in CIVL/SARL instead of
+	 *         being defined by programmers
+	 */
+	boolean isReservedFunction();
 }
