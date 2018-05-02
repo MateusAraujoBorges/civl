@@ -1,0 +1,20 @@
+#pragma CIVL acsl
+$input int n;
+$assume(n>=0 && n%2==0);
+
+int f(int n) {
+  int i=0;
+  /*@ loop invariant i<=n;
+    @ loop invariant i%2==0;
+    @ loop assigns i;
+    @*/
+  while (i<n) {
+    i+=2;
+  }
+  $assert(i==n);
+  return i;
+}
+
+int main() {
+  return f(0);
+}
