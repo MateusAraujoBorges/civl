@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import edu.udel.cis.vsl.civl.run.IF.UserInterface;
 
-public class AMGTest {
+public class AMGTest { 
 
 	/* *************************** Static Fields *************************** */
 
