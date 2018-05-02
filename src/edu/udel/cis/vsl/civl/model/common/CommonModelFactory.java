@@ -445,9 +445,9 @@ public class CommonModelFactory implements ModelFactory {
 				CIVLType processExpr = left.getExpressionType();
 
 				if (!processExpr.isIntegerType())
-					throw new CIVLException(
-							"Incompatible types to " + BINARY_OPERATOR.REMOTE
-									+ " operand. The left hand side expression must have a integer type.",
+					throw new CIVLException("Incompatible types to "
+							+ BINARY_OPERATOR.REMOTE
+							+ " operand. The left hand side expression must have a integer type.",
 							source);
 				return new CommonBinaryExpression(source, expressionScope,
 						lowestScope, right.getExpressionType(), operator, left,
@@ -497,9 +497,8 @@ public class CommonModelFactory implements ModelFactory {
 						// .setExpressionType(integerType());
 						resultType = typeFactory.integerType;
 					else
-						throw new CIVLException(
-								leftType + " and " + rightType
-										+ " are not pointers to compatiable types",
+						throw new CIVLException(leftType + " and " + rightType
+								+ " are not pointers to compatiable types",
 								source);
 				} else if (leftType.equals(rightType)) {
 					// ((CommonBinaryExpression)

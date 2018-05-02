@@ -797,23 +797,28 @@ public class UserInterface {
 				result = verifier.run();
 			} catch (CIVLUnimplementedFeatureException unimplemented) {
 				if (!isQuiet) {
-					verifier.terminateUpdater();
 					out.println();
 					out.println("Error: " + unimplemented.toString());
 				}
 				return false;
 			} catch (CIVLSyntaxException syntax) {
-				verifier.terminateUpdater();
 				if (!isQuiet)
 					err.println(syntax);
 				return false;
 			} catch (CancellationException | ExecutionException
 					| InterruptedException e) {
 				// time out
-				verifier.terminateUpdater();
+			} catch (OutOfMemoryError oome) {
+				throw new CIVLException(
+						"JVM is running out of memory"
+								+ ", use java flag '-Xmx' to increase the allocated memory sapce for JVM",
+						null);
 			} catch (VirtualMachineError vme) {
-				verifier.terminateUpdater();
 				throw vme;
+			} catch (Exception e) {
+				throw e;
+			} finally {
+				verifier.terminateUpdater();
 			}
 			if (result) {
 				if (modelTranslator.config.collectOutputs()) {

@@ -1204,10 +1204,9 @@ public class FunctionTranslator {
 		try {
 			condition = modelFactory.booleanExpression(condition);
 		} catch (ModelFactoryException err) {
-			throw new CIVLSyntaxException(
-					"The condition of the loop statement " + condition
-							+ " is of " + condition.getExpressionType()
-							+ " type which cannot be converted to boolean type.",
+			throw new CIVLSyntaxException("The condition of the loop statement "
+					+ condition + " is of " + condition.getExpressionType()
+					+ " type which cannot be converted to boolean type.",
 					condition.getSource());
 		}
 		loopEntranceLocation = modelFactory.location(condition.getSource(),
@@ -2980,10 +2979,9 @@ public class FunctionTranslator {
 		try {
 			expression = modelFactory.booleanExpression(expression);
 		} catch (ModelFactoryException err) {
-			throw new CIVLSyntaxException(
-					"The condition of the if statement " + expression
-							+ " is of " + expression.getExpressionType()
-							+ " type which cannot be converted to boolean type.",
+			throw new CIVLSyntaxException("The condition of the if statement "
+					+ expression + " is of " + expression.getExpressionType()
+					+ " type which cannot be converted to boolean type.",
 					expression.getSource());
 		}
 		if (modelFactory.anonFragment() != null) {
@@ -3311,8 +3309,8 @@ public class FunctionTranslator {
 		Statement defaultExit = null;
 		Set<Statement> breaks;
 		Location location = modelFactory.location(
-				modelFactory.sourceOfSpan(modelFactory
-						.sourceOfBeginning(switchNode),
+				modelFactory.sourceOfSpan(
+						modelFactory.sourceOfBeginning(switchNode),
 						modelFactory.sourceOfBeginning(switchNode.child(1))),
 				scope);
 
@@ -4650,10 +4648,9 @@ public class FunctionTranslator {
 					if (expression instanceof LHSExpression) {
 						expression = modelFactory.addressOfExpression(source,
 								modelFactory.subscriptExpression(source,
-										(LHSExpression) expression, modelFactory
-												.integerLiteralExpression(
-														source,
-														BigInteger.ZERO)));
+										(LHSExpression) expression,
+										modelFactory.integerLiteralExpression(
+												source, BigInteger.ZERO)));
 					} else if (expressionKind == Expression.ExpressionKind.ARRAY_LITERAL
 							|| expressionKind == Expression.ExpressionKind.ARRAY_LAMBDA) {
 						// creates anonymous variable in the root scope for this
