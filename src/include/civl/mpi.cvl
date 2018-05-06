@@ -366,12 +366,23 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   if(sendbuf != MPI_IN_PLACE)
     $mpi_check_buffer(sendbuf, sendcount, sendtype);
   checkerEntry = $mpi_create_coroutine_entry(ALLGATHER_TAG, 0, -1, 2, 
-					       datatypes);
+					     datatypes);
   specEntry = $collate_check(comm.collator, checkerEntry);
   $mpi_diff_coroutine_entries(specEntry, checkerEntry, place);
-  $mpi_gather(sendbuf, sendcount, sendtype,
-	     recvbuf, recvcount, recvtype,
-	      0, ALLGATHER_TAG, comm, "MPI_Allgather()");
+
+  if (sendbuf != MPI_IN_PLACE)
+    $mpi_gather(sendbuf, sendcount, sendtype,
+		recvbuf, recvcount, recvtype,
+		0, ALLGATHER_TAG, comm, "MPI_Allgather()");
+  else {
+    void * in_buf = $mpi_malloc(recvcount, recvtype);
+
+    memcpy(in_buf, recvbuf + recvcount*place, sizeofDatatype(recvtype) * recvcount);
+    $mpi_gather(in_buf, recvcount, recvtype,
+		recvbuf, recvcount, recvtype,
+		0, ALLGATHER_TAG, comm, "MPI_Allgather()");   
+    $free(in_buf);
+  }
   $mpi_bcast(recvbuf, recvcount*nprocs, recvtype, 0, ALLGATHER_TAG, comm,
 	     "MPI_Allgather()");
   return 0;
