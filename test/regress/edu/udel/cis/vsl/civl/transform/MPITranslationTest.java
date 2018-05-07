@@ -173,6 +173,18 @@ public class MPITranslationTest {
 				filename("simple/send_int_recv_double.c")));
 	}
 
+	@Test
+	public void allgather() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=3", TestConstants.QUIET,
+				filename("simple/allgather.c")));
+	}
+
+	@Test
+	public void allgatherInplace() {
+		assertTrue(ui.run("verify -input_mpi_nprocs=3", TestConstants.QUIET,
+				filename("simple/allgather_inplace.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
