@@ -426,6 +426,11 @@ public class LanguageFeaturesTest {
 	}
 
 	@Test
+	public void quantifiers2() {
+		assertTrue(ui.run(VERIFY, QUIET, filename("quantifiers2.cvl")));
+	}
+
+	@Test
 	public void removedHeapPointer() throws ABCException {
 		assertFalse(ui.run(VERIFY, QUIET, filename("removedHeapPointer.cvl")));
 	}

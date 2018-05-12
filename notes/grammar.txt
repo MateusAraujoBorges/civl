@@ -1,0 +1,34 @@
+
+ACSL
+
+\forall decl_list ;
+
+QUANT DECLS SEMI FORMULA
+
+
+Q D ; p ==> q
+Q D ; (p ==> q)
+
+not: (Q D ; p) ==> q
+
+Similar: a+b*c  is a+(b*c), not (a+b)*c
+
+(Q D ;)+ NOTQUANTFORM
+
+
+
+a && b || c  should be (a && b) || c
+
+but
+
+a && Q D ; p || q       is    a && (Q D ; p || q)
+
+
+formula: quant | equiv
+
+quant: Q D ; form
+
+equiv: implies (<==> (quant | equiv))?
+implies: or (OR (quant | or))?
+or: and (AND (quant | and))?
+and: ...

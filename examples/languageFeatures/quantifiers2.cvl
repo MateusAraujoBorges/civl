@@ -1,0 +1,15 @@
+void main() {
+  int a[5];
+  for (int i = 0; i < 5; i++) {
+    a[i] = i;
+  }
+  $assert(!!!$exists (int k:0..4) a[k]<0);
+  $assert($exists (int k:0..4) a[k]==2);
+  $assert(3!=5 && $exists (int k:0..4) a[k]==2);
+  $assert($exists (int i,j) a[i]==2 && a[j]==3); // OK
+  $assert($exists (int i:0..4; int j:0..4) a[i]==2 && a[j]==3); // OK
+  // note the following syntax is not supported. a little non-intuitive:
+  //$assert($exists (int i,j:0..4) a[i]==2 && a[j]==3);
+  // this is also "not yet implemented":
+  //$assert($exists (int i,j:($domain){0..4,0..4}) a[i]==2 && a[j]==3);
+}

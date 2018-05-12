@@ -1,0 +1,76 @@
+
+Dyscopes are currently stored in an array in the state.
+This gives each an ID.
+Reachable dyscopes: call stacks always have reference to concrete dyscope.
+Pointers to anywhere:
+equality of two dyscopes:
+Type of value associated to a dyscope: struct {int}
+d1==d2  becomes d1.0==d2.0.   This one survives renumbering, but not
+d1<d2.  Sure, that becomes an uninterpreted function.
+What about
+
+d1==d2 --> d1.0==5.
+
+Renumbering: Apply permutation to d1.0?
+
+
+f(2)=f(3) ... need that to return false
+
+CIVL:evaluation of equality for dyscope types special handling
+ (also inequality, <, >)
+
+
+A concrete state has some concrete ordered list of dyscopes
+(0,1,2,...,n-1)
+and values of expressions of dyscope type are integers.
+Two concrete states are equivalent if there is a permutation
+of the integers 0..n-1 such that when applied to one state
+by permuting the dyscopes in the list and the id numbers in the values,
+you get the other state.
+
+A symbolic state represents a set of concrete states.
+Question is given two symbolic states, are they "equivalent"
+meaning given any concrete state cs1 in ss1, there is a concrete
+state cs2 in ss2 such that cs1 and cs2 are equivalent.
+And vice versa.
+
+what is the permutation applied to the symbolic state?
+
+var: dyscope ... 
+
+var: array of T..
+
+example: (0 1 2)
+
+SS1:
+d1: X
+d2: Y
+d3: <1>
+d4: Z
+pc: X<Y && Y<1 && Z=2
+
+To show: let f be the permutation 
+ X<Y iff f(X)<f(Y)
+ X=Y iff f(X)=f(Y)
+
+SS2:
+d1: X
+d2: Y
+d3: <2>
+d4: Z
+pc: X<Y && Y<2 && Z=0
+
+
+evaluation of operations on pointers or anything involving
+
+f(3)=X
+f(3)=f(4)
+
+X: arbitrary pointer
+X.0 : dyscope type
+X.0==f(3)
+
+Can we guarantee that f will only be applied to concrete integers?
+
+"I never want to see a conrete integer representing a dyscope taken out of f"
+
