@@ -51,23 +51,33 @@ import edu.udel.cis.vsl.sarl.SARL;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 
 /**
+ * <p>
  * A model translator parses, links, transforms a sequence of source files (C or
  * CIVL-C programs) into a ABC program; and then build a CIVL model from that
  * program. Command line options are also taken into account including macros,
  * transformer settings (e.g., -ompNoSimplify), input variables, system/user
  * include path, etc.
+ * </p>
+ * 
  * <p>
  * A model translator takes into account a command line section. E.g., the
  * command line
- * <code>civl compare -D_CIVL -spec -DN=5 sum.c -impl -DCUDA -inputNB=8 sum.c sum_cuda.c</code>
- * contains three command line sections the common section, the "spec" section
+ * 
+ * <pre>
+   civl compare -D_CIVL -spec -DN=5 sum.c -impl -DCUDA -inputNB=8 sum.c sum_cuda.c
+ * </pre>
+ * 
+ * contains three command line sections: the common section, the "spec" section
  * and the "impl" section. Two model translators will be invoked for translating
  * the specification and the implementation, respectively, taking into account
- * the common commandline section and the corresponding specific section
+ * the common command line section and the corresponding specific section
  * (different lists of files, different macros, input variables, etc).
+ * </p>
+ * 
  * <p>
  * Non-compare command line contains one command line section, and thus only one
  * model translator is created.
+ * </p>
  * 
  * <p>
  * Orders of applying transformers:
@@ -85,11 +95,11 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
  * </p>
  * 
  * @author Manchun Zheng
- *
  */
 public class ModelTranslator {
 
-	// private final static fields (constants)
+	// private final static fields (constants)...
+
 	/**
 	 * The default macro for CIVL-C programs. Could be disable by the setting
 	 * the option _CIVL to false: <code>-_CIVL=false</code>.
@@ -104,7 +114,8 @@ public class ModelTranslator {
 	 */
 	private static final String MPI_CONTRACT_MACRO = "_MPI_CONTRACT";
 
-	// package-private fields, which are accessed by UserInterface
+	// package-private fields, which are accessed by UserInterface...
+
 	/**
 	 * The GMC configuration that this model translator associates with.
 	 */
@@ -126,6 +137,9 @@ public class ModelTranslator {
 	 */
 	SymbolicUniverse universe;
 
+	/**
+	 * This is the main ABC class used to compile a program.
+	 */
 	FrontEnd frontEnd;
 
 	// private fields
@@ -157,15 +171,11 @@ public class ModelTranslator {
 	 */
 	private TransformerFactory transformerFactory;
 
-	// /**
-	// * The core name of teh user file.
-	// */
-	// private String userFileCoreName;
-
 	private Configuration abcConfiguration = Configurations
 			.newMinimalConfiguration();
 
-	// constructor
+	// Constructors...
+
 	/**
 	 * Creates a new instance of model translator.
 	 * 
@@ -191,6 +201,10 @@ public class ModelTranslator {
 		this(gmcConfig, gmcSection, filenames, coreName,
 				SARL.newStandardUniverse());
 	}
+	
+	// TODO: add another parameter here, the FrontEnd.
+	// Then you can re-use front-ends across different ModelTranslators.
+	// Needed for civl compare command.
 
 	/**
 	 * Creates a new instance of model translator.
@@ -219,7 +233,6 @@ public class ModelTranslator {
 			throws PreprocessorException {
 		this.cmdSection = cmdSection;
 		this.gmcConfig = gmcConfig;
-		// this.userFileCoreName = coreName;
 		this.universe = universe;
 		if (cmdSection.isTrue(showProverQueriesO))
 			universe.setShowProverQueries(true);
@@ -238,7 +251,7 @@ public class ModelTranslator {
 		userIncludes = this.getUserIncludes(cmdSection);
 	}
 
-	// package private methods
+	// package private methods...
 
 	Program buildProgram() throws ABCException {
 		TranslationTask task;
@@ -265,6 +278,10 @@ public class ModelTranslator {
 		}
 		task.setVerbose(config.debugOrVerbose());
 
+		// TODO: can we re-use a given frontEnd here:
+		// there is a constructor for ABCExecutor that takes a FrontEnd
+		// but look at it, it sets a bunch of fields.
+		
 		ABCExecutor executor = new ABCExecutor(task);
 
 		task.setDynamicTask(new ParseSystemLibrary(executor, macros));

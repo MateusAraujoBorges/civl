@@ -51,6 +51,7 @@ import edu.udel.cis.vsl.abc.err.IF.ABCRuntimeException;
 import edu.udel.cis.vsl.abc.front.IF.ParseException;
 import edu.udel.cis.vsl.abc.front.IF.PreprocessorException;
 import edu.udel.cis.vsl.abc.program.IF.Program;
+import edu.udel.cis.vsl.abc.token.IF.FileIndexer;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.abc.transform.IF.Combiner;
 import edu.udel.cis.vsl.abc.transform.IF.Transform;
@@ -371,10 +372,13 @@ public class UserInterface {
 		implSection = this.readVerboseOrDebugOption(implSection,
 				anonymousSection);
 
+		// TODO: hmmmmm.... can they share front ends or at least
+		// file indexers????
+
 		ModelTranslator specWorker = new ModelTranslator(gmcConfig, specSection,
-				spec.files(), spec.getCoreFileName(), universe),
-				implWorker = new ModelTranslator(gmcConfig, implSection,
-						impl.files(), impl.getCoreFileName(), universe);
+				spec.files(), spec.getCoreFileName(), universe);
+		ModelTranslator implWorker = new ModelTranslator(gmcConfig, implSection,
+				impl.files(), impl.getCoreFileName(), universe);
 
 		// if (anonymousSection.isTrue(echoO))
 		// out.println(compareCommand.getCommandString());
@@ -841,6 +845,8 @@ public class UserInterface {
 				}
 			}
 			if (!isQuiet) {
+				printSourcefiles(out,
+						modelTranslator.frontEnd.getFileIndexer());
 				this.printCommand(out, command);
 				verifier.printStats();
 				printUniverseStats(out, modelTranslator.universe);
@@ -918,6 +924,11 @@ public class UserInterface {
 		out.println(time);
 		out.print("   memory (bytes)      : ");
 		out.println(memory);
+	}
+
+	private void printSourcefiles(PrintStream out, FileIndexer indexer) {
+		out.println("\n" + statsBar + " Source files " + statsBar);
+		indexer.print(out);
 	}
 
 	private void createWebLogs(Program program) throws IOException {
