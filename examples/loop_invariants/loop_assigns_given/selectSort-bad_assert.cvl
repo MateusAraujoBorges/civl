@@ -1,21 +1,26 @@
-#include <assert.h>
+#include <string.h>
 #pragma CIVL ACSL
 $input int N;
 $assume(N > 0);
 int a[N];
+int pre_a[N];
+
+/*@ predicate permut(int * p, int * q, int l, int u);
+  @*/
 
 int main() {
   int i, j;
   int minIdx = 0;
   
   $havoc(&a);
-  
+  memcpy(pre_a, a, N * sizeof(int));  
   /*@ loop invariant 0 <= i && i <= N;
     @ loop invariant \forall int t; N-i+1<=t && t <N  ==>
     @                  a[t] <= a[t-1];
     @ loop invariant \forall int t; 0 <= t && t < N-i && i > 0 ==>
     @                  a[t] >= a[N-i];
-    @ loop assigns   i, j, a[0 .. N-1];   
+    @ loop invariant permut(a, pre_a, 0, N);
+    @ loop assigns   i, j, a[0 .. N-1], minIdx;   
     @*/
   for (i = 0; i < N; i++) {
     /*@ loop invariant 0<=j && j <=N-i && 0<=minIdx && 
@@ -34,6 +39,6 @@ int main() {
     a[N-i-1] = tmp;
     minIdx = 0;
   }
-  assert($forall (int i : 1 .. N-1) a[i] < a[i-1]);
+  $assert(permut(a, pre_a, 1, N) && $forall (int i : 1 .. N-1) a[i] < a[i-1]);
   return 0;
 }

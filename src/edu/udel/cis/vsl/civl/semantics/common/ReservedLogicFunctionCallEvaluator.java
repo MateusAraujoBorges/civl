@@ -1,5 +1,8 @@
 package edu.udel.cis.vsl.civl.semantics.common;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.LogicFunction;
@@ -8,7 +11,9 @@ import edu.udel.cis.vsl.civl.semantics.IF.Evaluator;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 /**
  * This evaluator focuses on evaluating logic function calls.
  * 
@@ -16,6 +21,31 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
  *
  */
 public class ReservedLogicFunctionCallEvaluator {
+
+	/**
+	 * TODO: get rid of this function when Z3 and CVC provers can handle
+	 * reserved logic functions well.
+	 * 
+	 * @return true iff the given expression involves a symbolic constant which
+	 *         is a reserved logic function:
+	 */
+	public static boolean hasReservedLogicFunctionCalls(SymbolicUniverse su,
+			SymbolicExpression expression) {
+		Set<SymbolicConstant> freeConstants = su
+				.getFreeSymbolicConstants(expression);
+		Set<StringObject> freeConstantNames = new HashSet<>();
+
+		for (SymbolicConstant freeConstant : freeConstants)
+			freeConstantNames.add(freeConstant.name());
+
+		StringObject[] reservedFuncs = {
+				su.stringObject(LogicFunction.RESERVED_PERMUT)};
+
+		for (StringObject func : reservedFuncs)
+			if (freeConstantNames.contains(func))
+				return true;
+		return false;
+	}
 
 	/**
 	 * <p>

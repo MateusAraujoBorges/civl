@@ -154,6 +154,24 @@ public class SlowLoopInvariantsWithAssignsTest {
 	}
 
 	@Test
+	public void insertionSort() {
+		assertTrue(ui.run("verify", "-loop", TestConstants.QUIET,
+				filename("insertSort.cvl")));
+	}
+
+	@Test
+	public void insertionSortBadAssert() {
+		assertFalse(ui.run("verify", "-loop", TestConstants.QUIET,
+				filename("insertSort-bad_assert.cvl")));
+	}
+
+	@Test
+	public void insertionSortBadAssert2() {
+		assertFalse(ui.run("verify", "-loop", TestConstants.QUIET,
+				filename("insertSort-bad_assert2.cvl")));
+	}
+
+	@Test
 	public void selectSort() {
 		assertTrue(ui.run("verify", "-loop", TestConstants.QUIET,
 				filename("selectSort.cvl")));

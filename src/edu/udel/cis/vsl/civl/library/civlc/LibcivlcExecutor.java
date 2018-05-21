@@ -23,6 +23,7 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.Semantics;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.semantics.IF.TypeEvaluation;
+import edu.udel.cis.vsl.civl.semantics.common.ReservedLogicFunctionCallEvaluator;
 import edu.udel.cis.vsl.civl.state.IF.DynamicScope;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
@@ -673,7 +674,10 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 			Query query = (new Heuristics(universe))
 					.applyHeuristicSimplifications(context, assertValue);
 
-			if (acslPredicates2why3.length == 0)
+			if (acslPredicates2why3.length == 0
+					&& !ReservedLogicFunctionCallEvaluator
+							.hasReservedLogicFunctionCalls(universe,
+									query.query))
 				resultType = universe.reasoner(query.context).valid(query.query)
 						.getResultType();
 			// universe.setUseBackwardSubstitution(true);

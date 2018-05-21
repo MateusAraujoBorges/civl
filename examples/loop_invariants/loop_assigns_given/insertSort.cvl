@@ -1,0 +1,62 @@
+#include<string.h>
+
+#pragma CIVL ACSL
+
+$input int n;
+$assume(n > 0);
+int t[n];
+int pre_t[n];
+
+/*@ predicate Sorted(int *a, integer l, integer h) =
+  @   \forall int i,j; l <= i <= j < h ==> a[i] <= a[j];
+  @
+  @ predicate permut(int * a, int * b, int l, int h);
+  @
+  @*/
+
+void swap(int t[], int i, int j) {
+  int tmp = t[i];
+  t[i] = t[j];
+  t[j] = tmp;
+}
+
+void min_sort() {
+  int i,j;
+  int mi,mv;
+  
+  if (n <= 0) 
+    return;
+  /*@ loop invariant 0 <= i < n;
+    @ loop invariant
+    @   Sorted(t,0,i) &&
+    @   (\forall int k1, k2 ;
+    @      0 <= k1 < i <= k2 < n ==> t[k1] <= t[k2]) ;
+    @ loop invariant permut(t, pre_t, 0, n);
+    @ loop assigns i, mi, mv, j, t[0 .. n-1];
+    @*/
+  for (i=0; i<n-1; i++) {
+    // look for minimum value among t[i..n-1]
+    mv = t[i]; mi = i;
+    /*@ loop invariant i < j && i <= mi < n;
+      @  loop invariant
+      @    mv == t[mi] &&
+      @    (\forall int k; i <= k < j ==> t[k] >= mv);
+      @  loop invariant
+      @   permut(t, pre_t, 0, n);
+      @ loop assigns mi, mv, j;
+      @*/
+    for (j=i+1; j < n; j++) {
+      if (t[j] < mv) {
+	mi = j ; mv = t[j];
+      }
+    }
+    swap(t,i,mi);
+  }
+}
+
+int main() {
+  $havoc(&t);
+  memcpy(pre_t, t, sizeof(int) * n);
+  min_sort();
+  //@ assert permut(t, pre_t, 0, n) && Sorted(t, 0, n);
+}
