@@ -55,7 +55,7 @@ public class ACSLTransformTest {
 
 	@Test
 	public void predicateBadDeclTwice() {
-		assertFalse(ui.run("verify", // QUIET,
+		assertFalse(ui.run("verify", QUIET,
 				filename("predicate-bad_decl_twice.cvl")));
 	}
 

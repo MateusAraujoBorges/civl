@@ -199,9 +199,9 @@ public class ModelTranslator {
 	ModelTranslator(GMCConfiguration gmcConfig, GMCSection gmcSection,
 			String[] filenames, String coreName) throws PreprocessorException {
 		this(gmcConfig, gmcSection, filenames, coreName,
-				SARL.newStandardUniverse());
+				SARL.newStandardUniverse(), null);
 	}
-	
+
 	// TODO: add another parameter here, the FrontEnd.
 	// Then you can re-use front-ends across different ModelTranslators.
 	// Needed for civl compare command.
@@ -224,13 +224,16 @@ public class ModelTranslator {
 	 *            function.
 	 * @param universe
 	 *            The symbolic universe, the unique one used by this run.
+	 * @param frontEnd
+	 *            the {@link FrontEnd} to use. This can be null, in which case a
+	 *            new {@link FrontEnd} will be generated.
 	 * @throws PreprocessorException
 	 *             if there is a problem processing any macros defined in the
 	 *             command line
 	 */
 	ModelTranslator(GMCConfiguration gmcConfig, GMCSection cmdSection,
-			String[] filenames, String coreName, SymbolicUniverse universe)
-			throws PreprocessorException {
+			String[] filenames, String coreName, SymbolicUniverse universe,
+			FrontEnd frontEnd) throws PreprocessorException {
 		this.cmdSection = cmdSection;
 		this.gmcConfig = gmcConfig;
 		this.universe = universe;
@@ -249,6 +252,7 @@ public class ModelTranslator {
 		}
 		systemIncludes = this.getSysIncludes(cmdSection);
 		userIncludes = this.getUserIncludes(cmdSection);
+		this.frontEnd = frontEnd;
 	}
 
 	// package private methods...
@@ -281,11 +285,16 @@ public class ModelTranslator {
 		// TODO: can we re-use a given frontEnd here:
 		// there is a constructor for ABCExecutor that takes a FrontEnd
 		// but look at it, it sets a bunch of fields.
-		
-		ABCExecutor executor = new ABCExecutor(task);
 
+		ABCExecutor executor;
+
+		if (frontEnd == null) {
+			executor = new ABCExecutor(task);
+			frontEnd = executor.getFrontEnd();
+		} else {
+			executor = ABCExecutor.newExecutor(frontEnd, task);
+		}
 		task.setDynamicTask(new ParseSystemLibrary(executor, macros));
-		frontEnd = executor.getFrontEnd();
 		this.transformerFactory = Transforms
 				.newTransformerFactory(frontEnd.getASTFactory());
 		addTransformations(task, macros);

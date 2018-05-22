@@ -372,16 +372,14 @@ public class UserInterface {
 		implSection = this.readVerboseOrDebugOption(implSection,
 				anonymousSection);
 
-		// TODO: hmmmmm.... can they share front ends or at least
-		// file indexers????
-
+		// Create a new FrontEnd for the specWorker, but re-use it in the
+		// impl...
 		ModelTranslator specWorker = new ModelTranslator(gmcConfig, specSection,
-				spec.files(), spec.getCoreFileName(), universe);
+				spec.files(), spec.getCoreFileName(), universe, null);
 		ModelTranslator implWorker = new ModelTranslator(gmcConfig, implSection,
-				impl.files(), impl.getCoreFileName(), universe);
+				impl.files(), impl.getCoreFileName(), universe,
+				specWorker.frontEnd);
 
-		// if (anonymousSection.isTrue(echoO))
-		// out.println(compareCommand.getCommandString());
 		universe.setShowQueries(anonymousSection.isTrue(showQueriesO));
 		universe.setShowProverQueries(
 				anonymousSection.isTrue(showProverQueriesO));
@@ -455,15 +453,17 @@ public class UserInterface {
 		}
 		if (compareCommand.isReplay())
 			return this.runCompareReplay(compareCommand.getCommandString(),
-					gmcConfig, traceFile, model, specWorker.universe);
+					gmcConfig, traceFile, model,
+					specWorker.frontEnd.getFileIndexer(), specWorker.universe);
 		if (civlConfig.web())
 			this.createWebLogs(model.program());
 		return this.runCompareVerify(compareCommand.getCommandString(),
-				compareCommand.gmcConfig(), model, specWorker.universe);
+				compareCommand.gmcConfig(), model,
+				specWorker.frontEnd.getFileIndexer(), specWorker.universe);
 	}
 
 	/**
-	 * Checks non-determinstic functional equivalence, i.e., for every possible
+	 * Checks nondeterministic functional equivalence, i.e., for every possible
 	 * output of the implementation, there exists at least one same output in
 	 * the specification.
 	 * 
@@ -716,6 +716,8 @@ public class UserInterface {
 				CIVL_GUI gui = new CIVL_GUI(trace, replayer.symbolicAnalyzer);
 			}
 			if (!modelTranslator.config.isQuiet()) {
+				printSourcefiles(out,
+						modelTranslator.frontEnd.getFileIndexer());
 				printCommand(out, command);
 				replayer.printStats();
 				printUniverseStats(out, modelTranslator.universe);
@@ -770,6 +772,8 @@ public class UserInterface {
 			 * printUniverseStats(out, modelTranslator.universe);
 			 */
 			if (!modelTranslator.config.isQuiet()) {
+				printSourcefiles(out,
+						modelTranslator.frontEnd.getFileIndexer());
 				this.printCommand(out, command);
 				player.printStats();
 				printUniverseStats(out, modelTranslator.universe);
@@ -964,7 +968,7 @@ public class UserInterface {
 	}
 
 	private boolean runCompareVerify(String command, GMCConfiguration cmdConfig,
-			Model model, SymbolicUniverse universe)
+			Model model, FileIndexer fileIndexer, SymbolicUniverse universe)
 			throws CommandLineException, ABCException, IOException {
 		Verifier verifier = new Verifier(cmdConfig, model, out, err, startTime);
 		boolean result = false;
@@ -987,6 +991,7 @@ public class UserInterface {
 			throw e;
 		}
 		if (!quiet) {
+			printSourcefiles(out, fileIndexer);
 			this.printCommand(out, command);
 			verifier.printStats();
 			printUniverseStats(out, universe);
@@ -998,10 +1003,10 @@ public class UserInterface {
 	}
 
 	private boolean runCompareReplay(String command, GMCConfiguration gmcConfig,
-			File traceFile, Model model, SymbolicUniverse universe)
-			throws CommandLineException, FileNotFoundException, IOException,
-			SyntaxException, PreprocessorException, ParseException,
-			MisguidedExecutionException {
+			File traceFile, Model model, FileIndexer fileIndexer,
+			SymbolicUniverse universe) throws CommandLineException,
+			FileNotFoundException, IOException, SyntaxException,
+			PreprocessorException, ParseException, MisguidedExecutionException {
 		boolean guiMode = gmcConfig.getAnonymousSection().isTrue(guiO);
 		TracePlayer replayer;
 		Trace<Transition, State> trace;
@@ -1017,6 +1022,7 @@ public class UserInterface {
 			CIVL_GUI gui = new CIVL_GUI(trace, replayer.symbolicAnalyzer);
 		}
 		if (!quiet) {
+			printSourcefiles(out, fileIndexer);
 			this.printCommand(out, command);
 			// this.printTimeAndMemory(out);
 			replayer.printStats();
@@ -1066,7 +1072,11 @@ public class UserInterface {
 
 	private boolean runShow(ModelTranslator modelTranslator)
 			throws CommandLineException, IOException, ABCException {
-		return modelTranslator.translate() != null;
+		boolean result = modelTranslator.translate() != null;
+
+		if (!modelTranslator.config.isQuiet())
+			printSourcefiles(out, modelTranslator.frontEnd.getFileIndexer());
+		return result;
 	}
 
 	private void runHelp(HelpCommandLine command) {
