@@ -810,6 +810,11 @@ public class LanguageFeaturesTest {
 	public void ranges() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("ranges.cvl")));
 	}
+	
+	@Test
+	public void incompleteStruct() {
+		assertTrue(ui.run(VERIFY, "-showProgram", filename("incompleteStruct.c")));
+	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {

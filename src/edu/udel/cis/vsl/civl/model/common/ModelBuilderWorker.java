@@ -136,7 +136,8 @@ public class ModelBuilderWorker {
 	 * entity. This is built up as call events are processed. On a later pass,
 	 * we iterate over this map and set the function fields of the call event to
 	 * the corresponding {@link CIVLFunction} object. Visibility make it
-	 * package-private since {@link FunctionContractTranslator} needs to access it.
+	 * package-private since {@link FunctionContractTranslator} needs to access
+	 * it.
 	 */
 	Map<CallEvent, Function> callEvents;
 
@@ -606,15 +607,24 @@ public class ModelBuilderWorker {
 	 * Post-translation Methods
 	 * *********************************************************************
 	 */
-
 	/**
-	 * Returns false if a type contains a bundle or void (but void* is ok).
+	 * Returns false if a type contains a bundle, void (but void* is ok), or the
+	 * type is incomplete.
 	 * 
 	 * @param type
 	 *            The CIVL type to be checked
 	 * @return True of False
 	 */
 	private boolean bundleableType(CIVLType type) {
+		if (type.isVoidType())
+			return false;
+		if ((type.isStructType() || type.isUnionType())
+				&& !((CIVLStructOrUnionType) type).isComplete())
+			return false;
+		return bundleableTypeHelper(type);
+	}
+
+	private boolean bundleableTypeHelper(CIVLType type) {
 		boolean result = true;
 
 		if (bundleableEncountered.contains(type)) {
