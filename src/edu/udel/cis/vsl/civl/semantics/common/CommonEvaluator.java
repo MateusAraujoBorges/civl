@@ -464,10 +464,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            false only when executing $copy function.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects
-	 *            <strong> results an undefined value of the same type as the
-	 *            dereference expression </strong> iff this parameter set to
-	 *            true. Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects <strong>
+	 *            results an undefined value of the same type as the dereference
+	 *            expression </strong> iff this parameter set to true.
+	 *            Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @return A possibly new state and the value of memory space pointed by the
 	 *         pointer.
@@ -576,10 +576,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            The pointer to be dereferenced.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects
-	 *            <strong> results an undefined value of the same type as the
-	 *            dereference expression </strong> iff this parameter set to
-	 *            true. Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects <strong>
+	 *            results an undefined value of the same type as the dereference
+	 *            expression </strong> iff this parameter set to true.
+	 *            Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @param source
 	 *            The {@link CIVLSource} associates with the dereference
@@ -1632,70 +1632,12 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		Variable variable = expression.variable();
 		CIVLType type = variable.type();
-
-		if (type.isArrayType())
-			if (((CIVLArrayType) type).isComplete())
-				state = checkArrayExtentDeclaration(state, pid,
-						(CIVLCompleteArrayType) type, expression.getSource());
-
 		TypeEvaluation typeEval = getDynamicType(state, pid, type,
 				expression.getSource(), false);
 		int sid = typeEval.state.getDyscopeID(pid, variable);
 
 		return computeInitialValue(typeEval.state, pid, variable, typeEval.type,
 				sid);
-	}
-
-	/**
-	 * <p>
-	 * <b>Summary: </b> Checks of a given complete array type T satisfies such
-	 * property: <code>
-	 * array_extent_predicate(T) := 
-	 *            extent(T) > 0 && 
-	 *            elementTypeOf(T) is an complete array type ==> 
-	 *                          array_extent_predicate(elementTypeOf(T))
-	 *                          </code>
-	 * </p>
-	 * 
-	 * @param state
-	 *            The current state
-	 * @param pid
-	 *            The PID of the current process
-	 * @param arrayType
-	 *            The given {@link CIVLCompleteArrayType} that will be checked
-	 * @param source
-	 *            The {@link CIVLSource} related to this checking. It will be
-	 *            used to report when the check fails.
-	 * @return A new state after checking
-	 * @throws UnsatisfiablePathConditionException
-	 */
-	private State checkArrayExtentDeclaration(State state, int pid,
-			CIVLCompleteArrayType arrayType, CIVLSource source)
-			throws UnsatisfiablePathConditionException {
-		Expression extent = arrayType.extent();
-		Evaluation eval = evaluate(state, pid, extent);
-		BooleanExpression validArrayLength;
-		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
-		ResultType resultType;
-
-		state = eval.state;
-		validArrayLength = universe.lessThan(zero,
-				(NumericExpression) eval.value);
-		resultType = reasoner.valid(validArrayLength).getResultType();
-		if (resultType != ResultType.YES) {
-			state = errorLogger.logError(source, state, pid,
-					symbolicAnalyzer.stateInformation(state), validArrayLength,
-					resultType, ErrorKind.ARRAY_DECLARATION,
-					"Array extent must be greater than zero.");
-		}
-		if (arrayType.elementType().isArrayType()) {
-			CIVLArrayType elementType = (CIVLArrayType) arrayType.elementType();
-
-			if (elementType.isComplete())
-				return checkArrayExtentDeclaration(state, pid,
-						(CIVLCompleteArrayType) elementType, source);
-		}
-		return state;
 	}
 
 	/**
@@ -4112,13 +4054,11 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger
-							.logSimpleError(source, state, process,
-									this.symbolicAnalyzer.stateInformation(
-											state),
-									ErrorKind.OTHER,
-									"Try to obtain a string from a sequence of char has length"
-											+ " less than or equal to one");
+					this.errorLogger.logSimpleError(source, state, process,
+							this.symbolicAnalyzer.stateInformation(state),
+							ErrorKind.OTHER,
+							"Try to obtain a string from a sequence of char has length"
+									+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;
