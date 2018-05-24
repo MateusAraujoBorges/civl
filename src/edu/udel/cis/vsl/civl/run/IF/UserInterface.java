@@ -53,6 +53,7 @@ import edu.udel.cis.vsl.abc.front.IF.PreprocessorException;
 import edu.udel.cis.vsl.abc.program.IF.Program;
 import edu.udel.cis.vsl.abc.token.IF.FileIndexer;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.abc.token.IF.Tokens;
 import edu.udel.cis.vsl.abc.transform.IF.Combiner;
 import edu.udel.cis.vsl.abc.transform.IF.Transform;
 import edu.udel.cis.vsl.civl.analysis.IF.Analysis;
@@ -102,21 +103,30 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 
 /**
- * Basic command line and API user interface for CIVL tools.
+ * <p>
+ * This class provides a user interface to CIVL. The public methods in this
+ * class provide a programmatic interface; there are also methods to provide a
+ * command line interface. This class does not provide a graphical user
+ * interface.
+ * </p>
  * 
- * Modularization of the user interface:
- * 
- * <ui>
- * <li>preprocess</li>
- * <li>ast</li>
- * <li>program</li>
- * <li>model</li>
- * <li>random run</li>
- * <li>verify</li>
- * <li>replay</li> </ui>
+ * <p>
+ * The high-level commands provided by this interface are as follows:
+ * <ul>
+ * <li>help: print a help message explaining all commands and options</li>
+ * <li>config: configure CIVL by looking for provers, creating a .sarl file,
+ * etc.</li>
+ * <li>show: show the results of preprocessing, parsing, AST construction, AST
+ * transformations, and model construction</li>
+ * <li>run: run a program once, using a random number generator to resolve
+ * nondeterminism</li>
+ * <li>verify: verify a program by exploring its state space</li>
+ * <li>compare: compare two programs for functional equivalence</li>
+ * <li>replay: replay a trace saved by previous invocation of verify or compare
+ * that found a violation</li>
+ * </ul>
  * 
  * @author Stephen F. Siegel
- * 
  */
 public class UserInterface {
 
@@ -126,21 +136,22 @@ public class UserInterface {
 	public final static boolean debug = false;
 
 	/**
-	 * All options defined for CIVL. Key is the name of the option.
+	 * All options defined for CIVL. The key is the name of the option.
 	 */
 	public final static SortedMap<String, Option> definedOptions = new TreeMap<>();
 
 	/* ************************* Instance fields *************************** */
 
 	/**
-	 * Stderr: used only if something goes wrong, like a bad command line arg,
+	 * stderr: used only if something goes wrong, like a bad command line arg,
 	 * or internal exception
 	 */
 	private PrintStream err = System.err;
 
-	/** Stdout: where most output is going to go, including error reports */
+	/** stdout: where most output is going to go, including error reports */
 	private PrintStream out = System.out;
 
+	/** A stream that does nothing; used in quite mode to suppress output. */
 	private PrintStream dump = new PrintStream(new OutputStream() {
 		@Override
 		public void write(int b) throws IOException {
@@ -155,18 +166,13 @@ public class UserInterface {
 	private CommandLineParser parser;
 
 	/**
-	 * The time at which this instance of UserInterface was created.
+	 * The time at which this instance of {@link UserInterface} was created.
 	 */
 	private double startTime;
 
-	/**
-	 * The transformer factory that provides CIVL transformers.
-	 */
-	// private TransformerFactory transformerFactory = Transforms
-	// .newTransformerFactory(frontEnd.getASTFactory());
-
 	/* ************************** Static Code ***************************** */
-	// initializes the command line options
+
+	/** Initializes the command line options. */
 	static {
 		for (Option option : CIVLConstants.getAllOptions())
 			definedOptions.put(option.name(), option);
@@ -175,7 +181,8 @@ public class UserInterface {
 	/* ************************** Constructors ***************************** */
 
 	/**
-	 * Creates a new instance of user interface.
+	 * Creates a new instance of {@link UserInterface} using the {@link Option}s
+	 * given in {@link #definedOptions}.
 	 */
 	public UserInterface() {
 		parser = new CommandLineParser(definedOptions.values());
@@ -203,7 +210,8 @@ public class UserInterface {
 
 	/**
 	 * Runs the appropriate CIVL tools based on the command line arguments. This
-	 * variant provided in case a collection is more convenient than an array.
+	 * variant is provided in case a collection is more convenient than an
+	 * array.
 	 * 
 	 * @param args
 	 *            command line arguments as collection
@@ -217,7 +225,9 @@ public class UserInterface {
 	 * Runs command specified as one big String.
 	 * 
 	 * @param argsString
-	 * @return
+	 *            a single string containing command and all options; what would
+	 *            be typed on the command line by a user
+	 * @return true iff everything succeeded and no errors were found
 	 */
 	public boolean run(String argsString) {
 		String[] args = argsString.split(" ");
@@ -226,16 +236,25 @@ public class UserInterface {
 	}
 
 	/**
-	 * Run a non-compare command line, which could be
-	 * show/run/replay/verify/help/config.
+	 * Runs any command other than compare. The command is one of show, run,
+	 * replay, verify, help, or config.
 	 * 
 	 * @param commandLine
-	 *            The command line to be run.
-	 * @return the result of running the command line
+	 *            the command line object to be run, resulting from parsing the
+	 *            command line
+	 * @return true iff everything succeeded and no errors were found
 	 * @throws CommandLineException
+	 *             if there is a syntax error in the command
 	 * @throws ABCException
+	 *             if anything goes wrong in preprocessing, parsing, building or
+	 *             transforming the AST; usually this means a syntax error in
+	 *             the program
 	 * @throws IOException
+	 *             if a file is not found, or attempts to create and write to a
+	 *             file fail
 	 * @throws MisguidedExecutionException
+	 *             in the case of replay, if the trace in the trace file is not
+	 *             compatible with the specified program
 	 */
 	public boolean runNormalCommand(NormalCommandLine commandLine)
 			throws CommandLineException, ABCException, IOException,
@@ -252,10 +271,9 @@ public class UserInterface {
 			File traceFile = null;
 
 			if (kind == NormalCommandKind.REPLAY) {
-				String traceFilename;
-
-				traceFilename = (String) gmcConfig.getAnonymousSection()
+				String traceFilename = (String) gmcConfig.getAnonymousSection()
 						.getValue(traceO);
+
 				if (traceFilename == null) {
 					traceFilename = commandLine.getCoreFileName() + "_"
 							+ gmcConfig.getAnonymousSection()
@@ -271,18 +289,16 @@ public class UserInterface {
 						debugO, showStatesO, showSavedStatesO, showQueriesO,
 						showProverQueriesO, enablePrintfO, statelessPrintfO,
 						showTransitionsO, showUnreachedCodeO));
-				// gmcSection.setScalarValue(showTransitionsO, true);
 				gmcSection.setScalarValue(collectScopesO, false);
 				gmcSection.setScalarValue(collectProcessesO, false);
 				gmcSection.setScalarValue(collectHeapsO, false);
 				gmcSection.read(commandLine.gmcConfig().getAnonymousSection());
 			}
+
 			ModelTranslator modelTranslator = new ModelTranslator(gmcConfig,
 					gmcSection, commandLine.files(),
 					commandLine.getCoreFileName());
 
-			// if (commandLine.gmcSection().isTrue(echoO))
-			// out.println(commandLine.getCommandString());
 			switch (kind) {
 				case SHOW :
 					return runShow(modelTranslator);
@@ -306,11 +322,14 @@ public class UserInterface {
 	}
 
 	/**
-	 * Run a compare command, which is either compare verify or compare replay.
+	 * Run a command that involves comparing two programs. This is either
+	 * "compare" or a "replay" which specifies a spec and impl (i.e., a replay
+	 * of a trace that resulted from a prior compare command).
 	 * 
 	 * @param compareCommand
-	 *            The compare command to be run
-	 * @return the result of running the command
+	 *            the compare command to be run; the result of parsing the
+	 *            command line string
+	 * @return true iff everything succeeded and no errors were found
 	 * @throws CommandLineException
 	 * @throws ABCException
 	 * @throws IOException
@@ -350,7 +369,6 @@ public class UserInterface {
 							showQueriesO, showProverQueriesO, enablePrintfO,
 							statelessPrintfO, showTransitionsO,
 							showUnreachedCodeO));
-			// anonymousSection.setScalarValue(showTransitionsO, true);
 			anonymousSection.setScalarValue(collectScopesO, false);
 			anonymousSection.setScalarValue(collectProcessesO, false);
 			anonymousSection.setScalarValue(collectHeapsO, false);
@@ -372,13 +390,11 @@ public class UserInterface {
 		implSection = this.readVerboseOrDebugOption(implSection,
 				anonymousSection);
 
-		// Create a new FrontEnd for the specWorker, but re-use it in the
-		// impl...
+		FileIndexer fileIndexer = Tokens.newFileIndexer();
 		ModelTranslator specWorker = new ModelTranslator(gmcConfig, specSection,
-				spec.files(), spec.getCoreFileName(), universe, null);
+				spec.files(), spec.getCoreFileName(), universe, fileIndexer);
 		ModelTranslator implWorker = new ModelTranslator(gmcConfig, implSection,
-				impl.files(), impl.getCoreFileName(), universe,
-				specWorker.frontEnd);
+				impl.files(), impl.getCoreFileName(), universe, fileIndexer);
 
 		universe.setShowQueries(anonymousSection.isTrue(showQueriesO));
 		universe.setShowProverQueries(
@@ -421,7 +437,6 @@ public class UserInterface {
 		ModelBuilder modelBuilder = Models.newModelBuilder(specWorker.universe,
 				civlConfig);
 
-		// implProgram.prettyPrint(out);
 		if (civlConfig.debugOrVerbose()) {
 			out.println("Spec program...");
 			specProgram.prettyPrint(out);
@@ -429,10 +444,8 @@ public class UserInterface {
 			implProgram.prettyPrint(out);
 			out.println("Generating composite program...");
 		}
-		// specProgram.prettyPrint(System.out);
 		combinedAST = combiner.combine(specProgram.getAST(),
 				implProgram.getAST());
-		// combinedAST.prettyPrint(System.out, true);
 		compositeProgram = specWorker.frontEnd
 				.getProgramFactory(Language.CIVL_C).newProgram(combinedAST);
 		if (civlConfig.debugOrVerbose() || civlConfig.showAST()) {
@@ -559,6 +572,7 @@ public class UserInterface {
 	}
 
 	/* ************************* Private Methods *************************** */
+
 	/**
 	 * If the user set quiet option to true in the command, line
 	 * 
@@ -767,10 +781,6 @@ public class UserInterface {
 				out.flush();
 			}
 			result = player.run().result();
-			/*
-			 * original this.printCommand(out, command); player.printStats();
-			 * printUniverseStats(out, modelTranslator.universe);
-			 */
 			if (!modelTranslator.config.isQuiet()) {
 				printSourcefiles(out,
 						modelTranslator.frontEnd.getFileIndexer());
@@ -867,16 +877,9 @@ public class UserInterface {
 			String[] outputNames,
 			Map<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> outputValues) {
 		StringBuffer result = new StringBuffer();
-		// int k=0;
 		int numOutputs = outputNames.length;
 
 		result.append("\n=== output ===\n");
-		// result.append("Output variables:\n");
-		// for (int i = 0; i < numOutputs; i++) {
-		// result.append(outputNames[i]);
-		// result.append("\n");
-		// }
-		// result.append("Specification output values:");
 		for (Map.Entry<BooleanExpression, Set<Pair<State, SymbolicExpression[]>>> entry : outputValues
 				.entrySet()) {
 			int j = 0;
@@ -896,7 +899,6 @@ public class UserInterface {
 				result.append(
 						symbolicAnalyzer.inputVariablesToStringBuffer(state));
 				result.append("\nOutput:\n");
-				// result.append("(");
 				for (int k = 0; k < numOutputs; k++) {
 					if (l > 0)
 						result.append("\n");
@@ -908,7 +910,6 @@ public class UserInterface {
 					result.append(symbolicAnalyzer.symbolicExpressionToString(
 							null, state, null, outputs[k]));
 				}
-				// result.append(")");
 				j++;
 			}
 			result.append("\n");
@@ -1024,7 +1025,6 @@ public class UserInterface {
 		if (!quiet) {
 			printSourcefiles(out, fileIndexer);
 			this.printCommand(out, command);
-			// this.printTimeAndMemory(out);
 			replayer.printStats();
 			printUniverseStats(out, universe);
 			out.println();
@@ -1178,8 +1178,6 @@ public class UserInterface {
 		out.println("for a particular command, e.g., \'civl help compare\'");
 		out.flush();
 	}
-
-	/* ************************* Private Methods *************************** */
 
 	/**
 	 * Prints statistics after a run. The end time is marked and compared to the

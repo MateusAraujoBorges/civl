@@ -32,6 +32,7 @@ import edu.udel.cis.vsl.abc.main.TranslationTask;
 import edu.udel.cis.vsl.abc.main.TranslationTask.TranslationStage;
 import edu.udel.cis.vsl.abc.main.UnitTask;
 import edu.udel.cis.vsl.abc.program.IF.Program;
+import edu.udel.cis.vsl.abc.token.IF.FileIndexer;
 import edu.udel.cis.vsl.abc.transform.common.ExternLinkageVariableRenamer;
 import edu.udel.cis.vsl.abc.transform.common.Pruner;
 import edu.udel.cis.vsl.abc.transform.common.SideEffectRemover;
@@ -174,6 +175,8 @@ public class ModelTranslator {
 	private Configuration abcConfiguration = Configurations
 			.newMinimalConfiguration();
 
+	private FileIndexer fileIndexer;
+
 	// Constructors...
 
 	/**
@@ -202,10 +205,6 @@ public class ModelTranslator {
 				SARL.newStandardUniverse(), null);
 	}
 
-	// TODO: add another parameter here, the FrontEnd.
-	// Then you can re-use front-ends across different ModelTranslators.
-	// Needed for civl compare command.
-
 	/**
 	 * Creates a new instance of model translator.
 	 * 
@@ -224,19 +223,19 @@ public class ModelTranslator {
 	 *            function.
 	 * @param universe
 	 *            The symbolic universe, the unique one used by this run.
-	 * @param frontEnd
-	 *            the {@link FrontEnd} to use. This can be null, in which case a
-	 *            new {@link FrontEnd} will be generated.
+	 * @param fileIndexer
+	 *            the file indexer to use, can be null
 	 * @throws PreprocessorException
 	 *             if there is a problem processing any macros defined in the
 	 *             command line
 	 */
 	ModelTranslator(GMCConfiguration gmcConfig, GMCSection cmdSection,
 			String[] filenames, String coreName, SymbolicUniverse universe,
-			FrontEnd frontEnd) throws PreprocessorException {
+			FileIndexer fileIndexer) throws PreprocessorException {
 		this.cmdSection = cmdSection;
 		this.gmcConfig = gmcConfig;
 		this.universe = universe;
+		this.fileIndexer = fileIndexer;
 		if (cmdSection.isTrue(showProverQueriesO))
 			universe.setShowProverQueries(true);
 		if (cmdSection.isTrue(showQueriesO))
@@ -252,7 +251,6 @@ public class ModelTranslator {
 		}
 		systemIncludes = this.getSysIncludes(cmdSection);
 		userIncludes = this.getUserIncludes(cmdSection);
-		this.frontEnd = frontEnd;
 	}
 
 	// package private methods...
@@ -282,17 +280,15 @@ public class ModelTranslator {
 		}
 		task.setVerbose(config.debugOrVerbose());
 
-		// TODO: can we re-use a given frontEnd here:
-		// there is a constructor for ABCExecutor that takes a FrontEnd
-		// but look at it, it sets a bunch of fields.
-
 		ABCExecutor executor;
 
-		if (frontEnd == null) {
+		if (fileIndexer == null) {
 			executor = new ABCExecutor(task);
 			frontEnd = executor.getFrontEnd();
+			fileIndexer = frontEnd.getFileIndexer();
 		} else {
-			executor = ABCExecutor.newExecutor(frontEnd, task);
+			executor = new ABCExecutor(task, fileIndexer);
+			frontEnd = executor.getFrontEnd();
 		}
 		task.setDynamicTask(new ParseSystemLibrary(executor, macros));
 		this.transformerFactory = Transforms
