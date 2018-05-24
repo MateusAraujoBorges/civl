@@ -1,0 +1,27 @@
+#include "allreduce.h"
+#include "stdlib.h"
+
+#define VEC_N  10
+
+int main() {
+  MPI_Init(NULL, NULL);
+
+  struct comm * comm = (struct comm*)malloc(sizeof(struct comm));
+  
+  comm->c = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm->c, &comm->id);
+  MPI_Comm_size(comm->c, &comm->np);
+
+  int vn = VEC_N;
+  int v[VEC_N], buf[VEC_N];
+
+  for (int i = 0; i < VEC_N; i++) v[i] = 1;
+
+  comm_allreduce(comm, gs_int, gs_add,
+		 v, vn, buf);
+
+  $assert($forall (int i : 0 .. VEC_N-1) buf[i] == comm->np);
+
+  MPI_Finalize();  
+  free(comm);
+}
