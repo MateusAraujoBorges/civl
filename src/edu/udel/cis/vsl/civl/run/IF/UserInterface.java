@@ -322,7 +322,7 @@ public class UserInterface {
 	}
 
 	/**
-	 * Run a command that involves comparing two programs. This is either
+	 * Runs a command that involves comparing two programs. This is either
 	 * "compare" or a "replay" which specifies a spec and impl (i.e., a replay
 	 * of a trace that resulted from a prior compare command).
 	 * 
@@ -331,10 +331,17 @@ public class UserInterface {
 	 *            command line string
 	 * @return true iff everything succeeded and no errors were found
 	 * @throws CommandLineException
+	 *             if there is a syntax error in the command
 	 * @throws ABCException
+	 *             if anything goes wrong in preprocessing, parsing, building or
+	 *             transforming the AST; usually this means a syntax error in
+	 *             the program
 	 * @throws IOException
+	 *             if a file is not found, or attempts to create and write to a
+	 *             file fail
 	 * @throws MisguidedExecutionException
-	 * @throws SvcompException
+	 *             in the case of replay, if the trace in the trace file is not
+	 *             compatible with the specified program
 	 */
 	public boolean runCompareCommand(CompareCommandLine compareCommand)
 			throws CommandLineException, ABCException, IOException,
@@ -409,138 +416,6 @@ public class UserInterface {
 	}
 
 	/**
-	 * Checks strict functional equivalence, i.e., the specification and the
-	 * implementation always has the same output, requiring that there are only
-	 * one possible output for both of them.
-	 * 
-	 * @return
-	 * @throws CommandLineException
-	 * @throws MisguidedExecutionException
-	 * @throws IOException
-	 * @throws FileNotFoundException
-	 * @throws ABCException
-	 * @throws SvcompException
-	 */
-	private boolean strictCompareWorker(CompareCommandLine compareCommand,
-			ModelTranslator specWorker, ModelTranslator implWorker,
-			GMCConfiguration gmcConfig, GMCSection anonymousSection,
-			File traceFile) throws CommandLineException, FileNotFoundException,
-			IOException, MisguidedExecutionException, ABCException {
-		Combiner combiner = Transform.compareCombiner();
-		AST combinedAST;
-		Program specProgram = specWorker.buildProgram(),
-				implProgram = implWorker.buildProgram(), compositeProgram;
-		Model model;
-		NormalCommandLine spec = compareCommand.specification(),
-				impl = compareCommand.implementation();
-		CIVLConfiguration civlConfig = new CIVLConfiguration(anonymousSection);
-		ModelBuilder modelBuilder = Models.newModelBuilder(specWorker.universe,
-				civlConfig);
-
-		if (civlConfig.debugOrVerbose()) {
-			out.println("Spec program...");
-			specProgram.prettyPrint(out);
-			out.println("Impl program...");
-			implProgram.prettyPrint(out);
-			out.println("Generating composite program...");
-		}
-		combinedAST = combiner.combine(specProgram.getAST(),
-				implProgram.getAST());
-		compositeProgram = specWorker.frontEnd
-				.getProgramFactory(Language.CIVL_C).newProgram(combinedAST);
-		if (civlConfig.debugOrVerbose() || civlConfig.showAST()) {
-			compositeProgram.print(out);
-		}
-		if (civlConfig.debugOrVerbose() || civlConfig.showProgram()) {
-			compositeProgram.prettyPrint(out);
-		}
-		if (civlConfig.debugOrVerbose())
-			out.println("Extracting CIVL model...");
-		model = modelBuilder.buildModel(
-				anonymousSection, compositeProgram, "Composite_"
-						+ spec.getCoreFileName() + "_" + impl.getCoreFileName(),
-				debug, out);
-		if (civlConfig.debugOrVerbose() || civlConfig.showModel()) {
-			out.println(bar + " Model " + bar + "\n");
-			model.print(out, civlConfig.debugOrVerbose());
-		}
-		if (compareCommand.isReplay())
-			return this.runCompareReplay(compareCommand.getCommandString(),
-					gmcConfig, traceFile, model,
-					specWorker.frontEnd.getFileIndexer(), specWorker.universe);
-		if (civlConfig.web())
-			this.createWebLogs(model.program());
-		return this.runCompareVerify(compareCommand.getCommandString(),
-				compareCommand.gmcConfig(), model,
-				specWorker.frontEnd.getFileIndexer(), specWorker.universe);
-	}
-
-	/**
-	 * Checks nondeterministic functional equivalence, i.e., for every possible
-	 * output of the implementation, there exists at least one same output in
-	 * the specification.
-	 * 
-	 * TODO make sure the symbolic constants for input variables are the same
-	 * for spec and impl. (make sure they are always the first variables in the
-	 * same order of either program.)
-	 * 
-	 * TODO need a way for replay it if there is a counterexample
-	 * 
-	 * @return
-	 * @throws IOException
-	 * @throws CommandLineException
-	 * @throws ParseException
-	 * @throws SyntaxException
-	 * @throws PreprocessorException
-	 */
-	private boolean lessStrictCompareWorker(CompareCommandLine compareCommand,
-			ModelTranslator specWorker, ModelTranslator implWorker,
-			GMCConfiguration gmcConfig, GMCSection anonymousSection,
-			File traceFile)
-			throws ABCException, CommandLineException, IOException {
-		Model model = specWorker.translate();
-		Verifier verifier = new Verifier(gmcConfig, model, out, err, startTime,
-				true);
-		boolean result = verifier.run_work();
-		VerificationStatus statusSpec = verifier.verificationStatus, statusImpl;
-
-		// out.print("phase spec done.\n");
-		if (result) {
-			CIVLStateManager stateManager = verifier.stateManager();
-
-			model = implWorker.translate();
-			verifier = new Verifier(gmcConfig, model, out, err, startTime,
-					stateManager.outptutNames(),
-					stateManager.collectedOutputs());
-			result = verifier.run_work();
-			statusImpl = verifier.verificationStatus;
-			this.printCommand(out, compareCommand.getCommandString());
-			out.print("   max process count   : ");
-			out.println(Math.max(statusSpec.maxProcessCount,
-					statusImpl.maxProcessCount));
-			out.print("   states              : ");
-			out.println(statusSpec.numStates + statusImpl.numStates);
-			out.print("   states saved        : ");
-			out.println(statusSpec.numSavedStates + statusImpl.numSavedStates);
-			out.print("   state matches       : ");
-			out.println(
-					statusSpec.numMatchedStates + statusImpl.numMatchedStates);
-			out.print("   transitions         : ");
-			out.println(statusSpec.numTransitions + statusImpl.numTransitions);
-			out.print("   trace steps         : ");
-			out.println(statusSpec.numTraceSteps + statusImpl.numTraceSteps);
-			printUniverseStats(out, specWorker.universe);
-		}
-		if (result)
-			out.println("\nThe standard properties hold for all executions and "
-					+ "the specification and the implementation are functionally equivalent.");
-		else
-			out.println(
-					"\nThe specification and the implementation may NOT be functionally equivalent.");
-		return result;
-	}
-
-	/**
 	 * The GUI will call this method to get the input variables of a given
 	 * program. Currently, it is taking a list of files (in fact, the paths of
 	 * files), parsing and linking the given list of files and finding out the
@@ -550,11 +425,12 @@ public class UserInterface {
 	 * different input variables.
 	 * 
 	 * @param files
+	 *            the source files to parse
 	 * @return the list of input variable declaration nodes, which contains
 	 *         plenty of information about the input variable, e.g., the source,
 	 *         type and name, etc.
 	 * @throws ABCException
-	 * @throws PreprocessorException
+	 *             if anything goes wrong with parsing or constructing the AST
 	 */
 	public List<VariableDeclarationNode> getInputVariables(String[] files)
 			throws ABCException {
@@ -619,8 +495,7 @@ public class UserInterface {
 	 *            element 0 should be the name of the command
 	 * @return true iff everything succeeded and no errors discovered
 	 * @throws CommandLineException
-	 *             if the args are not properly formatted commandline arguments
-	 * @throws IOException
+	 *             if the args are not properly formatted command line arguments
 	 */
 	private boolean runMain(String[] args) throws CommandLineException {
 		boolean quiet = false;
@@ -699,17 +574,23 @@ public class UserInterface {
 	 * @param modelTranslator
 	 *            The model translator for this replay command, which contains
 	 *            the command line section information.
-	 * @return
+	 * @return true iff everything succeeded and no errors were found
 	 * @throws CommandLineException
-	 * @throws FileNotFoundException
-	 * @throws IOException
+	 *             if there is a syntax error in the command
 	 * @throws ABCException
+	 *             if anything goes wrong in preprocessing, parsing, building or
+	 *             transforming the AST; usually this means a syntax error in
+	 *             the program
+	 * @throws IOException
+	 *             if a file is not found, or attempts to create and write to a
+	 *             file fail
 	 * @throws MisguidedExecutionException
-	 * @throws SvcompException
+	 *             in the case of replay, if the trace in the trace file is not
+	 *             compatible with the specified program
 	 */
 	private boolean runReplay(String command, ModelTranslator modelTranslator,
-			File traceFile) throws CommandLineException, FileNotFoundException,
-			IOException, ABCException, MisguidedExecutionException {
+			File traceFile) throws CommandLineException, IOException,
+			ABCException, MisguidedExecutionException {
 		boolean result;
 		Model model;
 		TracePlayer replayer;
@@ -871,6 +752,147 @@ public class UserInterface {
 			return result;
 		}
 		return false;
+	}
+
+	/**
+	 * Checks strict functional equivalence, i.e., the specification and the
+	 * implementation always has the same output, requiring that there are only
+	 * one possible output for both of them.
+	 * 
+	 * @return true iff everything succeeded and no errors were found
+	 * @throws CommandLineException
+	 *             if there is a syntax error in the command
+	 * @throws ABCException
+	 *             if anything goes wrong in preprocessing, parsing, building or
+	 *             transforming the AST; usually this means a syntax error in
+	 *             the program
+	 * @throws IOException
+	 *             if a file is not found, or attempts to create and write to a
+	 *             file fail
+	 * @throws MisguidedExecutionException
+	 *             in the case of replay, if the trace in the trace file is not
+	 *             compatible with the specified program
+	 */
+	private boolean strictCompareWorker(CompareCommandLine compareCommand,
+			ModelTranslator specWorker, ModelTranslator implWorker,
+			GMCConfiguration gmcConfig, GMCSection anonymousSection,
+			File traceFile) throws CommandLineException, FileNotFoundException,
+			IOException, MisguidedExecutionException, ABCException {
+		Combiner combiner = Transform.compareCombiner();
+		AST combinedAST;
+		Program specProgram = specWorker.buildProgram(),
+				implProgram = implWorker.buildProgram(), compositeProgram;
+		Model model;
+		NormalCommandLine spec = compareCommand.specification(),
+				impl = compareCommand.implementation();
+		CIVLConfiguration civlConfig = new CIVLConfiguration(anonymousSection);
+		ModelBuilder modelBuilder = Models.newModelBuilder(specWorker.universe,
+				civlConfig);
+	
+		if (civlConfig.debugOrVerbose()) {
+			out.println("Spec program...");
+			specProgram.prettyPrint(out);
+			out.println("Impl program...");
+			implProgram.prettyPrint(out);
+			out.println("Generating composite program...");
+		}
+		combinedAST = combiner.combine(specProgram.getAST(),
+				implProgram.getAST());
+		compositeProgram = specWorker.frontEnd
+				.getProgramFactory(Language.CIVL_C).newProgram(combinedAST);
+		if (civlConfig.debugOrVerbose() || civlConfig.showAST()) {
+			compositeProgram.print(out);
+		}
+		if (civlConfig.debugOrVerbose() || civlConfig.showProgram()) {
+			compositeProgram.prettyPrint(out);
+		}
+		if (civlConfig.debugOrVerbose())
+			out.println("Extracting CIVL model...");
+		model = modelBuilder.buildModel(
+				anonymousSection, compositeProgram, "Composite_"
+						+ spec.getCoreFileName() + "_" + impl.getCoreFileName(),
+				debug, out);
+		if (civlConfig.debugOrVerbose() || civlConfig.showModel()) {
+			out.println(bar + " Model " + bar + "\n");
+			model.print(out, civlConfig.debugOrVerbose());
+		}
+		if (compareCommand.isReplay())
+			return this.runCompareReplay(compareCommand.getCommandString(),
+					gmcConfig, traceFile, model,
+					specWorker.frontEnd.getFileIndexer(), specWorker.universe);
+		if (civlConfig.web())
+			this.createWebLogs(model.program());
+		return this.runCompareVerify(compareCommand.getCommandString(),
+				compareCommand.gmcConfig(), model,
+				specWorker.frontEnd.getFileIndexer(), specWorker.universe);
+	}
+
+	/**
+	 * Checks nondeterministic functional equivalence, i.e., for every possible
+	 * output of the implementation, there exists at least one same output in
+	 * the specification.
+	 * 
+	 * TODO make sure the symbolic constants for input variables are the same
+	 * for spec and impl. (make sure they are always the first variables in the
+	 * same order of either program.)
+	 * 
+	 * TODO need a way for replay it if there is a counterexample
+	 * 
+	 * @return true iff everything succeeded and no errors were found
+	 * @throws CommandLineException
+	 *             if there is a syntax error in the command
+	 * @throws ABCException
+	 *             if anything goes wrong in preprocessing, parsing, building or
+	 *             transforming the AST; usually this means a syntax error in
+	 *             the program
+	 * @throws IOException
+	 *             if a file is not found, or attempts to create and write to a
+	 *             file fail
+	 */
+	private boolean lessStrictCompareWorker(CompareCommandLine compareCommand,
+			ModelTranslator specWorker, ModelTranslator implWorker,
+			GMCConfiguration gmcConfig, GMCSection anonymousSection,
+			File traceFile)
+			throws ABCException, CommandLineException, IOException {
+		Model model = specWorker.translate();
+		Verifier verifier = new Verifier(gmcConfig, model, out, err, startTime,
+				true);
+		boolean result = verifier.run_work();
+		VerificationStatus statusSpec = verifier.verificationStatus, statusImpl;
+	
+		if (result) {
+			CIVLStateManager stateManager = verifier.stateManager();
+	
+			model = implWorker.translate();
+			verifier = new Verifier(gmcConfig, model, out, err, startTime,
+					stateManager.outptutNames(),
+					stateManager.collectedOutputs());
+			result = verifier.run_work();
+			statusImpl = verifier.verificationStatus;
+			this.printCommand(out, compareCommand.getCommandString());
+			out.print("   max process count   : ");
+			out.println(Math.max(statusSpec.maxProcessCount,
+					statusImpl.maxProcessCount));
+			out.print("   states              : ");
+			out.println(statusSpec.numStates + statusImpl.numStates);
+			out.print("   states saved        : ");
+			out.println(statusSpec.numSavedStates + statusImpl.numSavedStates);
+			out.print("   state matches       : ");
+			out.println(
+					statusSpec.numMatchedStates + statusImpl.numMatchedStates);
+			out.print("   transitions         : ");
+			out.println(statusSpec.numTransitions + statusImpl.numTransitions);
+			out.print("   trace steps         : ");
+			out.println(statusSpec.numTraceSteps + statusImpl.numTraceSteps);
+			printUniverseStats(out, specWorker.universe);
+		}
+		if (result)
+			out.println("\nThe standard properties hold for all executions and "
+					+ "the specification and the implementation are functionally equivalent.");
+		else
+			out.println(
+					"\nThe specification and the implementation may NOT be functionally equivalent.");
+		return result;
 	}
 
 	private void printOutput(PrintStream out, SymbolicAnalyzer symbolicAnalyzer,

@@ -144,6 +144,7 @@ public class ModelTranslator {
 	FrontEnd frontEnd;
 
 	// private fields
+
 	private ArrayList<File> files = new ArrayList<>();
 
 	/**
@@ -483,27 +484,6 @@ public class ModelTranslator {
 	}
 
 	// private methods
-
-	// /**
-	// * Prints the input variables declared in the given program to the output
-	// * stream.
-	// *
-	// * @param program
-	// * the program, which is the result of parsing, linking and
-	// * transforming.
-	// */
-	// private void printInputVariableNames(Program program) {
-	// List<VariableDeclarationNode> inputVars = this
-	// .inputVariablesOfProgram(program);
-	//
-	// out.println(bar + " input variables of " + this.userFileCoreName + " "
-	// + bar);
-	// for (VariableDeclarationNode var : inputVars) {
-	// var.prettyPrint(out);
-	// out.println();
-	// }
-	// out.flush();
-	// }
 
 	/**
 	 * Gets the list of input variables declared in the given program.
