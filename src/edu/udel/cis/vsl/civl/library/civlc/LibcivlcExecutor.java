@@ -699,26 +699,6 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 					.getResultType();
 		// universe.setUseBackwardSubstitution(false);
 		if (resultType != ResultType.YES) {
-			// uncomment the following when debug:
-			// PreUniverse preU = (PreUniverse) universe;
-			// Why3Translator trans = new Why3Translator(preU,
-			// preU.cleanBoundVariables(context), acslPredicates2why3);
-			// String goals[];
-			//
-			// assertValue = (BooleanExpression) preU
-			// .cleanBoundVariables(assertValue);
-			// if (assertValue.operator() == SymbolicOperator.AND) {
-			// goals = new String[assertValue.numArguments()];
-			// for (int i = 0; i < goals.length; i++)
-			// goals[i] = trans.translateGoal(
-			// (SymbolicExpression) assertValue.argument(i));
-			// } else {
-			// goals = new String[1];
-			// goals[0] = trans.translateGoal(assertValue);
-			// }
-			// System.out.println(trans.getExecutableOutput(
-			// universe.numProverValidCalls(), goals));
-
 			StringBuilder message = new StringBuilder();
 			Pair<State, String> messageResult = this.symbolicAnalyzer
 					.expressionEvaluation(state, pid, arguments[0], false);
