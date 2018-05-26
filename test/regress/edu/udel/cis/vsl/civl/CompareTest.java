@@ -70,6 +70,13 @@ public class CompareTest {
 				filename("type_dependency/impl.c")));
 	}
 
+	@Test
+	public void unboundedAdderComparison() {
+		assertTrue(ui.run("compare", "-loop", QUIET, "-spec -loop",
+				filename("adder/ub_adder_spec.c"), "-impl -loop",
+				"-input_mpi_nprocs=2", filename("adder/ub_adder_par.c")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
