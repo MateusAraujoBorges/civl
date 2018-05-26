@@ -788,7 +788,7 @@ public class UserInterface {
 		CIVLConfiguration civlConfig = new CIVLConfiguration(anonymousSection);
 		ModelBuilder modelBuilder = Models.newModelBuilder(specWorker.universe,
 				civlConfig);
-	
+
 		if (civlConfig.debugOrVerbose()) {
 			out.println("Spec program...");
 			specProgram.prettyPrint(out);
@@ -859,10 +859,10 @@ public class UserInterface {
 				true);
 		boolean result = verifier.run_work();
 		VerificationStatus statusSpec = verifier.verificationStatus, statusImpl;
-	
+
 		if (result) {
 			CIVLStateManager stateManager = verifier.stateManager();
-	
+
 			model = implWorker.translate();
 			verifier = new Verifier(gmcConfig, model, out, err, startTime,
 					stateManager.outptutNames(),
@@ -943,7 +943,6 @@ public class UserInterface {
 		double time = Math.ceil((System.currentTimeMillis() - startTime) / 10.0)
 				/ 100.0;
 		long memory = Runtime.getRuntime().totalMemory();
-
 		out.println("\n" + statsBar + " Command " + statsBar);
 		out.print("civl " + command);
 		out.println("\n" + statsBar + " Stats " + statsBar);
@@ -955,7 +954,10 @@ public class UserInterface {
 
 	private void printSourcefiles(PrintStream out, FileIndexer indexer) {
 		out.println("\n" + statsBar + " Source files " + statsBar);
-		indexer.print(out);
+
+		List<String> ignore = Arrays.asList(
+				CIVLConstants.ROOT_INCLUDE_PATH.getPath(), "predefined");
+		indexer.printFiltered(out, ignore);
 	}
 
 	private void createWebLogs(Program program) throws IOException {
