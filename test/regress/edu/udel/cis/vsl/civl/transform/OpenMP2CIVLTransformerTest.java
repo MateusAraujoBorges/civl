@@ -72,6 +72,32 @@ public class OpenMP2CIVLTransformerTest {
 				TestConstants.QUIET, filename("parallelfor.c")));
 	}
 
+	@Test
+	public void sharedVarTest1() {
+		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
+				filename("sharedVar1.cvl")));
+	}
+
+	@Test
+	public void sharedVarTest2() {
+		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
+				"-showProgram",
+				// "-ompNoSimplify",
+				filename("sharedVar2.cvl")));
+	}
+
+	@Test
+	public void sharedVarTest3() {
+		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
+				"-showProgram", filename("sharedVar3.cvl")));
+	}
+
+	@Test
+	public void sharedVarTest4() {
+		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
+				"-ompNoSimplify", "-showProgram", filename("sharedVar4.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
