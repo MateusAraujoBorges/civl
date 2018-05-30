@@ -335,6 +335,7 @@ public class OpenMPOrphanWorker extends BaseWorker {
 			// Link "replacement" into the omp call's parent
 
 			if (!ompFunctionName.equals("omp_get_wtime")) {
+				node = node.parent();
 				ASTNode parent = node.parent();
 				int parentIndex = getChildIndex(parent, node);
 				assert parentIndex != -1;

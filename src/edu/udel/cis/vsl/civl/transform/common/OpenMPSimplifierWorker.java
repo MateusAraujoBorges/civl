@@ -359,8 +359,8 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 			ASTNode parent = node.parent();
 			int parentIndex = getChildIndex(parent, node);
 			assert parentIndex != -1;
-			parent.setChild(parentIndex, stmt);
 
+			parent.setChild(parentIndex, stmt);
 			removeOmpConstruct(stmt);
 
 		} else if (node instanceof FunctionCallNode
@@ -411,11 +411,11 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 			}
 
 			// Link "replacement" into the omp call's parent
+			node = node.parent();
 			ASTNode parent = node.parent();
 			int parentIndex = getChildIndex(parent, node);
 			assert parentIndex != -1;
 			parent.setChild(parentIndex, replacement);
-
 		} else if (node != null) {
 			Iterable<ASTNode> children = node.children();
 			for (ASTNode child : children) {
