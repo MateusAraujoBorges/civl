@@ -1,0 +1,14 @@
+#include <omp.h>
+#include <stdio.h>
+
+void f() {
+	#pragma omp for
+	for (int i=1; i<3; i++);
+}
+
+int main(){
+	#pragma omp parallel
+	{
+		f();
+	}
+}

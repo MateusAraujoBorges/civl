@@ -1,0 +1,15 @@
+int x = 0;
+
+void f() {
+	x = 3;
+}
+
+int main(){
+  #pragma omp parallel
+  {	
+	void f() {
+		x = 3;
+	}
+      f();
+  }
+}
