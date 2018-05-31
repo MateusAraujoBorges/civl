@@ -3,6 +3,7 @@ package edu.udel.cis.vsl.civl.transform.common;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import edu.udel.cis.vsl.abc.ast.IF.AST;
@@ -94,14 +95,38 @@ public class OpenMPOrphanWorker extends BaseWorker {
 					CompoundStatementNode ompParallelBody = (CompoundStatementNode) lastNotNullChild;
 					Set<FunctionDefinitionNode> toBeInserted = searchFunctionToBeInserted(
 							ompParallelBody, globalVars);
+					Set<String> alreadyExistsFunctionDef = getFunctionDefs(
+							ompParallelBody);
+					List<FunctionDefinitionNode> insertion = new LinkedList<>();
 
+					for (FunctionDefinitionNode functionDef : toBeInserted) {
+						if (!alreadyExistsFunctionDef
+								.contains(functionDef.getIdentifier().name()))
+							insertion.add(functionDef);
+					}
 					ompParallelBody.insertChildren(0,
-							new LinkedList<>(toBeInserted));
+							new LinkedList<>(insertion));
 				}
 			}
 		}
 		for (Function callee : function.getCallees())
 			searchOMPParallel(callee, visitedFunctions, globalVars);
+	}
+
+	private Set<String> getFunctionDefs(
+			CompoundStatementNode compoundStatementNode) {
+		Set<String> functionDefs = new HashSet<>();
+		Iterator<BlockItemNode> itemsIter = compoundStatementNode.iterator();
+
+		while (itemsIter.hasNext()) {
+			BlockItemNode item = itemsIter.next();
+
+			if (item instanceof FunctionDefinitionNode) {
+				functionDefs.add(
+						((FunctionDefinitionNode) item).getIdentifier().name());
+			}
+		}
+		return functionDefs;
 	}
 
 	private Set<FunctionDefinitionNode> searchFunctionToBeInserted(ASTNode node,
