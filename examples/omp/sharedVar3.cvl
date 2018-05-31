@@ -5,11 +5,8 @@ void f() {
 }
 
 int main(){
-  #pragma omp parallel
+  #pragma omp parallel shared(x)
   {	
-	void f() {
-		x = 3;
-	}
       f();
   }
 }
