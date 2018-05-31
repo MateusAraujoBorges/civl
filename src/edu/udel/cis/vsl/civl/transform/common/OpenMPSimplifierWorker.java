@@ -48,6 +48,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.statement.StatementNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.SwitchNode;
 import edu.udel.cis.vsl.abc.ast.node.common.expression.CommonDotNode;
 import edu.udel.cis.vsl.abc.ast.util.ExpressionEvaluator;
+import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
 import edu.udel.cis.vsl.civl.transform.IF.OpenMPSimplifier;
@@ -369,38 +370,26 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 				&& ((IdentifierExpressionNode) ((FunctionCallNode) node)
 						.getFunction()).getIdentifier().name()
 								.startsWith("omp_")) {
-			/*
-			 * Replace
-			 */
+			// I replace node with a null-like node.
+			Source nodeSource = node.getSource();
 			String ompFunctionName = ((IdentifierExpressionNode) ((FunctionCallNode) node)
 					.getFunction()).getIdentifier().name();
 			ASTNode replacement = null;
 			if (ompFunctionName.equals("omp_get_thread_num")) {
-				try {
-					replacement = nodeFactory
-							.newIntegerConstantNode(node.getSource(), "0");
-				} catch (SyntaxException e) {
-					e.printStackTrace();
-				}
+				replacement = nodeFactory.newIntConstantNode(nodeSource, 0);
 			} else if (ompFunctionName.equals("omp_get_num_threads")
 					|| ompFunctionName.equals("omp_get_max_threads")
 					|| ompFunctionName.equals("omp_get_num_procs")
 					|| ompFunctionName.equals("omp_get_thread_limit")) {
-				try {
-					replacement = nodeFactory
-							.newIntegerConstantNode(node.getSource(), "1");
-				} catch (SyntaxException e) {
-					e.printStackTrace();
-				}
-
+				replacement = nodeFactory.newIntConstantNode(nodeSource, 1);
 			} else if (ompFunctionName.equals("omp_init_lock")
 					|| ompFunctionName.equals("omp_set_lock")
 					|| ompFunctionName.equals("omp_unset_lock")
 					|| ompFunctionName.equals("omp_set_num_threads")) {
 				// delete this node
-				replacement = nodeFactory
-						.newNullStatementNode(node.getSource());
-
+				replacement = nodeFactory.newCastNode(nodeSource,
+						nodeFactory.newVoidTypeNode(nodeSource),
+						nodeFactory.newIntConstantNode(nodeSource, 0));
 			} else if (ompFunctionName.equals("omp_get_wtime")) {
 				// this will be transformed by the OMP transformer
 
@@ -411,7 +400,6 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 			}
 
 			// Link "replacement" into the omp call's parent
-			node = node.parent();
 			ASTNode parent = node.parent();
 			int parentIndex = getChildIndex(parent, node);
 			assert parentIndex != -1;
