@@ -254,9 +254,12 @@ public class OpenMPOrphanWorker extends BaseWorker {
 	private Function getFunction(FunctionCallNode functionCallNode) {
 		ExpressionNode identiferExpression = functionCallNode.getFunction();
 
-		if (!(identiferExpression instanceof IdentifierExpressionNode))
+		if (!(identiferExpression instanceof IdentifierExpressionNode)) {
+			String msg = "The transformation of function pointers in OpenMP orphan constructs.";
+
 			throw new CIVLUnimplementedFeatureException(
-					"CIVL doesn't support the transform of function pointers in omp transformer now.");
+					"The following feature is not yet implemented: " + msg);
+		}
 
 		IdentifierExpressionNode identifierExpressionNode = (IdentifierExpressionNode) identiferExpression;
 		IdentifierNode identifierNode = identifierExpressionNode
