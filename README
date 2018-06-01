@@ -1,5 +1,5 @@
       CIVL: The Concurrency Intermediate Verification Language
-                               v1.15.1
+                               v1.16
 
 ------------------------------ Overview -------------------------------
 
@@ -47,9 +47,25 @@ General Public License.  However, the libraries used by CIVL
 licenses.  See directory licenses for the license of each component.
 
 
--------------------------- Updates from v1.15 -------------------------
--- fixed an important bug related to cache of scope values
--- fixed bugs related to math functions in Fortran programs
+-------------------------- Updates from v1.15.1 -------------------------
+-- CIVL functionalities
+    - enable CIVL to parse ACSL expressions (“a<b<c”) correctly
+    - ACSL annotations requires pragma ACSL
+    - improve the handling on symbolic constants with pointer type
+-- CIVL output
+    - improve the printing of source file names.
+    - improve the printing of errors related with bundle data.
+-- Stability
+    - handle exceptions caused by missing source files
+    - handle exceptions related with incomplete struct
+    - handle exceptions related with incorrect macro definitions
+    - handle JVM Out-Of-Memory-Error exceptions
+-- Misc.
+    - fix SARL internal defects
+    - fix CIVL internal defects
+    - fix loop invariants transformer
+    - fix the grammar of ACSL-FORALL expressions
+    - fix the grammar of range structure
    
    
 ------------------------- Binary Installation -------------------------
