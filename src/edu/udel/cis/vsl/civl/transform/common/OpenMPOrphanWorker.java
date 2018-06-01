@@ -167,6 +167,7 @@ public class OpenMPOrphanWorker extends BaseWorker {
 			seen.add(curFunction);
 			if (useSharedVariableOrOmp(functionDefinitionNode,
 					globalVars) >= 2) {
+
 				functionDefinitionNode.remove();
 				result.add(functionDefinitionNode);
 			} else if (useSharedVariableOrOmp(functionDefinitionNode,
@@ -226,7 +227,7 @@ public class OpenMPOrphanWorker extends BaseWorker {
 				String identifier = ((IdentifierExpressionNode) ((FunctionCallNode) node)
 						.getFunction()).getIdentifier().name();
 
-				if (identifier.startsWith("_omp"))
+				if (identifier.startsWith("omp_"))
 					useOmp = true;
 			}
 			for (ASTNode child : node.children())
