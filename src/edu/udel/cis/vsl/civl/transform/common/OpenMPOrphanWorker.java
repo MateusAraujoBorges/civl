@@ -141,6 +141,17 @@ public class OpenMPOrphanWorker extends BaseWorker {
 		return functionDefs;
 	}
 
+	/**
+	 * Search for {@link Function}s that are either use shared variable or use
+	 * omp.
+	 * 
+	 * @param node
+	 *            The node to be searched.
+	 * @param globalVars
+	 * 
+	 * @return The set of {@link FunctionDefinitionNode} to be inserted at the
+	 *         beginning of the {@link OmpParallelNode}.
+	 */
 	private Set<FunctionDefinitionNode> searchFunctionToBeInserted(ASTNode node,
 			Set<String> globalVars) {
 		Set<FunctionDefinitionNode> result = new HashSet<>();
