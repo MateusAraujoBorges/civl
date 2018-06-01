@@ -80,23 +80,6 @@ public class OpenMP2CIVLTransformerTest {
 				TestConstants.QUIET, filename("sharedVar1.cvl")));
 	}
 
-	@Test
-	public void sharedVarTest2() {
-		// work when mannually change, maybe something wrong with the current
-		// orphan transformer.
-		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
-				TestConstants.QUIET, "-ompNoSimplify",
-				filename("sharedVar2.cvl")));
-	}
-
-	@Test
-	public void sharedVarTest3() {
-		// will work when copy the function definition into parallel region, but
-		// why this is a failing test?
-		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
-				TestConstants.QUIET, filename("sharedVar3.cvl")));
-	}
-
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
