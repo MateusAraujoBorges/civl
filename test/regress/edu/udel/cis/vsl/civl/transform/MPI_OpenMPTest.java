@@ -31,24 +31,21 @@ public class MPI_OpenMPTest {
 		assertTrue(ui.run(
 				"verify -enablePrintf=false -DMATH_ELABORATE_ASSUMPTIONS -input_mpi_nprocs=2 "
 						+ "-input_omp_thread_max=3 -ompLoopDecomp=ALL",
-						TestConstants.QUIET, filename("mpi-omp-pie-calculation.c")));
+				TestConstants.QUIET, filename("mpi-omp-pie-calculation.c")));
 	}
 
 	@Test
 	public void pie100() throws ABCException {
-		//-D_ELABORATE_DIV
-		assertTrue(ui
-				.run("verify -enablePrintf=false -DMATH_ELABORATE_ASSUMPTIONS ", 
-						"-input_mpi_nprocs=2 -input_omp_thread_max=10 -ompLoopDecomp=ALL", 
-						TestConstants.QUIET,
-						filename("mpi-omp-pie-calculation100.c")));
+		assertTrue(ui.run(
+				"verify -enablePrintf=false -DMATH_ELABORATE_ASSUMPTIONS ",
+				"-input_mpi_nprocs=2 -input_omp_thread_max=10 -ompLoopDecomp=ALL",
+				TestConstants.QUIET, filename("mpi-omp-pie-calculation100.c")));
 	}
 
 	@Test
 	public void helloworld() throws ABCException {
-		assertTrue(ui.run("verify -enablePrintf=false -input_mpi_nprocs=2", 
-				TestConstants.QUIET, 
-				filename("mpi-omp-hello-world.c")));
+		assertTrue(ui.run("verify -enablePrintf=false -input_mpi_nprocs=2",
+				TestConstants.QUIET, filename("mpi-omp-hello-world.c")));
 	}
 
 	@AfterClass

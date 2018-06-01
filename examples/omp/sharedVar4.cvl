@@ -1,0 +1,42 @@
+#include <omp.h>
+#include <stdio.h>
+
+int B=2;    
+int n=2;  
+int forks[2];
+static omp_lock_t lock[2];
+
+void dine(int id){   
+  int left = id;  
+  int right = (id + 1) % n;
+  while(1){
+    omp_set_lock(&(lock[left]));
+    if (forks[left]){ 
+      forks[left] = 0;
+    }
+    omp_set_lock(&(lock[right]));
+    if (forks[right]){
+      forks[right] = 0; 
+    }
+    forks[right] = 1;
+    forks[left] = 1;
+    omp_unset_lock(&(lock[right]));
+    omp_unset_lock(&(lock[left]));
+  }
+}
+
+int main(){
+  omp_init_lock(&(lock[0]));
+  omp_init_lock(&(lock[1]));
+  
+  for(int j=0; j<n; j++) 
+    forks[j] = 1; 
+  #pragma omp parallel
+  { 
+  	#pragma omp for
+  	for(int i=0; i<n; i++) 
+    	dine(i);  
+  }
+  omp_destroy_lock(&(lock[1]));
+  omp_destroy_lock(&(lock[0])); 
+}

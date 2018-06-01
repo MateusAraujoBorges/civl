@@ -1,0 +1,12 @@
+int x = 0;
+
+void f() {
+	x = 3;
+}
+
+int main(){
+  #pragma omp parallel shared(x)
+  {	
+      f();
+  }
+}

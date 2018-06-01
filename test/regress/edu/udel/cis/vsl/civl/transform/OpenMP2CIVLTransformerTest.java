@@ -72,6 +72,14 @@ public class OpenMP2CIVLTransformerTest {
 				TestConstants.QUIET, filename("parallelfor.c")));
 	}
 
+	@Test
+	public void sharedVarTest1() {
+		// after moving the function definition into the parallel region, this
+		// example will work.
+		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
+				TestConstants.QUIET, filename("sharedVar1.cvl")));
+	}
+
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;

@@ -1,0 +1,19 @@
+#include <omp.h>
+#include <stdio.h>
+
+static omp_lock_t lock;
+
+void f() {
+	omp_set_lock(&lock);
+	omp_unset_lock(&lock);
+}
+
+int main(){
+  omp_init_lock(&lock);
+  
+  #pragma omp parallel
+  {
+      f();
+  }
+  omp_destroy_lock(&lock); 
+}
