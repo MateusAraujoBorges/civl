@@ -36,7 +36,6 @@ public class MPI_OpenMPTest {
 
 	@Test
 	public void pie100() throws ABCException {
-		// -D_ELABORATE_DIV
 		assertTrue(ui.run(
 				"verify -enablePrintf=false -DMATH_ELABORATE_ASSUMPTIONS ",
 				"-input_mpi_nprocs=2 -input_omp_thread_max=10 -ompLoopDecomp=ALL",
