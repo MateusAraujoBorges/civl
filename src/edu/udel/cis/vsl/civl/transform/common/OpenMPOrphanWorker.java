@@ -24,6 +24,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpWorksharingNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.transform.IF.OpenMPOrphanTransformer;
 
 /**
@@ -252,6 +253,11 @@ public class OpenMPOrphanWorker extends BaseWorker {
 	 */
 	private Function getFunction(FunctionCallNode functionCallNode) {
 		ExpressionNode identiferExpression = functionCallNode.getFunction();
+
+		if (!(identiferExpression instanceof IdentifierExpressionNode))
+			throw new CIVLUnimplementedFeatureException(
+					"CIVL doesn't support the transform of function pointers in omp transformer now.");
+
 		IdentifierExpressionNode identifierExpressionNode = (IdentifierExpressionNode) identiferExpression;
 		IdentifierNode identifierNode = identifierExpressionNode
 				.getIdentifier();
