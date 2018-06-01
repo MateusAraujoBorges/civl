@@ -18,7 +18,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpForNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpParallelNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpSyncNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpWorksharingNode;
@@ -85,19 +84,10 @@ public class OpenMPOrphanWorker extends BaseWorker {
 			if (item instanceof OmpParallelNode) {
 				// An #pragma omp parallel statement
 				OmpParallelNode ompParallelNode = (OmpParallelNode) item;
-				int numChildren = ompParallelNode.numChildren() - 1;
-				ASTNode lastNotNullChild = null;
+				ASTNode eighthChild = ompParallelNode.child(7);
 
-				for (int i = numChildren - 1; i >= 0; i--) {
-					ASTNode curNode = ompParallelNode.child(i);
-
-					if (curNode != null) {
-						lastNotNullChild = curNode;
-						break;
-					}
-				}
-				if (lastNotNullChild instanceof CompoundStatementNode) {
-					CompoundStatementNode ompParallelBody = (CompoundStatementNode) lastNotNullChild;
+				if (eighthChild instanceof CompoundStatementNode) {
+					CompoundStatementNode ompParallelBody = (CompoundStatementNode) eighthChild;
 					Set<FunctionDefinitionNode> toBeInserted = searchFunctionToBeInserted(
 							ompParallelBody, globalVars);
 					Set<String> alreadyExistsFunctionDef = getFunctionDefs(
@@ -205,8 +195,8 @@ public class OpenMPOrphanWorker extends BaseWorker {
 	 *         <ul>
 	 *         <li>0 if contain neither.
 	 *         <li>1 if contain only shared variable.
-	 *         <li>2 if contains omp usage.
-	 *         <li>> 2 if contains both.
+	 *         <li>2 if contain omp usage.
+	 *         <li>3 if contain both.
 	 *         </ul>
 	 */
 	private int useSharedVariableOrOmp(FunctionDefinitionNode functionDefNode,
@@ -231,7 +221,7 @@ public class OpenMPOrphanWorker extends BaseWorker {
 						&& !localVars.contains(idNode.name()))
 					useShared = true;
 			}
-			if (node instanceof OmpForNode || node instanceof OmpSyncNode
+			if (node instanceof OmpSyncNode
 					|| node instanceof OmpWorksharingNode)
 				useOmp = true;
 			if (!useOmp && (node instanceof FunctionCallNode)) {
