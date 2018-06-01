@@ -16,7 +16,6 @@ import edu.udel.cis.vsl.abc.ast.node.IF.SequenceNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.FunctionDefinitionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.declaration.VariableDeclarationNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.expression.ExpressionNode.ExpressionKind;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.FunctionCallNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.expression.IdentifierExpressionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpForNode;
@@ -25,12 +24,17 @@ import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpSyncNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpWorksharingNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.BlockItemNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.statement.CompoundStatementNode;
-import edu.udel.cis.vsl.abc.ast.node.IF.statement.ExpressionStatementNode;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.transform.IF.OpenMPOrphanTransformer;
 
 /**
- * TODO add java doc
+ * This transformer will move or copy orphan constructs into the omp parallel
+ * region. It will first search for {@link OmpParallelNode}, then search for
+ * {@link FunctionCallNode} whose definition uses shared variables or omp. If
+ * the {@link FunctionDefinitionNode} uses omp, then move the
+ * {@link FunctionDefinitionNode} into the {@link OmpParallelNode}. If the
+ * {@link FunctionDefinitionNode} just uses shared variables, copy the
+ * {@link FunctionDefinitionNode} into the {@link OmpParallelNode}.
  * 
  * @author yanyihao
  *
@@ -54,11 +58,12 @@ public class OpenMPOrphanWorker extends BaseWorker {
 		searchOMPParallel(main, visitedFunctions, globalVars);
 		newAst = astFactory.newAST(root, ast.getSourceFiles(),
 				ast.isWholeProgram());
+
 		return newAst;
 	}
 
 	/**
-	 * Search for #pragma omp parallel blocks.
+	 * Search for #pragma omp parallel blocks and process its body.
 	 * 
 	 * @param visitedFunctions
 	 *            Functions that have already been visited.
@@ -113,6 +118,13 @@ public class OpenMPOrphanWorker extends BaseWorker {
 			searchOMPParallel(callee, visitedFunctions, globalVars);
 	}
 
+	/**
+	 * Get the set of identifiers of {@link FunctionDefinitionNode} inside a
+	 * {@link CompoundStatementNode}.
+	 * 
+	 * @param compoundStatementNode
+	 * @return The set of identifiers of {@link FunctionDefinitionNode}.
+	 */
 	private Set<String> getFunctionDefs(
 			CompoundStatementNode compoundStatementNode) {
 		Set<String> functionDefs = new HashSet<>();
@@ -153,10 +165,12 @@ public class OpenMPOrphanWorker extends BaseWorker {
 			Set<Function> callees = curFunction.getCallees();
 
 			seen.add(curFunction);
-			if (containOmpFunctionCallOrPragma(functionDefinitionNode)) {
+			if (useSharedVariableOrOmp(functionDefinitionNode,
+					globalVars) >= 2) {
 				functionDefinitionNode.remove();
 				result.add(functionDefinitionNode);
-			} else if (useSharedVariable(functionDefinitionNode, globalVars)) {
+			} else if (useSharedVariableOrOmp(functionDefinitionNode,
+					globalVars) == 1) {
 				result.add(functionDefinitionNode.copy());
 			}
 			for (Function f : callees) {
@@ -168,66 +182,62 @@ public class OpenMPOrphanWorker extends BaseWorker {
 	}
 
 	/**
+	 * Check if a {@link FunctionDefinitionNode} contains shared variable, any
+	 * omp functions or any omp pragmas.
 	 * 
 	 * @param functionDefNode
-	 * @return true iff the {@link FunctionDefinitionNode} contains any omp
-	 *         function calls.
+	 *            The {@link FunctionDefinitionNode} to be checked.
+	 * @param globalVars
+	 *            The set of variables declared in the global scope.
+	 * @return
+	 *         <ul>
+	 *         <li>0 if contain neither.
+	 *         <li>1 if contain only shared variable.
+	 *         <li>2 if contains omp usage.
+	 *         <li>> 2 if contains both.
+	 *         </ul>
 	 */
-	private boolean containOmpFunctionCallOrPragma(
-			FunctionDefinitionNode functionDefNode) {
-		if (functionDefNode == null)
-			return false;
-		CompoundStatementNode compoundStatementNode = functionDefNode.getBody();
-		Iterator<BlockItemNode> itemsIter = compoundStatementNode.iterator();
-
-		while (itemsIter.hasNext()) {
-			BlockItemNode item = itemsIter.next();
-			ExpressionNode expressionNode = null;
-
-			if (item instanceof ExpressionStatementNode
-					&& (expressionNode = ((ExpressionStatementNode) item)
-							.getExpression())
-									.expressionKind() == ExpressionKind.FUNCTION_CALL) {
-				FunctionCallNode functionCallNode = (FunctionCallNode) expressionNode;
-				IdentifierNode identiferNode = ((IdentifierExpressionNode) (functionCallNode
-						.getFunction())).getIdentifier();
-				String functioName = identiferNode.name();
-
-				if (functioName.startsWith("omp_"))
-					return true;
-			}
-			if (item instanceof OmpForNode || item instanceof OmpSyncNode
-					|| item instanceof OmpWorksharingNode)
-				return true;
-		}
-		return false;
-	}
-
-	private boolean useSharedVariable(FunctionDefinitionNode functionDefNode,
+	private int useSharedVariableOrOmp(FunctionDefinitionNode functionDefNode,
 			Set<String> globalVars) {
 		if (functionDefNode == null)
-			return false;
+			return 0;
+		int result = 0;
+		boolean useShared = false;
+		boolean useOmp = false;
 		LinkedList<ASTNode> queue = new LinkedList<>();
 		Set<String> localVars = retrieveVars(
 				functionDefNode.getBody().iterator());
 
 		queue.add(functionDefNode);
-		while (!queue.isEmpty()) {
+		while (!queue.isEmpty() && !useOmp) {
 			ASTNode node = queue.removeFirst();
 
-			if (node instanceof IdentifierNode) {
+			if (!useShared && (node instanceof IdentifierNode)) {
 				IdentifierNode idNode = (IdentifierNode) node;
 
 				if (globalVars.contains(idNode.name())
 						&& !localVars.contains(idNode.name()))
-					return true;
+					useShared = true;
+			}
+			if (node instanceof OmpForNode || node instanceof OmpSyncNode
+					|| node instanceof OmpWorksharingNode)
+				useOmp = true;
+			if (!useOmp && (node instanceof FunctionCallNode)) {
+				String identifier = ((IdentifierExpressionNode) ((FunctionCallNode) node)
+						.getFunction()).getIdentifier().name();
+
+				if (identifier.startsWith("_omp"))
+					useOmp = true;
 			}
 			for (ASTNode child : node.children())
 				if (child != null)
 					queue.addLast(child);
 		}
-
-		return false;
+		if (useOmp)
+			result += 2;
+		if (useShared)
+			result += 1;
+		return result;
 	}
 
 	/**
@@ -248,6 +258,13 @@ public class OpenMPOrphanWorker extends BaseWorker {
 		return (Function) entity;
 	}
 
+	/**
+	 * Retrieve the set of variables declared in an {@link Iterable}.
+	 * 
+	 * @param itemsIter
+	 *            The iterator to iterate an {@link Iterable}.
+	 * @return The set of identifiers declared inside an {@link Iterable}.
+	 */
 	private Set<String> retrieveVars(Iterator<BlockItemNode> itemsIter) {
 		Set<String> vars = new HashSet<>();
 
