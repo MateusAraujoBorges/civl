@@ -76,8 +76,8 @@ public class OpenMP2CIVLTransformerTest {
 	public void sharedVarTest1() {
 		// after moving the function definition into the parallel region, this
 		// example will work.
-		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2", "-showProgram",
-//				 "-ompNoSimplify",
+		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
+				TestConstants.QUIET, "-ompNoSimplify",
 				filename("sharedVar1.cvl")));
 	}
 
@@ -86,8 +86,7 @@ public class OpenMP2CIVLTransformerTest {
 		// work when mannually change, maybe something wrong with the current
 		// orphan transformer.
 		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
-				"-showProgram",
-				 "-ompNoSimplify",
+				TestConstants.QUIET, "-ompNoSimplify",
 				filename("sharedVar2.cvl")));
 	}
 
@@ -96,7 +95,7 @@ public class OpenMP2CIVLTransformerTest {
 		// will work when copy the function definition into parallel region, but
 		// why this is a failing test?
 		assertTrue(ui.run("verify", NO_PRINTF, "-input_omp_thread_max=2",
-				"-showProgram", "-ompNoSimplify", filename("sharedVar3.cvl")));
+				TestConstants.QUIET, filename("sharedVar3.cvl")));
 	}
 
 	@Test
