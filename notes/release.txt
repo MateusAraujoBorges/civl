@@ -73,7 +73,7 @@ all four components of CIVL and then re-build all of them.
 
 13. Append "+" to the fields named "version" in edu.udel.cis.vsl.civl.config.CIVLConstants.
 For example, the just released version is 1.2, then it becomes 1.2+, which stands for
-unstable release between 1.2 andd 1.3.
+unstable release between 1.2 and 1.3.
 
 14. Create a new directory for the benchmark running data generated
     during the release.  The name of the directory must be

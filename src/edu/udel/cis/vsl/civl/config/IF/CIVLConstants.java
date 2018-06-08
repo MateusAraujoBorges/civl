@@ -62,7 +62,7 @@ public class CIVLConstants {
 			"civl");
 
 	/** The version of this release of CIVL. */
-	public final static String version = "1.16";
+	public final static String version = "1.16+";
 
 	/**
 	 * The date of this release of CIVL. Format: YYYY-MM-DD in accordance with
