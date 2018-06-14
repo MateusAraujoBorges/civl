@@ -32,6 +32,7 @@ import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpForNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpParallelNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpReductionNode;
+import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpReductionNode.OmpReductionOperator;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpSymbolReductionNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpSyncNode;
 import edu.udel.cis.vsl.abc.ast.node.IF.omp.OmpSyncNode.OmpSyncNodeKind;
@@ -51,6 +52,7 @@ import edu.udel.cis.vsl.abc.ast.util.ExpressionEvaluator;
 import edu.udel.cis.vsl.abc.token.IF.Source;
 import edu.udel.cis.vsl.abc.token.IF.SyntaxException;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
+import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.transform.IF.OpenMPSimplifier;
 
 /**
@@ -813,10 +815,11 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 
 				// Build a map for scanning for reduction variable operator
 				// assignment consistency
-				Map<Entity, Operator> idOpMap = new HashMap<Entity, Operator>();
+				Map<Entity, OmpReductionOperator> idOpMap = new HashMap<Entity, OmpReductionOperator>();
 				for (OmpReductionNode r : reductionList) {
 					if (r instanceof OmpSymbolReductionNode) {
-						Operator op = ((OmpSymbolReductionNode) r).operator();
+						OmpReductionOperator op = ((OmpSymbolReductionNode) r)
+								.operator();
 						for (IdentifierExpressionNode id : r.variables()) {
 							idOpMap.put(id.getIdentifier().getEntity(), op);
 							reductionVariables.add(id.getIdentifier());
@@ -906,12 +909,12 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 	}
 
 	private boolean checkReductionAssignments(ASTNode node,
-			Map<Entity, Operator> idOpMap) {
+			Map<Entity, OmpReductionOperator> idOpMap) {
 		return checkReductionWorker(node, idOpMap, true);
 	}
 
 	private boolean checkReductionWorker(ASTNode node,
-			Map<Entity, Operator> idOpMap, boolean consistent) {
+			Map<Entity, OmpReductionOperator> idOpMap, boolean consistent) {
 		if (node instanceof OperatorNode) {
 			/*
 			 * Access the LHS to prepare for operator comparison
@@ -921,7 +924,7 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 				Entity idEnt = ((IdentifierExpressionNode) lhs).getIdentifier()
 						.getEntity();
 				if (idOpMap.keySet().contains(idEnt)) {
-					Operator op = idOpMap.get(idEnt);
+					Operator op = OmpReduceOp2CivlOp(idOpMap.get(idEnt));
 
 					switch (((OperatorNode) node).getOperator()) {
 						case ASSIGN :
@@ -941,9 +944,13 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 						case MINUSEQ :
 						case PLUSEQ :
 						case TIMESEQ :
+						case LAND :
+						case LOR :
 							consistent &= (((OperatorNode) node)
 									.getOperator() == op);
 							break;
+						case EQUALS :
+						case NEQ :
 						default :
 					}
 				}
@@ -956,6 +963,38 @@ public class OpenMPSimplifierWorker extends BaseWorker {
 			}
 		}
 		return consistent;
+	}
+
+	private Operator OmpReduceOp2CivlOp(
+			OmpReductionOperator ompReductionOperator) {
+		switch (ompReductionOperator) {
+			case SUM :
+				return Operator.PLUSEQ;
+			case MINUS :
+				return Operator.MINUSEQ;
+			case PROD :
+				return Operator.TIMESEQ;
+			case BAND :
+				return Operator.BITANDEQ;
+			case BOR :
+				return Operator.BITOREQ;
+			case BXOR :
+				return Operator.BITXOREQ;
+			case LAND :
+				return Operator.LAND;
+			case LOR :
+				return Operator.LOR;
+			case EQV :
+				return Operator.EQUALS;
+			case NEQ :
+				return Operator.NEQ;
+			case MIN :
+			case MAX :
+			default :
+				throw new CIVLUnimplementedFeatureException(
+						"Unsupport OpenMP Reduce Operator: "
+								+ ompReductionOperator);
+		}
 	}
 
 	/*

@@ -139,7 +139,9 @@ public abstract class LibraryComponent {
 		CIVL_BXOR, // bit-wise exclusive or
 		CIVL_MINLOC, // min value and location
 		CIVL_MAXLOC, // max value and location
-		CIVL_REPLACE // replace ? TODO: Find definition for this operation
+		CIVL_REPLACE, // replace ? TODO: Find definition for this operation
+		CIVL_EQ, // equal to
+		CIVL_NEQ, // NOT equal to
 	}
 
 	/**
@@ -451,12 +453,24 @@ public abstract class LibraryComponent {
 							(NumericExpression) op1[0]);
 					break;
 				case CIVL_LAND :
-					result[0] = universe.and((BooleanExpression) op0[0],
-							(BooleanExpression) op1[0]);
+					BooleanExpression aop0 = op0[0].isZero()
+							? universe.falseExpression()
+							: universe.trueExpression();
+					BooleanExpression aop1 = op1[0].isZero()
+							? universe.falseExpression()
+							: universe.trueExpression();
+
+					result[0] = universe.and(aop0, aop1);
 					break;
 				case CIVL_LOR :
-					result[0] = universe.or((BooleanExpression) op0[0],
-							(BooleanExpression) op1[0]);
+					BooleanExpression oop0 = op0[0].isZero()
+							? universe.falseExpression()
+							: universe.trueExpression();
+					BooleanExpression oop1 = op1[0].isZero()
+							? universe.falseExpression()
+							: universe.trueExpression();
+
+					result[0] = universe.or(oop0, oop1);
 					break;
 				case CIVL_LXOR :
 					BooleanExpression notNewData = universe
@@ -478,8 +492,25 @@ public abstract class LibraryComponent {
 							civlsource);
 				case CIVL_REPLACE :
 				case CIVL_BAND :
+					result[0] = universe.bitand((NumericExpression) op0[0],
+							(NumericExpression) op1[0]);
+					break;
 				case CIVL_BOR :
+					result[0] = universe.bitor((NumericExpression) op0[0],
+							(NumericExpression) op1[0]);
+					break;
 				case CIVL_BXOR :
+					result[0] = universe.bitxor((NumericExpression) op0[0],
+							(NumericExpression) op1[0]);
+					break;
+				case CIVL_EQ :
+					result[0] = universe.equals((NumericExpression) op0[0],
+							(NumericExpression) op1[0]);
+					break;
+				case CIVL_NEQ :
+					result[0] = universe.neq((NumericExpression) op0[0],
+							(NumericExpression) op1[0]);
+					break;
 				default :
 					throw new CIVLUnimplementedFeatureException(
 							"CIVLOperation: " + op.name());
