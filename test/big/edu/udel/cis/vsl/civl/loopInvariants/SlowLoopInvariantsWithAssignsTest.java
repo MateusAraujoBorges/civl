@@ -97,7 +97,7 @@ public class SlowLoopInvariantsWithAssignsTest {
 
 	@Test
 	public void arrayZeroes2dColumnPreserve() {
-		assertTrue(ui.run("verify", "-loop -showTransitions",
+		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop",
 				filename("arrayZeroes2d_2columns_preserve.cvl")));
 	}
 
