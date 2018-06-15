@@ -48,6 +48,7 @@ import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SARLException;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.UnaryOperator;
+import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
@@ -1723,7 +1724,8 @@ public class ImmutableStateFactory implements StateFactory {
 	 * @return True iff the given claim is evaluated to be false.
 	 */
 	private boolean nsat(BooleanExpression claim) {
-		return trueContextReasoner.isValid(universe.not(claim));
+		return trueContextReasoner.unsat(claim)
+				.getResultType() == ResultType.YES;
 	}
 
 	/**
