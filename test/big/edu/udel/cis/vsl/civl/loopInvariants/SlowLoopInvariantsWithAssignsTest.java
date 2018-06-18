@@ -29,13 +29,13 @@ public class SlowLoopInvariantsWithAssignsTest {
 				filename("arrayEquals.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void arrayEqualsBug() {
 		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop",
 				filename("arrayEquals-bug.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void arrayEqualsEarlyReturn() {
 		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop",
 				filename("arrayEquals_early_return.cvl")));
@@ -59,7 +59,7 @@ public class SlowLoopInvariantsWithAssignsTest {
 				filename("arrayEqualsNoReturn-bad_impl.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void arrayEqualsNoReturnBadAssert() {
 		assertFalse(ui.run("verify", TestConstants.QUIET, "-loop",
 				filename("arrayEqualsNoReturn-bad_assert.cvl")));

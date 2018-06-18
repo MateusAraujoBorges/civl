@@ -31,13 +31,13 @@ public class SlowLoopInvariantsNoAssignsTest {
 				filename("arrayEquals.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void arrayEqualsBug() {
 		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop=true",
 				filename("arrayEquals-bug.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void arrayEqualsEarlyReturn() {
 		assertTrue(ui.run("verify", TestConstants.QUIET, "-loop=true",
 				filename("arrayEquals_early_return.cvl")));
@@ -61,7 +61,7 @@ public class SlowLoopInvariantsNoAssignsTest {
 				filename("arrayEqualsNoReturn-bad_impl.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void arrayEqualsNoReturnBadAssert() {
 		assertFalse(ui.run("verify", TestConstants.QUIET, "-loop=true",
 				filename("arrayEqualsNoReturn-bad_assert.cvl")));
@@ -97,13 +97,13 @@ public class SlowLoopInvariantsNoAssignsTest {
 				filename("arrayZeroes2d_2columns.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void arrayZeroes2dColumnPreserve() {
 		assertTrue(ui.run("verify", "-loop=true", TestConstants.QUIET,
 				filename("arrayZeroes2d_2columns_preserve.cvl")));
 	}
 
-	@Test
+	@Ignore
 	public void arrayZeroes2d2ColumnsPreserve() {
 		assertTrue(ui.run("verify", "-loop=true", TestConstants.QUIET,
 				filename("arrayZeroes2d_2columns_preserve.cvl")));
@@ -212,8 +212,8 @@ public class SlowLoopInvariantsNoAssignsTest {
 
 	@Test
 	public void summationBadAssert() {
-		assertFalse(ui.run("verify", TestConstants.QUIET, "-loop=true",
-				filename("summation-bad_assert.cvl")));
+		assertFalse(ui.run("verify", TestConstants.QUIET,
+				"-loop=true", filename("summation-bad_assert.cvl")));
 	}
 
 	@Test
