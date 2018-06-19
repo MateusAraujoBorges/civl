@@ -553,8 +553,10 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				zeros.add(zeroVar);
 			zerosArray = universe.array(objectElementType, zeros);
 		} else {
-			zerosArray = symbolicUtil.newArray(state.getPathCondition(universe),
-					objectElementType, length, zeroVar);
+			eval = evaluator.newArray(state, objectElementType, zeroVar,
+					length);
+			zerosArray = eval.value;
+			state = eval.state;
 		}
 		// Calling setDataFrom to set the pointed object to zero
 		setDataRet = setDataFrom(state, pid, process, arguments[0], pointer,

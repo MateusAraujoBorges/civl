@@ -16,6 +16,7 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -30,7 +31,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.ArrayElementReference;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NTReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
@@ -40,6 +40,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.UnionMemberReference;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.NumberObject;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject.SymbolicObjectKind;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicSequence;
@@ -177,8 +178,12 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		dynamicToIntType = universe.functionType(
 				new Singleton<SymbolicType>(dynamicType),
 				universe.integerType());
-		sizeofFunction = universe.symbolicConstant(
-				universe.stringObject("SIZEOF"), dynamicToIntType);
+
+		StringObject sizeofFunctionName = ModelConfiguration
+				.getFunctionConstantName(universe, "SIZEOF");
+
+		sizeofFunction = universe.symbolicConstant(sizeofFunctionName,
+				dynamicToIntType);
 		this.zeroObj = universe.intObject(0);
 		this.oneObj = universe.intObject(1);
 		this.twoObj = universe.intObject(2);
@@ -771,34 +776,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			reference = makeParentOf(objRef, reference);
 		return universe.tuple(pointerType,
 				Arrays.asList(scope, vid, reference));
-	}
-
-	@Override
-	public SymbolicExpression newArray(BooleanExpression context,
-			SymbolicType elementValueType, NumericExpression length,
-			SymbolicExpression eleValue) {
-		Reasoner reasoner = universe.reasoner(context);
-		IntegerNumber length_number = (IntegerNumber) reasoner
-				.extractNumber(length);
-
-		if (length_number != null) {
-			int length_int = length_number.intValue();
-			List<SymbolicExpression> values = new ArrayList<>(length_int);
-
-			for (int i = 0; i < length_int; i++)
-				values.add(eleValue);
-			return universe.array(elementValueType, values);
-		} else {
-			NumericSymbolicConstant index = (NumericSymbolicConstant) universe
-					.symbolicConstant(universe.stringObject("i"),
-							universe.integerType());
-			SymbolicExpression arrayEleFunction = universe.lambda(index,
-					eleValue);
-			SymbolicCompleteArrayType arrayValueType = universe
-					.arrayType(elementValueType, length);
-
-			return universe.arrayLambda(arrayValueType, arrayEleFunction);
-		}
 	}
 
 	@Override
@@ -1425,9 +1402,9 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	@Override
 	public SymbolicExpression getAbstractGuardOfFunctionCall(String library,
 			String function, SymbolicExpression[] argumentValues) {
-		String functionName = abstractGuard + library + "_" + function;
+		String guardFunctionName = abstractGuard + library + "_" + function;
 		List<SymbolicType> argumentTypes = new ArrayList<>();
-		SymbolicConstant abstractFunction;
+		SymbolicConstant guard;
 		SymbolicType functionType;
 		List<SymbolicExpression> argValues = new ArrayList<>(
 				argumentValues.length + 1);
@@ -1438,13 +1415,16 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 		}
 		functionType = universe.functionType(argumentTypes,
 				universe.booleanType());
-		abstractFunction = universe.symbolicConstant(
-				universe.stringObject(functionName), functionType);
-		argValues.add(universe.stringExpression(functionName));
+
+		StringObject guardName = ModelConfiguration
+				.getFunctionConstantName(universe, guardFunctionName);
+
+		guard = universe.symbolicConstant(guardName, functionType);
+		argValues.add(universe.stringExpression(guardFunctionName));
 		for (int i = 0; i < argumentValues.length; i++) {
 			argValues.add(argumentValues[i]);
 		}
-		return universe.apply(abstractFunction, argValues);
+		return universe.apply(guard, argValues);
 	}
 
 	@Override

@@ -166,10 +166,12 @@ public class LibseqExecutor extends BaseLibraryExecutor
 
 					state = eval.state;
 					eleValue = eval.value;
-					arrayValue = symbolicUtil.newArray(
-							state.getPathCondition(universe),
+
+					eval = evaluator.newArray(state,
 							arrayType.elementType().getDynamicType(universe),
-							count, eleValue);
+							eleValue, count);
+					state = eval.state;
+					arrayValue = eval.value;
 					state = primaryExecutor.assign(source, state, pid, arrayPtr,
 							arrayValue);
 				}
