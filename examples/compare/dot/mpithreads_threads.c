@@ -64,17 +64,17 @@ void *dotprod(void *arg)
 
    /* Define and use local variables for convenience */
 
-   int i, start, end, len ;
+   int i, start, end, len, partial ;
    long offset;
    double mysum, *x, *y;
-   offset = (long)arg;
-     
+   offset = (long)arg[0];
+   partial = (long)arg[1];
    len = dotstr.veclen;
-   start = offset*len;
-   end   = start + len;
+   start = offset*partial;
+   end = (start + partial > len ? len : start + partial);
    x = dotstr.a;
    y = dotstr.b;
-
+	
    /*
    Perform the dot product and assign result to the appropriate variable in 
    the structure. 
@@ -95,7 +95,7 @@ void *dotprod(void *arg)
           arg, mysum, dotstr.sum);
    dotstr.sum += mysum;
    pthread_mutex_unlock (&mutexsum);
-
+   free(arg);
    pthread_exit((void*) 0);
 }
 
@@ -111,16 +111,19 @@ that we free up handles  when they are no longer needed.
 
 int main (int argc, char *argv[])
 {
-long i;
+long i, partial, len = VECLEN;
 double *a, *b;
 void *status;
 pthread_attr_t attr;
 
 /* Assign storage and initialize values */
-a = (double*) malloc (MAXTHRDS*VECLEN*sizeof(double));
-b = (double*) malloc (MAXTHRDS*VECLEN*sizeof(double));
-  
-for (i=0; i<VECLEN*MAXTHRDS; i++) {
+a = (double*) malloc (VECLEN*sizeof(double));
+b = (double*) malloc (VECLEN*sizeof(double));
+if (len % MAXTHRDS == 0)
+   	partial = len / MAXTHRDS;
+   else
+   	partial = len / MAXTHRDS + 1;
+for (i=0; i<VECLEN; i++) {
   a[i]=1;
   b[i]=a[i];
   }
@@ -141,7 +144,10 @@ for(i=0;i<MAXTHRDS;i++) {
   The offset is specified by 'i'. The size of
   the data for each thread is indicated by VECLEN.
   */
-  pthread_create( &callThd[i], &attr, dotprod, (void *)i); 
+  long *args = (long *)malloc(2 * sizeof(long));
+  args[0] = i;
+  args[1] = partial;
+  pthread_create( &callThd[i], &attr, dotprod, (void *)args); 
   }
 
 pthread_attr_destroy(&attr);

@@ -77,25 +77,21 @@ public class CompareTest {
 
 	@Test
 	public void dotMpiSerial() {
-		assertFalse(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
-				filename("dot", "mpithreads_serial.c"), IMPL,
-				"-input_mpi_nprocs=2", filename("dot", "mpithreads_mpi.c")));
-
-		assertFalse(ui.run(REPLAY, QUIET, NO_PRINTF, SPEC,
+		assertTrue(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
 				filename("dot", "mpithreads_serial.c"), IMPL,
 				"-input_mpi_nprocs=2", filename("dot", "mpithreads_mpi.c")));
 	}
 
 	@Test
 	public void dotPthreadsSerial() {
-		assertFalse(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
+		assertTrue(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
 				filename("dot", "mpithreads_serial.c"), IMPL,
 				"-inputMAXTHRDS=2", filename("dot", "mpithreads_threads.c")));
 	}
 
 	@Test
 	public void dotHybridSerial() {
-		assertFalse(ui.run(COMPARE, QUIET, "-inputVECLEN=5", SPEC,
+		assertTrue(ui.run(COMPARE, QUIET, "-inputVECLEN=5", SPEC,
 				filename("dot", "mpithreads_serial.c"), IMPL,
 				"-input_mpi_nprocs=2 -inputMAXTHRDS=2",
 				filename("dot", "mpithreads_both.c")));
@@ -103,7 +99,7 @@ public class CompareTest {
 
 	@Test
 	public void dotMpiHybrid() {
-		assertFalse(ui.run(COMPARE, QUIET, "-inputVECLEN=4 -input_mpi_nprocs=2",
+		assertTrue(ui.run(COMPARE, QUIET, "-inputVECLEN=4 -input_mpi_nprocs=2",
 				SPEC, filename("dot", "mpithreads_mpi.c"), IMPL,
 				"-inputMAXTHRDS=2", filename("dot", "mpithreads_both.c")));
 	}

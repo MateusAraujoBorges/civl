@@ -62,7 +62,7 @@ void *dotprod(void *arg)
 
    /* Define and use local variables for convenience */
 
-   int i, start, end, len, numthrds, myid;
+   int i, start, end, len, numthrds, myid, sigSize1, sigSize2, max;
    long mythrd;
    double mysum, *x, *y;
 
@@ -72,16 +72,23 @@ void *dotprod(void *arg)
    on a vector of length VECLENGTH.
    */
 
-   mythrd = (long)arg;
+   mythrd = (int)(arg[0]);
+   sigSize1 = (int)(arg[1]);
+   sigSize2 = (int)(arg[2]);
+   free(arg);
    MPI_Comm_rank (MPI_COMM_WORLD, &myid);
 
    numthrds = dotstr.numthrds;
    len = dotstr.veclen;
-   start = myid*numthrds*len + mythrd*len;
-   end   = start + len;
+   max = (myid+1)*sigSize1;
+   max = max > len ? len : max;
+   start = myid*sigSize1 + mythrd*sigSize2;
+   start = start > max ? max : start;
+   end   = start + sigSize2;
+   end = end > max ? max : end;
    x = dotstr.a;
    y = dotstr.b;
-
+	
    /*
    Perform the dot product and assign result
    to the appropriate variable in the structure. 
@@ -115,7 +122,7 @@ int main(int argc, char* argv[])
 {
 int len=VECLEN, myid, numprocs; 
 long i;
-int nump1, numthrds;
+int nump1, numthrds, segSize1, segSize2;
 double *a, *b;
 double nodesum, allsum;
 void *status;
@@ -128,10 +135,18 @@ MPI_Comm_rank (MPI_COMM_WORLD, &myid);
 
 /* Assign storage and initialize values */
 numthrds=MAXTHRDS;
-a = (double*) malloc (numprocs*numthrds*len*sizeof(double));
-b = (double*) malloc (numprocs*numthrds*len*sizeof(double));
+a = (double*) malloc (len*sizeof(double));
+b = (double*) malloc (len*sizeof(double));
+if (len % numprocs == 0)
+	segSize1 = len / numprocs;
+else 
+	segSize1 = len / numprocs + 1;
+if (segSize1 % numthrds == 0)
+	segSize2 = segSize1 / numthrds;
+else
+	segSize2 = segSize1 / numthrds + 1;
   
-for (i=0; i<len*numprocs*numthrds; i++) {
+for (i=0; i<len; i++) {
   a[i]=1;
   b[i]=a[i];
   }
@@ -154,7 +169,11 @@ pthread_mutex_init (&mutexsum, NULL);
 
 /* Create threads within this node to perform the dotproduct  */
 for(i=0;i<numthrds;i++) {
-  pthread_create( &callThd[i], &attr, dotprod, (void *)i); 
+	int* args = (int *)malloc(3 * sizeof(int));
+	args[0] = i;
+	args[1] = segSize1;
+	args[2] = segSize2;
+  pthread_create( &callThd[i], &attr, dotprod, (void*)args); 
   }
 
 /* Release the thread attribute handle as it is no longer needed */

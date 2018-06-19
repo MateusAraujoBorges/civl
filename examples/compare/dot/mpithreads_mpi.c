@@ -52,21 +52,27 @@ all access to the input is through a structure of type DOTDATA and all
 output from this function is written into this same structure. 
 */
 
-void *dotprod()
+void *dotprod(int numprocs)
 {
 
    /* Define and use local variables for convenience */
 
-   int i, start, end, myid, len;
+   int i, start, end, myid, len, partial;
    double mysum, *x, *y;
    
    /* Obtain rank of this node */
 
    MPI_Comm_rank (MPI_COMM_WORLD, &myid);
-     
+   
    len = dotstr.veclen;
-   start = myid*len;
-   end   = start + len;
+   
+   if (len % numprocs == 0)
+   	 partial = len / numprocs;
+   else
+   	 partial = (len / numprocs) + 1;
+   
+   start = myid*partial;
+   end   = ((start + partial) > len ? len : start + partial);
    x = dotstr.a;
    y = dotstr.b;
 
@@ -104,10 +110,10 @@ MPI_Comm_size (MPI_COMM_WORLD, &numprocs);
 MPI_Comm_rank (MPI_COMM_WORLD, &myid);
 
 /* Assign storage and initialize values */
-a = (double*) malloc (numprocs*len*sizeof(double));
-b = (double*) malloc (numprocs*len*sizeof(double));
+a = (double*) malloc (len*sizeof(double));
+b = (double*) malloc (len*sizeof(double));
   
-for (i=0; i<len*numprocs; i++) {
+for (i=0; i<len; i++) {
   a[i]=1;
   b[i]=a[i];
   }
@@ -118,7 +124,7 @@ dotstr.b = b;
 dotstr.sum=0;
 
 /* Call  the  dot product routine */
-dotprod();
+dotprod(numprocs);
 mysum = dotstr.sum;
 printf("Task %d partial sum is %f\n",myid, mysum);
 
