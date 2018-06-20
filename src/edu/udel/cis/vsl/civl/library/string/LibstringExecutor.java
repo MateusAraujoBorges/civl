@@ -486,8 +486,7 @@ public class LibstringExecutor extends BaseLibraryExecutor
 		objectElementTypeStatic = symbolicAnalyzer.getArrayBaseType(state,
 				arguments[0].getSource(), pointer);
 		objectElementType = objectElementTypeStatic.getDynamicType(universe);
-		dataTypeSize = symbolicUtil.sizeof(arguments[0].getSource(),
-				objectElementTypeStatic, objectElementType);
+		dataTypeSize = typeFactory.sizeofDynamicType(objectElementType);
 
 		// TODO: what is the point of looping over all arguments of size?
 		// Shouldn't this only look for the case of one argument?
@@ -502,11 +501,10 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				 * size contains any "SIZEOF(CHAR) or SIZEOF(BOOLEAN)", never
 				 * simplify SIZEOF(CHAR)(or SIZEOF(BOOLEAN) to one
 				 */
-				if (obj.equals(symbolicUtil.sizeof(null, typeFactory.charType(),
-						universe.characterType()))
-						|| obj.equals(symbolicUtil.sizeof(null,
-								this.typeFactory.booleanType(),
-								universe.booleanType())))
+				if (obj.equals(
+						typeFactory.sizeofDynamicType(universe.characterType()))
+						|| obj.equals(typeFactory
+								.sizeofDynamicType(universe.booleanType())))
 					byteIsUnit = false;
 			}
 		}

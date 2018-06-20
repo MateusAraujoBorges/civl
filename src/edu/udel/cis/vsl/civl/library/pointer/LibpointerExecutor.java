@@ -691,21 +691,19 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 					arguments[1].getExpressionType(), argumentValues[1]);
 			message.append(arguments[1].toString() + "=" + secondArg);
 			message.append("\nResult: \n          ");
-			message.append(
-					firstArg.substring(1) + "="
-							+ this.symbolicAnalyzer.symbolicExpressionToString(
-									arguments[0].getSource(), state,
-									((CIVLPointerType) arguments[0]
-											.getExpressionType()).baseType(),
-									first));
+			message.append(firstArg.substring(1) + "="
+					+ this.symbolicAnalyzer.symbolicExpressionToString(
+							arguments[0].getSource(), state,
+							((CIVLPointerType) arguments[0].getExpressionType())
+									.baseType(),
+							first));
 			message.append("\n          ");
-			message.append(
-					secondArg.substring(1) + "="
-							+ this.symbolicAnalyzer.symbolicExpressionToString(
-									arguments[1].getSource(), state,
-									((CIVLPointerType) arguments[1]
-											.getExpressionType()).baseType(),
-									second));
+			message.append(secondArg.substring(1) + "="
+					+ this.symbolicAnalyzer.symbolicExpressionToString(
+							arguments[1].getSource(), state,
+							((CIVLPointerType) arguments[1].getExpressionType())
+									.baseType(),
+							second));
 			state = this.reportAssertionFailure(state, pid, process, resultType,
 					message.toString(), arguments, argumentValues, source,
 					claim, 2);
@@ -822,8 +820,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 				arguments[0].getSource(), ptr);
 		primitiveTypePointed = primitiveTypePointedStatic
 				.getDynamicType(universe);
-		ptr_primType_size = symbolicUtil.sizeof(arguments[0].getSource(),
-				primitiveTypePointedStatic, primitiveTypePointed);
+		ptr_primType_size = typeFactory.sizeofDynamicType(primitiveTypePointed);
 		if (!this.civlConfig.svcomp()) {
 			claim = universe.divides(ptr_primType_size, type_size);
 			reasoner = universe.reasoner(state.getPathCondition(universe));
