@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
+import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType.PrimitiveTypeKind;
 import edu.udel.cis.vsl.civl.transform.IF.GeneralTransformer;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
@@ -375,6 +377,26 @@ public final class ModelConfiguration {
 	private static final String CIVL_FUNCTION_CONSTANT_PREFIX = "CIVL_";
 
 	/**
+	 * Returns a {@link StringObject} which is the name of the dynamic
+	 * representation an identifier of either a variable or a function from
+	 * source program. The returned name follows CIVL's naming convention and is
+	 * uniquely associated to the given identifier.
+	 * 
+	 * @param universe
+	 *            a reference to the {@link SymbolicUniverse}
+	 * @param identifier
+	 *            an identifier that belongs to a variable or function from
+	 *            source programs
+	 * @return a {@link StringObject} which is the name of the symbolic
+	 *         representation of a variable or a function from the source
+	 *         program.
+	 */
+	public static StringObject getIdentifierName(SymbolicUniverse universe,
+			String identifier) {
+		return universe.stringObject(identifier);
+	}
+
+	/**
 	 * <p>
 	 * Returns a {@link StringObject} which is the name of the value an abstract
 	 * function. The value of an abstract function is a function type symbolic
@@ -404,31 +426,6 @@ public final class ModelConfiguration {
 				.stringObject(CIVL_ABSTRACT_FUNCTION_PREFIX + identifier);
 	}
 
-	// /**
-	// * <p>
-	// * Returns a {@link StringObject} which is the name of a symbolic
-	// constant.
-	// * The symbolic constant will be used as a bound variable.
-	// * </p>
-	// *
-	// * <p>
-	// * The returned name follows CIVL's naming convention for function type
-	// * symbolic constants that are not values of abstract functions and is
-	// * uniquely associated with the given <code>identifier</code>.
-	// * </p>
-	// *
-	// * @param universe
-	// * a reference to the {@link SymbolicUniverse}
-	// * @param identifier
-	// * an identifier that belongs to a symbolic constant
-	// * @return a {@link StringObject} which is the name of a symbolic constant
-	// */
-	// public static StringObject getBoundVariableName(SymbolicUniverse
-	// universe,
-	// String identifier) {
-	// return universe.stringObject(CIVL_BOUND_VARIABLE_PREFIX + identifier);
-	// }
-
 	/**
 	 * <p>
 	 * Returns a {@link StringObject} which is the name of a function type
@@ -457,19 +454,20 @@ public final class ModelConfiguration {
 	/**
 	 * 
 	 * <p>
-	 * Returns a {@link StringObject} which is the name of a symbolic tuple
-	 * type. The name follows CIVL's naming convention and is uniquely
+	 * Returns a {@link StringObject} which is the name of a symbolic tuple or
+	 * union type. The name follows CIVL's naming convention and is uniquely
 	 * associated with the given identifier.
 	 * </p>
 	 * 
 	 * @param universe
 	 *            a reference to the {@link SymbolicUniverse}
 	 * @param identifier
-	 *            an identifier that belongs to a symbolic tuple type
-	 * @return a {@link StringObject} which is the name of a symbolic tuple type
+	 *            an identifier that belongs to a symbolic tuple or union type
+	 * @return a {@link StringObject} which is the name of a symbolic tuple or
+	 *         union type
 	 */
-	public static StringObject getTupleTypeName(SymbolicUniverse universe,
-			String identifier) {
+	public static StringObject getTupleOrUnionTypeName(
+			SymbolicUniverse universe, String identifier) {
 		return universe.stringObject(identifier);
 	}
 
@@ -482,5 +480,29 @@ public final class ModelConfiguration {
 	 */
 	public static StringObject getInvalidName(SymbolicUniverse universe) {
 		return universe.stringObject(INVALID);
+	}
+
+	/**
+	 * 
+	 * @param universe
+	 *            a reference to the {@link SymbolicUniverse}
+	 * @return the {@link StringObject} which is the name of the symbolic
+	 *         constants representing undefined values.
+	 */
+	public static StringObject getUndefinedName(SymbolicUniverse universe) {
+		return universe.stringObject(UNDEFINED);
+	}
+
+	/**
+	 * 
+	 * @param universe
+	 *            a reference to the {@link SymbolicUniverse}
+	 * @return the {@link StringObject} which is the name of the symbolic
+	 *         constant representing the <code>sizeof(type)</code> where
+	 *         <code>type</code> is a {@link CIVLPrimitiveType}
+	 */
+	public static StringObject getSizeofPrimitiveTypeConstantName(
+			SymbolicUniverse universe, PrimitiveTypeKind kind) {
+		return universe.stringObject("SIZEOF_" + kind);
 	}
 }

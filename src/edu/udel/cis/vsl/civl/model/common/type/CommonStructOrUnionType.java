@@ -13,12 +13,14 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.Identifier;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.type.StructOrUnionField;
 import edu.udel.cis.vsl.civl.model.common.CommonIdentifier;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
 /**
@@ -156,13 +158,16 @@ public class CommonStructOrUnionType extends CommonType
 					fieldDynamicTypes.add(fieldDynamicType);
 				}
 				if (this.isStruct) {
-					dynamicType = universe.tupleType(
-							universe.stringObject(name.name()),
+					StringObject tupleTypeName = ModelConfiguration
+							.getTupleOrUnionTypeName(universe, name.name());
+					dynamicType = universe.tupleType(tupleTypeName,
 							fieldDynamicTypes);
 				} else {
 					try {
-						dynamicType = universe.unionType(
-								universe.stringObject(name.name()),
+						StringObject unionTypeName = ModelConfiguration
+								.getTupleOrUnionTypeName(universe, name.name());
+
+						dynamicType = universe.unionType(unionTypeName,
 								fieldDynamicTypes);
 					} catch (IllegalArgumentException ex) {
 						throw new CIVLException(ex.getMessage(), null);
@@ -211,9 +216,10 @@ public class CommonStructOrUnionType extends CommonType
 
 	@Override
 	public CIVLType copyAs(CIVLPrimitiveType type, SymbolicUniverse universe) {
-		String newName = "CIVL" + name;
+		StringObject newIdentifierName = ModelConfiguration
+				.getIdentifierName(universe, "CIVL" + name);
 		Identifier newId = new CommonIdentifier(name.getSource(),
-				universe.stringObject(newName));
+				newIdentifierName);
 		CIVLStructOrUnionType newType = new CommonStructOrUnionType(newId,
 				isHandleObject);
 		List<StructOrUnionField> newFields = new ArrayList<>(this.numFields());

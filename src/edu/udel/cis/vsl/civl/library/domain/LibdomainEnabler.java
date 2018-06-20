@@ -198,7 +198,7 @@ public class LibdomainEnabler extends BaseLibraryEnabler
 		SymbolicTupleType decompType;
 		SymbolicExpression decomp;
 		StringObject domDecompTypeName = ModelConfiguration
-				.getTupleTypeName(universe, DOMAIN_DECOMPOSITION_TUPLE_NAME);
+				.getTupleOrUnionTypeName(universe, DOMAIN_DECOMPOSITION_TUPLE_NAME);
 
 		dim = ((NumericExpression) universe.tupleRead(domain, zeroObject));
 		// the following cast should be guaranteed, dimension should always a

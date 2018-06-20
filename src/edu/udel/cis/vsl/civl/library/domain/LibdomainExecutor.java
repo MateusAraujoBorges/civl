@@ -217,7 +217,7 @@ public class LibdomainExecutor extends BaseLibraryExecutor
 		}
 
 		StringObject domDecompTypeName = ModelConfiguration
-				.getTupleTypeName(universe, DOMAIN_DECOMPOSITION_TUPLE_NAME);
+				.getTupleOrUnionTypeName(universe, DOMAIN_DECOMPOSITION_TUPLE_NAME);
 
 		resultType = universe.tupleType(domDecompTypeName,
 				Arrays.asList(universe.integerType(),

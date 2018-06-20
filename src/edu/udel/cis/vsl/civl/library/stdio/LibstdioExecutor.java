@@ -43,6 +43,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
@@ -239,16 +240,19 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
 		SymbolicType stringArrayType;
+		StringObject contentsFunctionName = ModelConfiguration
+				.getFunctionConstantName(universe, "contents");
+		StringObject fileLengthFunctionName = ModelConfiguration
+				.getFunctionConstantName(universe, "fileLength");
 
 		EOF = universe.integer(-100);
 		stringSymbolicType = universe.arrayType(universe.characterType());
 		stringArrayType = universe.arrayType(stringSymbolicType);
 		emptyContents = universe.emptyArray(stringSymbolicType);
-		initialContentsFunction = universe.symbolicConstant(
-				universe.stringObject("contents"), universe.functionType(
+		initialContentsFunction = universe
+				.symbolicConstant(contentsFunctionName, universe.functionType(
 						Arrays.asList(stringSymbolicType), stringArrayType));
-		fileLengthFunction = universe.symbolicConstant(
-				universe.stringObject("fileLength"),
+		fileLengthFunction = universe.symbolicConstant(fileLengthFunctionName,
 				universe.functionType(Arrays.asList(stringSymbolicType),
 						universe.integerType()));
 		createStringToDataFunctions();
@@ -274,31 +278,42 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	 * abstract functions to convert a data of a certain type into a string.
 	 */
 	private void createDataToStringFunctions() {
+		StringObject intToString = ModelConfiguration
+				.getFunctionConstantName(universe, "intToString");
+		StringObject doubleToString = ModelConfiguration
+				.getFunctionConstantName(universe, "doubleToString");
+		StringObject charToString = ModelConfiguration
+				.getFunctionConstantName(universe, "charToString");
+		StringObject stringDataToString = ModelConfiguration
+				.getFunctionConstantName(universe, "stringDataToString");
+		StringObject pointerToString = ModelConfiguration
+				.getFunctionConstantName(universe, "pointerToString");
+
 		intToStringFunction = universe
-				.symbolicConstant(universe.stringObject("intToString"),
+				.symbolicConstant(intToString,
 						universe.functionType(
 								Arrays.asList(stringSymbolicType,
 										universe.integerType()),
 								stringSymbolicType));
-		doubleToStringFunction = universe.symbolicConstant(
-				universe.stringObject("doubleToString"),
+		doubleToStringFunction = universe.symbolicConstant(doubleToString,
 				universe.functionType(
 						Arrays.asList(stringSymbolicType, universe.realType()),
 						stringSymbolicType));
 		charToStringFunction = universe
-				.symbolicConstant(universe.stringObject("charToString"),
+				.symbolicConstant(charToString,
 						universe.functionType(
 								Arrays.asList(stringSymbolicType,
 										universe.characterType()),
 								stringSymbolicType));
-		stringDataToStringFunction = universe.symbolicConstant(
-				universe.stringObject("stringDataToString"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						stringSymbolicType));
+		stringDataToStringFunction = universe
+				.symbolicConstant(stringDataToString,
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								stringSymbolicType));
 		pointerToStringFunction = universe
 				.symbolicConstant(
-						universe.stringObject("pointerToString"), universe
+						pointerToString, universe
 								.functionType(
 										Arrays.asList(stringSymbolicType,
 												typeFactory
@@ -311,28 +326,36 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	 * abstract functions to convert a string to a data of certain type.
 	 */
 	private void createStringToDataFunctions() {
-		stringToIntFunction = universe.symbolicConstant(
-				universe.stringObject("stringToInt"),
+		StringObject stringToInt = ModelConfiguration
+				.getFunctionConstantName(universe, "stringToInt");
+		StringObject stringToDouble = ModelConfiguration
+				.getFunctionConstantName(universe, "stringToDouble");
+		StringObject stringToChar = ModelConfiguration
+				.getFunctionConstantName(universe, "stringToChar");
+		StringObject stringToStringData = ModelConfiguration
+				.getFunctionConstantName(universe, "stringToStringData");
+		StringObject stringToPointer = ModelConfiguration
+				.getFunctionConstantName(universe, "stringToPointer");
+
+		stringToIntFunction = universe.symbolicConstant(stringToInt,
 				universe.functionType(
 						Arrays.asList(stringSymbolicType, stringSymbolicType),
 						universe.integerType()));
-		stringToDoubleFunction = universe.symbolicConstant(
-				universe.stringObject("stringToDouble"),
+		stringToDoubleFunction = universe.symbolicConstant(stringToDouble,
 				universe.functionType(
 						Arrays.asList(stringSymbolicType, stringSymbolicType),
 						universe.realType()));
-		stringToCharFunction = universe.symbolicConstant(
-				universe.stringObject("stringToChar"),
+		stringToCharFunction = universe.symbolicConstant(stringToChar,
 				universe.functionType(
 						Arrays.asList(stringSymbolicType, stringSymbolicType),
 						universe.characterType()));
-		stringToStringDataFunction = universe.symbolicConstant(
-				universe.stringObject("stringToStringData"),
-				universe.functionType(
-						Arrays.asList(stringSymbolicType, stringSymbolicType),
-						stringSymbolicType));
-		stringToPointerFunction = universe.symbolicConstant(
-				universe.stringObject("stringToPointer"),
+		stringToStringDataFunction = universe
+				.symbolicConstant(stringToStringData,
+						universe.functionType(
+								Arrays.asList(stringSymbolicType,
+										stringSymbolicType),
+								stringSymbolicType));
+		stringToPointerFunction = universe.symbolicConstant(stringToPointer,
 				universe.functionType(
 						Arrays.asList(stringSymbolicType, stringSymbolicType),
 						typeFactory.pointerSymbolicType()));
@@ -1079,8 +1102,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 							Arrays.asList(
 									universe.stringExpression(formatString),
 									argumentValues[dataIndex++]));
-				fileContents = appendStringToArray(fileContents,
+				eval = appendStringToArray(state, fileContents,
 						newStringExpression);
+				fileContents = eval.value;
+				state = eval.state;
 			}
 			fileObject = universe.tupleWrite(fileObject, oneObject,
 					fileContents);
@@ -1202,8 +1227,10 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 				.arrayType(universe.characterType());
 		SymbolicFunctionType funcType = universe.functionType(
 				Arrays.asList(stringSymType, stringSymType), arrayType);
-		SymbolicConstant charsToString = universe.symbolicConstant(
-				universe.stringObject("charsToString"), funcType);
+		StringObject charToStringName = ModelConfiguration
+				.getFunctionConstantName(universe, "charsToString");
+		SymbolicConstant charsToString = universe
+				.symbolicConstant(charToStringName, funcType);
 		return charsToString;
 	}
 
@@ -1221,17 +1248,19 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 	 *         <code>extent(a) - 2</code> as strArray, cell
 	 *         <code>extent(a) - 1</code> stores the element newString.
 	 */
-	private SymbolicExpression appendStringToArray(SymbolicExpression strArray,
-			SymbolicExpression newString) {
+	private Evaluation appendStringToArray(State state,
+			SymbolicExpression strArray, SymbolicExpression newString) {
 		// If the string array is non-concrete, use array lambda and conditional
 		// expression to represent the result:
 		if (strArray.operator() != SymbolicOperator.ARRAY) {
 			NumericExpression oldLength = universe.length(strArray);
 			NumericExpression newLength = universe.add(one,
 					universe.length(strArray));
-			NumericSymbolicConstant i = (NumericSymbolicConstant) universe
-					.symbolicConstant(universe.stringObject("i"),
+			Pair<State, SymbolicConstant> freshSymbol = stateFactory
+					.getFreshSymbol(state,
+							ModelConfiguration.HAVOC_PREFIX_INDEX,
 							universe.integerType());
+			NumericSymbolicConstant i = (NumericSymbolicConstant) freshSymbol.right;
 			BooleanExpression cond = universe.lessThan(i, oldLength);
 			// Here is a trick: The SARL conditional operation requires that the
 			// trueExpression has the same value as the falseExpression. But the
@@ -1245,11 +1274,13 @@ public class LibstdioExecutor extends BaseLibraryExecutor
 			SymbolicCompleteArrayType newArrayType = universe
 					.arrayType(stringSymbolicType, newLength);
 
+			state = freshSymbol.left;
 			lambdaFunc = universe.lambda(i, lambdaFunc);
-			return universe.arrayWrite(
-					universe.arrayLambda(newArrayType, lambdaFunc), oldLength,
-					newString);
+			return new Evaluation(state,
+					universe.arrayWrite(
+							universe.arrayLambda(newArrayType, lambdaFunc),
+							oldLength, newString));
 		} else
-			return universe.append(strArray, newString);
+			return new Evaluation(state, universe.append(strArray, newString));
 	}
 }
