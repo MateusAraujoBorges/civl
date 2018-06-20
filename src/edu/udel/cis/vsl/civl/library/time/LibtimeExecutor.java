@@ -22,7 +22,6 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
-import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -49,21 +48,16 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 		if (tmType != null)
 			this.tmSymbolicType = tmType.getDynamicType(universe);
 		this.stringSymbolicType = universe.arrayType(universe.characterType());
-		if (tmType != null) {
-			StringObject localtimeFuncName = ModelConfiguration
-					.getFunctionConstantName(universe, "localtime");
-
-			this.localtimeFunc = universe.symbolicConstant(localtimeFuncName,
-					universe.functionType(Arrays.asList(universe.realType()),
-							this.tmSymbolicType));
-		}
-		if (tmType != null) {
-			StringObject strftimeFuncName = ModelConfiguration
-					.getFunctionConstantName(universe, "strftime");
-
+		if (tmType != null)
+			this.localtimeFunc = universe
+					.symbolicConstant(universe.stringObject("localtime"),
+							universe.functionType(
+									Arrays.asList(universe.realType()),
+									this.tmSymbolicType));
+		if (tmType != null)
 			this.tmToStrFunc = universe
 					.symbolicConstant(
-							strftimeFuncName, universe
+							universe.stringObject("strftime"), universe
 									.functionType(
 											Arrays.asList(
 													universe.integerType(),
@@ -71,14 +65,10 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 															.pointerSymbolicType(),
 													this.tmSymbolicType),
 											this.stringSymbolicType));
-		}
-		if (tmType != null) {
-			StringObject strftimeSizeFuncName = ModelConfiguration
-					.getFunctionConstantName(universe, "strftimeSize");
-
+		if (tmType != null)
 			this.tmToStrSizeFunc = universe
 					.symbolicConstant(
-							strftimeSizeFuncName, universe
+							universe.stringObject("strftimeSize"), universe
 									.functionType(
 											Arrays.asList(
 													universe.integerType(),
@@ -86,7 +76,6 @@ public class LibtimeExecutor extends BaseLibraryExecutor
 															.pointerSymbolicType(),
 													this.tmSymbolicType),
 											universe.integerType()));
-		}
 	}
 
 	@Override

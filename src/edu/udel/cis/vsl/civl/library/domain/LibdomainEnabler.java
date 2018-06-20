@@ -42,7 +42,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
-import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
@@ -50,11 +49,6 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
 public class LibdomainEnabler extends BaseLibraryEnabler
 		implements
 			LibraryEnabler {
-
-	/**
-	 * The name of the tuple type for domain decomposition:
-	 */
-	private static final String DOMAIN_DECOMPOSITION_TUPLE_NAME = "$domain_decomposition";
 
 	public LibdomainEnabler(String name, Enabler primaryEnabler,
 			Evaluator evaluator, ModelFactory modelFactory,
@@ -197,8 +191,6 @@ public class LibdomainEnabler extends BaseLibraryEnabler
 				.getDomainElementType(domain);
 		SymbolicTupleType decompType;
 		SymbolicExpression decomp;
-		StringObject domDecompTypeName = ModelConfiguration
-				.getTupleOrUnionTypeName(universe, DOMAIN_DECOMPOSITION_TUPLE_NAME);
 
 		dim = ((NumericExpression) universe.tupleRead(domain, zeroObject));
 		// the following cast should be guaranteed, dimension should always a
@@ -207,7 +199,8 @@ public class LibdomainEnabler extends BaseLibraryEnabler
 		numPartsNumber = reasoner.extractNumber(numParts);
 		numElementsNumber = reasoner
 				.extractNumber(symbolicUtil.getDomainSize(domain));
-		decompType = universe.tupleType(domDecompTypeName,
+		decompType = universe.tupleType(
+				universe.stringObject("$domain_decomposition"),
 				Arrays.asList(universe.integerType(),
 						universe.arrayType(domain.type(), numParts)));
 		if (numPartsNumber == null)

@@ -246,7 +246,7 @@ public class HeapAnalyzer {
 	 * @return The invalid heap object of the given type.
 	 */
 	SymbolicConstant invalidHeapObject(SymbolicType heapObjectType) {
-		StringObject name = ModelConfiguration.getInvalidName(universe);
+		StringObject name = universe.stringObject(ModelConfiguration.INVALID);
 
 		return universe.symbolicConstant(name, heapObjectType);
 	}

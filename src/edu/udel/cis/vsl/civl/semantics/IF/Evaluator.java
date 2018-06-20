@@ -418,32 +418,6 @@ public interface Evaluator {
 			throws UnsatisfiablePathConditionException;
 
 	/**
-	 * <p>
-	 * Creates a new array of given length, using the given type as its element
-	 * type, and each element having the given value.
-	 * </p>
-	 * 
-	 * <p>
-	 * Note that creating a new array is not state independent.
-	 * </p>
-	 * 
-	 * @param state
-	 *            the current state
-	 * @param elementType
-	 *            The type of the array element. Note necessarily the type of
-	 *            <code>commonElementValue</code>.
-	 * @param commonElementValue
-	 *            The element value of the array.
-	 * @param arrayLength
-	 *            The length of the array.
-	 * @return an {@link Evaluation} with the updated state and the new array
-	 *         value.
-	 */
-	Evaluation newArray(State state, SymbolicType elementType,
-			SymbolicExpression commonElementValue,
-			NumericExpression arrayLength);
-
-	/**
 	 * Return a new {@link ArrayToolBox}
 	 * 
 	 * @param universe

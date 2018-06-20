@@ -419,6 +419,27 @@ public interface SymbolicUtility {
 			ReferenceExpression reference);
 
 	/**
+	 * Creates a new array of given length, using the given type as its element
+	 * type, and each element having the given value.
+	 * 
+	 * @param context
+	 *            The context of the operation, i.e., the path condition of the
+	 *            current state.
+	 * @param elementValueType
+	 *            The type of the array element. Note necessarily the type of
+	 *            <code>eleValue</code>.
+	 * @param length
+	 *            The length of the array.
+	 * @param eleValue
+	 *            The element value of the array.
+	 * @return the new array of the given length, with each element initialized
+	 *         with the given symbolic expression.
+	 */
+	SymbolicExpression newArray(BooleanExpression context,
+			SymbolicType elementValueType, NumericExpression length,
+			SymbolicExpression eleValue);
+
+	/**
 	 * Returns the NULL pointer of CIVL.
 	 * 
 	 * @return The NULL pointer of CIVL.

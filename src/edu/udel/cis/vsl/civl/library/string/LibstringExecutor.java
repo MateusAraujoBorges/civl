@@ -14,7 +14,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -38,7 +37,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
-import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicFunctionType;
@@ -291,15 +289,13 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				else {
 					SymbolicFunctionType funcType;
 					SymbolicExpression func;
-					StringObject strcmpFunctionName = ModelConfiguration
-							.getFunctionConstantName(universe, "strcmp");
 
 					funcType = universe.functionType(
 							Arrays.asList(charPointer1.type(),
 									charPointer2.type()),
 							universe.integerType());
-					func = universe.symbolicConstant(strcmpFunctionName,
-							funcType);
+					func = universe.symbolicConstant(
+							universe.stringObject("strcmp"), funcType);
 					symResult = universe.apply(func,
 							Arrays.asList(charPointer1, charPointer2));
 				}
@@ -401,10 +397,9 @@ public class LibstringExecutor extends BaseLibraryExecutor
 					.arrayType(universe.characterType());
 			SymbolicFunctionType typeCastFuncType = universe.functionType(
 					Arrays.asList(rawRootVarType), ArrayOfCharType);
-			StringObject civlDyCastArrCharFuncName = ModelConfiguration
-					.getFunctionConstantName(universe, CIVL_DYCAST_ARRCHAR);
 			SymbolicExpression typeCastFunc = universe.symbolicConstant(
-					civlDyCastArrCharFuncName, typeCastFuncType);
+					universe.stringObject(CIVL_DYCAST_ARRCHAR),
+					typeCastFuncType);
 			SymbolicExpression castedRootVar = universe.apply(typeCastFunc,
 					Arrays.asList(rawRootVar));
 			// Construct arg1
@@ -413,10 +408,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 			SymbolicFunctionType funcType = universe.functionType(
 					Arrays.asList(ArrayOfCharType, universe.referenceType()),
 					universe.integerType());
-			StringObject civlStrLenFuncName = ModelConfiguration
-					.getFunctionConstantName(universe, CIVL_STRLEN);
-			SymbolicExpression func = universe
-					.symbolicConstant(civlStrLenFuncName, funcType);
+			SymbolicExpression func = universe.symbolicConstant(
+					universe.stringObject(CIVL_STRLEN), funcType);
 			SymbolicExpression symResult = universe.apply(func,
 					Arrays.asList(castedRootVar, refExpr));
 			// Add PC: 0 <= CIVL_strlen(arg0, arg1)
@@ -560,10 +553,8 @@ public class LibstringExecutor extends BaseLibraryExecutor
 				zeros.add(zeroVar);
 			zerosArray = universe.array(objectElementType, zeros);
 		} else {
-			eval = evaluator.newArray(state, objectElementType, zeroVar,
-					length);
-			zerosArray = eval.value;
-			state = eval.state;
+			zerosArray = symbolicUtil.newArray(state.getPathCondition(universe),
+					objectElementType, length, zeroVar);
 		}
 		// Calling setDataFrom to set the pointed object to zero
 		setDataRet = setDataFrom(state, pid, process, arguments[0], pointer,

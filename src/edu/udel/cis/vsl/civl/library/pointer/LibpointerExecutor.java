@@ -219,10 +219,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 						? ((SymbolicArrayType) operandType).baseType()
 						: operandType;
 
-		eval = applyCIVLOperation(state, pid, process, objs, civlOperator, one,
-				elementType, source);
-		result = eval.value;
-		state = eval.state;
+		result = applyCIVLOperation(state, pid, process, objs, civlOperator,
+				one, elementType, source);
 		writtenRet = setDataFrom(state, pid, process, arguments[3],
 				argumentValues[3], operandCount, result, false, source);
 		eval = writtenRet.left;
@@ -693,19 +691,21 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 					arguments[1].getExpressionType(), argumentValues[1]);
 			message.append(arguments[1].toString() + "=" + secondArg);
 			message.append("\nResult: \n          ");
-			message.append(firstArg.substring(1) + "="
-					+ this.symbolicAnalyzer.symbolicExpressionToString(
-							arguments[0].getSource(), state,
-							((CIVLPointerType) arguments[0].getExpressionType())
-									.baseType(),
-							first));
+			message.append(
+					firstArg.substring(1) + "="
+							+ this.symbolicAnalyzer.symbolicExpressionToString(
+									arguments[0].getSource(), state,
+									((CIVLPointerType) arguments[0]
+											.getExpressionType()).baseType(),
+									first));
 			message.append("\n          ");
-			message.append(secondArg.substring(1) + "="
-					+ this.symbolicAnalyzer.symbolicExpressionToString(
-							arguments[1].getSource(), state,
-							((CIVLPointerType) arguments[1].getExpressionType())
-									.baseType(),
-							second));
+			message.append(
+					secondArg.substring(1) + "="
+							+ this.symbolicAnalyzer.symbolicExpressionToString(
+									arguments[1].getSource(), state,
+									((CIVLPointerType) arguments[1]
+											.getExpressionType()).baseType(),
+									second));
 			state = this.reportAssertionFailure(state, pid, process, resultType,
 					message.toString(), arguments, argumentValues, source,
 					claim, 2);

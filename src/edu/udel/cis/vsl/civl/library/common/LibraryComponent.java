@@ -14,7 +14,6 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.Model;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -33,7 +32,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.ReferenceExpression;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
@@ -303,7 +301,7 @@ public abstract class LibraryComponent {
 	 * @throws UnsatisfiablePathConditionException
 	 *             when types of operands are invalid for operations.
 	 */
-	protected Evaluation applyCIVLOperation(State state, int pid,
+	protected SymbolicExpression applyCIVLOperation(State state, int pid,
 			String process, SymbolicExpression operands[], CIVLOperator CIVLOp,
 			NumericExpression count, SymbolicType elementType,
 			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
@@ -323,13 +321,10 @@ public abstract class LibraryComponent {
 			SymbolicExpression[] result = new SymbolicExpression[countStep];
 			NumericExpression totalUnits = universe.multiply(count,
 					universe.integer(countStep));
-			Pair<State, SymbolicConstant> freshSymbol = evaluator.stateFactory()
-					.getFreshSymbol(state,
-							ModelConfiguration.HAVOC_PREFIX_INDEX,
+			NumericSymbolicConstant identifier = (NumericSymbolicConstant) universe
+					.symbolicConstant(universe.stringObject("j"),
 							universe.integerType());
-			NumericSymbolicConstant identifier = (NumericSymbolicConstant) freshSymbol.right;
 
-			state = freshSymbol.left;
 			for (int w = 0; w < countStep; w++) {
 				singleOperand0[w] = universe.arrayRead(operand0,
 						universe.add(identifier, universe.integer(w)));
@@ -340,10 +335,9 @@ public abstract class LibraryComponent {
 					singleOperand1, CIVLOp, countStep, civlsource);
 			if (countStep == 1) {
 				// optimization
-				return new Evaluation(state,
-						universe.arrayLambda(
-								universe.arrayType(elementType, totalUnits),
-								universe.lambda(identifier, result[0])));
+				return universe.arrayLambda(
+						universe.arrayType(elementType, totalUnits),
+						universe.lambda(identifier, result[0]));
 			} else {
 				// When an operand contains more than one basic elements (e.g.
 				// MINLOC or MAXLOC), the return the value will be constructed
@@ -378,14 +372,14 @@ public abstract class LibraryComponent {
 				function = universe.array(elementType, result);
 				function = universe.lambda(identifier,
 						universe.arrayRead(function, identOffset));
-				return new Evaluation(state, universe.arrayLambda(
-						universe.arrayType(elementType, totalUnits), function));
+				return universe.arrayLambda(
+						universe.arrayType(elementType, totalUnits), function);
 			}
 		} else {
 			int countInt = ((IntegerNumber) concCount).intValue();
 
 			if (countInt <= 0)
-				return new Evaluation(state, universe.emptyArray(elementType));
+				return universe.emptyArray(elementType);
 
 			int totalUnits = countInt * countStep;
 			SymbolicExpression[] singleOperand0 = new SymbolicExpression[countStep];
@@ -406,7 +400,7 @@ public abstract class LibraryComponent {
 						civlsource);
 				System.arraycopy(singleResult, 0, result, i, countStep);
 			}
-			return new Evaluation(state, universe.array(elementType, result));
+			return universe.array(elementType, result);
 		}
 	}
 
@@ -847,7 +841,7 @@ public abstract class LibraryComponent {
 						pointerExpr);
 			eval.value = universe.array(eval.value.type(),
 					Arrays.asList(eval.value));
-			eval = arrayFlatten(state, pid, eval.value,
+			eval.value = arrayFlatten(state, pid, eval.value,
 					new ArrayMeasurement((SymbolicArrayType) eval.value.type()),
 					source);
 			return eval;
@@ -884,7 +878,9 @@ public abstract class LibraryComponent {
 			indices[i] = indices[indices.length - i - 1];
 			indices[indices.length - i - 1] = tmp;
 		}
-		return arraySliceRead(state, pid, rootArray, indices, count, source);
+		eval.value = arraySliceRead(state, pid, rootArray, indices, count,
+				source);
+		return eval;
 	}
 
 	/**
@@ -953,7 +949,7 @@ public abstract class LibraryComponent {
 	 * @throws UnsatisfiablePathConditionException
 	 *             When array out of bound happens.
 	 */
-	public Evaluation arraySliceRead(State state, int pid,
+	public SymbolicExpression arraySliceRead(State state, int pid,
 			SymbolicExpression array, NumericExpression indices[],
 			NumericExpression count, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
@@ -986,25 +982,19 @@ public abstract class LibraryComponent {
 					array = i < indices.length
 							? universe.arrayRead(array, indices[i])
 							: universe.arrayRead(array, zero);
-				return new Evaluation(state, symbolicAnalyzer.getSubArray(state,
-						pid, array, index, universe.add(index, count), source));
+				return symbolicAnalyzer.getSubArray(state, pid, array, index,
+						universe.add(index, count), source);
 			}
 		}
-
-		Evaluation eval = arrayFlatten(state, pid, array, arrayMeasure, source);
-
-		flattenArray = eval.value;
-		state = eval.state;
+		flattenArray = arrayFlatten(state, pid, array, arrayMeasure, source);
 		for (i = 0; i < indices.length; i++)
 			pos = universe.add(pos,
 					universe.multiply(indices[i], sliceSizes[i]));
 		// valid subscript: d < indices.length <= dimension && sliceSizes.length
 		// == dimension
 		step = i > 0 ? sliceSizes[i - 1] : sliceSizes[0];
-		return new Evaluation(state,
-				symbolicAnalyzer.getSubArray(state, pid, flattenArray, pos,
-						universe.add(pos, universe.multiply(count, step)),
-						source));
+		return symbolicAnalyzer.getSubArray(state, pid, flattenArray, pos,
+				universe.add(pos, universe.multiply(count, step)), source);
 	}
 
 	/**
@@ -1042,7 +1032,7 @@ public abstract class LibraryComponent {
 	 *            The {@link CIVLSource} related with this method call
 	 * @return
 	 */
-	public Evaluation arraySliceWrite1d(State state, int pid,
+	public SymbolicExpression arraySliceWrite1d(State state, int pid,
 			SymbolicExpression targetArray, SymbolicExpression dataArray,
 			NumericExpression index, CIVLSource source) {
 		NumericExpression dataLength = universe.length(dataArray);
@@ -1051,11 +1041,9 @@ public abstract class LibraryComponent {
 
 		// If the data array has a non-concrete length, use array lambda:
 		if (concreteDataLength == null) {
-			Pair<State, SymbolicConstant> freshSymbol = evaluator.stateFactory()
-					.getFreshSymbol(state,
-							ModelConfiguration.HAVOC_PREFIX_INDEX,
+			NumericSymbolicConstant symConst = (NumericSymbolicConstant) universe
+					.symbolicConstant(universe.stringObject("i"),
 							universe.integerType());
-			NumericSymbolicConstant symConst = (NumericSymbolicConstant) freshSymbol.right;
 			BooleanExpression hiCond = universe.lessThan(symConst,
 					universe.add(index, dataLength));
 			BooleanExpression loCond = universe.lessThanEquals(index, symConst);
@@ -1063,13 +1051,11 @@ public abstract class LibraryComponent {
 			SymbolicCompleteArrayType targetArrayType = (SymbolicCompleteArrayType) targetArray
 					.type();
 
-			state = freshSymbol.left;
 			elementLambda = universe.lambda(symConst,
 					universe.cond(universe.and(hiCond, loCond),
 							universe.arrayRead(dataArray, symConst),
 							universe.arrayRead(targetArray, symConst)));
-			return new Evaluation(state,
-					universe.arrayLambda(targetArrayType, elementLambda));
+			return universe.arrayLambda(targetArrayType, elementLambda);
 		} else {
 			int intDataLength = ((IntegerNumber) concreteDataLength).intValue();
 
@@ -1080,7 +1066,7 @@ public abstract class LibraryComponent {
 				targetArray = universe.arrayWrite(targetArray, IplusIndex,
 						universe.arrayRead(dataArray, I));
 			}
-			return new Evaluation(state, targetArray);
+			return targetArray;
 		}
 	}
 
@@ -1106,7 +1092,7 @@ public abstract class LibraryComponent {
 	 * @return casted array
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public Evaluation arrayCasting(State state, int pid,
+	public SymbolicExpression arrayCasting(State state, int pid,
 			SymbolicExpression oldArray, ArrayMeasurement oldArrayMeasurement,
 			SymbolicCompleteArrayType targetType, CIVLSource source)
 			throws UnsatisfiablePathConditionException {
@@ -1116,13 +1102,13 @@ public abstract class LibraryComponent {
 
 		// Straightforward Optimizations:
 		if (oldArray.type().equals(targetType))
-			return new Evaluation(state, oldArray);
+			return oldArray;
 		// Optimization: if oldArray is a symbolic constant, just change type:
 		if (oldArray.operator() == SymbolicOperator.SYMBOLIC_CONSTANT) {
 			SymbolicObject[] args = {oldArray.argument(1)};
 
-			return new Evaluation(state, universe.make(
-					SymbolicOperator.SYMBOLIC_CONSTANT, targetType, args));
+			return universe.make(SymbolicOperator.SYMBOLIC_CONSTANT, targetType,
+					args);
 		}
 
 		ArrayMeasurement targetArrayMeasurement = new ArrayMeasurement(
@@ -1142,13 +1128,11 @@ public abstract class LibraryComponent {
 			targetExtentNumbers[d] = extent.intValue();
 		}
 
-		Evaluation eval = arrayFlatten(state, pid, oldArray,
+		SymbolicExpression flattenArray = arrayFlatten(state, pid, oldArray,
 				oldArrayMeasurement, source);
-		SymbolicExpression flattenArray = eval.value;
 
-		eval.value = flattenToMultiDimensionalArray(targetExtentNumbers,
+		return flattenToMultiDimensionalArray(targetExtentNumbers,
 				oldArrayMeasurement.baseType, flattenArray);
-		return eval;
 	}
 
 	/**
@@ -1254,7 +1238,7 @@ public abstract class LibraryComponent {
 	 * @return
 	 * @throws UnsatisfiablePathConditionException
 	 */
-	public Evaluation arrayFlatten(State state, int pid,
+	public SymbolicExpression arrayFlatten(State state, int pid,
 			SymbolicExpression array, ArrayMeasurement arrayMeasurement,
 			CIVLSource civlsource) throws UnsatisfiablePathConditionException {
 		Queue<SymbolicExpression> subTreeQueue = new LinkedList<>();
@@ -1295,7 +1279,7 @@ public abstract class LibraryComponent {
 							universe.arrayRead(array, universe.integer(j)));
 			}
 		}
-		return new Evaluation(state, universe.array(baseType, subTreeQueue));
+		return universe.array(baseType, subTreeQueue);
 	}
 
 	/**
@@ -1357,7 +1341,6 @@ public abstract class LibraryComponent {
 		NumericExpression i;
 		BooleanExpression claim;
 		Reasoner reasoner = universe.reasoner(state.getPathCondition(universe));
-		Evaluation eval;
 
 		dataSize = universe.length(dataSequence);
 		// Direct assignment conditions:
@@ -1374,21 +1357,17 @@ public abstract class LibraryComponent {
 				return new Evaluation(state, dataSequence);
 		} // TODO: what if the length of dataSize is non-concrete and cannot be
 			// decided by reasoner?
-		eval = arrayFlatten(state, pid, array,
+		flattenArray = arrayFlatten(state, pid, array,
 				new ArrayMeasurement((SymbolicArrayType) array.type()), source);
-		state = eval.state;
-		flattenArray = eval.value;
 		i = startPos;
 
 		Number dataSizeConcrete = reasoner.extractNumber(dataSize);
 
 		if (dataSizeConcrete == null) {
 			// TODO: only if flattenArray has dimension 1:
-			Pair<State, SymbolicConstant> freshSymbol = evaluator.stateFactory()
-					.getFreshSymbol(state,
-							ModelConfiguration.HAVOC_PREFIX_INDEX,
+			NumericSymbolicConstant idx = (NumericSymbolicConstant) universe
+					.symbolicConstant(universe.stringObject("i"),
 							universe.integerType());
-			NumericSymbolicConstant idx = (NumericSymbolicConstant) freshSymbol.right;
 			BooleanExpression condition = universe.and(
 					universe.lessThanEquals(startPos, idx),
 					universe.lessThan(idx, universe.add(startPos, dataSize)));
@@ -1397,7 +1376,6 @@ public abstract class LibraryComponent {
 							universe.subtract(idx, startPos)),
 					universe.arrayRead(flattenArray, idx));
 
-			state = freshSymbol.left;
 			flattenArray = universe.arrayLambda(
 					(SymbolicCompleteArrayType) flattenArray.type(),
 					universe.lambda(idx, function));
@@ -1415,9 +1393,10 @@ public abstract class LibraryComponent {
 					elementInDataArray);
 			i = universe.add(i, one);
 		}
-		return arrayCasting(state, pid, flattenArray,
+		flattenArray = arrayCasting(state, pid, flattenArray,
 				new ArrayMeasurement((SymbolicArrayType) flattenArray.type()),
 				(SymbolicCompleteArrayType) array.type(), source);
+		return new Evaluation(state, flattenArray);
 	}
 
 	/**
@@ -1449,7 +1428,7 @@ public abstract class LibraryComponent {
 	 *            The {@link CIVLSource} corresponding to this method call
 	 * @return A flattened array
 	 */
-	private Evaluation arrayLambdaFlatten2(State state,
+	private SymbolicExpression arrayLambdaFlatten2(State state,
 			SymbolicExpression array, NumericExpression[] arraySliceSizes,
 			NumericExpression[] arrayExtents, CIVLSource civlsource) {
 		SymbolicCompleteArrayType arrayType = (SymbolicCompleteArrayType) array
@@ -1468,22 +1447,21 @@ public abstract class LibraryComponent {
 		arrayType = (SymbolicCompleteArrayType) array.type();
 		newDim = arrayType.dimensions();
 		if (newDim == 1)
-			return new Evaluation(state, array);
+			return array;
 		if (newDim < dim) {
 			arraySliceSizes = Arrays.copyOfRange(arraySliceSizes, dim - newDim,
 					dim);
 			dim = newDim;
 		}
 		// end of pre-process
-		Pair<State, SymbolicConstant> freshSymbol = evaluator.stateFactory()
-				.getFreshSymbol(state, ModelConfiguration.HAVOC_PREFIX_INDEX,
+
+		NumericSymbolicConstant symConst = (NumericSymbolicConstant) universe
+				.symbolicConstant(universe.stringObject("i"),
 						universe.integerType());
-		NumericSymbolicConstant symConst = (NumericSymbolicConstant) freshSymbol.right;
 		NumericExpression extent = arrayType.extent();
 		NumericExpression index = symConst;
 		SymbolicExpression arrayReadFunc = array;
 
-		state = freshSymbol.left;
 		for (int d = 0; d < dim; d++) {
 			arrayReadFunc = universe.arrayRead(arrayReadFunc,
 					universe.divide(index, arraySliceSizes[d]));
@@ -1491,8 +1469,8 @@ public abstract class LibraryComponent {
 		}
 		arrayType = universe.arrayType(arrayReadFunc.type(),
 				universe.multiply(arraySliceSizes[0], extent));
-		return new Evaluation(state, universe.arrayLambda(arrayType,
-				universe.lambda(symConst, arrayReadFunc)));
+		return universe.arrayLambda(arrayType,
+				universe.lambda(symConst, arrayReadFunc));
 	}
 
 	/**
