@@ -29,6 +29,7 @@ import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
@@ -36,6 +37,11 @@ import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
 public class LibdomainExecutor extends BaseLibraryExecutor
 		implements
 			LibraryExecutor {
+
+	/**
+	 * The name of the tuple type for domain decomposition:
+	 */
+	private static final String DOMAIN_DECOMPOSITION_TUPLE_NAME = "$domain_decomposition";
 
 	public LibdomainExecutor(String name, Executor primaryExecutor,
 			ModelFactory modelFactory, SymbolicUtility symbolicUtil,
@@ -209,8 +215,11 @@ public class LibdomainExecutor extends BaseLibraryExecutor
 						numParts_int);
 				break;
 		}
-		resultType = universe.tupleType(
-				universe.stringObject("$domain_decomposition"),
+
+		StringObject domDecompTypeName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, DOMAIN_DECOMPOSITION_TUPLE_NAME);
+
+		resultType = universe.tupleType(domDecompTypeName,
 				Arrays.asList(universe.integerType(),
 						universe.arrayType(domain.type(), numParts)));
 		result = universe.tuple(resultType, Arrays.asList(numParts,

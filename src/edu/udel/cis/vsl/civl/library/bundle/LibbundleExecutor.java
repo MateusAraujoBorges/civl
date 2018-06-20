@@ -7,6 +7,7 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
@@ -32,6 +33,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
@@ -110,7 +112,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 	 * and what shape it eventually will be is unknown to $bundle_pack.
 	 * </p>
 	 */
-	private static String BUNDLE_SUBARRAY_FUNCTION_NAME = "$bundle_slice";
+	private final StringObject BUNDLE_SUBARRAY_FUNCTION_NAME;
 
 	/* **************************** Constructors *************************** */
 
@@ -123,6 +125,8 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 				symbolicAnalyzer, civlConfig, libExecutorLoader,
 				libEvaluatorLoader);
 		arrayToolBox = evaluator.newArrayToolBox(universe);
+		BUNDLE_SUBARRAY_FUNCTION_NAME = ModelConfiguration
+				.getFunctionConstantName(universe, "$bundle_slice");
 	}
 
 	/*
@@ -372,8 +376,8 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		funcType = universe.functionType(Arrays.asList(array.type(),
 				indicesArray.type(), universe.integerType()), outputType);
 
-		SymbolicExpression symConst = universe.symbolicConstant(
-				universe.stringObject(BUNDLE_SUBARRAY_FUNCTION_NAME), funcType);
+		SymbolicExpression symConst = universe
+				.symbolicConstant(BUNDLE_SUBARRAY_FUNCTION_NAME, funcType);
 
 		return universe.apply(symConst,
 				Arrays.asList(array, indicesArray, count));
@@ -851,12 +855,11 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 	 *         function {@link #BUNDLE_SUBARRAY_FUNCTION_NAME}
 	 * 
 	 */
-	private static boolean isBundleSubarrayFunction(SymbolicExpression expr) {
+	private boolean isBundleSubarrayFunction(SymbolicExpression expr) {
 		if (expr.operator() == SymbolicOperator.APPLY) {
 			SymbolicConstant funcIdent = (SymbolicConstant) expr.argument(0);
 
-			return funcIdent.name().getString()
-					.equals(BUNDLE_SUBARRAY_FUNCTION_NAME);
+			return funcIdent.name() == BUNDLE_SUBARRAY_FUNCTION_NAME;
 		}
 		return false;
 	}

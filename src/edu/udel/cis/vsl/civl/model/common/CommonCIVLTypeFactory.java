@@ -53,6 +53,7 @@ import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
@@ -222,34 +223,48 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 				universe.integerType());
 		LinkedList<SymbolicType> pointerComponents = new LinkedList<>();
 		LinkedList<SymbolicType> fpointerComponents = new LinkedList<>();
+		StringObject processTupleTypeName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, "process");
+		StringObject stateTupleTypeName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, "state");
+		StringObject dynamicTupleTypeName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, "dynamicType");
+		StringObject pointerTupleTypeName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, "pointer");
+		StringObject fpointerTupleTypeName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, "fpointer");
+		StringObject voidTupleTypeName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, "void");
+		StringObject regRangeTupleTypeName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, "$regular_range");
 
 		this.config = config;
 		this.universe = universe;
 		scopeType = (CIVLScopeType) primitiveType(PrimitiveTypeKind.SCOPE,
 				null);
 		scopeSymbolicType = scopeType.getDynamicType(universe);
-		processSymbolicType = universe
-				.tupleType(universe.stringObject("process"), intTypeSingleton);
+		processSymbolicType = universe.tupleType(processTupleTypeName,
+				intTypeSingleton);
 		processType = primitiveType(PrimitiveTypeKind.PROCESS,
 				processSymbolicType);
-		stateSymbolicType = universe.tupleType(universe.stringObject("state"),
+		stateSymbolicType = universe.tupleType(stateTupleTypeName,
 				intTypeSingleton);
 		stateType = primitiveType(PrimitiveTypeKind.STATE, stateSymbolicType);
-		dynamicSymbolicType = universe.tupleType(
-				universe.stringObject("dynamicType"), intTypeSingleton);
+		dynamicSymbolicType = universe.tupleType(dynamicTupleTypeName,
+				intTypeSingleton);
 		dynamicType = primitiveType(PrimitiveTypeKind.DYNAMIC,
 				dynamicSymbolicType);
 		pointerComponents.add(scopeType.getDynamicType(universe));
 		pointerComponents.add(universe.integerType());
 		pointerComponents.add(universe.referenceType());
-		pointerSymbolicType = universe
-				.tupleType(universe.stringObject("pointer"), pointerComponents);
+		pointerSymbolicType = universe.tupleType(pointerTupleTypeName,
+				pointerComponents);
 		fpointerComponents.add(scopeType.getDynamicType(universe));
 		fpointerComponents.add(universe.integerType());
-		functionPointerSymbolicType = universe.tupleType(
-				universe.stringObject("fpointer"), fpointerComponents);
-		this.voidSymbolicType = universe
-				.tupleType(universe.stringObject("void"), new ArrayList<>());
+		functionPointerSymbolicType = universe.tupleType(fpointerTupleTypeName,
+				fpointerComponents);
+		this.voidSymbolicType = universe.tupleType(voidTupleTypeName,
+				new ArrayList<>());
 		this.voidType = primitiveType(PrimitiveTypeKind.VOID, voidSymbolicType);
 		this.integerType = primitiveType(PrimitiveTypeKind.INT,
 				universe.integerType());
@@ -260,8 +275,7 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 		this.charType = primitiveType(PrimitiveTypeKind.CHAR,
 				universe.characterType());
 		this.rangeType = new CommonRegularRangeType(
-				new CommonIdentifier(this.systemSource,
-						universe.stringObject("$regular_range")),
+				new CommonIdentifier(systemSource, regRangeTupleTypeName),
 				universe, integerType);
 		this.systemTypes.put(ModelConfiguration.RANGE_TYPE, rangeType);
 
@@ -298,7 +312,7 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 		SymbolicTupleType dynamicType = computeDynamicHeapType(mallocs);
 		SymbolicExpression initialValue = computeInitialHeapValue(dynamicType);
 		SymbolicExpression undefinedValue = universe.symbolicConstant(
-				universe.stringObject("UNDEFINED"), dynamicType);
+				ModelConfiguration.getUndefinedName(universe), dynamicType);
 
 		heapType.complete(mallocs, dynamicType, initialValue, undefinedValue);
 		this.heapType = heapType;
@@ -495,6 +509,8 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 		LinkedList<SymbolicType> includedTypes = new LinkedList<SymbolicType>();
 		SymbolicUnionType dynamicType;
 		Set<SymbolicType> seenTypes = new HashSet<>();
+		StringObject bundleUnionName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, "$bundle");
 
 		for (SymbolicType type : elementTypes) {
 			if (!seenTypes.contains(type)) {
@@ -509,8 +525,7 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 				seenTypes.add(arrayType);
 			}
 		}
-		dynamicType = universe.unionType(universe.stringObject("$bundle"),
-				includedTypes);
+		dynamicType = universe.unionType(bundleUnionName, includedTypes);
 		bundleType.complete(eleTypes, includedTypes, dynamicType);
 		this.bundleType = bundleType;
 		this.bundleSymbolicType = dynamicType;
@@ -529,6 +544,8 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 			Iterable<MallocStatement> mallocStatements) {
 		LinkedList<SymbolicType> fieldTypes = new LinkedList<SymbolicType>();
 		SymbolicTupleType result;
+		StringObject heapTupleTypeName = ModelConfiguration
+				.getTupleOrUnionTypeName(universe, "$heap");
 
 		for (MallocStatement statement : mallocStatements) {
 			SymbolicType fieldType = universe
@@ -536,7 +553,7 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 
 			fieldTypes.add(fieldType);
 		}
-		result = universe.tupleType(universe.stringObject("$heap"), fieldTypes);
+		result = universe.tupleType(heapTupleTypeName, fieldTypes);
 		return result;
 	}
 
@@ -611,14 +628,14 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 			return universe.integer(this.config.getIntBit());
 		}
 
-		String name = "SIZEOF_" + kind;
+		StringObject sizeofName = ModelConfiguration
+				.getSizeofPrimitiveTypeConstantName(universe, kind);
 		NumericSymbolicConstant result = (NumericSymbolicConstant) universe
-				.symbolicConstant(universe.stringObject(name),
-						universe.integerType());
+				.symbolicConstant(sizeofName, universe.integerType());
 
 		ModelConfiguration.SIZEOF_VARS.add(result);
-		if (!ModelConfiguration.RESERVE_NAMES.contains(name))
-			ModelConfiguration.RESERVE_NAMES.add(name);
+		if (!ModelConfiguration.RESERVE_NAMES.contains(sizeofName.getString()))
+			ModelConfiguration.RESERVE_NAMES.add(sizeofName.getString());
 		return result;
 	}
 

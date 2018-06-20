@@ -7,6 +7,7 @@ import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
 import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
+import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLScopeType;
@@ -18,10 +19,12 @@ import edu.udel.cis.vsl.civl.semantics.IF.LibraryExecutorLoader;
 import edu.udel.cis.vsl.civl.semantics.IF.SymbolicAnalyzer;
 import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
+import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.IntObject;
@@ -317,12 +320,14 @@ public class LibcollateExecutor extends BaseLibraryExecutor
 		statusArray = universe.tupleRead(gstate, gcollate_state_status);
 		nprocs = universe.length(statusArray);
 
-		NumericSymbolicConstant i = (NumericSymbolicConstant) universe
-				.symbolicConstant(universe.stringObject("i"),
-						universe.integerType());
+		Pair<State, SymbolicConstant> freshSymbol = stateFactory.getFreshSymbol(
+				state, ModelConfiguration.HAVOC_PREFIX_INDEX,
+				universe.integerType());
+		NumericSymbolicConstant i = (NumericSymbolicConstant) freshSymbol.right;
 		BooleanExpression pred;
 		SymbolicExpression status = universe.arrayRead(statusArray, i);
 
+		state = freshSymbol.left;
 		// forall i : [0, nprocs) that status[i] == 1 (ARRIVED) || status[i] ==
 		// 2 (DEPARTED):
 		pred = universe.equals(status, one);
