@@ -5,6 +5,7 @@ import static edu.udel.cis.vsl.civl.TestConstants.OMP_NO_SIMP;
 import static edu.udel.cis.vsl.civl.TestConstants.OMP_THREAD_TWO;
 import static edu.udel.cis.vsl.civl.TestConstants.QUIET;
 import static edu.udel.cis.vsl.civl.TestConstants.VERIFY;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -91,6 +92,18 @@ public class OpenMP2CIVLTransformerTest {
 				filename(simpleDir, "omp_reduce.c")));
 	}
 
+	@Test
+	public void omp_reduce_bad_undecl_id() {
+		assertFalse(ui.run(VERIFY, OMP_NO_SIMP, OMP_THREAD_TWO, QUIET,
+				filename(simpleDir, "omp_reduce_bad.c")));
+	}
+
+	@Test
+	public void omp_reduce_bad_syntax_err() {
+		assertFalse(ui.run(VERIFY, OMP_NO_SIMP, OMP_THREAD_TWO, QUIET,
+				filename(simpleDir, "omp_reduce_bad2.c")));
+	}
+	
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
 		ui = null;
