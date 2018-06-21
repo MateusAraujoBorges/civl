@@ -144,7 +144,6 @@ import edu.udel.cis.vsl.sarl.number.IF.Numbers;
 public class CommonEvaluator implements Evaluator {
 
 	private static int INTEGER_BIT_LENGTH = 32;
-	private static String ABSTRACT_FUNCTION_PREFIX = "_uf_";
 	public static String POINTER_TO_INT_FUNCTION = "_pointer2Int";
 	public static String INT_TO_POINTER_FUNCTION = "_int2Pointer";
 	public static String CHAR_TO_INT_FUNCTION = "_char2int";
@@ -456,10 +455,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            false only when executing $copy function.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @return A possibly new state and the value of memory space pointed by the
 	 *         pointer.
@@ -568,10 +567,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            The pointer to be dereferenced.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @param source
 	 *            The {@link CIVLSource} associates with the dereference
@@ -696,10 +695,11 @@ public class CommonEvaluator implements Evaluator {
 			arguments.add(eval.value);
 		}
 		functionType = universe.functionType(argumentTypes, returnType);
-		if (functionName.startsWith("$"))
-			functionName = ABSTRACT_FUNCTION_PREFIX + functionName;
-		functionExpression = universe.symbolicConstant(
-				universe.stringObject(functionName), functionType);
+
+		StringObject funcName = ModelConfiguration
+				.getAbstractFunctionName(universe, functionName);
+
+		functionExpression = universe.symbolicConstant(funcName, functionType);
 		functionApplication = universe.apply(functionExpression, arguments);
 		result = new Evaluation(state, functionApplication);
 		return result;
@@ -1295,8 +1295,11 @@ public class CommonEvaluator implements Evaluator {
 			derivativeName += partial.left.name().name()
 					+ partial.right.value();
 		}
-		functionExpression = universe.symbolicConstant(
-				universe.stringObject(derivativeName), functionType);
+
+		StringObject funcName = ModelConfiguration
+				.getAbstractFunctionName(universe, derivativeName);
+
+		functionExpression = universe.symbolicConstant(funcName, functionType);
 		functionApplication = universe.apply(functionExpression, arguments);
 		result = new Evaluation(state, functionApplication);
 		return result;
@@ -4044,11 +4047,13 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger.logSimpleError(source, state, process,
-							this.symbolicAnalyzer.stateInformation(state),
-							ErrorKind.OTHER,
-							"Try to obtain a string from a sequence of char has length"
-									+ " less than or equal to one");
+					this.errorLogger
+							.logSimpleError(source, state, process,
+									this.symbolicAnalyzer.stateInformation(
+											state),
+									ErrorKind.OTHER,
+									"Try to obtain a string from a sequence of char has length"
+											+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;
