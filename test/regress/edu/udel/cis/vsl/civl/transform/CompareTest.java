@@ -61,6 +61,53 @@ public class CompareTest {
 	}
 
 	@Test
+	public void dotMpiPthreadsWeakScaling() {
+		assertTrue(ui.run(COMPARE, QUIET, "-inputVECLEN=5", SPEC,
+				"-inputMAXTHRDS=2",
+				filename("dot", "mpithreads_threads_weak_scaling.c"), IMPL,
+				"-input_mpi_nprocs=2",
+				filename("dot", "mpithreads_mpi_weak_scaling.c")));
+	}
+
+	@Test
+	public void dotMpiSerialWeakScaling() {
+		assertTrue(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
+				filename("dot", "mpithreads_serial.c"), IMPL,
+				"-input_mpi_nprocs=2",
+				filename("dot", "mpithreads_mpi_weak_scaling.c")));
+	}
+
+	@Test
+	public void dotPthreadsSerialWeakScaling() {
+		assertTrue(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
+				filename("dot", "mpithreads_serial.c"), IMPL,
+				"-inputMAXTHRDS=2",
+				filename("dot", "mpithreads_threads_weak_scaling.c")));
+	}
+
+	@Test
+	public void dotHybridSerialWeakScaling() {
+		assertTrue(ui.run(COMPARE, QUIET, "-inputVECLEN=5", SPEC,
+				filename("dot", "mpithreads_serial.c"), IMPL,
+				"-input_mpi_nprocs=2 -inputMAXTHRDS=2",
+				filename("dot", "mpithreads_both_weak_scaling.c")));
+	}
+
+	@Test
+	public void dotMpiHybridWeakScaling() {
+		assertTrue(ui.run(COMPARE, QUIET, "-inputVECLEN=4 -input_mpi_nprocs=2",
+				SPEC, filename("dot", "mpithreads_mpi_weak_scaling.c"), IMPL,
+				"-inputMAXTHRDS=2",
+				filename("dot", "mpithreads_both_weak_scaling.c")));
+	}
+
+	@Test
+	public void outputfiles() {
+		assertTrue(ui.run(COMPARE, QUIET, SPEC, filename("io", "out1.c"), IMPL,
+				filename("io", "out2.c")));
+	}
+
+	@Test
 	public void dotMpiPthreads() {
 		assertTrue(ui.run(COMPARE, QUIET, "-inputVECLEN=5", SPEC,
 				"-inputMAXTHRDS=2", filename("dot", "mpithreads_threads.c"),
@@ -77,21 +124,34 @@ public class CompareTest {
 
 	@Test
 	public void dotMpiSerial() {
-		assertTrue(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
+		// False because each process in the concurrent program is working on an
+		// array with the same length of the serial one, then the total result
+		// of the concurrent program is larger than the serial one.
+		assertFalse(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
+				filename("dot", "mpithreads_serial.c"), IMPL,
+				"-input_mpi_nprocs=2", filename("dot", "mpithreads_mpi.c")));
+
+		assertFalse(ui.run(REPLAY, QUIET, NO_PRINTF, SPEC,
 				filename("dot", "mpithreads_serial.c"), IMPL,
 				"-input_mpi_nprocs=2", filename("dot", "mpithreads_mpi.c")));
 	}
 
 	@Test
 	public void dotPthreadsSerial() {
-		assertTrue(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
+		// False because each process in the concurrent program is working on an
+		// array with the same length of the serial one, then the total result
+		// of the concurrent program is larger than the serial one.
+		assertFalse(ui.run(COMPARE, NO_PRINTF, QUIET, "-inputVECLEN=5", SPEC,
 				filename("dot", "mpithreads_serial.c"), IMPL,
 				"-inputMAXTHRDS=2", filename("dot", "mpithreads_threads.c")));
 	}
 
 	@Test
 	public void dotHybridSerial() {
-		assertTrue(ui.run(COMPARE, QUIET, "-inputVECLEN=5", SPEC,
+		// False because each process in the concurrent program is working on an
+		// array with the same length of the serial one, then the total result
+		// of the concurrent program is larger than the serial one.
+		assertFalse(ui.run(COMPARE, QUIET, "-inputVECLEN=5", SPEC,
 				filename("dot", "mpithreads_serial.c"), IMPL,
 				"-input_mpi_nprocs=2 -inputMAXTHRDS=2",
 				filename("dot", "mpithreads_both.c")));
@@ -99,15 +159,12 @@ public class CompareTest {
 
 	@Test
 	public void dotMpiHybrid() {
-		assertTrue(ui.run(COMPARE, QUIET, "-inputVECLEN=4 -input_mpi_nprocs=2",
+		// False because each process is working on an array with the same size,
+		// and the hybrid one has more processes than the mpi one, then the
+		// result of the hybrid one is larger than just the mpi one.
+		assertFalse(ui.run(COMPARE, QUIET, "-inputVECLEN=4 -input_mpi_nprocs=2",
 				SPEC, filename("dot", "mpithreads_mpi.c"), IMPL,
 				"-inputMAXTHRDS=2", filename("dot", "mpithreads_both.c")));
-	}
-
-	@Test
-	public void outputfiles() {
-		assertTrue(ui.run(COMPARE, QUIET, SPEC, filename("io", "out1.c"), IMPL,
-				filename("io", "out2.c")));
 	}
 
 	@AfterClass
