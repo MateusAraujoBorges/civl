@@ -47,8 +47,6 @@ public class TransformerFactory {
 
 	private Cuda2CIVLTransformer cuda2CivlTransformer;
 
-	private SvcompUnPPTransformer svcompUnPPTransformer;
-
 	// private SvcompTransformer svcompTransformer;
 
 	private ContractTransformer contractTransformer;
@@ -210,20 +208,6 @@ public class TransformerFactory {
 				if (cuda2CivlTransformer == null)
 					cuda2CivlTransformer = new Cuda2CIVLTransformer(astFactory);
 				return cuda2CivlTransformer;
-			}
-		};
-	}
-
-	public TransformRecord getSvcompUnPPTransformerRecord() {
-		return new TransformRecord(SvcompUnPPTransformer.CODE,
-				SvcompUnPPTransformer.LONG_NAME,
-				SvcompUnPPTransformer.SHORT_DESCRIPTION) {
-			@Override
-			public Transformer create(ASTFactory astFactory) {
-				if (svcompUnPPTransformer == null)
-					svcompUnPPTransformer = new SvcompUnPPTransformer(
-							astFactory);
-				return svcompUnPPTransformer;
 			}
 		};
 	}
