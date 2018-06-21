@@ -144,7 +144,6 @@ import edu.udel.cis.vsl.sarl.number.IF.Numbers;
 public class CommonEvaluator implements Evaluator {
 
 	private static int INTEGER_BIT_LENGTH = 32;
-	private static String ABSTRACT_FUNCTION_PREFIX = "_uf_";
 	public static String POINTER_TO_INT_FUNCTION = "_pointer2Int";
 	public static String INT_TO_POINTER_FUNCTION = "_int2Pointer";
 	public static String CHAR_TO_INT_FUNCTION = "_char2int";
@@ -256,13 +255,6 @@ public class CommonEvaluator implements Evaluator {
 	 * for pointers, like heap object reachability, reachable memory units, etc.
 	 */
 	private SymbolicTupleType functionPointerType;
-
-	/**
-	 * An uninterpreted function used to evaluate "sizeof" on a type. It takes
-	 * as input one expression of type dynamicType and returns an integer
-	 * expression.
-	 */
-	private SymbolicExpression sizeofFunction;
 
 	/**
 	 * The unique state factory used in the system.
@@ -396,7 +388,6 @@ public class CommonEvaluator implements Evaluator {
 		zeroR = universe.zeroReal();
 		one = universe.integer(1);
 		nullExpression = universe.nullExpression();
-		sizeofFunction = symbolicUtil.sizeofFunction();
 		bigOFunction = universe.symbolicConstant(universe.stringObject("BIG_O"),
 				universe.functionType(
 						new Singleton<SymbolicType>(universe.realType()),
@@ -664,11 +655,10 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		TypeEvaluation typeEval = getDynamicType(state, pid, type, source,
 				isDeclaration);
-		SymbolicExpression expr = symbolicUtil.expressionOfType(type,
+		SymbolicExpression expr = typeFactory.expressionOfType(type,
 				typeEval.type);
-		Evaluation result = new Evaluation(typeEval.state, expr);
 
-		return result;
+		return new Evaluation(typeEval.state, expr);
 	}
 
 	/**
@@ -705,10 +695,11 @@ public class CommonEvaluator implements Evaluator {
 			arguments.add(eval.value);
 		}
 		functionType = universe.functionType(argumentTypes, returnType);
-		if (functionName.startsWith("$"))
-			functionName = ABSTRACT_FUNCTION_PREFIX + functionName;
-		functionExpression = universe.symbolicConstant(
-				universe.stringObject(functionName), functionType);
+
+		StringObject funcName = ModelConfiguration
+				.getAbstractFunctionName(universe, functionName);
+
+		functionExpression = universe.symbolicConstant(funcName, functionType);
 		functionApplication = universe.apply(functionExpression, arguments);
 		result = new Evaluation(state, functionApplication);
 		return result;
@@ -733,7 +724,7 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		if (expression.isFieldOffset()) {
 			CIVLType structType = expression.getTypeForOffset();
-			SymbolicExpression typeValue = this.symbolicUtil.expressionOfType(
+			SymbolicExpression typeValue = typeFactory.expressionOfType(
 					structType, structType.getDynamicType(universe));
 			SymbolicExpression value = universe.apply(offsetFunction,
 					Arrays.asList(typeValue,
@@ -1304,8 +1295,11 @@ public class CommonEvaluator implements Evaluator {
 			derivativeName += partial.left.name().name()
 					+ partial.right.value();
 		}
-		functionExpression = universe.symbolicConstant(
-				universe.stringObject(derivativeName), functionType);
+
+		StringObject funcName = ModelConfiguration
+				.getAbstractFunctionName(universe, derivativeName);
+
+		functionExpression = universe.symbolicConstant(funcName, functionType);
 		functionApplication = universe.apply(functionExpression, arguments);
 		result = new Evaluation(state, functionApplication);
 		return result;
@@ -2778,8 +2772,7 @@ public class CommonEvaluator implements Evaluator {
 			SymbolicExpression value = state.valueOf(pid,
 					type.getStateVariable());
 
-			result = new TypeEvaluation(state,
-					symbolicUtil.getType(source, value));
+			result = new TypeEvaluation(state, typeFactory.getType(value));
 		} else if (type instanceof CIVLArrayType) {
 			CIVLArrayType arrayType = (CIVLArrayType) type;
 			TypeEvaluation elementTypeEval = getDynamicType(state, pid,
@@ -3942,13 +3935,14 @@ public class CommonEvaluator implements Evaluator {
 					"sizeof applied to incomplete array type", source);
 		} else {
 			NumericExpression sizeof;
+			TypeEvaluation teval = getDynamicType(state, pid, type, source,
+					false);
 
-			eval = dynamicTypeOf(state, pid, type, source, false);
-			sizeof = (NumericExpression) universe.apply(sizeofFunction,
-					new Singleton<SymbolicExpression>(eval.value));
-			eval.value = sizeof;
+			state = teval.state;
+			sizeof = typeFactory.sizeofDynamicType(teval.type);
+			eval = new Evaluation(state, sizeof);
 			eval.state = stateFactory.addToPathcondition(eval.state, pid,
-					universe.lessThan(zero, sizeof));
+					typeFactory.sizeofNonPrimitiveTypesFact());
 		}
 		return eval;
 	}

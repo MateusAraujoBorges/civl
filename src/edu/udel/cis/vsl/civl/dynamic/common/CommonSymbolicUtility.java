@@ -3,11 +3,9 @@ package edu.udel.cis.vsl.civl.dynamic.common;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 
 import edu.udel.cis.vsl.civl.dynamic.IF.SymbolicUtility;
@@ -17,11 +15,8 @@ import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
 import edu.udel.cis.vsl.civl.model.IF.CIVLTypeFactory;
 import edu.udel.cis.vsl.civl.model.IF.CIVLUnimplementedFeatureException;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLArrayType;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.state.IF.StateFactory;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
-import edu.udel.cis.vsl.civl.util.IF.Singleton;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
 import edu.udel.cis.vsl.sarl.IF.SARLException;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
@@ -91,28 +86,9 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	private NumericExpression one;
 
 	/**
-	 * The uninterpreted function sizeof.
-	 */
-	private SymbolicExpression sizeofFunction;
-
-	/**
 	 * Symbolic dynamic type.
 	 */
 	private SymbolicTupleType dynamicType;
-
-	/**
-	 * Map from symbolic type to a canonic symbolic expression of that type.
-	 */
-	private Map<SymbolicType, SymbolicExpression> typeExpressionMap = new HashMap<>();
-
-	private Map<SymbolicExpression, SymbolicType> typeExpressionMap2 = new HashMap<>();
-
-	private Map<SymbolicType, CIVLType> staticTypeMap = new HashMap<>();
-
-	/**
-	 * The map of symbolic types and their ID's.
-	 */
-	private Map<SymbolicType, NumericExpression> sizeofDynamicMap = new HashMap<>();
 
 	/**
 	 * The symbolic expression of boolean false.
@@ -167,18 +143,11 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	 */
 	public CommonSymbolicUtility(SymbolicUniverse universe,
 			ModelFactory modelFactory, StateFactory stateFactory) {
-		SymbolicType dynamicToIntType;
-
 		this.stateFactory = stateFactory;
 		this.universe = universe;
 		this.typeFactory = modelFactory.typeFactory();
 		this.heapAnalyzer = new HeapAnalyzer(universe, this);
 		dynamicType = typeFactory.dynamicSymbolicType();
-		dynamicToIntType = universe.functionType(
-				new Singleton<SymbolicType>(dynamicType),
-				universe.integerType());
-		sizeofFunction = universe.symbolicConstant(
-				universe.stringObject("SIZEOF"), dynamicToIntType);
 		this.zeroObj = universe.intObject(0);
 		this.oneObj = universe.intObject(1);
 		this.twoObj = universe.intObject(2);
@@ -577,25 +546,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public SymbolicExpression expressionOfType(CIVLType civlType,
-			SymbolicType type) {
-		SymbolicExpression result;
-
-		result = typeExpressionMap.get(type);
-		if (result == null) {
-			SymbolicExpression id = universe.integer(type.id());
-
-			result = universe.tuple(dynamicType,
-					new Singleton<SymbolicExpression>(id));
-			typeExpressionMap.put(type, result);
-			typeExpressionMap2.put(result, type);
-			if (civlType != null)
-				staticTypeMap.put(type, civlType);
-		}
-		return result;
-	}
-
-	@Override
 	public int getArrayIndex(CIVLSource source, SymbolicExpression pointer)
 			throws CIVLInternalException {
 		int int_arrayIndex;
@@ -835,55 +785,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	public ReferenceExpression referenceToHeapMemUnit(
 			SymbolicExpression pointer) {
 		return this.heapAnalyzer.referenceToHeapMemUnit(pointer);
-	}
-
-	@Override
-	public NumericExpression sizeof(CIVLSource source, CIVLType civlType,
-			SymbolicType type) {
-		NumericExpression result = sizeofDynamicMap.get(type);
-
-		if (result == null) {
-			if (type.isBoolean())
-				result = typeFactory.booleanType().getSizeof();
-			else if (type == typeFactory.dynamicSymbolicType())
-				result = typeFactory.dynamicType().getSizeof();
-			else if (type.isInteger())
-				result = typeFactory.integerType().getSizeof();
-			else if (type == typeFactory.processSymbolicType())
-				result = typeFactory.processType().getSizeof();
-			else if (type.isReal())
-				result = typeFactory.realType().getSizeof();
-			else if (type.typeKind() == SymbolicTypeKind.CHAR)
-				result = typeFactory.charType().getSizeof();
-			else if (type == typeFactory.scopeSymbolicType())
-				result = typeFactory.scopeType().getSizeof();
-			else if (type instanceof SymbolicCompleteArrayType) {
-				SymbolicCompleteArrayType arrayType = (SymbolicCompleteArrayType) type;
-
-				result = sizeof(source, civlType == null
-						? null
-						: ((CIVLArrayType) civlType).elementType(),
-						arrayType.elementType());
-				result = universe.multiply(arrayType.extent(),
-						(NumericExpression) result);
-			} else if (type instanceof SymbolicArrayType) {
-				throw new CIVLInternalException(
-						"sizeof applied to incomplete array type", source);
-			} else {
-				// wrap the type in an expression of type dynamicTYpe
-				SymbolicExpression typeExpr = expressionOfType(civlType, type);
-
-				result = (NumericExpression) universe.apply(sizeofFunction,
-						new Singleton<SymbolicExpression>(typeExpr));
-			}
-			sizeofDynamicMap.put(type, result);
-		}
-		return result;
-	}
-
-	@Override
-	public SymbolicExpression sizeofFunction() {
-		return this.sizeofFunction;
 	}
 
 	@Override
@@ -1341,16 +1242,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 	}
 
 	@Override
-	public CIVLType getStaticTypeOfDynamicType(SymbolicExpression typeId) {
-		SymbolicType dynamicType = this.typeExpressionMap2.get(typeId);
-
-		if (dynamicType != null) {
-			return this.staticTypeMap.get(dynamicType);
-		}
-		return null;
-	}
-
-	@Override
 	public boolean isRectangularDomain(SymbolicExpression domain) {
 		// a domain is the tuple (dimension, type, value)
 		return universe.tupleRead(domain, oneObj).isZero();
@@ -1413,13 +1304,6 @@ public class CommonSymbolicUtility implements SymbolicUtility {
 			}
 		}
 		return result;
-	}
-
-	@Override
-	public SymbolicType getType(CIVLSource source, SymbolicExpression expr) {
-		int id = extractIntField(source, expr, zeroObj);
-
-		return (SymbolicType) universe.objectWithId(id);
 	}
 
 	@Override

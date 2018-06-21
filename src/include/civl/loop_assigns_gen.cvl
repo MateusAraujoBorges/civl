@@ -32,8 +32,8 @@ $state_f $loop_write_set $loop_write_set_union($loop_write_set ws, $mem iter_mem
   return ws;
 }
 
-$atomic_f _Bool $loop_write_set_havoc($loop_write_set ws, $state pre_state) {
-  return $mem_havoc(ws.havocables, pre_state);
+$atomic_f _Bool $loop_write_set_havoc($loop_write_set ws) {
+  return $mem_havoc(ws.havocables);
 }
 
 /* Implementation details for widening a $loop_write_set ws: 

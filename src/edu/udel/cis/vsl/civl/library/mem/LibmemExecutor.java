@@ -494,17 +494,17 @@ public class LibmemExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		SymbolicExpression memObj = argumentValues[0];
-		SymbolicExpression stateValue = argumentValues[1];
-		State originalState = modelFactory
-				.statenullConstantValue() == stateValue
-						? state
-						: stateFactory.getStateByReference(
-								modelFactory.getStateRef(stateValue));
+		// SymbolicExpression stateValue = argumentValues[1];
+		// State originalState = modelFactory
+		// .statenullConstantValue() == stateValue
+		// ? state
+		// : stateFactory.getStateByReference(
+		// modelFactory.getStateRef(stateValue));
 		SymbolicExpression pointers[] = memObject2PointerArray(memObj);
 		BooleanExpression returnedValue = universe.trueExpression();
 
 		Pair<State, List<AssignableRefreshment>> refreshes = wsRefresher
-				.refresh(errSideEffectFreeEvaluator, originalState, state, pid,
+				.refresh(errSideEffectFreeEvaluator, state, state, pid,
 						Arrays.asList(pointers), source);
 
 		state = refreshes.left;

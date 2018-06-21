@@ -31,7 +31,6 @@ import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression.SymbolicOperator;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
-import edu.udel.cis.vsl.sarl.IF.object.IntObject;
 import edu.udel.cis.vsl.sarl.IF.object.SymbolicObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicCompleteArrayType;
@@ -182,18 +181,14 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 			CIVLSource civlSource) throws UnsatisfiablePathConditionException {
 		SymbolicObject arrayObject;
 		SymbolicExpression array;
-		NumericExpression size;
-		CIVLType baseType = typeFactory.bundleType().getStaticElementType(
-				((IntObject) argumentValues[0].argument(0)).getInt());
 
 		assert arguments.length == 1;
 		assert argumentValues[0].operator() == SymbolicOperator.UNION_INJECT;
 		arrayObject = argumentValues[0].argument(1);
 		assert arrayObject instanceof SymbolicExpression;
 		array = (SymbolicExpression) arrayObject;
-		size = symbolicUtil.sizeof(civlSource,
-				typeFactory.incompleteArrayType(baseType), array.type());
-		return new Evaluation(state, size);
+		return new Evaluation(state,
+				typeFactory.sizeofDynamicType(array.type()));
 	}
 
 	/**
@@ -261,11 +256,10 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 					.newArrayShape((SymbolicArrayType) rootArray.type());
 			startIndices = symbolicUtil.extractArrayIndicesFrom(pointer);
 			availableSize = bytewiseDataSize(rootArrayShape, startIndices);
-			baseSize = symbolicUtil.sizeof(ptrSource, null,
-					rootArrayShape.baseType);
+			baseSize = typeFactory.sizeofDynamicType(rootArrayShape.baseType);
 		} else
-			baseSize = availableSize = symbolicUtil.sizeof(ptrSource, null,
-					rootArray.type());
+			baseSize = availableSize = typeFactory
+					.sizeofDynamicType(rootArray.type());
 		inBound = universe.lessThanEquals(size, availableSize);
 		baseDivides = universe.divides(baseSize, availableSize);
 		resultType = reasoner.valid(universe.and(baseDivides, inBound))
@@ -299,8 +293,8 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 		if (rootMemoryArrayShape == null)
 			return rootMemoryArray;
 
-		NumericExpression baseSize = symbolicUtil.sizeof(source, null,
-				rootMemoryArrayShape.baseType);
+		NumericExpression baseSize = typeFactory
+				.sizeofDynamicType(rootMemoryArrayShape.baseType);
 		NumericExpression count = universe.divide(size, baseSize);
 		Number concreteCount = reasoner.extractNumber(count);
 
@@ -411,7 +405,6 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 			Expression[] arguments, SymbolicExpression[] argumentValues,
 			CIVLSource source) throws UnsatisfiablePathConditionException {
 		// do error checking, then call "unpack" ...
-		CIVLSource bundleSource = arguments[0].getSource();
 		CIVLSource ptrSource = arguments[1].getSource();
 		SymbolicExpression bundle = argumentValues[0];
 		SymbolicExpression pointer = argumentValues[1];
@@ -440,7 +433,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 			wrtArrayBase_t = wrtArrayShape.baseType;
 			availableSize = bytewiseDataSize(wrtArrayShape, wrtStartIndices);
 		} else {
-			availableSize = symbolicUtil.sizeof(ptrSource, null, wrtArrayType);
+			availableSize = typeFactory.sizeofDynamicType(wrtArrayType);
 			wrtArrayBase_t = wrtArrayType;
 		}
 		// compute bundle data size ...
@@ -453,8 +446,7 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 			bundleDataBase_t = dataArrayShape.baseType;
 		} else {
 			bundleDataBase_t = bundleData.type();
-			sizeofBundleData = symbolicUtil.sizeof(bundleSource, null,
-					bundleDataBase_t);
+			sizeofBundleData = typeFactory.sizeofDynamicType(bundleDataBase_t);
 		}
 
 		ResultType errorCheckingResult = ResultType.NO;
@@ -831,8 +823,8 @@ public class LibbundleExecutor extends BaseLibraryExecutor
 	 */
 	private NumericExpression bytewiseDataSize(ArrayShape arrayShape,
 			NumericExpression[] startIndices) {
-		NumericExpression base = symbolicUtil.sizeof(null, null,
-				arrayShape.baseType);
+		NumericExpression base = typeFactory
+				.sizeofDynamicType(arrayShape.baseType);
 		NumericExpression total = universe.multiply(Arrays.asList(base,
 				arrayShape.extents[0], arrayShape.subArraySizes[0]));
 

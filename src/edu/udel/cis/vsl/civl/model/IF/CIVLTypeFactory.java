@@ -21,6 +21,10 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLScopeType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.type.StructOrUnionField;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicUnionType;
@@ -412,4 +416,64 @@ public interface CIVLTypeFactory {
 	 */
 	CIVLBundleType initBundleType();
 
+	/**
+	 * Return the size of a dynamic type. Note that the given type must not
+	 * contain any incomplete array type.
+	 * 
+	 * @param universe
+	 *            a reference to the {@link SymbolicUniverse}
+	 * @param the
+	 *            a symbolic type
+	 * @return the size of a dynamic type
+	 */
+	NumericExpression sizeofDynamicType(SymbolicType dynamicType);
+
+	/**
+	 * Given a symbolic type, returns a canonical symbolic expression which
+	 * somehow wraps that type so it can be used as a value. Nothing should be
+	 * assumed about the symbolic expression. To extract the type from such an
+	 * expression, use method {@link #getType}.
+	 * 
+	 * @param civlType
+	 *            the CIVL type that the symbolic type corresponds to.
+	 * @param type
+	 *            a symbolic type
+	 * @return a canonical symbolic expression wrapping that type
+	 */
+	SymbolicExpression expressionOfType(CIVLType civlType, SymbolicType type);
+
+	/**
+	 * Given a symbolic expression returned by the method
+	 * {@link #expressionOfType}, this extracts the type that was used to create
+	 * that expression. If the given expression is not an expression that was
+	 * created by {@link #expressionOfType}, the behavior is undefined.
+	 * 
+	 * @param expr
+	 *            a symbolic expression returned by method
+	 *            {@link #expressionOfType}
+	 * @return the symbolic type used to create that expression
+	 */
+	public SymbolicType getType(SymbolicExpression expr);
+
+	/**
+	 * Given a symbolic expression returned by the method
+	 * {@link #expressionOfType}, this returns the {@link CIVLType} which is
+	 * associated to the dynamic type that was used to create the given
+	 * expression. If the given expression is not an expression that was created
+	 * by {@link #expressionOfType}, the behavior is undefined.
+	 * 
+	 * @param expr
+	 *            a symbolic expression returned by method
+	 *            {@link #expressionOfType}
+	 * @return the corresponding CIVL type of the given dynamic type which was
+	 *         used to create the given expression
+	 */
+	CIVLType getStaticTypeOfDynamicType(SymbolicExpression typeId);
+
+	/**
+	 * @return a boolean expression which is the fact about the size-of any
+	 *         non-primitive type, i.e. the size-of any non-primitive type is
+	 *         positive.
+	 */
+	BooleanExpression sizeofNonPrimitiveTypesFact();
 }

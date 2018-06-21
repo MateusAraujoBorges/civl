@@ -64,7 +64,7 @@ public class WriteSetWidenOperator extends WriteSetOperator {
 					.unrolledReferenceExpression(ref, rootRef));
 		}
 
-		List<UnrolledReferenceExpression> commonUnrolleds = applyWidenOperatorWorker(
+		List<UnrolledReferenceExpression> commonUnrolleds = applyWidenOperatorWorker2(
 				unrolledMembers);
 
 		for (UnrolledReferenceExpression unrolled : commonUnrolleds)
@@ -74,6 +74,19 @@ public class WriteSetWidenOperator extends WriteSetOperator {
 		return results;
 	}
 
+	private List<UnrolledReferenceExpression> applyWidenOperatorWorker2(
+			List<UnrolledReferenceExpression> unrolledReferences) {
+		UnrolledReferenceExpression widened = null;
+
+		for (UnrolledReferenceExpression unrolled : unrolledReferences) {
+			widened = widened == null
+					? unrolled
+					: widened.diff(unrolled, universe);
+		}
+		return Arrays.asList(widened);
+	}
+
+	@SuppressWarnings("unused")
 	private List<UnrolledReferenceExpression> applyWidenOperatorWorker(
 			List<UnrolledReferenceExpression> unrolledReferences) {
 		List<List<UnrolledReferenceExpression>> cliques = getCliques(

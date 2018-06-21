@@ -32,7 +32,8 @@ import edu.udel.cis.vsl.civl.model.IF.variable.Variable;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 
 public class CommonAccuracyAssumptionBuilder
-		implements AccuracyAssumptionBuilder {
+		implements
+			AccuracyAssumptionBuilder {
 
 	/** The model factory used to create new model components. */
 	private ModelFactory factory;
@@ -68,50 +69,49 @@ public class CommonAccuracyAssumptionBuilder
 		// e.g. conjunctions of quantified expressions, etc. Make it more
 		// robust.
 		switch (expression.expressionKind()) {
-		case ABSTRACT_FUNCTION_CALL:
-			calls.add((AbstractFunctionCallExpression) expression);
-			break;
-		case QUANTIFIER:
-			quantifiedExpressions.add((QuantifiedExpression) expression);
-			analyze(((QuantifiedExpression) expression).expression());
-			break;
-		case BINARY:
-			analyze(((BinaryExpression) expression).left());
-			analyze(((BinaryExpression) expression).right());
-			break;
-		case BOUND_VARIABLE:
-			// Might have to eventually do something with these?
-			break;
-		case DERIVATIVE:
-			// TODO: Future examples might have assumptions about the
-			// derivative.
-			break;
-		case ADDRESS_OF:
-		case ARRAY_LITERAL:
-		case BOOLEAN_LITERAL:
-		case CAST:
-		case COND:
-		case DEREFERENCE:
-		case DOT:
-		case DYNAMIC_TYPE_OF:
-		case INITIAL_VALUE:
-		case INTEGER_LITERAL:
-		case NULL_LITERAL:
-		case REAL_LITERAL:
-		case RESULT:
-		case SELF:
-		case SIZEOF_EXPRESSION:
-		case SIZEOF_TYPE:
-		case STRING_LITERAL:
-		case STRUCT_OR_UNION_LITERAL:
-		case SUBSCRIPT:
-		case FUNC_CALL:
-		case UNARY:
-		case UNDEFINED_PROC:
-		case VARIABLE:
-		default:
-			// These shouldn't matter for the analysis.
-			break;
+			case ABSTRACT_FUNCTION_CALL :
+				calls.add((AbstractFunctionCallExpression) expression);
+				break;
+			case QUANTIFIER :
+				quantifiedExpressions.add((QuantifiedExpression) expression);
+				analyze(((QuantifiedExpression) expression).expression());
+				break;
+			case BINARY :
+				analyze(((BinaryExpression) expression).left());
+				analyze(((BinaryExpression) expression).right());
+				break;
+			case BOUND_VARIABLE :
+				// Might have to eventually do something with these?
+				break;
+			case DERIVATIVE :
+				// TODO: Future examples might have assumptions about the
+				// derivative.
+				break;
+			case ADDRESS_OF :
+			case ARRAY_LITERAL :
+			case BOOLEAN_LITERAL :
+			case CAST :
+			case COND :
+			case DEREFERENCE :
+			case DOT :
+			case INITIAL_VALUE :
+			case INTEGER_LITERAL :
+			case NULL_LITERAL :
+			case REAL_LITERAL :
+			case RESULT :
+			case SELF :
+			case SIZEOF_EXPRESSION :
+			case SIZEOF_TYPE :
+			case STRING_LITERAL :
+			case STRUCT_OR_UNION_LITERAL :
+			case SUBSCRIPT :
+			case FUNC_CALL :
+			case UNARY :
+			case UNDEFINED_PROC :
+			case VARIABLE :
+			default :
+				// These shouldn't matter for the analysis.
+				break;
 		}
 	}
 
@@ -146,102 +146,118 @@ public class CommonAccuracyAssumptionBuilder
 
 	private boolean matchesPattern(Expression expression) {
 		switch (expression.expressionKind()) {
-		case BINARY:
-			switch (((BinaryExpression) expression).operator()) {
-			case TIMES:
-				// recognize it if of the form i*x or x*i, where i is a bound
-				// variable.
-				Expression left = ((BinaryExpression) expression).left();
-				Expression right = ((BinaryExpression) expression).right();
+			case BINARY :
+				switch (((BinaryExpression) expression).operator()) {
+					case TIMES :
+						// recognize it if of the form i*x or x*i, where i is a
+						// bound
+						// variable.
+						Expression left = ((BinaryExpression) expression)
+								.left();
+						Expression right = ((BinaryExpression) expression)
+								.right();
 
-				// TODO: this seems to match a lot more than patter described
-				// above.
+						// TODO: this seems to match a lot more than patter
+						// described
+						// above.
 
-				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return true;
-				} else if (right
-						.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return true;
-				} else if ((left.expressionKind() == ExpressionKind.CAST)
-						&& ((CastExpression) left).getExpression()
+						if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+							return true;
+						} else if (right
 								.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return true;
-				} else if ((right.expressionKind() == ExpressionKind.CAST)
-						&& ((CastExpression) right).getExpression()
-								.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return true;
+							return true;
+						} else if ((left
+								.expressionKind() == ExpressionKind.CAST)
+								&& ((CastExpression) left).getExpression()
+										.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+							return true;
+						} else if ((right
+								.expressionKind() == ExpressionKind.CAST)
+								&& ((CastExpression) right).getExpression()
+										.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+							return true;
+						}
+					default :
+						return false;
 				}
-			default:
+			default :
 				return false;
-			}
-		default:
-			return false;
 		}
 	}
 
 	private Expression separatedExpression(Expression expression) {
 		switch (expression.expressionKind()) {
-		case BINARY:
-			switch (((BinaryExpression) expression).operator()) {
-			case TIMES:
-				// recognize it if of the form i*x or x*i, where i is a bound
-				// variable.
-				Expression left = ((BinaryExpression) expression).left();
-				Expression right = ((BinaryExpression) expression).right();
+			case BINARY :
+				switch (((BinaryExpression) expression).operator()) {
+					case TIMES :
+						// recognize it if of the form i*x or x*i, where i is a
+						// bound
+						// variable.
+						Expression left = ((BinaryExpression) expression)
+								.left();
+						Expression right = ((BinaryExpression) expression)
+								.right();
 
-				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return right;
-				} else if (right
-						.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return left;
-				} else if ((left.expressionKind() == ExpressionKind.CAST)
-						&& ((CastExpression) left).getExpression()
+						if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+							return right;
+						} else if (right
 								.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return right;
-				} else if ((right.expressionKind() == ExpressionKind.CAST)
-						&& ((CastExpression) right).getExpression()
-								.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return left;
+							return left;
+						} else if ((left
+								.expressionKind() == ExpressionKind.CAST)
+								&& ((CastExpression) left).getExpression()
+										.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+							return right;
+						} else if ((right
+								.expressionKind() == ExpressionKind.CAST)
+								&& ((CastExpression) right).getExpression()
+										.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+							return left;
+						}
+					default :
+						return null;
 				}
-			default:
+			default :
 				return null;
-			}
-		default:
-			return null;
 		}
 	}
 
 	private BoundVariableExpression boundVariable(Expression expression) {
 		switch (expression.expressionKind()) {
-		case BINARY:
-			switch (((BinaryExpression) expression).operator()) {
-			case TIMES:
-				// recognize it if of the form i*x or x*i, where i is a bound
-				// variable.
-				Expression left = ((BinaryExpression) expression).left();
-				Expression right = ((BinaryExpression) expression).right();
+			case BINARY :
+				switch (((BinaryExpression) expression).operator()) {
+					case TIMES :
+						// recognize it if of the form i*x or x*i, where i is a
+						// bound
+						// variable.
+						Expression left = ((BinaryExpression) expression)
+								.left();
+						Expression right = ((BinaryExpression) expression)
+								.right();
 
-				if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return (BoundVariableExpression) left;
-				} else if (right
-						.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return (BoundVariableExpression) right;
-				} else if ((left.expressionKind() == ExpressionKind.CAST)
-						&& ((CastExpression) left).getExpression()
+						if (left.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+							return (BoundVariableExpression) left;
+						} else if (right
 								.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return (BoundVariableExpression) ((CastExpression) left)
-							.getExpression();
-				} else if ((right.expressionKind() == ExpressionKind.CAST)
-						&& ((CastExpression) right).getExpression()
-								.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
-					return (BoundVariableExpression) ((CastExpression) right)
-							.getExpression();
+							return (BoundVariableExpression) right;
+						} else if ((left
+								.expressionKind() == ExpressionKind.CAST)
+								&& ((CastExpression) left).getExpression()
+										.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+							return (BoundVariableExpression) ((CastExpression) left)
+									.getExpression();
+						} else if ((right
+								.expressionKind() == ExpressionKind.CAST)
+								&& ((CastExpression) right).getExpression()
+										.expressionKind() == ExpressionKind.BOUND_VARIABLE) {
+							return (BoundVariableExpression) ((CastExpression) right)
+									.getExpression();
+						}
+					default :
+						return null;
 				}
-			default:
+			default :
 				return null;
-			}
-		default:
-			return null;
 		}
 	}
 
@@ -251,75 +267,89 @@ public class CommonAccuracyAssumptionBuilder
 	 */
 	private boolean matchesIteratorPattern(Expression expression) {
 		switch (expression.expressionKind()) {
-		case BINARY:
-			switch (((BinaryExpression) expression).operator()) {
-			case TIMES:
-				// recognize it if of the form iter*dt or dt*iter, where iter is
-				// an int
-				// variable and dt is an input.
-				Expression left = ((BinaryExpression) expression).left();
-				Expression right = ((BinaryExpression) expression).right();
+			case BINARY :
+				switch (((BinaryExpression) expression).operator()) {
+					case TIMES :
+						// recognize it if of the form iter*dt or dt*iter, where
+						// iter is
+						// an int
+						// variable and dt is an input.
+						Expression left = ((BinaryExpression) expression)
+								.left();
+						Expression right = ((BinaryExpression) expression)
+								.right();
 
-				if (left.expressionKind() == ExpressionKind.VARIABLE) {
-					if (right.expressionKind() == ExpressionKind.VARIABLE) {
-						VariableExpression leftVariable = (VariableExpression) left;
-						VariableExpression rightVariable = (VariableExpression) right;
-
-						if (leftVariable.variable().type().isIntegerType()
-								&& rightVariable.variable().isInput()) {
-							return true;
-						} else if (rightVariable.variable().type()
-								.isIntegerType()
-								&& leftVariable.variable().isInput()) {
-							return true;
-						}
-					}
-				} else if (left.expressionKind() == ExpressionKind.CAST) {
-					Expression castExpression = ((CastExpression) left)
-							.getExpression();
-
-					if (castExpression
-							.expressionKind() == ExpressionKind.VARIABLE) {
-						if (right.expressionKind() == ExpressionKind.VARIABLE) {
-							VariableExpression leftVariable = (VariableExpression) castExpression;
-							VariableExpression rightVariable = (VariableExpression) right;
-
-							if (leftVariable.variable().type().isIntegerType()
-									&& rightVariable.variable().isInput()) {
-								return true;
-							} else if (rightVariable.variable().type()
-									.isIntegerType()
-									&& leftVariable.variable().isInput()) {
-								return true;
-							}
-						}
-					}
-				} else if (right.expressionKind() == ExpressionKind.CAST) {
-					Expression castExpression = ((CastExpression) right)
-							.getExpression();
-
-					if (castExpression
-							.expressionKind() == ExpressionKind.VARIABLE) {
 						if (left.expressionKind() == ExpressionKind.VARIABLE) {
-							VariableExpression leftVariable = (VariableExpression) left;
-							VariableExpression rightVariable = (VariableExpression) castExpression;
+							if (right
+									.expressionKind() == ExpressionKind.VARIABLE) {
+								VariableExpression leftVariable = (VariableExpression) left;
+								VariableExpression rightVariable = (VariableExpression) right;
 
-							if (leftVariable.variable().type().isIntegerType()
-									&& rightVariable.variable().isInput()) {
-								return true;
-							} else if (rightVariable.variable().type()
-									.isIntegerType()
-									&& leftVariable.variable().isInput()) {
-								return true;
+								if (leftVariable.variable().type()
+										.isIntegerType()
+										&& rightVariable.variable().isInput()) {
+									return true;
+								} else if (rightVariable.variable().type()
+										.isIntegerType()
+										&& leftVariable.variable().isInput()) {
+									return true;
+								}
+							}
+						} else if (left
+								.expressionKind() == ExpressionKind.CAST) {
+							Expression castExpression = ((CastExpression) left)
+									.getExpression();
+
+							if (castExpression
+									.expressionKind() == ExpressionKind.VARIABLE) {
+								if (right
+										.expressionKind() == ExpressionKind.VARIABLE) {
+									VariableExpression leftVariable = (VariableExpression) castExpression;
+									VariableExpression rightVariable = (VariableExpression) right;
+
+									if (leftVariable.variable().type()
+											.isIntegerType()
+											&& rightVariable.variable()
+													.isInput()) {
+										return true;
+									} else if (rightVariable.variable().type()
+											.isIntegerType()
+											&& leftVariable.variable()
+													.isInput()) {
+										return true;
+									}
+								}
+							}
+						} else if (right
+								.expressionKind() == ExpressionKind.CAST) {
+							Expression castExpression = ((CastExpression) right)
+									.getExpression();
+
+							if (castExpression
+									.expressionKind() == ExpressionKind.VARIABLE) {
+								if (left.expressionKind() == ExpressionKind.VARIABLE) {
+									VariableExpression leftVariable = (VariableExpression) left;
+									VariableExpression rightVariable = (VariableExpression) castExpression;
+
+									if (leftVariable.variable().type()
+											.isIntegerType()
+											&& rightVariable.variable()
+													.isInput()) {
+										return true;
+									} else if (rightVariable.variable().type()
+											.isIntegerType()
+											&& leftVariable.variable()
+													.isInput()) {
+										return true;
+									}
+								}
 							}
 						}
-					}
+					default :
+						return false;
 				}
-			default:
+			default :
 				return false;
-			}
-		default:
-			return false;
 		}
 	}
 
@@ -330,81 +360,95 @@ public class CommonAccuracyAssumptionBuilder
 	 */
 	private Pair<Expression, Expression> iteratorPair(Expression expression) {
 		switch (expression.expressionKind()) {
-		case BINARY:
-			switch (((BinaryExpression) expression).operator()) {
-			case TIMES:
-				// recognize it if of the form iter*dt or dt*iter, where iter is
-				// an int
-				// variable and dt is an input.
-				Expression left = ((BinaryExpression) expression).left();
-				Expression right = ((BinaryExpression) expression).right();
+			case BINARY :
+				switch (((BinaryExpression) expression).operator()) {
+					case TIMES :
+						// recognize it if of the form iter*dt or dt*iter, where
+						// iter is
+						// an int
+						// variable and dt is an input.
+						Expression left = ((BinaryExpression) expression)
+								.left();
+						Expression right = ((BinaryExpression) expression)
+								.right();
 
-				if (left.expressionKind() == ExpressionKind.VARIABLE) {
-					if (right.expressionKind() == ExpressionKind.VARIABLE) {
-						VariableExpression leftVariable = (VariableExpression) left;
-						VariableExpression rightVariable = (VariableExpression) right;
-
-						if (leftVariable.variable().type().isIntegerType()
-								&& rightVariable.variable().isInput()) {
-							return new Pair<Expression, Expression>(
-									leftVariable, rightVariable);
-						} else if (rightVariable.variable().type()
-								.isIntegerType()
-								&& leftVariable.variable().isInput()) {
-							return new Pair<Expression, Expression>(
-									rightVariable, leftVariable);
-						}
-					}
-				} else if (left.expressionKind() == ExpressionKind.CAST) {
-					Expression castExpression = ((CastExpression) left)
-							.getExpression();
-
-					if (castExpression
-							.expressionKind() == ExpressionKind.VARIABLE) {
-						if (right.expressionKind() == ExpressionKind.VARIABLE) {
-							VariableExpression leftVariable = (VariableExpression) castExpression;
-							VariableExpression rightVariable = (VariableExpression) right;
-
-							if (leftVariable.variable().type().isIntegerType()
-									&& rightVariable.variable().isInput()) {
-								return new Pair<Expression, Expression>(
-										leftVariable, rightVariable);
-							} else if (rightVariable.variable().type()
-									.isIntegerType()
-									&& leftVariable.variable().isInput()) {
-								return new Pair<Expression, Expression>(
-										rightVariable, leftVariable);
-							}
-						}
-					}
-				} else if (right.expressionKind() == ExpressionKind.CAST) {
-					Expression castExpression = ((CastExpression) right)
-							.getExpression();
-
-					if (castExpression
-							.expressionKind() == ExpressionKind.VARIABLE) {
 						if (left.expressionKind() == ExpressionKind.VARIABLE) {
-							VariableExpression leftVariable = (VariableExpression) left;
-							VariableExpression rightVariable = (VariableExpression) castExpression;
+							if (right
+									.expressionKind() == ExpressionKind.VARIABLE) {
+								VariableExpression leftVariable = (VariableExpression) left;
+								VariableExpression rightVariable = (VariableExpression) right;
 
-							if (leftVariable.variable().type().isIntegerType()
-									&& rightVariable.variable().isInput()) {
-								return new Pair<Expression, Expression>(
-										leftVariable, rightVariable);
-							} else if (rightVariable.variable().type()
-									.isIntegerType()
-									&& leftVariable.variable().isInput()) {
-								return new Pair<Expression, Expression>(
-										rightVariable, leftVariable);
+								if (leftVariable.variable().type()
+										.isIntegerType()
+										&& rightVariable.variable().isInput()) {
+									return new Pair<Expression, Expression>(
+											leftVariable, rightVariable);
+								} else if (rightVariable.variable().type()
+										.isIntegerType()
+										&& leftVariable.variable().isInput()) {
+									return new Pair<Expression, Expression>(
+											rightVariable, leftVariable);
+								}
+							}
+						} else if (left
+								.expressionKind() == ExpressionKind.CAST) {
+							Expression castExpression = ((CastExpression) left)
+									.getExpression();
+
+							if (castExpression
+									.expressionKind() == ExpressionKind.VARIABLE) {
+								if (right
+										.expressionKind() == ExpressionKind.VARIABLE) {
+									VariableExpression leftVariable = (VariableExpression) castExpression;
+									VariableExpression rightVariable = (VariableExpression) right;
+
+									if (leftVariable.variable().type()
+											.isIntegerType()
+											&& rightVariable.variable()
+													.isInput()) {
+										return new Pair<Expression, Expression>(
+												leftVariable, rightVariable);
+									} else if (rightVariable.variable().type()
+											.isIntegerType()
+											&& leftVariable.variable()
+													.isInput()) {
+										return new Pair<Expression, Expression>(
+												rightVariable, leftVariable);
+									}
+								}
+							}
+						} else if (right
+								.expressionKind() == ExpressionKind.CAST) {
+							Expression castExpression = ((CastExpression) right)
+									.getExpression();
+
+							if (castExpression
+									.expressionKind() == ExpressionKind.VARIABLE) {
+								if (left.expressionKind() == ExpressionKind.VARIABLE) {
+									VariableExpression leftVariable = (VariableExpression) left;
+									VariableExpression rightVariable = (VariableExpression) castExpression;
+
+									if (leftVariable.variable().type()
+											.isIntegerType()
+											&& rightVariable.variable()
+													.isInput()) {
+										return new Pair<Expression, Expression>(
+												leftVariable, rightVariable);
+									} else if (rightVariable.variable().type()
+											.isIntegerType()
+											&& leftVariable.variable()
+													.isInput()) {
+										return new Pair<Expression, Expression>(
+												rightVariable, leftVariable);
+									}
+								}
 							}
 						}
-					}
+					default :
+						return null;
 				}
-			default:
+			default :
 				return null;
-			}
-		default:
-			return null;
 		}
 	}
 
@@ -682,11 +726,9 @@ public class CommonAccuracyAssumptionBuilder
 				rhs = factory.binaryExpression(source, op, rhs, newTerm);
 			}
 		}
-		rhs = factory
-				.binaryExpression(source, BINARY_OPERATOR.PLUS, rhs,
-						factory.unaryExpression(source, UNARY_OPERATOR.BIG_O,
-								multiple(source, separatedExpression,
-										function.continuity())));
+		rhs = factory.binaryExpression(source, BINARY_OPERATOR.PLUS, rhs,
+				factory.unaryExpression(source, UNARY_OPERATOR.BIG_O, multiple(
+						source, separatedExpression, function.continuity())));
 		return factory.binaryExpression(source, BINARY_OPERATOR.EQUAL, lhs,
 				rhs);
 	}

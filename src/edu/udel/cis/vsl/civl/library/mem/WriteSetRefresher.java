@@ -81,7 +81,7 @@ public class WriteSetRefresher {
 					WriteSetOperations.assignableRefreshment(pointer,
 							eval.value, universe.trueExpression()));
 		} else
-			eval = evaluator.dereference(source, preState, process, rootPointer,
+			eval = evaluator.dereference(source, state, process, rootPointer,
 					false, false);
 		oldValue = eval.value;
 		eval.state = state;
