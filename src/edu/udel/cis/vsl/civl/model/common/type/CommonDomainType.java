@@ -4,13 +4,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLCompleteDomainType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLDomainType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLPrimitiveType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
-import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicArrayType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
@@ -54,31 +52,26 @@ public class CommonDomainType extends CommonType implements CIVLDomainType {
 			SymbolicArrayType recDomainType, literalDomainType;
 			SymbolicType integerType = universe.integerType();
 			SymbolicType rangeType = this.rangeType.getDynamicType(universe);
-			StringObject domainSubtypeUnionTypeName = ModelConfiguration
-					.getTupleOrUnionTypeName(universe, "domain");
-			StringObject domainTupleTypeName = ModelConfiguration
-					.getTupleOrUnionTypeName(universe, "$domain");
 
 			recDomainType = universe.arrayType(rangeType);
-			literalDomainType = universe
-					.arrayType(universe.arrayType(integerType));
+			literalDomainType = universe.arrayType(universe
+					.arrayType(integerType));
 			tupleComponents.add(universe.integerType());
 			tupleComponents.add(universe.integerType());
 			if (this.subtypesUnion == null)
 				this.subtypesUnion = universe.unionType(
-						domainSubtypeUnionTypeName,
+						universe.stringObject("domain"),
 						Arrays.asList(recDomainType, literalDomainType));
 			tupleComponents.add(this.subtypesUnion);
-			domainTupleType = universe.tupleType(domainTupleTypeName,
-					tupleComponents);
+			domainTupleType = universe.tupleType(
+					universe.stringObject("$domain"), tupleComponents);
 			this.dynamicType = domainTupleType;
 		}
 		return this.dynamicType;
 	}
 
 	@Override
-	public SymbolicUnionType getDynamicSubTypesUnion(
-			SymbolicUniverse universe) {
+	public SymbolicUnionType getDynamicSubTypesUnion(SymbolicUniverse universe) {
 		if (this.subtypesUnion == null)
 			this.getDynamicType(universe);
 		return this.subtypesUnion;

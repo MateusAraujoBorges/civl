@@ -144,7 +144,6 @@ import edu.udel.cis.vsl.sarl.number.IF.Numbers;
 public class CommonEvaluator implements Evaluator {
 
 	private static int INTEGER_BIT_LENGTH = 32;
-	private static String ABSTRACT_FUNCTION_PREFIX = "_uf_";
 	public static String POINTER_TO_INT_FUNCTION = "_pointer2Int";
 	public static String INT_TO_POINTER_FUNCTION = "_int2Pointer";
 	public static String CHAR_TO_INT_FUNCTION = "_char2int";
@@ -256,13 +255,6 @@ public class CommonEvaluator implements Evaluator {
 	 * for pointers, like heap object reachability, reachable memory units, etc.
 	 */
 	private SymbolicTupleType functionPointerType;
-
-	/**
-	 * An uninterpreted function used to evaluate "sizeof" on a type. It takes
-	 * as input one expression of type dynamicType and returns an integer
-	 * expression.
-	 */
-	private SymbolicExpression sizeofFunction;
 
 	/**
 	 * The unique state factory used in the system.
@@ -396,7 +388,6 @@ public class CommonEvaluator implements Evaluator {
 		zeroR = universe.zeroReal();
 		one = universe.integer(1);
 		nullExpression = universe.nullExpression();
-		sizeofFunction = symbolicUtil.sizeofFunction();
 		bigOFunction = universe.symbolicConstant(universe.stringObject("BIG_O"),
 				universe.functionType(
 						new Singleton<SymbolicType>(universe.realType()),
@@ -464,10 +455,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            false only when executing $copy function.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @return A possibly new state and the value of memory space pointed by the
 	 *         pointer.
@@ -576,10 +567,10 @@ public class CommonEvaluator implements Evaluator {
 	 *            The pointer to be dereferenced.
 	 * @param muteErrorSideEffects
 	 *            Should this method mute error side-effects ? i.e.
-	 *            Dereferencing a pointer with error side-effects <strong>
-	 *            results an undefined value of the same type as the dereference
-	 *            expression </strong> iff this parameter set to true.
-	 *            Otherwise, an error will be reported and
+	 *            Dereferencing a pointer with error side-effects
+	 *            <strong> results an undefined value of the same type as the
+	 *            dereference expression </strong> iff this parameter set to
+	 *            true. Otherwise, an error will be reported and
 	 *            UnsatisfiablePathConditionException will be thrown.
 	 * @param source
 	 *            The {@link CIVLSource} associates with the dereference
@@ -664,11 +655,10 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		TypeEvaluation typeEval = getDynamicType(state, pid, type, source,
 				isDeclaration);
-		SymbolicExpression expr = symbolicUtil.expressionOfType(type,
+		SymbolicExpression expr = typeFactory.expressionOfType(type,
 				typeEval.type);
-		Evaluation result = new Evaluation(typeEval.state, expr);
 
-		return result;
+		return new Evaluation(typeEval.state, expr);
 	}
 
 	/**
@@ -705,10 +695,11 @@ public class CommonEvaluator implements Evaluator {
 			arguments.add(eval.value);
 		}
 		functionType = universe.functionType(argumentTypes, returnType);
-		if (functionName.startsWith("$"))
-			functionName = ABSTRACT_FUNCTION_PREFIX + functionName;
-		functionExpression = universe.symbolicConstant(
-				universe.stringObject(functionName), functionType);
+
+		StringObject funcName = ModelConfiguration
+				.getAbstractFunctionName(universe, functionName);
+
+		functionExpression = universe.symbolicConstant(funcName, functionType);
 		functionApplication = universe.apply(functionExpression, arguments);
 		result = new Evaluation(state, functionApplication);
 		return result;
@@ -733,7 +724,7 @@ public class CommonEvaluator implements Evaluator {
 			throws UnsatisfiablePathConditionException {
 		if (expression.isFieldOffset()) {
 			CIVLType structType = expression.getTypeForOffset();
-			SymbolicExpression typeValue = this.symbolicUtil.expressionOfType(
+			SymbolicExpression typeValue = typeFactory.expressionOfType(
 					structType, structType.getDynamicType(universe));
 			SymbolicExpression value = universe.apply(offsetFunction,
 					Arrays.asList(typeValue,
@@ -1304,8 +1295,11 @@ public class CommonEvaluator implements Evaluator {
 			derivativeName += partial.left.name().name()
 					+ partial.right.value();
 		}
-		functionExpression = universe.symbolicConstant(
-				universe.stringObject(derivativeName), functionType);
+
+		StringObject funcName = ModelConfiguration
+				.getAbstractFunctionName(universe, derivativeName);
+
+		functionExpression = universe.symbolicConstant(funcName, functionType);
 		functionApplication = universe.apply(functionExpression, arguments);
 		result = new Evaluation(state, functionApplication);
 		return result;
@@ -2778,8 +2772,7 @@ public class CommonEvaluator implements Evaluator {
 			SymbolicExpression value = state.valueOf(pid,
 					type.getStateVariable());
 
-			result = new TypeEvaluation(state,
-					symbolicUtil.getType(source, value));
+			result = new TypeEvaluation(state, typeFactory.getType(value));
 		} else if (type instanceof CIVLArrayType) {
 			CIVLArrayType arrayType = (CIVLArrayType) type;
 			TypeEvaluation elementTypeEval = getDynamicType(state, pid,
@@ -2925,7 +2918,9 @@ public class CommonEvaluator implements Evaluator {
 				// lost:
 				teval = getDynamicType(state, pid, elementType, null, false);
 				state = teval.state;
-				eval = newArray(state, teval.type, elementValue, extent);
+				eval.value = symbolicUtil.newArray(
+						state.getPathCondition(universe), teval.type, extent,
+						elementValue);
 				break;
 			}
 			case BUNDLE :
@@ -3940,13 +3935,14 @@ public class CommonEvaluator implements Evaluator {
 					"sizeof applied to incomplete array type", source);
 		} else {
 			NumericExpression sizeof;
+			TypeEvaluation teval = getDynamicType(state, pid, type, source,
+					false);
 
-			eval = dynamicTypeOf(state, pid, type, source, false);
-			sizeof = (NumericExpression) universe.apply(sizeofFunction,
-					new Singleton<SymbolicExpression>(eval.value));
-			eval.value = sizeof;
+			state = teval.state;
+			sizeof = typeFactory.sizeofDynamicType(teval.type);
+			eval = new Evaluation(state, sizeof);
 			eval.state = stateFactory.addToPathcondition(eval.state, pid,
-					universe.lessThan(zero, sizeof));
+					typeFactory.sizeofNonPrimitiveTypesFact());
 		}
 		return eval;
 	}
@@ -4051,11 +4047,13 @@ public class CommonEvaluator implements Evaluator {
 				state = eval.state;
 				// A single character is not acceptable.
 				if (eval.value.numArguments() <= 1) {
-					this.errorLogger.logSimpleError(source, state, process,
-							this.symbolicAnalyzer.stateInformation(state),
-							ErrorKind.OTHER,
-							"Try to obtain a string from a sequence of char has length"
-									+ " less than or equal to one");
+					this.errorLogger
+							.logSimpleError(source, state, process,
+									this.symbolicAnalyzer.stateInformation(
+											state),
+									ErrorKind.OTHER,
+									"Try to obtain a string from a sequence of char has length"
+											+ " less than or equal to one");
 					throw new UnsatisfiablePathConditionException();
 				} else {
 					originalArray = eval.value;
@@ -4835,35 +4833,5 @@ public class CommonEvaluator implements Evaluator {
 	@Override
 	public ArrayToolBox newArrayToolBox(SymbolicUniverse universe) {
 		return new SimpleArrayToolBox(universe);
-	}
-
-	@Override
-	public Evaluation newArray(State state, SymbolicType elementType,
-			SymbolicExpression commonElementValue,
-			NumericExpression arrayLength) {
-		IntegerNumber length_number = (IntegerNumber) universe
-				.extractNumber(arrayLength);
-
-		if (length_number != null) {
-			int length_int = length_number.intValue();
-			List<SymbolicExpression> values = new ArrayList<>(length_int);
-
-			for (int i = 0; i < length_int; i++)
-				values.add(commonElementValue);
-			return new Evaluation(state, universe.array(elementType, values));
-		} else {
-			Pair<State, SymbolicConstant> newSymbolState = stateFactory
-					.getFreshSymbol(state,
-							ModelConfiguration.HAVOC_PREFIX_INDEX,
-							universe.integerType());
-			SymbolicConstant boundVar = newSymbolState.right;
-			SymbolicExpression arrayEleFunction = universe.lambda(boundVar,
-					commonElementValue);
-			SymbolicCompleteArrayType arrayValueType = universe
-					.arrayType(elementType, arrayLength);
-
-			return new Evaluation(newSymbolState.left,
-					universe.arrayLambda(arrayValueType, arrayEleFunction));
-		}
 	}
 }

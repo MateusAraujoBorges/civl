@@ -1,5 +1,6 @@
 package edu.udel.cis.vsl.civl.library.comm;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import edu.udel.cis.vsl.civl.config.IF.CIVLConfiguration;
@@ -8,7 +9,7 @@ import edu.udel.cis.vsl.civl.library.common.BaseLibraryExecutor;
 import edu.udel.cis.vsl.civl.model.IF.CIVLException.ErrorKind;
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.ModelConfiguration;
+import edu.udel.cis.vsl.civl.model.IF.Model;
 import edu.udel.cis.vsl.civl.model.IF.ModelFactory;
 import edu.udel.cis.vsl.civl.model.IF.expression.Expression;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLBundleType;
@@ -23,14 +24,15 @@ import edu.udel.cis.vsl.civl.state.IF.State;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
+import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.ValidityResult.ResultType;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
-import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.number.Number;
+import edu.udel.cis.vsl.sarl.IF.object.StringObject;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicType;
 
@@ -485,15 +487,18 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		state = eval.state;
 		gcomm = eval.value;
 		dest = (NumericExpression) universe.tupleRead(comm, zeroObject);
-		queue = universe.arrayRead(universe.arrayRead(
-				universe.tupleRead(gcomm, threeObject), source), dest);
+		queue = universe
+				.arrayRead(
+						universe.arrayRead(
+								universe.tupleRead(gcomm, threeObject), source),
+						dest);
 		queueLength = universe.tupleRead(queue, zeroObject);
 		messages = universe.tupleRead(queue, oneObject);
 		msgIdx = this.getMatchedMsgIdx(state, pid, process, messages,
 				queueLength, tag, civlsource);
-		if (msgIdx == -1) {
-			return emptyMessage(state);
-		} else
+		if (msgIdx == -1)
+			message = this.getEmptyMessage(state);
+		else
 			message = universe.arrayRead(messages, universe.integer(msgIdx));
 		return new Evaluation(state, message);
 	}
@@ -604,6 +609,40 @@ public class LibcommExecutor extends BaseLibraryExecutor
 	// return primaryExecutor.malloc(source, state, pid, process,
 	// scopeExpression, scope, gcommType, gcomm);
 	// }
+
+	/**
+	 * Helper function for creating an empty buffer
+	 * 
+	 * @param universe
+	 *            The Symbolic Universe
+	 * @param model
+	 *            The CIVL model of the program
+	 * @param symbolicUtil
+	 *            The SymbolicUtility
+	 * @param context
+	 *            The path condition of the current state
+	 * @param nprocs
+	 *            The NumericExpression of the number of processes
+	 * @return
+	 */
+	public static SymbolicExpression newGcommBuffer(SymbolicUniverse universe,
+			Model model, SymbolicUtility symbolicUtil,
+			BooleanExpression context, NumericExpression nprocs) {
+		SymbolicExpression queueLength = universe.integer(0);
+		CIVLType messageType = model.mesageType();
+		CIVLType queueType = model.queueType();
+		SymbolicType dynamicQueueType = queueType.getDynamicType(universe);
+		SymbolicType dynamicMessageType = messageType.getDynamicType(universe);
+		SymbolicExpression emptyMessages = universe.array(dynamicMessageType,
+				new LinkedList<SymbolicExpression>());
+		SymbolicExpression emptyQueue = universe.tuple(
+				(SymbolicTupleType) dynamicQueueType,
+				Arrays.asList(queueLength, emptyMessages));
+		SymbolicExpression bufRow = symbolicUtil.newArray(context,
+				emptyQueue.type(), nprocs, emptyQueue);
+
+		return symbolicUtil.newArray(context, bufRow.type(), nprocs, bufRow);
+	}
 
 	/**
 	 * Frees the gcomm object and gives a CIVL sequence ($seq) of remaining
@@ -787,18 +826,17 @@ public class LibcommExecutor extends BaseLibraryExecutor
 	 *            The current state.
 	 * @return
 	 */
-	private Evaluation emptyMessage(State state) {
+	private SymbolicExpression getEmptyMessage(State state) {
 		SymbolicExpression message;
 		CIVLType messageType = model.mesageType();
 		CIVLBundleType bundleType = typeFactory.bundleType();
 		LinkedList<SymbolicExpression> emptyMessageComponents = new LinkedList<SymbolicExpression>();
+		StringObject name;
 		SymbolicExpression bundle;
-		Pair<State, SymbolicConstant> freshSymbol = stateFactory.getFreshSymbol(
-				state, ModelConfiguration.HAVOC_PREFIX_INDEX,
-				bundleType.getDynamicType(universe));
 
-		state = freshSymbol.left;
-		bundle = freshSymbol.right;
+		name = universe.stringObject("X_s" + -1 + "v" + -1);
+		bundle = universe.symbolicConstant(name,
+				bundleType.getDynamicType(universe));
 		emptyMessageComponents.add(universe.integer(-1));
 		emptyMessageComponents.add(universe.integer(-1));
 		emptyMessageComponents.add(universe.integer(-1));
@@ -807,7 +845,7 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		message = this.universe.tuple(
 				(SymbolicTupleType) messageType.getDynamicType(universe),
 				emptyMessageComponents);
-		return new Evaluation(state, message);
+		return message;
 	}
 
 	/**
@@ -956,14 +994,9 @@ public class LibcommExecutor extends BaseLibraryExecutor
 		nprocs = (NumericExpression) universe.tupleRead(eval.value, zeroObject);
 
 		BooleanExpression pred;
-		NumericSymbolicConstant i;
-		Pair<State, SymbolicConstant> freshSymbol = stateFactory.getFreshSymbol(
-				state, ModelConfiguration.HAVOC_PREFIX_INDEX,
-				universe.integerType());
-
-		i = (NumericSymbolicConstant) freshSymbol.right;
-		state = freshSymbol.left;
-
+		NumericSymbolicConstant i = (NumericSymbolicConstant) universe
+				.symbolicConstant(universe.stringObject("i"),
+						universe.integerType());
 		NumericExpression queueLength;
 
 		if (isCommEmptyIn)

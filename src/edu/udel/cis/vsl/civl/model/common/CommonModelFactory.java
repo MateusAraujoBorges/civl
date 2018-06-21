@@ -445,9 +445,9 @@ public class CommonModelFactory implements ModelFactory {
 				CIVLType processExpr = left.getExpressionType();
 
 				if (!processExpr.isIntegerType())
-					throw new CIVLException(
-							"Incompatible types to " + BINARY_OPERATOR.REMOTE
-									+ " operand. The left hand side expression must have a integer type.",
+					throw new CIVLException("Incompatible types to "
+							+ BINARY_OPERATOR.REMOTE
+							+ " operand. The left hand side expression must have a integer type.",
 							source);
 				return new CommonBinaryExpression(source, expressionScope,
 						lowestScope, right.getExpressionType(), operator, left,
@@ -497,9 +497,8 @@ public class CommonModelFactory implements ModelFactory {
 						// .setExpressionType(integerType());
 						resultType = typeFactory.integerType;
 					else
-						throw new CIVLException(
-								leftType + " and " + rightType
-										+ " are not pointers to compatiable types",
+						throw new CIVLException(leftType + " and " + rightType
+								+ " are not pointers to compatiable types",
 								source);
 				} else if (leftType.equals(rightType)) {
 					// ((CommonBinaryExpression)
@@ -1263,8 +1262,7 @@ public class CommonModelFactory implements ModelFactory {
 		Identifier result = identifiers.get(name);
 
 		if (result == null) {
-			StringObject stringObject = ModelConfiguration
-					.getIdentifierName(universe, name);
+			StringObject stringObject = universe.stringObject(name);
 
 			result = new CommonIdentifier(source, stringObject);
 			identifiers.put(name, result);
@@ -1394,10 +1392,8 @@ public class CommonModelFactory implements ModelFactory {
 			return typeFactory.scopeType.scopeIdentityToValueOperator(universe)
 					.apply(ModelConfiguration.DYNAMIC_UNDEFINED_SCOPE);
 		else {
-			StringObject undefinedValueName = ModelConfiguration
-					.getUndefinedName(universe);
 			SymbolicExpression result = universe
-					.symbolicConstant(undefinedValueName, type);
+					.symbolicConstant(universe.stringObject("UNDEFINED"), type);
 
 			return result;
 		}

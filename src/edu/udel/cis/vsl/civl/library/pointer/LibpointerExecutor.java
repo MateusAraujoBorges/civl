@@ -219,10 +219,8 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 						? ((SymbolicArrayType) operandType).baseType()
 						: operandType;
 
-		eval = applyCIVLOperation(state, pid, process, objs, civlOperator, one,
-				elementType, source);
-		result = eval.value;
-		state = eval.state;
+		result = applyCIVLOperation(state, pid, process, objs, civlOperator,
+				one, elementType, source);
 		writtenRet = setDataFrom(state, pid, process, arguments[3],
 				argumentValues[3], operandCount, result, false, source);
 		eval = writtenRet.left;
@@ -822,8 +820,7 @@ public class LibpointerExecutor extends BaseLibraryExecutor
 				arguments[0].getSource(), ptr);
 		primitiveTypePointed = primitiveTypePointedStatic
 				.getDynamicType(universe);
-		ptr_primType_size = symbolicUtil.sizeof(arguments[0].getSource(),
-				primitiveTypePointedStatic, primitiveTypePointed);
+		ptr_primType_size = typeFactory.sizeofDynamicType(primitiveTypePointed);
 		if (!this.civlConfig.svcomp()) {
 			claim = universe.divides(ptr_primType_size, type_size);
 			reasoner = universe.reasoner(state.getPathCondition(universe));

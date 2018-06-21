@@ -6,7 +6,6 @@ import java.util.List;
 
 import edu.udel.cis.vsl.civl.model.IF.CIVLInternalException;
 import edu.udel.cis.vsl.civl.model.IF.CIVLSource;
-import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.state.IF.UnsatisfiablePathConditionException;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.sarl.IF.Reasoner;
@@ -75,35 +74,6 @@ public interface SymbolicUtility {
 	 */
 	BooleanExpression contains(SymbolicExpression container,
 			SymbolicExpression element);
-
-	/**
-	 * Given a symbolic type, returns a canonic symbolic expression which
-	 * somehow wraps that type so it can be used as a value. Nothing should be
-	 * assumed about the symbolic expression. To extract the type from such an
-	 * expression, use method {@link #getType}.
-	 * 
-	 * @param civlType
-	 *            the CIVL type that the symbolic type corresponds to.
-	 * @param type
-	 *            a symbolic type
-	 * @return a canonic symbolic expression wrapping that type
-	 */
-	SymbolicExpression expressionOfType(CIVLType civlType, SymbolicType type);
-
-	/**
-	 * Given a symbolic expression returned by the method
-	 * {@link #expressionOfType}, this extracts the type that was used to create
-	 * that expression. If the given expression is not an expression that was
-	 * created by {@link #expressionOfType}, the behavior is undefined.
-	 * 
-	 * @param source
-	 *            the source information of the expression.
-	 * @param expr
-	 *            a symbolic expression returned by method
-	 *            {@link #expressionOfType}
-	 * @return the symbolic type used to create that expression
-	 */
-	public SymbolicType getType(CIVLSource source, SymbolicExpression expr);
 
 	/**
 	 * 
@@ -419,6 +389,27 @@ public interface SymbolicUtility {
 			ReferenceExpression reference);
 
 	/**
+	 * Creates a new array of given length, using the given type as its element
+	 * type, and each element having the given value.
+	 * 
+	 * @param context
+	 *            The context of the operation, i.e., the path condition of the
+	 *            current state.
+	 * @param elementValueType
+	 *            The type of the array element. Note necessarily the type of
+	 *            <code>eleValue</code>.
+	 * @param length
+	 *            The length of the array.
+	 * @param eleValue
+	 *            The element value of the array.
+	 * @return the new array of the given length, with each element initialized
+	 *         with the given symbolic expression.
+	 */
+	SymbolicExpression newArray(BooleanExpression context,
+			SymbolicType elementValueType, NumericExpression length,
+			SymbolicExpression eleValue);
+
+	/**
 	 * Returns the NULL pointer of CIVL.
 	 * 
 	 * @return The NULL pointer of CIVL.
@@ -459,28 +450,6 @@ public interface SymbolicUtility {
 	 *         corresponding heap memory unit.
 	 */
 	ReferenceExpression referenceToHeapMemUnit(SymbolicExpression heapPointer);
-
-	/**
-	 * Compute the symbolic representation of the size of a given symbolic type.
-	 * 
-	 * @param source
-	 *            The source code element to be used in the error report (if
-	 *            any).
-	 * @param civlType
-	 *            The CIVL type corresponding to the symbolic type
-	 * @param type
-	 *            The symbolic type whose size is to evaluated.
-	 * @return The symbolic representation of the size of the symbolic type.
-	 */
-	NumericExpression sizeof(CIVLSource source, CIVLType civlType,
-			SymbolicType type);
-
-	/**
-	 * Returns the abstract function <code>sizeof()</code>.
-	 * 
-	 * @return The abstract function <code>sizeof()</code>.
-	 */
-	SymbolicExpression sizeofFunction();
 
 	/**
 	 * Returns an array element reference by giving the array reference and the
@@ -722,17 +691,6 @@ public interface SymbolicUtility {
 	 * @return the symbolic type of dynamic type
 	 */
 	SymbolicTupleType dynamicType();
-
-	/**
-	 * returns the corresponding CIVL type of the given dynamic type with the
-	 * specified ID.
-	 * 
-	 * @param typeId
-	 *            The ID of the symbolic type.
-	 * @return the corresponding CIVL type of the given dynamic type with the
-	 *         specified ID
-	 */
-	CIVLType getStaticTypeOfDynamicType(SymbolicExpression typeId);
 
 	/**
 	 * Is the given domain a rectangular domain?

@@ -810,10 +810,21 @@ public class LanguageFeaturesTest {
 	public void ranges() {
 		assertTrue(ui.run(VERIFY, QUIET, filename("ranges.cvl")));
 	}
-	
+
 	@Test
 	public void incompleteStruct() {
-		assertTrue(ui.run(VERIFY, "-showProgram", filename("incompleteStruct.c")));
+		assertTrue(
+				ui.run(VERIFY, "-showProgram", filename("incompleteStruct.c")));
+	}
+
+	@Test
+	public void sizeofTest() {
+		assertTrue(ui.run(VERIFY, filename("sizeofTest.cvl")));
+	}
+
+	@Test
+	public void sizeofBadTest() {
+		assertFalse(ui.run(VERIFY, filename("sizeofTestBad.cvl")));
 	}
 
 	@AfterClass

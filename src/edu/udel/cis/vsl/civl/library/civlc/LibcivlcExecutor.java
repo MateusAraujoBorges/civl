@@ -282,9 +282,9 @@ public class LibcivlcExecutor extends BaseLibraryExecutor
 				array1d = universe.arrayRead(array2d, universe.integer(j));
 				if (array1d == symbolicUtil.invalidHeapObject(array1d.type()))
 					continue;
-				result = universe.add(result, universe.multiply(
-						universe.length(array1d),
-						symbolicUtil.sizeof(source, null, elementType)));
+				result = universe.add(result,
+						universe.multiply(universe.length(array1d),
+								typeFactory.sizeofDynamicType(elementType)));
 			}
 		}
 		return new Evaluation(state, result);

@@ -89,7 +89,6 @@ public final class ModelConfiguration {
 	}
 
 	/* Global symbolic constants: size_of primitive types */
-
 	public static Set<SymbolicConstant> SIZEOF_VARS = new HashSet<>();
 
 	public static void addSizeofSymbol(SymbolicConstant symbol) {
@@ -360,6 +359,7 @@ public final class ModelConfiguration {
 	 */
 	public static final String ContractMPICommSizeName = "$mpi_comm_size";
 
+	/************* Methods and fields for naming convention *************/
 	/**
 	 * For all abstract functions declared in the source programs, their values,
 	 * i.e. function type symbolic constants, should have names that starts with
@@ -377,24 +377,10 @@ public final class ModelConfiguration {
 	private static final String CIVL_FUNCTION_CONSTANT_PREFIX = "CIVL_";
 
 	/**
-	 * Returns a {@link StringObject} which is the name of the dynamic
-	 * representation an identifier of either a variable or a function from
-	 * source program. The returned name follows CIVL's naming convention and is
-	 * uniquely associated to the given identifier.
-	 * 
-	 * @param universe
-	 *            a reference to the {@link SymbolicUniverse}
-	 * @param identifier
-	 *            an identifier that belongs to a variable or function from
-	 *            source programs
-	 * @return a {@link StringObject} which is the name of the symbolic
-	 *         representation of a variable or a function from the source
-	 *         program.
+	 * The name prefix of symbolic constants that represent the values of sizes
+	 * of primitive types:
 	 */
-	public static StringObject getIdentifierName(SymbolicUniverse universe,
-			String identifier) {
-		return universe.stringObject(identifier);
-	}
+	private static String SIZEOF_PRIMITIVE_TYPE_PREFIX = "SIZEOF_";
 
 	/**
 	 * <p>
@@ -453,26 +439,6 @@ public final class ModelConfiguration {
 
 	/**
 	 * 
-	 * <p>
-	 * Returns a {@link StringObject} which is the name of a symbolic tuple or
-	 * union type. The name follows CIVL's naming convention and is uniquely
-	 * associated with the given identifier.
-	 * </p>
-	 * 
-	 * @param universe
-	 *            a reference to the {@link SymbolicUniverse}
-	 * @param identifier
-	 *            an identifier that belongs to a symbolic tuple or union type
-	 * @return a {@link StringObject} which is the name of a symbolic tuple or
-	 *         union type
-	 */
-	public static StringObject getTupleOrUnionTypeName(
-			SymbolicUniverse universe, String identifier) {
-		return universe.stringObject(identifier);
-	}
-
-	/**
-	 * 
 	 * @param universe
 	 *            a reference to the {@link SymbolicUniverse}
 	 * @return the {@link StringObject} which is the name of the symbolic
@@ -494,15 +460,36 @@ public final class ModelConfiguration {
 	}
 
 	/**
+	 * <p>
+	 * Returns the name of the unique symbolic constant which represents the
+	 * value of the size of a specific {@link CIVLPrimitiveType}.
+	 * </p>
 	 * 
 	 * @param universe
 	 *            a reference to the {@link SymbolicUniverse}
-	 * @return the {@link StringObject} which is the name of the symbolic
-	 *         constant representing the <code>sizeof(type)</code> where
-	 *         <code>type</code> is a {@link CIVLPrimitiveType}
+	 * @param kind
+	 *            the kind of the given {@link CIVLPrimitiveType}
+	 * @return the name of the unique symbolic constant which represents the
+	 *         value of the size of a specific {@link CIVLPrimitiveType}
 	 */
-	public static StringObject getSizeofPrimitiveTypeConstantName(
+	public static StringObject getSizeofPrimitiveTypeName(
 			SymbolicUniverse universe, PrimitiveTypeKind kind) {
-		return universe.stringObject("SIZEOF_" + kind);
+		return universe.stringObject(SIZEOF_PRIMITIVE_TYPE_PREFIX + kind);
+	}
+
+	/**
+	 * <p>
+	 * Returns the name of the unique function type symbolic constant which maps
+	 * non-primitive types to their size values.
+	 * </p>
+	 * 
+	 * @param universe
+	 *            a reference to the {@link SymbolicUniverse}
+	 * @return the name of the unique function type symbolic constant which maps
+	 *         non-primitive types to their size values.
+	 */
+	public static StringObject getSizeofNonPrimitiveTypeFunctionName(
+			SymbolicUniverse universe) {
+		return getFunctionConstantName(universe, "SIZEOF");
 	}
 }
