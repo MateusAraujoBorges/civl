@@ -1,0 +1,6 @@
+int main() {
+
+  struct T {int x;};
+  
+  $assert(sizeof(struct T) > 0);
+}
