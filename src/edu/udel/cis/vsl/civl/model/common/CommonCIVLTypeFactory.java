@@ -53,6 +53,7 @@ import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericSymbolicConstant;
+import edu.udel.cis.vsl.sarl.IF.expr.SymbolicConstant;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.number.IntegerNumber;
 import edu.udel.cis.vsl.sarl.IF.object.StringObject;
@@ -699,6 +700,17 @@ public class CommonCIVLTypeFactory implements CIVLTypeFactory {
 				assert false : "unreachable";
 				return null;
 		}
+	}
+
+	@Override
+	public BooleanExpression sizeofNonPrimitiveTypesFact() {
+		SymbolicConstant bv = universe.symbolicConstant(
+				universe.stringObject("_t"), dynamicSymbolicType());
+
+		return universe.forall(bv,
+				universe.lessThan(universe.zeroInt(),
+						(NumericExpression) universe.apply(sizeofFunction,
+								Arrays.asList(bv))));
 	}
 
 	@Override

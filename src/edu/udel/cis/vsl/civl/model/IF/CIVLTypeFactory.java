@@ -22,6 +22,7 @@ import edu.udel.cis.vsl.civl.model.IF.type.CIVLStructOrUnionType;
 import edu.udel.cis.vsl.civl.model.IF.type.CIVLType;
 import edu.udel.cis.vsl.civl.model.IF.type.StructOrUnionField;
 import edu.udel.cis.vsl.sarl.IF.SymbolicUniverse;
+import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.NumericExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import edu.udel.cis.vsl.sarl.IF.type.SymbolicTupleType;
@@ -468,4 +469,11 @@ public interface CIVLTypeFactory {
 	 *         used to create the given expression
 	 */
 	CIVLType getStaticTypeOfDynamicType(SymbolicExpression typeId);
+
+	/**
+	 * @return a boolean expression which is the fact about the size-of any
+	 *         non-primitive type, i.e. the size-of any non-primitive type is
+	 *         positive.
+	 */
+	BooleanExpression sizeofNonPrimitiveTypesFact();
 }

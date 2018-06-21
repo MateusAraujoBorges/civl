@@ -3942,7 +3942,7 @@ public class CommonEvaluator implements Evaluator {
 			sizeof = typeFactory.sizeofDynamicType(teval.type);
 			eval = new Evaluation(state, sizeof);
 			eval.state = stateFactory.addToPathcondition(eval.state, pid,
-					universe.lessThan(zero, sizeof));
+					typeFactory.sizeofNonPrimitiveTypesFact());
 		}
 		return eval;
 	}
