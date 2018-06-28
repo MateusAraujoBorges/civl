@@ -26,46 +26,10 @@ public class SvcompTest {
 
 	/* **************************** Test Methods *************************** */
 
-	// Yes
-	// None
-	@Test
-	public void sync01_true() throws ABCException {
-		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
-				filename("sync01_true-unreach-call.i")));
-	}
-
-	// sigma_false-unreach-call.i
-	@Test
-	public void sigma_false() throws ABCException {
-		assertFalse(ui.run("verify -showProgram=false", "-svcomp16",
-				TestConstants.QUIET, filename("sigma_false-unreach-call.i")));
-	}
-
-	// singleton_false-unreach-call.i
-	@Test
-	public void singleton_false() throws ABCException {
-		assertFalse(ui.run("verify", "-svcomp16", TestConstants.QUIET,
-				filename("singleton_false-unreach-call.i")));
-	}
-
 	@Test
 	public void intPointer() throws ABCException {
 		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
 				filename("intPointer.c")));
-	}
-
-	// stack_longest_true-unreach-call.i
-	@Test
-	public void stack_longest_true() throws ABCException {
-		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
-				filename("stack_longest_true-unreach-call.i")));
-	}
-
-	// 28_buggy_simple_loop1_vf_false-unreach-call.i
-	@Test
-	public void buggy_simple_28() throws ABCException {
-		assertFalse(ui.run("verify", "-svcomp16", TestConstants.QUIET,
-				filename("28_buggy_simple_loop1_vf_false-unreach-call.i")));
 	}
 
 	@Test
@@ -78,12 +42,6 @@ public class SvcompTest {
 	public void threadLocal() {
 		assertTrue(ui.run("verify", "-svcomp16", TestConstants.QUIET,
 				filename("threadLocal.c")));
-	}
-
-	@Test
-	public void fmaxsym_cas_true() {
-		assertTrue(ui.run("verify  -svcomp16", TestConstants.QUIET,
-				filename("10_fmaxsym_cas_true-unreach-call.i")));
 	}
 
 	@Test

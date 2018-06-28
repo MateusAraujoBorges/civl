@@ -302,17 +302,8 @@ public class ModelTranslator {
 	private void addTransformations(TranslationTask task,
 			Map<String, String> macros) throws ABCException {
 		if (config.svcomp())
-			for (UnitTask unitTask : task.getUnitTasks()) {
-				for (File sourceFile : unitTask.getSourceFiles()) {
-					if (sourceFile.getName().endsWith(".i")) {
-						unitTask.addTransformCode(Pruner.CODE);
-						unitTask.addTransformRecord(transformerFactory
-								.getSvcompUnPPTransformerRecord());
-					}
-				}
-			}
-		task.addTransformRecord(
-				transformerFactory.getSvcompTransformerRecord(config));
+			task.addTransformRecord(
+					transformerFactory.getSvcompTransformerRecord(config));
 		if (config.loopInvariantEnabled())
 			task.addTransformRecord(
 					transformerFactory.getLoopContractTransformerRecord());
