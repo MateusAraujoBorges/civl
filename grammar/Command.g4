@@ -163,6 +163,7 @@ OPTION_NAME
     | '-sliceAnalysis'
     | '-solve'
     | '-statelessPrintf'
+    | '-statistical'
     | '-strict'
     | '-svcomp16'
     | '-svcomp17'

@@ -1,16 +1,16 @@
 package edu.udel.cis.vsl.civl.config.IF;
 
-import static edu.udel.cis.vsl.gmc.Option.OptionType.BOOLEAN;
-import static edu.udel.cis.vsl.gmc.Option.OptionType.INTEGER;
-import static edu.udel.cis.vsl.gmc.Option.OptionType.STRING;
+import edu.udel.cis.vsl.gmc.Option;
+import edu.udel.cis.vsl.gmc.Option.OptionType;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.udel.cis.vsl.gmc.Option;
-import edu.udel.cis.vsl.gmc.Option.OptionType;
+import static edu.udel.cis.vsl.gmc.Option.OptionType.BOOLEAN;
+import static edu.udel.cis.vsl.gmc.Option.OptionType.INTEGER;
+import static edu.udel.cis.vsl.gmc.Option.OptionType.STRING;
 
 /**
  * This class manages all constant configurations of the system.
@@ -181,6 +181,7 @@ public class CIVLConstants {
 	public static String WITNESS = "witness";
 	public static String DIRECT = "direct";
 	public static String INTBIT = "int_bit";
+	public static String STATISTICAL = "statistical";
 
 	// Option objects
 
@@ -632,6 +633,9 @@ public class CIVLConstants {
 	public final static Option direct0 = Option.newScalarOption(DIRECT, STRING,
 			"Direct branching at line numbers in the given file", null);
 
+	public final static Option statisticalO = Option.newScalarOption(STATISTICAL, BOOLEAN,
+					"Use the statistical heuristic to explore", false);
+
 	/**
 	 * The name of the CIVL system function, which is the starting point of a
 	 * CIVL model.
@@ -658,7 +662,7 @@ public class CIVLConstants {
 				sysIncludePathO, traceO, userIncludePathO, verboseO, webO,
 				CIVLMacroO, analyzeAbsO, strictCompareO, collectOutputO,
 				checkDivisionByZeroO, checkMemoryLeakO, timeoutO, unpreprocO,
-				sliceAnalysisO, witnessO, direct0, intBit,
+				sliceAnalysisO, witnessO, direct0, statisticalO, intBit,
 				intOperationTransformer, maxProcsO};
 	}
 

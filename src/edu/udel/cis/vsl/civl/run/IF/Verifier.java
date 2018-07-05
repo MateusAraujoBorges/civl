@@ -1,24 +1,6 @@
 package edu.udel.cis.vsl.civl.run.IF;
 
-import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.collectOutputO;
-import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.maxdepthO;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Splitter;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
 import edu.udel.cis.vsl.civl.log.IF.CIVLLogEntry;
@@ -36,8 +18,36 @@ import edu.udel.cis.vsl.gmc.CommandLineException;
 import edu.udel.cis.vsl.gmc.ExcessiveErrorException;
 import edu.udel.cis.vsl.gmc.GMCConfiguration;
 import edu.udel.cis.vsl.gmc.seq.DfsSearcher;
+import edu.udel.cis.vsl.gmc.seq.Searcher;
+import edu.udel.cis.vsl.gmc.seq.StateQuantifier;
+import edu.udel.cis.vsl.gmc.seq.StatisticalSearcher;
+import edu.udel.cis.vsl.gmc.util.BigRational;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
+import org.apache.commons.rng.UniformRandomProvider;
+import org.apache.commons.rng.simple.RandomSource;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.collectOutputO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.maxdepthO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.seedO;
+import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.statisticalO;
 
 public class Verifier extends Player {
 
@@ -243,10 +253,36 @@ public class Verifier extends Player {
 			this.addPredicate(
 					Predicates.newFunctionalEquivalence(modelFactory.universe(),
 							symbolicAnalyzer, outputNames, specOutputs));
-		searcher = new DfsSearcher<State, Transition>(enabler, stateManager,
-				predicate, config);
-		if (civlConfig.debug())
+		Boolean useStatisticalExploration = (Boolean) config.getAnonymousSection()
+						.getValueOrDefault(statisticalO);
+		if (useStatisticalExploration) {
+			StateQuantifier<State> quantifier = s -> {
+				BooleanExpression pc = s.getPathCondition(modelFactory.universe());
+				out.println("[verifier:] " + pc);
+				// TODO quick hack until I figure out how to reuse the SARL smtlib translator
+				long numConjuncts = Splitter.on(Pattern.compile("\\(|\\)"))
+								.omitEmptyStrings()
+								.trimResults()
+								.splitToList(pc.toString())
+								.stream()
+								.filter(str -> str.equals("and") || str.equals("or"))
+								.count();
+
+				pc.toString();
+				return new BigRational(1, 2).pow((int) numConjuncts);
+			};
+			Long seed = (Long) config.getAnonymousSection()
+							.getValueOrDefault(seedO);
+			UniformRandomProvider rng = RandomSource.create(RandomSource.MT_64, seed);
+			searcher = new StatisticalSearcher<>(enabler, stateManager, predicate,
+							quantifier, config, rng, null);
+		} else {
+			searcher = new DfsSearcher<>(enabler, stateManager, predicate, config);
+		}
+		if (civlConfig.debug()) {
 			searcher.setDebugOut(out);
+			searcher.setDebugging(true);
+		}
 		searcher.setName(sessionName);
 		log.setSearcher(searcher);
 		// stateManager.setStack(searcher.stack());
