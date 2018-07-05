@@ -87,6 +87,10 @@
 		<pathelement location="${gmc.jar}" />
 		<pathelement location="${abc.jar}" />
 		<pathelement location="${antlr.jar}" />
+		<pathelement location="${commons-rng-core.jar}" />
+		<pathelement location="${commons-rng-sampling.jar}" />
+		<pathelement location="${commons-rng-simple.jar}" />		
+		<pathelement location="${guava.jar}" />
 	</path>
 
 	<target name="compile" depends="CommandParser" description="Compile all java source files.">

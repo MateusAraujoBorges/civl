@@ -1,6 +1,5 @@
 package edu.udel.cis.vsl.civl.run.IF;
 
-import com.google.common.base.Splitter;
 import edu.udel.cis.vsl.civl.config.IF.CIVLConstants;
 import edu.udel.cis.vsl.civl.log.IF.CIVLExecutionException;
 import edu.udel.cis.vsl.civl.log.IF.CIVLLogEntry;
@@ -12,6 +11,7 @@ import edu.udel.cis.vsl.civl.run.common.VerificationStatus;
 import edu.udel.cis.vsl.civl.semantics.IF.Transition;
 import edu.udel.cis.vsl.civl.state.IF.CIVLStateException;
 import edu.udel.cis.vsl.civl.state.IF.State;
+import edu.udel.cis.vsl.civl.statistical.ExactLinearQuantifier;
 import edu.udel.cis.vsl.civl.util.IF.Pair;
 import edu.udel.cis.vsl.civl.util.IF.Printable;
 import edu.udel.cis.vsl.gmc.CommandLineException;
@@ -21,7 +21,6 @@ import edu.udel.cis.vsl.gmc.seq.DfsSearcher;
 import edu.udel.cis.vsl.gmc.seq.Searcher;
 import edu.udel.cis.vsl.gmc.seq.StateQuantifier;
 import edu.udel.cis.vsl.gmc.seq.StatisticalSearcher;
-import edu.udel.cis.vsl.gmc.util.BigRational;
 import edu.udel.cis.vsl.sarl.IF.expr.BooleanExpression;
 import edu.udel.cis.vsl.sarl.IF.expr.SymbolicExpression;
 import org.apache.commons.rng.UniformRandomProvider;
@@ -42,7 +41,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.collectOutputO;
 import static edu.udel.cis.vsl.civl.config.IF.CIVLConstants.maxdepthO;
@@ -229,7 +227,7 @@ public class Verifier extends Player {
 	 * The object used to perform the depth-first search of the state space.
 	 * 
 	 */
-	private DfsSearcher<State, Transition> searcher;
+	private Searcher<State, Transition> searcher;
 
 	// private boolean shortFileNamesShown;
 
@@ -256,24 +254,16 @@ public class Verifier extends Player {
 		Boolean useStatisticalExploration = (Boolean) config.getAnonymousSection()
 						.getValueOrDefault(statisticalO);
 		if (useStatisticalExploration) {
-			StateQuantifier<State> quantifier = s -> {
-				BooleanExpression pc = s.getPathCondition(modelFactory.universe());
-				out.println("[verifier:] " + pc);
-				// TODO quick hack until I figure out how to reuse the SARL smtlib translator
-				long numConjuncts = Splitter.on(Pattern.compile("\\(|\\)"))
-								.omitEmptyStrings()
-								.trimResults()
-								.splitToList(pc.toString())
-								.stream()
-								.filter(str -> str.equals("and") || str.equals("or"))
-								.count();
-
-				pc.toString();
-				return new BigRational(1, 2).pow((int) numConjuncts);
-			};
 			Long seed = (Long) config.getAnonymousSection()
 							.getValueOrDefault(seedO);
 			UniformRandomProvider rng = RandomSource.create(RandomSource.MT_64, seed);
+			StateQuantifier<State> quantifier;
+			try {
+				quantifier = new ExactLinearQuantifier(modelFactory.universe(),
+								civlConfig.debug() ? out : null);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 			searcher = new StatisticalSearcher<>(enabler, stateManager, predicate,
 							quantifier, config, rng, null);
 		} else {
